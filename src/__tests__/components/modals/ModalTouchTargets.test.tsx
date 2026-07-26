@@ -10,6 +10,7 @@ jest.mock("react-native", () => {
     Text: "Text",
     Modal: ({ children }: { children: React.ReactNode }) => children,
     ScrollView: ({ children }: { children: React.ReactNode }) => children,
+    KeyboardAvoidingView: ({ children }: { children: React.ReactNode }) => children,
     FlatList: ({ data, renderItem, ListFooterComponent, ListEmptyComponent }: any) => {
       if (data?.length) {
         return React.createElement(

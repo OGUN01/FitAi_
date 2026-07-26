@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
+import { rh, rw } from '../../utils/responsive';
 
 
 interface Props {
@@ -148,10 +149,12 @@ const styles = StyleSheet.create({
 
   button: {
     backgroundColor: colors.primary,
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.md,
-    minWidth: 150,
+    minWidth: Math.max(rw(150), 150),
   },
 
   buttonText: {
@@ -165,6 +168,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     maxHeight: 200,
     width: "100%",
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
   },
 
   errorTitle: {

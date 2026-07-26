@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rs, rbr } from '../../../utils/responsive';
+import { rs, rbr, rf } from '../../../utils/responsive';
 
 interface CameraOverlayProps {
   mode: "food" | "progress" | "barcode";
@@ -35,7 +36,8 @@ export const CameraOverlay: React.FC<CameraOverlayProps> = ({
             <View style={styles.scanningLine} />
             {isScanning && (
               <View style={styles.scanningIndicator}>
-                <Text style={styles.scanningText}>✓ Scanning...</Text>
+                <Ionicons name="barcode-outline" size={rf(fontSize.sm)} color={colors.white} />
+                <Text style={styles.scanningText}>Scanning...</Text>
               </View>
             )}
           </View>
@@ -155,6 +157,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs / 2,
   },
 
   scanningText: {

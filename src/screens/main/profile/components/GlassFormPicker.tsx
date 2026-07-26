@@ -147,13 +147,15 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                           selected && styles.optionLabelSelected,
                           columns === 3 && { fontSize: rf(12) },
                         ]}
-                        numberOfLines={1}>
+                        numberOfLines={columns === 3 ? 1 : 2}
+                        ellipsizeMode="tail">
                         {option.label}
                       </Text>
                       {option.description && (
                         <Text
                           style={styles.optionDescription}
-                          numberOfLines={1}
+                          numberOfLines={columns === 3 ? 1 : 2}
+                          ellipsizeMode="tail"
                         >
                           {option.description}
                         </Text>
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
     overflow: "hidden",
-    minHeight: rw(52),
+    minHeight: Math.max(rw(52), 44),
     justifyContent: "center",
   },
   optionButtonSelected: {

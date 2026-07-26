@@ -48,7 +48,11 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({
   const showBack = typeof onBack === "function";
 
   return (
-    <Animated.View entering={FadeIn.duration(250)} style={[styles.container, style]}>
+    <Animated.View
+      entering={FadeIn.duration(250)}
+      style={[styles.container, style]}
+      accessibilityRole="header"
+    >
       {/* Left: back chevron (fixed width so titles align when absent) */}
       <View style={styles.side}>
         {showBack ? (
@@ -75,6 +79,7 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({
         style={[
           styles.titleWrap,
           leftAlignTitle ? styles.titleLeft : styles.titleCenter,
+          !leftAlignTitle && styles.titleCenterShrink,
         ]}
       >
         {titleIcon ? (
@@ -109,13 +114,16 @@ const styles = StyleSheet.create({
     minHeight: rf(52),
   },
   side: {
-    width: rf(44),
+    // Fixed-width side slot for back + right action. Use minWidth instead of
+    // width so wider right actions (e.g. an inline "Edit" pill) aren't
+    // clipped to 44px.
+    minWidth: rf(44),
     alignItems: "center",
     justifyContent: "center",
   },
   backButton: {
-    width: rf(40),
-    height: rf(40),
+    width: Math.max(rf(40), 44),
+    height: Math.max(rf(40), 44),
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
@@ -128,6 +136,11 @@ const styles = StyleSheet.create({
   },
   titleCenter: {
     justifyContent: "center",
+  },
+  titleCenterShrink: {
+    // Allow the centered title to shrink so it doesn't push the side slots
+    // off-screen when the title is long.
+    flexShrink: 1,
   },
   titleLeft: {
     justifyContent: "flex-start",

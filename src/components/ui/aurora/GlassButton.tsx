@@ -96,7 +96,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       ]}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      accessibilityState={{ disabled: isDisabled }}
       testID={testID}
     >
       <LinearGradient
@@ -156,7 +156,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   disabled: {
-    opacity: 0.5,
+    // 0.6 keeps the gradient label above the WCAG AA 4.5:1 threshold on the
+    // dark app background (the previous 0.5 dropped contrast below AA).
+    opacity: 0.6,
   },
 });
 

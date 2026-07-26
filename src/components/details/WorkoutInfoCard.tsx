@@ -1,8 +1,10 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rf, rw, rh, rbr } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 
 interface WorkoutInfoCardProps {
   workout: {
@@ -25,15 +27,31 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
   completionPercentage,
   getDifficultyColor,
 }) => {
+  const displayCalories = workout.calories > 0 ? String(workout.calories) : "—";
+  const workoutIconName = isCompleted ? "checkmark-circle" : "fitness";
+
   return (
     <Card style={styles.workoutCard} variant="elevated">
       <View style={styles.workoutHeader}>
         <View style={styles.workoutInfo}>
-          <Text style={styles.workoutName}>{workout.name}</Text>
-          <Text style={styles.workoutDescription}>{workout.description}</Text>
+          <Text
+            style={styles.workoutName}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {workout.name}
+          </Text>
+          <Text
+            style={styles.workoutDescription}
+            numberOfLines={3}
+            ellipsizeMode="tail"
+          >
+            {workout.description}
+          </Text>
         </View>
         <View style={styles.workoutIcon}>
-          <Text style={styles.workoutEmoji}>{isCompleted ? "✅" : "💪"}</Text>
+          <Ionicons name={workoutIconName as any} size={rf(24)} color={colors.white} />
         </View>
       </View>
 
@@ -43,7 +61,7 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
             <View
               style={[
                 styles.progressFill,
-                { width: `${completionPercentage}%` },
+                { width: `${Math.max(completionPercentage, 6)}%` },
               ]}
             />
           </View>
@@ -70,9 +88,7 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
           <Text style={styles.statLabel}>Difficulty</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {workout.calories > 0 ? workout.calories : "~300"}
-          </Text>
+          <Text style={styles.statValue}>{displayCalories}</Text>
           <Text style={styles.statLabel}>Calories</Text>
         </View>
       </View>
@@ -83,7 +99,7 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
           <View style={styles.musclesList}>
             {workout.targetMuscles.map((muscle: string, index: number) => (
               <View key={index} style={styles.muscleTag}>
-                <Text style={styles.muscleText}>{muscle}</Text>
+                <Text style={styles.muscleText} numberOfLines={1}>{muscle}</Text>
               </View>
             ))}
           </View>
@@ -96,7 +112,7 @@ export const WorkoutInfoCard: React.FC<WorkoutInfoCardProps> = ({
           <View style={styles.equipmentList}>
             {workout.equipment.map((item, index) => (
               <View key={index} style={styles.equipmentTag}>
-                <Text style={styles.equipmentText}>{item}</Text>
+                <Text style={styles.equipmentText} numberOfLines={1}>{item}</Text>
               </View>
             ))}
           </View>
@@ -142,10 +158,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginLeft: spacing.md,
-  },
-
-  workoutEmoji: {
-    fontSize: rf(24),
+    overflow: "hidden",
   },
 
   progressContainer: {
@@ -184,6 +197,7 @@ const styles = StyleSheet.create({
 
   statItem: {
     alignItems: "center",
+    flex: 1,
   },
 
   statValue: {
@@ -216,12 +230,13 @@ const styles = StyleSheet.create({
   },
 
   muscleTag: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs / 2,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.primary + "40",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    maxWidth: rw(160),
   },
 
   muscleText: {
@@ -252,6 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs / 2,
     borderRadius: borderRadius.md,
+    maxWidth: rw(160),
   },
 
   equipmentText: {

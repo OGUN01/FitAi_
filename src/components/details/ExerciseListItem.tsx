@@ -1,8 +1,10 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
-import { rw, rh, rbr } from '../../utils/responsive';
+import { rw, rh, rbr, rf } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_SOFT } from '../../utils/colors';
 
 interface Exercise {
   id: string;
@@ -40,18 +42,29 @@ export const ExerciseListItem: React.FC<ExerciseListItemProps> = ({
           <Text style={styles.exerciseNumberText}>{index + 1}</Text>
         </View>
         <View style={styles.exerciseInfo}>
-          <Text style={styles.exerciseName}>{exercise.name}</Text>
-          <Text style={styles.exerciseDetails}>
+          <Text
+            style={styles.exerciseName}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {exercise.name}
+          </Text>
+          <Text style={styles.exerciseDetails} numberOfLines={1}>
             {exercise.sets} sets × {exercise.reps} reps
             {exercise.weight && ` • ${exercise.weight}`}
           </Text>
-          <Text style={styles.exerciseRest}>Rest: {exercise.restTime}</Text>
+          <Text style={styles.exerciseRest} numberOfLines={1}>Rest: {exercise.restTime}</Text>
         </View>
         <TouchableOpacity
           style={styles.exerciseArrow}
           onPress={() => onPress(exercise)}
+          accessibilityRole="button"
+          accessibilityLabel={`View ${exercise.name} details`}
+          accessibilityHint="Opens exercise detail"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.exerciseArrowText}>→</Text>
+          <Ionicons name="chevron-forward" size={rf(20)} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -59,7 +72,7 @@ export const ExerciseListItem: React.FC<ExerciseListItemProps> = ({
         <View style={styles.exerciseMuscles}>
           {exercise.targetMuscles.map((muscle, muscleIndex) => (
             <View key={muscleIndex} style={styles.exerciseMuscleTag}>
-              <Text style={styles.exerciseMuscleText}>{muscle}</Text>
+              <Text style={styles.exerciseMuscleText} numberOfLines={1}>{muscle}</Text>
             </View>
           ))}
         </View>
@@ -118,17 +131,13 @@ const styles = StyleSheet.create({
   },
 
   exerciseArrow: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: rbr(16),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rh(32), 44),
+    borderRadius: Math.max(rbr(16), 22),
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  exerciseArrowText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    marginLeft: spacing.xs,
   },
 
   exerciseMuscles: {
@@ -138,10 +147,11 @@ const styles = StyleSheet.create({
   },
 
   exerciseMuscleTag: {
-    backgroundColor: colors.secondary + "20",
+    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs / 4,
     borderRadius: borderRadius.sm,
+    maxWidth: rw(140),
   },
 
   exerciseMuscleText: {

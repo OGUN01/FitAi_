@@ -7,8 +7,10 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { rf, rp } from "../../utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rp, rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 // ============================================================================
 // TYPES
@@ -28,7 +30,7 @@ interface InfoTooltipProps {
 export const InfoTooltip: React.FC<InfoTooltipProps> = ({
   title,
   description,
-  icon = "ℹ️",
+  icon,
   position = "bottom",
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -39,8 +41,15 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
         onPress={() => setIsVisible(true)}
         style={styles.iconButton}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={`More info: ${title}`}
+        accessibilityHint="Opens a tooltip with details"
       >
-        <Text style={styles.icon}>{icon}</Text>
+        <Ionicons
+          name="information-circle-outline"
+          size={rf(16)}
+          color={colors.primary}
+        />
       </TouchableOpacity>
 
       <Modal
@@ -52,14 +61,19 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
         <Pressable
           style={styles.modalOverlay}
           onPress={() => setIsVisible(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss tooltip"
+          accessibilityHint="Closes the tooltip"
         >
           <View style={styles.tooltipContainer}>
             <View style={styles.tooltipContent}>
-              <Text style={styles.tooltipTitle}>{title}</Text>
-              <Text style={styles.tooltipDescription}>{description}</Text>
+              <Text style={styles.tooltipTitle} numberOfLines={2}>{title}</Text>
+              <Text style={styles.tooltipDescription} numberOfLines={10}>{description}</Text>
               <TouchableOpacity
                 onPress={() => setIsVisible(false)}
                 style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss tooltip"
               >
                 <Text style={styles.closeButtonText}>Got it!</Text>
               </TouchableOpacity>
@@ -81,16 +95,12 @@ const styles = StyleSheet.create({
   },
 
   iconButton: {
-    width: rf(20),
-    height: rf(20),
-    borderRadius: rf(10),
-    backgroundColor: `${colors.primary}15`,
-    alignItems: "center",
+    minWidth: Math.max(rf(20), 44),
+    minHeight: Math.max(rf(20), 44),
     justifyContent: "center",
-  },
-
-  icon: {
-    fontSize: rf(14),
+    alignItems: "center",
+    borderRadius: rf(10),
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW + 0.03),
   },
 
   modalOverlay: {
@@ -110,8 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
-    boxShadow: '0px 2px 8px rgba(0,0,0,0.25)',
     elevation: 5,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
 
   tooltipTitle: {
@@ -130,6 +143,8 @@ const styles = StyleSheet.create({
 
   closeButton: {
     alignSelf: "flex-end",
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.primary,

@@ -1,4 +1,4 @@
-﻿// AI Status Indicator Component
+// AI Status Indicator Component
 // Shows whether the app is using real AI or demo mode
 
 import React from "react";
@@ -10,8 +10,9 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf } from "../../utils/responsive";
+import { rf, rh } from "../../utils/responsive";
 import { aiService } from "../../ai";
 
 interface AIStatusIndicatorProps {
@@ -25,33 +26,23 @@ export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({
 }) => {
   const status = aiService.getAIStatus();
 
-  const getStatusColor = () => {
-    return status.mode === "real"
-      ? colors.success
-      : colors.warning;
-  };
-
-  const getStatusIcon = () => {
-    return status.mode === "real" ? "🤖" : "🎭";
-  };
-
-  const getStatusText = () => {
-    return status.mode === "real" ? "AI Powered" : "Demo Mode";
-  };
+  const statusColor = status.mode === "real" ? colors.success : colors.warning;
+  const statusText = status.mode === "real" ? "AI Powered" : "Demo Mode";
+  const statusIcon = status.mode === "real" ? "sparkles" : "flask-outline";
 
   const Component = onPress ? TouchableOpacity : View;
 
   return (
     <Component
-      style={[styles.container, { borderColor: getStatusColor() }, style]}
+      style={[styles.container, { borderColor: statusColor }, style]}
       onPress={onPress}
-      accessibilityLabel={`AI Status: ${getStatusText()}`}
+      accessibilityLabel={`AI Status: ${statusText}`}
       accessibilityRole={onPress ? "button" : "text"}
       accessibilityHint={onPress ? "Double tap to view AI details" : undefined}
     >
-      <Text style={styles.icon}>{getStatusIcon()}</Text>
-      <Text style={[styles.text, { color: getStatusColor() }]}>
-        {getStatusText()}
+      <Ionicons name={statusIcon as any} size={rf(14)} color={statusColor} style={styles.icon} />
+      <Text style={[styles.text, { color: statusColor }]} numberOfLines={1}>
+        {statusText}
       </Text>
     </Component>
   );
@@ -61,6 +52,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: Math.max(rh(36), 44),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -69,7 +61,6 @@ const styles = StyleSheet.create({
   },
 
   icon: {
-    fontSize: rf(14),
     marginRight: spacing.xs,
   },
 

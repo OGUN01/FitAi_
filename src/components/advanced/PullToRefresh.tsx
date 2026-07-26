@@ -9,7 +9,10 @@ import {
   Vibration,
   StyleProp,
   ViewStyle,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from '../../utils/responsive';
 
@@ -39,12 +42,19 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   const rotationValue = useRef(new Animated.Value(0)).current;
   const scaleValue = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  // Track the latest contentOffset.y so the PanResponder can decide whether
+  // the ScrollView is scrolled to top before hijacking the gesture. Reading
+  // this from a ref avoids stale-closure bugs that would otherwise hijack
+  // pull-down gestures while the user is mid-scroll.
+  const scrollOffsetRef = useRef(0);
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_, gestureState) => {
-      // Only handle if scrolled to top and pulling down
-      return gestureState.dy > 0 && !isRefreshing;
+      // Only handle if the ScrollView is at the very top AND the user is
+      // pulling down. This prevents hijacking mid-scroll gestures.
+      const atTop = scrollOffsetRef.current <= 0;
+      return atTop && gestureState.dy > 0 && !isRefreshing;
     },
 
     onPanResponderGrant: () => {
@@ -143,10 +153,19 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     return "Pull to refresh";
   };
 
-  const getRefreshIcon = () => {
-    if (isRefreshing) return "⟳";
-    if (canRefresh) return "↑";
-    return "↓";
+  const getRefreshIconName = (): React.ComponentProps<typeof Ionicons>["name"] => {
+    if (isRefreshing) return "refresh";
+    if (canRefresh) return "arrow-up";
+    return "arrow-down";
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset } = event.nativeEvent;
+    scrollOffsetRef.current = contentOffset.y;
+    // Reset pull state if scrolled away from top
+    if (contentOffset.y > 0 && (canRefresh || currentPullDistance > 0)) {
+      resetPull();
+    }
   };
 
   return (
@@ -166,9 +185,9 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         ]}
       >
         <View style={styles.refreshContent}>
-          <Animated.Text
+          <Animated.View
             style={[
-              styles.refreshIcon,
+              styles.refreshIconWrap,
               {
                 transform: [
                   {
@@ -179,14 +198,15 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
                   },
                   { scale: scaleValue },
                 ],
-                color: canRefresh
-                  ? colors.primary
-                  : colors.textSecondary,
               },
             ]}
           >
-            {getRefreshIcon()}
-          </Animated.Text>
+            <Ionicons
+              name={getRefreshIconName()}
+              size={rf(24)}
+              color={canRefresh ? colors.primary : colors.textSecondary}
+            />
+          </Animated.View>
           <Text
             style={[
               styles.refreshText,
@@ -202,28 +222,27 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         </View>
       </Animated.View>
 
-      {/* Scrollable Content */}
+      {/*
+        ScrollView with contentOffset tracking. The pull-down PanResponder
+        only engages when contentOffset.y === 0, so it can never hijack a
+        mid-scroll gesture. The animated indicator above the ScrollView
+        grows/shrinks in sync with pullDistance so the refresh indicator and
+        the content translate together — the previous implementation wrapped
+        children in a translated Animated.View which left the indicator
+        visually disconnected from the scroll content.
+      */}
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
+        contentContainerStyle={{
+          transform: [{ translateY: pullDistance }],
+        }}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={(event) => {
-          const { contentOffset } = event.nativeEvent;
-          // Reset pull state if scrolled away from top
-          if (contentOffset.y > 0 && (canRefresh || currentPullDistance > 0)) {
-            resetPull();
-          }
-        }}
+        onScroll={handleScroll}
         {...panResponder.panHandlers}
       >
-        <Animated.View
-          style={{
-            transform: [{ translateY: pullDistance }],
-          }}
-        >
-          {children}
-        </Animated.View>
+        {children}
       </ScrollView>
     </View>
   );
@@ -252,8 +271,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  refreshIcon: {
-    fontSize: rf(24),
+  refreshIconWrap: {
     marginBottom: rp(4),
   },
 
@@ -266,3 +284,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+

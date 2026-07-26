@@ -56,25 +56,29 @@ export const BodyMeasurementsEditModal: React.FC<
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [scaleBarWidth, setScaleBarWidth] = useState(0);
 
-  // Load current values when modal opens
+  // Load current values ONLY when the modal transitions to visible. The
+  // previous deps [visible, bodyAnalysis, weightUnit] re-ran this effect every
+  // time the store's bodyAnalysis updated (e.g. from a parallel save) —
+  // wiping in-progress edits the user was mid-typing. weightUnit changes are
+  // handled separately by the unit-conversion effect below.
   useEffect(() => {
-    if (visible) {
-      const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
-      // ✅ SSOT: profileStore.bodyAnalysis is authoritative
-      setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : "");
-      const rawWeight = bodyAnalysisData?.current_weight_kg;
-      const displayWt = rawWeight && rawWeight > 0 ? toDisplayWeight(rawWeight, weightUnit) : null;
-      setWeight(displayWt != null ? displayWt.toFixed(1) : "");
-      const rawTarget = bodyAnalysisData?.target_weight_kg;
-      const displayTarget = rawTarget && rawTarget > 0 ? toDisplayWeight(rawTarget, weightUnit) : null;
-      setTargetWeight(displayTarget != null ? displayTarget.toFixed(1) : "");
-      setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : "");
-      setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
-      setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
-      setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
-      setErrors({});
-    }
-  }, [visible, bodyAnalysis, weightUnit]);
+    if (!visible) return;
+    const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
+    // ✅ SSOT: profileStore.bodyAnalysis is authoritative
+    setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : "");
+    const rawWeight = bodyAnalysisData?.current_weight_kg;
+    const displayWt = rawWeight && rawWeight > 0 ? toDisplayWeight(rawWeight, weightUnit) : null;
+    setWeight(displayWt != null ? displayWt.toFixed(1) : "");
+    const rawTarget = bodyAnalysisData?.target_weight_kg;
+    const displayTarget = rawTarget && rawTarget > 0 ? toDisplayWeight(rawTarget, weightUnit) : null;
+    setTargetWeight(displayTarget != null ? displayTarget.toFixed(1) : "");
+    setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : "");
+    setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
+    setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
+    setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
+    setErrors({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   // Calculate BMI — weight state is in display units (lbs when imperial);
   // convert to kg first so BMI is always kg/m^2.
@@ -338,31 +342,38 @@ export const BodyMeasurementsEditModal: React.FC<
               </View>
             </View>
 
-            {/* BMI Scale */}
+            {/* BMI Scale — segments sized proportionally to the BMI ranges
+                they represent (15-18.5, 18.5-25, 25-30, 30-40). The previous
+                flex values 18.5/6.5/5/10 didn't match the actual BMI range
+                widths, so the indicator didn't align with segment boundaries. */}
             <View style={styles.bmiScale}>
               <View
                 style={styles.bmiScaleBarContainer}
                 onLayout={(e: LayoutChangeEvent) => setScaleBarWidth(e.nativeEvent.layout.width)}
               >
                 <View style={styles.bmiScaleBar}>
+                  {/* 15-18.5 = 3.5 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
-                      { backgroundColor: "#2196F3", flex: 18.5 },
+                      { backgroundColor: "#2196F3", flex: 3.5 },
                     ]}
                   />
+                  {/* 18.5-25 = 6.5 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
                       { backgroundColor: "#4CAF50", flex: 6.5 },
                     ]}
                   />
+                  {/* 25-30 = 5 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
                       { backgroundColor: "#FF9800", flex: 5 },
                     ]}
                   />
+                  {/* 30-40 = 10 units */}
                   <View
                     style={[
                       styles.bmiScaleSegment,
@@ -370,24 +381,30 @@ export const BodyMeasurementsEditModal: React.FC<
                     ]}
                   />
                 </View>
-                {/* BMI Position Indicator — only render once the bar width is known */}
-                {bmi && scaleBarWidth > 0 && (() => {
+                {/* BMI Position Indicator. Render even when scaleBarWidth is 0
+                    (first paint) using a percentage-based left so the indicator
+                    is visible immediately instead of waiting for onLayout. */}
+                {bmi && (() => {
                   const bmiVal = parseFloat(bmi);
                   const pct = Math.min(100, Math.max(0, ((bmiVal - 15) / (40 - 15)) * 100));
                   return (
                     <View
                       style={[
                         styles.bmiIndicator,
-                        { left: (scaleBarWidth * pct) / 100 },
+                        { left: `${pct}%` },
                       ]}
                     />
                   );
                 })()}
               </View>
+              {/* Scale labels — include endpoints (15, 40) so all 4 segment
+                  boundaries are marked. */}
               <View style={styles.bmiScaleLabels}>
+                <Text style={styles.bmiScaleLabel}>15</Text>
                 <Text style={styles.bmiScaleLabel}>18.5</Text>
                 <Text style={styles.bmiScaleLabel}>25</Text>
                 <Text style={styles.bmiScaleLabel}>30</Text>
+                <Text style={styles.bmiScaleLabel}>40</Text>
               </View>
             </View>
           </GlassCard>

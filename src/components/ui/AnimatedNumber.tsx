@@ -49,6 +49,8 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
       style={style}
       // @ts-ignore - Reanimated AnimatedProps type issue with text prop
       animatedProps={animatedProps}
+      accessibilityRole="text"
+      accessibilityLabel={`${prefix}${value.toFixed(decimals)}${suffix}`}
     >
       {prefix}
       {value.toFixed(decimals)}

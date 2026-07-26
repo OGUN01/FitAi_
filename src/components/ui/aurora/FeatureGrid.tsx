@@ -239,7 +239,7 @@ export const FeatureGrid: React.FC<FeatureGridProps> = ({
   elevation = 1,
 }) => {
   return (
-    <View style={[styles.container, { gap }, style]}>
+    <View style={[styles.container, style]}>
       {features.map((feature, index) => (
         <View
           key={`feature-${index}`}
@@ -270,17 +270,22 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -spacing.md / 2,
+    // No negative margin + gap on the container — the columnWrapper already
+    // applies paddingHorizontal: gap/2 + marginBottom: gap, so adding a
+    // container-level gap (or the previous -spacing.md/2 negative margin)
+    // double-counted the gap and could overflow on narrow screens.
   },
   columnWrapper: {
-    marginBottom: spacing.md,
+    // marginBottom applied inline above so it tracks the `gap` prop.
   },
   item: {
     width: "100%",
+    overflow: "hidden",
   },
   itemContent: {
     alignItems: "center",
     gap: spacing.sm,
+    flex: 1,
   },
   iconContainer: {
     width: rs(48),

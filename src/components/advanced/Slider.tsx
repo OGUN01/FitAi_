@@ -168,44 +168,56 @@ const NativeSlider: React.FC<SliderProps> = ({
 }) => {
   const [sliderWidth, setSliderWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
   const thumbPosition = useRef(new Animated.Value(0)).current;
   const thumbScale = useRef(new Animated.Value(1)).current;
+  // Thumb visual size — kept in sync with the styles.thumb width/height below.
+  const THUMB_SIZE = Math.max(rs(24), 24);
 
   React.useEffect(() => {
-    if (sliderWidth > 24) {
+    if (sliderWidth > THUMB_SIZE) {
       const percentage = (value - min) / (max - min);
-      const position = percentage * (sliderWidth - 24);
+      const position = percentage * (sliderWidth - THUMB_SIZE);
       Animated.timing(thumbPosition, {
         toValue: position,
-        duration: isDragging ? 0 : 200,
+        // 0ms while dragging so the thumb tracks the finger 1:1; otherwise
+        // animate from the old position. Reads isDragging from a ref so this
+        // effect's deps don't include the dragging flag — toggling the flag
+        // no longer re-fires the animation with the same value.
+        duration: isDraggingRef.current ? 0 : 200,
         useNativeDriver: false,
       }).start();
     }
-  }, [value, min, max, sliderWidth, isDragging]);
+  }, [value, min, max, sliderWidth, THUMB_SIZE]);
+
+  const setDragging = (next: boolean) => {
+    isDraggingRef.current = next;
+    setIsDragging(next);
+  };
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => !disabled,
     onMoveShouldSetPanResponder: () => !disabled,
 
     onPanResponderGrant: () => {
-      setIsDragging(true);
+      setDragging(true);
       Animated.spring(thumbScale, { toValue: 1.2, useNativeDriver: false }).start();
     },
 
     onPanResponderMove: (event, gestureState) => {
-      if (sliderWidth <= 24) return;
+      if (sliderWidth <= THUMB_SIZE) return;
       const { dx } = gestureState;
-      const currentPosition = ((value - min) / (max - min)) * (sliderWidth - 24);
-      const newPosition = Math.max(0, Math.min(sliderWidth - 24, currentPosition + dx));
+      const currentPosition = ((value - min) / (max - min)) * (sliderWidth - THUMB_SIZE);
+      const newPosition = Math.max(0, Math.min(sliderWidth - THUMB_SIZE, currentPosition + dx));
       thumbPosition.setValue(newPosition);
-      const percentage = newPosition / (sliderWidth - 24);
+      const percentage = newPosition / (sliderWidth - THUMB_SIZE);
       const newValue = min + percentage * (max - min);
       const steppedValue = Math.round(newValue / step) * step;
       onValueChange(Math.max(min, Math.min(max, steppedValue)));
     },
 
     onPanResponderRelease: () => {
-      setIsDragging(false);
+      setDragging(false);
       Animated.spring(thumbScale, { toValue: 1, useNativeDriver: false }).start();
     },
   });
@@ -230,38 +242,40 @@ const NativeSlider: React.FC<SliderProps> = ({
       )}
 
       <View
-        style={[styles.track, { backgroundColor: trackColor }]}
+        style={[styles.trackWrap, { backgroundColor: trackColor }]}
         onLayout={(event) => setSliderWidth(event.nativeEvent.layout.width)}
       >
-        <Animated.View
-          style={[
-            styles.activeTrack,
-            {
-              backgroundColor: activeTrackColor,
-              width:
-                sliderWidth > 24
-                  ? thumbPosition.interpolate({
-                      inputRange: [0, sliderWidth - 24],
-                      outputRange: [12, sliderWidth - 12],
-                      extrapolate: "clamp",
-                    })
-                  : 12,
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.thumb,
-            {
-              backgroundColor: thumbColor,
-              transform: [{ translateX: thumbPosition }, { scale: thumbScale }],
-            },
-            disabled && styles.thumbDisabled,
-          ]}
-          {...panResponder.panHandlers}
-        >
-          <View style={styles.thumbInner} />
-        </Animated.View>
+        <View style={[styles.track, { backgroundColor: trackColor }]}>
+          <Animated.View
+            style={[
+              styles.activeTrack,
+              {
+                backgroundColor: activeTrackColor,
+                width:
+                  sliderWidth > THUMB_SIZE
+                    ? thumbPosition.interpolate({
+                        inputRange: [0, sliderWidth - THUMB_SIZE],
+                        outputRange: [THUMB_SIZE / 2, sliderWidth - THUMB_SIZE / 2],
+                        extrapolate: "clamp",
+                      })
+                    : THUMB_SIZE / 2,
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.thumb,
+              {
+                backgroundColor: thumbColor,
+                transform: [{ translateX: thumbPosition }, { scale: thumbScale }],
+              },
+              disabled && styles.thumbDisabled,
+            ]}
+            {...panResponder.panHandlers}
+          >
+            <View style={styles.thumbInner} />
+          </Animated.View>
+        </View>
       </View>
 
       <View style={styles.minMaxContainer}>
@@ -339,11 +353,19 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
+  trackWrap: {
+    // Wrapper with vertical padding so the thumb (which extends above the
+    // track) has room and is never clipped. The wrapper also enlarges the
+    // tappable area for the PanResponder so the touch target meets 44px.
+    height: Math.max(rs(44), 44),
+    justifyContent: "center",
+    marginVertical: spacing.sm,
+  },
+
   track: {
     height: 8,
     borderRadius: rbr(4),
     position: "relative",
-    marginVertical: spacing.sm,
   },
 
   activeTrack: {
@@ -392,6 +414,9 @@ const styles = StyleSheet.create({
     position: "relative",
     height: 4,
     marginTop: spacing.xs,
+    // Allow the first/last step indicators (positioned at 0%/100%) to render
+    // outside the container bounds instead of being clipped.
+    overflow: "visible",
   },
 
   stepIndicator: {
@@ -400,6 +425,10 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: rbr(1),
     top: 0,
+    // Centre the indicator on its step percentage. translateX(-50%) keeps
+    // the 2px-wide mark centred on the step boundary, including at 0% and
+    // 100% where it previously clipped outside the container.
     transform: [{ translateX: -1 }],
+    marginLeft: 0,
   },
 });

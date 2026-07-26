@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rbr, rp } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface LoadingAnimationProps {
   type?: "spinner" | "dots" | "pulse" | "wave";
@@ -137,7 +138,7 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
           {
             width: sizeValue,
             height: sizeValue,
-            borderColor: color + "30",
+            borderColor: hexToRgba(color, TINT_ALPHA_MEDIUM),
             borderTopColor: color,
             transform: [{ rotate: spin }],
           },
@@ -198,9 +199,13 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 
   const renderWave = () => {
     const bars = Array.from({ length: 5 }, (_, index) => {
-      const delay = index * 0.1;
+      // Per-bar delay was previously computed but never applied — each bar
+      // used the same `scaleY` interpolation, so the wave was uniform. We now
+      // derive a per-bar phase by interpolating against offset input ranges
+      // so the bars are visibly staggered.
+      const phase = index * 0.1;
       const scaleY = animationValue.interpolate({
-        inputRange: [0, 0.5, 1],
+        inputRange: [0 + phase, 0.5 + phase, 1],
         outputRange: [0.3, 1, 0.3],
         extrapolate: "clamp",
       });
@@ -240,9 +245,13 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[styles.container, style]}
+      accessibilityRole="progressbar"
+      accessibilityLabel={text || "Loading"}
+    >
       {renderAnimation()}
-      {text && <Text style={[styles.text, { color }]}>{text}</Text>}
+      {text && <Text style={[styles.text, { color }]} numberOfLines={2}>{text}</Text>}
     </View>
   );
 };
@@ -257,6 +266,8 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderRadius: rbr(50),
     borderStyle: "solid",
+    // borderColor set inline — was `${color}30` hex-append; now hexToRgba so
+    // rgba/named colors don't break the spinner.
   },
 
   dotsContainer: {

@@ -33,7 +33,7 @@ export default function IngredientsSection({
           Tap ingredients for details:
         </Text>
         <View style={styles.ingredientsGrid}>
-          {meal.items?.map((item, index) => (
+          {(meal.items && meal.items.length > 0) ? meal.items.map((item, index) => (
             <AnimatedPressable
               key={index}
               style={styles.ingredientChip}
@@ -44,8 +44,14 @@ export default function IngredientsSection({
               accessibilityLabel={`View ${item.name} details`}
               accessibilityRole="button"
             >
-              <Text style={styles.ingredientText}>🥘 {item.name}</Text>
-              <Text style={styles.ingredientCalories}>
+              <Ionicons
+                name="restaurant"
+                size={16}
+                color={colors.text.muted}
+                style={styles.ingredientIcon}
+              />
+              <Text style={styles.ingredientText} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.ingredientCalories} numberOfLines={1}>
                 {Math.round(item.calories)} cal
               </Text>
               <Ionicons
@@ -54,7 +60,9 @@ export default function IngredientsSection({
                 color={colors.text.muted}
               />
             </AnimatedPressable>
-          )) || []}
+          )) : (
+            <Text style={styles.emptyText}>No ingredients listed for this meal.</Text>
+          )}
         </View>
       </View>
     </GlassCard>
@@ -97,11 +105,23 @@ const styles = StyleSheet.create({
     borderRadius: rbr(20),
     borderWidth: 1,
     borderColor: colors.glass.border,
+    maxWidth: "100%",
+    minHeight: Math.max(rp(40), 44),
+  },
+  ingredientIcon: {
+    marginRight: rp(6),
   },
   ingredientText: {
     fontSize: rf(14),
     color: colors.text.secondary,
     marginRight: rp(6),
+    flexShrink: 1,
+  },
+  emptyText: {
+    fontSize: rf(13),
+    color: colors.text.muted,
+    fontStyle: "italic",
+    paddingVertical: rp(8),
   },
   ingredientCalories: {
     fontSize: rf(12),

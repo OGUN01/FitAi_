@@ -136,7 +136,9 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                 strokeWidth={strokeWidth}
                 fill="transparent"
               />
-              {/* Progress circle */}
+              {/* Progress circle — rotate -90deg so the arc starts at 12
+                  o'clock instead of 3 o'clock (SVG circles default to the
+                  3 o'clock starting position). */}
               <Circle
                 cx={size / 2}
                 cy={size / 2}
@@ -147,6 +149,7 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                 strokeDasharray={`${progress} ${circumference - progress}`}
                 strokeDashoffset={circumference / 4}
                 strokeLinecap="round"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
               />
             </Svg>
             <View style={styles.percentageContainer}>
@@ -175,10 +178,11 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
           </View>
         </View>
 
-        {/* Incomplete sections */}
+        {/* Incomplete sections — show all (was slice(0,2) which hid the 3rd+
+            incomplete sections, leaving them with no quick-action button). */}
         {incompleteSections.length > 0 && (
           <View style={styles.sectionsContainer}>
-            {incompleteSections.slice(0, 2).map((section) => (
+            {incompleteSections.map((section) => (
               <AnimatedPressable
                 key={section.id}
                 onPress={() => {
@@ -188,6 +192,8 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                 scaleValue={0.97}
                 hapticFeedback={false}
                 style={styles.sectionButton}
+                accessibilityRole="button"
+                accessibilityLabel={`Complete ${section.name}`}
               >
                 <View style={styles.sectionIcon}>
                   <Ionicons
@@ -196,7 +202,7 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                     color={getColor()}
                   />
                 </View>
-                <Text style={styles.sectionName}>{section.name}</Text>
+                <Text style={styles.sectionName} numberOfLines={1} ellipsizeMode="tail">{section.name}</Text>
                 <Ionicons
                   name="add-circle-outline"
                   size={rf(16)}
@@ -269,7 +275,9 @@ const styles = StyleSheet.create({
   },
   completionProgress: {
     height: "100%",
-    borderRadius: rh(2),
+    // No borderRadius — the parent bar already rounds both ends and clips
+    // the fill. The previous borderRadius on the fill produced a rounded
+    // right edge that floated inside the squared-left bar at low %.
   },
   completionText: {
     fontSize: rf(10),
@@ -281,6 +289,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   sectionButton: {
@@ -293,6 +302,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.md,
     gap: spacing.xs,
+    minWidth: 120,
   },
   sectionIcon: {
     width: rw(24),

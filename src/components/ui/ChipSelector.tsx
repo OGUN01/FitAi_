@@ -92,6 +92,9 @@ const Chip: React.FC<{
       activeOpacity={0.8}
       onPress={handlePress}
       style={[styles.chip, animatedStyle]}
+      accessibilityRole="button"
+      accessibilityLabel={option.label}
+      accessibilityState={{ selected: isSelected }}
     >
       {isSelected && (
         <LinearGradient
@@ -101,7 +104,7 @@ const Chip: React.FC<{
           style={styles.chipGradient}
         />
       )}
-      <Animated.Text style={[styles.chipText, animatedTextStyle]}>
+      <Animated.Text style={[styles.chipText, animatedTextStyle]} numberOfLines={1}>
         {option.label}
       </Animated.Text>
     </AnimatedTouchable>
@@ -114,7 +117,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   onSelectionChange,
   multiSelect = true,
   animated = true,
-  gradient = [colors.success, "#45A049"],
+  gradient = [colors.success, colors.successDark || colors.success],
   style,
 }) => {
   const handleChipPress = (id: string) => {
@@ -166,8 +169,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     borderWidth: 2,
     overflow: "hidden",
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     minHeight: 44,
     minWidth: 44,
     justifyContent: "center",

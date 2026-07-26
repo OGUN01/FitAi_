@@ -84,15 +84,14 @@ export const MealDetail: React.FC<MealDetailProps> = ({
               variant="ghost"
               size="sm"
             />
-          ) : (
-            <View style={styles.side} />
-          )
+          ) : null
         }
       />
 
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <MealInfoCard
           meal={meal}
@@ -113,7 +112,7 @@ export const MealDetail: React.FC<MealDetailProps> = ({
         <MealInsights insights={insights} notes={meal.notes} />
       </ScrollView>
 
-      <MealActions onEdit={onEdit} onDelete={onDelete} />
+      {(onEdit || onDelete) && <MealActions onEdit={onEdit} onDelete={onDelete} />}
     </AuroraBackground>
   );
 };
@@ -127,9 +126,6 @@ const styles = StyleSheet.create({
   emptyWrap: {
     flex: 1,
     justifyContent: "center",
-  },
-  side: {
-    width: 0,
   },
   scrollView: {
     flex: 1,

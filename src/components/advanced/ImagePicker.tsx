@@ -5,14 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePickerExpo from "expo-image-picker";
 import { Button, Card, Modal } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rs, rbr } from '../../utils/responsive';
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface ImagePickerProps {
   mode: "single" | "multiple";
@@ -144,70 +145,83 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   return (
     <Modal visible={visible} onClose={onClose}>
       <View style={styles.container}>
-        {/* Action Buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={takePhoto}
-            disabled={isLoading || (!canAddMore && mode === "multiple")}
-            accessibilityRole="button"
-            accessibilityLabel="Take photo"
-          >
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>📷</Text>
-            </View>
-            <Text style={styles.actionText}>Take Photo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={pickFromLibrary}
-            disabled={isLoading || (!canAddMore && mode === "multiple")}
-            accessibilityRole="button"
-            accessibilityLabel="Choose image from library"
-          >
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>🖼️</Text>
-            </View>
-            <Text style={styles.actionText}>Choose from Library</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Selected Images (Multiple Mode) */}
-        {mode === "multiple" && selectedImages.length > 0 && (
-          <View style={styles.selectedSection}>
-            <Text style={styles.selectedTitle}>
-              Selected Images ({selectedImages.length}/{maxImages})
-            </Text>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.selectedImagesContainer}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Action Buttons */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={takePhoto}
+              disabled={isLoading || (!canAddMore && mode === "multiple")}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo"
+              accessibilityState={{ disabled: isLoading || (!canAddMore && mode === "multiple") }}
             >
-              {selectedImages.map((uri, index) => (
-                <View key={index} style={styles.selectedImageContainer}>
-                  <Image source={{ uri }} style={styles.selectedImage} />
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeImage(index)}
-                  >
-                    <Text style={styles.removeButtonText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
+              <View style={styles.actionIcon}>
+                <Ionicons name="camera" size={rf(24)} color={colors.primary} />
+              </View>
+              <Text style={styles.actionText} numberOfLines={1}>Take Photo</Text>
+            </TouchableOpacity>
 
-        {/* Tips */}
-        <Card style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>📝 Tips for better photos:</Text>
-          <Text style={styles.tipText}>• Use good lighting</Text>
-          <Text style={styles.tipText}>• Keep the camera steady</Text>
-          <Text style={styles.tipText}>• Fill the frame with your subject</Text>
-          <Text style={styles.tipText}>• Avoid shadows and reflections</Text>
-        </Card>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={pickFromLibrary}
+              disabled={isLoading || (!canAddMore && mode === "multiple")}
+              accessibilityRole="button"
+              accessibilityLabel="Choose image from library"
+              accessibilityState={{ disabled: isLoading || (!canAddMore && mode === "multiple") }}
+            >
+              <View style={styles.actionIcon}>
+                <Ionicons name="images" size={rf(24)} color={colors.primary} />
+              </View>
+              <Text style={styles.actionText} numberOfLines={1}>Choose from Library</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Selected Images (Multiple Mode) */}
+          {mode === "multiple" && selectedImages.length > 0 && (
+            <View style={styles.selectedSection}>
+              <Text style={styles.selectedTitle} numberOfLines={1}>
+                Selected Images ({selectedImages.length}/{maxImages})
+              </Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.selectedImagesContainer}
+              >
+                {selectedImages.map((uri, index) => (
+                  <View key={index} style={styles.selectedImageContainer}>
+                    <Image source={{ uri }} style={styles.selectedImage} />
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeImage(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove image ${index + 1}`}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={rf(16)} color={colors.white} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Tips */}
+          <Card style={styles.tipsCard}>
+            <View style={styles.tipsTitleRow}>
+              <Ionicons name="create-outline" size={rf(16)} color={colors.info} />
+              <Text style={styles.tipsTitle}>Tips for better photos:</Text>
+            </View>
+            <Text style={styles.tipText}>• Use good lighting</Text>
+            <Text style={styles.tipText}>• Keep the camera steady</Text>
+            <Text style={styles.tipText}>• Fill the frame with your subject</Text>
+            <Text style={styles.tipText}>• Avoid shadows and reflections</Text>
+          </Card>
+        </ScrollView>
 
         {/* Bottom Actions */}
         <View style={styles.bottomActions}>
@@ -238,6 +252,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  scrollView: {
+    flex: 1,
+  },
+
   actionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -258,14 +276,10 @@ const styles = StyleSheet.create({
     width: rs(60),
     height: rs(60),
     borderRadius: rbr(30),
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,
-  },
-
-  actionEmoji: {
-    fontSize: rf(24),
   },
 
   actionText: {
@@ -305,32 +319,34 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -8,
     right: -8,
-    width: Math.max(rs(24), 44),
-    height: Math.max(rs(24), 44),
-    borderRadius: Math.max(rbr(12), 22),
+    width: rs(28),
+    height: rs(28),
+    minHeight: 44,
+    minWidth: 44,
+    borderRadius: rbr(14),
     backgroundColor: colors.error,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  removeButtonText: {
-    fontSize: rf(12),
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold as "700",
-  },
-
   tipsCard: {
     marginBottom: spacing.lg,
-    backgroundColor: colors.info + "10",
+    backgroundColor: hexToRgba(colors.info, TINT_ALPHA_LOW + 0.05),
     borderWidth: 1,
-    borderColor: colors.info + "30",
+    borderColor: hexToRgba(colors.info, TINT_ALPHA_MEDIUM + 0.1),
+  },
+
+  tipsTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
 
   tipsTitle: {
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.semibold as "600",
     color: colors.info,
-    marginBottom: spacing.sm,
   },
 
   tipText: {

@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rs, rbr, rp } from '../../../utils/responsive';
+import { rs, rbr, rp, rf } from '../../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 import { Option } from "../../../hooks/useMultiSelectWithCustom";
 
 interface OptionsListProps {
@@ -30,6 +32,7 @@ export const OptionsList: React.FC<OptionsListProps> = ({
   if (entries.length === 0 || entries.every(([, opts]) => opts.length === 0)) {
     return (
       <View style={styles.noResults}>
+        <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
         <Text style={styles.noResultsText}>No options found</Text>
       </View>
     );
@@ -43,7 +46,7 @@ export const OptionsList: React.FC<OptionsListProps> = ({
       {entries.map(([region, regionOptions]) => (
         <View key={`region-${region}`}>
           {showRegions && region && (
-            <Text style={styles.regionHeader}>{region}</Text>
+            <Text style={styles.regionHeader} numberOfLines={1}>{region}</Text>
           )}
           {regionOptions.map((option) => {
             const isSelected = isOptionSelected(option.value);
@@ -62,10 +65,18 @@ export const OptionsList: React.FC<OptionsListProps> = ({
                 ]}
                 onPress={() => toggleOption(option)}
                 disabled={isDisabled && !option.isCustom}
+                accessibilityRole={option.isCustom ? "button" : "checkbox"}
+                accessibilityLabel={option.label}
+                accessibilityState={{ checked: isSelected, disabled: isDisabled && !option.isCustom }}
               >
                 <View style={styles.optionContent}>
                   {option.icon && (
-                    <Text style={styles.optionIcon}>{option.icon}</Text>
+                    <Ionicons
+                      name={option.icon as any}
+                      size={rf(fontSize.lg)}
+                      color={option.isCustom ? colors.primary : colors.textSecondary}
+                      style={styles.optionIcon}
+                    />
                   )}
                   <View style={styles.optionTextContainer}>
                     <Text
@@ -75,11 +86,12 @@ export const OptionsList: React.FC<OptionsListProps> = ({
                         isDisabled && styles.optionTextDisabled,
                         option.isCustom && styles.optionTextCustom,
                       ]}
+                      numberOfLines={2}
                     >
                       {option.label}
                     </Text>
                     {option.region && showRegions && (
-                      <Text style={styles.optionRegion}>{option.region}</Text>
+                      <Text style={styles.optionRegion} numberOfLines={1}>{option.region}</Text>
                     )}
                   </View>
                 </View>
@@ -92,7 +104,9 @@ export const OptionsList: React.FC<OptionsListProps> = ({
                       isDisabled && styles.checkboxDisabled,
                     ]}
                   >
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={rf(fontSize.sm)} color={colors.white} />
+                    )}
                   </View>
                 )}
               </TouchableOpacity>
@@ -123,6 +137,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    minHeight: 44,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     marginVertical: spacing.xs / 2,
@@ -131,9 +146,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemSelected: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     borderWidth: 1,
-    borderColor: colors.primary + "40",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
 
   optionItemDisabled: {
@@ -141,9 +156,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemCustom: {
-    backgroundColor: colors.primary + "10",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW + 0.05),
     borderWidth: 1,
-    borderColor: colors.primary + "30",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.1),
     borderStyle: "dashed",
   },
 
@@ -154,7 +169,6 @@ const styles = StyleSheet.create({
   },
 
   optionIcon: {
-    fontSize: fontSize.lg,
     marginRight: spacing.sm,
   },
 
@@ -207,15 +221,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  checkmark: {
-    fontSize: fontSize.sm,
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold as "700",
-  },
-
   noResults: {
     alignItems: "center",
     paddingVertical: spacing.xl,
+    gap: spacing.sm,
   },
 
   noResultsText: {

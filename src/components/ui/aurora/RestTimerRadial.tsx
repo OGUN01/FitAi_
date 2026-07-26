@@ -250,6 +250,7 @@ export const RestTimerRadial: React.FC<RestTimerRadialProps> = ({
       style={[styles.container, { width: safeSize, height: safeSize }, style]}
       accessibilityRole="timer"
       accessibilityLabel={`Rest timer, ${Math.ceil(remaining.value)} seconds remaining`}
+      accessibilityLiveRegion="polite"
       accessibilityValue={{
         min: 0,
         max: Math.round(safeDuration),
@@ -356,6 +357,8 @@ const styles = StyleSheet.create({
     bottom: -rs(40),
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: Math.max(rs(44), 44),
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

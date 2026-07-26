@@ -8,11 +8,7 @@ import {
   TextStyle,
   TouchableOpacity,
 } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import { useSharedValue, withTiming } from "react-native-reanimated";
 import { rf, rp, rh, rw, rbr } from "../../utils/responsive";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
@@ -66,23 +62,24 @@ export const Input: React.FC<InputProps> = ({
     });
   }, [isFocused]);
 
-  // Note: Shadow animations removed from useAnimatedStyle to fix React Native warning
-  // Shadow glow effect is now applied via inputContainerFocused style
-  const animatedStyle = useAnimatedStyle(() => {
-    return {};
-  });
-
   return (
     <View style={[styles.container, style]}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={styles.label} numberOfLines={1}>{label}</Text>}
 
-      <Animated.View
+      <View
         style={[
           styles.inputContainer,
-          isFocused && styles.inputContainerFocused,
-          error && styles.inputContainerError,
+          // Error colour takes precedence while there is an error; once the
+          // error is cleared the border returns to the focus/default colour
+          // immediately instead of sticking on the error colour until the
+          // next focus event (the previous animated border style only
+          // re-evaluated on focus/blur).
+          error
+            ? styles.inputContainerError
+            : isFocused
+              ? styles.inputContainerFocused
+              : null,
           disabled && styles.inputContainerDisabled,
-          animatedStyle,
         ]}
       >
         {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
@@ -97,7 +94,6 @@ export const Input: React.FC<InputProps> = ({
           ]}
           testID={testID}
           accessibilityLabel={label || placeholder}
-          accessibilityRole="none"
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
           value={value}
@@ -115,10 +111,13 @@ export const Input: React.FC<InputProps> = ({
 
         {rightIcon && (
           <TouchableOpacity
-            style={styles.rightIconContainer}
+            style={[
+              styles.rightIconContainer,
+              !onRightIconPress && styles.rightIconContainerNonInteractive,
+            ]}
             onPress={onRightIconPress}
             disabled={!onRightIconPress}
-            accessibilityRole="button"
+            accessibilityRole={onRightIconPress ? "button" : undefined}
             accessibilityLabel={
               secureTextEntry ? "Show password" : "Hide password"
             }
@@ -126,9 +125,9 @@ export const Input: React.FC<InputProps> = ({
             {rightIcon}
           </TouchableOpacity>
         )}
-      </Animated.View>
+      </View>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error && <Text style={styles.errorText} numberOfLines={3}>{error}</Text>}
     </View>
   );
 };
@@ -210,6 +209,13 @@ const styles = StyleSheet.create({
     minWidth: rw(44),
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  // When no onPress handler is provided the right icon is purely decorative;
+  // shrink it so it stops reserving a 44px tap target that isn't interactive.
+  rightIconContainerNonInteractive: {
+    minWidth: 0,
+    minHeight: 0,
   },
 
   errorText: {

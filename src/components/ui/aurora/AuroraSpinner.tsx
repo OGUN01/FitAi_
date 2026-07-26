@@ -20,6 +20,7 @@ import {
   toLinearGradientProps,
   gradientAuroraSpace,
 } from "../../../theme/gradients";
+import { colors } from "../../../theme/aurora-tokens";
 
 // ============================================================================
 // TYPES
@@ -203,9 +204,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   innerCircle: {
-    backgroundColor: "transparent",
-    // Add dark background to create ring effect
-    // This will be transparent, showing the parent background through
+    // Use the app background tier so the spinner renders as a true ring even
+    // when the parent has a solid (non-blurred) background. The previous
+    // "transparent" left a full disc on solid-card parents because there was
+    // nothing behind the gradient to "punch through" to.
+    backgroundColor: colors.background.DEFAULT,
   },
 });
 

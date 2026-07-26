@@ -60,6 +60,8 @@ export const Modal: React.FC<ModalProps> = ({
           onPress={handleOverlayPress}
           accessibilityRole="button"
           accessibilityLabel="Dismiss modal"
+          accessibilityHint="Closes this dialog"
+          accessible={closeOnOverlayPress}
         />
         <View style={[styles.container, style]} pointerEvents="box-none">
           <View style={[styles.content, contentStyle]}>
@@ -107,6 +109,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
           onPress={handleOverlayPress}
           accessibilityRole="button"
           accessibilityLabel="Dismiss modal"
+          accessibilityHint="Closes this bottom sheet"
+          accessible={closeOnOverlayPress}
         />
         <View style={styles.bottomSheetContainer} pointerEvents="box-none">
           <View
@@ -118,7 +122,12 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
               },
             ]}
           >
-            <View style={styles.bottomSheetHandle} />
+            <View
+              style={styles.bottomSheetHandle}
+              accessibilityRole="button"
+              accessibilityLabel="Bottom sheet handle"
+              accessibilityHint="Drag to dismiss"
+            />
             {children}
           </View>
         </View>
@@ -143,8 +152,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
-    width: "90%", // Use percentage instead of screenWidth calculation
-    maxHeight: rh(682), // Absolute (was "80%") — percentage maxHeight causes a11y inverted-bounds on Android
+    width: "90%",
+    // Use percentage maxHeight so the dialog never exceeds the viewport on
+    // small phones. The previous rh(682) was an absolute px value that
+    // could exceed screen height on small devices.
+    maxHeight: "85%",
     ...shadows.lg,
   },
 

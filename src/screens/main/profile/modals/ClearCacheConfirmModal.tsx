@@ -60,9 +60,14 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable onPress={onCancel}>
+      <Pressable
+        onPress={onCancel}
+        style={styles.overlayPressable}
+        accessibilityRole="button"
+        accessibilityLabel="Cancel cache clear"
+      >
         <BlurView intensity={80} style={styles.blurContainer}>
-          <Pressable onPress={() => {}}>
+          <Pressable onPress={() => {}} style={styles.dialogPressable}>
             <View style={styles.dialogContainer} accessibilityRole="alert">
               <GlassCard
                 elevation={5}
@@ -130,9 +135,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.overlay,
   },
-  dialogContainer: {
+  overlayPressable: {
+    flex: 1,
+  },
+  dialogPressable: {
+    // Give the inner Pressable a style so it lays out the dialog card
+    // (previously it had no style, which could cause layout issues on some
+    // platforms).
     width: "85%",
     maxWidth: 340,
+  },
+  dialogContainer: {
+    width: "100%",
+    maxWidth: 340,
+    maxHeight: "80%",
   },
   iconContainer: {
     alignItems: "center",
@@ -158,6 +174,8 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
     borderRadius: borderRadius.md,
     overflow: "hidden",
   },
@@ -170,6 +188,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   confirmGradient: {
+    minHeight: 44,
+    justifyContent: "center",
     paddingVertical: spacing.md,
     alignItems: "center",
   },

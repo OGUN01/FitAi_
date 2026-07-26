@@ -24,7 +24,6 @@ const avatarShadow = {
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.3,
   shadowRadius: 12,
-  boxShadow: '0px 4px 12px rgba(255, 107, 107, 0.3)',
 };
 
 interface ProfileHeaderProps {
@@ -39,7 +38,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onEditPress,
 }) => {
   const getInitials = (name?: string) => {
-    if (!name) return "U";
+    if (!name || !name.trim()) return "?";
     return name
       .split(" ")
       .map((n) => n[0])
@@ -68,9 +67,11 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         >
           <Pressable
             onPress={onEditPress}
-            hitSlop={8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Edit personal information"
+            accessibilityHint="Opens the personal info editor"
+            style={({ pressed }) => pressed && styles.avatarPressed}
           >
             <LinearGradient
               colors={["#FF6B6B", "#FF8E53"]}
@@ -85,9 +86,16 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
         {/* User Info */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <Text style={styles.userName}>{userName || ""}</Text>
+          <Text
+            style={styles.userName}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {userName || ""}
+          </Text>
           {memberSinceLabel ? (
-            <Text style={styles.memberSince}>{memberSinceLabel}</Text>
+            <Text style={styles.memberSince} numberOfLines={1}>{memberSinceLabel}</Text>
           ) : null}
         </Animated.View>
       </View>
@@ -117,6 +125,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.25)",
     elevation: 8,
   },
+  avatarPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.96 }],
+  },
   avatarText: {
     fontSize: rf(32),
     fontWeight: "700",
@@ -138,7 +150,7 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: colors.text,
     textAlign: 'center',
-    opacity: 0.85,
+    opacity: 0.9,
   },
 });
 

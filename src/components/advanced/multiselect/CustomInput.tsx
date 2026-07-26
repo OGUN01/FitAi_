@@ -32,6 +32,9 @@ export const CustomInput: React.FC<CustomInputProps> = ({
         value={customValue}
         onChangeText={setCustomValue}
         autoFocus
+        returnKeyType="done"
+        onSubmitEditing={handleAddCustom}
+        accessibilityLabel={customPlaceholder}
       />
       <View style={styles.customInputActions}>
         <Button

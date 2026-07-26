@@ -9,7 +9,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { CookingVideo } from "../../services/youtubeVideoService";
 import { colors } from "../../theme/aurora-tokens";
-import { rf, rp, rbr } from '../../utils/responsive';
+import { rf, rp, rh, rbr } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { GlassCard } from "../ui/aurora";
 import { AnimatedPressable } from "../ui/aurora";
 import { AuroraSpinner } from "../ui/aurora";
@@ -71,7 +72,13 @@ export default function VideoSection({
               </View>
             )}
             <View style={styles.playButton}>
-              <Ionicons name="play" size={32} color={colors.text.primary} />
+              <Ionicons
+                name="play"
+                size={32}
+                color={colors.text.primary}
+                accessibilityLabel="Play cooking video"
+                accessibilityRole="image"
+              />
             </View>
             <View style={styles.videoDuration}>
               <Text style={styles.videoDurationText}>
@@ -107,25 +114,29 @@ export default function VideoSection({
     );
   }
 
-  return (
-    <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
-      <View style={styles.videoError}>
-        <Ionicons name="videocam-off" size={48} color={colors.text.secondary} />
-        <Text style={styles.errorText}>{videoError}</Text>
-        <AnimatedPressable
-          style={styles.retryButton}
-          onPress={onRetry}
-          scaleValue={0.96}
-          springConfig="snappy"
-          hapticType="light"
-          accessibilityLabel="Retry loading video"
-          accessibilityRole="button"
-        >
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </AnimatedPressable>
-      </View>
-    </GlassCard>
-  );
+  if (videoError) {
+    return (
+      <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
+        <View style={styles.videoError}>
+          <Ionicons name="videocam-off" size={48} color={colors.text.secondary} />
+          <Text style={styles.errorText}>{videoError}</Text>
+          <AnimatedPressable
+            style={styles.retryButton}
+            onPress={onRetry}
+            scaleValue={0.96}
+            springConfig="snappy"
+            hapticType="light"
+            accessibilityLabel="Retry loading video"
+            accessibilityRole="button"
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </AnimatedPressable>
+        </View>
+      </GlassCard>
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -136,7 +147,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   videoPreview: {
-    height: 200,
+    height: Math.max(rh(200), 180),
     borderRadius: rbr(12),
     overflow: "hidden",
     backgroundColor: colors.background.DEFAULT,
@@ -183,7 +194,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 107, 53, 0.12)",
+    minHeight: Math.max(rp(44), 44),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW + 0.08),
     paddingHorizontal: rp(16),
     paddingVertical: rp(10),
     borderRadius: rbr(8),
@@ -196,7 +208,7 @@ const styles = StyleSheet.create({
     marginLeft: rp(8),
   },
   videoPlaceholder: {
-    height: 200,
+    height: Math.max(rh(200), 180),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.background.tertiary,
@@ -207,7 +219,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   videoError: {
-    height: 200,
+    height: Math.max(rh(200), 180),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.background.tertiary,
@@ -222,6 +234,9 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary.DEFAULT,
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: rp(20),
     paddingVertical: rp(10),
     borderRadius: rbr(8),

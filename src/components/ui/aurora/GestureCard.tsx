@@ -303,7 +303,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "100%",
     justifyContent: "center",
-    paddingHorizontal: spacing.lg,
+    alignItems: "center",
+    // No horizontal padding — the action content is centred so the icon+label
+    // stay visually centred as the card translates. The previous
+    // paddingHorizontal: spacing.lg pushed the content off-centre.
   },
   actionContent: {
     alignItems: "center",

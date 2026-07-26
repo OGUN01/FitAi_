@@ -15,21 +15,23 @@ export const MealActions: React.FC<MealActionsProps> = ({
   return (
     <View style={styles.bottomContainer}>
       <View style={styles.actionButtons}>
-        <Button
-          title="Edit Meal"
-          onPress={onEdit ?? (() => {})}
-          disabled={!onEdit}
-          variant="outline"
-          style={styles.actionButton}
-        />
-        <Button
-          title="Delete Meal"
-          onPress={onDelete ?? (() => {})}
-          disabled={!onDelete}
-          variant="outline"
-          style={{ ...styles.actionButton, ...styles.deleteButton }}
-          textStyle={styles.deleteButtonText}
-        />
+        {onEdit && (
+          <Button
+            title="Edit Meal"
+            onPress={onEdit}
+            variant="outline"
+            style={styles.actionButton}
+          />
+        )}
+        {onDelete && (
+          <Button
+            title="Delete Meal"
+            onPress={onDelete}
+            variant="outline"
+            style={{ ...styles.actionButton, ...styles.deleteButton }}
+            textStyle={styles.deleteButtonText}
+          />
+        )}
       </View>
     </View>
   );

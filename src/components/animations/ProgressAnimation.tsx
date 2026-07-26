@@ -83,8 +83,13 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
     });
 
     return (
-      <View style={[styles.linearContainer, style]}>
-        {label && <Text style={styles.label}>{label}</Text>}
+      <View
+        style={[styles.linearContainer, style]}
+        accessibilityRole="progressbar"
+        accessibilityLabel={label || "Progress"}
+        accessibilityValue={{ min: 0, max: 100, now: Math.round(progress) }}
+      >
+        {label && <Text style={styles.label} numberOfLines={1}>{label}</Text>}
 
         <View style={styles.progressRow}>
           <View style={[styles.linearTrack, { height, backgroundColor }]}>
@@ -101,7 +106,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           </View>
 
           {showPercentage && (
-            <Text style={[styles.percentageText, { color }]}>
+            <Text style={[styles.percentageText, { color }]} numberOfLines={1}>
               {Math.round(progress)}%
             </Text>
           )}
@@ -132,6 +137,9 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           { width: circularSize, height: circularSize },
           style,
         ]}
+        accessibilityRole="progressbar"
+        accessibilityLabel={label || "Progress"}
+        accessibilityValue={{ min: 0, max: 100, now: Math.round(progress) }}
       >
         <Animated.View
           style={[
@@ -217,6 +225,9 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           { width: circularSize, height: circularSize },
           style,
         ]}
+        accessibilityRole="progressbar"
+        accessibilityLabel={label || "Progress"}
+        accessibilityValue={{ min: 0, max: 100, now: Math.round(progress) }}
       >
         {/* Multiple rings for visual effect */}
         {[0.6, 0.8, 1].map((multiplier, index) => {

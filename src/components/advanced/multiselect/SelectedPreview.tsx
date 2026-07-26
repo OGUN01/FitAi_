@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
 
 interface SelectedPreviewProps {
   selectedLabels: string[];
@@ -21,7 +22,7 @@ export const SelectedPreview: React.FC<SelectedPreviewProps> = ({
     >
       {selectedLabels.map((label) => (
         <View key={`selected-${label}`} style={styles.selectedTag}>
-          <Text style={styles.selectedTagText} numberOfLines={1}>
+          <Text style={styles.selectedTagText} numberOfLines={1} ellipsizeMode="tail">
             {label}
           </Text>
         </View>
@@ -36,13 +37,14 @@ const styles = StyleSheet.create({
   },
 
   selectedTag: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs / 2,
     borderRadius: borderRadius.sm,
     marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.primary + "40",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    maxWidth: 200,
   },
 
   selectedTagText: {

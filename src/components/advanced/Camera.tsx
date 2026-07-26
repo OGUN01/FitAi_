@@ -9,11 +9,14 @@ import {
   Modal,
   StyleProp,
   ViewStyle,
+  Keyboard,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rbr, rs } from '../../utils/responsive';
+import { rf, rbr, rs, rh, rw } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import {
   isProductBarcode,
   matchesPackagedFoodBarcodeType,
@@ -247,9 +250,9 @@ const CameraComponent: React.FC<CameraProps> = ({
           accessibilityRole="button"
           accessibilityHint="Double tap to close the camera"
         >
-          <Text style={styles.closeIcon}>✕</Text>
+          <Ionicons name="close" size={rf(22)} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{getModeTitle()}</Text>
+        <Text style={styles.title} numberOfLines={1}>{getModeTitle()}</Text>
         <TouchableOpacity
           style={styles.flashButton}
           onPress={toggleFlash}
@@ -257,9 +260,11 @@ const CameraComponent: React.FC<CameraProps> = ({
           accessibilityRole="button"
           accessibilityHint="Double tap to toggle flash"
         >
-          <Text style={styles.flashIcon}>
-            {flashMode === "on" ? "⚡" : "⚡"}
-          </Text>
+          <Ionicons
+            name={flashMode === "on" ? "flash" : "flash-off"}
+            size={rf(22)}
+            color={flashMode === "on" ? colors.primary : colors.text}
+          />
         </TouchableOpacity>
       </View>
 
@@ -369,7 +374,7 @@ const CameraComponent: React.FC<CameraProps> = ({
           accessibilityRole="button"
           accessibilityHint="Double tap to switch between front and back camera"
         >
-          <Text style={styles.flipIcon}>🔄</Text>
+          <Ionicons name="camera-reverse-outline" size={rf(24)} color={colors.text} />
         </TouchableOpacity>
 
         {mode !== "barcode" ? (
@@ -436,7 +441,10 @@ const CameraComponent: React.FC<CameraProps> = ({
       {/* Portion size hint for food mode */}
       {mode === "food" && onPortionGramsChange && (
         <View style={styles.portionHintContainer}>
-          <Text style={styles.portionHintLabel}>⚖️ Portion size hint (optional)</Text>
+          <View style={styles.portionHintLabelRow}>
+            <Ionicons name="scale-outline" size={rf(13)} color={colors.text} />
+            <Text style={styles.portionHintLabel}>Portion size hint (optional)</Text>
+          </View>
           <View style={styles.portionHintRow}>
             <TextInput
               style={styles.portionHintInput}
@@ -449,12 +457,14 @@ const CameraComponent: React.FC<CameraProps> = ({
               onSubmitEditing={() => {
                 const val = parseFloat(gramsText);
                 onPortionGramsChange(!isNaN(val) && val > 0 ? val : null);
+                Keyboard.dismiss();
               }}
               placeholder="grams"
               placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
               maxLength={4}
               returnKeyType="done"
+              accessibilityLabel="Portion size in grams"
             />
             <Text style={styles.portionHintUnit}>g</Text>
             {gramsText.length > 0 && (
@@ -464,12 +474,18 @@ const CameraComponent: React.FC<CameraProps> = ({
                   onPortionGramsChange(null);
                 }}
                 style={styles.portionClearBtn}
+                accessibilityLabel="Clear portion size"
+                accessibilityRole="button"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={styles.portionClearText}>✕</Text>
+                <Ionicons name="close-circle" size={rf(16)} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
             {portionGrams != null && portionGrams > 0 && (
-              <Text style={styles.portionActiveText}>✓ {portionGrams}g set</Text>
+              <View style={styles.portionActiveRow}>
+                <Ionicons name="checkmark" size={rf(11)} color={colors.primary} />
+                <Text style={styles.portionActiveText}>{portionGrams}g set</Text>
+              </View>
             )}
           </View>
           <Text style={styles.portionHintSubtext}>
@@ -482,7 +498,7 @@ const CameraComponent: React.FC<CameraProps> = ({
       <View style={styles.tipsContainer}>
         {mode === "food" && (
           <View style={styles.tipItem}>
-            <Text style={styles.tipIcon}>💡</Text>
+            <Ionicons name="bulb-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
             <Text style={styles.tipText}>
               Ensure good lighting and place food on a contrasting background
             </Text>
@@ -491,7 +507,7 @@ const CameraComponent: React.FC<CameraProps> = ({
 
         {mode === "progress" && (
           <View style={styles.tipItem}>
-            <Text style={styles.tipIcon}>📏</Text>
+            <Ionicons name="resize-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
             <Text style={styles.tipText}>
               Stand 3-4 feet away from the camera for best results
             </Text>
@@ -500,7 +516,7 @@ const CameraComponent: React.FC<CameraProps> = ({
 
         {mode === "barcode" && (
           <View style={styles.tipItem}>
-            <Text style={styles.tipIcon}>🔍</Text>
+            <Ionicons name="search" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
             <Text style={styles.tipText}>
               Hold the barcode 6-8 inches away and keep it steady for best
               scanning
@@ -510,7 +526,7 @@ const CameraComponent: React.FC<CameraProps> = ({
 
         {mode === "label" && (
           <View style={styles.tipItem}>
-            <Text style={styles.tipIcon}>Label</Text>
+            <Ionicons name="document-text-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
             <Text style={styles.tipText}>
               Keep the label flat, fill the frame, and avoid glare for the best
               reading accuracy
@@ -569,15 +585,12 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
 
-  closeIcon: {
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-
   title: {
+    flex: 1,
     fontSize: fontSize.lg,
     fontWeight: typography.fontWeight.semibold as "600",
     color: colors.text,
+    textAlign: "center",
   },
 
   flashButton: {
@@ -587,10 +600,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-
-  flashIcon: {
-    fontSize: fontSize.lg,
   },
 
   instructionsContainer: {
@@ -709,16 +718,12 @@ const styles = StyleSheet.create({
   },
 
   flipButton: {
-    width: rs(50),
-    height: rs(50),
+    width: Math.max(rs(50), 44),
+    height: Math.max(rs(50), 44),
     borderRadius: rbr(25),
     backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-
-  flipIcon: {
-    fontSize: rf(24),
   },
 
   captureButton: {
@@ -751,17 +756,22 @@ const styles = StyleSheet.create({
   portionHintContainer: {
     marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW + 0.05),
     borderRadius: borderRadius.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: `${colors.primary}30`,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.1),
+  },
+  portionHintLabelRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 4,
+    marginBottom: 4,
   },
   portionHintLabel: {
     fontSize: rf(11),
     fontWeight: "600" as const,
     color: colors.text,
-    marginBottom: 4,
   },
   portionHintRow: {
     flexDirection: "row" as const,
@@ -771,7 +781,7 @@ const styles = StyleSheet.create({
   },
   portionHintInput: {
     width: 72,
-    height: 32,
+    minHeight: Math.max(rh(36), 36),
     backgroundColor: colors.surface,
     borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
@@ -787,10 +797,16 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: "600" as const,
   },
-  portionClearBtn: { padding: 4 },
-  portionClearText: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
+  portionClearBtn: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  portionActiveRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 2,
   },
   portionActiveText: {
     fontSize: rf(11),
@@ -798,7 +814,7 @@ const styles = StyleSheet.create({
     fontWeight: "600" as const,
   },
   portionHintSubtext: {
-    fontSize: rf(9),
+    fontSize: rf(11),
     color: colors.textSecondary,
   },
   tipsContainer: {
@@ -815,7 +831,6 @@ const styles = StyleSheet.create({
   },
 
   tipIcon: {
-    fontSize: fontSize.md,
     marginRight: spacing.sm,
   },
 
@@ -956,7 +971,9 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   barcodeActionButton: {
-    minWidth: rs(110),
+    minWidth: Math.max(rs(110), 110),
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
@@ -983,7 +1000,9 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
   },
   labelLibraryButton: {
-    minWidth: rs(190),
+    minWidth: Math.max(rs(190), 190),
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
@@ -1001,12 +1020,17 @@ const styles = StyleSheet.create({
 
 // Export Camera component with error boundary
 export const Camera: React.FC<CameraProps> = ({ visible = true, ...rest }) => {
+  // onDismiss fires on iOS when the Modal is dismissed via swipe/overlay;
+  // we ensure onClose is called so camera refs and listeners are cleaned up
+  // even when the user dismisses via the OS rather than our Close button.
+  // onRequestClose covers Android hardware-back.
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
       onRequestClose={rest.onClose}
+      onDismiss={rest.onClose}
       transparent={false}
       statusBarTranslucent
       hardwareAccelerated

@@ -24,6 +24,7 @@ import { flatColors as colors } from "../../theme/aurora-tokens";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 
 interface OnboardingRequiredProps {
   /** The feature/metric that requires onboarding */
@@ -261,9 +262,10 @@ const styles = StyleSheet.create({
   compactContainer: {
     flexDirection: "row",
     alignItems: "center" as const,
+    minHeight: Math.max(rh(36), 44),
     paddingVertical: rh(8),
     paddingHorizontal: rp(12),
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: rp(8),
     gap: rw(6),
   },
@@ -287,13 +289,13 @@ const styles = StyleSheet.create({
   },
   // Loading metric styles
   loadingMetric: {
-    backgroundColor: `${colors.textMuted}20`,
+    backgroundColor: hexToRgba(colors.textMuted, 0.2),
     borderRadius: rp(4),
     overflow: "hidden",
   },
   loadingShimmer: {
     flex: 1,
-    backgroundColor: `${colors.textMuted}30`,
+    backgroundColor: hexToRgba(colors.textMuted, 0.3),
   },
 });
 

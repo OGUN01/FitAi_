@@ -38,6 +38,9 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
         }}
         scaleValue={0.97}
         hapticFeedback={false}
+        accessibilityRole="button"
+        accessibilityLabel="Sign out"
+        accessibilityHint="Logs you out of your FitAI account"
       >
         <GlassCard
           elevation={1}

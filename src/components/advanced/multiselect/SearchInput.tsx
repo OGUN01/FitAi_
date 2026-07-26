@@ -1,6 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import { View, StyleSheet, TextInput } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 
 interface SearchInputProps {
   searchQuery: string;
@@ -19,8 +21,9 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         placeholderTextColor={colors.textMuted}
         value={searchQuery}
         onChangeText={setSearchQuery}
+        accessibilityLabel="Search options"
       />
-      <Text style={styles.searchIcon}>🔍</Text>
+      <Ionicons name="search" size={rf(fontSize.md)} color={colors.textMuted} style={styles.searchIcon} />
     </View>
   );
 };
@@ -45,7 +48,6 @@ const styles = StyleSheet.create({
   },
 
   searchIcon: {
-    fontSize: fontSize.md,
     marginLeft: spacing.sm,
   },
 });

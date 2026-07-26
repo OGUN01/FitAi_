@@ -7,14 +7,17 @@ import {
   ScrollView,
   Modal,
   TextInput,
-
+  KeyboardAvoidingView,
+  Platform,
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rs, rbr, rp, rh } from '../../utils/responsive';
-
+import { rs, rbr, rp, rf } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface Option {
   id: string;
@@ -74,7 +77,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
       ? [
           {
             id: "add-custom",
-            label: `➕ ${customLabel}...`,
+            label: `${customLabel}...`,
             value: "add-custom",
             isCustom: true,
           },
@@ -152,7 +155,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
       id: `custom-${Date.now()}`,
       label: trimmedValue,
       value: trimmedValue.toLowerCase().replace(/\s+/g, "-"),
-      icon: "✨",
+      icon: "sparkles",
     };
 
     // Add to custom options
@@ -246,6 +249,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         onPress={() => !disabled && setIsVisible(true)}
         accessibilityRole="button"
         accessibilityLabel={label || placeholder}
+        accessibilityState={{ disabled }}
       >
         <Text
           style={[
@@ -257,7 +261,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         >
           {getDisplayText()}
         </Text>
-        <Text style={styles.triggerIcon}>▼</Text>
+        <Ionicons name="chevron-down" size={rf(fontSize.sm)} color={colors.textSecondary} style={styles.triggerIcon} />
       </TouchableOpacity>
 
       {/* Selected Items Preview */}
@@ -267,10 +271,10 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
           showsHorizontalScrollIndicator={false}
           style={styles.selectedPreview}
         >
-          {getSelectedLabels().map((label) => (
-            <View key={`selected-${label}`} style={styles.selectedTag}>
-              <Text style={styles.selectedTagText} numberOfLines={1}>
-                {label}
+          {getSelectedLabels().map((selectedLabel) => (
+            <View key={`selected-${selectedLabel}`} style={styles.selectedTag}>
+              <Text style={styles.selectedTagText} numberOfLines={1} ellipsizeMode="tail">
+                {selectedLabel}
               </Text>
             </View>
           ))}
@@ -283,12 +287,15 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         animationType="slide"
         onRequestClose={handleCancel}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <SafeAreaView style={styles.modalContent} edges={["bottom"]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label || "Select Options"}</Text>
+              <Text style={styles.modalTitle} numberOfLines={1}>{label || "Select Options"}</Text>
               {maxSelections && (
-                <Text style={styles.selectionCount}>
+                <Text style={styles.selectionCount} numberOfLines={1}>
                   {tempSelectedValues.length}/{maxSelections} selected
                 </Text>
               )}
@@ -303,15 +310,16 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                   placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
+                  accessibilityLabel="Search options"
                 />
-                <Text style={styles.searchIcon}>🔍</Text>
+                <Ionicons name="search" size={rf(fontSize.md)} color={colors.textMuted} style={styles.searchIcon} />
               </View>
             )}
 
             {/* Custom Input Mode */}
             {showCustomInput ? (
               <View style={styles.customInputContainer}>
-                <Text style={styles.customInputLabel}>
+                <Text style={styles.customInputLabel} numberOfLines={1}>
                   Add Custom {label?.replace("Select ", "")}
                 </Text>
                 <TextInput
@@ -321,6 +329,9 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                   value={customValue}
                   onChangeText={setCustomValue}
                   autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleAddCustom}
+                  accessibilityLabel={customPlaceholder}
                 />
                 <View style={styles.customInputActions}>
                   <Button
@@ -350,7 +361,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                   ([region, regionOptions]) => (
                     <View key={`region-${region}`}>
                       {showRegions && region && (
-                        <Text style={styles.regionHeader}>{region}</Text>
+                        <Text style={styles.regionHeader} numberOfLines={1}>{region}</Text>
                       )}
                       {regionOptions.map((option) => {
                         const isSelected = isOptionSelected(option.value);
@@ -369,14 +380,21 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                             ]}
                             onPress={() => toggleOption(option)}
                             disabled={isDisabled && !option.isCustom}
-                            accessibilityRole="button"
+                            accessibilityRole={option.isCustom ? "button" : "checkbox"}
                             accessibilityLabel={option.label}
+                            accessibilityState={{
+                              checked: isSelected,
+                              disabled: isDisabled && !option.isCustom,
+                            }}
                           >
                             <View style={styles.optionContent}>
                               {option.icon && (
-                                <Text style={styles.optionIcon}>
-                                  {option.icon}
-                                </Text>
+                                <Ionicons
+                                  name={option.icon as any}
+                                  size={rf(fontSize.lg)}
+                                  color={option.isCustom ? colors.primary : colors.textSecondary}
+                                  style={styles.optionIcon}
+                                />
                               )}
                               <View style={styles.optionTextContainer}>
                                 <Text
@@ -386,11 +404,12 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                                     isDisabled && styles.optionTextDisabled,
                                     option.isCustom && styles.optionTextCustom,
                                   ]}
+                                  numberOfLines={2}
                                 >
                                   {option.label}
                                 </Text>
                                 {option.region && showRegions && (
-                                  <Text style={styles.optionRegion}>
+                                  <Text style={styles.optionRegion} numberOfLines={1}>
                                     {option.region}
                                   </Text>
                                 )}
@@ -406,7 +425,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                                 ]}
                               >
                                 {isSelected && (
-                                  <Text style={styles.checkmark}>✓</Text>
+                                  <Ionicons name="checkmark" size={rf(fontSize.sm)} color={colors.white} />
                                 )}
                               </View>
                             )}
@@ -419,6 +438,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
 
                 {filteredOptions.length === 0 && (
                   <View style={styles.noResults}>
+                    <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
                     <Text style={styles.noResultsText}>No options found</Text>
                   </View>
                 )}
@@ -442,8 +462,8 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                 />
               </View>
             )}
-          </View>
-        </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -489,8 +509,7 @@ const styles = StyleSheet.create({
   },
 
   triggerIcon: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 
   selectedPreview: {
@@ -498,13 +517,14 @@ const styles = StyleSheet.create({
   },
 
   selectedTag: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs / 2,
     borderRadius: borderRadius.sm,
     marginRight: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.primary + "40",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    maxWidth: 200,
   },
 
   selectedTagText: {
@@ -523,7 +543,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    maxHeight: rh(682),
+    maxHeight: "80%",
   },
 
   modalHeader: {
@@ -565,7 +585,6 @@ const styles = StyleSheet.create({
   },
 
   searchIcon: {
-    fontSize: fontSize.md,
     marginLeft: spacing.sm,
   },
 
@@ -628,9 +647,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemSelected: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     borderWidth: 1,
-    borderColor: colors.primary + "40",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
 
   optionItemDisabled: {
@@ -638,9 +657,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemCustom: {
-    backgroundColor: colors.primary + "10",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW + 0.05),
     borderWidth: 1,
-    borderColor: colors.primary + "30",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.1),
     borderStyle: "dashed",
   },
 
@@ -651,7 +670,6 @@ const styles = StyleSheet.create({
   },
 
   optionIcon: {
-    fontSize: fontSize.lg,
     marginRight: spacing.sm,
   },
 
@@ -704,15 +722,10 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  checkmark: {
-    fontSize: fontSize.sm,
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold as "700",
-  },
-
   noResults: {
     alignItems: "center",
     paddingVertical: spacing.xl,
+    gap: spacing.sm,
   },
 
   noResultsText: {

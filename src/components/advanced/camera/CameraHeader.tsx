@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rbr } from '../../../utils/responsive';
+import { rbr, rf } from '../../../utils/responsive';
 
 interface CameraHeaderProps {
   title: string;
@@ -25,9 +26,9 @@ export const CameraHeader: React.FC<CameraHeaderProps> = ({
         accessibilityRole="button"
         accessibilityHint="Double tap to close the camera"
       >
-        <Text style={styles.closeIcon}>✕</Text>
+        <Ionicons name="close" size={rf(22)} color={colors.text} />
       </TouchableOpacity>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} numberOfLines={1}>{title}</Text>
       <TouchableOpacity
         style={styles.flashButton}
         onPress={onToggleFlash}
@@ -35,7 +36,11 @@ export const CameraHeader: React.FC<CameraHeaderProps> = ({
         accessibilityRole="button"
         accessibilityHint="Double tap to toggle flash"
       >
-        <Text style={styles.flashIcon}>{flashMode === "on" ? "⚡" : "⚡"}</Text>
+        <Ionicons
+          name={flashMode === "on" ? "flash" : "flash-off"}
+          size={rf(22)}
+          color={flashMode === "on" ? colors.primary : colors.text}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -60,15 +65,12 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
 
-  closeIcon: {
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-
   title: {
+    flex: 1,
     fontSize: fontSize.lg,
     fontWeight: typography.fontWeight.semibold as "600",
     color: colors.text,
+    textAlign: "center",
   },
 
   flashButton: {
@@ -78,9 +80,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-
-  flashIcon: {
-    fontSize: fontSize.lg,
   },
 });

@@ -26,19 +26,27 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   if (overlay) {
     return (
-      <View style={[styles.overlay, style]}>
+      <View
+        style={[styles.overlay, style]}
+        accessibilityRole="progressbar"
+        accessibilityLabel={text || "Loading"}
+      >
         <View style={styles.overlayContent}>
           <ActivityIndicator size={size} color={color} />
-          {text && <Text style={styles.overlayText}>{text}</Text>}
+          {text && <Text style={styles.overlayText} numberOfLines={2}>{text}</Text>}
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[styles.container, style]}
+      accessibilityRole="progressbar"
+      accessibilityLabel={text || "Loading"}
+    >
       <ActivityIndicator size={size} color={color} />
-      {text && <Text style={styles.text}>{text}</Text>}
+      {text && <Text style={styles.text} numberOfLines={2}>{text}</Text>}
     </View>
   );
 };
@@ -66,7 +74,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
+    // Above content but below modals/dialogs (zIndex.modal is 1400). The
+    // previous zIndex:1000 meant a spinner shown inside a modal could be
+    // hidden behind the modal backdrop.
+    zIndex: 1500,
+    elevation: 1500,
   },
 
   overlayContent: {

@@ -86,7 +86,10 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
   }));
 
   return (
-    <Animated.View style={[styles.container, animatedStyle, style]}>
+    <Animated.View
+      style={[styles.container, animatedStyle, style]}
+      accessible={true}
+    >
       {children}
     </Animated.View>
   );

@@ -1,4 +1,5 @@
 import { Vibration, Platform } from "react-native";
+import * as Haptics from "expo-haptics";
 
 export type HapticType =
   | "light"
@@ -18,41 +19,47 @@ export class HapticFeedback {
 
   static trigger(type: HapticType = "light") {
     if (!this.isEnabled) return;
+    if (Platform.OS === "web") return;
 
     if (Platform.OS === "ios") {
-      // iOS has more sophisticated haptic feedback
+      // Use expo-haptics on iOS — Vibration.vibrate() on iOS ignores the
+      // duration argument and always vibrates 400ms, which made per-type
+      // durations (selection/light/error) indistinguishable. expo-haptics
+      // maps to the real iOS haptic engine (UIImpactFeedbackGenerator /
+      // UINotificationFeedbackGenerator).
       this.triggerIOS(type);
     } else if (Platform.OS === "android") {
-      // Android uses vibration patterns
       this.triggerAndroid(type);
     }
   }
 
   private static triggerIOS(type: HapticType) {
-    // Note: In a real app, you'd use react-native-haptic-feedback
-    // For now, we'll use basic vibration
-    switch (type) {
-      case "light":
-        Vibration.vibrate(10);
-        break;
-      case "medium":
-        Vibration.vibrate(20);
-        break;
-      case "heavy":
-        Vibration.vibrate(50);
-        break;
-      case "success":
-        Vibration.vibrate([10, 50, 10]);
-        break;
-      case "warning":
-        Vibration.vibrate([20, 100]);
-        break;
-      case "error":
-        Vibration.vibrate([50, 50, 50]);
-        break;
-      case "selection":
-        Vibration.vibrate(5);
-        break;
+    try {
+      switch (type) {
+        case "light":
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          break;
+        case "medium":
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          break;
+        case "heavy":
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          break;
+        case "success":
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        case "warning":
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          break;
+        case "error":
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          break;
+        case "selection":
+          Haptics.selectionAsync();
+          break;
+      }
+    } catch {
+      // Haptics are non-critical — silently ignore.
     }
   }
 

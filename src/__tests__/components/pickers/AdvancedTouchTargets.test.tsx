@@ -21,6 +21,8 @@ jest.mock("react-native", () => {
     TouchableOpacity: React.forwardRef((props: any, ref) =>
       React.createElement("TouchableOpacity", { ...props, ref }, props.children),
     ),
+    KeyboardAvoidingView: ({ children }: { children: React.ReactNode }) => children,
+    Platform: { OS: "ios", select: (obj: any) => obj.ios },
     StyleSheet: {
       create: (styles: unknown) => styles,
       flatten: (style: any) =>

@@ -1,22 +1,25 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
+  View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
   Animated,
   Vibration,
-  Dimensions,
+  useWindowDimensions,
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+import { rf } from "../../utils/responsive";
 
 interface MenuItem {
   id: string;
   label: string;
+  /** Ionicons glyph name. Older callers may pass an emoji string — it is
+   * rendered as a fallback if the name does not match an Ionicons glyph. */
   icon: string;
   onPress: () => void;
   destructive?: boolean;
@@ -42,11 +45,28 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 }) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const pendingActionTimer = useRef<NodeJS.Timeout | null>(null);
   const scaleValue = useRef(new Animated.Value(1)).current;
   const menuOpacity = useRef(new Animated.Value(0)).current;
   const menuScale = useRef(new Animated.Value(0.8)).current;
   const touchPosition = useRef({ x: 0, y: 0 });
+
+  // Clear any pending timers (long-press + delayed action) on unmount so a
+  // setTimeout callback never fires onPress on a stale/unmounted item.
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      if (pendingActionTimer.current) {
+        clearTimeout(pendingActionTimer.current);
+        pendingActionTimer.current = null;
+      }
+    };
+  }, []);
 
   const handlePressIn = (event: any) => {
     if (disabled) return;
@@ -148,8 +168,13 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 
     hideMenu();
 
-    // Delay the action slightly to allow menu to close
-    setTimeout(() => {
+    // Delay the action slightly to allow menu to close.
+    // Track the timer so it can be cancelled on unmount.
+    if (pendingActionTimer.current) {
+      clearTimeout(pendingActionTimer.current);
+    }
+    pendingActionTimer.current = setTimeout(() => {
+      pendingActionTimer.current = null;
       item.onPress();
     }, 100);
   };
@@ -180,6 +205,9 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
           style={styles.overlay}
           activeOpacity={1}
           onPress={hideMenu}
+          accessibilityLabel="Dismiss menu"
+          accessibilityRole="button"
+          accessibilityHint="Closes the long-press menu"
         >
           <Animated.View
             style={[
@@ -203,14 +231,24 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                 ]}
                 onPress={() => handleMenuItemPress(item)}
                 disabled={item.disabled}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
+                accessibilityState={{ disabled: item.disabled }}
               >
-                <Text style={styles.menuIcon}>{item.icon}</Text>
+                <View style={styles.menuIcon}>
+                  <Ionicons
+                    name={item.icon as any}
+                    size={rf(fontSize.lg)}
+                    color={item.destructive ? colors.error : colors.text}
+                  />
+                </View>
                 <Text
                   style={[
                     styles.menuLabel,
                     item.destructive && styles.menuLabelDestructive,
                     item.disabled && styles.menuLabelDisabled,
                   ]}
+                  numberOfLines={1}
                 >
                   {item.label}
                 </Text>

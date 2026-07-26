@@ -6,15 +6,18 @@ import {
   PanResponder,
   Animated,
   Vibration,
+  TouchableOpacity,
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, typography } from "../../theme/aurora-tokens";
 import { rf, rp } from '../../utils/responsive';
 
 interface SwipeAction {
   id: string;
   label: string;
+  /** Ionicons glyph name. Older callers may pass emoji strings. */
   icon: string;
   color: string;
   onPress: () => void;
@@ -93,7 +96,6 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
         Math.abs(dx) > swipeThreshold || velocity > 0.5;
 
       translateX.flattenOffset();
-      lastOffset.current = currentTranslateX.current;
 
       if (shouldTriggerAction) {
         if (dx > 0) {
@@ -128,6 +130,10 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
       tension: 100,
       friction: 8,
     }).start();
+    // Commit the new resting offset ONLY after we've decided to keep the
+    // swipe open. The previous implementation set lastOffset before checking
+    // shouldTriggerAction, so a rejected swipe sprang back from the stale
+    // offset rather than from the live gesture position.
     lastOffset.current = position;
     currentTranslateX.current = position;
   };
@@ -184,24 +190,16 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
               },
             ]}
           >
-            <Animated.View
-              style={[
-                styles.actionContent,
-                {
-                  opacity: translateX.interpolate({
-                    inputRange: isLeft
-                      ? [40 * (index + 1), 80 * (index + 1)]
-                      : [-80 * (index + 1), -40 * (index + 1)],
-                    outputRange: [0, 1],
-                    extrapolate: "clamp",
-                  }),
-                },
-              ]}
-              onTouchEnd={() => handleActionPress(action)}
+            <TouchableOpacity
+              style={styles.actionContent}
+              onPress={() => handleActionPress(action)}
+              accessibilityRole="button"
+              accessibilityLabel={action.label}
+              activeOpacity={0.7}
             >
-              <Text style={styles.actionIcon}>{action.icon}</Text>
-              <Text style={styles.actionLabel}>{action.label}</Text>
-            </Animated.View>
+              <Ionicons name={action.icon as any} size={rf(20)} color={colors.white} style={styles.actionIcon} />
+              <Text style={styles.actionLabel} numberOfLines={1}>{action.label}</Text>
+            </TouchableOpacity>
           </Animated.View>
         ))}
       </View>
@@ -236,6 +234,7 @@ const styles = StyleSheet.create({
   container: {
     position: "relative",
     overflow: "hidden",
+    minHeight: 44,
   },
 
   content: {
@@ -263,18 +262,19 @@ const styles = StyleSheet.create({
   actionButton: {
     width: 80,
     height: "100%",
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
   },
 
   actionContent: {
+    flex: 1,
+    width: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
 
   actionIcon: {
-    fontSize: rf(20),
-    color: colors.white,
     marginBottom: rp(4),
   },
 
@@ -285,3 +285,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+

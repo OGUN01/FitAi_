@@ -90,9 +90,9 @@ export default function CookingSessionScreen({
       {},
     );
 
-    crossPlatformAlert("🎉 Cooking Complete!", completionMessage, [
+    crossPlatformAlert("Cooking Complete!", completionMessage, [
       {
-        text: "Enjoy Your Meal! 🍽️",
+        text: "Enjoy Your Meal!",
         onPress: () => {
           navigation.navigate("Diet", {
             mealCompleted: true,
@@ -113,7 +113,7 @@ export default function CookingSessionScreen({
 
   return (
     <AuroraBackground theme="space" animated intensity={0.3}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
         <View style={styles.header}>
           <AnimatedPressable
             onPress={() => {
@@ -140,18 +140,22 @@ export default function CookingSessionScreen({
             accessibilityLabel="Close cooking session"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={28} color={colors.text.primary} />
+            <Ionicons name="close" size={rf(28)} color={colors.text.primary} />
           </AnimatedPressable>
           <View style={styles.headerContent}>
-            <Text style={styles.mealName}>{meal.name}</Text>
-            <Text style={styles.mealMeta}>
+            <Text style={styles.mealName} numberOfLines={1} ellipsizeMode="tail">{meal.name}</Text>
+            <Text style={styles.mealMeta} numberOfLines={2}>
               Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m •{" "}
               {meal.difficulty}
             </Text>
           </View>
         </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <VideoSection
           cookingVideo={cookingVideo}
           isLoadingVideo={isLoadingVideo}

@@ -9,9 +9,12 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rh } from "../../utils/responsive";
+import { rh, rf } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
 
 interface DatePickerProps {
   value: Date;
@@ -65,13 +68,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     }
   };
 
+  // Date list — capped to ±60 days around today (or to the provided
+  // minimumDate/maximumDate window when narrower). The previous
+  // implementation walked from `minDate - 1 month` to `maxDate + 2 months`,
+  // which could allocate thousands of Date objects when callers passed wide
+  // minimumDate/maximumDate ranges (e.g. birth date pickers).
   const dateOptions = useMemo(() => {
     const options = [];
     const today = new Date();
-    const start =
-      minimumDate || new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const end =
-      maximumDate || new Date(today.getFullYear(), today.getMonth() + 2, 0);
+    today.setHours(0, 0, 0, 0);
+    const defaultStart = new Date(today);
+    defaultStart.setDate(defaultStart.getDate() - 60);
+    const defaultEnd = new Date(today);
+    defaultEnd.setDate(defaultEnd.getDate() + 60);
+
+    const start = minimumDate || defaultStart;
+    const end = maximumDate || defaultEnd;
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       options.push(new Date(d));
@@ -80,7 +92,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     return options;
   }, [minimumDate, maximumDate]);
 
+  // Time list — only allocated when the mode actually needs time values.
+  // 96 quarter-hour slots (24 * 4). Cheap, but no point paying for it when
+  // mode === "date".
   const timeOptions = useMemo(() => {
+    if (mode === "date") return [];
     const options = [];
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
@@ -90,7 +106,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       }
     }
     return options;
-  }, []);
+  }, [mode]);
 
   const isDateSelected = (date: Date) => {
     if (mode === "date") {
@@ -161,7 +177,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   </View>
                 )}
               </View>
-              {isSelected && <Text style={styles.checkmark}>✓</Text>}
+              {isSelected && (
+                <Ionicons name="checkmark" size={rf(18)} color={colors.primary} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -207,7 +225,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   minute: "2-digit",
                 })}
               </Text>
-              {isSelected && <Text style={styles.checkmark}>✓</Text>}
+              {isSelected && (
+                <Ionicons name="checkmark" size={rf(18)} color={colors.primary} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -252,11 +272,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         onPress={() => !disabled && setIsVisible(true)}
         accessibilityRole="button"
         accessibilityLabel={label || placeholder}
+        accessibilityState={{ disabled }}
       >
-        <Text style={[styles.triggerText, !value && styles.placeholderText]}>
+        <Text style={[styles.triggerText, !value && styles.placeholderText]} numberOfLines={1}>
           {value ? formatDate(value) : placeholder}
         </Text>
-        <Text style={styles.triggerIcon}>📅</Text>
+        <Ionicons name="calendar-outline" size={rf(20)} color={disabled ? colors.textMuted : colors.primary} />
       </TouchableOpacity>
 
       <Modal
@@ -266,9 +287,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         onRequestClose={handleCancel}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <SafeAreaView style={styles.modalContent} edges={["bottom"]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
+              <Text style={styles.modalTitle} numberOfLines={1}>
                 Select{" "}
                 {mode === "datetime"
                   ? "Date & Time"
@@ -294,7 +315,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 style={styles.actionButton}
               />
             </View>
-          </View>
+          </SafeAreaView>
         </View>
       </Modal>
     </View>
@@ -339,10 +360,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  triggerIcon: {
-    fontSize: fontSize.lg,
-  },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -353,7 +370,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    maxHeight: rh(682),
+    maxHeight: "80%",
   },
 
   modalHeader: {
@@ -387,7 +404,7 @@ const styles = StyleSheet.create({
   },
 
   optionItemSelected: {
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     borderWidth: 1,
     borderColor: colors.primary,
   },
@@ -427,12 +444,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.white,
     fontWeight: typography.fontWeight.semibold as "600",
-  },
-
-  checkmark: {
-    fontSize: fontSize.lg,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold as "700",
   },
 
   dateTimeContainer: {

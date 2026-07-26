@@ -12,10 +12,12 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { dataBridge } from "../../services/DataBridge";
 import { migrationManager } from "../../services/migrationManager";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
+import { rh } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface TestResult {
@@ -195,8 +197,11 @@ export const MigrationTestComponent: React.FC = () => {
           ]}
           onPress={runAllTests}
           disabled={isRunning}
+          accessibilityRole="button"
+          accessibilityLabel="Run all migration tests"
+          accessibilityState={{ disabled: isRunning }}
         >
-          <Text style={styles.buttonText}>
+          <Text style={styles.buttonText} numberOfLines={1}>
             {isRunning ? "Running Tests..." : "Run All Tests"}
           </Text>
         </TouchableOpacity>
@@ -204,21 +209,25 @@ export const MigrationTestComponent: React.FC = () => {
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
           onPress={clearResults}
+          accessibilityRole="button"
+          accessibilityLabel="Clear test results"
         >
-          <Text style={styles.buttonTextSecondary}>Clear Results</Text>
+          <Text style={styles.buttonTextSecondary} numberOfLines={1}>Clear Results</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, styles.warningButton]}
           onPress={clearDataAndResults}
+          accessibilityRole="button"
+          accessibilityLabel="Clear test data and results"
         >
-          <Text style={styles.buttonText}>Clear Test Data</Text>
+          <Text style={styles.buttonText} numberOfLines={1}>Clear Test Data</Text>
         </TouchableOpacity>
       </View>
 
       {/* Test Results */}
       <ScrollView style={styles.results} showsVerticalScrollIndicator={false}>
-        <Text style={styles.resultsTitle}>
+        <Text style={styles.resultsTitle} numberOfLines={1}>
           Test Results ({testResults.length})
         </Text>
 
@@ -236,15 +245,22 @@ export const MigrationTestComponent: React.FC = () => {
               ]}
             >
               <View style={styles.resultHeader}>
-                <Text style={styles.resultTest}>{result.test}</Text>
-                <Text style={styles.resultTime}>{result.timestamp}</Text>
+                <Text style={styles.resultTest} numberOfLines={2}>{result.test}</Text>
+                <Text style={styles.resultTime} numberOfLines={1}>{result.timestamp}</Text>
               </View>
 
-              <Text style={styles.resultStatus}>
-                {result.success ? "✅ PASSED" : "❌ FAILED"}
-              </Text>
+              <View style={styles.resultStatusRow}>
+                <Ionicons
+                  name={result.success ? "checkmark-circle" : "close-circle"}
+                  size={fontSize.sm}
+                  color={result.success ? colors.success : colors.error}
+                />
+                <Text style={[styles.resultStatus, result.success ? styles.resultStatusSuccess : styles.resultStatusError]}>
+                  {result.success ? "PASSED" : "FAILED"}
+                </Text>
+              </View>
 
-              <Text style={styles.resultData}>
+              <Text style={styles.resultData} numberOfLines={20}>
                 {typeof result.result === "object"
                   ? JSON.stringify(result.result, null, 2)
                   : String(result.result)}
@@ -285,6 +301,8 @@ const styles = StyleSheet.create({
   },
 
   button: {
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
@@ -375,10 +393,24 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
+  resultStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs / 2,
+    marginBottom: spacing.xs,
+  },
+
   resultStatus: {
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
-    marginBottom: spacing.xs,
+  },
+
+  resultStatusSuccess: {
+    color: colors.success,
+  },
+
+  resultStatusError: {
+    color: colors.error,
   },
 
   resultData: {

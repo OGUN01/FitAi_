@@ -23,7 +23,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../../../utils/responsive";
+import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../../utils/colors";
 
 interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
   label: string;
@@ -58,16 +59,21 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
     borderOpacity.value = withTiming(0, { duration: 200 });
   };
 
+  // Border colour takes precedence from the error state when present; once
+  // the error clears the border returns to the focus/default colour
+  // immediately instead of staying on the error colour until the next focus.
   const animatedBorderStyle = useAnimatedStyle(() => ({
     borderColor: error
       ? colors.error
-      : `rgba(255, 107, 53, ${0.2 + borderOpacity.value * 0.3})`,
+      : isFocused
+        ? colors.primary
+        : `rgba(255, 107, 53, ${0.2 + borderOpacity.value * 0.3})`,
   }));
 
   return (
     <View style={styles.container}>
       {/* Label */}
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label} numberOfLines={1}>{label}</Text>
 
       {/* Input Container */}
       <Animated.View
@@ -81,7 +87,7 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: `${iconColor}15` },
+              { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW + 0.03) },
             ]}
           >
             <Ionicons name={icon} size={rf(16)} color={iconColor} />
@@ -96,10 +102,11 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           onBlur={handleBlur}
           placeholderTextColor={colors.textMuted}
           selectionColor={colors.primary}
+          accessibilityLabel={label}
           {...props}
         />
 
-        {suffix && <Text style={styles.suffix}>{suffix}</Text>}
+        {suffix && <Text style={styles.suffix} numberOfLines={1}>{suffix}</Text>}
       </Animated.View>
 
       {/* Error or Hint */}
@@ -110,10 +117,10 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
             size={rf(12)}
             color={colors.error}
           />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText} numberOfLines={3}>{error}</Text>
         </View>
       ) : hint ? (
-        <Text style={styles.hintText}>{hint}</Text>
+        <Text style={styles.hintText} numberOfLines={3}>{hint}</Text>
       ) : null}
     </View>
   );
@@ -138,13 +145,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
     overflow: "hidden",
+    minHeight: Math.max(rw(48), 44),
   },
   inputError: {
     borderColor: colors.error,
   },
   iconContainer: {
     width: rw(40),
-    height: rw(48),
+    height: Math.max(rw(48), 44),
     justifyContent: "center",
     alignItems: "center",
     marginLeft: spacing.xs,
@@ -152,10 +160,12 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: rw(48),
+    minHeight: Math.max(rw(48), 44),
     fontSize: rf(15),
     color: colors.white,
     paddingHorizontal: spacing.md,
+    // Allow the input to grow vertically for multiline content (the previous
+    // fixed height clipped multi-line text).
   },
   inputNoIcon: {
     paddingLeft: spacing.md,

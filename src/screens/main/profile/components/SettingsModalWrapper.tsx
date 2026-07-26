@@ -32,6 +32,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../../../utils/colors";
 import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 
@@ -85,11 +86,12 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
     >
       <StatusBar
         barStyle="light-content"
+        backgroundColor={colors.background}
       />
       <View style={styles.modalContainer}>
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
             style={styles.keyboardView}
           >
             {/* Header */}
@@ -117,16 +119,16 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                   <View
                     style={[
                       styles.headerIcon,
-                      { backgroundColor: `${iconColor}20` },
+                      { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_SOFT) },
                     ]}
                   >
                     <Ionicons name={icon} size={rf(18)} color={iconColor} />
                   </View>
                 )}
                 <View style={styles.headerTitleText}>
-                  <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
+                  <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
                   {subtitle && (
-                    <Text style={styles.headerSubtitle} numberOfLines={1}>{subtitle}</Text>
+                    <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text>
                   )}
                 </View>
               </View>
@@ -163,7 +165,8 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                   disabled={saveDisabled || isSaving}
                   style={styles.saveButtonContainer}
                   accessibilityRole="button"
-                  accessibilityLabel={saveLabel}
+                  accessibilityLabel={isSaving ? `${saveLabel} (saving)` : saveLabel}
+                  accessibilityState={{ disabled: saveDisabled || isSaving }}
                 >
                   <LinearGradient
                     colors={
@@ -267,7 +270,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    // Generous bottom padding so the last input isn't covered by the save
+    // footer when the keyboard is open.
+    paddingBottom: spacing.xxl,
   },
   footer: {
     paddingHorizontal: spacing.md,

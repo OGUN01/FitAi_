@@ -24,7 +24,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   maxValue = 100,
   description,
   icon,
-  gradient = [colors.success, "#45A049"],
+  gradient = [colors.success, colors.successDark || colors.success],
   size = 120,
   strokeWidth = 12,
   showGlow = true,
@@ -33,7 +33,12 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   const percentage = Math.min((value / maxValue) * 100, 100);
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[styles.container, style]}
+      accessibilityRole="progressbar"
+      accessibilityLabel={title}
+      accessibilityValue={{ min: 0, max: maxValue, now: Math.round(value) }}
+    >
       <LinearGradient
         colors={[
           colors.backgroundSecondary,

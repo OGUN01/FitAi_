@@ -81,8 +81,8 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
 
           {/* Text */}
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Unlock Your Full Potential</Text>
-            <Text style={styles.subtitle}>
+            <Text style={styles.title} numberOfLines={2}>Unlock Your Full Potential</Text>
+            <Text style={styles.subtitle} numberOfLines={3}>
               Create a free account to save progress and sync across devices.
             </Text>
           </View>
@@ -138,8 +138,11 @@ const styles = StyleSheet.create({
     borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
-    boxShadow: '0px 4px 8px rgba(255,107,53,0.3)',
     elevation: 6,
+    shadowColor: "#FF6B35",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   textContainer: {
     alignItems: "center",

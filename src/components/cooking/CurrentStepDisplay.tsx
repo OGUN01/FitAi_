@@ -6,6 +6,7 @@ import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 import { colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { GlassCard } from "../ui/aurora";
 import { AnimatedPressable } from "../ui/aurora";
 
@@ -55,11 +56,18 @@ export default function CurrentStepDisplay({
 
       <View style={styles.stepHeader}>
         <View style={styles.stepInfo}>
-          <Text style={styles.stepCounter}>
-            {currentStep.icon} Step {currentStep.step} of{" "}
+          <Text style={styles.stepCounter} numberOfLines={1}>
+            {currentStep.icon ? `${currentStep.icon} ` : ""}Step {currentStep.step} of{" "}
             {cookingFlow.steps.length}
           </Text>
-          <Text style={styles.stepTitle}>{currentStep.instruction}</Text>
+          <Text
+            style={styles.stepTitle}
+            numberOfLines={4}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {currentStep.instruction}
+          </Text>
         </View>
         {currentStep.timeRequired && (
           <AnimatedPressable
@@ -85,7 +93,10 @@ export default function CurrentStepDisplay({
 
       {currentStep.tips && (
         <View style={styles.tipsContainer}>
-          <Text style={styles.tipText}>💡 {currentStep.tips}</Text>
+          <View style={styles.tipRow}>
+            <Ionicons name="bulb-outline" size={rf(16)} color={colors.warning.DEFAULT} style={styles.tipIcon} />
+            <Text style={styles.tipText} numberOfLines={5}>{currentStep.tips}</Text>
+          </View>
         </View>
       )}
 
@@ -113,7 +124,7 @@ const styles = StyleSheet.create({
     marginHorizontal: rp(16),
     marginBottom: rp(16),
     borderColor: colors.primary.DEFAULT,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   progressHeader: {
     marginBottom: rp(16),
@@ -161,10 +172,13 @@ const styles = StyleSheet.create({
   timerButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 107, 53, 0.12)",
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW + 0.08),
     paddingHorizontal: rp(12),
     paddingVertical: rp(10),
     borderRadius: rbr(16),
+    marginLeft: rp(8),
   },
   timerButtonText: {
     fontSize: rf(14),
@@ -172,12 +186,21 @@ const styles = StyleSheet.create({
     marginLeft: rp(4),
   },
   tipsContainer: {
-    backgroundColor: "rgba(255, 152, 0, 0.12)",
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, TINT_ALPHA_LOW + 0.08),
     padding: rp(12),
     borderRadius: rbr(8),
     marginTop: rp(12),
   },
+  tipRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  tipIcon: {
+    marginTop: rp(2),
+    marginRight: rp(6),
+  },
   tipText: {
+    flex: 1,
     fontSize: rf(14),
     color: colors.warning.DEFAULT,
     lineHeight: rf(20),
@@ -188,7 +211,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: rp(16),
     padding: rp(12),
-    backgroundColor: "rgba(255, 152, 0, 0.12)",
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, TINT_ALPHA_LOW + 0.08),
     borderRadius: rbr(8),
   },
   timerDisplay: {

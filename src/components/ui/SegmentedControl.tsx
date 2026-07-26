@@ -103,6 +103,9 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
             onPress={() => onSelect(option.id)}
             onLayout={(event) => handleSegmentLayout(index, event)}
             style={styles.segment}
+            accessibilityRole="tab"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected: selectedId === option.id }}
           >
             <Text
               style={[
@@ -111,6 +114,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
               ]}
               numberOfLines={2}
               ellipsizeMode="tail"
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
             >
               {option.label}
             </Text>

@@ -8,13 +8,14 @@ import {
   Modal,
   Pressable,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   PanResponder,
   StyleSheet,
 } from "react-native";
 import { Achievement } from "../../services/achievementEngine";
 import { flatColors as colors } from "../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../utils/responsive";
+import { rf, rp, rbr, rh } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import useAchievementStore from "../../stores/achievementStore";
 
 interface AchievementCelebrationProps {
@@ -23,16 +24,16 @@ interface AchievementCelebrationProps {
   onClose: () => void;
 }
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
 const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   visible,
   achievement,
   onClose,
 }) => {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { markCelebrationShown } = useAchievementStore();
 
-  // Animation values
+  // Animation values — initialised to a sensible default; reset to live
+  // screenHeight/screenWidth on each open via the effect below.
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -53,8 +54,12 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dy) > 20;
+        // Only claim the gesture on a clear downward swipe. Returning false
+        // for taps and small moves lets the Close button receive its own
+        // press — previously the PanResponder swallowed all touches.
+        return gestureState.dy > 20 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onPanResponderMove: (evt, gestureState) => {
         if (gestureState.dy > 0) {
@@ -122,10 +127,10 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       // Start confetti animation
       startConfettiAnimation();
 
-      // Auto close after 5 seconds
+      // Auto close after 8 seconds (was 5s — too short for long descriptions).
       const timer = setTimeout(() => {
         handleClose();
-      }, 5000);
+      }, 8000);
 
       return () => {
         clearTimeout(timer);
@@ -237,6 +242,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
         {confetti.map((item, index) => (
           <Animated.View
             key={index}
+            accessibilityLabel="Celebration confetti"
+            accessibilityRole="image"
+            accessible={false}
             style={[
               styles.confetti,
               {
@@ -298,10 +306,10 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
               <View
                 style={[
                   styles.tierBadge,
-                  { backgroundColor: tierColor + "40" },
+                  { backgroundColor: hexToRgba(tierColor, TINT_ALPHA_MEDIUM + 0.1) },
                 ]}
               >
-                <Text style={[styles.tierText, { color: tierColor }]}>
+                <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
                   {achievement.tier} Achievement
                 </Text>
               </View>
@@ -309,27 +317,33 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 
             {/* Achievement Details */}
             <View style={styles.detailsContainer}>
-              <Text style={styles.celebrationText}>
-                🎉 Achievement Unlocked! 🎉
+              <Text style={styles.celebrationText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+                Achievement Unlocked!
               </Text>
 
-              <Text style={styles.titleText}>{achievement.title}</Text>
+              <Text style={styles.titleText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{achievement.title}</Text>
 
-              <Text style={styles.descriptionText}>
+              <Text style={styles.descriptionText} numberOfLines={4}>
                 {achievement.description}
               </Text>
 
               {/* Reward */}
               <View style={styles.rewardContainer}>
-                <Text style={styles.rewardText}>
+                <Text style={styles.rewardText} numberOfLines={2}>
                   {achievement.reward.description}
                 </Text>
               </View>
             </View>
 
             {/* Close Button */}
-            <Pressable onPress={handleClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Awesome! ✨</Text>
+            <Pressable
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss celebration"
+              accessibilityHint="Closes the achievement celebration"
+            >
+              <Text style={styles.closeButtonText}>Awesome!</Text>
             </Pressable>
 
             {/* Swipe Indicator */}
@@ -430,6 +444,8 @@ const styles = StyleSheet.create({
   closeButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: rbr(12),
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     paddingVertical: rp(12),
     paddingHorizontal: rp(24),
     alignSelf: "center",

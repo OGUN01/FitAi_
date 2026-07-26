@@ -117,6 +117,9 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
     <AnimatedLinearGradient
       {...gradientProps}
       style={[styles.container, animatedStyle, style]}
+      // The gradient is purely decorative — hide it from screen readers so
+      // they don't try to traverse the animated background layer.
+      accessible={false}
     >
       {children}
     </AnimatedLinearGradient>

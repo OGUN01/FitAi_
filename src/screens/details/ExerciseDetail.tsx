@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "../../components/ui";
 import {
   AuroraBackground,
@@ -12,7 +13,7 @@ import {
   EmptyState,
 } from "../../components/ui/aurora";
 import { colors, spacing } from "../../theme/aurora-tokens";
-import { rp, rw } from "../../utils/responsive";
+import { rp } from "../../utils/responsive";
 import { useExerciseData } from "./hooks/useExerciseData";
 import { useExerciseVisual } from "./hooks/useExerciseVisual";
 import { useStepAnimation } from "./hooks/useStepAnimation";
@@ -94,9 +95,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
       <GlassHeader
         title="Exercise Guide"
         onBack={onBack}
-        rightAction={
-          <View style={styles.side} />
-        }
+        rightAction={null}
       />
 
       <ScrollView
@@ -137,7 +136,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
         />
       </ScrollView>
 
-      <View style={styles.bottomContainer}>
+      <SafeAreaView edges={["bottom"]} style={styles.bottomContainer}>
         <Button
           title="Start Exercise"
           onPress={onStartExercise ?? (() => {})}
@@ -146,7 +145,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           size="lg"
           fullWidth
         />
-      </View>
+      </SafeAreaView>
     </AuroraBackground>
   );
 };
@@ -160,9 +159,6 @@ const styles = StyleSheet.create({
   emptyWrap: {
     flex: 1,
     justifyContent: "center",
-  },
-  side: {
-    width: rw(44),
   },
   scrollView: {
     flex: 1,

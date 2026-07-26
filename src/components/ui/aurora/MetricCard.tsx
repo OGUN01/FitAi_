@@ -214,12 +214,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               // @ts-ignore - Reanimated AnimatedProps type issue
               animatedProps={animatedTextProps}
               style={[styles.value, { fontSize: sizeStyles.valueFontSize }]}
+              accessibilityLabel={`${label}: ${value.toFixed(decimals)}${unit || ""}`}
             >
               {value.toFixed(decimals)}
             </AnimatedText>
             {unit && (
               <Text
                 style={[styles.unit, { fontSize: sizeStyles.labelFontSize }]}
+                numberOfLines={1}
               >
                 {unit}
               </Text>
@@ -230,6 +232,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           <View style={styles.labelRow}>
             <Text
               style={[styles.label, { fontSize: sizeStyles.labelFontSize }]}
+              numberOfLines={2}
             >
               {label}
             </Text>
@@ -248,6 +251,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     minWidth: 120,
+    maxWidth: 240,
   },
   content: {
     flexDirection: "row",

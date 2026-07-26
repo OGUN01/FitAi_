@@ -4,11 +4,13 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT } from '../../utils/colors';
 import { GlassCard } from "../ui/aurora";
 import { AnimatedPressable } from "../ui/aurora";
 
@@ -17,7 +19,7 @@ interface StepsListProps {
   currentStepIndex: number;
   completedSteps: Set<number>;
   onStepPress: (index: number) => void;
-  scrollViewRef: React.RefObject<ScrollView | null>;
+  scrollViewRef?: React.RefObject<ScrollView | null>;
 }
 
 export default function StepsList({
@@ -25,7 +27,6 @@ export default function StepsList({
   currentStepIndex,
   completedSteps,
   onStepPress,
-  scrollViewRef,
 }: StepsListProps) {
   if (!cookingFlow) return null;
 
@@ -36,11 +37,7 @@ export default function StepsList({
       style={styles.stepsListSection}
     >
       <Text style={styles.sectionTitle}>Cooking Steps</Text>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.stepsList}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.stepsList}>
         {cookingFlow.steps.map((step, index) => (
           <AnimatedPressable
             key={index}
@@ -64,6 +61,7 @@ export default function StepsList({
                     index === currentStepIndex && styles.currentStepText,
                     completedSteps.has(index) && styles.completedStepText,
                   ]}
+                  numberOfLines={1}
                 >
                   {step.icon || step.step}
                 </Text>
@@ -75,13 +73,18 @@ export default function StepsList({
                     index === currentStepIndex && styles.currentStepText,
                     completedSteps.has(index) && styles.completedStepText,
                   ]}
+                  numberOfLines={3}
+                  ellipsizeMode="tail"
                 >
                   {step.instruction}
                 </Text>
                 {step.timeRequired && (
-                  <Text style={styles.stepTimeText}>
-                    ⏱️ {step.timeRequired} min
-                  </Text>
+                  <View style={styles.stepTimeRow}>
+                    <Ionicons name="timer-outline" size={rf(12)} color={colors.text.muted} />
+                    <Text style={styles.stepTimeText} numberOfLines={1}>
+                      {step.timeRequired} min
+                    </Text>
+                  </View>
                 )}
               </View>
               {completedSteps.has(index) && (
@@ -94,13 +97,16 @@ export default function StepsList({
             </View>
           </AnimatedPressable>
         ))}
-      </ScrollView>
+      </View>
 
       {cookingFlow.proTips.length > 0 && (
         <View style={styles.proTipsSection}>
-          <Text style={styles.proTipsTitle}>💡 Pro Tips</Text>
+          <View style={styles.proTipsTitleRow}>
+            <Ionicons name="bulb-outline" size={rf(16)} color={colors.warning.DEFAULT} />
+            <Text style={styles.proTipsTitle}>Pro Tips</Text>
+          </View>
           {cookingFlow.proTips.map((tip, index) => (
-            <Text key={index} style={styles.proTipText}>
+            <Text key={index} style={styles.proTipText} numberOfLines={4}>
               • {tip}
             </Text>
           ))}
@@ -123,8 +129,9 @@ const styles = StyleSheet.create({
     paddingBottom: rp(8),
   },
   stepsList: {
-    maxHeight: 300,
-  },
+    // Use plain View — no nested ScrollView. The outer CookingSessionScreen
+    // ScrollView already handles scrolling for the whole screen.
+  } as ViewStyle,
   stepItem: {
     paddingHorizontal: rp(16),
     paddingVertical: rp(12),
@@ -132,10 +139,10 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.glass.border,
   },
   currentStepItem: {
-    backgroundColor: `${colors.primary.DEFAULT}18`,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW + 0.08),
   },
   completedStepItem: {
-    backgroundColor: "rgba(76, 175, 80, 0.08)",
+    backgroundColor: hexToRgba(colors.success.DEFAULT, TINT_ALPHA_SOFT),
   },
   stepItemContent: {
     flexDirection: "row",
@@ -171,22 +178,32 @@ const styles = StyleSheet.create({
     fontSize: rf(16),
     color: colors.text.secondary,
   },
+  stepTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: rp(4),
+    gap: rp(4),
+  },
   stepTimeText: {
     fontSize: rf(12),
     color: colors.text.muted,
-    marginTop: rp(4),
   },
   proTipsSection: {
-    backgroundColor: "rgba(255, 152, 0, 0.10)",
+    backgroundColor: hexToRgba(colors.warning.DEFAULT, TINT_ALPHA_LOW + 0.06),
     padding: rp(16),
     borderRadius: rbr(12),
     marginTop: rp(16),
+  },
+  proTipsTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: rp(8),
+    gap: rp(6),
   },
   proTipsTitle: {
     fontSize: rf(16),
     fontWeight: "700",
     color: colors.warning.DEFAULT,
-    marginBottom: rp(8),
   },
   proTipText: {
     fontSize: rf(14),
@@ -195,3 +212,4 @@ const styles = StyleSheet.create({
     marginBottom: rp(4),
   },
 });
+

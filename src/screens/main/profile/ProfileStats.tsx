@@ -174,11 +174,15 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     gap: rp(spacing.sm),
   },
+  // Use flexGrow:1 + flexBasis:32% so three cards always fit per row without
+  // the previous 31.5% width overflowing to a 4th-column wrap on devices
+  // where 1% rounding differs.
   statCardWrapper: {
-    width: "31.5%",
+    flexGrow: 1,
+    flexBasis: "32%",
   },
   statCard: {
     alignItems: "center",

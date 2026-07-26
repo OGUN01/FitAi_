@@ -886,6 +886,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
           <FlatList
             data={filteredTemplates}
             keyExtractor={(item) => item.id}
+            testID="template-list"
             renderItem={({ item, index }) =>
               viewMode === "grid" ? (
                 <TemplateGridCard
@@ -1188,6 +1189,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
             <Pressable
               onPress={() => onStart(template)}
               disabled={template.exercises.length === 0}
+              testID={`start-button-${template.id}`}
               style={({ pressed }) => [
                 styles.gridStartBtn,
                 template.exercises.length === 0 && styles.gridStartBtnDisabled,

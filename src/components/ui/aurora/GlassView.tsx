@@ -108,6 +108,9 @@ export const GlassView: React.FC<GlassViewProps> = ({
     (Platform.OS === "android" && optimizeForAndroid) || Platform.OS === "web";
 
   if (useFallback) {
+    // Layer a tinted background on top of the background tier so the fallback
+    // is actually visible against the dark app background (the previous
+    // overlayColor default rgba(255,255,255,0.1) was ~10% white — imperceptible).
     return (
       <View
         style={[
@@ -121,7 +124,10 @@ export const GlassView: React.FC<GlassViewProps> = ({
           style,
         ]}
       >
-        {children}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background.secondary, opacity: 0.85 }]} />
+        <View style={styles.contentFront}>
+          {children}
+        </View>
       </View>
     );
   }
@@ -160,6 +166,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentFront: {
+    flex: 1,
+    // Render above the tinted overlay layer.
+    zIndex: 1,
   },
 });
 

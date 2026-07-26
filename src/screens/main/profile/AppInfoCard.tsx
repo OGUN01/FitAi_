@@ -49,12 +49,12 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
 
           <View style={styles.info}>
             <View style={styles.nameRow}>
-              <Text style={styles.appName}>FitAI</Text>
+              <Text style={styles.appName} numberOfLines={1}>FitAI</Text>
               <View style={styles.versionBadge}>
-                <Text style={styles.versionText}>v{version}</Text>
+                <Text style={styles.versionText} numberOfLines={1}>v{version}</Text>
               </View>
             </View>
-            <Text style={styles.tagline}>
+            <Text style={styles.tagline} numberOfLines={2}>
               Your AI-powered fitness companion
             </Text>
           </View>
@@ -67,7 +67,6 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
               name="heart"
               size={rf(14)}
               color={colors.errorLight}
-              style={styles.heartIcon}
             />
             <Text style={styles.footerText}>for fitness enthusiasts</Text>
           </View>
@@ -100,7 +99,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    boxShadow: '0px 2px 4px rgba(255, 107, 107, 0.3)',
     elevation: 4,
   },
   logoText: {
@@ -150,13 +148,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "wrap",
     justifyContent: "center",
+    // Use gap so the heart icon stays inline with the text instead of
+    // wrapping to its own line (orphaned icon) on narrow screens.
+    gap: rf(4),
   },
   footerText: {
     fontSize: rf(12),
     color: colors.textMuted,
-  },
-  heartIcon: {
-    marginHorizontal: rf(4),
   },
 });
 

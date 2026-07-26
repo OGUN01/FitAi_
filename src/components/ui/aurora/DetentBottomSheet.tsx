@@ -16,6 +16,7 @@
 
 import React, { useCallback, useEffect, useMemo } from "react";
 import { StyleSheet, View, ViewStyle, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -41,7 +42,7 @@ import {
 import { animations, springConfig } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
-import { rp, dimensions } from "../../../utils/responsive";
+import { rp, rf, dimensions } from "../../../utils/responsive";
 
 // ============================================================================
 // TYPES
@@ -246,11 +247,19 @@ export const DetentBottomSheet: React.FC<DetentBottomSheetProps> = ({
         >
           {/* Drag handle region (pan-driven detents) */}
           <PanGestureHandler onGestureEvent={gestureHandler}>
-            <Animated.View>
+            <Animated.View
+              accessibilityRole="adjustable"
+              accessibilityLabel="Sheet detent"
+              accessibilityHint="Drag up or down to change sheet height"
+            >
               <Animated.View style={[styles.grabberRow, grabberAnimatedStyle]}>
                 <View style={styles.grabber} />
                 {/* Detent dots row — visual hint of how many snap points exist */}
-                <View style={styles.detentDots}>
+                <View
+                  style={styles.detentDots}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
                   {sortedPoints.map((_, i) => (
                     <View
                       key={i}
@@ -273,12 +282,16 @@ export const DetentBottomSheet: React.FC<DetentBottomSheetProps> = ({
                 haptics.light();
                 onClose();
               }}
-              hitSlop={12}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
               accessibilityLabel="Close"
               style={styles.closeButton}
             >
-              <Animated.Text style={styles.closeIcon}>✕</Animated.Text>
+              <Ionicons
+                name="close"
+                size={rf(14)}
+                color={colors.text.secondary}
+              />
             </Pressable>
           </View>
 
@@ -352,11 +365,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.glass.background,
-  },
-  closeIcon: {
-    color: colors.text.secondary,
-    fontSize: 14,
-    fontWeight: "700",
   },
   content: {
     flex: 1,

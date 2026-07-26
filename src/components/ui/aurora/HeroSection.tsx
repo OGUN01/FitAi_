@@ -105,6 +105,11 @@ export interface HeroSectionProps {
    * @default 'cover'
    */
   resizeMode?: "cover" | "contain" | "stretch" | "center";
+
+  /**
+   * Accessibility label describing the hero image for screen readers.
+   */
+  accessibilityLabel?: string;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -121,6 +126,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   style,
   contentStyle,
   resizeMode = "cover",
+  accessibilityLabel,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -172,6 +178,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         source={image}
         style={[styles.image, parallaxStyle]}
         resizeMode={resizeMode}
+        accessibilityRole="image"
+        accessibilityLabel={accessibilityLabel || "Hero background image"}
+        accessible={false}
       >
         {/* Gradient Overlay for Better Text Contrast */}
         <LinearGradient {...gradientProps} style={styles.overlay}>

@@ -15,7 +15,8 @@ import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { colors, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
-import { rp, rf } from "../../../utils/responsive";
+import { rp, rf, rh } from "../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import { AnimatedPressable } from "./AnimatedPressable";
 
 export interface EmptyStateProps {
@@ -58,20 +59,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     <Animated.View
       entering={FadeInDown.delay(delay).duration(400)}
       style={[styles.container, style]}
-      accessibilityRole="summary"
+      accessible={true}
       accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={subtitle}
     >
-      <View style={[styles.iconDisc, { backgroundColor: `${iconColor}1A` }]}>
+      <View style={[styles.iconDisc, { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW + 0.03) }]}>
         <Ionicons name={icon} size={size} color={iconColor} />
       </View>
 
       <Animated.View entering={FadeInDown.delay(delay + 80).duration(400)}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{title}</Text>
       </Animated.View>
 
       {subtitle ? (
         <Animated.View entering={FadeInDown.delay(delay + 160).duration(400)}>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={styles.subtitle} numberOfLines={4}>{subtitle}</Text>
         </Animated.View>
       ) : null}
 
@@ -86,7 +88,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             accessibilityRole="button"
             accessibilityLabel={ctaText}
           >
-            <Animated.Text style={styles.ctaText}>{ctaText}</Animated.Text>
+            <Animated.Text style={styles.ctaText} numberOfLines={1}>{ctaText}</Animated.Text>
           </AnimatedPressable>
         </Animated.View>
       ) : null}
@@ -125,6 +127,8 @@ const styles = StyleSheet.create({
   },
   cta: {
     marginTop: rp(spacing.lg),
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
     backgroundColor: colors.primary.DEFAULT,
     paddingHorizontal: rp(spacing.xl),
     paddingVertical: rp(spacing.md),

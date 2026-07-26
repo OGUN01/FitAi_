@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
 import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
 
 export interface SelectionOption {
@@ -106,7 +107,11 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                 <View style={styles.divider} />
 
                 {/* Options */}
-                <View style={styles.optionsList} accessibilityRole="radiogroup">
+                <View
+                  style={styles.optionsList}
+                  accessibilityRole="radiogroup"
+                  accessibilityLabel={title}
+                >
                   {options.map((opt) => {
                     const isSelected = opt.value === selectedValue;
                     const isDisabled = opt.disabled === true;
@@ -123,6 +128,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                         disabled={isDisabled}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: isSelected }}
+                        accessibilityLabel={opt.label}
                         style={[
                           styles.optionRow,
                           ...(isSelected ? [styles.optionRowSelected] : []),
@@ -133,7 +139,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                           style={[
                             styles.optionIconWrap,
                             isSelected && {
-                              backgroundColor: `${iconColor}30`,
+                              backgroundColor: hexToRgba(iconColor, TINT_ALPHA_MEDIUM),
                             },
                           ]}
                         >
@@ -155,11 +161,17 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                               isSelected && { color: colors.white },
                               isDisabled && styles.optionLabelDisabled,
                             ]}
+                            numberOfLines={2}
+                            ellipsizeMode="tail"
                           >
                             {opt.label}
                           </Text>
                           {opt.description && (
-                            <Text style={styles.optionDescription}>
+                            <Text
+                              style={styles.optionDescription}
+                              numberOfLines={3}
+                              ellipsizeMode="tail"
+                            >
                               {opt.description}
                             </Text>
                           )}
@@ -207,7 +219,10 @@ const styles = StyleSheet.create({
   dialogContainer: {
     width: "88%",
     maxWidth: 380,
-    maxHeight: rh(682),
+    // Use percentage maxHeight so the dialog never exceeds the viewport on
+    // short screens (rh(682) was an absolute px value that could exceed
+    // screen height on small devices).
+    maxHeight: "85%",
   },
   headerRow: {
     flexDirection: "row",
@@ -237,9 +252,12 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   closeBtn: {
-    width: Math.max(rw(32), 44),
-    height: Math.max(rw(32), 44),
-    borderRadius: Math.max(rw(16), 22),
+    // Match headerIconWrap dimensions (rw(40)) so the header row stays
+    // visually symmetric (previously closeBtn was rw(32) — smaller than the
+    // icon wrap on the other side).
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
+    borderRadius: Math.max(rw(20), 22),
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     justifyContent: "center",
     alignItems: "center",

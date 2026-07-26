@@ -177,8 +177,12 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
     <View
       style={[styles.container, { width: size, height: size }]}
       accessibilityRole="progressbar"
+      accessibilityLabel={displayText}
       accessibilityValue={{ now: progress, min: 0, max: 100 }}
-      accessible={true}
+      // Do NOT set accessible={true} on the container — it would swallow the
+      // center children (text/icon) from the a11y tree. The progressbar role
+      // is announced from the container; children remain independently
+      // accessible.
     >
       <Svg width={size} height={size}>
         {/* Define gradient if enabled */}

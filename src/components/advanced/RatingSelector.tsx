@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,9 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rbr } from '../../utils/responsive';
+import { rbr, rf } from '../../utils/responsive';
 
 interface RatingSelectorProps {
   value: number;
@@ -23,6 +24,8 @@ interface RatingSelectorProps {
   style?: StyleProp<ViewStyle>;
 }
 
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
+
 export const RatingSelector: React.FC<RatingSelectorProps> = ({
   value,
   onRatingChange,
@@ -35,25 +38,25 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
   style,
 }) => {
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [animatedValues] = useState(
+  // Animated.Value must live in a ref so it persists across renders without
+  // being recreated (the prior useState pattern created new Animated.Values
+  // on every render and leaked the animation bindings).
+  const animatedValuesRef = useRef<Animated.Value[]>(
     Array.from({ length: maxRating }, () => new Animated.Value(1)),
   );
 
-  const getIcon = (index: number, isActive: boolean) => {
-    const rating = hoveredRating || value;
-    const isHighlighted = index < rating;
-
+  const getIconName = (isHighlighted: boolean): IconName => {
     switch (type) {
       case "stars":
-        return isHighlighted ? "⭐" : "☆";
+        return isHighlighted ? "star" : "star-outline";
       case "difficulty":
-        return isHighlighted ? "🔥" : "○";
+        return isHighlighted ? "flame" : "ellipse-outline";
       case "satisfaction":
-        return isHighlighted ? "😊" : "😐";
+        return isHighlighted ? "happy-outline" : "sad-outline";
       case "intensity":
-        return isHighlighted ? "💪" : "○";
+        return isHighlighted ? "fitness" : "ellipse-outline";
       default:
-        return isHighlighted ? "⭐" : "☆";
+        return isHighlighted ? "star" : "star-outline";
     }
   };
 
@@ -92,13 +95,13 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
   const getSize = () => {
     switch (size) {
       case "sm":
-        return 24;
+        return 28;
       case "md":
-        return 32;
+        return 36;
       case "lg":
-        return 40;
+        return 44;
       default:
-        return 32;
+        return 36;
     }
   };
 
@@ -131,12 +134,12 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
     // Animate the pressed item
     Animated.sequence([
-      Animated.timing(animatedValues[rating - 1], {
+      Animated.timing(animatedValuesRef.current[rating - 1], {
         toValue: 1.3,
         duration: 100,
         useNativeDriver: true,
       }),
-      Animated.timing(animatedValues[rating - 1], {
+      Animated.timing(animatedValuesRef.current[rating - 1], {
         toValue: 1,
         duration: 100,
         useNativeDriver: true,
@@ -171,26 +174,32 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
                 key={index}
                 style={[
                   styles.iconButton,
-                  { width: getSize(), height: getSize() },
+                  { width: Math.max(getSize(), 44), height: Math.max(getSize(), 44) },
                   disabled && styles.iconButtonDisabled,
                 ]}
                 onPress={() => handlePress(rating)}
                 onPressIn={() => handlePressIn(rating)}
                 onPressOut={handlePressOut}
                 disabled={disabled}
+                accessibilityRole="button"
+                accessibilityLabel={`Rate ${rating} of ${maxRating}`}
+                accessibilityState={{ disabled, selected: isActive }}
+                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               >
-                <Animated.Text
+                <Animated.View
                   style={[
-                    styles.icon,
+                    styles.iconWrap,
                     {
-                      fontSize: getSize() * 0.8,
-                      color: getColor(index),
-                      transform: [{ scale: animatedValues[index] }],
+                      transform: [{ scale: animatedValuesRef.current[index] }],
                     },
                   ]}
                 >
-                  {getIcon(index, isActive)}
-                </Animated.Text>
+                  <Ionicons
+                    name={getIconName(isActive)}
+                    size={rf(getSize() * 0.8)}
+                    color={getColor(index)}
+                  />
+                </Animated.View>
               </TouchableOpacity>
             );
           })}
@@ -198,8 +207,8 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
         {showValue && (
           <View style={styles.valueContainer}>
-            <Text style={styles.valueText}>{getLabel()}</Text>
-            <Text style={styles.numericValue}>
+            <Text style={styles.valueText} numberOfLines={1}>{getLabel()}</Text>
+            <Text style={styles.numericValue} numberOfLines={1}>
               ({value}/{maxRating})
             </Text>
           </View>
@@ -209,7 +218,7 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
       {/* Description based on type */}
       {type !== "stars" && (
         <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionText}>
+          <Text style={styles.descriptionText} numberOfLines={2}>
             {type === "difficulty" && "Rate how challenging this was"}
             {type === "satisfaction" && "How satisfied are you?"}
             {type === "intensity" && "Rate the workout intensity"}
@@ -219,13 +228,13 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
       {/* Scale Labels */}
       <View style={styles.scaleContainer}>
-        <Text style={styles.scaleText}>
+        <Text style={styles.scaleText} numberOfLines={1}>
           {type === "difficulty" && "Easy"}
           {type === "satisfaction" && "Poor"}
           {type === "intensity" && "Light"}
           {type === "stars" && "1"}
         </Text>
-        <Text style={styles.scaleText}>
+        <Text style={styles.scaleText} numberOfLines={1}>
           {type === "difficulty" && "Hard"}
           {type === "satisfaction" && "Excellent"}
           {type === "intensity" && "Intense"}
@@ -262,20 +271,21 @@ const styles = StyleSheet.create({
   iconButton: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: rbr(20),
+    borderRadius: rbr(22),
   },
 
   iconButtonDisabled: {
     opacity: 0.5,
   },
 
-  icon: {
-    textAlign: "center",
+  iconWrap: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   valueContainer: {
     alignItems: "center",
-    gap: spacing.xs / 2,
+    gap: spacing.xs,
   },
 
   valueText: {

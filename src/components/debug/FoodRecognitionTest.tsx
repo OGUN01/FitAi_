@@ -1,4 +1,4 @@
-// 🧪 FitAI Food Recognition Test Component
+// FitAI Food Recognition Test Component
 // Simple test interface for validating the revolutionary food recognition system
 
 import React, { useState } from "react";
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import {
   foodRecognitionService,
@@ -144,7 +145,10 @@ export const FoodRecognitionTest: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>🧪 Food Recognition Test</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="flask-outline" size={rf(24)} color={colors.text} />
+          <Text style={styles.title}>Food Recognition Test</Text>
+        </View>
         <Text style={styles.subtitle}>
           Test the revolutionary AI-powered food recognition system with 90%+
           accuracy
@@ -163,6 +167,9 @@ export const FoodRecognitionTest: React.FC = () => {
                   ? styles.mealTypeButtonSelected
                   : styles.mealTypeButtonUnselected,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Select ${label} meal type`}
+              accessibilityState={{ selected: selectedMealType === type }}
             >
               <Text
                 style={[
@@ -171,6 +178,7 @@ export const FoodRecognitionTest: React.FC = () => {
                     ? styles.mealTypeTextSelected
                     : styles.mealTypeTextUnselected,
                 ]}
+                numberOfLines={1}
               >
                 {emoji} {label}
               </Text>
@@ -183,6 +191,9 @@ export const FoodRecognitionTest: React.FC = () => {
           onPress={testWithImage}
           disabled={isLoading}
           style={[styles.testButton, isLoading && styles.testButtonDisabled]}
+          accessibilityRole="button"
+          accessibilityLabel="Test food recognition with image"
+          accessibilityState={{ disabled: isLoading }}
         >
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -190,7 +201,10 @@ export const FoodRecognitionTest: React.FC = () => {
               <Text style={styles.testButtonText}>Testing...</Text>
             </View>
           ) : (
-            <Text style={styles.testButtonText}>📸 Test with Image</Text>
+            <View style={styles.loadingContainer}>
+              <Ionicons name="camera" size={rf(16)} color={colors.white} />
+              <Text style={styles.testButtonText}>Test with Image</Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -199,10 +213,15 @@ export const FoodRecognitionTest: React.FC = () => {
       {testResults.length > 0 && (
         <View style={styles.resultsCard}>
           <View style={styles.resultsHeader}>
-            <Text style={styles.resultsTitle}>
+            <Text style={styles.resultsTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               Test Results ({testResults.length})
             </Text>
-            <TouchableOpacity onPress={clearResults} style={styles.clearButton}>
+            <TouchableOpacity
+              onPress={clearResults}
+              style={styles.clearButton}
+              accessibilityRole="button"
+              accessibilityLabel="Clear test results"
+            >
               <Text style={styles.clearButtonText}>Clear</Text>
             </TouchableOpacity>
           </View>
@@ -213,31 +232,38 @@ export const FoodRecognitionTest: React.FC = () => {
                 <Image
                   source={{ uri: test.imageUri }}
                   style={styles.resultImage}
+                  resizeMode="cover"
                 />
 
                 <View style={styles.resultDetails}>
                   <View style={styles.resultHeader}>
-                    <Text style={styles.resultMealType}>{test.mealType}</Text>
-                    <Text style={styles.resultTime}>
+                    <Text style={styles.resultMealType} numberOfLines={1}>{test.mealType}</Text>
+                    <Text style={styles.resultTime} numberOfLines={1}>
                       {new Date(test.timestamp).toLocaleTimeString()}
                     </Text>
                     {test.processingTime && (
-                      <Text style={styles.resultProcessingTime}>
+                      <Text style={styles.resultProcessingTime} numberOfLines={1}>
                         {(test.processingTime / 1000).toFixed(2)}s
                       </Text>
                     )}
                   </View>
 
                   {test.error ? (
-                    <Text style={styles.resultError}>❌ {test.error}</Text>
+                    <View style={styles.resultStatusRow}>
+                      <Ionicons name="close-circle" size={rf(12)} color={colors.error} />
+                      <Text style={styles.resultError} numberOfLines={3}>{test.error}</Text>
+                    </View>
                   ) : (
-                    <Text style={styles.resultSuccess}>
-                      ✅ {formatResult(test.result)}
-                    </Text>
+                    <View style={styles.resultStatusRow}>
+                      <Ionicons name="checkmark-circle" size={rf(12)} color={colors.successAlt} />
+                      <Text style={styles.resultSuccess} numberOfLines={3}>
+                        {formatResult(test.result)}
+                      </Text>
+                    </View>
                   )}
 
                   {test.result?.foods && (
-                    <Text style={styles.resultFoods}>
+                    <Text style={styles.resultFoods} numberOfLines={2}>
                       {test.result.foods
                         .slice(0, 2)
                         .map((food: any) => food.name)
@@ -254,7 +280,10 @@ export const FoodRecognitionTest: React.FC = () => {
 
       {/* System Status */}
       <View style={styles.statusCard}>
-        <Text style={styles.statusTitle}>🚀 System Status</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="rocket-outline" size={rf(18)} color={colors.info} />
+          <Text style={styles.statusTitle}>System Status</Text>
+        </View>
         <Text style={styles.statusText}>
           • Multi-API food recognition with 90%+ accuracy{"\n"}• Indian cuisine
           specialization (100% detection){"\n"}• Zero-cost operation with API
@@ -272,18 +301,26 @@ const styles = StyleSheet.create({
     padding: rp(16),
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: rp(24),
     marginBottom: rp(24),
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(8),
+    marginBottom: rp(8),
   },
   title: {
     fontSize: rf(24),
     fontWeight: "bold",
     color: colors.text,
-    marginBottom: rp(8),
   },
   subtitle: {
     fontSize: rf(14),
@@ -303,6 +340,8 @@ const styles = StyleSheet.create({
     marginBottom: rp(24),
   },
   mealTypeButton: {
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
     paddingHorizontal: rp(16),
     paddingVertical: rp(8),
     borderRadius: rbr(20),
@@ -313,7 +352,7 @@ const styles = StyleSheet.create({
     borderColor: colors.info,
   },
   mealTypeButtonUnselected: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surfaceLight,
     borderColor: colors.borderLight,
   },
   mealTypeText: {
@@ -326,6 +365,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   testButton: {
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
     paddingVertical: rp(16),
     paddingHorizontal: rp(24),
     borderRadius: rbr(12),
@@ -339,6 +380,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     fontSize: rf(16),
+    marginLeft: rp(8),
   },
   loadingContainer: {
     flexDirection: "row",
@@ -346,24 +388,31 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   resultsCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: rp(24),
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 2,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   resultsHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
     alignItems: "center" as const,
     marginBottom: rp(16),
+    gap: rp(8),
   },
   resultsTitle: {
+    flex: 1,
     fontSize: rf(20),
     fontWeight: "bold",
     color: colors.text,
   },
   clearButton: {
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
     paddingHorizontal: rp(12),
     paddingVertical: rp(4),
     backgroundColor: colors.errorTint,
@@ -397,6 +446,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     gap: rp(8),
     marginBottom: rp(4),
+    flexWrap: "wrap",
   },
   resultMealType: {
     fontWeight: "600",
@@ -412,11 +462,18 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: "500",
   },
+  resultStatusRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: rp(4),
+  },
   resultError: {
+    flex: 1,
     color: colors.error,
     fontSize: rf(12),
   },
   resultSuccess: {
+    flex: 1,
     color: colors.successAlt,
     fontSize: rf(12),
   },
@@ -434,7 +491,6 @@ const styles = StyleSheet.create({
   statusTitle: {
     color: colors.info,
     fontWeight: "600",
-    marginBottom: rp(8),
   },
   statusText: {
     color: colors.info,

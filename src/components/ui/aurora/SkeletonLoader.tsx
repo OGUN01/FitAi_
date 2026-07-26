@@ -118,12 +118,16 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     return () => { cancelAnimation(shimmerPosition); };
   }, [animated]);
 
-  // Animated shimmer style
+  // Animated shimmer style — sweep distance is derived from the actual
+  // skeleton width so the shimmer covers the full element on wide containers
+  // (the previous fixed [-300, 300] range left wide containers unshimmered
+  // past 300px and narrow containers with an off-screen sweep).
+  const sweep = typeof finalWidth === "number" ? finalWidth : 300;
   const animatedShimmerStyle = useAnimatedStyle(() => {
     const translateX = interpolate(
       shimmerPosition.value,
       [0, 1],
-      [-300, 300], // Shimmer sweep distance
+      [-sweep, sweep],
     );
 
     return {
@@ -143,7 +147,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         style,
       ]}
       accessibilityLabel="Loading content"
-      accessible={true}
+      accessibilityRole="progressbar"
     >
       {/* Base skeleton background */}
       <View style={[styles.base, { borderRadius: finalBorderRadius }]} />

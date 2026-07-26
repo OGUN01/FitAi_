@@ -7,6 +7,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
+import { rh, rw } from '../../utils/responsive';
 
 
 interface ErrorFallbackProps {
@@ -140,6 +141,9 @@ const styles = StyleSheet.create({
 
   button: {
     backgroundColor: colors.primary,
+    minHeight: Math.max(rh(44), 44),
+    minWidth: Math.max(rw(120), 120),
+    justifyContent: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,

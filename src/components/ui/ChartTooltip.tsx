@@ -67,13 +67,23 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
 
   if (!visible) return null;
 
+  const a11yLabel = label ? `${label}: ${displayValue}` : String(displayValue);
+
   return (
-    <Animated.View style={[styles.container, animatedStyle, style]}>
+    <Animated.View
+      style={[styles.container, animatedStyle, style]}
+      accessibilityLabel={a11yLabel}
+    >
       <View style={styles.bubble}>
-        {label && <Text style={styles.label}>{label}</Text>}
-        <Text style={styles.value}>{displayValue}</Text>
+        {label && <Text style={styles.label} numberOfLines={1}>{label}</Text>}
+        <Text style={styles.value} numberOfLines={1}>{displayValue}</Text>
       </View>
-      <View style={styles.arrow} />
+      {/* Arrow rendered as a small triangle (rotated square) — CSS triangle
+          borders render with hairline gaps on Android, so we use a rotated
+          View instead. */}
+      <View style={styles.arrowWrap}>
+        <View style={styles.arrow} />
+      </View>
     </Animated.View>
   );
 };
@@ -83,6 +93,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignItems: "center",
     zIndex: 1000,
+    elevation: 1000,
   },
 
   bubble: {
@@ -90,8 +101,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(12),
     paddingVertical: rp(8),
     borderRadius: borderRadius.md,
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.25)',
     elevation: 5,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -110,15 +124,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  arrow: {
-    width: 0,
-    height: 0,
+  arrowWrap: {
+    // Wrapper that clips the rotated square so only the bottom half shows,
+    // forming a downward-pointing triangle without CSS border tricks (which
+    // render with hairline gaps on Android).
+    width: rp(12),
+    height: rp(6),
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "flex-start",
     marginTop: -1,
-    borderLeftWidth: rp(6),
-    borderRightWidth: rp(6),
-    borderTopWidth: rp(6),
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: colors.surface,
+  },
+
+  arrow: {
+    width: rp(10),
+    height: rp(10),
+    backgroundColor: colors.surface,
+    transform: [{ rotate: "45deg" }],
+    marginTop: -rp(5),
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });

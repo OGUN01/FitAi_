@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   Pressable,
+  KeyboardAvoidingView,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import {
@@ -16,6 +17,7 @@ import {
 } from "../../services/achievements/types";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 
 interface AchievementDetailModalProps {
@@ -73,13 +75,24 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
           <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlayDark }]} />
         )}
 
+        {/*
+          Backdrop tap target rendered BEFORE the modal card so it sits in the
+          z-stack below the content. Previously it was an absoluteFillObject
+          placed after the BlurView, which let it intercept taps meant for the
+          modal content. Now it only catches taps on the area outside the card.
+        */}
         <TouchableOpacity
           style={styles.backdrop}
           onPress={onClose}
           activeOpacity={1}
+          accessibilityLabel="Dismiss modal overlay"
+          accessibilityRole="button"
         />
 
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView
+          style={styles.modalContent}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View style={styles.header}>
             <View
               style={[styles.iconContainer, !isUnlocked && styles.grayscale]}
@@ -89,28 +102,29 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
             <TouchableOpacity
               onPress={onClose}
               style={styles.closeButton}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel="Close achievement details"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons
                 name="close"
-                size={24}
+                size={rf(22)}
                 color={colors.text}
               />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.title}>{achievement.title}</Text>
+          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{achievement.title}</Text>
 
           <View style={[styles.tierBadge, { borderColor: tierColor }]}>
-            <Text style={[styles.tierText, { color: tierColor }]}>
+            <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
               {(achievement.tier ?? 'unknown').toUpperCase()} TIER
             </Text>
           </View>
 
           <ScrollView
             style={styles.scrollContent}
+            contentContainerStyle={styles.scrollContentInner}
             showsVerticalScrollIndicator={false}
           >
             <Text style={styles.description}>{achievement.description}</Text>
@@ -125,14 +139,14 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
                         ? "checkbox"
                         : "square-outline"
                     }
-                    size={20}
+                    size={rf(20)}
                     color={
                       isUnlocked || progress >= req.target
                         ? colors.success
                         : colors.textTertiary
                     }
                   />
-                  <Text style={styles.requirementText}>
+                  <Text style={styles.requirementText} numberOfLines={3}>
                     {req.target} {req.type.replace(/_/g, " ")}
                   </Text>
                 </View>
@@ -142,12 +156,12 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>REWARDS</Text>
               <View style={styles.rewardRow}>
-                <Text style={styles.rewardIcon}>🪙</Text>
-                <Text style={styles.rewardText}>
+                <Ionicons name="ribbon-outline" size={rf(18)} color={colors.primary} style={styles.rewardIcon} />
+                <Text style={styles.rewardText} numberOfLines={1}>
                   {achievement.reward.value} FitCoins
                 </Text>
               </View>
-              <Text style={styles.rewardDesc}>
+              <Text style={styles.rewardDesc} numberOfLines={3}>
                 {achievement.reward.description}
               </Text>
             </View>
@@ -155,8 +169,8 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
             {!isUnlocked && progress > 0 && (
               <View style={styles.progressContainer}>
                 <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel}>Current Progress</Text>
-                  <Text style={styles.progressValue}>
+                  <Text style={styles.progressLabel} numberOfLines={1}>Current Progress</Text>
+                  <Text style={styles.progressValue} numberOfLines={1}>
                     {Math.round(progressPercent)}%
                   </Text>
                 </View>
@@ -176,15 +190,15 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
 
             {isUnlocked && userAchievement?.unlockedAt && (
               <View style={styles.unlockedContainer}>
-                <Ionicons name="trophy" size={20} color={colors.gold} />
-                <Text style={styles.unlockedText}>
+                <Ionicons name="trophy" size={rf(20)} color={colors.gold} />
+                <Text style={styles.unlockedText} numberOfLines={2}>
                   Unlocked on{" "}
                   {new Date(userAchievement.unlockedAt).toLocaleDateString()}
                 </Text>
               </View>
             )}
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </View>
       )}
     </Modal>
@@ -200,6 +214,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   modalContent: {
     width: "100%",
@@ -213,8 +228,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
-    boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.5)',
     elevation: 10,
+    zIndex: 2,
   },
   header: {
     flexDirection: "row",
@@ -270,7 +285,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   scrollContent: {
-    flexGrow: 0,
+    flexGrow: 1,
+  },
+  scrollContentInner: {
+    paddingBottom: rh(16),
   },
   description: {
     fontSize: rf(14),
@@ -310,7 +328,6 @@ const styles = StyleSheet.create({
     marginBottom: rh(4),
   },
   rewardIcon: {
-    fontSize: rf(18),
     marginRight: rw(8),
   },
   rewardText: {
@@ -354,15 +371,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,215,0,0.1)",
+    // Darken gold tint to meet WCAG AA contrast for white text. The previous
+    // 10% gold was nearly invisible and made the "Unlocked on" badge wash out.
+    backgroundColor: hexToRgba(colors.gold, TINT_ALPHA_LOW + 0.18),
     padding: rw(12),
     borderRadius: rbr(12),
     marginTop: rh(8),
+    gap: rw(8),
   },
   unlockedText: {
     color: colors.gold,
     fontWeight: "700",
-    marginLeft: rw(8),
     fontSize: rf(12),
+    flex: 1,
   },
 });

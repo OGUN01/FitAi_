@@ -155,13 +155,14 @@ export const LiveVolumeRing: React.FC<LiveVolumeRingProps> = ({
       testID={testID}
       style={[styles.container, { width: safeSize, height: safeSize }]}
       accessibilityRole="progressbar"
+      accessibilityLabel={`Volume: ${value} of ${safeMax}`}
+      accessibilityLiveRegion="polite"
       accessibilityValue={{
         now: Math.round(targetPercent),
         min: 0,
         max: 100,
         text: `${value} of ${safeMax}`,
       }}
-      accessible={true}
     >
       <Svg width={safeSize} height={safeSize}>
         <Defs>

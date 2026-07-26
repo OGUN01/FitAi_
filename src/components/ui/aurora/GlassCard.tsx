@@ -159,7 +159,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
           colors={gradientBorderPreset.glass.colors as [string, string, ...string[]]}
           start={gradientBorderPreset.glass.start}
           end={gradientBorderPreset.glass.end}
-          style={styles.gradientBorderLayer}
+          style={[styles.gradientBorderLayer, { borderRadius: borderRadiusValue }]}
           pointerEvents="none"
         />
       )}
@@ -199,7 +199,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 0, // inherits parent clipping
+    // Previously relied on the parent clipping the gradient to the rounded
+    // shape, but the parent has overflow:hidden on its own borderRadius and
+    // the gradient layer is a sibling of `content` (not a child of the
+    // rounded clip path). Setting borderRadius explicitly ensures the
+    // gradient border follows the card's corner shape on Android/Web.
+    borderRadius: 0,
   },
   content: {
     width: "100%",

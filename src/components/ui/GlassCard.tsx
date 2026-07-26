@@ -4,13 +4,14 @@
  */
 
 import React from "react";
-import { StyleSheet, View, ViewStyle } from "react-native";
+import { StyleSheet, View, ViewStyle, Pressable } from "react-native";
 import { GlassView } from "./aurora/GlassView";
 import {
   spacing,
   shadows,
   borderRadius as br,
 } from "../../theme/aurora-tokens";
+import { rp, rw } from "../../utils/responsive";
 
 type ElevationLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type PaddingSize = "none" | "sm" | "md" | "lg" | "xl";
@@ -54,13 +55,13 @@ interface GlassCardProps {
   showBorder?: boolean;
 
   /**
-   * Enable press effect
+   * Enable press effect (renders the card in a Pressable so onPress works).
    * @default false
    */
   pressable?: boolean;
 
   /**
-   * Press handler
+   * Press handler. Required when `pressable` is true.
    */
   onPress?: () => void;
 
@@ -81,19 +82,21 @@ interface GlassCardProps {
 }
 
 const getPaddingValue = (size: PaddingSize): number => {
+  // Scale padding responsively (the aurora GlassCard already did this; this
+  // non-aurora variant was returning raw spacing tokens).
   switch (size) {
     case "none":
       return 0;
     case "sm":
-      return spacing.sm;
+      return rp(spacing.sm);
     case "md":
-      return spacing.md;
+      return rp(spacing.md);
     case "lg":
-      return spacing.lg;
+      return rp(spacing.lg);
     case "xl":
-      return spacing.xl;
+      return rp(spacing.xl);
     default:
-      return spacing.md;
+      return rp(spacing.md);
   }
 };
 
@@ -102,17 +105,17 @@ const getBorderRadiusValue = (size: BorderRadiusSize): number => {
     case "none":
       return 0;
     case "sm":
-      return br.sm;
+      return rw(br.sm);
     case "md":
-      return br.md;
+      return rw(br.md);
     case "lg":
-      return br.lg;
+      return rw(br.lg);
     case "xl":
-      return br.xl;
+      return rw(br.xl);
     case "xxl":
-      return br.xxl;
+      return rw(br.xxl);
     default:
-      return br.lg;
+      return rw(br.lg);
   }
 };
 
@@ -158,10 +161,22 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     </View>
   );
 
-  // Advanced features (gradient border, AnimatedPressable) pending implementation
-
   if (pressable && onPress) {
-    return content;
+    // Use a Pressable wrapper so the press handler actually fires. The
+    // previous implementation accepted pressable/onPress but never wired
+    // them up — the props were a no-op.
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.pressableWrap,
+          pressed && styles.pressablePressed,
+        ]}
+      >
+        {content}
+      </Pressable>
+    );
   }
 
   return content;
@@ -169,15 +184,22 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 
 const styles = StyleSheet.create({
   shadowWrapper: {
-    // Shadow wrapper - contains shadow properties
-    overflow: "hidden", // Ensure content is clipped within bounds
+    // The shadow wrapper previously set overflow:hidden, which clipped the
+    // elevation shadow drawn outside the bounds — defeating the shadow.
+    // GlassView below already clips its content; let the shadow breathe.
   },
   glassContainer: {
     overflow: "hidden",
   },
   content: {
     width: "100%",
-    overflow: "hidden", // Additional clipping for content
+    overflow: "hidden",
+  },
+  pressableWrap: {
+    width: "100%",
+  },
+  pressablePressed: {
+    opacity: 0.9,
   },
 });
 

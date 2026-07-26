@@ -31,9 +31,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../services/supabase";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { Button, Input, PasswordInput } from "../../components/ui";
 import { rf, rh, rw } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface PasswordResetScreenProps {
   /** Recovery token from the deep link, if any (diagnostic; not required for PKCE). */
@@ -139,6 +141,11 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
   const updateField = (field: "password" | "confirmPassword", value: string) => {
     if (field === "password") {
       setPassword(value);
+      // Re-validate confirmPassword when password changes so cross-field
+      // "passwords do not match" error stays accurate while typing.
+      if (errors.confirmPassword) {
+        setErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+      }
     } else {
       setConfirmPassword(value);
     }
@@ -189,6 +196,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
           scaleValue={0.97}
           accessibilityLabel="Go back"
           accessibilityRole="button"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Ionicons
             name="arrow-back"
@@ -198,8 +206,15 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         </AnimatedPressable>
       )}
       <View style={styles.titleBlock}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        <Text style={styles.title} numberOfLines={2}>{title}</Text>
+        <Text
+          style={styles.subtitle}
+          numberOfLines={3}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+        >
+          {subtitle}
+        </Text>
       </View>
     </View>
   );
@@ -209,6 +224,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
           <View style={styles.centeredState}>
+            <AuroraSpinner size="lg" />
             <Text style={styles.statusText}>Verifying your reset link…</Text>
           </View>
         </SafeAreaView>
@@ -253,7 +269,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
 
               <View style={styles.footerRow}>
                 <Text style={styles.footerText}>Remembered your password? </Text>
-                <AnimatedPressable onPress={onBackToLogin} scaleValue={0.97}>
+                <AnimatedPressable
+                  onPress={onBackToLogin}
+                  scaleValue={0.97}
+                  style={styles.footerLinkContainer}
+                  accessibilityRole="link"
+                  accessibilityLabel="Back to login"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Text style={styles.footerLink}>Back to Login</Text>
                 </AnimatedPressable>
               </View>
@@ -361,7 +384,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
 
               <View style={styles.footerRow}>
                 <Text style={styles.footerText}>Link not working? </Text>
-                <AnimatedPressable onPress={onRequestNewReset} scaleValue={0.97}>
+                <AnimatedPressable
+                  onPress={onRequestNewReset}
+                  scaleValue={0.97}
+                  style={styles.footerLinkContainer}
+                  accessibilityRole="link"
+                  accessibilityLabel="Request a new password reset link"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Text style={styles.footerLink}>Request a new one</Text>
                 </AnimatedPressable>
               </View>
@@ -406,19 +436,24 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.lg,
     alignItems: "center",
+    position: "relative",
   },
 
   backButton: {
     position: "absolute",
     left: spacing.lg,
     top: spacing.lg,
-    zIndex: 1,
-    padding: spacing.sm,
+    zIndex: 2,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   titleBlock: {
     alignItems: "center",
-    marginTop: rh(30),
+    marginTop: rh(40),
+    paddingHorizontal: spacing.xl,
   },
 
   title: {
@@ -448,9 +483,9 @@ const styles = StyleSheet.create({
 
   noticeCard: {
     alignItems: "center",
-    backgroundColor: `${colors.surface}CC`,
+    backgroundColor: hexToRgba(colors.surface, TINT_ALPHA_MEDIUM + 0.5),
     borderWidth: 1,
-    borderColor: `${colors.border}80`,
+    borderColor: hexToRgba(colors.border, TINT_ALPHA_MEDIUM + 0.2),
     borderRadius: borderRadius.xl,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
@@ -469,9 +504,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: `${colors.error}15`,
+    backgroundColor: hexToRgba(colors.error, TINT_ALPHA_LOW + 0.05),
     borderWidth: 1,
-    borderColor: `${colors.error}40`,
+    borderColor: hexToRgba(colors.error, TINT_ALPHA_MEDIUM + 0.1),
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -508,5 +543,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.primary,
     fontWeight: typography.fontWeight.medium,
+  },
+
+  footerLinkContainer: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
 });

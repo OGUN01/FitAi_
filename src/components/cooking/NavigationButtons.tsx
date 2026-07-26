@@ -81,8 +81,8 @@ export default function NavigationButtons({
           size={24}
           color={colors.text.primary}
         />
-        <Text style={styles.completeButtonText}>
-          {isCurrentStepCompleted ? "Step Done ✓" : "Mark Complete"}
+        <Text style={styles.completeButtonText} numberOfLines={1}>
+          {isCurrentStepCompleted ? "Step Done" : "Mark Complete"}
         </Text>
       </AnimatedPressable>
 
@@ -95,8 +95,8 @@ export default function NavigationButtons({
         accessibilityLabel={isLastStep ? "Finish cooking" : "Next step"}
         accessibilityRole="button"
       >
-        <Text style={styles.navButtonText}>
-          {isLastStep ? "🎉 Finish Cooking" : "Next Step"}
+        <Text style={styles.navButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+          {isLastStep ? "Finish Cooking" : "Next Step"}
         </Text>
         <Ionicons
           name={isLastStep ? "checkmark" : "chevron-forward"}
@@ -122,6 +122,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    minHeight: Math.max(rp(44), 44),
     backgroundColor: colors.background.tertiary,
     paddingVertical: rp(14),
     borderRadius: rbr(8),
@@ -138,6 +139,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    minHeight: Math.max(rp(44), 44),
     backgroundColor: colors.primary.DEFAULT,
     paddingVertical: rp(14),
     borderRadius: rbr(8),

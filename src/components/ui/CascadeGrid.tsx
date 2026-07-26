@@ -91,13 +91,20 @@ export const CascadeGrid: React.FC<CascadeGridProps> = ({
 
   return (
     <View style={[styles.container, style]}>
+      {/*
+        Use flex with minWidth + flexBasis so columns always divide evenly
+        without the previous `${100 / columns - 2}%` magic number (which left
+        a 2% gap unaccounted for and could overflow when combined with `gap`).
+      */}
       <View style={[styles.grid, { gap: spacing.md }]}>
         {childArray.map((child, index) => (
           <View
             key={index}
             style={[
               styles.gridItem,
-              { width: columns === 1 ? "100%" : `${100 / columns - 2}%` },
+              columns === 1
+                ? { width: "100%" }
+                : { flexBasis: `${100 / columns}%`, flexGrow: 1 },
             ]}
           >
             <CascadeItem

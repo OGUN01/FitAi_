@@ -32,6 +32,7 @@ import {
   Platform,
   Modal as RNModal,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -176,6 +177,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         <Pressable
           onPress={closeOnOverlayPress ? handleClose : undefined}
           style={StyleSheet.absoluteFill}
+          accessible={closeOnOverlayPress}
+          accessibilityRole={closeOnOverlayPress ? "button" : undefined}
+          accessibilityLabel={closeOnOverlayPress ? "Dismiss sheet" : undefined}
         >
           <Animated.View style={[styles.backdrop, backdropAnimatedStyle]} />
         </Pressable>
@@ -220,19 +224,23 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 {(title || showCloseButton) && (
                   <View style={styles.header}>
                     {title ? (
-                      <Animated.Text style={styles.title}>{title}</Animated.Text>
+                      <Animated.Text style={styles.title} numberOfLines={1}>{title}</Animated.Text>
                     ) : (
                       <View />
                     )}
                     {showCloseButton ? (
                       <Pressable
                         onPress={handleClose}
-                        hitSlop={12}
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                         accessibilityRole="button"
                         accessibilityLabel="Close"
                         style={styles.closeButton}
                       >
-                        <Animated.Text style={styles.closeIcon}>✕</Animated.Text>
+                        <Ionicons
+                          name="close"
+                          size={rf(14)}
+                          color={colors.text.secondary}
+                        />
                       </Pressable>
                     ) : null}
                   </View>
@@ -305,11 +313,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.glass.background,
-  },
-  closeIcon: {
-    color: colors.text.secondary,
-    fontSize: rf(14),
-    fontWeight: "700",
   },
   content: {
     paddingHorizontal: rp(spacing.lg),

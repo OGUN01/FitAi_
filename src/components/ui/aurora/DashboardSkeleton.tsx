@@ -39,7 +39,11 @@ export const DashboardSkeleton: React.FC<DashboardSkeletonProps> = ({
   style,
 }) => {
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[styles.container, style]}
+      accessibilityLabel="Loading content"
+      accessibilityRole="progressbar"
+    >
       {showHeader && (
         <View style={styles.header}>
           <SkeletonLoader variant="avatar" />

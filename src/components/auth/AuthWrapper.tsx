@@ -1,10 +1,11 @@
 import React, { useEffect } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
 import { initializeBackend } from "../../utils/integration";
 import { rf, rp } from "../../utils/responsive";
 import { THEME } from "../../utils/constants";
+import { typography } from "../../theme/aurora-tokens";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -14,7 +15,13 @@ interface AuthWrapperProps {
 
 /**
  * Authentication wrapper component
- * Handles authentication state and initialization
+ * Handles authentication state and initialization.
+ *
+ * When the user is not authenticated and no `fallback` is provided, we render
+ * a minimal loading-style placeholder rather than a dead "log in" UI: callers
+ * are expected to pass an actual authentication screen via `fallback` (the
+ * app's WelcomeScreen is the canonical auth entry). The placeholder is only a
+ * fallback-of-the-fallback for misconfigured call sites.
  */
 export const AuthWrapper: React.FC<AuthWrapperProps> = ({
   children,
@@ -51,7 +58,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
 
   // Show fallback if not authenticated
   if (!isAuthenticated) {
-    return fallback || <AuthenticationScreen />;
+    return fallback || <AuthenticationPlaceholder />;
   }
 
   // Show children if authenticated
@@ -59,24 +66,25 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
 };
 
 /**
- * Simple authentication screen placeholder
- * Replace with your actual login/register screens
+ * Minimal placeholder shown only when a caller forgets to pass `fallback`.
+ * This is intentionally NOT a real auth UI — it just tells the user to sign
+ * in via the app's entry screen and avoids shipping a dead login form.
  */
-const AuthenticationScreen: React.FC = () => {
+const AuthenticationPlaceholder: React.FC = () => {
   return (
     <View style={styles.authContainer}>
+      <ActivityIndicator size="large" color={THEME.colors.primary} />
       <Text style={styles.authTitle}>Welcome to FitAI</Text>
-      <Text style={styles.authSubtitle}>Please log in to continue</Text>
-      {/* Add your login/register components here */}
+      <Text style={styles.authSubtitle}>Please sign in to continue.</Text>
     </View>
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: THEME.colors.background,
   },
   loadingText: {
@@ -86,22 +94,23 @@ const styles = {
   },
   authContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: THEME.colors.background,
     padding: rp(20),
+    gap: rp(8),
   },
   authTitle: {
     color: THEME.colors.text,
     fontSize: rf(32),
-    fontWeight: "bold" as const,
-    marginBottom: rp(8),
+    fontWeight: typography.fontWeight.bold,
+    marginTop: rp(16),
   },
   authSubtitle: {
     color: THEME.colors.textSecondary,
     fontSize: rf(16),
-    textAlign: "center" as const,
+    textAlign: "center",
   },
-};
+});
 
 export default AuthWrapper;

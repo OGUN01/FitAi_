@@ -1,8 +1,10 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rf } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { MealData } from "../../hooks/useMealDetailLogic";
 
 interface MealInfoCardProps {
@@ -22,10 +24,24 @@ export const MealInfoCard: React.FC<MealInfoCardProps> = ({
         <View style={styles.mealInfo}>
           <View style={styles.mealTitleRow}>
             <Text style={styles.mealIcon}>{mealIcon}</Text>
-            <Text style={styles.mealName}>{meal.name}</Text>
-            {meal.isCompleted && <Text style={styles.completedBadge}>✓</Text>}
+            <Text
+              style={styles.mealName}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {meal.name}
+            </Text>
+            {meal.isCompleted && (
+              <Ionicons
+                name="checkmark-circle"
+                size={rf(18)}
+                color={colors.success}
+                style={styles.completedBadge}
+              />
+            )}
           </View>
-          <Text style={styles.mealTime}>
+          <Text style={styles.mealTime} numberOfLines={1}>
             {meal.time ? `${meal.time} • ` : ""}
             {formattedDate}
           </Text>
@@ -87,14 +103,13 @@ const styles = StyleSheet.create({
   },
 
   mealName: {
+    flex: 1,
     fontSize: fontSize.xxl,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
   },
 
   completedBadge: {
-    fontSize: fontSize.lg,
-    color: colors.success,
     marginLeft: spacing.sm,
   },
 
@@ -104,13 +119,14 @@ const styles = StyleSheet.create({
   },
 
   caloriesContainer: {
+    flexShrink: 0,
     alignItems: "center" as const,
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.primary + "40",
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
 
   caloriesValue: {

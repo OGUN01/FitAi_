@@ -7,13 +7,16 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
   } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "./Card";
 import { Button } from "./Button";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { rf, rs, rbr } from "../../utils/responsive";
+import { rf, rs, rh, rbr } from "../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface DialogAction {
@@ -84,8 +87,9 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
     }
   };
 
-  if (!visible) return null;
-
+  // NOTE: do NOT early-return on !visible. The Modal relies on its `visible`
+  // prop transitioning from true→false to play animationType="fade"'s
+  // fade-out. Returning null before that transition skips the fade-out.
   return (
     <Modal
       visible={visible}
@@ -100,7 +104,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: getTypeColor() + "20" },
+                { backgroundColor: hexToRgba(getTypeColor(), TINT_ALPHA_SOFT) },
               ]}
             >
               <Ionicons
@@ -111,10 +115,10 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
             </View>
 
             {/* Title */}
-            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.title} numberOfLines={2}>{title}</Text>
 
             {/* Message */}
-            {message && <Text style={styles.message}>{message}</Text>}
+            {message && <Text style={styles.message} numberOfLines={6}>{message}</Text>}
 
             {/* Actions */}
             {actions.length > 0 && (
@@ -134,10 +138,10 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                         title={action.text}
                         onPress={action.onPress}
                         variant={getButtonVariant(action)}
-                        accessibilityLabel={action.style === "cancel" ? "back" : action.text}
+                        accessibilityLabel={action.text}
                         style={
                           index === actions.length - 1
-                            ? { width: "100%" as const }
+                            ? styles.lastActionButton
                             : styles.actionButton
                         }
                       />
@@ -203,10 +207,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
 
-  icon: {
-    fontSize: rf(28),
-  },
-
   title: {
     fontSize: fontSize.xl,
     fontWeight: "700",
@@ -236,15 +236,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
 
+  // Primary/last button gets full width and a slightly stronger visual
+  // weight than the outline "cancel" button above it.
   actionButton: {
     width: "100%",
   },
 
   lastActionButton: {
-    // Any special styling for the last button
+    width: "100%",
+    marginTop: spacing.xs,
   },
 
-  // Workout complete styles
+  // Workout complete styles (used by WorkoutCompleteDialog).
   statsContainer: {
     width: "100%",
     marginBottom: spacing.xl,
@@ -431,7 +434,7 @@ const detailStyles = StyleSheet.create({
     width: rs(36),
     height: rs(36),
     borderRadius: rbr(18),
-    backgroundColor: colors.primary + "20",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -520,14 +523,17 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
             {/* Celebration Icon */}
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: colors.success + "20" },
+                { backgroundColor: hexToRgba(colors.success, TINT_ALPHA_SOFT) },
               ]}
             >
               <Ionicons
@@ -542,7 +548,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 
             {/* Stats */}
             <View style={styles.statsContainer}>
-              <Text style={styles.statsTitle}>
+              <Text style={styles.statsTitle} numberOfLines={3}>
                 Great job! You completed "{workoutTitle}"
               </Text>
 
@@ -572,7 +578,11 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                   <TouchableOpacity
                     key={star}
                     onPress={() => setRating(star)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                    accessibilityState={{ selected: star <= rating }}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    style={completeStyles.starButton}
                   >
                     <Ionicons
                       name={star <= rating ? "star" : "star-outline"}
@@ -593,6 +603,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 multiline
                 maxLength={500}
                 numberOfLines={2}
+                accessibilityLabel="Workout notes (optional)"
               />
             </View>
 
@@ -608,12 +619,12 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 title="Done"
                 onPress={handleDone}
                 variant="primary"
-                style={styles.actionButton}
+                style={styles.lastActionButton}
               />
             </View>
           </Card>
         </SafeAreaView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -633,8 +644,16 @@ const completeStyles = StyleSheet.create({
   },
   starsRow: {
     flexDirection: "row" as const,
+    justifyContent: "center",
     gap: rf(8),
     marginBottom: rf(12),
+  },
+
+  starButton: {
+    minWidth: Math.max(rh(44), 44),
+    minHeight: Math.max(rh(44), 44),
+    justifyContent: "center",
+    alignItems: "center",
   },
   notesInput: {
     width: "100%" as const,

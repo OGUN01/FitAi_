@@ -6,14 +6,19 @@
  * - Icon support
  * - Description text
  * - Animated switch
+ *
+ * The whole row is NOT wrapped in a Pressable — only the Switch itself is
+ * interactive. The previous implementation wrapped the row in an
+ * AnimatedPressable AND wired the inner Switch, so a single tap fired both
+ * handlers (double toggle) or conflicted with gesture handling.
  */
 
 import React from "react";
 import { View, Text, StyleSheet, Switch, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../../../utils/responsive";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
 import { haptics } from "../../../../utils/haptics";
 
 interface GlassFormSwitchProps {
@@ -35,68 +40,61 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
   onValueChange,
   disabled = false,
 }) => {
-  const handlePress = () => {
-    if (!disabled) {
-      haptics.light();
-      onValueChange(!value);
-    }
+  const handleValueChange = (newValue: boolean) => {
+    if (disabled) return;
+    haptics.light();
+    onValueChange(newValue);
   };
 
   return (
-    <AnimatedPressable
-      onPress={handlePress}
-      scaleValue={0.98}
-      hapticFeedback={false}
-      disabled={disabled}
+    <View
+      style={[styles.container, disabled && styles.containerDisabled]}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value, disabled }}
+      accessibilityLabel={label}
     >
-      <View style={[styles.container, disabled && styles.containerDisabled]}>
-        {/* Icon */}
-        {icon && (
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: `${iconColor}15` },
-            ]}
-          >
-            <Ionicons
-              name={icon}
-              size={rf(18)}
-              color={disabled ? colors.textMuted : iconColor}
-            />
-          </View>
-        )}
-
-        {/* Text */}
-        <View style={styles.textContainer}>
-          <Text style={[styles.label, disabled && styles.labelDisabled]}>
-            {label}
-          </Text>
-          {description && (
-            <Text style={styles.description} numberOfLines={2}>
-              {description}
-            </Text>
-          )}
+      {/* Icon */}
+      {icon && (
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW + 0.03) },
+          ]}
+        >
+          <Ionicons
+            name={icon}
+            size={rf(18)}
+            color={disabled ? colors.textMuted : iconColor}
+          />
         </View>
+      )}
 
-        {/* Switch */}
-        <Switch
-          value={value}
-          onValueChange={(newValue) => {
-            haptics.light();
-            onValueChange(newValue);
-          }}
-          disabled={disabled}
-          trackColor={{
-            false: "rgba(255, 255, 255, 0.1)",
-            true: `${colors.primary}50`,
-          }}
-          thumbColor={
-            value ? colors.primary : "rgba(255, 255, 255, 0.4)"
-          }
-          ios_backgroundColor="rgba(255, 255, 255, 0.1)"
-        />
+      {/* Text */}
+      <View style={styles.textContainer}>
+        <Text style={[styles.label, disabled && styles.labelDisabled]} numberOfLines={2}>
+          {label}
+        </Text>
+        {description && (
+          <Text style={styles.description} numberOfLines={3}>
+            {description}
+          </Text>
+        )}
       </View>
-    </AnimatedPressable>
+
+      {/* Switch — the only interactive element. The row itself is not
+          pressable, eliminating the double-toggle conflict. */}
+      <Switch
+        value={value}
+        onValueChange={handleValueChange}
+        disabled={disabled}
+        trackColor={{
+          false: "rgba(255, 255, 255, 0.15)",
+          true: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.4),
+        }}
+        thumbColor={value ? colors.primary : "rgba(255, 255, 255, 0.6)"}
+        ios_backgroundColor="rgba(255, 255, 255, 0.15)"
+      />
+    </View>
   );
 };
 
@@ -110,6 +108,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.08)",
     padding: spacing.md,
     marginBottom: spacing.sm,
+    minHeight: 44,
   },
   containerDisabled: {
     opacity: 0.5,

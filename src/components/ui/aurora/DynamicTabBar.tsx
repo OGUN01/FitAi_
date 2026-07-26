@@ -6,6 +6,7 @@
 
 import React, { useEffect } from "react";
 import { StyleSheet, View, Text, Pressable, ViewStyle, TextStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
@@ -289,13 +290,23 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
                           ),
                         },
                       ]}
+                      accessibilityLabel={`${tab.validationState}`}
+                      accessibilityRole="image"
                     />
                   )}
 
                 {/* Completion Checkmark */}
                 {tab.isCompleted && (
-                  <View style={styles.completionBadge}>
-                    <Text style={styles.completionCheck}>✓</Text>
+                  <View
+                    style={styles.completionBadge}
+                    accessibilityLabel="Completed"
+                    accessibilityRole="image"
+                  >
+                    <Ionicons
+                      name="checkmark"
+                      size={rf(10)}
+                      color={colors.text.primary}
+                    />
                   </View>
                 )}
               </View>
@@ -351,6 +362,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
     position: "relative",
+    // Allow the validationDot (top:-4, right:-4) and completionBadge
+    // (top:-6, right:-6) to render outside the tab content bounds instead
+    // of being clipped.
+    overflow: "visible",
   },
   iconContainer: {
     width: rs(24),
@@ -376,7 +391,8 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
   },
   tabTextDisabled: {
-    opacity: 0.4,
+    // 0.5 keeps disabled tab text above WCAG AA contrast (0.4 was too low).
+    opacity: 0.5,
   },
   validationDot: {
     position: "absolute",
@@ -398,11 +414,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.success.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
-  },
-  completionCheck: {
-    fontSize: rf(10),
-    color: colors.text.primary,
-    fontWeight: typography.fontWeight.bold as TextStyle['fontWeight'],
   },
 });
 

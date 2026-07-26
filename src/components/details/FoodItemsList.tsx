@@ -18,12 +18,12 @@ export const FoodItemsList: React.FC<FoodItemsListProps> = ({ foods }) => {
           <Card key={food.id} style={styles.foodCard}>
             <View style={styles.foodHeader}>
               <View style={styles.foodInfo}>
-                <Text style={styles.foodName}>{food.name}</Text>
-                <Text style={styles.foodQuantity}>
+                <Text style={styles.foodName} numberOfLines={2} ellipsizeMode="tail">{food.name}</Text>
+                <Text style={styles.foodQuantity} numberOfLines={1}>
                   {food.quantity} {food.unit}
                 </Text>
               </View>
-              <Text style={styles.foodCalories}>{food.calories} cal</Text>
+              <Text style={styles.foodCalories} numberOfLines={1}>{food.calories} cal</Text>
             </View>
 
             <View style={styles.foodMacros}>
@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
   },
 
   macroItem: {
+    flex: 1,
     alignItems: "center" as const,
   },
 

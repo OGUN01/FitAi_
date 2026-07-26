@@ -252,7 +252,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: spacing.xs,
+    // minHeight 44 to meet the touch-target minimum (the previous
+    // paddingVertical: spacing.xs left the tab at ~20px tall).
+    minHeight: 44,
+    paddingVertical: spacing.sm,
     zIndex: 1,
   },
   tabText: {

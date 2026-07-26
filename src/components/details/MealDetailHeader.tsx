@@ -1,7 +1,8 @@
-﻿import React from "react";
+import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
-import { rw, rh, rbr } from '../../utils/responsive';
+import { rw, rh, rbr, rf } from '../../utils/responsive';
 
 
 interface MealDetailHeaderProps {
@@ -20,17 +21,23 @@ export const MealDetailHeader: React.FC<MealDetailHeaderProps> = ({
         onPress={onBack}
         accessibilityRole="button"
         accessibilityLabel="Back"
+        accessibilityHint="Return to previous screen"
+        disabled={!onBack}
       >
-        <Text style={styles.backIcon}>←</Text>
+        <Ionicons name="arrow-back" size={rf(20)} color={colors.text} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Meal Details</Text>
+      <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+        Meal Details
+      </Text>
       <TouchableOpacity
         style={styles.editButton}
         onPress={onEdit}
         accessibilityRole="button"
         accessibilityLabel="Edit meal"
+        accessibilityHint="Open meal editor"
+        disabled={!onEdit}
       >
-        <Text style={styles.editIcon}>✏️</Text>
+        <Ionicons name="create-outline" size={rf(20)} color={colors.text} />
       </TouchableOpacity>
     </View>
   );
@@ -56,15 +63,13 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
 
-  backIcon: {
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-
   headerTitle: {
+    flex: 1,
     fontSize: fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
+    textAlign: "center",
+    marginHorizontal: spacing.sm,
   },
 
   editButton: {
@@ -74,9 +79,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
-  },
-
-  editIcon: {
-    fontSize: fontSize.md,
   },
 });

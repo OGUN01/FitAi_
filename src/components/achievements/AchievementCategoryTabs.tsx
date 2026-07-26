@@ -48,9 +48,11 @@ export const AchievementCategoryTabs: React.FC<
               activeOpacity={0.7}
               accessibilityRole="tab"
               accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={category.label}
             >
               <Text
                 style={[styles.tabText, isSelected && styles.selectedTabText]}
+                numberOfLines={1}
               >
                 {category.label}
               </Text>
@@ -64,7 +66,10 @@ export const AchievementCategoryTabs: React.FC<
 
 const styles = StyleSheet.create({
   container: {
-    height: rh(48),
+    // Use minHeight instead of fixed height so the row can grow with the
+    // user's font scale (the previous height: rh(48) clipped tabs at large
+    // text sizes).
+    minHeight: 44,
     marginBottom: rh(8),
   },
   scrollContent: {

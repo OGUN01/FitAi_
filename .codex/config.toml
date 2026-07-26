@@ -1,0 +1,20 @@
+[mcp_servers.browsermcp]
+command = "cmd"
+args = [
+    "/c",
+    "npx",
+    "@browsermcp/mcp@latest",
+]
+
+[mcp_servers.supabase]
+command = "cmd"
+args = [
+    "/c",
+    "pnpm",
+    "dlx",
+    "@supabase/mcp-server-supabase@latest",
+    "--project-ref=mqfrwtmkokivoxgukgsz",
+]
+
+[mcp_servers.supabase.env]
+SUPABASE_ACCESS_TOKEN = "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef"

@@ -96,6 +96,9 @@ export const TabBar: React.FC<TabBarProps> = ({
                       : responsiveTheme.colors.textMuted,
                   },
                 ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 {tab.title}
               </Text>
@@ -128,7 +131,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    // All responsive styles moved to inline
   },
 
   tab: {
@@ -137,7 +139,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     minHeight: 44,
-    overflow: "hidden",
+    // overflow:hidden would clip the active indicator (which sits at the
+    // bottom edge). Let it render outside the tab bounds.
   },
 
   iconContainer: {
@@ -146,8 +149,5 @@ const styles = StyleSheet.create({
 
   tabText: {
     textAlign: "center",
-    // All responsive styles moved to inline
   },
-
-  // activeIndicator removed - now inline with flow layout
 });

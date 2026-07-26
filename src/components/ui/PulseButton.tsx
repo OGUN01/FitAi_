@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, ActivityIndicator } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,7 +10,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { rf, rp } from "../../utils/responsive";
+import { rf, rp, rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
 interface PulseButtonProps {
@@ -82,6 +82,9 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       style={[styles.container, style]}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {/* Outer Glow */}
       {pulseEnabled && !disabled && !loading && (
@@ -103,11 +106,16 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text
-            style={[styles.buttonText, disabled && styles.buttonTextDisabled]}
-          >
-            {loading ? "Loading..." : title}
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Text
+              style={[styles.buttonText, disabled && styles.buttonTextDisabled]}
+              numberOfLines={1}
+            >
+              {title}
+            </Text>
+          )}
         </LinearGradient>
       </Animated.View>
     </TouchableOpacity>
@@ -137,9 +145,12 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: borderRadius.full,
     overflow: "hidden",
-    boxShadow: '0px 4px 8px rgba(0,0,0,0.3)',
     elevation: 8,
-    minHeight: 44,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    minHeight: Math.max(rh(44), 44),
   },
 
   buttonGradient: {
@@ -147,6 +158,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     alignItems: "center" as const,
     justifyContent: "center" as const,
+    minHeight: Math.max(rh(44), 44),
   },
 
   buttonText: {

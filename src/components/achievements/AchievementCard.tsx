@@ -51,6 +51,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
       activeOpacity={0.8}
       accessibilityLabel={`${achievement.title}, ${achievement.tier} tier achievement. ${isCompleted ? "Earned" : "Locked"}.`}
       accessibilityRole="button"
+      accessibilityHint={isCompleted ? "Tap to view achievement details" : "Tap to view progress and how to unlock"}
     >
       <GlassCard
         elevation={isCompleted ? 4 : 1}
@@ -81,19 +82,22 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
               <View style={styles.titleRow}>
                 <Text
                   style={[styles.title, !isCompleted && styles.titleLocked]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
                 >
                   {achievement.title}
                 </Text>
               </View>
               <View style={styles.tierRow}>
                 <View style={[styles.tierBadge, { borderColor: tierColor }]}>
-                  <Text style={[styles.tierText, { color: tierColor }]}>
+                  <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
                     {achievement.tier.toUpperCase()}
                   </Text>
                 </View>
               </View>
 
-              <Text style={styles.description}>
+              <Text style={styles.description} numberOfLines={3}>
                 {achievement.description}
               </Text>
             </View>
@@ -113,7 +117,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
                     ]}
                   />
                 </View>
-                <Text style={styles.progressText}>
+                <Text style={styles.progressText} numberOfLines={1}>
                   {Math.round(progressPercent)}%
                 </Text>
               </View>
@@ -121,7 +125,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
           )}
 
           {isCompleted && (
-            <Text style={styles.unlockedText}>
+            <Text style={styles.unlockedText} numberOfLines={1}>
               Unlocked{" "}
               {new Date(
                 userProgress?.unlockedAt || Date.now(),
@@ -162,8 +166,8 @@ const styles = StyleSheet.create({
     fontSize: rf(24),
   },
   iconLocked: {
-    opacity: 0.5,
-    backgroundColor: "rgba(0,0,0,0.1)",
+    opacity: 0.6,
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   checkBadge: {
     position: "absolute",

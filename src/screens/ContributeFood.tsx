@@ -370,7 +370,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               />
               <View style={styles.barcodeBadge}>
                 <Text style={styles.barcodeBadgeLabel}>Barcode</Text>
-                <Text style={styles.barcodeBadgeValue} numberOfLines={1}>
+                <Text style={styles.barcodeBadgeValue} numberOfLines={1} ellipsizeMode="middle">
                   {barcode || "—"}
                 </Text>
               </View>
@@ -499,12 +499,13 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
             <AnimatedPressable
               style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
               onPress={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || Object.keys(errors).length > 0}
               scaleValue={0.97}
               springConfig="smooth"
               hapticType="medium"
               accessibilityRole="button"
               accessibilityLabel="Submit nutrition data"
+              accessibilityState={{ disabled: isSubmitting || Object.keys(errors).length > 0 }}
             >
               {isSubmitting ? (
                 <AuroraSpinner size="sm" theme="white" />
@@ -660,6 +661,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    minHeight: Math.max(rp(44), 44),
     gap: rp(8),
     backgroundColor: colors.primary.DEFAULT,
     borderRadius: rbr(borderRadius.xxl),

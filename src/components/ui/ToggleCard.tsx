@@ -115,6 +115,9 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
       onPress={handlePress}
       disabled={disabled}
       style={style}
+      accessibilityRole="switch"
+      accessibilityLabel={title}
+      accessibilityState={{ checked: isActive, disabled }}
     >
       <Animated.View
         style={[
@@ -129,7 +132,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
 
           {/* Text Content */}
           <View style={styles.textContent}>
-            <Text style={[styles.title, disabled && styles.titleDisabled]}>
+            <Text style={[styles.title, disabled && styles.titleDisabled]} numberOfLines={2}>
               {title}
             </Text>
             {description && (
@@ -138,6 +141,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
                   styles.description,
                   disabled && styles.descriptionDisabled,
                 ]}
+                numberOfLines={3}
               >
                 {description}
               </Text>
@@ -176,8 +180,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     borderWidth: 2,
     padding: spacing.md,
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
     elevation: 3,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     overflow: "hidden",
     minHeight: 44,
   },
@@ -225,6 +232,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
+  // Toggle track is smaller than 44px — but the entire card is tappable and
+  // exposes accessibilityRole="switch", so the touch target is the card.
   toggleSwitch: {
     width: rw(40),
     height: rp(20),

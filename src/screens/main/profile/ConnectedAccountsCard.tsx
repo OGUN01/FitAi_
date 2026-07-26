@@ -52,7 +52,9 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
       isConnected: isGoogleConnected,
       email: googleEmail,
     },
-    ...(Platform.OS === "ios"
+    // Only render the Apple row when the host actually wires onApplePress —
+    // otherwise the row was a dead "Connect" button that did nothing on tap.
+    ...(Platform.OS === "ios" && onApplePress
       ? [
           {
             id: "apple",
