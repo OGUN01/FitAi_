@@ -33,7 +33,14 @@ export default function VideoSection({
       <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
         <View style={styles.videoPlaceholder}>
           <AuroraSpinner size="lg" theme="primary" />
-          <Text style={styles.loadingText}>Loading cooking video...</Text>
+          <Text
+            style={styles.loadingText}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            Loading cooking video...
+          </Text>
         </View>
       </GlassCard>
     );
@@ -76,19 +83,24 @@ export default function VideoSection({
                 name="play"
                 size={32}
                 color={colors.text.primary}
-                accessibilityLabel="Play cooking video"
-                accessibilityRole="image"
               />
             </View>
             <View style={styles.videoDuration}>
-              <Text style={styles.videoDurationText}>
+              <Text style={styles.videoDurationText} numberOfLines={1}>
                 {Math.floor(cookingVideo.lengthSeconds / 60)}:
                 {(cookingVideo.lengthSeconds % 60).toString().padStart(2, "0")}
               </Text>
             </View>
           </AnimatedPressable>
-          <Text style={styles.videoTitle}>{cookingVideo.title}</Text>
-          <Text style={styles.videoAuthor}>by {cookingVideo.author}</Text>
+          <Text
+            style={styles.videoTitle}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            {cookingVideo.title}
+          </Text>
+          <Text style={styles.videoAuthor} numberOfLines={1}>by {cookingVideo.author}</Text>
           <AnimatedPressable
             style={styles.watchVideoButton}
             onPress={() =>
@@ -99,6 +111,7 @@ export default function VideoSection({
             scaleValue={0.96}
             springConfig="smooth"
             hapticType="light"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel="Watch cooking tutorial on YouTube"
             accessibilityRole="button"
           >
@@ -107,7 +120,14 @@ export default function VideoSection({
               size={20}
               color={colors.primary.DEFAULT}
             />
-            <Text style={styles.watchVideoText}>Watch Cooking Tutorial</Text>
+            <Text
+              style={styles.watchVideoText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Watch Cooking Tutorial
+            </Text>
           </AnimatedPressable>
         </View>
       </GlassCard>
@@ -119,17 +139,32 @@ export default function VideoSection({
       <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
         <View style={styles.videoError}>
           <Ionicons name="videocam-off" size={48} color={colors.text.secondary} />
-          <Text style={styles.errorText}>{videoError}</Text>
+          <Text
+            style={styles.errorText}
+            numberOfLines={3}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            {videoError}
+          </Text>
           <AnimatedPressable
             style={styles.retryButton}
             onPress={onRetry}
             scaleValue={0.96}
             springConfig="snappy"
             hapticType="light"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel="Retry loading video"
             accessibilityRole="button"
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text
+              style={styles.retryButtonText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              Try Again
+            </Text>
           </AnimatedPressable>
         </View>
       </GlassCard>
@@ -178,8 +213,8 @@ const styles = StyleSheet.create({
   },
   videoDuration: {
     position: "absolute",
-    bottom: 8,
-    right: 8,
+    bottom: rp(8),
+    right: rp(8),
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),

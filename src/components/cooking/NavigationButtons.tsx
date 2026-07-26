@@ -42,8 +42,10 @@ export default function NavigationButtons({
         scaleValue={0.96}
         springConfig="smooth"
         hapticType="light"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityLabel="Previous step"
         accessibilityRole="button"
+        accessibilityState={{ disabled: currentStepIndex === 0 }}
       >
         <Ionicons
           name="chevron-back"
@@ -55,6 +57,9 @@ export default function NavigationButtons({
             styles.navButtonText,
             currentStepIndex === 0 && styles.disabledButtonText,
           ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
         >
           Previous
         </Text>
@@ -69,8 +74,10 @@ export default function NavigationButtons({
         scaleValue={0.96}
         springConfig="smooth"
         hapticType="light"
-        accessibilityLabel={isCurrentStepCompleted ? "Step completed" : "Mark step complete"}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityLabel={isCurrentStepCompleted ? "Step completed, tap to undo" : "Mark step complete"}
         accessibilityRole="button"
+        accessibilityState={{ checked: isCurrentStepCompleted }}
       >
         <Ionicons
           name={
@@ -81,7 +88,12 @@ export default function NavigationButtons({
           size={24}
           color={colors.text.primary}
         />
-        <Text style={styles.completeButtonText} numberOfLines={1}>
+        <Text
+          style={styles.completeButtonText}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+        >
           {isCurrentStepCompleted ? "Step Done" : "Mark Complete"}
         </Text>
       </AnimatedPressable>
@@ -92,6 +104,7 @@ export default function NavigationButtons({
         scaleValue={0.96}
         springConfig="smooth"
         hapticType="light"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityLabel={isLastStep ? "Finish cooking" : "Next step"}
         accessibilityRole="button"
       >
@@ -129,7 +142,7 @@ const styles = StyleSheet.create({
     marginHorizontal: rp(4),
   },
   disabledButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: colors.glass.backgroundDark,
   },
   finishButton: {
     backgroundColor: colors.success.DEFAULT,

@@ -48,17 +48,32 @@ export default function CurrentStepDisplay({
       style={styles.currentStepSection}
     >
       <View style={styles.progressHeader}>
-        <Text style={styles.encouragementText}>{encouragement}</Text>
-        <View style={styles.progressBarContainer}>
+        <Text
+          style={styles.encouragementText}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
+          {encouragement}
+        </Text>
+        <View
+          style={styles.progressBarContainer}
+          accessibilityRole="progressbar"
+          accessibilityLabel={`Step ${currentStepIndex + 1} of ${cookingFlow.steps.length}, ${Math.round(progress)} percent complete`}
+        >
           <View style={[styles.progressBar, { width: `${progress}%` }]} />
         </View>
       </View>
 
       <View style={styles.stepHeader}>
         <View style={styles.stepInfo}>
-          <Text style={styles.stepCounter} numberOfLines={1}>
-            {currentStep.icon ? `${currentStep.icon} ` : ""}Step {currentStep.step} of{" "}
-            {cookingFlow.steps.length}
+          <Text
+            style={styles.stepCounter}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            Step {currentStep.step} of {cookingFlow.steps.length}
           </Text>
           <Text
             style={styles.stepTitle}
@@ -84,7 +99,7 @@ export default function CurrentStepDisplay({
               size={20}
               color={colors.primary.DEFAULT}
             />
-            <Text style={styles.timerButtonText}>
+            <Text style={styles.timerButtonText} numberOfLines={1}>
               {currentStep.timeRequired}m
             </Text>
           </AnimatedPressable>
@@ -95,7 +110,14 @@ export default function CurrentStepDisplay({
         <View style={styles.tipsContainer}>
           <View style={styles.tipRow}>
             <Ionicons name="bulb-outline" size={rf(16)} color={colors.warning.DEFAULT} style={styles.tipIcon} />
-            <Text style={styles.tipText} numberOfLines={5}>{currentStep.tips}</Text>
+            <Text
+              style={styles.tipText}
+              numberOfLines={5}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {currentStep.tips}
+            </Text>
           </View>
         </View>
       )}
@@ -108,6 +130,7 @@ export default function CurrentStepDisplay({
             scaleValue={0.9}
             springConfig="snappy"
             hapticType="light"
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityLabel="Stop timer"
             accessibilityRole="button"
           >

@@ -19,7 +19,14 @@ export default function IngredientsSection({
 }: IngredientsSectionProps) {
   return (
     <GlassCard padding="lg" borderRadius="xl" style={styles.ingredientsSection}>
-      <Text style={styles.sectionTitle}>Ingredients & Nutrition</Text>
+      <Text
+        style={styles.sectionTitle}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
+        Ingredients & Nutrition
+      </Text>
 
       <MacroDashboard
         meal={meal}
@@ -29,7 +36,12 @@ export default function IngredientsSection({
       />
 
       <View style={styles.ingredientsList}>
-        <Text style={styles.ingredientsTitle}>
+        <Text
+          style={styles.ingredientsTitle}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+        >
           Tap ingredients for details:
         </Text>
         <View style={styles.ingredientsGrid}>
@@ -41,23 +53,36 @@ export default function IngredientsSection({
               scaleValue={0.95}
               springConfig="snappy"
               hapticType="light"
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               accessibilityLabel={`View ${item.name} details`}
               accessibilityRole="button"
             >
               <Ionicons
                 name="restaurant"
                 size={16}
-                color={colors.text.muted}
+                color={colors.text.secondary}
                 style={styles.ingredientIcon}
               />
-              <Text style={styles.ingredientText} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.ingredientCalories} numberOfLines={1}>
+              <Text
+                style={styles.ingredientText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
+                {item.name}
+              </Text>
+              <Text
+                style={styles.ingredientCalories}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {Math.round(item.calories)} cal
               </Text>
               <Ionicons
                 name="information-circle"
                 size={16}
-                color={colors.text.muted}
+                color={colors.text.secondary}
               />
             </AnimatedPressable>
           )) : (
@@ -119,13 +144,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: rf(13),
-    color: colors.text.muted,
+    color: colors.text.secondary,
     fontStyle: "italic",
     paddingVertical: rp(8),
   },
   ingredientCalories: {
     fontSize: rf(12),
-    color: colors.text.muted,
+    color: colors.text.secondary,
     marginRight: rp(8),
   },
 });

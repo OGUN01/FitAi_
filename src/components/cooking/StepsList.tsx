@@ -52,6 +52,10 @@ export default function StepsList({
             hapticType="light"
             accessibilityLabel={`Step ${step.step}: ${step.instruction}`}
             accessibilityRole="button"
+            accessibilityState={{
+              selected: index === currentStepIndex,
+              checked: completedSteps.has(index),
+            }}
           >
             <View style={styles.stepItemContent}>
               <View style={styles.stepNumber}>
@@ -62,8 +66,10 @@ export default function StepsList({
                     completedSteps.has(index) && styles.completedStepText,
                   ]}
                   numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
                 >
-                  {step.icon || step.step}
+                  {step.step}
                 </Text>
               </View>
               <View style={styles.stepTextContainer}>
@@ -75,12 +81,14 @@ export default function StepsList({
                   ]}
                   numberOfLines={3}
                   ellipsizeMode="tail"
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
                 >
                   {step.instruction}
                 </Text>
                 {step.timeRequired && (
                   <View style={styles.stepTimeRow}>
-                    <Ionicons name="timer-outline" size={rf(12)} color={colors.text.muted} />
+                    <Ionicons name="timer-outline" size={rf(12)} color={colors.text.secondary} />
                     <Text style={styles.stepTimeText} numberOfLines={1}>
                       {step.timeRequired} min
                     </Text>
@@ -106,7 +114,13 @@ export default function StepsList({
             <Text style={styles.proTipsTitle}>Pro Tips</Text>
           </View>
           {cookingFlow.proTips.map((tip, index) => (
-            <Text key={index} style={styles.proTipText} numberOfLines={4}>
+            <Text
+              key={index}
+              style={styles.proTipText}
+              numberOfLines={4}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
               • {tip}
             </Text>
           ))}
@@ -137,6 +151,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(12),
     borderBottomWidth: 1,
     borderBottomColor: colors.glass.border,
+    minHeight: Math.max(rp(56), 44),
   },
   currentStepItem: {
     backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW + 0.08),
@@ -186,7 +201,7 @@ const styles = StyleSheet.create({
   },
   stepTimeText: {
     fontSize: rf(12),
-    color: colors.text.muted,
+    color: colors.text.secondary,
   },
   proTipsSection: {
     backgroundColor: hexToRgba(colors.warning.DEFAULT, TINT_ALPHA_LOW + 0.06),

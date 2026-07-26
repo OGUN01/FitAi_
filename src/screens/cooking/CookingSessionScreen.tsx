@@ -113,7 +113,7 @@ export default function CookingSessionScreen({
 
   return (
     <AuroraBackground theme="space" animated intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right", "bottom"]}>
         <View style={styles.header}>
           <AnimatedPressable
             onPress={() => {
@@ -136,6 +136,7 @@ export default function CookingSessionScreen({
             scaleValue={0.9}
             springConfig="snappy"
             hapticType="light"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.closeButton}
             accessibilityLabel="Close cooking session"
             accessibilityRole="button"
@@ -143,8 +144,21 @@ export default function CookingSessionScreen({
             <Ionicons name="close" size={rf(28)} color={colors.text.primary} />
           </AnimatedPressable>
           <View style={styles.headerContent}>
-            <Text style={styles.mealName} numberOfLines={1} ellipsizeMode="tail">{meal.name}</Text>
-            <Text style={styles.mealMeta} numberOfLines={2}>
+            <Text
+              style={styles.mealName}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {meal.name}
+            </Text>
+            <Text
+              style={styles.mealMeta}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
               Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m •{" "}
               {meal.difficulty}
             </Text>
@@ -153,6 +167,7 @@ export default function CookingSessionScreen({
 
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -255,5 +270,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: rp(100),
   },
 });
