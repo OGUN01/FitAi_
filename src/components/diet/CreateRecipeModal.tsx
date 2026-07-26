@@ -262,7 +262,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
             accessibilityRole="button"
             accessibilityLabel="Close recipe creator"
           >
-            <Text style={styles.closeButtonText}>✕</Text>
+            <Ionicons name="close" size={rf(20)} color={colors.text} />
           </TouchableOpacity>
         </View>
 

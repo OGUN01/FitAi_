@@ -30,7 +30,8 @@ export type DataType =
   | "dietPreferences"
   | "bodyAnalysis"
   | "workoutPreferences"
-  | "advancedReview";
+  | "advancedReview"
+  | "foodContribution";
 
 export interface SyncOperation {
   id: string;
@@ -333,6 +334,7 @@ class SyncEngine {
       bodyAnalysis: { table: "body_analysis", idField: "user_id" },
       workoutPreferences: { table: "workout_preferences", idField: "user_id" },
       advancedReview: { table: "advanced_review", idField: "user_id" },
+      foodContribution: { table: "user_food_contributions", idField: "id" },
     };
 
     const { table, idField } = tableMap[type];

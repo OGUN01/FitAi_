@@ -169,8 +169,8 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                   Choose what type of meal you're scanning for better accuracy
                 </Text>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>✕</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close meal type selector">
+                <Ionicons name="close" size={rf(20)} color={colors.text} />
               </TouchableOpacity>
             </View>
 

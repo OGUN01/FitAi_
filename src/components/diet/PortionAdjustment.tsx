@@ -14,6 +14,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
@@ -197,7 +198,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       );
       if (changedFoods.length > 0) {
         crossPlatformAlert(
-          "✅ Portions Adjusted!",
+          "Portions Adjusted!",
           `Updated portion sizes for ${changedFoods.length} food item${changedFoods.length !== 1 ? "s" : ""}.\n\nNutrition values have been recalculated automatically.`,
           [{ text: "Perfect!" }],
         );
@@ -317,8 +318,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Adjust Portion Sizes</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>✕</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close portion adjustment">
+            <Ionicons name="close" size={rf(20)} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -418,9 +419,12 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
             {/* Manual Gram Input - For users with weighing scales */}
             <View style={styles.manualInputContainer}>
-              <Text style={styles.manualInputLabel}>
-                ⚖️ Have a scale? Enter exact grams:
-              </Text>
+              <View style={styles.manualInputLabelRow}>
+                <Ionicons name="scale-outline" size={rf(14)} color={colors.textSecondary} />
+                <Text style={styles.manualInputLabel}>
+                  Have a scale? Enter exact grams:
+                </Text>
+              </View>
               <View style={styles.manualInputRow}>
                 <TextInput
                   style={styles.manualInput}

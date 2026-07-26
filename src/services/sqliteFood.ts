@@ -89,6 +89,25 @@ class SqliteFoodService {
     return this.state === "ready";
   }
 
+  /**
+   * Async readiness guard — resolves once the database is in the 'ready'
+   * state. Used by callers (e.g. FoodSearchSheet) that need to wait for the
+   * DB before issuing queries. If the DB is already ready, resolves
+   * immediately.
+   */
+  async ensureDbReady(): Promise<void> {
+    if (this.state === "ready") return;
+    // Poll until ready (the download/init flow flips state to 'ready').
+    await new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (this.state === "ready") {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 200);
+    });
+  }
+
   /** Current download / readiness state */
   getState(): SQLiteDownloadState {
     return this.state;

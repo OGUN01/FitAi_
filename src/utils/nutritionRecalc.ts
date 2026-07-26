@@ -81,3 +81,45 @@ export function sumMacros(entries: MacroGrams[]): MacroGrams {
 export function parseMacroString(value: string): number {
   return parseLocalFloat(value) || 0;
 }
+
+// ---------------------------------------------------------------------------
+// Crowdsource food contribution helpers (used by crowdFoodDb.ts)
+// ---------------------------------------------------------------------------
+
+/** Full macro set including calories — per-100g or per-serving. */
+export interface FullMacroSet {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  sugar?: number;
+  sodium?: number;
+}
+
+/** Whether the macros were provided per-100g or per-serving. */
+export type NutritionBasis = "per_100g" | "per_serving";
+
+/**
+ * Normalise a macro set to per-100g. If the input is already per-100g it is
+ * returned unchanged. If it is per-serving, the macros are scaled by
+ * (100 / servingSize). Guards against zero/negative serving sizes by falling
+ * back to the original values.
+ */
+export function normalizeToPer100g(
+  per100g: FullMacroSet,
+  basis: NutritionBasis,
+  servingSize: number | null,
+): FullMacroSet {
+  if (basis === "per_100g" || !servingSize || servingSize <= 0) {
+    return per100g;
+  }
+  const factor = 100 / servingSize;
+  return {
+    calories: per100g.calories * factor,
+    protein: per100g.protein * factor,
+    carbs: per100g.carbs * factor,
+    fat: per100g.fat * factor,
+    fiber: per100g.fiber * factor,
+  };
+}

@@ -145,7 +145,7 @@ export const FoodRecognitionFeedback: React.FC<
             accessibilityRole="button"
             accessibilityLabel="Close food recognition feedback"
           >
-            <Text style={styles.closeText}>✕</Text>
+            <Ionicons name="close" size={rf(20)} color={colors.text} />
           </TouchableOpacity>
         </View>
 
