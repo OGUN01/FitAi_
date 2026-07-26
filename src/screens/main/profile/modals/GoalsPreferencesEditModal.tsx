@@ -13,7 +13,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormPicker } from "../components/GlassFormPicker";
 import { useProfileStore } from "../../../../stores/profileStore";
-import { useAuth } from "../../../../hooks/useAuth";import { rf } from "../../../../utils/responsive";
+import { useAuth } from "../../../../hooks/useAuth";
+import { flatColors as colors } from "../../../../theme/aurora-tokens";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
@@ -421,7 +422,7 @@ export const GoalsPreferencesEditModal: React.FC<
       title="Goals & Preferences"
       subtitle="Customize your fitness journey"
       icon="flag-outline"
-      iconColor="#4CAF50"
+      iconColor={colors.success}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}

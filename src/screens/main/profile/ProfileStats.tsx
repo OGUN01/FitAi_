@@ -220,7 +220,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   statLabel: {
-    fontSize: rf(10),
+    // Math.max floor keeps the label legible above the WCAG AA floor on
+    // small devices where rf(10) scales below 10px (matches the pattern used
+    // for bmiScaleLabel in BodyMeasurementsEditModal).
+    fontSize: Math.max(rf(10), 10),
     fontWeight: "600",
     color: colors.textSecondary,
     textAlign: "center",

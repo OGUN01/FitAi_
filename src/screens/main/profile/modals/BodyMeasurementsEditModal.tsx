@@ -296,7 +296,7 @@ export const BodyMeasurementsEditModal: React.FC<
       title="Body Measurements"
       subtitle="Track your body composition"
       icon="body-outline"
-      iconColor="#FF6B35"
+      iconColor={colors.primary}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -416,7 +416,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Height"
         icon="resize-outline"
-        iconColor="#2196F3"
+        iconColor={colors.info}
         value={height}
         onChangeText={setHeight}
         placeholder="Enter your height"
@@ -431,7 +431,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Current Weight"
         icon="scale-outline"
-        iconColor="#FF6B35"
+        iconColor={colors.primary}
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"
@@ -446,7 +446,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Target Weight"
         icon="flag-outline"
-        iconColor="#4CAF50"
+        iconColor={colors.success}
         value={targetWeight}
         onChangeText={setTargetWeight}
         placeholder="Enter your goal weight"
@@ -461,7 +461,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Body Fat %"
         icon="body-outline"
-        iconColor="#FF9800"
+        iconColor={colors.warning}
         value={bodyFat}
         onChangeText={setBodyFat}
         placeholder="Enter body fat percentage"
@@ -476,7 +476,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Chest"
         icon="ellipse-outline"
-        iconColor="#9C27B0"
+        iconColor={colors.purple}
         value={chest}
         onChangeText={setChest}
         placeholder="Enter chest measurement"
@@ -491,7 +491,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Waist"
         icon="radio-button-off-outline"
-        iconColor="#00BCD4"
+        iconColor={colors.cyan}
         value={waist}
         onChangeText={setWaist}
         placeholder="Enter waist measurement"
@@ -506,7 +506,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Hips"
         icon="ellipse-outline"
-        iconColor="#E91E63"
+        iconColor={colors.pink}
         value={hips}
         onChangeText={setHips}
         placeholder="Enter hips measurement"

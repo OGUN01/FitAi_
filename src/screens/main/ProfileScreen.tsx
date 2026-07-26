@@ -336,10 +336,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: rp(40),
+    paddingBottom: rh(40),
   },
   bottomSpacing: {
-    height: rp(100),
+    height: rh(100),
   },
 });
 
