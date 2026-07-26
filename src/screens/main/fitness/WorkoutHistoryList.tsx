@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: spacing.xxl,
+    paddingVertical: spacing.xl,
     gap: spacing.lg,
   },
   emptyIconContainer: {
@@ -571,8 +571,7 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: rf(12),
-    color: colors.text,
-    opacity: 0.7,
+    color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(18),
     paddingHorizontal: spacing.md,

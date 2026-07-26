@@ -1084,6 +1084,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       keyboardType="numeric"
                       maxLength={4}
                       returnKeyType="done"
+                      accessibilityLabel="Serving size in grams"
                     />
                     <Text style={styles.labelGramsUnit}>g</Text>
                   </View>
@@ -1163,6 +1164,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       maxLength={4}
                       returnKeyType="done"
                       autoFocus
+                      accessibilityLabel="Portion weight in grams"
                     />
                     <Text style={styles.labelGramsUnit}>g</Text>
                   </View>

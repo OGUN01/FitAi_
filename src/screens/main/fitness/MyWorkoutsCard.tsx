@@ -221,6 +221,8 @@ const StatTile: React.FC<StatTileProps> = ({ icon, value, label, tint }) => (
     <Text
       style={styles.statValue}
       numberOfLines={1}
+      adjustsFontSizeToFit={true}
+      minimumFontScale={0.7}
     >
       {value}
     </Text>
@@ -289,7 +291,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   // Fixed rf(14) so values like "10,000" don't shrink visually while "0"
-  // renders at full size (was adjustsFontSizeToFit jumping between tiles).
+  // renders at full size. numberOfLines=1 + minimumFontScale guards against
+  // overflow on narrow tiles without the visual jump of full fit-to-width.
   statValue: {
     fontSize: rf(14),
     fontWeight: "700",

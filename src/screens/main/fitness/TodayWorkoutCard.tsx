@@ -222,7 +222,12 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 </View>
 
                 {!isRestDay && workout && (
-                  <Text style={styles.metaRow} numberOfLines={2}>
+                  <Text
+                    style={styles.metaRow}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.8}
+                  >
                     {`${workout.duration} min${META_BULLET}${exerciseCount} exercises${META_BULLET}${
                       displayCalories !== undefined
                         ? displayCalories
