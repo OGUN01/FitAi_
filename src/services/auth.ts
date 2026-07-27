@@ -499,7 +499,7 @@ class AuthService {
       const { error } = await supabase.auth.signOut();
 
       if (error) {
-        console.warn("âŒ Remote sign-out failed; clearing local auth state anyway:", error.message);
+        console.error("âŒ Remote sign-out failed; clearing local auth state anyway:", error.message);
       }
 
       // Clear local session and auth-scoped caches regardless of remote outcome.
