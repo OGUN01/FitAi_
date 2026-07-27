@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { WaterIntakeModal } from "./WaterIntakeModal";
 
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.xl,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     marginBottom: spacing.lg,
   },
@@ -221,19 +221,19 @@ const styles = StyleSheet.create({
   },
   goalReachedBadge: {
     fontSize: fontSize.sm,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.success,
   },
   progressBarContainer: {
     height: 8,
     backgroundColor: colors.border,
-    borderRadius: 4,
+    borderRadius: borderRadius.sm,
     overflow: "hidden",
     marginBottom: spacing.md,
   },
   progressBarFill: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: borderRadius.sm,
     minWidth: 4,
   },
   waterQuickAddButtons: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   rippleOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.primary,
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     opacity: 0,
   },
 });
