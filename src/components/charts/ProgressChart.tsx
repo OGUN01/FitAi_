@@ -225,8 +225,11 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         {/* Period Selector */}
         <View style={styles.periodSelector}>
           {periods.map((period) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={period.key}
+              scaleValue={0.96}
+              springConfig="snappy"
+              hapticType="light"
               style={[
                 styles.periodButton,
                 selectedPeriod === period.key && styles.periodButtonActive,
@@ -242,7 +245,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
               >
                 {period.label}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
