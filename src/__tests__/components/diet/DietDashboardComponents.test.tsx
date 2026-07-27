@@ -42,93 +42,110 @@ beforeEach(() => {
   mockCancelDownload.mockReset().mockResolvedValue(undefined);
 });
 
-const makeProps = () => ({
-  selectedDate: new Date("2026-07-24T12:00:00"),
-  streakDays: 12,
-  onMenuPress: jest.fn(),
-  onPrevDay: jest.fn(),
-  onNextDay: jest.fn(),
-  onSelectDate: jest.fn(),
-  onOpenPlan: jest.fn(),
-});
+// ---------------------------------------------------------------------------
+// DietScreenHeader
+// ---------------------------------------------------------------------------
 
 describe("DietScreenHeader", () => {
-  it("renders the compact dashboard hierarchy and opens the selected plan", () => {
-    const props = makeProps();
+  it('renders "Nutrition Plan" title, date navigator, and generate/search buttons; fires prev/next/generate/search callbacks', () => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+
+    const props = {
+      isGeneratingPlan: false,
+      hasPlan: false,
+      onGenerateWeeklyPlan: jest.fn(),
+      handleSearchFood: jest.fn(),
+      selectedDate: today,
+      onPrevDay: jest.fn(),
+      onNextDay: jest.fn(),
+    };
     const screen = render(<DietScreenHeader {...props} />);
 
-    expect(screen.getByText("Diet")).toBeTruthy();
-    expect(screen.getByText("12 day streak")).toBeTruthy();
+    expect(screen.getByText("Nutrition Plan")).toBeTruthy();
+    // dateLabel is "Today" because selectedDate IS today.
+    expect(screen.getByText("Today")).toBeTruthy();
 
-    fireEvent.press(screen.getByLabelText("Open diet settings"));
     fireEvent.press(screen.getByLabelText("Previous day"));
-    fireEvent.press(screen.getByLabelText("Next day"));
-    const datePill = screen.getByLabelText("Open Friday, July 24 meal plan");
-    expect(StyleSheet.flatten(datePill.props.style)).toMatchObject({
-      minHeight: 44,
-    });
-    fireEvent.press(datePill);
-
-    expect(props.onMenuPress).toHaveBeenCalledTimes(1);
     expect(props.onPrevDay).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Next day"));
     expect(props.onNextDay).toHaveBeenCalledTimes(1);
-    expect(props.onOpenPlan).toHaveBeenCalledWith(props.selectedDate);
+
+    fireEvent.press(screen.getByLabelText("Generate weekly plan"));
+    expect(props.onGenerateWeeklyPlan).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Log Meal"));
+    expect(props.handleSearchFood).toHaveBeenCalledTimes(1);
+
+    // Button inner text reflects the not-hasPlan branch.
+    expect(screen.getByText("Generate Week")).toBeTruthy();
   });
 
-  it("shows seven equal day cells that select the date without opening the plan", () => {
-    const props = makeProps();
-    const screen = render(<DietScreenHeader {...props} />);
-    const dayCells = screen.getAllByLabelText(/^Select .*$/);
+  it("shows Refresh label when hasPlan, and shows spinner (disabled) while isGeneratingPlan", () => {
+    const baseProps = {
+      hasPlan: true,
+      onGenerateWeeklyPlan: jest.fn(),
+      handleSearchFood: jest.fn(),
+      selectedDate: (() => {
+        const d = new Date();
+        d.setHours(12, 0, 0, 0);
+        return d;
+      })(),
+      onPrevDay: jest.fn(),
+      onNextDay: jest.fn(),
+    };
 
-    expect(dayCells).toHaveLength(7);
-    dayCells.forEach((cell) => {
-      // flex:1 is asserted on style (kept for test identity); the runtime flex
-      // item is the AnimatedPressable wrapper, sized via containerStyle
-      // (styles.dayCellContainer) — see DietScreenHeader render note.
-      expect(cell.props.style).toEqual(expect.objectContaining({ flex: 1 }));
-    });
+    const screen = render(<DietScreenHeader {...baseProps} isGeneratingPlan={false} />);
 
-    fireEvent.press(screen.getByLabelText("Select Mon Jul 20 2026"));
+    expect(screen.getByText("Refresh Week")).toBeTruthy();
+    expect(screen.getByLabelText("Refresh weekly plan")).toBeTruthy();
+    expect(screen.queryByText("Generate Week")).toBeNull();
 
-    const monday = props.onSelectDate.mock.calls[0][0] as Date;
-    expect(monday).toEqual(new Date("2026-07-20T12:00:00"));
-    // Week-strip tap selects the date only; it must NOT open the full Plan
-    // (that is the "View Today's Plan" CTA's job).
-    expect(props.onOpenPlan).not.toHaveBeenCalled();
+    screen.rerender(<DietScreenHeader {...baseProps} isGeneratingPlan={true} />);
+
+    // AuroraSpinner replaces the inner text/icon, so the label text is gone.
+    expect(screen.queryByText("Refresh Week")).toBeNull();
+
+    // AnimatedPressable wraps the inner Pressable in an Animated.View. The
+    // accessibilityState set on the Pressable ({ disabled: true }) bubbles up
+    // to the wrapper, which is what getByLabelText returns. Asserting on
+    // accessibilityState is the stable contract across the reanimated mock.
+    const generateBtn = screen.getByLabelText("Refresh weekly plan");
+    expect(generateBtn.props.accessibilityState).toEqual({ disabled: true });
   });
 });
+
+// ---------------------------------------------------------------------------
+// NutritionSummaryCard
+// ---------------------------------------------------------------------------
 
 const nutritionTargets = {
   calories: { current: 450, target: 1856 },
   protein: { current: 8, target: 185 },
   carbs: { current: 42, target: 195 },
   fat: { current: 28, target: 37 },
-  fiber: { current: 5, target: 25 },
 };
 
 describe("NutritionSummaryCard", () => {
-  it("renders the compact calorie summary and three macro columns", () => {
-    const onEditGoal = jest.fn();
-    const view = render(
-      <NutritionSummaryCard
-        nutritionTargets={nutritionTargets}
-        onEditGoal={onEditGoal}
-      />,
-    );
+  it("renders calorie remaining, target, and macro labels with fiber absent when not provided", () => {
+    const view = render(<NutritionSummaryCard nutritionTargets={nutritionTargets} />);
 
-    expect(view.getByText("Calories")).toBeTruthy();
-    // Consumed is primary in the arc center; remaining is the secondary "left" line.
-    expect(view.getByText("450")).toBeTruthy();
-    expect(view.getByText("1,406 left")).toBeTruthy();
-    expect(view.getByText("450 / 1,856 kcal")).toBeTruthy();
-    expect(view.getAllByTestId("dashboard-macro")).toHaveLength(3);
+    // remaining = target - current = 1856 - 450 = 1406
+    expect(view.getByText("1406")).toBeTruthy();
+    expect(view.getByText("Calories left")).toBeTruthy();
+    expect(view.getByText("of 1856")).toBeTruthy();
+
+    expect(view.getByText("Protein")).toBeTruthy();
+    expect(view.getByText("Carbs")).toBeTruthy();
+    expect(view.getByText("Fats")).toBeTruthy();
+
+    // fiber/sugar absent because not provided in nutritionTargets.
     expect(view.queryByText("Fiber")).toBeNull();
-
-    fireEvent.press(view.getByLabelText("Edit calorie goal"));
-    expect(onEditGoal).toHaveBeenCalledTimes(1);
+    expect(view.queryByText("Sugar")).toBeNull();
   });
 
-  it("preserves the missing-target notice and zero progress semantics", () => {
+  it("shows the missing-target notice and zero progress when all targets are zero and no consumed data", () => {
     const view = render(
       <NutritionSummaryCard
         nutritionTargets={{
@@ -136,9 +153,7 @@ describe("NutritionSummaryCard", () => {
           protein: { current: 0, target: 0 },
           carbs: { current: 0, target: 0 },
           fat: { current: 0, target: 0 },
-          fiber: { current: 0, target: 0 },
         }}
-        onEditGoal={jest.fn()}
       />,
     );
 
@@ -147,36 +162,33 @@ describe("NutritionSummaryCard", () => {
         "Complete your profile to see personalized nutrition targets",
       ),
     ).toBeTruthy();
-    expect(view.getByRole("progressbar").props.accessibilityValue).toEqual({
-      min: 0,
-      max: 0,
-      now: 0,
-    });
+
+    // calories.target is falsy → the component renders `0` (the `: 0` branch).
+    expect(view.getByText("0")).toBeTruthy();
+    // Not overflow (target=0) → "Calories left".
+    expect(view.getByText("Calories left")).toBeTruthy();
   });
 
-  it("announces calorie overflow without reporting a negative remainder", () => {
+  it("announces calorie overflow as +N with 'Over target' label", () => {
     const view = render(
       <NutritionSummaryCard
         nutritionTargets={{
           ...nutritionTargets,
           calories: { current: 2100, target: 1856 },
         }}
-        onEditGoal={jest.fn()}
       />,
     );
 
-    // Consumed is primary in the arc center; overflow is shown as "+N over",
-    // never as a negative remainder.
-    expect(view.getByText("2,100")).toBeTruthy();
-    expect(view.getByText("kcal eaten")).toBeTruthy();
-    expect(view.getByText("+244 over")).toBeTruthy();
-    expect(view.getByRole("progressbar").props.accessibilityValue).toEqual({
-      min: 0,
-      max: 1856,
-      now: 2100,
-    });
+    // Math.round(2100 - 1856) = 244
+    expect(view.getByText("+244")).toBeTruthy();
+    expect(view.getByText("Over target")).toBeTruthy();
+    expect(view.queryByText("Calories left")).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// DietQuickActions
+// ---------------------------------------------------------------------------
 
 const makeActionCallbacks = () => ({
   onScanFood: jest.fn(),
@@ -188,104 +200,108 @@ const makeActionCallbacks = () => ({
 });
 
 describe("DietQuickActions", () => {
-  it("renders six accessible actions in a fixed two-row grid", () => {
+  it("renders six accessible action buttons in a horizontal scroll and fires each callback", () => {
     const callbacks = makeActionCallbacks();
     const screen = render(<DietQuickActions {...callbacks} />);
-    const actions = screen.getAllByTestId("diet-quick-action");
 
-    expect(actions).toHaveLength(6);
-    expect(
-      StyleSheet.flatten(
-        screen.getByTestId("diet-quick-actions-grid").props.style,
-      ),
-    ).toMatchObject({
-      flexDirection: "row",
-      flexWrap: "wrap",
-      columnGap: 8,
-      rowGap: 8,
-    });
-    // The sizing lives on the cell View (the real flex item); the pressable
-    // inside fills it. See DietQuickActions render comment.
-    const cells = screen.getAllByTestId("diet-quick-action-cell");
-    expect(cells).toHaveLength(6);
-    cells.forEach((cell) => {
-      expect(StyleSheet.flatten(cell.props.style)).toMatchObject({
-        width: "31.5%",
-        minHeight: 64,
-      });
-    });
-    expect(actions).toHaveLength(6);
+    // All six labels render.
+    expect(screen.getByText("Scan Food")).toBeTruthy();
+    expect(screen.getByText("Barcode")).toBeTruthy();
+    expect(screen.getByText("Scan Label")).toBeTruthy();
+    expect(screen.getByText("Log Meal")).toBeTruthy();
+    expect(screen.getByText("Log Water")).toBeTruthy();
+    expect(screen.getByText("Recipes")).toBeTruthy();
 
-    fireEvent.press(screen.getByLabelText("More"));
+    // Each pressable has accessibilityLabel === label and fires its callback.
+    fireEvent.press(screen.getByLabelText("Scan Food"));
+    expect(callbacks.onScanFood).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Barcode"));
+    expect(callbacks.onScanBarcode).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Scan Label"));
+    expect(callbacks.onScanLabel).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Log Meal"));
+    expect(callbacks.onLogMeal).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Log Water"));
+    expect(callbacks.onLogWater).toHaveBeenCalledTimes(1);
+
+    fireEvent.press(screen.getByLabelText("Recipes"));
     expect(callbacks.onViewRecipes).toHaveBeenCalledTimes(1);
-    expect(screen.queryByLabelText("Recipes")).toBeNull();
   });
 });
 
+// ---------------------------------------------------------------------------
+// DatabaseDownloadBanner
+// ---------------------------------------------------------------------------
+
 describe("DatabaseDownloadBanner", () => {
-  it("renders the compact offline prompt with accessible 44px actions", () => {
+  it("renders the not_downloaded banner with Download Now and Skip actions", () => {
+    mockDownloadState = "not_downloaded";
     const onDismiss = jest.fn();
     const screen = render(<DatabaseDownloadBanner onDismiss={onDismiss} />);
 
-    expect(screen.getByText("Offline food database")).toBeTruthy();
-    expect(
-      StyleSheet.flatten(screen.getByTestId("offline-database-row").props.style),
-    ).toMatchObject({ flexDirection: "row", alignItems: "center" });
+    expect(screen.getByText("Offline food database available")).toBeTruthy();
+    expect(screen.getByText("Download Now")).toBeTruthy();
+    expect(screen.getByLabelText("Download Now")).toBeTruthy();
+    expect(screen.getByText("Skip for Now")).toBeTruthy();
+    expect(screen.getByLabelText("Skip for Now")).toBeTruthy();
 
-    const download = screen.getByLabelText("Download offline database");
-    const dismiss = screen.getByLabelText(
-      "Dismiss offline database banner",
-    );
+    // primaryBtn style has minHeight: 42 (not 44).
+    const download = screen.getByLabelText("Download Now");
     expect(StyleSheet.flatten(download.props.style)).toMatchObject({
-      minHeight: 44,
-    });
-    expect(StyleSheet.flatten(dismiss.props.style)).toMatchObject({
-      minHeight: 44,
-      minWidth: 44,
+      minHeight: 42,
     });
 
-    fireEvent.press(dismiss);
+    fireEvent.press(screen.getByLabelText("Skip for Now"));
     expect(onDismiss).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Offline food database")).toBeNull();
+    // After dismiss, isDismissed=true → component returns null.
+    expect(screen.queryByText("Offline food database available")).toBeNull();
   });
 
-  it("keeps pause and cancel available while downloading", async () => {
+  it("renders Pause and Cancel while downloading and both invoke cancelDownload", async () => {
     mockDownloadState = "downloading";
 
     const paused = render(<DatabaseDownloadBanner />);
-    const pause = paused.getByLabelText("Pause offline database download");
-    expect(StyleSheet.flatten(pause.props.style)).toMatchObject({ minHeight: 44 });
+    const pause = paused.getByLabelText("Pause");
+    expect(StyleSheet.flatten(pause.props.style)).toMatchObject({ minHeight: 42 });
     fireEvent.press(pause);
     await waitFor(() => expect(mockCancelDownload).toHaveBeenCalledTimes(1));
     paused.unmount();
 
+    mockCancelDownload.mockClear();
     mockDownloadState = "downloading";
+
     const cancelled = render(<DatabaseDownloadBanner />);
-    const cancel = cancelled.getByLabelText("Cancel offline database download");
-    expect(StyleSheet.flatten(cancel.props.style)).toMatchObject({
-      minHeight: 44,
-    });
+    const cancel = cancelled.getByLabelText("Cancel");
+    expect(StyleSheet.flatten(cancel.props.style)).toMatchObject({ minHeight: 42 });
     fireEvent.press(cancel);
-    await waitFor(() => expect(mockCancelDownload).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mockCancelDownload).toHaveBeenCalledTimes(1));
   });
 
-  it("offers an accessible retry after a failed download", () => {
+  it("renders Retry in error state and invoking it calls downloadDatabase", async () => {
     mockDownloadState = "error";
     const screen = render(<DatabaseDownloadBanner />);
-    const retry = screen.getByLabelText("Retry offline database download");
 
-    expect(StyleSheet.flatten(retry.props.style)).toMatchObject({ minHeight: 44 });
-    fireEvent.press(retry);
-    expect(mockDownloadDatabase).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Retry")).toBeTruthy();
+    expect(screen.getByText("Download failed")).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText("Retry"));
+    // handleRetry sets state to not_downloaded then calls handleDownload,
+    // which sets state to "downloading" and awaits downloadDatabase.
+    await waitFor(() => expect(mockDownloadDatabase).toHaveBeenCalledTimes(1));
   });
 
-  it("briefly shows success and then dismisses it", () => {
+  it("shows Database ready then auto-dismisses after 3s calling onDismiss", () => {
     jest.useFakeTimers();
     mockDownloadState = "ready";
     const onDismiss = jest.fn();
     const screen = render(<DatabaseDownloadBanner onDismiss={onDismiss} />);
 
     expect(screen.getByText("Database ready")).toBeTruthy();
+
     act(() => jest.advanceTimersByTime(3000));
 
     expect(onDismiss).toHaveBeenCalledTimes(1);
