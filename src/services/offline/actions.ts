@@ -97,7 +97,6 @@ export async function executeAction(action: OfflineAction): Promise<void> {
       if (!updateValidation.valid) {
         throw new Error(updateValidation.error);
       }
-      console.log(`✅ Successfully updated record ${id} in ${table}`);
       break;
 
     case "DELETE":
