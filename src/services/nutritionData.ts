@@ -289,7 +289,7 @@ class NutritionDataService {
         .maybeSingle();
 
       if (error) {
-        console.warn(
+        console.error(
           "Diet preferences not found or access denied:",
           error.message,
         );
@@ -304,7 +304,7 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.warn(
+      console.error(
         "Error in getUserDietPreferences:",
         error instanceof Error ? error.message : error,
       );
@@ -379,7 +379,7 @@ class NutritionDataService {
         .maybeSingle();
 
       if (error) {
-        console.warn(
+        console.error(
           "âš ï¸ [NutritionData] Nutrition goals table not accessible:",
           error.message,
         );
@@ -411,7 +411,7 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.warn(
+      console.error(
         "âš ï¸ [NutritionData] Error in getUserNutritionGoals:",
         error instanceof Error ? error.message : error,
       );
