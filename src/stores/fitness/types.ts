@@ -1,5 +1,11 @@
 import { WeeklyWorkoutPlan, DayWorkout } from "../../ai";
-import { RealtimeChannel } from "@supabase/supabase-js";
+// NOTE: RealtimeChannel was previously imported here to type a module-level
+// `workoutSessionsChannel` export, but that export was dead code —
+// fitnessStore declares its OWN local `let workoutSessionsChannel` and uses
+// that exclusively. The duplicated declaration violated the single-source-of-
+// truth rule (two declarations of the same concept, only one ever wired up).
+// Removed along with the unused export. If a future caller needs to observe
+// the channel, expose a getter on useFitnessStore instead of a second var.
 import type { WorkoutTemplate } from "../../services/workoutTemplateService";
 
 export interface WorkoutProgress {
@@ -173,12 +179,11 @@ export interface FitnessState {
   getAllSessionCalories: (dateStr: string) => number;
 }
 
-// Realtime subscription channel reference (outside store to persist across re-renders)
-export let workoutSessionsChannel: RealtimeChannel | null = null;
-
-export const setWorkoutSessionsChannel = (channel: RealtimeChannel | null) => {
-  workoutSessionsChannel = channel;
-};
+// Realtime subscription channel reference lives in fitnessStore.ts (local
+// module-level `let`). It is NOT exported from here — the previous
+// `export let workoutSessionsChannel` + `setWorkoutSessionsChannel` were dead
+// code (never imported anywhere) and a duplicated declaration of the same
+// concept the store manages locally.
 
 export interface CompletedSession {
   sessionId: string; // UUID, unique per completion
