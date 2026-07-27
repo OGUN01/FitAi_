@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
@@ -12,11 +12,17 @@ interface SummaryCardProps {
   metricsHistory: DailyMetrics[];
 }
 
-export const SummaryCard: React.FC<SummaryCardProps> = ({
+export const SummaryCard: React.FC<SummaryCardProps> = React.memo(({
   selectedPeriod,
   workoutTrend,
   metricsHistory,
 }) => {
+  const { mealsLogged, waterLiters } = useMemo(() => {
+    const meals = metricsHistory.reduce((sum, m) => sum + (m.mealsLogged || 0), 0);
+    const waterMl = metricsHistory.reduce((sum, m) => sum + (m.waterIntakeMl || 0), 0);
+    return { mealsLogged: meals, waterLiters: (waterMl / 1000).toFixed(1) + "L" };
+  }, [metricsHistory]);
+
   return (
     <Animated.View
       entering={FadeInDown.duration(400)}
@@ -34,25 +40,20 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         </View>
         <View style={styles.summaryStatItem}>
           <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>
-            {metricsHistory.reduce((sum, m) => sum + (m.mealsLogged || 0), 0)}
+            {mealsLogged}
           </Text>
           <Text style={styles.summaryStatLabel} numberOfLines={1}>Meals Logged</Text>
         </View>
         <View style={styles.summaryStatItem}>
           <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>
-            {(
-              metricsHistory.reduce(
-                (sum, m) => sum + (m.waterIntakeMl || 0),
-                0,
-              ) / 1000
-            ).toFixed(1) + "L"}
+            {waterLiters}
           </Text>
           <Text style={styles.summaryStatLabel} numberOfLines={1}>Water</Text>
         </View>
       </View>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   summaryCard: {
