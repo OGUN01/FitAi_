@@ -243,6 +243,8 @@ jest.mock("../../utils/responsive", () => ({
   rw: (value: number) => value,
   rp: (value: number) => value,
   rh: (value: number) => value,
+  rs: (value: number) => value,
+  rbr: (value: number) => value,
 }));
 
 jest.mock("../../hooks/useAuth", () => ({
