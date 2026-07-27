@@ -220,6 +220,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   // → hook count mismatch → HomeScreen crash for every logged-in user.
   // See src/docs/VERIFIED-FINDINGS.md "P0-4". Regression-guarded by
   // src/__tests__/screens/HomeScreen.hookInvariant.test.tsx.
+  const todaysFocusWorkoutInfo = React.useMemo(
+    () => ({
+      hasWeeklyPlan: todaysWorkoutInfo.hasWeeklyPlan,
+      isRestDay: todaysWorkoutInfo.isRestDay,
+      isCompleted: todaysWorkoutInfo.isCompleted,
+      hasWorkout: todaysWorkoutInfo.hasWorkout,
+      dayStatus: todaysWorkoutInfo.dayStatus,
+      workoutType: (() => {
+        const t = todaysWorkoutInfo.workoutType;
+        if (
+          t === 'strength' ||
+          t === 'cardio' ||
+          t === 'flexibility' ||
+          t === 'hiit' ||
+          t === 'mixed'
+        )
+          return t;
+        return undefined;
+      })(),
+      workout: todaysWorkoutInfo.workout
+        ? {
+            title: todaysWorkoutInfo.workout.title ?? '',
+            duration: todaysWorkoutInfo.workout.duration ?? 0,
+            estimatedCalories: todaysWorkoutInfo.workout.estimatedCalories ?? 0,
+            exercises: todaysWorkoutInfo.workout.exercises?.length,
+          }
+        : undefined,
+    }),
+    [todaysWorkoutInfo]
+  );
+
   const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeAnim.value }));
 
   if (showGuestSignUp) {
@@ -355,33 +386,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               {/* 5. Today's Workout */}
               <View style={styles.section}>
                 <TodaysFocus
-                  workoutInfo={{
-                    hasWeeklyPlan: todaysWorkoutInfo.hasWeeklyPlan,
-                    isRestDay: todaysWorkoutInfo.isRestDay,
-                    isCompleted: todaysWorkoutInfo.isCompleted,
-                    hasWorkout: todaysWorkoutInfo.hasWorkout,
-                    dayStatus: todaysWorkoutInfo.dayStatus,
-                    workoutType: (() => {
-                      const t = todaysWorkoutInfo.workoutType;
-                      if (
-                        t === 'strength' ||
-                        t === 'cardio' ||
-                        t === 'flexibility' ||
-                        t === 'hiit' ||
-                        t === 'mixed'
-                      )
-                        return t;
-                      return undefined;
-                    })(),
-                    workout: todaysWorkoutInfo.workout
-                      ? {
-                          title: todaysWorkoutInfo.workout.title ?? '',
-                          duration: todaysWorkoutInfo.workout.duration ?? 0,
-                          estimatedCalories: todaysWorkoutInfo.workout.estimatedCalories ?? 0,
-                          exercises: todaysWorkoutInfo.workout.exercises?.length,
-                        }
-                      : undefined,
-                  }}
+                  workoutInfo={todaysFocusWorkoutInfo}
                   workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
                   onWorkoutPress={handleWorkoutPress}
                 />
