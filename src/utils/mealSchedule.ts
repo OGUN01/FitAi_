@@ -27,6 +27,10 @@ const parseTimeToMinutes = (
 
   if (isNaN(hours) || isNaN(minutes)) return null;
 
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
   return hours * 60 + minutes;
 };
 
@@ -70,12 +74,6 @@ export const calculateMealSchedule = (
       afternoonSnack: "4:00 PM",
       dinner: "7:00 PM",
     };
-  }
-
-  // Calculate awake duration (handle overnight sleep)
-  let awakeDuration = sleepMinutes - wakeMinutes;
-  if (awakeDuration <= 0) {
-    awakeDuration += 1440; // Add 24 hours if sleep is past midnight
   }
 
   // Calculate meal times based on wake time

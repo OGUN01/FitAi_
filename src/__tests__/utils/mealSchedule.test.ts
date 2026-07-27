@@ -137,21 +137,55 @@ describe("mealSchedule", () => {
         });
       });
 
-      it('"25:99" is NOT treated as invalid (parseInt succeeds, no range validation) -> 25*60+99 = 1599 min', () => {
-        // parseTimeToMinutes only checks isNaN, not hour/minute ranges.
-        // wakeMinutes = sleepMinutes = 1599; awakeDuration = 0 -> +1440 = 1440
-        // breakfast = 1599 + 45 = 1644 -> normalize -> 1644 % 1440 = 204 -> 3:24 AM
-        const schedule = calculateMealSchedule("25:99", "25:99");
-        expect(schedule.breakfast).toBe("3:24 AM");
+      it('"25:99" is rejected (hours > 23, minutes > 59) -> parseTimeToMinutes returns null -> default schedule', () => {
+        // hours=25 > 23 and minutes=99 > 59 -> null -> fall through to default
+        expect(calculateMealSchedule("25:99", "25:99")).toEqual({
+          breakfast: "8:00 AM",
+          morningSnack: "10:30 AM",
+          lunch: "1:00 PM",
+          afternoonSnack: "4:00 PM",
+          dinner: "7:00 PM",
+        });
+      });
 
-        // morningSnack = 1644 + 150 = 1794 -> 1794 % 1440 = 354 -> 5:54 AM
-        expect(schedule.morningSnack).toBe("5:54 AM");
-        // lunch = 1599 + 300 = 1899 -> 1899 % 1440 = 459 -> 7:39 AM
-        expect(schedule.lunch).toBe("7:39 AM");
-        // afternoonSnack = 1899 + 180 = 2079 -> 2079 % 1440 = 639 -> 10:39 AM
-        expect(schedule.afternoonSnack).toBe("10:39 AM");
-        // dinner = 1599 - 180 = 1419 -> 1419 % 1440 = 1419 -> 23:39 -> 11:39 PM
-        expect(schedule.dinner).toBe("11:39 PM");
+      it('"24:00" is rejected (hours=24 is out of range) -> default schedule', () => {
+        // hours=24 > 23 -> null -> default schedule
+        expect(calculateMealSchedule("24:00", "24:00")).toEqual({
+          breakfast: "8:00 AM",
+          morningSnack: "10:30 AM",
+          lunch: "1:00 PM",
+          afternoonSnack: "4:00 PM",
+          dinner: "7:00 PM",
+        });
+      });
+
+      it('"12:60" is rejected (minutes=60 is out of range) -> default schedule', () => {
+        // minutes=60 > 59 -> null -> default schedule
+        expect(calculateMealSchedule("12:60", "12:60")).toEqual({
+          breakfast: "8:00 AM",
+          morningSnack: "10:30 AM",
+          lunch: "1:00 PM",
+          afternoonSnack: "4:00 PM",
+          dinner: "7:00 PM",
+        });
+      });
+
+      it('"23:59" is a valid boundary (hours=23, minutes=59) -> real computed schedule, not default', () => {
+        // wakeMinutes = 23*60 + 59 = 1439
+        // breakfast = 1439 + 45 = 1484 -> 1484 % 1440 = 44 -> 12:44 AM
+        // morningSnack = 1484 + 150 = 1634 -> 1634 % 1440 = 194 -> 3:14 AM
+        // lunch = 1439 + 300 = 1739 -> 1739 % 1440 = 299 -> 4:59 AM
+        // afternoonSnack = 1739 + 180 = 1919 -> 1919 % 1440 = 479 -> 7:59 AM
+        // dinner = 1439 - 180 = 1259 -> 8:59 PM
+        const schedule = calculateMealSchedule("23:59", "23:59");
+        expect(schedule).not.toEqual({
+          breakfast: "8:00 AM",
+          morningSnack: "10:30 AM",
+          lunch: "1:00 PM",
+          afternoonSnack: "4:00 PM",
+          dinner: "7:00 PM",
+        });
+        expect(schedule.breakfast).toBe("12:44 AM");
       });
     });
   });
