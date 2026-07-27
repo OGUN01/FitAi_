@@ -365,7 +365,8 @@ export class RecognizedFoodLogger {
         .single();
 
       if (metaError) {
-        // no-op: metadata table may not exist yet; failure is non-fatal
+        // Non-fatal: metadata is supplementary. Still log per rule 5 (no silent failures).
+        console.error("Failed to store meal recognition metadata:", metaError);
       }
     } catch (error) {
       console.warn("Warning: Failed to store recognition metadata:", error);
