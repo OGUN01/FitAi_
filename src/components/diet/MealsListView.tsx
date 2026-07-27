@@ -25,6 +25,7 @@ import {
   flatColors as colors,
   flatFontSize as fontSize,
   spacing,
+  typography,
 } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     fontSize: fontSize.xl,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   headerSpacer: {
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
   },
   mealTypeLabel: {
     fontSize: fontSize.xs,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
     textTransform: "uppercase" as const,
     letterSpacing: 0.5,
@@ -396,11 +397,11 @@ const styles = StyleSheet.create({
   mealTimeText: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: "600" as const,
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   mealName: {
     fontSize: fontSize.md,
-    fontWeight: "600" as const,
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
     marginBottom: spacing.xxs,
   },
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
   calorieText: {
     fontSize: fontSize.sm,
     color: colors.primary,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   macroPillsRow: {
     flexDirection: "row" as const,
@@ -435,7 +436,7 @@ const styles = StyleSheet.create({
   },
   macroPillText: {
     fontSize: fontSize.xs,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   emptyState: {
     marginTop: spacing.xl,
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     textAlign: "center" as const,
   },
