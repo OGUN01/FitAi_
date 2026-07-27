@@ -7,6 +7,7 @@ import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import {
   healthKitService,
   HealthKitData,
+  HealthKitWorkout,
   HealthSyncResult,
 } from "../services/healthKit";
 import {
@@ -756,7 +757,7 @@ export const useHealthDataStore = create<HealthDataState>()(
                 syncResult.data.sleepHours ?? get().metrics.sleepHours,
               recentWorkouts: mergeRecentWorkouts(
                 get().metrics.recentWorkouts,
-                syncResult.data.workouts?.map((workout: any) => ({
+                syncResult.data.workouts?.map((workout: HealthKitWorkout) => ({
                   id:
                     workout.id ||
                     `${workout.activityType || "unknown"}_${workout.startDate || "unknown"}`,
