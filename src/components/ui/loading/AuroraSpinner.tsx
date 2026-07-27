@@ -76,10 +76,10 @@ const SIZE_CONFIG: Record<SpinnerSize, { size: number; thickness: number }> = {
 // ============================================================================
 
 const DEFAULT_AURORA_COLORS = [
-  "#4ECDC4", // Teal
-  "#FF6B6B", // Coral
-  "#FFC107", // Amber
-  "#4ECDC4", // Teal (loop)
+  colors.teal, // Teal
+  colors.primary, // Coral (brand primary)
+  colors.amber, // Amber
+  colors.teal, // Teal (loop)
 ];
 
 // ============================================================================
@@ -263,7 +263,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   visible,
   message,
   spinnerSize = "lg",
-  backgroundColor = "rgba(0, 0, 0, 0.7)",
+  backgroundColor = colors.overlayDark,
   style,
 }) => {
   const fadeValue = useRef(new Animated.Value(0)).current;
