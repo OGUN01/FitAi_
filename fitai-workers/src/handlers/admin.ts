@@ -105,7 +105,7 @@ function parseConfigBoolean(value: unknown, fallback = false): boolean {
 export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 	const supabase = getSupabaseClient(c.env);
 
-	const [{ count: totalUsers }, { data: subsByTier }, { data: aiCallsToday }, { data: maintenanceRow }] = await Promise.all([
+	const [usersResult, subsResult, aiCallsResult, maintenanceResult] = await Promise.all([
 		supabase.from('profiles').select('id', { count: 'exact', head: true }),
 		supabase.from('subscriptions').select('tier').eq('status', 'active'),
 		supabase
@@ -115,6 +115,28 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 		supabase.from('app_config').select('value').eq('key', 'maintenance_mode').maybeSingle(),
 	]);
 
+	if (usersResult.error) {
+		console.error('[Admin Dashboard] Failed to fetch total users:', usersResult.error);
+		return c.json({ success: false, error: { message: usersResult.error.message } }, 500);
+	}
+	if (subsResult.error) {
+		console.error('[Admin Dashboard] Failed to fetch active subscriptions:', subsResult.error);
+		return c.json({ success: false, error: { message: subsResult.error.message } }, 500);
+	}
+	if (aiCallsResult.error) {
+		console.error('[Admin Dashboard] Failed to fetch AI calls today:', aiCallsResult.error);
+		return c.json({ success: false, error: { message: aiCallsResult.error.message } }, 500);
+	}
+	if (maintenanceResult.error) {
+		console.error('[Admin Dashboard] Failed to fetch maintenance mode:', maintenanceResult.error);
+		return c.json({ success: false, error: { message: maintenanceResult.error.message } }, 500);
+	}
+
+	const { count: totalUsers } = usersResult;
+	const { data: subsByTier } = subsResult;
+	const { data: aiCallsToday } = aiCallsResult;
+	const { data: maintenanceRow } = maintenanceResult;
+
 	// Aggregate active subs by tier
 	const tierCounts: Record<string, number> = { free: 0, basic: 0, pro: 0 };
 	for (const row of subsByTier ?? []) {
@@ -122,13 +144,25 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 	}
 
 	// Revenue MTD (sum of subscription plan prices for active subs this month)
-	const { data: revData } = await supabase
+	const { data: revData, error: revError } = await supabase
 		.from('subscriptions')
 		.select('tier, billing_cycle, created_at')
 		.eq('status', 'active')
 		.gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
 
-	const { data: plans } = await supabase.from('subscription_plans').select('tier, price_monthly, price_yearly');
+	if (revError) {
+		console.error('[Admin Dashboard] Failed to fetch revenue data:', revError);
+		return c.json({ success: false, error: { message: revError.message } }, 500);
+	}
+
+	const { data: plans, error: plansError } = await supabase
+		.from('subscription_plans')
+		.select('tier, price_monthly, price_yearly');
+
+	if (plansError) {
+		console.error('[Admin Dashboard] Failed to fetch subscription plans:', plansError);
+		return c.json({ success: false, error: { message: plansError.message } }, 500);
+	}
 
 	const priceMap: Record<string, { monthly: number; yearly: number }> = {};
 	for (const p of plans ?? []) {
@@ -461,25 +495,37 @@ export async function handleAdminAnalytics(c: AdminCtx): Promise<Response> {
 	const supabase = getSupabaseClient(c.env);
 
 	if (metric === 'revenue') {
-		const { data } = await supabase
+		const { data, error } = await supabase
 			.from('subscriptions')
 			.select('created_at, tier, billing_cycle')
 			.eq('status', 'active')
 			.gte('created_at', since)
 			.order('created_at');
 
+		if (error) {
+			console.error('[Admin Analytics] Failed to fetch revenue metric:', error);
+			return c.json({ success: false, error: { message: error.message } }, 500);
+		}
 		return c.json({ success: true, data: data ?? [] });
 	}
 
 	if (metric === 'dau') {
 		// Daily active users: count distinct user_id in api_logs per day
-		const { data } = await supabase.from('api_logs').select('user_id, created_at').gte('created_at', since).order('created_at');
+		const { data, error } = await supabase
+			.from('api_logs')
+			.select('user_id, created_at')
+			.gte('created_at', since)
+			.order('created_at');
 
+		if (error) {
+			console.error('[Admin Analytics] Failed to fetch dau metric:', error);
+			return c.json({ success: false, error: { message: error.message } }, 500);
+		}
 		return c.json({ success: true, data: data ?? [] });
 	}
 
 	// Default: ai_calls — feature_usage rows for ai_generation
-	const { data } = await supabase
+	const { data, error } = await supabase
 		.from('feature_usage')
 		.select('period_start, usage_count, period_type')
 		.eq('feature_key', 'ai_generation')
@@ -487,6 +533,10 @@ export async function handleAdminAnalytics(c: AdminCtx): Promise<Response> {
 		.gte('period_start', since.substring(0, 10))
 		.order('period_start');
 
+	if (error) {
+		console.error('[Admin Analytics] Failed to fetch ai_calls metric:', error);
+		return c.json({ success: false, error: { message: error.message } }, 500);
+	}
 	return c.json({ success: true, data: data ?? [] });
 }
 
