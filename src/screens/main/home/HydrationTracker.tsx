@@ -11,14 +11,7 @@
 
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  FadeIn,
-} from "react-native-reanimated";
 import Svg, {
-  Circle,
   Defs,
   LinearGradient,
   Stop,
@@ -54,10 +47,6 @@ const WaterDrop: React.FC<{ progress: number; size: number }> = ({
   const progress = Number.isFinite(rawProgress)
     ? Math.max(0, Math.min(100, rawProgress))
     : 0;
-
-  const fillHeight = (progress / 100) * (size * 0.7);
-  const dropWidth = size * 0.6;
-  const dropHeight = size * 0.75;
 
   // Pre-calculate and round SVG path coordinates
   const waterTop = Math.round(95 - progress * 0.8);
