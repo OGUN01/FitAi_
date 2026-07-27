@@ -15,7 +15,7 @@ export const WarningBanner: React.FC<WarningBannerProps> = ({
   return (
     <GlassCard elevation={1} style={styles.card}>
       <View style={styles.content}>
-        <Ionicons name="information-circle" size={rf(24)} color="#FFA726" />
+        <Ionicons name="information-circle" size={rf(24)} color={colors.warning} />
         <View style={styles.text}>
           <Text style={styles.title}>Development Build Required</Text>
           <Text style={styles.description}>
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.md,
-    backgroundColor: "rgba(255, 167, 38, 0.15)",
+    backgroundColor: colors.warningTint,
   },
   content: {
     flexDirection: "row",
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: "#FFA726",
+    color: colors.warning,
     marginBottom: rp(4),
   },
   description: {
