@@ -107,12 +107,6 @@ export interface FitnessState {
     userId?: string,
   ) => Promise<string>;
   endWorkoutSession: (sessionId: string) => Promise<void>;
-  updateExerciseProgress: (
-    exerciseId: string,
-    setIndex: number,
-    reps: number,
-    weight: number,
-  ) => void;
   updateSetData: (
     exerciseId: string,
     setIndex: number,

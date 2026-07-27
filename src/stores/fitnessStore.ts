@@ -877,62 +877,6 @@ export const useFitnessStore = create<FitnessState>()(
         }
       },
 
-      updateExerciseProgress: (exerciseId, setIndex, reps, weight) => {
-        set((state) => {
-          if (!state.currentWorkoutSession) return state;
-
-          const updatedExercises = state.currentWorkoutSession.exercises.map(
-            (exercise) => {
-              if (exercise.exerciseId === exerciseId) {
-                const updatedSets = [...exercise.sets];
-                if (updatedSets[setIndex]) {
-                  updatedSets[setIndex] = {
-                    reps,
-                    weight,
-                    completed: reps > 0,
-                  };
-                }
-
-                const completedSets = updatedSets.filter(
-                  (set) => set.completed,
-                ).length;
-                const exerciseCompleted = completedSets === updatedSets.length;
-
-                return {
-                  ...exercise,
-                  sets: updatedSets,
-                  completed: exerciseCompleted,
-                };
-              }
-              return exercise;
-            },
-          );
-
-          // Calculate overall progress
-          const totalExercises = updatedExercises.length;
-          const completedExercises = updatedExercises.filter(
-            (ex) => ex.completed,
-          ).length;
-          const progressPercent = Math.round(
-            (completedExercises / totalExercises) * 100,
-          );
-
-          // Update workout progress
-          get().updateWorkoutProgress(
-            state.currentWorkoutSession!.workoutId,
-            progressPercent,
-          );
-
-          return {
-            ...state,
-            currentWorkoutSession: {
-              ...state.currentWorkoutSession,
-              exercises: updatedExercises,
-            },
-          };
-        });
-      },
-
       updateSetData: (exerciseId, setIndex, data) => {
         set((state) => {
           if (!state.currentWorkoutSession) return state;
