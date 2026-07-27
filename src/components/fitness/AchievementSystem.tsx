@@ -4,11 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
-import { AuroraSpinner } from "../ui/aurora";
+import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rbr, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
@@ -301,14 +300,17 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         <View style={styles.stateWrap}>
           <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
           <Text style={styles.errorText}>Couldn't load achievements</Text>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.retryButton}
             onPress={loadAchievements}
+            scaleValue={0.96}
+            springConfig="snappy"
+            hapticType="light"
             accessibilityRole="button"
             accessibilityLabel="Retry loading achievements"
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </Card>
     );
