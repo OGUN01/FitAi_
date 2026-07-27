@@ -69,17 +69,6 @@ export type {
   WaterCalculator,
 } from './types';
 
-export type {
-  IBMRCalculator,
-  IBMICalculator,
-  ITDEECalculator,
-  IWaterCalculator,
-  IClimateDetector,
-  IEthnicityDetector,
-  IFormulaSelector,
-  IHealthCalculatorFactory,
-} from './interfaces';
-
 // ============================================================================
 // PHASE 2: CORE CALCULATOR EXPORTS
 // ============================================================================
@@ -106,14 +95,12 @@ export {
 // TDEE Calculator
 export {
   ClimateAdaptiveTDEECalculator,
-  detectClimateSimple,
   tdeeCalculator,
 } from './calculators/tdeeCalculator';
 
 // Water Calculator
 export {
   ClimateAdaptiveWaterCalculator,
-  assessDehydration,
   waterCalculator,
 } from './calculators/waterCalculator';
 
@@ -131,33 +118,7 @@ export {
   detectClimate,
   detectEthnicity,
   detectBestBMRFormula,
-  validateActivityLevel,
 } from './autoDetection';
-
-// ============================================================================
-// PHASE 1: CLASS EXPORTS - CALCULATOR FACTORY
-// ============================================================================
-
-export { HealthCalculatorFactory } from './calculatorFactory';
-
-// ============================================================================
-// PHASE 4: HEALTH CALCULATOR FACADE - UNIFIED API
-// ============================================================================
-
-export {
-  HealthCalculatorFacade,
-  type ComprehensiveHealthMetrics,
-  type GoalInput,
-  type GoalValidationResult,
-} from './HealthCalculatorFacade';
 
 // Step Goal Calculator
 export { calculatePersonalizedStepGoal } from './calculators/stepGoalCalculator';
-
-// ============================================================================
-// VERSION INFO
-// ============================================================================
-
-export const UNIVERSAL_HEALTH_VERSION = '4.0.0';
-export const UNIVERSAL_HEALTH_PHASE = 'Phase 4: Integration & Facade';
-export const UNIVERSAL_HEALTH_DATE = '2025-12-30';
