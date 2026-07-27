@@ -365,10 +365,7 @@ export class RecognizedFoodLogger {
         .single();
 
       if (metaError) {
-        console.log(
-          "Recognition metadata storage skipped (table may not exist):",
-          metaError.message,
-        );
+        // no-op: metadata table may not exist yet; failure is non-fatal
       }
     } catch (error) {
       console.warn("Warning: Failed to store recognition metadata:", error);
