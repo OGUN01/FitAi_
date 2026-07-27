@@ -797,6 +797,11 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                         setMealType(type);
                         haptics.light();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        type.charAt(0).toUpperCase() + type.slice(1)
+                      }
+                      accessibilityState={{ selected: mealType === type }}
                     >
                       <Ionicons
                         name={
@@ -830,6 +835,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     mode === "ingredients" && styles.modeToggleBtnActive,
                   ]}
                   onPress={() => setMode("ingredients")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ingredients mode"
+                  accessibilityState={{ selected: mode === "ingredients" }}
                 >
                   <Ionicons
                     name="list-outline"
@@ -855,6 +863,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     mode === "simple" && styles.modeToggleBtnActive,
                   ]}
                   onPress={() => setMode("simple")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Simple mode"
+                  accessibilityState={{ selected: mode === "simple" }}
                 >
                   <Ionicons
                     name="calculator-outline"
