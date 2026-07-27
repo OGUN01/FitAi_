@@ -32,6 +32,24 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// RestTimerRadial (transitive import via MainNavigation -> WeeklyBuilderScreen
+// -> ExerciseEditorSheet) imports @shopify/react-native-skia, which ships ESM
+// that Jest's transformIgnorePatterns doesn't whitelist. The test never renders
+// Skia, so stub the named imports RestTimerRadial uses as no-ops.
+jest.mock("@shopify/react-native-skia", () => {
+  const React = require("react");
+  const Noop: React.FC<{ children?: React.ReactNode }> = ({ children }) =>
+    children ?? null;
+  return {
+    Canvas: Noop,
+    Path: Noop,
+    Group: Noop,
+    LinearGradient: Noop,
+    vec: (x: number, y: number) => ({ x, y }),
+    Skia: { Path: { Make: () => ({}) } },
+  };
+});
+
 jest.mock("../../hooks/useAppConfig", () => ({
   useAppConfig: () => ({
     config: {
