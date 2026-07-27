@@ -369,11 +369,8 @@ const validateAndFixExerciseNames = (workout: GeneratedWorkout): GeneratedWorkou
     );
 
     if (!isValid) {
-      console.log(`⚠️  Invalid exercise name detected: "${exercise.name}"`);
-
       // Find closest valid exercise
       const closestMatch = findClosestValidExercise(exercise.name, [...VERIFIED_EXERCISE_NAMES]);
-      console.log(`🔄 Replaced with: "${closestMatch}"`);
 
       return { ...exercise, name: closestMatch };
     }
