@@ -216,19 +216,34 @@ class WorkoutTemplateService {
     if (error) {
       // Fallback: non-atomic but better than nothing
       console.error("Failed to increment template usage count (rpc):", error);
-      const { data } = await supabase
+      const { data: fallbackData, error: selectError } = await supabase
         .from("workout_templates")
         .select("usage_count")
         .eq("id", id)
         .eq("user_id", userId)
         .single();
+      if (selectError) {
+        // CLAUDE.md #5: no silent failures — log and bail rather than writing
+        // a fabricated usage_count=1 (currentCount would default to 0 on null).
+        console.error(
+          "Failed to read usage_count for non-atomic fallback:",
+          selectError,
+        );
+        return;
+      }
       const currentCount =
-        (data as { usage_count?: number } | null)?.usage_count ?? 0;
-      await supabase
+        (fallbackData as { usage_count?: number } | null)?.usage_count ?? 0;
+      const { error: updateError } = await supabase
         .from("workout_templates")
         .update({ usage_count: currentCount + 1, last_used_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", id)
         .eq("user_id", userId);
+      if (updateError) {
+        console.error(
+          "Failed to increment usage_count (fallback update):",
+          updateError,
+        );
+      }
     }
   }
 
@@ -368,7 +383,7 @@ class WorkoutTemplateService {
     });
 
     // Record lineage + atomically increment fork_count
-    await supabase
+    const { error: lineageError } = await supabase
       .from("workout_templates")
       .update({
         parent_template_id: templateId,
@@ -376,6 +391,14 @@ class WorkoutTemplateService {
       })
       .eq("id", forked.id)
       .eq("user_id", userId);
+    if (lineageError) {
+      // Non-fatal — the fork itself succeeded; lineage is metadata. Log per
+      // CLAUDE.md #5 (no silent failures) but do not roll back the fork.
+      console.error(
+        "Failed to record fork lineage (parent_template_id/author_name):",
+        lineageError,
+      );
+    }
 
     const { error: forkCountError } = await supabase.rpc(
       "increment_template_fork_count",
