@@ -104,7 +104,7 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
       {/* Step Circle */}
       <View style={[styles.stepCircle, stepStyles.circle]}>
         {isCompleted ? (
-          <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
         ) : (
           <Text style={[styles.stepNumber, stepStyles.number]}>
             {stepNumber}
