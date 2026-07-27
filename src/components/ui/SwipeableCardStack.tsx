@@ -24,7 +24,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { rf, rp, rh, rw, dimensions } from "../../utils/responsive";
+import { rf, rh, dimensions } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hapticSwipeAction } from "../../utils/haptics";
 
@@ -92,7 +92,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       translateX.value = ctx.startX + event.translationX;
       translateY.value = ctx.startY + event.translationY * 0.2; // Reduced vertical movement
     },
-    onEnd: (event) => {
+    onEnd: (_event) => {
       const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
       const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 
@@ -119,14 +119,14 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
+      onPanResponderGrant: (_evt, _gestureState) => {
         startPositionRef.current = { x: translateX.value, y: translateY.value };
       },
       onPanResponderMove: (evt, gestureState) => {
         translateX.value = startPositionRef.current.x + gestureState.dx;
         translateY.value = startPositionRef.current.y + gestureState.dy * 0.2;
       },
-      onPanResponderRelease: (evt, gestureState) => {
+      onPanResponderRelease: (_evt, _gestureState) => {
         const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
         const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 
