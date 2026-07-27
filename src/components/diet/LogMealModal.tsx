@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import { flatColors as colors, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { useNutritionStore } from "../../stores/nutritionStore";
@@ -1328,7 +1328,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(22),
-    fontWeight: "bold",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   closeButton: {
@@ -1353,7 +1353,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
     marginBottom: rh(6),
   },
@@ -1393,7 +1393,7 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
   },
   typeChipTextActive: {
@@ -1421,7 +1421,7 @@ const styles = StyleSheet.create({
   },
   modeToggleText: {
     fontSize: rf(12),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
   },
   modeToggleTextActive: {
@@ -1440,7 +1440,7 @@ const styles = StyleSheet.create({
   },
   addIngredientText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.primary,
   },
   colFixed: {
@@ -1454,7 +1454,7 @@ const styles = StyleSheet.create({
   },
   colHeader: {
     fontSize: rf(10),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
     textAlign: "center" as const,
   },
@@ -1494,7 +1494,7 @@ const styles = StyleSheet.create({
   },
   totalValue: {
     fontSize: rf(15),
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
   },
   totalLabel: {
@@ -1565,7 +1565,7 @@ const styles = StyleSheet.create({
   },
   scanChipText: {
     fontSize: rf(11),
-    fontWeight: "600" as const,
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.primary,
   },
   portionBadgeRow: {
@@ -1598,7 +1598,7 @@ const styles = StyleSheet.create({
   },
   multiplierBtnText: {
     fontSize: rf(13),
-    fontWeight: "600" as const,
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
   },
   multiplierBtnTextActive: {
@@ -1625,7 +1625,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
   },
   // FEATURE 1: tertiary "Save Meal" button — outline style so it reads as a
@@ -1637,7 +1637,7 @@ const styles = StyleSheet.create({
   },
   saveMealButtonText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.primary,
   },
   saveButton: {
@@ -1645,7 +1645,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
   },
   // FEATURE 1: autocomplete dropdown styles
@@ -1675,7 +1675,7 @@ const styles = StyleSheet.create({
   },
   suggestionName: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
   },
   suggestionMeta: {
