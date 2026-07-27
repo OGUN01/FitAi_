@@ -11,6 +11,7 @@ import {
   BodyMeasurement,
 } from "../types/localData";
 import type { MealLog } from "../types/diet";
+import { logger } from "../utils/logger";
 
 // ============================================================================
 // MIGRATION TYPES AND INTERFACES
@@ -805,7 +806,7 @@ export class MigrationEngine {
       // The previous implementation built a raw SQL string but never executed
       // it; the upload was simulated with a delay. Keeping that behavior until
       // the real client wiring lands.
-      console.log(`Uploading to ${table}:`, data);
+      logger.debug(`Uploading to ${table}`, { data });
 
       // For now, simulate the upload with a small delay
       await this.sleep(50 + Math.random() * 100);
@@ -823,7 +824,7 @@ export class MigrationEngine {
   ): Promise<void> {
     try {
       // TODO: replace with actual Supabase client / RPC call.
-      console.log(`Deleting from ${table}: ${id}`);
+      logger.debug(`Deleting from ${table}`, { id });
       await this.sleep(50 + Math.random() * 100);
     } catch (error) {
       throw new Error(
@@ -837,26 +838,26 @@ export class MigrationEngine {
       // TODO: replace these stubs with real COUNT queries via the Supabase client.
       // Verify user profile exists
       if (context.uploadedData.user) {
-        console.log("Verifying user profile in Supabase");
+        logger.debug("Verifying user profile in Supabase");
       }
 
       // Verify fitness data exists
       if (context.uploadedData.fitness) {
-        console.log("Verifying fitness data in Supabase");
+        logger.debug("Verifying fitness data in Supabase");
       }
 
       // Verify nutrition data exists
       if (context.uploadedData.nutrition) {
-        console.log("Verifying nutrition data in Supabase");
+        logger.debug("Verifying nutrition data in Supabase");
       }
 
       // Verify progress data exists
       if (context.uploadedData.progress) {
-        console.log("Verifying progress data in Supabase");
+        logger.debug("Verifying progress data in Supabase");
       }
 
       await this.sleep(200 + Math.random() * 300);
-      console.log("Data verification completed successfully");
+      logger.debug("Data verification completed successfully");
     } catch (error) {
       throw new Error(
         `Data verification failed: ${error instanceof Error ? error.message : String(error)}`,
