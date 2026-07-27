@@ -10,5 +10,4 @@
 
 export { ProgressChart } from "./ProgressChart";
 export { NutritionChart } from "./NutritionChart";
-export { WorkoutIntensityChart } from "./WorkoutIntensityChart";
 export { MuscleBalanceRadar, RADAR_AXES } from "./MuscleBalanceRadar";
