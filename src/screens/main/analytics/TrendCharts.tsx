@@ -4,7 +4,7 @@
  * Inspired by Apple Health, Fitbit, and modern fintech dashboards
  */
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
@@ -23,7 +23,7 @@ interface TrendChartsProps {
   onChartPress?: (chartType: string) => void;
 }
 
-export const TrendCharts: React.FC<TrendChartsProps> = ({
+export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
   weightData,
   calorieData,
   workoutData,
@@ -35,6 +35,18 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
   const hasWorkoutData = Boolean(workoutData && workoutData.length > 0);
   const safeCalorieData = calorieData ?? [];
   const safeWorkoutData = workoutData ?? [];
+
+  const weightLegend = useMemo(
+    () => (hasWeightData ? [{ color: colors.primary, label: "Weight" }] : undefined),
+    [hasWeightData],
+  );
+  const calorieLegend = useMemo(
+    () => (hasCalorieData ? [{ color: colors.success, label: "Consumed" }] : undefined),
+    [hasCalorieData],
+  );
+  const handleWeightPress = useCallback(() => onChartPress?.("weight"), [onChartPress]);
+  const handleCaloriePress = useCallback(() => onChartPress?.("calories"), [onChartPress]);
+  const handleWorkoutPress = useCallback(() => onChartPress?.("workouts"), [onChartPress]);
 
   return (
     <View style={styles.container}>
@@ -51,13 +63,9 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           title="Weight Progress"
           icon="trending-down"
           iconColor={colors.primary}
-          legend={
-            hasWeightData
-              ? [{ color: colors.primary, label: "Weight" }]
-              : undefined
-          }
+          legend={weightLegend}
           delay={0}
-          onPress={hasWeightData ? () => onChartPress?.("weight") : undefined}
+          onPress={hasWeightData ? handleWeightPress : undefined}
         >
           <LineChart data={weightData || []} color={colors.primary} unit="kg" />
         </ChartCard>
@@ -66,13 +74,9 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           title="Calorie Analysis"
           icon="flame"
           iconColor={colors.warning}
-          legend={
-            hasCalorieData
-              ? [{ color: colors.success, label: "Consumed" }]
-              : undefined
-          }
+          legend={calorieLegend}
           delay={100}
-          onPress={hasCalorieData ? () => onChartPress?.("calories") : undefined}
+          onPress={hasCalorieData ? handleCaloriePress : undefined}
         >
           {hasCalorieData ? (
             <BarChart
@@ -102,7 +106,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           icon="barbell"
           iconColor={colors.info}
           delay={200}
-          onPress={hasWorkoutData ? () => onChartPress?.("workouts") : undefined}
+          onPress={hasWorkoutData ? handleWorkoutPress : undefined}
         >
           {hasWorkoutData ? (
             <BarChart
@@ -130,7 +134,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
