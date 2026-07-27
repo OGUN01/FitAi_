@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
@@ -40,8 +40,6 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   onBack,
   onStartExercise,
 }) => {
-  const [isFavorited, setIsFavorited] = useState(false);
-
   const exercise = useExerciseData(exerciseId);
   const { isLoading, visualData } = useExerciseVisual(exercise?.name);
 
