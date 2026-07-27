@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   StyleProp,
   ViewStyle,
@@ -11,6 +10,8 @@ import {
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rs, rp, rbr } from "../../utils/responsive";
 import { getLocalDateString } from "../../utils/weekUtils";
+import { hexToRgba } from "../../utils/colors";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface WorkoutDay {
   date: string;
@@ -75,11 +76,11 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
 
     const intensityColors = [
       colors.surface,
-      "#2d5a3d", // Light green (lightened from #1a3d2e for visibility)
-      "#3a7a4d", // Light-medium green
-      "#40774c", // Medium green
-      "#53945b", // Dark green
-      colors.success, // Darkest green
+      colors.successAlt,
+      hexToRgba(colors.success, 0.4),
+      hexToRgba(colors.success, 0.6),
+      hexToRgba(colors.success, 0.8),
+      colors.success,
     ];
 
     return intensityColors[Math.min(intensity, 5)];
@@ -143,7 +144,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
               {calendarData.map((week, weekIndex) => (
                 <View key={weekIndex} style={styles.weekColumn}>
                   {week.map((day, dayIndex) => (
-                    <TouchableOpacity
+                    <AnimatedPressable
                       key={dayIndex}
                       style={[
                         styles.dayCell,
@@ -157,7 +158,12 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
                       hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                       accessibilityRole="button"
                       accessibilityLabel={`${day.date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}${day.workout ? `, ${day.workout.type}, intensity ${day.workout.intensity} of 5` : ", rest day"}`}
-                    />
+                      scaleValue={0.9}
+                      springConfig="snappy"
+                      hapticType="light"
+                    >
+                      {null}
+                    </AnimatedPressable>
                   ))}
                 </View>
               ))}
