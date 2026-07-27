@@ -3,7 +3,7 @@
  * Premium header with greeting, date, weather-style summary
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -29,7 +29,7 @@ interface HomeHeaderProps {
   notificationCount?: number;
 }
 
-export const HomeHeader: React.FC<HomeHeaderProps> = ({
+export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(({
   userName,
   userInitial,
   streak,
@@ -39,7 +39,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   notificationCount = 0,
 }) => {
   const hour = new Date().getHours();
-  const { greeting, icon, gradientColors } = (() => {
+  const { greeting, icon, gradientColors } = useMemo(() => {
     if (hour >= 5 && hour < 12) {
       return {
         greeting: "Good morning",
@@ -59,13 +59,19 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       icon: "moon" as const,
       gradientColors: [colors.primary, colors.primaryDark] as [string, string],
     };
-  })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const todayDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
+  const todayDate = useMemo(
+    () =>
+      new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   return (
     <View style={styles.container}>
@@ -154,7 +160,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
