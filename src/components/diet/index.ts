@@ -3,6 +3,8 @@
 
 export { CompactDietCard } from "./CompactDietCard";
 export type { CompactDietCardProps, MacroStat } from "./CompactDietCard";
+export { MealsListView } from "./MealsListView";
+export type { MealsListViewProps, MealsListViewMeal } from "./MealsListView";
 export { PremiumMealCard } from "./PremiumMealCard";
 export { HealthScoreIndicator } from "./HealthScoreIndicator";
 export { ProductDetailsModal } from "./ProductDetailsModal";

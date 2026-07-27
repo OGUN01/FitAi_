@@ -27,6 +27,7 @@ import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 
 import { CompactDietCard } from "../../components/diet/CompactDietCard";
+import { MealsListView } from "../../components/diet/MealsListView";
 import { MealPlanView } from "../../components/diet/MealPlanView";
 import { WaterIntakeModal } from "../../components/diet/WaterIntakeModal";
 import { DietScreenHeader } from "../../components/diet/DietScreenHeader";
@@ -76,8 +77,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [logMealScanResult, setLogMealScanResult] =
     useState<LogMealScanResult | null>(null);
   const [showMealDetailModal, setShowMealDetailModal] = useState(false);
-  // AG3: placeholder for the meals-list view (another agent wires real navigation).
+  // AG3: meals-list view state. showMealsList toggles the "Today's Meals"
+  // full list; showMealDetail + selectedMeal are the hook for the meal-detail
+  // agent (next agent builds the real detail screen — placeholder for now).
   const [showMealsList, setShowMealsList] = useState(false);
+  const [showMealDetail, setShowMealDetail] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState<DayMeal | null>(null);
   const [selectedMealForDetail, setSelectedMealForDetail] =
     useState<DayMeal | null>(null);
   const [showBarcodeOptions, setShowBarcodeOptions] = useState(false);
@@ -565,12 +570,20 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setShowMealDetailModal(false);
     setSelectedMealForDetail(null);
   }, []);
-  // AG3: opens the "today" meals view. Placeholder until the meals-list agent
-  // wires real navigation — toggling showMealsList gives the next agent a hook.
+  // AG3: opens the "Today's Meals" list view from the CompactDietCard.
   const handleViewToday = useCallback(() => {
-    setShowMealsList((prev) => !prev);
-    console.log("[DietScreen] View Today tapped", { showMealsList });
-  }, [showMealsList]);
+    setShowMealsList(true);
+  }, []);
+  // AG3: meal row tap from MealsListView — opens meal detail. The real detail
+  // screen is built by another agent; for now we set state + log so the hook
+  // is visible. showMealDetail/selectedMeal are the contract for that agent.
+  const handleMealsListMealPress = useCallback((meal: DayMeal) => {
+    setSelectedMeal(meal);
+    setShowMealDetail(true);
+  }, []);
+  const handleMealsListBack = useCallback(() => {
+    setShowMealsList(false);
+  }, []);
   const handleCloseLogMealModal = useCallback(
     () => setShowLogMealModal(false),
     [],
@@ -786,17 +799,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onViewToday={handleViewToday}
               testID="compact-diet-view-today"
             />
-
-            {/* AG3: meals-list placeholder. Another agent swaps this for the
-                real "today's meals" view. Kept minimal so the card stays the
-                focal point until the meals list is built. */}
-            {showMealsList ? (
-              <View style={styles.mealsListPlaceholder}>
-                <Text style={styles.mealsListPlaceholderText}>
-                  Today's meals list goes here
-                </Text>
-              </View>
-            ) : null}
 
             <DietQuickActions
               onScanFood={handleScanFood}
@@ -1273,6 +1275,48 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             onDismiss={handleScanResultDismiss}
           />
         )}
+
+        {/* AG3: "Today's Meals" list view — opens from CompactDietCard's
+            "View Today" button. Covers the main diet content with a focused
+            list of today's planned meals. Each row taps through to meal
+            detail (built by another agent; placeholder for now). */}
+        {showMealsList ? (
+          <View style={styles.mealsListOverlay}>
+            <MealsListView
+              meals={todaysMeals}
+              mealSchedule={mealSchedule}
+              onMealPress={handleMealsListMealPress}
+              onBack={handleMealsListBack}
+              onGeneratePlan={onGenerateWeeklyPlan}
+              testID="diet-meals-list-view"
+            />
+          </View>
+        ) : null}
+
+        {/* AG3: meal-detail placeholder. The meal-detail agent replaces this
+            block with the real detail screen; for now it confirms the tap
+            contract from MealsListView.onMealPress. */}
+        {showMealDetail && selectedMeal ? (
+          <View style={styles.mealDetailPlaceholder}>
+            <GlassCard elevation={2} padding="lg" style={styles.mealDetailCard}>
+              <Text style={styles.mealDetailTitle}>
+                {selectedMeal.name || selectedMeal.type}
+              </Text>
+              <Text style={styles.mealDetailHint}>
+                Meal detail screen — coming soon
+              </Text>
+              <Button
+                title="Close"
+                onPress={() => {
+                  setShowMealDetail(false);
+                  setSelectedMeal(null);
+                }}
+                variant="primary"
+                size="md"
+              />
+            </GlassCard>
+          </View>
+        ) : null}
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -1311,19 +1355,38 @@ const styles = StyleSheet.create({
   errorBannerIcon: {
     marginRight: spacing.sm,
   },
-  // AG3: meals-list placeholder (replaced by the meals-list agent later).
-  mealsListPlaceholder: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center" as const,
+  // AG3: meals-list overlay — full-screen focused list over the main diet
+  // content. Same background as the app so the transition reads as a new view.
+  mealsListOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background,
+    zIndex: 100,
   },
-  mealsListPlaceholderText: {
+  // AG3: meal-detail placeholder (replaced by the meal-detail agent).
+  mealDetailPlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlayDark,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    zIndex: 200,
+    paddingHorizontal: spacing.lg,
+  },
+  mealDetailCard: {
+    width: "100%" as const,
+    alignItems: "center" as const,
+    gap: spacing.md,
+  },
+  mealDetailTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: "700" as const,
+    color: colors.text,
+    textAlign: "center" as const,
+  },
+  mealDetailHint: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+    textAlign: "center" as const,
+    marginBottom: spacing.sm,
   },
   bottomSpacing: { height: rh(80) },
   barcodeLoadingOverlay: {
