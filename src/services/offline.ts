@@ -481,7 +481,7 @@ class OfflineService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         switch (type) {
-          case "CREATE":
+          case "CREATE": {
             const insertData =
               table === "workout_sessions"
                 ? normalizeWorkoutSessionPayload(
@@ -547,8 +547,9 @@ class OfflineService {
               throw new Error(createValidation.error);
             }
             break;
+          }
 
-          case "UPDATE":
+          case "UPDATE": {
             const normalizedUpdateData =
               table === "workout_sessions"
                 ? normalizeWorkoutSessionPayload(
@@ -576,8 +577,9 @@ class OfflineService {
               throw new Error(updateValidation.error);
             }
             break;
+          }
 
-          case "DELETE":
+          case "DELETE": {
             if (!data.id) {
               throw new Error(
                 `DELETE operation missing required 'id' field for table ${table}`,
@@ -596,6 +598,7 @@ class OfflineService {
               throw new Error(deleteValidation.error);
             }
             break;
+          }
 
           default:
             throw new Error(`Unknown action type: ${type}`);
