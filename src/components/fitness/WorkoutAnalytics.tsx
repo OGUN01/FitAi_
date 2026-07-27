@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
-import { AuroraSpinner } from "../ui/aurora";
+import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rh } from "../../utils/responsive";
 import { useFitnessData } from "../../hooks/useFitnessData";
@@ -69,14 +69,17 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
         <View style={styles.stateWrap}>
           <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
           <Text style={styles.errorText}>Couldn't load analytics</Text>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.retryButton}
             onPress={() => loadWorkoutStats(selectedRange)}
+            scaleValue={0.96}
+            springConfig="snappy"
+            hapticType="light"
             accessibilityRole="button"
             accessibilityLabel="Retry loading analytics"
           >
             <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </Card>
     );
@@ -89,13 +92,16 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
 
         <View style={styles.timeRangeSelector}>
           {timeRanges.map((range) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={range.id}
               style={[
                 styles.timeRangeButton,
                 selectedRange === range.id && styles.timeRangeButtonActive,
               ]}
               onPress={() => handleRangeChange(range.id)}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="light"
             >
               <Text
                 style={[
@@ -105,7 +111,7 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
               >
                 {range.label}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
