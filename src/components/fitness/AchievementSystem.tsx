@@ -79,11 +79,14 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
         .order("earned_at", { ascending: false });
 
       if (error) {
+        // CLAUDE.md §5: log Supabase errors — never swallow with empty state.
+        console.error("[AchievementSystem] Failed to load achievements:", error);
         setError(error.message);
       } else {
         setAchievements(data || []);
       }
     } catch (err) {
+      console.error("[AchievementSystem] loadAchievements threw:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load achievements",
       );
@@ -234,7 +237,11 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
           .from("achievements")
           .insert(newAchievements);
 
-        if (!error) {
+        if (error) {
+          // CLAUDE.md §5: log Supabase insert errors — never swallow.
+          console.error("[AchievementSystem] Failed to insert achievements:", error);
+          setError(error.message);
+        } else {
           const titles = newAchievements.map((a) => a.title).join(", ");
           crossPlatformAlert(
             "Achievement Unlocked!",
@@ -246,12 +253,14 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
           useAchievementStore
             .getState()
             .reconcileWithCurrentData(user.id)
-            .catch(() => {
-              // Sync failure is non-fatal; next mount will retry. Surface via
-              // setError so the developer still sees it during development.
+            .catch((reconcileErr) => {
+              // Sync failure is non-fatal; next mount will retry. Still log so
+              // a silent store/Supabase sync drift doesn't go unnoticed.
+              console.error("[AchievementSystem] reconcileWithCurrentData failed:", reconcileErr);
             });
         }
       } catch (err) {
+        console.error("[AchievementSystem] awardAchievements threw:", err);
         setError(
           err instanceof Error ? err.message : "Failed to award achievements",
         );
