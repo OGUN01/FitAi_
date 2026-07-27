@@ -210,7 +210,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
             <LinearGradient
               colors={[
                 colors.primaryDark,
-                "#7C3AED",
+                colors.purple,
                 colors.pink,
               ]}
               start={{ x: 0, y: 0 }}
