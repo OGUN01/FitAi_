@@ -463,6 +463,11 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   onPress={() =>
                     updateAdjustment(currentFoodIndex, portion.grams)
                   }
+                  accessibilityRole="button"
+                  accessibilityLabel={`${portion.label}, ${portion.grams} grams`}
+                  accessibilityState={{
+                    selected: currentAdjustment.adjustedGrams === portion.grams,
+                  }}
                 >
                   <Text
                     style={[
@@ -495,6 +500,11 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 updateAdjustment(currentFoodIndex, currentFood.estimatedGrams)
               }
               disabled={currentAdjustment.adjustmentRatio === 1.0}
+              accessibilityRole="button"
+              accessibilityLabel="Reset portion to estimated"
+              accessibilityState={{
+                disabled: currentAdjustment.adjustmentRatio === 1.0,
+              }}
             >
               <Ionicons name="refresh-outline" size={rf(14)} color={colors.primary} />
               <Text
