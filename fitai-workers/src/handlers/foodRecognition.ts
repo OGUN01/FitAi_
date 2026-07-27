@@ -233,7 +233,7 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 				},
 			metadata: {
 				processingTime,
-				model: 'google/gemini-3.5-flash-lite',
+				model: modelId,
 				userId: user.id,
 			},
 		});
@@ -301,8 +301,6 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 				code: ErrorCode.INTERNAL_ERROR,
 				metadata: {
 					processingTime,
-					// Include error details in dev/debug mode
-					debug: errorDetails,
 				},
 			},
 			500,
