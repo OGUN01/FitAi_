@@ -63,7 +63,7 @@ FitAI is a cutting-edge fitness application that combines:
 - **TypeScript** for type safety
 - **Custom UI Components** (19 advanced components)
 - **Zustand** for state management
-- **React Navigation** for routing
+- **Custom hand-rolled navigation** (overlay-session router in `src/components/navigation/MainNavigation.tsx` — NOT React Navigation)
 
 ### **Backend Stack**
 - **Supabase** for database and authentication
@@ -95,7 +95,7 @@ FitAI/
 │   │   ├── details/         # Detail view screens
 │   │   └── demo/            # Component showcase
 │   ├── services/            # API and backend services
-│   ├── store/               # State management
+│   ├── stores/              # Zustand state stores (fitness, nutrition, user, profile, subscription)
 │   ├── hooks/               # Custom React hooks
 │   ├── features/            # Core app features
 │   ├── data/                # Exercise and food databases
