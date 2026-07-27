@@ -110,7 +110,14 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
       onRequestClose={handleClose}
     >
       <View style={styles.backdrop}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose} />
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={handleClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss water intake modal"
+          accessibilityHint="Closes the dialog without saving"
+        />
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardView}
@@ -136,6 +143,9 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   onPress={handleClose}
                   style={styles.closeButton}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                  accessibilityHint="Closes the water intake dialog"
                 >
                   <Ionicons name="close" size={24} color={colors.white} />
                 </TouchableOpacity>
@@ -184,6 +194,9 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                     style={styles.quickOption}
                     onPress={() => handleQuickAdd(option.amount)}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${option.label} of water`}
+                    accessibilityHint="Quickly adds this amount to today's water intake"
                   >
                     <LinearGradient
                       colors={[
@@ -251,6 +264,8 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                 style={styles.submitButton}
                 onPress={handleCustomSubmit}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Add water"
               >
                 <LinearGradient
                   colors={[colors.primary, colors.primaryLight]}
