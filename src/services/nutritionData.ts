@@ -141,9 +141,6 @@ class NutritionDataService {
   async initialize(): Promise<void> {
     try {
       await crudOperations.initialize();
-      console.log(
-        "Nutrition Data Service initialized with Track B integration",
-      );
     } catch (error) {
       console.error("Failed to initialize Nutrition Data Service:", error);
       throw error;
@@ -241,10 +238,6 @@ class NutritionDataService {
           error: error.message,
         };
       }
-
-      console.log(
-        `ðŸ“Š meal_logs query result: ${data?.length || 0} meals for date ${date || "all"}`,
-      );
 
       // Transform meal_logs data to match expected Meal interface
       // Supabase meal_logs columns: meal_type, meal_name, total_calories, total_protein, total_carbohydrates, total_fat
