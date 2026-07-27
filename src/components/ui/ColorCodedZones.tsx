@@ -107,7 +107,7 @@ export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
 
 // Default color palette for zones
 export const HEART_RATE_ZONE_COLORS = {
-  zone1: "#8B9DC3", // Light blue - Recovery
+  zone1: colors.info, // Light blue - Recovery
   zone2: colors.success, // Green - Fat burn
   zone3: colors.amber, // Yellow - Cardio
   zone4: colors.warning, // Orange - Hard
