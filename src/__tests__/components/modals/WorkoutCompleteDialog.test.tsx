@@ -86,8 +86,8 @@ describe("WorkoutCompleteDialog", () => {
 
     const safeArea = screen.UNSAFE_getByType("SafeAreaView");
     expect(StyleSheet.flatten(safeArea.props.style)).toMatchObject({
-      flexShrink: 1,
-      maxHeight: 568 - 24 - 16 - spacing.lg * 2,
+      width: "85%",
+      maxWidth: 400,
     });
 
     const bodyScroll = screen.UNSAFE_getByType("ScrollView");
