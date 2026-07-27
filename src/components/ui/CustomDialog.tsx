@@ -371,7 +371,14 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
               <Ionicons name="barbell" size={rf(22)} color={colors.primary} />
             </View>
             <Text style={detailStyles.title} numberOfLines={2}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={detailStyles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={detailStyles.closeBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close dialog"
+              accessibilityHint="Closes the workout details dialog"
+            >
               <Ionicons name="close" size={rf(20)} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -405,7 +412,14 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
           </View>
 
           {/* Close Button */}
-          <TouchableOpacity style={detailStyles.closeButton} onPress={onClose} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={detailStyles.closeButton}
+            onPress={onClose}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Got it"
+            accessibilityHint="Closes the workout details dialog"
+          >
             <Text style={detailStyles.closeButtonText}>Got it</Text>
           </TouchableOpacity>
         </View>
