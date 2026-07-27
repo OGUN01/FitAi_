@@ -61,7 +61,7 @@ export async function executeAction(action: OfflineAction): Promise<void> {
   const { type, table, data } = action;
 
   switch (type) {
-    case "CREATE":
+    case "CREATE": {
       const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
       // progress_entries has a unique (user_id, entry_date) constraint — upsert to avoid
       // duplicate key errors when replaying queued offline actions.
@@ -77,8 +77,9 @@ export async function executeAction(action: OfflineAction): Promise<void> {
         throw new Error(createValidation.error);
       }
       break;
+    }
 
-    case "UPDATE":
+    case "UPDATE": {
       const { id, ...updateData } = data;
       if (!id) {
         throw new Error(
@@ -98,8 +99,9 @@ export async function executeAction(action: OfflineAction): Promise<void> {
         throw new Error(updateValidation.error);
       }
       break;
+    }
 
-    case "DELETE":
+    case "DELETE": {
       if (!data.id) {
         throw new Error(
           `DELETE operation missing required 'id' field for table ${table}`,
@@ -118,6 +120,7 @@ export async function executeAction(action: OfflineAction): Promise<void> {
         throw new Error(deleteValidation.error);
       }
       break;
+    }
 
     default:
       throw new Error(`Unknown action type: ${type}`);
