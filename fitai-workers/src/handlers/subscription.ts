@@ -687,7 +687,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	let rawBody: string;
 	try {
 		rawBody = await c.req.text();
-	} catch {
+	} catch (readError) {
+		console.error('[Webhook] Failed to read request body:', readError);
 		// Always return 200 to prevent Razorpay retry storms
 		return c.json({ success: false, error: 'Failed to read request body' }, 200);
 	}
@@ -703,7 +704,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	let isValidSignature: boolean;
 	try {
 		isValidSignature = await verifyWebhookSignature(rawBody, signature, env.RAZORPAY_WEBHOOK_SECRET, webhookTimestamp);
-	} catch {
+	} catch (sigError) {
+		console.error('[Webhook] Signature verification threw:', sigError);
 		return c.json({ success: false, error: 'Signature verification error' }, 200);
 	}
 
@@ -734,7 +736,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 			// Already processed, return success
 			return c.json({ success: true, message: 'Event already processed' }, 200);
 		}
-	} catch {
+	} catch (dedupError) {
+		console.error('[Webhook] Dedup check failed for event', eventId, ':', dedupError);
 		// Table might not exist yet or query failed; continue processing
 	}
 
@@ -743,10 +746,11 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	const newStatus = WEBHOOK_EVENT_STATUS_MAP[eventType];
 
 	if (!newStatus) {
-		// Unhandled event type â€” log for idempotency and return success
+		// Unhandled event type — log for idempotency and return success
 		try {
 			await recordWebhookEvent(supabase, eventId, eventType, buildWebhookPayload(eventId, event, 'skipped', 'unhandled_event'));
-		} catch {
+		} catch (skipError) {
+			console.error('[Webhook] Failed to record skipped (unhandled) event', eventId, ':', skipError);
 			// Non-critical: idempotency insert failed
 		}
 		return c.json({ success: true, message: 'Event type not handled' }, 200);
@@ -764,7 +768,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	let existingSubscription: SubscriptionRow | null;
 	try {
 		existingSubscription = await fetchLatestSubscriptionByRazorpayId(supabase, razorpaySubscriptionId);
-	} catch {
+	} catch (lookupError) {
+		console.error('[Webhook] Subscription lookup failed for', razorpaySubscriptionId, ':', lookupError);
 		try {
 			await recordWebhookEvent(
 				supabase,
@@ -772,7 +777,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 				event.event,
 				buildWebhookPayload(eventId, event, 'skipped', 'subscription_lookup_failed'),
 			);
-		} catch {
+		} catch (recordError) {
+			console.error('[Webhook] Failed to record lookup-failed event', eventId, ':', recordError);
 			// Best effort only; the webhook must still be acknowledged.
 		}
 		return c.json({ success: true, message: 'Webhook received but subscription lookup failed' }, 200);
@@ -781,7 +787,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	if (!existingSubscription?.id) {
 		try {
 			await recordWebhookEvent(supabase, eventId, event.event, buildWebhookPayload(eventId, event, 'skipped', 'missing_subscription'));
-		} catch {
+		} catch (recordError) {
+			console.error('[Webhook] Failed to record missing-subscription event', eventId, ':', recordError);
 			// Best effort only; we still acknowledge the webhook to avoid retry storms.
 		}
 		return c.json({ success: true, message: 'Webhook received but no matching subscription record exists' }, 200);
@@ -795,7 +802,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 				eventType,
 				buildWebhookPayload(eventId, event, 'skipped', 'stale_event'),
 			);
-		} catch {
+		} catch (recordError) {
+			console.error('[Webhook] Failed to record stale event', eventId, ':', recordError);
 			// Non-critical: stale event logging failed
 		}
 		return c.json({ success: true, message: 'Stale webhook ignored' }, 200);
@@ -853,7 +861,8 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 	// Record successful event processing for idempotency
 	try {
 		await recordWebhookEvent(supabase, eventId, eventType, buildWebhookPayload(eventId, event, 'processed'));
-	} catch {
+	} catch (recordError) {
+		console.error('[Webhook] Failed to record processed event', eventId, ':', recordError);
 		return c.json({ success: false, error: 'Failed to record webhook event' }, 200);
 	}
 
