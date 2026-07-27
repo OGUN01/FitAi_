@@ -214,8 +214,8 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		// the response is returned before the increment completes.
 		try {
 			await incrementUsage(c.env, userId, featureKey, periodType);
-		} catch {
-			console.error(`[SubscriptionGate] Failed to increment usage for ${featureKey}`);
+		} catch (incrementError) {
+			console.error(`[SubscriptionGate] Failed to increment usage for ${featureKey}:`, incrementError);
 		}
 
 		await next();
