@@ -134,7 +134,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   icon="calendar-outline"
                   label="Timeline"
                   value={`${alternative.newTimeline} wks`}
-                  color="#3B82F6"
+                  color={colors.blue}
                 />
               )}
               {alternative.newTargetWeight && (
@@ -149,7 +149,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                 icon="flame-outline"
                 label="Calories"
                 value={`${alternative.dailyCalories != null && !isNaN(alternative.dailyCalories) ? alternative.dailyCalories : "--"}`}
-                color="#F97316"
+                color={colors.orange}
               />
               {alternative.newWorkoutFrequency && (
                 <MetricPill
