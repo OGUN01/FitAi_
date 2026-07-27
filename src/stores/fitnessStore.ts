@@ -28,6 +28,25 @@ import {
 } from "../utils/weekUtils";
 
 /**
+ * Loose shape of a single exercise object stored in the `workout_sessions`
+ * `exercises_completed` (canonical) or legacy `exercises` JSONB column. The
+ * columns are written by several services over time, so only the fields
+ * actually consumed by the hydration/refresh mappings are declared (all
+ * optional). Replaces the previous `any` typing — CLAUDE.md: no `any` where a
+ * proper type exists.
+ */
+type StoredSessionExercise = {
+  exerciseName?: string;
+  name?: string;
+  sets?: number;
+  reps?: number;
+  exerciseId?: string;
+  id?: string;
+  duration?: number;
+  restTime?: number;
+};
+
+/**
  * BUG-2: Returns the real authenticated user id, or null when the user is a
  * guest / not authenticated. Callers use this to SKIP offline-queue sync for
  * guests (matching the pattern in nutritionStore, hydrationStore). Guest IDs
@@ -1097,12 +1116,14 @@ export const useFitnessStore = create<FitnessState>()(
                   // is kept ONLY for rows written before this standardization
                   // (startTemplateSession and completion writers now all use
                   // exercises_completed). Do not write `exercises` for new rows.
-                  const rawExercises = Array.isArray(s.exercises_completed)
-                    ? s.exercises_completed
+                  const rawExercises: StoredSessionExercise[] = Array.isArray(
+                    s.exercises_completed,
+                  )
+                    ? (s.exercises_completed as StoredSessionExercise[])
                     : Array.isArray(s.exercises)
-                      ? s.exercises
+                      ? (s.exercises as StoredSessionExercise[])
                       : [];
-                  const exercises = rawExercises.map((ex: any) => ({
+                  const exercises = rawExercises.map((ex) => ({
                     name: ex.exerciseName || ex.name || "",
                     sets: Number(ex.sets) || 0,
                     reps: Number(ex.reps) || 0,
@@ -1369,7 +1390,7 @@ export const useFitnessStore = create<FitnessState>()(
           const { data, error } = await supabase
             .from("workout_sessions")
             .select(
-              "id, workout_id, planned_day_key, plan_slot_key, workout_name, workout_type, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed",
+              "id, workout_id, planned_day_key, plan_slot_key, workout_name, workout_type, duration, total_duration_minutes, calories_burned, completed_at, started_at, is_extra, exercises_completed, is_completed",
             )
             .eq("id", sessionId)
             .eq("user_id", userId)
@@ -1400,9 +1421,8 @@ export const useFitnessStore = create<FitnessState>()(
             typeof data.total_duration_minutes === "number" &&
             data.total_duration_minutes > 0
               ? data.total_duration_minutes
-              : typeof (data as any).duration === "number" &&
-                (data as any).duration > 0
-                ? (data as any).duration
+              : typeof data.duration === "number" && data.duration > 0
+                ? data.duration
                 : planWorkout?.duration || 0;
           // Authoritative calories from the server — NO client-side re-derive.
           const caloriesBurned =
@@ -1410,10 +1430,12 @@ export const useFitnessStore = create<FitnessState>()(
               ? data.calories_burned
               : 0;
 
-          const rawExercises = Array.isArray(data.exercises_completed)
-            ? data.exercises_completed
+          const rawExercises: StoredSessionExercise[] = Array.isArray(
+            data.exercises_completed,
+          )
+            ? (data.exercises_completed as StoredSessionExercise[])
             : [];
-          const exercises = rawExercises.map((ex: any) => ({
+          const exercises = rawExercises.map((ex) => ({
             name: ex.exerciseName || ex.name || "",
             sets: Number(ex.sets) || 0,
             reps: Number(ex.reps) || 0,
