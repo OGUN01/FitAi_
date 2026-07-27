@@ -59,6 +59,8 @@ interface UserState {
   isLoading: boolean;
   error: string | null;
   isProfileComplete: boolean;
+  // Runtime source for goals when profile is null (rule 6 — never drop user data)
+  fitnessGoals: FitnessGoals | null;
 
   // Actions
   createProfile: (
@@ -98,6 +100,7 @@ export const useUserStore = create<UserState>()(
       isLoading: false,
       error: null,
       isProfileComplete: false,
+      fitnessGoals: null,
 
       // Actions
       createProfile: async (
@@ -126,6 +129,7 @@ export const useUserStore = create<UserState>()(
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Failed to create profile";
+          console.error("[userStore] create profile failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -162,6 +166,7 @@ export const useUserStore = create<UserState>()(
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Failed to get profile";
+          console.error("[userStore] get profile failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -204,6 +209,7 @@ export const useUserStore = create<UserState>()(
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Failed to update profile";
+          console.error("[userStore] update profile failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -234,12 +240,16 @@ export const useUserStore = create<UserState>()(
               };
               set({
                 profile: updatedProfile,
+                fitnessGoals: response.data,
                 isLoading: false,
                 error: null,
                 isProfileComplete: get().checkProfileComplete(updatedProfile),
               });
             } else {
+              // profile is null — preserve goals as runtime state (rule 6)
+              console.warn("[userStore] create fitness goals succeeded but profile is null; storing goals in runtime fitnessGoals field");
               set({
+                fitnessGoals: response.data,
                 isLoading: false,
                 error: null,
               });
@@ -257,6 +267,7 @@ export const useUserStore = create<UserState>()(
             error instanceof Error
               ? error.message
               : "Failed to create fitness goals";
+          console.error("[userStore] create fitness goals failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -286,12 +297,16 @@ export const useUserStore = create<UserState>()(
               };
               set({
                 profile: updatedProfile,
+                fitnessGoals: response.data,
                 isLoading: false,
                 error: null,
                 isProfileComplete: get().checkProfileComplete(updatedProfile),
               });
             } else {
+              // profile is null — preserve goals as runtime state (rule 6)
+              console.warn("[userStore] get fitness goals succeeded but profile is null; storing goals in runtime fitnessGoals field");
               set({
+                fitnessGoals: response.data,
                 isLoading: false,
                 error: null,
               });
@@ -309,6 +324,7 @@ export const useUserStore = create<UserState>()(
             error instanceof Error
               ? error.message
               : "Failed to get fitness goals";
+          console.error("[userStore] get fitness goals failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -342,12 +358,16 @@ export const useUserStore = create<UserState>()(
               };
               set({
                 profile: updatedProfile,
+                fitnessGoals: response.data,
                 isLoading: false,
                 error: null,
                 isProfileComplete: get().checkProfileComplete(updatedProfile),
               });
             } else {
+              // profile is null — preserve goals as runtime state (rule 6)
+              console.warn("[userStore] update fitness goals succeeded but profile is null; storing goals in runtime fitnessGoals field");
               set({
+                fitnessGoals: response.data,
                 isLoading: false,
                 error: null,
               });
@@ -365,6 +385,7 @@ export const useUserStore = create<UserState>()(
             error instanceof Error
               ? error.message
               : "Failed to update fitness goals";
+          console.error("[userStore] update fitness goals failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -405,6 +426,7 @@ export const useUserStore = create<UserState>()(
             error instanceof Error
               ? error.message
               : "Failed to get complete profile";
+          console.error("[userStore] get complete profile failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -443,6 +465,7 @@ export const useUserStore = create<UserState>()(
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Failed to delete profile";
+          console.error("[userStore] delete profile failed:", error);
           set({
             isLoading: false,
             error: errorMessage,
@@ -464,6 +487,7 @@ export const useUserStore = create<UserState>()(
           profile: null,
           isProfileComplete: false,
           error: null,
+          fitnessGoals: null,
         });
       },
 
@@ -473,6 +497,11 @@ export const useUserStore = create<UserState>()(
           isProfileComplete: profile
             ? get().checkProfileComplete(profile)
             : false,
+          // Sync runtime fitnessGoals from profile when present; when profile
+          // is null, leave fitnessGoals intact so any cached goals survive
+          // (rule 6 — store is the runtime source).
+          fitnessGoals:
+            profile?.fitnessGoals ?? get().fitnessGoals,
         });
       },
 
@@ -602,7 +631,7 @@ export const useUserStore = create<UserState>()(
       },
 
       reset: () => {
-        set({ profile: null, isProfileComplete: false, isLoading: false, error: null });
+        set({ profile: null, isProfileComplete: false, isLoading: false, error: null, fitnessGoals: null });
       },
     }),
     {
@@ -611,6 +640,7 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         profile: state.profile,
         isProfileComplete: state.isProfileComplete,
+        fitnessGoals: state.fitnessGoals,
       }),
     },
   ),
