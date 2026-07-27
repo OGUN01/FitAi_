@@ -19,7 +19,7 @@
  * Reduce-motion is respected on the layout animations (entrance/exit fall back to
  * a plain fade so reduce-motion users don't see sliding).
  */
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -37,12 +37,8 @@ import Animated, {
   FadeIn,
   FadeOut,
   useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  interpolate,
 } from "react-native-reanimated";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { GestureDetector } from "react-native-gesture-handler";
 import { useDragToReorder } from "../../../gestures/handlers";
 import { animations, duration } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
