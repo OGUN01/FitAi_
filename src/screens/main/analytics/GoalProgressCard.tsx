@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,24 +17,31 @@ interface GoalProgressCardProps {
   bodyAnalysis?: BodyAnalysisData | null;
 }
 
-export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
+export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
   calculatedMetrics,
   profilePersonalInfo: _profilePersonalInfo,
   bodyAnalysis,
 }) => {
-  const { weightProgress } = getWeightGoalProgress({
-    currentWeightKg: calculatedMetrics?.currentWeightKg ?? null,
-    targetWeightKg: calculatedMetrics?.targetWeightKg ?? null,
-    fallbackStartWeightKg:
-      calculatedMetrics?.currentWeightKg ??
-      bodyAnalysis?.current_weight_kg ??
-      null,
-    weeklyRateKg: calculatedMetrics?.weeklyWeightLossRate ?? null,
-    targetTimelineWeeks: calculatedMetrics?.targetTimelineWeeks ?? null,
-  });
-
-  const weightProgressPercent =
-    weightProgress != null ? Math.round(weightProgress * 100) : 0;
+  const { weightProgressPercent } = useMemo(() => {
+    const { weightProgress } = getWeightGoalProgress({
+      currentWeightKg: calculatedMetrics?.currentWeightKg ?? null,
+      targetWeightKg: calculatedMetrics?.targetWeightKg ?? null,
+      fallbackStartWeightKg:
+        calculatedMetrics?.currentWeightKg ??
+        bodyAnalysis?.current_weight_kg ??
+        null,
+      weeklyRateKg: calculatedMetrics?.weeklyWeightLossRate ?? null,
+      targetTimelineWeeks: calculatedMetrics?.targetTimelineWeeks ?? null,
+    });
+    const percent = weightProgress != null ? Math.round(weightProgress * 100) : 0;
+    return { weightProgressPercent: percent };
+  }, [
+    calculatedMetrics?.currentWeightKg,
+    calculatedMetrics?.targetWeightKg,
+    calculatedMetrics?.weeklyWeightLossRate,
+    calculatedMetrics?.targetTimelineWeeks,
+    bodyAnalysis?.current_weight_kg,
+  ]);
 
   return (
     <Animated.View
@@ -102,7 +109,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
       </View>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   trendCard: {
