@@ -65,7 +65,9 @@ const MetricCard: React.FC<{
   trendValue?: string;
   delay?: number;
   onPress?: () => void;
-}> = ({
+  metricId?: string;
+  onMetricPress?: (metric: string) => void;
+}> = React.memo(({
   title,
   value,
   subtitle,
@@ -75,6 +77,8 @@ const MetricCard: React.FC<{
   trendValue,
   delay = 0,
   onPress,
+  metricId,
+  onMetricPress,
 }) => {
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
@@ -111,7 +115,13 @@ const MetricCard: React.FC<{
       style={styles.cardWrapper}
     >
       <AnimatedPressable
-        onPress={onPress}
+        onPress={() => {
+          if (metricId && onMetricPress) {
+            onMetricPress(metricId);
+          } else {
+            onPress?.();
+          }
+        }}
         scaleValue={0.97}
         hapticFeedback={true}
         hapticType="light"
@@ -173,9 +183,9 @@ const MetricCard: React.FC<{
       </AnimatedPressable>
     </Animated.View>
   );
-};
+});
 
-export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
+export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
   data,
   period,
   onMetricPress,
@@ -240,7 +250,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           }
           subtitle={!hasWeightTrendData ? "Log again to see trend" : undefined}
           delay={0}
-          onPress={() => onMetricPress?.("weight")}
+          metricId="weight"
+          onMetricPress={onMetricPress}
         />
 
         <MetricCard
@@ -260,7 +271,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               : undefined
           }
           delay={100}
-          onPress={() => onMetricPress?.("calories")}
+          metricId="calories"
+          onMetricPress={onMetricPress}
         />
       </View>
 
@@ -279,7 +291,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               : undefined
           }
           delay={200}
-          onPress={() => onMetricPress?.("workouts")}
+          metricId="workouts"
+          onMetricPress={onMetricPress}
         />
 
         <MetricCard
@@ -289,7 +302,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           icon="flame"
           color={colors.errorLight}
           delay={300}
-          onPress={() => onMetricPress?.("streak")}
+          metricId="streak"
+          onMetricPress={onMetricPress}
         />
       </View>
 
@@ -321,7 +335,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               icon="body-outline"
               color={colors.accent}
               delay={400}
-              onPress={() => onMetricPress?.("bmi")}
+              metricId="bmi"
+              onMetricPress={onMetricPress}
             />
 
             <MetricCard
@@ -331,7 +346,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               icon="pulse-outline"
               color={colors.pink}
               delay={500}
-              onPress={() => onMetricPress?.("bmr")}
+              metricId="bmr"
+              onMetricPress={onMetricPress}
             />
           </View>
 
@@ -344,7 +360,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               icon="flash-outline"
               color={colors.warningAlt}
               delay={600}
-              onPress={() => onMetricPress?.("tdee")}
+              metricId="tdee"
+              onMetricPress={onMetricPress}
             />
 
             <MetricCard
@@ -358,14 +375,15 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
               icon="water-outline"
               color={colors.cyan}
               delay={700}
-              onPress={() => onMetricPress?.("water")}
+              metricId="water"
+              onMetricPress={onMetricPress}
             />
           </View>
         </>
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
