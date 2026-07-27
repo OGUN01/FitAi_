@@ -12,10 +12,10 @@ import {
   FlatList,
   StyleSheet,
   TextInput,
-  Pressable,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+// NOTE: Pressable intentionally removed — all interactive buttons use AnimatedPressable.
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -654,7 +654,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               testID="template-search-input"
             />
             {search.length > 0 ? (
-              <Pressable
+              <AnimatedPressable
                 onPress={() => {
                   haptics.light();
                   setSearch("");
@@ -663,13 +663,16 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
                 accessibilityHint="Remove the search query"
+                scaleValue={0.9}
+                springConfig="snappy"
+                hapticType="light"
               >
                 <Ionicons
                   name="close-circle"
                   size={rf(18)}
                   color={colors.text.tertiary}
                 />
-              </Pressable>
+              </AnimatedPressable>
             ) : null}
           </View>
 
@@ -1126,7 +1129,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
             {/* Bookmark icon (Phase 10) — top-right of thumbnail. Hidden during
                 multi-select so it doesn't conflict with the selection checkbox. */}
             {!multiSelect ? (
-              <Pressable
+              <AnimatedPressable
                 onPress={(e) => {
                   e.stopPropagation();
                   onToggleBookmark(template.id);
@@ -1138,13 +1141,16 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                   bookmarked ? "Remove bookmark" : "Bookmark template"
                 }
                 testID={`bookmark-${template.id}`}
+                scaleValue={0.9}
+                springConfig="snappy"
+                hapticType="light"
               >
                 <Ionicons
                   name={bookmarked ? "bookmark" : "bookmark-outline"}
                   size={rf(18)}
                   color={colors.text.primary}
                 />
-              </Pressable>
+              </AnimatedPressable>
             ) : null}
           </LinearGradient>
 
@@ -1186,7 +1192,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
 
           {/* Start button (non-multiselect only) */}
           {!multiSelect ? (
-            <Pressable
+            <AnimatedPressable
               onPress={() => onStart(template)}
               disabled={template.exercises.length === 0}
               testID={`start-button-${template.id}`}
@@ -1202,9 +1208,12 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                   ? "Template has no exercises yet"
                   : "Begin a workout session from this template"
               }
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="light"
             >
               <Text style={styles.gridStartBtnText}>Start</Text>
-            </Pressable>
+            </AnimatedPressable>
           ) : null}
         </GlassCard>
       </AnimatedPressable>
@@ -1311,7 +1320,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                   {template.name}
                 </Text>
                 {!multiSelect ? (
-                  <Pressable
+                  <AnimatedPressable
                     onPress={(e) => {
                       e.stopPropagation();
                       onToggleBookmark(template.id);
@@ -1323,6 +1332,9 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                       bookmarked ? "Remove bookmark" : "Bookmark template"
                     }
                     testID={`bookmark-${template.id}`}
+                    scaleValue={0.9}
+                    springConfig="snappy"
+                    hapticType="light"
                   >
                     <Ionicons
                       name={bookmarked ? "bookmark" : "bookmark-outline"}
@@ -1331,7 +1343,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                         bookmarked ? colors.primary.DEFAULT : colors.text.secondary
                       }
                     />
-                  </Pressable>
+                  </AnimatedPressable>
                 ) : null}
                 {multiSelect ? (
                   <View
@@ -1409,13 +1421,16 @@ const TemplateListRow: React.FC<ListRowProps> = ({
               {/* Exercise quick list (preserves GAP-14 history tap) */}
               <View style={styles.exerciseListContainer}>
                 {template.exercises.slice(0, 3).map((ex, idx) => (
-                  <Pressable
+                  <AnimatedPressable
                     key={`${ex.exerciseId}-${idx}`}
                     style={styles.exerciseRow}
                     onPress={() => onExerciseHistory(ex.exerciseId, ex.name)}
                     testID={`exercise-history-${template.id}-${idx}`}
                     accessibilityRole="button"
                     accessibilityLabel={`View ${ex.name} history`}
+                    scaleValue={0.95}
+                    springConfig="snappy"
+                    hapticType="light"
                   >
                     <Text style={styles.exerciseRowName} numberOfLines={1}>
                       {ex.name}
@@ -1426,7 +1441,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                         ? ex.repRange[0]
                         : `${ex.repRange[0]}-${ex.repRange[1]}`}
                     </Text>
-                  </Pressable>
+                  </AnimatedPressable>
                 ))}
                 {template.exercises.length > 3 ? (
                   <Text style={styles.moreExercises}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, PropsWithChildren } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
+import { View, Text, StyleSheet, Modal } from "react-native";
 import { Card } from "../ui";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 
@@ -161,11 +162,14 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
 
               {/* Controls */}
               <View style={styles.controls}>
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[styles.modernControlButton, styles.outlineButton]}
                   onPress={handlePauseResume}
                   accessibilityRole="button"
                   accessibilityLabel={isPaused ? "Resume timer" : "Pause timer"}
+                  scaleValue={0.95}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
                   <Text
                     style={[styles.modernControlText, styles.outlineButtonText]}
@@ -175,13 +179,16 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
                   >
                     {isPaused ? "Resume" : "Pause"}
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
 
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[styles.modernControlButton, styles.primaryButton]}
                   onPress={onComplete}
                   accessibilityRole="button"
                   accessibilityLabel="Skip rest"
+                  scaleValue={0.95}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
                   <Text
                     style={[styles.modernControlText, styles.primaryButtonText]}
@@ -191,13 +198,16 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
                   >
                     Skip Rest
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
 
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[styles.modernControlButton, styles.outlineButton]}
                   onPress={onCancel}
                   accessibilityRole="button"
                   accessibilityLabel="Cancel timer"
+                  scaleValue={0.95}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
                   <Text
                     style={[styles.modernControlText, styles.outlineButtonText]}
@@ -207,30 +217,36 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
                   >
                     Cancel
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
 
               {/* Quick Time Adjustments */}
               <View style={styles.quickAdjustments}>
-                <TouchableOpacity
+                <AnimatedPressable
                   style={styles.adjustButton}
                   onPress={() =>
                     setTimeRemaining((prev) => Math.max(0, prev - 30))
                   }
                   accessibilityRole="button"
                   accessibilityLabel="Subtract 30 seconds"
+                  scaleValue={0.9}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
                   <Text style={styles.adjustButtonText}>-30s</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
 
-                <TouchableOpacity
+                <AnimatedPressable
                   style={styles.adjustButton}
                   onPress={() => setTimeRemaining((prev) => prev + 30)}
                   accessibilityRole="button"
                   accessibilityLabel="Add 30 seconds"
+                  scaleValue={0.9}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
                   <Text style={styles.adjustButtonText}>+30s</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             </View>
           </Card>

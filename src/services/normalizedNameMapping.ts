@@ -120,10 +120,6 @@ class NormalizedNameMappingService {
     this.wordIndex = this.buildWordIndex();
     this.muscleIndex = {}; // exerciseDatabase.indices.byMuscle; // Disabled to reduce bundle size
     this.equipmentIndex = {}; // exerciseDatabase.indices.byEquipment; // Disabled to reduce bundle size
-
-    console.log(
-      `🎯 Normalized Name Mapping initialized in fallback mode (bundle size optimization)`
-    );
   }
 
   /**

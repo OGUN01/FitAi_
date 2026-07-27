@@ -206,8 +206,6 @@ class AnalyticsEngine extends EventEmitter {
 
       // Emit analytics update event
       this.emit("metricsUpdated", metrics);
-
-      console.log(`📈 Daily metrics added for ${metrics.date}`);
     } catch (error) {
       console.error("❌ Error adding daily metrics:", error);
     }
@@ -229,10 +227,6 @@ class AnalyticsEngine extends EventEmitter {
     if (relevantMetrics.length === 0) {
       throw new Error("Insufficient data for analytics generation");
     }
-
-    console.log(
-      `📊 Generating ${period} analytics with ${relevantMetrics.length} data points...`,
-    );
 
     const analytics: ComprehensiveAnalytics = {
       period,
@@ -258,10 +252,6 @@ class AnalyticsEngine extends EventEmitter {
       this.generateImprovementSuggestions(analytics);
     analytics.achievements = this.identifyAchievements(relevantMetrics);
     analytics.trends = this.analyzeTrends(relevantMetrics);
-
-    console.log(
-      `✅ Analytics generated - Overall Score: ${analytics.overallScore}/100`,
-    );
 
     return analytics;
   }
@@ -1129,9 +1119,6 @@ class AnalyticsEngine extends EventEmitter {
           365,
         );
         this.metricsHistory = dailyMetrics.map((m) => this.dailyMetricsToFitness(m));
-        console.log(
-          `✅ Loaded ${this.metricsHistory.length} historical metrics from Supabase`,
-        );
         return;
       }
 
@@ -1139,9 +1126,6 @@ class AnalyticsEngine extends EventEmitter {
       const stored = await AsyncStorage.getItem(this.METRICS_HISTORY_KEY);
       if (stored) {
         this.metricsHistory = JSON.parse(stored);
-        console.log(
-          `✅ Loaded ${this.metricsHistory.length} historical metrics from AsyncStorage (guest)`,
-        );
       }
     } catch (error) {
       console.error("❌ Error loading metrics history:", error);

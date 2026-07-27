@@ -3,10 +3,11 @@ import {
   View,
   Text,
   Image,
-  TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../../components/ui";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rbr } from '../../../utils/responsive';
 
@@ -38,27 +39,28 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
           />
         ) : (
           <View style={styles.animationPlaceholder}>
-            <Text style={styles.animationEmoji}>🏋️‍♂️</Text>
+            <Ionicons name="barbell" size={rf(48)} color={colors.textSecondary} style={styles.animationEmoji} />
             <Text style={styles.animationText}>Exercise Animation</Text>
           </View>
         )}
 
         {instructionsCount > 1 && (
           <View style={styles.animationControls}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.playButton}
               onPress={onTogglePlay}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? "Pause animation" : "Play animation"}
+              scaleValue={0.9}
+              springConfig="snappy"
+              hapticType="light"
             >
-              <Text style={styles.playButtonText}>
-                {isPlaying ? "⏸️" : "▶️"}
-              </Text>
-            </TouchableOpacity>
+              <Ionicons name={isPlaying ? "pause" : "play"} size={rf(20)} color={colors.surface} />
+            </AnimatedPressable>
 
             <View style={styles.stepIndicators}>
               {Array.from({ length: instructionsCount }).map((_, index) => (
-                <TouchableOpacity
+                <AnimatedPressable
                   key={index}
                   style={[
                     styles.stepIndicator,
@@ -68,7 +70,12 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
                   hitSlop={{ top: 18, bottom: 18, left: 18, right: 18 }}
                   accessibilityRole="button"
                   accessibilityLabel={`Go to step ${index + 1}`}
-                />
+                  scaleValue={0.95}
+                  springConfig="snappy"
+                  hapticType="light"
+                >
+                  {null}
+                </AnimatedPressable>
               ))}
             </View>
           </View>
