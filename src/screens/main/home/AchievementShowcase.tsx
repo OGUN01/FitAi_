@@ -97,7 +97,7 @@ const ProgressBadge: React.FC<{
   </AnimatedPressable>
 );
 
-export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
+export const AchievementShowcase: React.FC<AchievementShowcaseProps> = React.memo(({
   achievements,
   totalBadges,
   totalAchievements,
@@ -228,7 +228,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
       )}
     </GlassCard>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {
