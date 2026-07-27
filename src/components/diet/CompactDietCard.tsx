@@ -27,6 +27,7 @@ import {
   spacing,
   borderRadius,
   flatFontSize as fontSize,
+  typography,
 } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rh, rbr } from "../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
   },
   ringValue: {
     fontSize: fontSize.xl,
-    fontWeight: "800" as const,
+    fontWeight: String(typography.fontWeight.extrabold) as any,
     color: colors.primary,
   },
   ringLabel: {
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
   },
   consumedLabel: {
     fontSize: fontSize.sm,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   consumedValue: {
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
   },
   consumedNumber: {
     fontSize: fontSize.sm,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   consumedUnit: {
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
   },
   macroLabel: {
     fontSize: rf(10),
-    fontWeight: "600" as const,
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
   },
   macroValueRow: {
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   },
   macroValue: {
     fontSize: rf(11),
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   macroTarget: {
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
   },
   viewTodayText: {
     fontSize: fontSize.sm,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
 });
