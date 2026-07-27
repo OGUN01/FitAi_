@@ -14,19 +14,7 @@
  */
 
 import { supabase } from "../services/supabase";
-import type {
-  PersonalInfo,
-  DietPreferences,
-  WorkoutPreferences,
-  BodyMetrics,
-  FitnessGoals,
-} from "../types/user";
-import type {
-  SyncableUserProfile,
-  SyncableBodyAnalysis,
-  ValidationResult,
-  SyncableData,
-} from "../types/profileData";
+import type { ValidationResult } from "../types/profileData";
 
 // ============================================================================
 // TYPES
@@ -37,8 +25,8 @@ export type DiscrepancySeverity = "info" | "warning" | "error";
 export interface Discrepancy {
   dataType: string;
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   severity: DiscrepancySeverity;
 }
 
@@ -82,7 +70,7 @@ interface SchemaField {
     | "timestamp";
   required: boolean;
   nullable?: boolean;
-  validValues?: any[];
+  validValues?: unknown[];
   minValue?: number;
   maxValue?: number;
 }
@@ -1074,19 +1062,19 @@ export class ConsistencyChecker {
   // LOGGING HELPERS
   // ============================================================================
 
-  private log(message: string, data?: any): void {
+  private log(message: string, data?: unknown): void {
     if (data !== undefined) {
     } else {
     }
   }
 
-  private logWarning(message: string, data?: any): void {
+  private logWarning(message: string, data?: unknown): void {
     if (data !== undefined) {
     } else {
     }
   }
 
-  private logError(message: string, data?: any): void {
+  private logError(message: string, data?: unknown): void {
     if (data !== undefined) {
       console.error(`[ConsistencyChecker] ERROR: ${message}`, data);
     } else {
@@ -1101,7 +1089,7 @@ export class ConsistencyChecker {
   /**
    * Performs deep equality check between two values
    */
-  private deepEqual(a: any, b: any): boolean {
+  private deepEqual(a: unknown, b: unknown): boolean {
     // Handle null/undefined
     if (a === b) return true;
     if (a === null || b === null) return false;
@@ -1121,14 +1109,16 @@ export class ConsistencyChecker {
 
     // Handle objects
     if (typeof a === "object" && typeof b === "object") {
-      const keysA = Object.keys(a);
-      const keysB = Object.keys(b);
+      const objA = a as Record<string, unknown>;
+      const objB = b as Record<string, unknown>;
+      const keysA = Object.keys(objA);
+      const keysB = Object.keys(objB);
 
       if (keysA.length !== keysB.length) return false;
 
       for (const key of keysA) {
         if (!keysB.includes(key)) return false;
-        if (!this.deepEqual(a[key], b[key])) return false;
+        if (!this.deepEqual(objA[key], objB[key])) return false;
       }
       return true;
     }
@@ -1189,8 +1179,8 @@ export class ConsistencyChecker {
   private addDiscrepancy(
     dataType: string,
     field: string,
-    oldValue: any,
-    newValue: any,
+    oldValue: unknown,
+    newValue: unknown,
   ): void {
     const severity = this.determineSeverity(dataType, field);
 
@@ -1230,7 +1220,7 @@ export class ConsistencyChecker {
    * Compares local storage data between old and new systems
    * Performs deep comparison and logs all discrepancies
    */
-  compareLocalData(oldData: any, newData: any): boolean {
+  compareLocalData(oldData: Record<string, unknown>, newData: Record<string, unknown>): boolean {
     this.log("Starting local data comparison");
     this.discrepancies = [];
 
@@ -1265,7 +1255,11 @@ export class ConsistencyChecker {
 
       if (!this.deepEqual(oldSection, newSection)) {
         isMatch = false;
-        this.compareObjects(dataType, oldSection || {}, newSection || {});
+        this.compareObjects(
+          dataType,
+          (oldSection as Record<string, unknown>) || {},
+          (newSection as Record<string, unknown>) || {},
+        );
       }
     }
 
@@ -1278,8 +1272,8 @@ export class ConsistencyChecker {
    */
   private compareObjects(
     dataType: string,
-    oldObj: any,
-    newObj: any,
+    oldObj: Record<string, unknown>,
+    newObj: Record<string, unknown>,
     prefix: string = "",
   ): void {
     const allKeys = new Set([
@@ -1302,7 +1296,12 @@ export class ConsistencyChecker {
           oldValue !== null &&
           newValue !== null
         ) {
-          this.compareObjects(dataType, oldValue, newValue, fieldPath);
+          this.compareObjects(
+            dataType,
+            oldValue as Record<string, unknown>,
+            newValue as Record<string, unknown>,
+            fieldPath,
+          );
         } else {
           this.addDiscrepancy(dataType, fieldPath, oldValue, newValue);
         }
@@ -1401,7 +1400,7 @@ export class ConsistencyChecker {
   /**
    * Validates that data matches the expected schema
    */
-  validateDataIntegrity(data: any, dataType: DataType): ValidationResult {
+  validateDataIntegrity(data: Record<string, unknown>, dataType: DataType): ValidationResult {
     this.log(`Validating data integrity for: ${dataType}`);
 
     const errors: string[] = [];
@@ -1477,7 +1476,7 @@ export class ConsistencyChecker {
    * Validates field type
    */
   private validateFieldType(
-    value: any,
+    value: unknown,
     expectedType: SchemaField["type"],
   ): boolean {
     switch (expectedType) {
@@ -1511,7 +1510,7 @@ export class ConsistencyChecker {
    * Validates local data types (non-database)
    */
   private validateLocalDataType(
-    data: any,
+    data: Record<string, unknown>,
     dataType: DataType,
   ): ValidationResult {
     const errors: string[] = [];
