@@ -28,6 +28,7 @@ import { GuestSignUpScreen } from "./GuestSignUpScreen";
 
 import { CompactDietCard } from "../../components/diet/CompactDietCard";
 import { MealsListView } from "../../components/diet/MealsListView";
+import { MealDetailView } from "../../components/diet/MealDetailView";
 import { MealPlanView } from "../../components/diet/MealPlanView";
 import { WaterIntakeModal } from "../../components/diet/WaterIntakeModal";
 import { DietScreenHeader } from "../../components/diet/DietScreenHeader";
@@ -584,6 +585,20 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const handleMealsListBack = useCallback(() => {
     setShowMealsList(false);
   }, []);
+  // AG3: closes the meal-detail overlay and clears the selected meal.
+  const handleMealDetailBack = useCallback(() => {
+    setShowMealDetail(false);
+    setSelectedMeal(null);
+  }, []);
+  // AG3: "Log this meal" CTA — delegates to the existing
+  // completeMealPreparation flow from useMealPlanning (the same handler the
+  // MealDetailModal "Mark Complete" button uses). No new logging logic here.
+  const handleMealDetailLogMeal = useCallback(
+    (meal: DayMeal) => {
+      completeMealPreparation(meal);
+    },
+    [completeMealPreparation],
+  );
   const handleCloseLogMealModal = useCallback(
     () => setShowLogMealModal(false),
     [],
@@ -1293,28 +1308,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           </View>
         ) : null}
 
-        {/* AG3: meal-detail placeholder. The meal-detail agent replaces this
-            block with the real detail screen; for now it confirms the tap
-            contract from MealsListView.onMealPress. */}
+        {/* AG3: meal-detail overlay — opens when a meal row in MealsListView is
+            tapped (selectedMeal + showMealDetail). Renders the full meal
+            detail card with macros, food items, and a "Log this meal" CTA that
+            delegates to the existing completeMealPreparation flow. */}
         {showMealDetail && selectedMeal ? (
-          <View style={styles.mealDetailPlaceholder}>
-            <GlassCard elevation={2} padding="lg" style={styles.mealDetailCard}>
-              <Text style={styles.mealDetailTitle}>
-                {selectedMeal.name || selectedMeal.type}
-              </Text>
-              <Text style={styles.mealDetailHint}>
-                Meal detail screen — coming soon
-              </Text>
-              <Button
-                title="Close"
-                onPress={() => {
-                  setShowMealDetail(false);
-                  setSelectedMeal(null);
-                }}
-                variant="primary"
-                size="md"
-              />
-            </GlassCard>
+          <View style={styles.mealDetailOverlay}>
+            <MealDetailView
+              meal={selectedMeal}
+              isCompleted={
+                (storeGetMealProgress(selectedMeal.id)?.progress ?? 0) >= 100
+              }
+              onBack={handleMealDetailBack}
+              onLogMeal={handleMealDetailLogMeal}
+              mealSchedule={mealSchedule}
+              testID="diet-meal-detail-view"
+            />
           </View>
         ) : null}
       </SafeAreaView>
@@ -1362,31 +1371,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     zIndex: 100,
   },
-  // AG3: meal-detail placeholder (replaced by the meal-detail agent).
-  mealDetailPlaceholder: {
+  // AG3: meal-detail overlay — full-screen detail card over the main diet
+  // content. Same background as MealsListView so the list→detail transition
+  // reads as one view.
+  mealDetailOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlayDark,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    backgroundColor: colors.background,
     zIndex: 200,
-    paddingHorizontal: spacing.lg,
-  },
-  mealDetailCard: {
-    width: "100%" as const,
-    alignItems: "center" as const,
-    gap: spacing.md,
-  },
-  mealDetailTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: "700" as const,
-    color: colors.text,
-    textAlign: "center" as const,
-  },
-  mealDetailHint: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: "center" as const,
-    marginBottom: spacing.sm,
   },
   bottomSpacing: { height: rh(80) },
   barcodeLoadingOverlay: {
