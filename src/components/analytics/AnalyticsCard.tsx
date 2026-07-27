@@ -118,7 +118,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 
         {trend && trendValue && (
           <View style={styles.trendContainer}>
-            <Ionicons name={getTrendIcon()} size={rf(14)} color="#fff" />
+            <Ionicons name={getTrendIcon()} size={rf(14)} color={colors.white} />
             <Text style={[styles.trendValue, sizeStyles.subtitle]}>
               {trendValue}
             </Text>
@@ -149,7 +149,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: rbr(12),
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -171,10 +171,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   icon: {
-    color: "#fff",
+    color: colors.white,
   },
   value: {
-    color: "#fff",
+    color: colors.white,
     fontWeight: "bold",
     marginBottom: rp(4),
   },
