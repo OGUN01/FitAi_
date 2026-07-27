@@ -376,7 +376,12 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
   const renderActionButtons = () => {
     if (result?.success) {
       return (
-        <TouchableOpacity style={styles.completeButton} onPress={onComplete}>
+        <TouchableOpacity
+          style={styles.completeButton}
+          onPress={onComplete}
+          accessibilityRole="button"
+          accessibilityLabel="Continue"
+        >
           <Text style={styles.completeButtonText}>Continue</Text>
         </TouchableOpacity>
       );
@@ -385,10 +390,20 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
     if (result && !result.success) {
       return (
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.retryButton} onPress={onCancel}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={onCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Retry"
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={onCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
+          >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -397,7 +412,12 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 
     if (allowCancel && progress?.status === "running") {
       return (
-        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={onCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel Migration"
+        >
           <Text style={styles.cancelButtonText}>Cancel Migration</Text>
         </TouchableOpacity>
       );

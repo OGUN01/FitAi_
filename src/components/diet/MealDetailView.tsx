@@ -141,9 +141,6 @@ const FoodItemRow = React.memo(({ item, index, isLast }: FoodItemRowProps) => {
       ? item.quantity
       : `${item.amount || item.quantity || 1} ${item.unit || "serving"}`;
   const calories = Math.round(item.calories || 0);
-  const protein = Math.round(item.macros?.protein || 0);
-  const carbs = Math.round(item.macros?.carbohydrates || 0);
-  const fat = Math.round(item.macros?.fat || 0);
 
   return (
     <View style={[styles.foodItem, isLast && styles.foodItemLast]}>
@@ -156,6 +153,8 @@ const FoodItemRow = React.memo(({ item, index, isLast }: FoodItemRowProps) => {
         >
           {name}
         </Text>
+      </View>
+      <View style={styles.foodItemRight}>
         <Text
           style={styles.foodItemQuantity}
           numberOfLines={1}
@@ -164,8 +163,6 @@ const FoodItemRow = React.memo(({ item, index, isLast }: FoodItemRowProps) => {
         >
           {quantityStr}
         </Text>
-      </View>
-      <View style={styles.foodItemRight}>
         <Text
           style={styles.foodItemCalories}
           numberOfLines={1}
@@ -174,17 +171,6 @@ const FoodItemRow = React.memo(({ item, index, isLast }: FoodItemRowProps) => {
         >
           {calories} cal
         </Text>
-        <View style={styles.foodItemMacros}>
-          <Text style={[styles.foodItemMacro, { color: MACRO_PILL_COLORS.protein }]}>
-            P:{protein}
-          </Text>
-          <Text style={[styles.foodItemMacro, { color: MACRO_PILL_COLORS.carbs }]}>
-            C:{carbs}
-          </Text>
-          <Text style={[styles.foodItemMacro, { color: MACRO_PILL_COLORS.fat }]}>
-            F:{fat}
-          </Text>
-        </View>
       </View>
     </View>
   );
@@ -364,7 +350,7 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
         {/* Food items list */}
         {foodItems.length > 0 ? (
           <View style={styles.foodItemsSection}>
-            <Text style={styles.sectionLabel}>Food Items</Text>
+            <Text style={styles.sectionLabel}>Ingredients</Text>
             <GlassCard elevation={1} padding="none" style={styles.foodItemsCard}>
               {foodItems.map((item, index) => (
                 <FoodItemRow
@@ -575,28 +561,19 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: "600" as const,
     color: colors.text,
-    marginBottom: rp(2),
+  },
+  foodItemRight: {
+    alignItems: "flex-end" as const,
+    gap: rp(2),
   },
   foodItemQuantity: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
   },
-  foodItemRight: {
-    alignItems: "flex-end" as const,
-  },
   foodItemCalories: {
     fontSize: fontSize.sm,
     fontWeight: "700" as const,
     color: colors.primary,
-    marginBottom: rp(2),
-  },
-  foodItemMacros: {
-    flexDirection: "row" as const,
-    gap: spacing.xs,
-  },
-  foodItemMacro: {
-    fontSize: fontSize.xs,
-    fontWeight: "600" as const,
   },
   bottomSpacing: {
     height: rh(80),
