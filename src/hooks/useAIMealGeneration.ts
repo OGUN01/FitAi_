@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ScanResultData } from "../components/diet/ScanResultModal";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
+import { logger } from "../utils/logger";
 import { useNutritionStore } from "../stores";
 import { useProfileStore } from "../stores/profileStore";
 import { aiService } from "../ai";
@@ -359,7 +360,7 @@ export const useAIMealGeneration = (options?: {
     ];
 
     if (process.env.NODE_ENV !== "test") {
-      console.info("[BarcodeSession]", event);
+      logger.debug("[BarcodeSession]", { event });
     }
   }, []);
 

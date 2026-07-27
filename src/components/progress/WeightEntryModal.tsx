@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { logger } from "../../utils/logger";
 import {
   View,
   Text,
@@ -198,7 +199,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 
       invalidateMetricsCache();
 
-      console.info("Weight entry saved successfully:", weightKg, "kg");
+      logger.info("Weight entry saved successfully", { weightKg });
 
       onSuccess?.();
       handleClose();
