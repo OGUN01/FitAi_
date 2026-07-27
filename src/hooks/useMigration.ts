@@ -1,7 +1,7 @@
 // Migration Hook for Track B Infrastructure
 // Provides easy React integration for migration functionality
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   migrationManager,
   MigrationState,
@@ -279,19 +279,22 @@ export const useMigrationStatus = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     const checkStatus = async () => {
       try {
         const status = await migrationManager.checkMigrationStatus();
+        if (!mounted) return;
         setHasLocalData(status.hasLocalData);
         setLastMigration(status.migrationHistory[0] || null);
       } catch (error) {
         console.error("Failed to check migration status:", error);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
     checkStatus();
+    return () => { mounted = false; };
   }, []);
 
   return {
@@ -351,6 +354,16 @@ export const useSimpleMigration = () => {
     message: "Preparing migration...",
     percentage: 0,
   });
+  const completionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear any pending completion timer on unmount to prevent setState after unmount
+  useEffect(() => {
+    return () => {
+      if (completionTimerRef.current) {
+        clearTimeout(completionTimerRef.current);
+      }
+    };
+  }, []);
 
   const startMigration = async (
     userId: string,
@@ -377,7 +390,7 @@ export const useSimpleMigration = () => {
         setProgress({ message: "Migration completed!", percentage: 100 });
 
         // Show completion for a moment
-        setTimeout(() => {
+        completionTimerRef.current = setTimeout(() => {
           setIsActive(false);
         }, 1500);
 
