@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  Pressable,
   StyleSheet,
   LayoutAnimation,
   StyleProp,
@@ -11,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
@@ -68,23 +67,24 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     return reps.toString();
   };
 
-  // TODO: tokenize — these muscle-group colors are hardcoded hex and bypass
-  // the aurora token system (CLAUDE.md rule 12 — don't invent tokens here).
-  // Replace with semantic tokens once a muscle-group palette is added.
+  // Muscle-group chip tints — semantic aurora tokens passed through hexToRgba
+  // so the chip background adapts to the active theme (dark/light). Text on
+  // top is colors.text (styles.muscleGroupText), so the 0.25 alpha keeps
+  // contrast readable in both modes.
   const getMuscleGroupColor = (group: string) => {
-    const colors: Record<string, string> = {
-      chest: "#FF6B6B",
-      back: "#4ECDC4",
-      shoulders: "#45B7D1",
-      biceps: "#96CEB4",
-      triceps: "#FFEAA7",
-      legs: "#DDA0DD",
-      abs: "#98D8C8",
-      glutes: "#F7DC6F",
-      cardio: "#FF7675",
-      flexibility: "#A29BFE",
+    const muscleColors: Record<string, string> = {
+      chest: hexToRgba(colors.error, 0.25),
+      back: hexToRgba(colors.info, 0.25),
+      shoulders: hexToRgba(colors.info, 0.25),
+      biceps: hexToRgba(colors.success, 0.25),
+      triceps: hexToRgba(colors.warning, 0.25),
+      legs: hexToRgba(colors.secondary, 0.25),
+      abs: hexToRgba(colors.success, 0.25),
+      glutes: hexToRgba(colors.warning, 0.25),
+      cardio: hexToRgba(colors.error, 0.25),
+      flexibility: hexToRgba(colors.neutral, 0.25),
     };
-    return colors[group.toLowerCase()] || colors.primary;
+    return muscleColors[group.toLowerCase()] || hexToRgba(colors.primary, 0.25);
   };
 
   const getDifficultyIcon = (
@@ -126,7 +126,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     >
       <View style={styles.cardContent}>
         <View style={styles.header}>
-          <Pressable onPress={handleToggleExpand} style={styles.headerPressable}>
+          <AnimatedPressable
+            onPress={handleToggleExpand}
+            style={styles.headerPressable}
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+          >
             <View style={styles.exerciseNumber}>
               <Text style={styles.exerciseNumberText}>{exerciseNumber}</Text>
             </View>
@@ -158,7 +164,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 )}
               </View>
             </View>
-          </Pressable>
+          </AnimatedPressable>
 
           <View style={styles.statusSection}>
             {isCompleted ? (
@@ -170,13 +176,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 />
               </View>
             ) : (
-              <TouchableOpacity style={styles.playButton} onPress={onStart}>
+              <AnimatedPressable
+                style={styles.playButton}
+                onPress={onStart}
+                scaleValue={0.9}
+                springConfig="snappy"
+                hapticType="light"
+              >
                 <Ionicons
                   name="play"
                   size={rf(14)}
                   color={colors.textSecondary}
                 />
-              </TouchableOpacity>
+              </AnimatedPressable>
             )}
           </View>
         </View>
@@ -290,7 +302,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         >
                           {instruction}
                         </Text>
-                        <Pressable
+                        <AnimatedPressable
                           onPress={() =>
                             setExpandedInstructions((prev) => {
                               const next = new Set(prev);
@@ -306,11 +318,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                           accessibilityRole="button"
                           accessibilityLabel={isInstrExpanded ? "Show less" : "Show more"}
                           style={styles.showMoreButton}
+                          scaleValue={0.9}
+                          springConfig="snappy"
+                          hapticType="light"
                         >
                           <Text style={styles.showMoreText}>
                             {isInstrExpanded ? "Show less" : "Show more"}
                           </Text>
-                        </Pressable>
+                        </AnimatedPressable>
                       </View>
                     </View>
                   );
@@ -334,12 +349,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
             <View style={styles.actionButtons}>
               {!isCompleted ? (
-                <TouchableOpacity
+                <AnimatedPressable
                   style={styles.completeButton}
                   onPress={onComplete}
+                  scaleValue={0.9}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
                   <Text style={styles.completeButtonText}>Mark Complete</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               ) : (
                 <View style={styles.completedStatus}>
                   <Text style={styles.completedStatusText}>Completed</Text>
@@ -349,19 +367,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           </View>
         )}
 
-        <Pressable
+        <AnimatedPressable
           onPress={handleToggleExpand}
           style={styles.expandIndicator}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={isExpanded ? "Collapse exercise details" : "Expand exercise details"}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="light"
         >
           <Ionicons
             name={isExpanded ? "chevron-up" : "chevron-down"}
             size={rf(14)}
             color={colors.textMuted}
           />
-        </Pressable>
+        </AnimatedPressable>
       </View>
     </Card>
   );
