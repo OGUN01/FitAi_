@@ -140,7 +140,7 @@ export const SuggestedWorkouts: React.FC<SuggestedWorkoutsProps> = ({
         decelerationRate="fast"
         snapToInterval={rw(160) + rp(spacing.md)}
       >
-        {workouts.map((workout, index) => {
+        {workouts.map((workout, _index) => {
           const categoryConfig = getCategoryConfig(workout.category);
           const difficultyConfig = getDifficultyConfig(workout.difficulty);
           const status = getTemplateStatus(workout);
