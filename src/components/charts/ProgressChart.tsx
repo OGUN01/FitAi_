@@ -9,11 +9,12 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { ChartTooltip } from "../ui/ChartTooltip";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { hapticSelection } from "../../utils/haptics";
-import { rh } from "../../utils/responsive";
+import { rh, rf } from "../../utils/responsive";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -207,18 +208,31 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
               {trend.isPositive ? "+" : "-"}
               {trend.value.toFixed(1)} {unit}
             </Text>
-            <Text
-              style={[
-                styles.trendLabel,
-                {
-                  color: trend.isPositive
-                    ? colors.success
-                    : colors.error,
-                },
-              ]}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing.xs,
+              }}
             >
-              {trend.isPositive ? "↗" : "↘"} {selectedPeriod}
-            </Text>
+              <Ionicons
+                name={trend.isPositive ? "trending-up" : "trending-down"}
+                size={rf(12)}
+                color={trend.isPositive ? colors.success : colors.error}
+              />
+              <Text
+                style={[
+                  styles.trendLabel,
+                  {
+                    color: trend.isPositive
+                      ? colors.success
+                      : colors.error,
+                  },
+                ]}
+              >
+                {selectedPeriod}
+              </Text>
+            </View>
           </View>
         </View>
 
