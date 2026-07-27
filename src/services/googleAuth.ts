@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import type { AuthResponse } from './auth';
 import type { AuthUser } from '../types/user';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
@@ -14,7 +13,7 @@ try {
   const googleSigninModule = require('@react-native-google-signin/google-signin');
   GoogleSignin = googleSigninModule.GoogleSignin;
   statusCodes = googleSigninModule.statusCodes;
-} catch (error) {
+} catch {
   console.warn('⚠️ Google Sign-in not available (running in Expo Go)');
 }
 
@@ -231,8 +230,10 @@ class GoogleAuthService {
           console.error('⚠️ Failed to create profile for Google user:', profileError);
           console.error('⚠️ Profile error details:', JSON.stringify(profileError, null, 2));
         } else {
+          // Profile created successfully — no further action needed.
         }
       } else {
+        // Existing user — profile already present, nothing to do.
       }
 
       return {
@@ -420,7 +421,7 @@ class GoogleAuthService {
   async linkGoogleAccount(): Promise<GoogleSignInResult> {
     try {
 
-      const { data, error } = await supabase.auth.linkIdentity({
+      const { error } = await supabase.auth.linkIdentity({
         provider: 'google',
       });
 
@@ -461,7 +462,7 @@ class GoogleAuthService {
       if (!googleIdentity) {
         return { success: false, error: 'No Google identity linked' };
       }
-      const { data, error } = await supabase.auth.unlinkIdentity(googleIdentity);
+      const { error } = await supabase.auth.unlinkIdentity(googleIdentity);
 
       if (error) {
         console.error('❌ Google account unlinking error:', error);
