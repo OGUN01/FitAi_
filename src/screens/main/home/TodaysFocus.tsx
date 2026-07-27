@@ -34,7 +34,7 @@ interface TodaysFocusProps {
   onWorkoutPress: () => void;
 }
 
-export const TodaysFocus: React.FC<TodaysFocusProps> = ({
+export const TodaysFocus: React.FC<TodaysFocusProps> = React.memo(({
   workoutInfo,
   workoutProgress = 0,
   onWorkoutPress,
@@ -162,7 +162,7 @@ export const TodaysFocus: React.FC<TodaysFocusProps> = ({
       </GlassCard>
     </AnimatedPressable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
