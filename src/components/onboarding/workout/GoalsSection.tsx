@@ -43,11 +43,6 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
       showInfoTooltip(title, description);
     };
 
-  // Get activity level info for display
-  const currentActivityLevel = ACTIVITY_LEVELS.find(
-    (level: any) => level.value === formData.activity_level,
-  );
-
   return (
     <GlassCard
       style={styles.sectionEdgeToEdge}
@@ -385,38 +380,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginBottom: spacing.md,
-  },
-  calculatedActivityCard: {
-    // Custom styles for activity card if needed
-  },
-  calculatedActivityContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  calculatedActivityText: {
-    flex: 1,
-  },
-  calculatedActivityTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-    flexShrink: 1,
-  },
-  calculatedActivityDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    flexShrink: 1,
-  },
-  calculatedActivityNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: spacing.sm,
-  },
-  calculatedActivityNoteText: {
-    flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
   },
   activityCardItem: {
     width: rw(105),
