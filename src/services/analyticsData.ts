@@ -260,7 +260,7 @@ class AnalyticsDataService {
 
       // Back-fill analytics_metrics in the background — fast path works next time.
       this.backFillWeightToAnalytics(userId, fallbackWeights).catch((err) =>
-        console.warn("[getWeightHistory] back-fill failed:", err),
+        console.error("[getWeightHistory] back-fill failed:", err),
       );
 
       return fallbackWeights;
@@ -294,7 +294,7 @@ class AnalyticsDataService {
         { onConflict: "user_id,metric_date" },
       );
       if (error) {
-        console.warn(
+        console.error(
           "[backFillWeightToAnalytics] Failed for",
           entry.date,
           ":",
