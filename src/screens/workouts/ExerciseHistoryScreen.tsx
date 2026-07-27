@@ -20,7 +20,7 @@
  * Data flow unchanged: exerciseHistoryService.getHistory + getPersonalRecords
  * remain the source of truth; totalVolume from volumeCalculator is reused.
  */
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -226,6 +226,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
   const [prs, setPrs] = useState<ExercisePR[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const userId = getCurrentUserId();
@@ -246,6 +247,10 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
           setPrs(p);
         }
       })
+      .catch((err) => {
+        console.error("[ExerciseHistoryScreen] Failed to load history:", err);
+        if (!cancelled) setLoadError(true);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -255,44 +260,81 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     };
   }, [exerciseId]);
 
-  const prSessionIds = new Set<string>();
-  for (const pr of prs) {
-    if (pr.sessionId) {
-      prSessionIds.add(pr.sessionId);
+  // Memoize the Set so renderSession's useCallback stays stable across renders
+  // that don't change `prs` (a fresh Set every render would break the memo).
+  const prSessionIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const pr of prs) {
+      if (pr.sessionId) {
+        ids.add(pr.sessionId);
+      }
     }
-  }
+    return ids;
+  }, [prs]);
 
-  const renderSession = ({ item }: { item: ExerciseHistoryEntry }) => {
-    const hasPR = prSessionIds.has(item.sessionId);
-    return (
-      <GlassCard
-        elevation={1}
-        padding="md"
-        borderRadius="lg"
-        style={styles.sessionCard}
-      >
-        <View style={styles.sessionHeader}>
-          <Text style={styles.sessionDate}>{formatDate(item.completedAt)}</Text>
-          {hasPR && (
-            <View style={styles.prPill}>
-              <Ionicons
-                name="trophy"
-                size={rf(typography.fontSize.micro)}
-                color={colors.warning.DEFAULT}
-              />
-              <Text style={styles.prPillText}>PR</Text>
-            </View>
+  const renderSession = useCallback(
+    ({ item }: { item: ExerciseHistoryEntry }) => {
+      const hasPR = prSessionIds.has(item.sessionId);
+      return (
+        <GlassCard
+          elevation={1}
+          padding="md"
+          borderRadius="lg"
+          style={styles.sessionCard}
+        >
+          <View style={styles.sessionHeader}>
+            <Text style={styles.sessionDate}>{formatDate(item.completedAt)}</Text>
+            {hasPR && (
+              <View style={styles.prPill}>
+                <Ionicons
+                  name="trophy"
+                  size={rf(typography.fontSize.micro)}
+                  color={colors.warning.DEFAULT}
+                />
+                <Text style={styles.prPillText}>PR</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.sessionSets}>{formatSets(item.sets)}</Text>
+          {item.estimated1RM != null && (
+            <Text style={styles.sessionE1RM}>
+              Est. 1RM: {Math.round(item.estimated1RM)}kg
+            </Text>
           )}
-        </View>
-        <Text style={styles.sessionSets}>{formatSets(item.sets)}</Text>
-        {item.estimated1RM != null && (
-          <Text style={styles.sessionE1RM}>
-            Est. 1RM: {Math.round(item.estimated1RM)}kg
-          </Text>
-        )}
-      </GlassCard>
-    );
-  };
+        </GlassCard>
+      );
+    },
+    [prSessionIds],
+  );
+
+  const handleRetry = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    const userId = getCurrentUserId();
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    Promise.all([
+      exerciseHistoryService.getHistory(exerciseId, userId, 90),
+      exerciseHistoryService.getPersonalRecords(exerciseId, userId),
+    ])
+      .then(([h, p]) => {
+        if (!cancelled) {
+          setHistory(h);
+          setPrs(p);
+        }
+      })
+      .catch((err) => {
+        console.error("[ExerciseHistoryScreen] Failed to load history:", err);
+        if (!cancelled) setLoadError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    // No cleanup setter needed — component re-renders replace this closure.
+  }, [exerciseId]);
 
   if (loading) {
     return (
@@ -300,6 +342,26 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingWrap}>
             <AuroraSpinner size="lg" theme="primary" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.container}>
+          <GlassHeader title={exerciseName} titleIcon="barbell" onBack={navigation?.goBack} />
+          <View style={styles.errorWrap}>
+            <EmptyState
+              icon="cloud-offline-outline"
+              iconColor={colors.error.DEFAULT}
+              title="Couldn't load history"
+              subtitle="Check your connection and try again."
+              ctaText="Try Again"
+              onCta={handleRetry}
+            />
           </View>
         </SafeAreaView>
       </AuroraBackground>
@@ -353,6 +415,11 @@ const styles = StyleSheet.create({
     paddingTop: rp(spacing.md),
   },
   loadingWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorWrap: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
