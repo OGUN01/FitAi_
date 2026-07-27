@@ -16,7 +16,14 @@
 // EXPORTS
 // ============================================================================
 
-export { MOTIVATIONAL_CONTENT_SCHEMA } from "./schemas";
+// NOTE: The JSON Schema definitions in src/ai/schemas.ts (WORKOUT_SCHEMA,
+// NUTRITION_SCHEMA, WEEKLY_MEAL_PLAN_SCHEMA, MOTIVATIONAL_CONTENT_SCHEMA,
+// FOOD_ANALYSIS_SCHEMA, PROGRESS_ANALYSIS_SCHEMA) are not currently consumed
+// by any code path — full response validation against these schemas is not
+// yet implemented (see generateWorkout below). They are retained as the
+// canonical schema reference for future validation work. Do not re-export
+// them here without wiring an actual consumer, to avoid implying an active
+// public API that doesn't exist.
 
 // Feature Engines - Keep these (they use demo data for UI)
 export { workoutEngine } from "../features/workouts/WorkoutEngine";
