@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, Platform, StyleSheet, Text } from "react-native";
+import { Platform, StyleSheet, Text } from "react-native";
 import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { BottomSheet } from "@/components/ui/aurora/BottomSheet";
 import { GlassCard } from "@/components/ui/aurora/GlassCard";
@@ -9,9 +9,14 @@ import { ClearCacheConfirmModal } from "@/screens/main/profile/modals/ClearCache
 import { MealDetailModal } from "@/components/diet/MealDetailModal";
 import { flatColors as colors } from "@/theme/aurora-tokens";
 import type { DayMeal } from "@/types/ai";
+import { crossPlatformAlert as mockCrossPlatformAlert } from "@/utils/crossPlatformAlert";
 
 jest.mock("@/utils/haptics", () => ({
   haptics: { trigger: jest.fn() },
+}));
+
+jest.mock("@/utils/crossPlatformAlert", () => ({
+  crossPlatformAlert: jest.fn(),
 }));
 
 // Walks the rendered tree and returns the first node whose flattened style
@@ -172,6 +177,10 @@ describe("opaque overlay surfaces", () => {
 });
 
 describe("opaque overlay interactions", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("preserves BottomSheet close behavior", () => {
     const onClose = jest.fn();
     const view = render(
@@ -316,7 +325,7 @@ describe("opaque overlay interactions", () => {
       />,
     );
 
-    fireEvent.press(view.getByText("Mark as Completed"));
+    fireEvent.press(view.getByText("Mark Complete"));
 
     expect(onMarkComplete).toHaveBeenCalledWith(meal);
   });
@@ -333,14 +342,13 @@ describe("opaque overlay interactions", () => {
       />,
     );
 
-    fireEvent.press(view.getByLabelText("Back to meal plan"));
+    fireEvent.press(view.getByLabelText("Close meal details"));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("preserves Meal Detail delete confirmation", () => {
     const onDelete = jest.fn();
-    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(jest.fn());
     const view = render(
       <MealDetailModal
         visible
@@ -351,25 +359,20 @@ describe("opaque overlay interactions", () => {
       />,
     );
 
-    // Open the overflow menu, then press the destructive Delete action.
-    fireEvent.press(view.getByLabelText("Open meal actions"));
-    fireEvent.press(view.getByLabelText("Delete meal"));
+    fireEvent.press(view.getByLabelText(`Delete ${meal.name}`));
 
-    expect(alertSpy).toHaveBeenCalledWith(
+    const mockedAlert = jest.mocked(mockCrossPlatformAlert);
+    expect(mockedAlert).toHaveBeenCalledWith(
       "Delete Meal",
       `Are you sure you want to delete "${meal.name}"?`,
       expect.any(Array),
-      undefined,
     );
-    const buttons = alertSpy.mock.calls[0]?.[2];
-    const deleteAction = buttons?.find(
-      (button) => button.style === "destructive",
-    );
-    expect(deleteAction).toBeDefined();
 
+    const buttons = mockedAlert.mock.calls[0]?.[2] ?? [];
+    const deleteAction = buttons.find((button) => button.style === "destructive");
+    expect(deleteAction).toBeDefined();
     deleteAction?.onPress?.();
 
     expect(onDelete).toHaveBeenCalledWith(meal);
-    alertSpy.mockRestore();
   });
 });
