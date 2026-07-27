@@ -147,7 +147,7 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 		// Get authenticated user
 		const user = c.get('user') as AuthContext['user'];
 		if (!user) {
-			throw new APIError('Authentication required', 401, ErrorCode.AUTHENTICATION_REQUIRED);
+			throw new APIError('Authentication required', 401, ErrorCode.UNAUTHORIZED);
 		}
 
 		// Parse and validate request body
