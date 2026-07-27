@@ -11,7 +11,7 @@
  * from the remaining-time shared value.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View, Text, Pressable, ViewStyle } from "react-native";
 import {
   Canvas,
@@ -19,19 +19,15 @@ import {
   Group,
   LinearGradient,
   vec,
-  Skia,
 } from "@shopify/react-native-skia";
 import {
   useSharedValue,
   useDerivedValue,
   useFrameCallback,
-  withTiming,
   runOnJS,
-  interpolate,
   interpolateColor,
-  Extrapolate,
 } from "react-native-reanimated";
-import { colors, flatColors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 import { rf, rs } from "../../../utils/responsive";

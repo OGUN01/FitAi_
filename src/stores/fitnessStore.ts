@@ -3,7 +3,6 @@ import { persist } from "zustand/middleware";
 import { Platform } from "react-native";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import * as crypto from "expo-crypto";
-import { WeeklyWorkoutPlan, DayWorkout, WorkoutSet } from "../ai";
 import { crudOperations } from "../services/crudOperations";
 import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
@@ -145,9 +144,6 @@ export const useFitnessStore = create<FitnessState>()(
         }
 
         try {
-          const planTitle =
-            plan.planTitle || `Week ${plan.weekNumber} Workout Plan`;
-
           // Save to local storage via Zustand persist first
           set({ weeklyWorkoutPlan: plan });
         } catch (error) {
@@ -717,7 +713,7 @@ export const useFitnessStore = create<FitnessState>()(
               caloriesBurned: null,
               exercises: workout.exercises.map((exercise) => ({
                 exerciseId: exercise.exerciseId,
-                sets: Array.from({ length: exercise.sets }, (_, index) => ({
+                sets: Array.from({ length: exercise.sets }, (_, _index) => ({
                   reps:
                     typeof exercise.reps === "string"
                       ? parseInt(exercise.reps) || 10
@@ -1049,7 +1045,7 @@ export const useFitnessStore = create<FitnessState>()(
                       : typeof s.duration === "number" && s.duration > 0
                         ? s.duration
                         : planWorkout?.duration || 0;
-                  let caloriesBurned =
+                  const caloriesBurned =
                     typeof s.calories_burned === "number"
                       ? s.calories_burned
                       : 0;

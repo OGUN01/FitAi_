@@ -11,8 +11,8 @@ export interface DataConflict {
   id: string;
   type: ConflictType;
   field: string;
-  localValue: any;
-  remoteValue: any;
+  localValue: unknown;
+  remoteValue: unknown;
   timestamp: Date;
   severity: "low" | "medium" | "high" | "critical";
   autoResolvable: boolean;
@@ -52,7 +52,7 @@ export type ResolutionStrategy =
 export interface ConflictResolution {
   conflictId: string;
   strategy: ResolutionStrategy;
-  resolvedValue: any;
+  resolvedValue: unknown;
   userChoice?: boolean;
   timestamp: Date;
   reasoning: string;
@@ -61,7 +61,7 @@ export interface ConflictResolution {
 export interface ConflictResolutionResult {
   resolvedConflicts: ConflictResolution[];
   unresolvedConflicts: DataConflict[];
-  mergedData: any;
+  mergedData: Record<string, unknown>;
   requiresUserInput: boolean;
   summary: {
     total: number;
@@ -107,7 +107,7 @@ export class ConflictResolutionService {
 
     // Compare each field
     for (const field in localData) {
-      if (localData.hasOwnProperty(field)) {
+      if (Object.prototype.hasOwnProperty.call(localData, field)) {
         const localValue = localData[field];
         const remoteValue = remoteData[field];
 
@@ -126,8 +126,8 @@ export class ConflictResolutionService {
     // Check for missing fields in local data
     for (const field in remoteData) {
       if (
-        remoteData.hasOwnProperty(field) &&
-        !localData.hasOwnProperty(field)
+        Object.prototype.hasOwnProperty.call(remoteData, field) &&
+        !Object.prototype.hasOwnProperty.call(localData, field)
       ) {
         conflicts.push({
           id: this.generateConflictId(),
@@ -443,8 +443,8 @@ export class ConflictResolutionService {
 
   private determineSeverity(
     field: string,
-    localValue: any,
-    remoteValue: any,
+    _localValue: any,
+    _remoteValue: any,
   ): "low" | "medium" | "high" | "critical" {
     // Critical fields that affect core functionality
     const criticalFields = ["id", "user_id", "email", "password"];
@@ -517,7 +517,7 @@ export class ConflictResolutionService {
 
   private getResolutionReasoning(
     strategy: ResolutionStrategy,
-    conflict: DataConflict,
+    _conflict: DataConflict,
   ): string {
     switch (strategy) {
       case "local_wins":

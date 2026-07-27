@@ -608,7 +608,7 @@ class UnifiedAIService {
       const weeklyPlan: WeeklyWorkoutPlan = {
         id: weeklyPlanData.id || `weekly_workout_week_${weekNumber}`,
         weekNumber,
-        workouts: workouts,
+        workouts,
         planTitle: weeklyPlanData.planTitle || "Your Personalized Workout Plan",
         planDescription: weeklyPlanData.planDescription,
         restDays: weeklyPlanData.restDays || [],
@@ -1155,19 +1155,19 @@ function transformWorkoutData(
     title: workoutPlan.title || "AI Generated Workout",
     description: workoutPlan.description || "",
     category: "strength", // Default category
-    difficulty: difficulty,
+    difficulty,
     duration: workoutPlan.totalDuration ?? 0,
     estimatedCalories: workoutPlan.estimatedCalories || 0, // 0 = will be calculated at completion with user's real weight
-    exercises: exercises,
-    warmup: warmup,
-    cooldown: cooldown,
+    exercises,
+    warmup,
+    cooldown,
     equipment: [], // Will be populated by exercise data
     targetMuscleGroups: [], // Will be populated by exercise data
     icon: "fitness",
     tags: ["ai-generated", difficulty],
     isPersonalized: true,
     aiGenerated: true,
-    dayOfWeek: dayOfWeek,
+    dayOfWeek,
     createdAt: new Date().toISOString(),
   } as unknown as DayWorkout;
 }

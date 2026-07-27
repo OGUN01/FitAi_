@@ -1,3 +1,4 @@
+/* global window */
 import { useState, useCallback } from "react";
 import { Linking, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

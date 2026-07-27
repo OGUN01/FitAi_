@@ -1,3 +1,4 @@
+/* global window */
 import { supabase } from './supabase';
 import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
 import { Platform } from 'react-native';
@@ -508,7 +509,7 @@ class AuthService {
       return {
         success: true,
       };
-    } catch (error) {
+    } catch {
       await this.clearLocalSession();
       return {
         success: true,
@@ -782,6 +783,7 @@ class AuthService {
                 (k: string) => !result.remoteSyncKeys!.includes(k)
               );
               if (pending.length > 0) {
+                // Pending sync keys will be processed on next migration run
               }
             }
           } else {
