@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: fontSize.xl,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
 
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
 
   foodName: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     flex: 1,
   },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   originalText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   nutritionPreview: {
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
 
   previewTitle: {
     fontSize: fontSize.md,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   nutritionValue: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
 
   sliderCard: {
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
 
   currentPortionGrams: {
     fontSize: fontSize.xxl,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
   },
 
@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     textAlign: "center",
     backgroundColor: colors.background,
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   manualInputUnit: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   quickPortionsCard: {
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
   quickPortionLabel: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     marginBottom: spacing.xs,
   },
 
@@ -870,7 +870,7 @@ const styles = StyleSheet.create({
   resetButtonText: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   resetButtonTextDisabled: {
