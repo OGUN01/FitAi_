@@ -112,7 +112,7 @@ export async function fetchLatestManualWeightEntry(
   }
 
   if (currentWeightError) {
-    console.warn(
+    console.error(
       "[currentWeight] Failed to fetch user_current_weight, falling back to progress_entries:",
       currentWeightError,
     );
