@@ -46,24 +46,8 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
     finalTDEE: number;
     breakdown: string;
   } {
-    const activityMultipliers: Record<string, number> = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9,
-      extreme: 1.9, // Alias for very_active (onboarding uses "extreme")
-    };
-
-    const climateMultipliers: Record<ClimateType, number> = {
-      tropical: 1.075,
-      temperate: 1.0,
-      cold: 1.15,
-      arid: 1.05,
-    };
-
-    const activityMult = activityMultipliers[activityLevel];
-    const climateMult = climateMultipliers[climate];
+    const activityMult = ACTIVITY_MULTIPLIERS[activityLevel];
+    const climateMult = CLIMATE_MULTIPLIERS[climate];
     const activityTDEE = bmr * activityMult;
     const finalTDEE = activityTDEE * climateMult;
 
