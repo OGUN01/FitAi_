@@ -21,7 +21,6 @@ interface HeartRateZone {
 
 interface ColorCodedZonesProps {
   zones: HeartRateZone[];
-  maxHR?: number; // Maximum heart rate for calculations
   style?: StyleProp<ViewStyle>;
 }
 
@@ -96,7 +95,6 @@ const ZoneRow: React.FC<ZoneRowProps> = ({ zone, index }) => {
 
 export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
   zones,
-  _maxHR = 180,
   style,
 }) => {
   return (
