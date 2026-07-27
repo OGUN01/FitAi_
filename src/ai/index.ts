@@ -74,12 +74,24 @@ import {
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { getLocalDateString } from "../utils/weekUtils";
 import { getCurrentUserId } from "../services/authUtils";
-import type { AIServiceMetadata } from "./types";
 
-// Re-export AIServiceMetadata so existing `import { AIServiceMetadata } from "../ai"`
-// callers keep resolving after the duplicate interface below was removed in
-// favor of the canonical definition in ./types.ts.
-export type { AIServiceMetadata };
+/**
+ * Metadata about an AI service generation (caching, cost, model, timing).
+ *
+ * Populated by the backend response's `metadata` field and surfaced via
+ * aiService.getLastMetadata() for UI display. The previous duplicate
+ * definition in src/ai/types.ts was removed when that dead file was deleted;
+ * this is now the single source of truth.
+ */
+export interface AIServiceMetadata {
+  cached: boolean;
+  cacheSource?: "kv" | "database" | "fresh";
+  generationTime: number;
+  model?: string;
+  tokensUsed?: number;
+  costUsd?: number;
+  cuisineDetected?: string;
+}
 
 // ============================================================================
 // UNIFIED AI SERVICE (Connected to Cloudflare Workers)
