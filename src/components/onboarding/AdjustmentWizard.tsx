@@ -61,7 +61,13 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
       statusBarTranslucent
     >
       {/* Backdrop — fills screen, tap to dismiss */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose}>
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss goal adjustment"
+        accessibilityHint="Closes the adjustment wizard without saving"
+      >
         <BlurView intensity={40} tint="dark" style={styles.blurOverlay}>
           {/* Inner — stops propagation so taps inside don't dismiss */}
           <Pressable onPress={(e) => e.stopPropagation()}>
