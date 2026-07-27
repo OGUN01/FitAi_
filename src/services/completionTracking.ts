@@ -735,9 +735,10 @@ class CompletionTrackingService {
                 );
               }
             }
-          } else {
-            // Continue with completion even if no user
           }
+          // No-else: when currentUserId is absent (guest), the local
+          // nutritionStore.completeMeal() call above already recorded the
+          // completion; there is nothing to persist to Supabase.
         } catch (mealLogError) {
           console.error(`❌ Error creating meal log:`, mealLogError);
           // Continue with completion even if logging fails
@@ -758,9 +759,6 @@ class CompletionTrackingService {
         };
 
         this.emit(event);
-
-        // Verify the meal progress was saved
-        const savedProgress = nutritionStore.getMealProgress(mealId);
 
         return true;
       }
