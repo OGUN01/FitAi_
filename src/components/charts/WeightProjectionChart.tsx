@@ -15,7 +15,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rf, rw, rs } from "../../utils/responsive";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -40,7 +40,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   currentWeight,
   targetWeight,
   weeks,
-  width: widthProp,
+  width: _widthProp,
   height = 200,
   milestones = [],
   style,
@@ -138,6 +138,13 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
     })
     .filter((p): p is { x: number; y: number; week: number; weight: number } => p !== null);
 
+  // Precompute SVG label strings so they are referenced by identifier (avoids
+  // react-native/no-raw-text firing on string/template literals in SvgText).
+  const currentWeightLabel = `${currentWeight}kg`;
+  const targetWeightLabel = `${targetWeight}kg`;
+  const nowLabel = "Now";
+  const weekLabel = `Week ${weeks}`;
+
   // Don't render until we have a valid width
   if (containerWidth === 0) {
     return (
@@ -220,7 +227,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           textAnchor="middle"
           fontWeight="bold"
         >
-          {currentWeight}kg
+          {currentWeightLabel}
         </SvgText>
 
         <SvgText
@@ -231,7 +238,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           textAnchor="middle"
           fontWeight="bold"
         >
-          {targetWeight}kg
+          {targetWeightLabel}
         </SvgText>
 
         {/* Week labels */}
@@ -242,7 +249,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           fontSize={rf(10)}
           textAnchor="middle"
         >
-          Now
+          {nowLabel}
         </SvgText>
 
         <SvgText
@@ -252,7 +259,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
           fontSize={rf(10)}
           textAnchor="middle"
         >
-          Week {weeks}
+          {weekLabel}
         </SvgText>
       </Svg>
 
