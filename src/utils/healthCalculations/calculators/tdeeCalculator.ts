@@ -6,6 +6,7 @@
 import type { TDEECalculator } from '../interfaces/calculators';
 import type { ActivityLevel, ClimateType } from '../types';
 import { CALORIE_PER_KG } from '../../../services/validation/constants';
+import { ACTIVITY_MULTIPLIERS, CLIMATE_MULTIPLIERS } from '../core/tdeeCalculation';
 
 /**
  * Climate-Adaptive TDEE Calculator
@@ -22,26 +23,10 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
    */
   calculate(bmr: number, activityLevel: ActivityLevel, climate: ClimateType): number {
     // Activity multipliers (WHO/FAO validated)
-    const activityMultipliers: Record<string, number> = {
-      sedentary: 1.2,     // Desk job, minimal exercise
-      light: 1.375,       // Light exercise 1-3 days/week
-      moderate: 1.55,     // Moderate exercise 3-5 days/week
-      active: 1.725,      // Heavy exercise 6-7 days/week
-      very_active: 1.9,   // Intense daily training or physical job
-      extreme: 1.9,       // Alias for very_active (onboarding uses "extreme")
-    };
-
-    let tdee = bmr * (activityMultipliers[activityLevel] ?? 1.2);
+    let tdee = bmr * (ACTIVITY_MULTIPLIERS[activityLevel] ?? 1.2);
 
     // Climate adjustments (research-backed)
-    const climateMultipliers: Record<ClimateType, number> = {
-      tropical: 1.075,   // +7.5% for heat stress and sweating
-      temperate: 1.0,    // Baseline (moderate climate)
-      cold: 1.15,        // +15% for shivering thermogenesis
-      arid: 1.05,        // +5% for dehydration stress and heat
-    };
-
-    tdee *= climateMultipliers[climate];
+    tdee *= CLIMATE_MULTIPLIERS[climate];
 
     return Math.round(tdee);
   }

@@ -21,6 +21,7 @@ import {
   BMIClassification,
 } from './types';
 import { detectBestBMRFormula } from './autoDetection';
+import { ACTIVITY_MULTIPLIERS, CLIMATE_MULTIPLIERS } from './core/tdeeCalculation';
 
 // ============================================================================
 // BMR CALCULATORS (4 formulas)
@@ -415,26 +416,10 @@ export class HealthCalculatorFactory {
     climate: ClimateType
   ): number {
     // Base activity multipliers
-    const activityMultipliers: Record<string, number> = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9,
-      extreme: 1.9, // Alias for very_active (onboarding uses "extreme")
-    };
-
-    const baseTDEE = bmr * (activityMultipliers[activityLevel] ?? 1.55);
+    const baseTDEE = bmr * (ACTIVITY_MULTIPLIERS[activityLevel] ?? 1.55);
 
     // BUG-12: Climate modifiers — use CLIMATE_MULTIPLIERS SSOT values (tropical = 1.075)
-    const climateModifiers = {
-      tropical: 1.075, // +7.5% for heat stress and sweating (matches CLIMATE_MULTIPLIERS SSOT)
-      temperate: 1.00, // Baseline
-      cold: 1.15,      // +15% for thermogenesis
-      arid: 1.05,      // +5% for heat stress
-    };
-
-    return Math.round(baseTDEE * climateModifiers[climate]);
+    return Math.round(baseTDEE * CLIMATE_MULTIPLIERS[climate]);
   }
 
   /**
