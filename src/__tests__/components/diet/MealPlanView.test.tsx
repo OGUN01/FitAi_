@@ -1,11 +1,7 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import {
-  fireEvent,
-  render,
-  within,
-} from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
+// Mock icon + gradient deps shared across the suite.
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: () => null,
 }));
@@ -19,30 +15,39 @@ jest.mock("expo-linear-gradient", () => {
   };
 });
 
-import {
-  MealPlanView,
-  type MealPlanViewProps,
-} from "@/components/diet/MealPlanView";
-import { DailyMealList } from "@/components/diet/DailyMealList";
-import { flatColors as colors } from "@/theme/aurora-tokens";
-import type { DayMeal } from "@/types/ai";
+// Stub PremiumMealCard so MealPlanView tests stay focused on wiring
+// (per-meal render order, mealTime/progress/calorie passthrough,
+// card press -> onMealPress vs handleStartMeal fallback, start/complete
+// callbacks). PremiumMealCard has its own test coverage elsewhere.
+jest.mock("@/components/diet/PremiumMealCard", () => ({
+  PremiumMealCard: (props: any) => {
+    const React = jest.requireActual("react");
+    const { View, Text, Pressable } = jest.requireActual("react-native");
+    return React.createElement(
+      View,
+      { testID: `meal-card-${props.meal.id}` },
+      React.createElement(Text, null, props.meal.name),
+      React.createElement(Text, null, props.mealTime),
+      React.createElement(Text, null, `progress:${props.progress ?? 0}`),
+      React.createElement(Text, null, `calories:${props.macroTargets?.calories ?? 0}`),
+      React.createElement(Pressable, { testID: `card-press-${props.meal.id}`, onPress: props.onPress }),
+      React.createElement(Pressable, { testID: `start-${props.meal.id}`, onPress: props.onStartMeal }),
+      React.createElement(Pressable, { testID: `complete-${props.meal.id}`, onPress: props.onCompleteMeal }),
+    );
+  },
+}));
 
-const testStyles = StyleSheet.create({
-  viewport360: { width: 360, flex: 1 },
+// Stub GlassCard as a plain View so the empty-state branch renders stably.
+jest.mock("@/components/ui/aurora/GlassCard", () => {
+  const React = jest.requireActual("react");
+  const { View } = jest.requireActual("react-native");
+  return {
+    GlassCard: ({ children }: any) => React.createElement(View, null, children),
+  };
 });
 
-const expectMinimumTouchTarget = (styleValue: unknown) => {
-  const style = StyleSheet.flatten(styleValue) as {
-    width?: number;
-    minWidth?: number;
-    height?: number;
-    minHeight?: number;
-  };
-  const width = Math.max(style.width ?? 0, style.minWidth ?? 0);
-  const height = Math.max(style.height ?? 0, style.minHeight ?? 0);
-  expect(width).toBeGreaterThanOrEqual(44);
-  expect(height).toBeGreaterThanOrEqual(44);
-};
+import { MealPlanView, type MealPlanViewProps } from "@/components/diet/MealPlanView";
+import type { DayMeal } from "@/types/ai";
 
 const makeMeal = (
   id: string,
@@ -75,267 +80,189 @@ const lunch = makeMeal("lunch", "lunch", "Chana Masala & Stir Fry");
 const snack = makeMeal("snack", "snack", "Greek Yogurt & Chia Seeds");
 const dinner = makeMeal("dinner", "dinner", "Paneer Tikka Salad & Egg");
 
-// Use today's date so the header renders "Today's Plan" (the title switches to
-// "{Weekday}'s Plan" for non-today dates — a hardcoded past date would fail).
-const TODAY = new Date();
-TODAY.setHours(12, 0, 0, 0);
+const mealSchedule = {
+  breakfast: "7:45 AM",
+  morningSnack: "10:30 AM",
+  lunch: "12:00 PM",
+  afternoonSnack: "3:00 PM",
+  dinner: "8:00 PM",
+};
 
 const makeBaseProps = (): MealPlanViewProps => ({
-  selectedDate: TODAY,
-  meals: [],
-  getMealProgress: (id) => ({
+  weeklyMealPlan: {},
+  selectedDay: "",
+  setSelectedDay: jest.fn(),
+  todaysMeals: [],
+  storeGetMealProgress: (id: string) => ({
     progress: id === "breakfast" ? 100 : id === "lunch" ? 35 : 0,
   }),
-  mealSchedule: {
-    breakfast: "7:45 AM",
-    morningSnack: "10:30 AM",
-    lunch: "12:00 PM",
-    afternoonSnack: "3:00 PM",
-    dinner: "8:00 PM",
-  },
-  consumedCalories: 1125,
+  mealSchedule,
+  handleStartMeal: jest.fn(),
+  completeMealPreparation: jest.fn(),
+  macroTargets: { protein: 120, carbs: 200, fat: 60 },
   calorieTarget: 1856,
-  loggedMealCount: 2,
-  onBack: jest.fn(),
-  onFilterPress: jest.fn(),
-  onMealPress: jest.fn(),
-  onLogMeal: jest.fn(),
-  onGeneratePlan: jest.fn(),
-  isGeneratingPlan: false,
 });
 
 describe("MealPlanView", () => {
-  it("renders a stable chronological plan with schedule, statuses, intake, and footer", () => {
+  it("renders \"Today's Meals\" title when selectedDay is falsy and lists meals in given order", () => {
     const props = makeBaseProps();
     const view = render(
       <MealPlanView
         {...props}
-        meals={[dinner, snack, breakfast, lunch]}
-        footer={<View testID="plan-footer" />}
+        selectedDay=""
+        todaysMeals={[dinner, snack, breakfast, lunch]}
       />,
     );
 
-    expect(view.getByText("Today's Plan")).toBeTruthy();
-    // Subtitle is the full formatted selected date (today).
-    const expectedSubtitle = new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    }).format(TODAY);
-    expect(view.getByText(expectedSubtitle)).toBeTruthy();
-    const cards = view.getAllByTestId("meal-plan-card");
-    expect(cards).toHaveLength(4);
-    expect(view.queryAllByTestId("timeline-connector")).toHaveLength(3);
-    expect(within(cards[0]).getByText(breakfast.name)).toBeTruthy();
-    expect(within(cards[1]).getByText(lunch.name)).toBeTruthy();
-    expect(within(cards[2]).getByText(snack.name)).toBeTruthy();
-    expect(within(cards[3]).getByText(dinner.name)).toBeTruthy();
-    expect(view.getByText("7:45 AM")).toBeTruthy();
-    expect(view.getByText("12:00 PM")).toBeTruthy();
-    expect(view.getByText("3:00 PM")).toBeTruthy();
-    expect(view.getByText("8:00 PM")).toBeTruthy();
-    expect(view.getByText("Completed")).toBeTruthy();
-    expect(view.getByText("In Progress")).toBeTruthy();
-    expect(view.getAllByText("Upcoming")).toHaveLength(2);
-    expect(view.getByText("Today's Intake")).toBeTruthy();
-    expect(view.getByText("1,125 / 1,856 kcal")).toBeTruthy();
-    expect(view.getByText("731 kcal remaining")).toBeTruthy();
-    expect(view.getByText("2 meals logged")).toBeTruthy();
-    expect(view.getByText("61%")).toBeTruthy();
-
-    expect(view.getByTestId("intake-card")).toBeTruthy();
-    expect(view.getByTestId("plan-footer-slot")).toBeTruthy();
+    expect(view.getByText("Today's Meals")).toBeTruthy();
+    // Component maps todaysMeals in array order, so all four meals render.
+    expect(view.getByTestId("meal-card-breakfast")).toBeTruthy();
+    expect(view.getByTestId("meal-card-lunch")).toBeTruthy();
+    expect(view.getByTestId("meal-card-snack")).toBeTruthy();
+    expect(view.getByTestId("meal-card-dinner")).toBeTruthy();
+    expect(view.getByText(breakfast.name)).toBeTruthy();
+    expect(view.getByText(lunch.name)).toBeTruthy();
+    expect(view.getByText(snack.name)).toBeTruthy();
+    expect(view.getByText(dinner.name)).toBeTruthy();
   });
 
-  it("connects every plan action and exposes 44px-by-44px touch targets", () => {
+  it("renders \"{Day}'s Meals\" title when selectedDay is a non-empty string", () => {
     const props = makeBaseProps();
-    const view = render(
-      <MealPlanView {...props} meals={[breakfast, lunch, snack, dinner]} />,
-    );
-
-    const back = view.getByLabelText("Back to diet dashboard");
-    const filter = view.getByLabelText("Filter meal plan");
-    const meal = view.getByLabelText(`Open ${breakfast.name}`);
-    const logMeal = view.getByLabelText("Log meal");
-
-    [back, filter, meal, logMeal].forEach((target) => {
-      expectMinimumTouchTarget(target.props.style);
-    });
-
-    fireEvent.press(back);
-    fireEvent.press(filter);
-    fireEvent.press(meal);
-    fireEvent.press(logMeal);
-
-    expect(props.onBack).toHaveBeenCalledTimes(1);
-    expect(props.onFilterPress).toHaveBeenCalledTimes(1);
-    expect(props.onMealPress).toHaveBeenCalledWith(breakfast);
-    expect(props.onLogMeal).toHaveBeenCalledTimes(1);
-  });
-
-  it("uses equal-size image fallbacks and transitions to one after image error", () => {
-    const withImage: DayMeal = {
-      ...breakfast,
-      imageUrl: "https://example.com/breakfast.jpg",
-    };
-    const view = render(
-      <MealPlanView {...makeBaseProps()} meals={[withImage, lunch]} />,
-    );
-
-    const image = view.getByLabelText(`${withImage.name} meal`);
-    const imageStyle = StyleSheet.flatten(image.props.style);
-    const lunchFallback = view.getByTestId(`meal-image-fallback-${lunch.id}`);
-    expect(StyleSheet.flatten(lunchFallback.props.style)).toMatchObject({
-      width: imageStyle.width,
-      height: imageStyle.height,
-    });
-
-    fireEvent(image, "error");
-
-    expect(view.queryByLabelText(`${withImage.name} meal`)).toBeNull();
-    expect(
-      StyleSheet.flatten(
-        view.getByTestId(`meal-image-fallback-${withImage.id}`).props.style,
-      ),
-    ).toMatchObject({ width: imageStyle.width, height: imageStyle.height });
-  });
-
-  it("retries a meal image when its URI changes after an error", () => {
-    const props = makeBaseProps();
-    const failedImageMeal: DayMeal = {
-      ...breakfast,
-      imageUrl: "https://example.com/failed.jpg",
-    };
-    const view = render(<MealPlanView {...props} meals={[failedImageMeal]} />);
-
-    fireEvent(view.getByLabelText(`${failedImageMeal.name} meal`), "error");
-    expect(
-      view.getByTestId(`meal-image-fallback-${failedImageMeal.id}`),
-    ).toBeTruthy();
-
-    const refreshedImageMeal: DayMeal = {
-      ...failedImageMeal,
-      imageUrl: "https://example.com/refreshed.jpg",
-    };
-    view.rerender(<MealPlanView {...props} meals={[refreshedImageMeal]} />);
-
-    expect(view.getByLabelText(`${refreshedImageMeal.name} meal`).props.source).toEqual({
-      uri: refreshedImageMeal.imageUrl,
-    });
-  });
-
-  it("keeps opaque surfaces and long text constrained for a 360px viewport", () => {
-    const longMeal = makeMeal(
-      "long-name",
-      "dinner",
-      "Paneer Tikka Salad With Roasted Vegetables, Eggs, Seeds, and Herb Dressing",
-    );
-    const view = render(
-      <View testID="viewport-360" style={testStyles.viewport360}>
-        <MealPlanView {...makeBaseProps()} meals={[longMeal]} />
-      </View>,
-    );
-
-    expect(StyleSheet.flatten(view.getByTestId("viewport-360").props.style)).toMatchObject({
-      width: 360,
-    });
-    expect(
-      StyleSheet.flatten(view.getByTestId("meal-plan-screen").props.style),
-    ).toEqual(expect.objectContaining({ backgroundColor: colors.background }));
-    expect(
-      StyleSheet.flatten(view.getByTestId("meal-plan-card").props.style),
-    ).toEqual(
-      expect.objectContaining({ backgroundColor: colors.backgroundSecondary }),
-    );
-    expect(
-      StyleSheet.flatten(view.getByTestId("intake-card").props.style),
-    ).toEqual(
-      expect.objectContaining({ backgroundColor: colors.backgroundSecondary }),
-    );
-    const longName = view.getByText(longMeal.name);
-    expect(longName.props.numberOfLines).toBe(2);
-    expect(StyleSheet.flatten(longName.props.style)).toEqual(
-      expect.objectContaining({ flexShrink: 1 }),
-    );
-    expect(view.getByText("Today's Plan").props.numberOfLines).toBe(1);
-  });
-
-  it("offers plan generation for an empty day and reports generation progress", () => {
-    const props = makeBaseProps();
-    const view = render(<MealPlanView {...props} />);
-
-    expect(view.getByText("No meals planned")).toBeTruthy();
-    const generate = view.getByLabelText("Generate meal plan");
-    expect(StyleSheet.flatten(generate.props.style)).toEqual(
-      expect.objectContaining({ minHeight: 44 }),
-    );
-    expectMinimumTouchTarget(generate.props.style);
-    fireEvent.press(generate);
-    expect(props.onGeneratePlan).toHaveBeenCalledTimes(1);
-
-    view.rerender(<MealPlanView {...props} isGeneratingPlan />);
-    expect(view.getByText("Generating Plan…")).toBeTruthy();
-    expect(view.getByLabelText("Generate meal plan").props.accessibilityState).toEqual({
-      busy: true,
-      disabled: true,
-    });
-  });
-
-  it("clamps overflow intake progress to its accessibility maximum", () => {
     const view = render(
       <MealPlanView
-        {...makeBaseProps()}
-        consumedCalories={2100}
+        {...props}
+        selectedDay="friday"
+        todaysMeals={[]}
+      />,
+    );
+
+    expect(view.getByText("Friday's Meals")).toBeTruthy();
+    expect(view.queryByText("Today's Meals")).toBeNull();
+  });
+
+  it("renders the empty state with \"No meals planned for today\" when weeklyMealPlan is truthy and todaysMeals empty", () => {
+    const props = makeBaseProps();
+    const view = render(
+      <MealPlanView
+        {...props}
+        weeklyMealPlan={{}}
+        todaysMeals={[]}
+        selectedDay=""
+      />,
+    );
+
+    expect(view.getByText("No meals planned for today")).toBeTruthy();
+    expect(view.getByLabelText("No meals planned for today")).toBeTruthy();
+  });
+
+  it("renders the empty state with \"Generate a meal plan to get started\" when weeklyMealPlan is falsy and todaysMeals empty", () => {
+    const props = makeBaseProps();
+    const view = render(
+      <MealPlanView
+        {...props}
+        weeklyMealPlan={null}
+        todaysMeals={[]}
+        selectedDay=""
+      />,
+    );
+
+    expect(view.getByText("Generate a meal plan to get started")).toBeTruthy();
+    expect(view.getByLabelText("Generate a meal plan to get started")).toBeTruthy();
+  });
+
+  it("passes mealTime, progress, and calorieTarget to each PremiumMealCard", () => {
+    const props = makeBaseProps();
+    const view = render(
+      <MealPlanView
+        {...props}
+        todaysMeals={[breakfast, lunch]}
+        storeGetMealProgress={(id) => ({ progress: id === "breakfast" ? 100 : 35 })}
+        macroTargets={{ protein: 120, carbs: 200, fat: 60 }}
         calorieTarget={1856}
       />,
     );
 
-    expect(view.getByRole("progressbar").props.accessibilityValue).toEqual({
-      min: 0,
-      max: 1856,
-      now: 1856,
-    });
+    // mealTime wiring (real getMealTime util runs).
+    expect(view.getByText("7:45 AM")).toBeTruthy();
+    expect(view.getByText("12:00 PM")).toBeTruthy();
+    // progress passthrough.
+    expect(view.getByText("progress:100")).toBeTruthy();
+    expect(view.getByText("progress:35")).toBeTruthy();
+    // calorieTarget passthrough on both cards.
+    expect(view.getAllByText("calories:1856")).toHaveLength(2);
   });
 
-  it("uses a valid zero-target accessibility range", () => {
+  it("fires onMealPress when provided and a card is pressed", () => {
+    const onMealPress = jest.fn();
+    const handleStartMeal = jest.fn();
+    const props = makeBaseProps();
     const view = render(
       <MealPlanView
-        {...makeBaseProps()}
-        consumedCalories={450}
-        calorieTarget={0}
+        {...props}
+        onMealPress={onMealPress}
+        handleStartMeal={handleStartMeal}
+        todaysMeals={[breakfast]}
       />,
     );
 
-    expect(view.getByRole("progressbar").props.accessibilityValue).toEqual({
-      min: 0,
-      max: 1,
-      now: 0,
-    });
+    fireEvent.press(view.getByTestId("card-press-breakfast"));
+    expect(onMealPress).toHaveBeenCalledTimes(1);
+    expect(onMealPress).toHaveBeenCalledWith(breakfast);
+    expect(handleStartMeal).not.toHaveBeenCalled();
   });
-});
 
-describe("DailyMealList", () => {
-  it("renders compact real-meal rows with logged and planned states", () => {
-    const logged = render(
-      <DailyMealList
-        title="Logged meals"
-        meals={[breakfast]}
-        status="logged"
+  it("fires handleStartMeal (fallback) when onMealPress not provided, plus start/complete buttons", () => {
+    const handleStartMeal = jest.fn();
+    const completeMealPreparation = jest.fn();
+    const props = makeBaseProps();
+    const view = render(
+      <MealPlanView
+        {...props}
+        handleStartMeal={handleStartMeal}
+        completeMealPreparation={completeMealPreparation}
+        todaysMeals={[breakfast]}
       />,
     );
-    expect(logged.getByText("Logged meals")).toBeTruthy();
-    expect(logged.getByText(breakfast.name).props.numberOfLines).toBe(1);
-    expect(logged.getByText("450 kcal · 30P · 50C · 14F")).toBeTruthy();
-    expect(logged.getByText("Logged")).toBeTruthy();
-    logged.unmount();
 
-    const planned = render(
-      <DailyMealList
-        title="Planned meals"
-        meals={[dinner]}
-        status="planned"
+    // Card press falls back to handleStartMeal when onMealPress is absent.
+    fireEvent.press(view.getByTestId("card-press-breakfast"));
+    expect(handleStartMeal).toHaveBeenCalledTimes(1);
+    expect(handleStartMeal).toHaveBeenCalledWith(breakfast);
+
+    // Start button fires handleStartMeal.
+    fireEvent.press(view.getByTestId("start-breakfast"));
+    expect(handleStartMeal).toHaveBeenCalledTimes(2);
+
+    // Complete button fires completeMealPreparation.
+    fireEvent.press(view.getByTestId("complete-breakfast"));
+    expect(completeMealPreparation).toHaveBeenCalledTimes(1);
+    expect(completeMealPreparation).toHaveBeenCalledWith(breakfast);
+  });
+
+  it("does not render meal cards when todaysMeals is empty/undefined", () => {
+    const props = makeBaseProps();
+
+    // Empty array branch.
+    const emptyView = render(
+      <MealPlanView
+        {...props}
+        weeklyMealPlan={{}}
+        todaysMeals={[]}
       />,
     );
-    expect(planned.getByText("Planned")).toBeTruthy();
+    expect(emptyView.queryByTestId("meal-card-breakfast")).toBeNull();
+    expect(emptyView.getByText("No meals planned for today")).toBeTruthy();
+    emptyView.unmount();
+
+    // Undefined branch (component uses todaysMeals?.length ?? 0).
+    const undefinedView = render(
+      <MealPlanView
+        {...props}
+        weeklyMealPlan={{}}
+        todaysMeals={undefined as unknown as DayMeal[]}
+      />,
+    );
+    expect(undefinedView.queryByTestId("meal-card-breakfast")).toBeNull();
+    expect(undefinedView.getByText("No meals planned for today")).toBeTruthy();
   });
 });
