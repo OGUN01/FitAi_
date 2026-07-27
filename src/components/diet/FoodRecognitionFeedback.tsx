@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
 import { RecognizedFood } from "../../services/foodRecognitionService";
 import { rf, rh, rw, rbr } from "../../utils/responsive";
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: fontSize.xl,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
 
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   closeText: {
     fontSize: rf(16),
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   progressIndicator: {
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
 
   foodName: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     flex: 1,
   },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: fontSize.xs,
     color: colors.white,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   detailsGrid: {
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   sectionCard: {
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   correctnessButtonText: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   correctnessButtonIcon: {
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
     marginBottom: spacing.sm,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
 
   correctionInput: {
