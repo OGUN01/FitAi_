@@ -6,7 +6,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   StyleProp,
   ViewStyle,
 } from "react-native";
@@ -14,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rh } from "../../utils/responsive";
 import { aiService } from "../../ai";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface AIStatusIndicatorProps {
   onPress?: () => void;
@@ -30,7 +30,7 @@ export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({
   const statusText = status.mode === "real" ? "AI Powered" : "Demo Mode";
   const statusIcon = status.mode === "real" ? "sparkles" : "flask-outline";
 
-  const Component = onPress ? TouchableOpacity : View;
+  const Component = onPress ? AnimatedPressable : View;
 
   return (
     <Component

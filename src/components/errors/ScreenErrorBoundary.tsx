@@ -8,12 +8,12 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { rh, rw, rf } from '../../utils/responsive';
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 
 interface Props {
@@ -90,9 +90,9 @@ export class ScreenErrorBoundary extends Component<Props, State> {
                 : "We encountered an unexpected error."}
             </Text>
 
-            <TouchableOpacity style={styles.button} onPress={this.handleReset} accessibilityRole="button" accessibilityLabel="Try again">
+            <AnimatedPressable style={styles.button} onPress={this.handleReset} scaleValue={0.95} accessibilityRole="button" accessibilityLabel="Try again">
               <Text style={styles.buttonText}>Try Again</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {__DEV__ && this.state.error && (
               <ScrollView style={styles.errorDetails}>
