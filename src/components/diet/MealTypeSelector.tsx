@@ -150,6 +150,9 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             style={styles.backdropTouchable}
             activeOpacity={1}
             onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss meal type selector"
+            accessibilityHint="Closes the meal type picker without selecting"
           />
 
           <Animated.View
@@ -202,6 +205,9 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                       ]}
                       onPress={() => handleSelect(option.type)}
                       activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={option.label}
+                      accessibilityState={{ selected: isSelected }}
                     >
                       <View style={styles.optionContent}>
                         <View
