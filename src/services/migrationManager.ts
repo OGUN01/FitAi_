@@ -803,7 +803,7 @@ export class MigrationManager {
           .delete()
           .eq("user_id", userId);
         if (workoutsError)
-          console.warn(
+          console.error(
             "[MigrationManager] workouts table not found:",
             workoutsError.message
           );
