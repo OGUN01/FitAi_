@@ -760,11 +760,17 @@ export const useHealthDataStore = create<HealthDataState>()(
                 syncResult.data.workouts?.map((workout: HealthKitWorkout) => ({
                   id:
                     workout.id ||
-                    `${workout.activityType || "unknown"}_${workout.startDate || "unknown"}`,
+                    `${workout.activityType || "unknown"}_${workout.startDate.toISOString()}`,
                   type: workout.activityType || "unknown",
                   duration: workout.duration || 0,
                   calories: workout.energyBurned || 0,
-                  date: workout.startDate || new Date().toISOString(),
+                  // HealthKitWorkout.startDate is a Date object; recentWorkouts
+                  // stores ISO strings. Convert explicitly. The previous
+                  // `workout.startDate || new Date().toISOString()` fallback was
+                  // dead (startDate is a required Date, never falsy) and would
+                  // have stored a Date object under a string-typed field —
+                  // masked only by the prior `any` typing.
+                  date: workout.startDate.toISOString(),
                   source: "HealthKit" as const,
                 })) || [],
               ),
