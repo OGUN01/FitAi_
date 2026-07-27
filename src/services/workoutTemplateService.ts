@@ -447,9 +447,7 @@ class WorkoutTemplateService {
         plan_title: (planData.planTitle as string) ?? "Draft",
         plan_description: (planData.planDescription as string) ?? "",
         week_number: (planData.weekNumber as number) ?? 1,
-        total_workouts: ((planData.workouts as unknown[]) ?? []).length,
-        duration_range: "draft",
-        plan_data: planData,
+        workouts: planData,
         is_active: false,
         plan_source: "custom",
         is_draft: true,
@@ -471,7 +469,7 @@ class WorkoutTemplateService {
   ): Promise<Record<string, unknown> | null> {
     const { data, error } = await supabase
       .from("weekly_workout_plans")
-      .select("plan_data")
+      .select("workouts")
       .eq("user_id", userId)
       .eq("plan_source", "custom")
       .eq("is_draft", true)
@@ -484,7 +482,7 @@ class WorkoutTemplateService {
       return null;
     }
 
-    return (data as { plan_data?: Record<string, unknown> } | null)?.plan_data ?? null;
+    return (data as { workouts?: Record<string, unknown> } | null)?.workouts ?? null;
   }
 
   /**
