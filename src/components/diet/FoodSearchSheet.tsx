@@ -34,6 +34,7 @@ import {
   spacing,
   borderRadius,
   flatFontSize as fontSize,
+  typography,
 } from "../../theme/aurora-tokens";
 import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
 import { sqliteFood, type SQLiteFoodResult } from "../../services/sqliteFood";
@@ -464,7 +465,7 @@ const styles = StyleSheet.create({
   sourceTagText: {
     color: colors.textSecondary,
     fontSize: rf(fontSize.micro),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     textTransform: "uppercase",
   },
   nameWrap: {
@@ -474,7 +475,7 @@ const styles = StyleSheet.create({
   name: {
     color: colors.text,
     fontSize: rf(fontSize.md),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   subtitle: {
     color: colors.textSecondary,
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
   cals: {
     color: colors.text,
     fontSize: rf(fontSize.lg),
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   calsUnit: {
     color: colors.textSecondary,
