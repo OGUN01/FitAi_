@@ -25,7 +25,6 @@ import {
   EncryptionConfig,
   EncryptedData,
   StorageInfo,
-  ValidationResult,
 } from "../types/localData";
 
 // Web-compatible crypto utilities
@@ -47,7 +46,7 @@ const CryptoUtils = {
   },
 
   // PBKDF2 implementation
-  PBKDF2: (password: string, salt: any, options: any) => {
+  PBKDF2: (password: string, salt: { toString(): string }, _options: unknown) => {
     // Simple hash for web compatibility
     const combined = password + salt.toString();
     let hash = 0;
@@ -96,32 +95,39 @@ const CryptoUtils = {
   // store the encryption key in the OS keychain.
   // AES encryption (simplified for web)
   AES: {
-    encrypt: (data: string, key: string, options?: any) => {
+    encrypt: (data: string, _key: string, _options?: unknown) => {
       // Simple base64 encoding for web compatibility
       // Simple encoding for React Native compatibility
       // Using basic string manipulation since this is just for simple obfuscation
       const encoded = data;
       return {
         ciphertext: {
-          toString: (format: any) => encoded,
+          toString: (_format?: unknown) => encoded,
         },
         tag: {
-          toString: (format: any) => "mock-tag",
+          toString: (_format?: unknown) => "mock-tag",
         },
       };
     },
 
-    decrypt: (encryptedData: any, key: string, options?: any) => {
+    decrypt: (
+      encryptedData: {
+        ciphertext: { toString(): string };
+        tag?: { toString(): string };
+      },
+      _key: string,
+      _options?: unknown,
+    ) => {
       // Simple base64 decoding for web compatibility
       try {
         // Simple decryption - in production use proper crypto library
         const decoded = encryptedData.ciphertext.toString();
         return {
-          toString: (format: any) => decoded,
+          toString: (_format?: unknown) => decoded,
         };
-      } catch (error) {
+      } catch {
         return {
-          toString: (format: any) => "",
+          toString: (_format?: unknown) => "",
         };
       }
     },
@@ -130,20 +136,20 @@ const CryptoUtils = {
   // Encoding utilities
   enc: {
     Base64: {
-      stringify: (wordArray: any) => {
+      stringify: (wordArray: unknown) => {
         if (typeof wordArray === "string") {
           // Basic string handling for React Native compatibility
           return wordArray;
         }
         // Basic string handling for React Native compatibility
-        return wordArray.toString();
+        return String(wordArray);
       },
       parse: (base64: string) => ({
-        toString: (format?: any) => {
+        toString: (_format?: unknown) => {
           try {
             // Simple base64 handling - in production use proper crypto library
             return base64;
-          } catch (error) {
+          } catch {
             return base64;
           }
         },
@@ -485,21 +491,6 @@ export class EnhancedLocalStorageService {
         }
         return s;
       },
-    };
-
-    // Parse version strings to compare
-    const parseVersion = (v: string): number[] =>
-      v.split(".").map((n) => parseInt(n, 10) || 0);
-    const compareVersions = (a: string, b: string): number => {
-      const aParts = parseVersion(a);
-      const bParts = parseVersion(b);
-      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-        const aPart = aParts[i] || 0;
-        const bPart = bParts[i] || 0;
-        if (aPart < bPart) return -1;
-        if (aPart > bPart) return 1;
-      }
-      return 0;
     };
 
     // Get ordered list of versions
@@ -911,7 +902,7 @@ export class EnhancedLocalStorageService {
   }
 
   // Basic key-value setter used by migration
-  async setItem(key: string, value: any): Promise<void> {
+  async setItem(key: string, value: unknown): Promise<void> {
     await this.ensureReady();
     await AsyncStorage.setItem(
       key,
