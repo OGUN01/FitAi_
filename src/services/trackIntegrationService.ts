@@ -548,9 +548,12 @@ export class TrackIntegrationService {
     }
   }
 
-  private log(message: string, ...args: any[]): void {
+  private log(message: string, ...args: unknown[]): void {
+    // CLAUDE.md: no console.log in production paths. debugMode is off by
+    // default; when a developer enables it locally, route diagnostics through
+    // console.warn so they never ship as production log noise.
     if (this.config.debugMode) {
-      console.log(`[TrackIntegration] ${message}`, ...args);
+      console.warn(`[TrackIntegration] ${message}`, ...args);
     }
   }
 }
