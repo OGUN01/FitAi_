@@ -21,21 +21,6 @@ import { loadExerciseDatabase, Exercise } from '../utils/exerciseDatabase';
 import { ValidationError, APIError } from '../utils/errors';
 
 // ============================================================================
-// SAFE PARSE HELPER
-// ============================================================================
-
-/**
- * FIX G: Parse an integer query param safely.
- * Returns defaultVal when the string is absent, empty, or non-numeric.
- * Clamps the result to [min, max].
- */
-function safeParseInt(value: string | undefined | null, defaultVal: number, min: number, max: number): number {
-  const parsed = parseInt(value ?? '', 10);
-  if (isNaN(parsed)) return defaultVal;
-  return Math.min(max, Math.max(min, parsed));
-}
-
-// ============================================================================
 // SEARCH AND FILTER LOGIC
 // ============================================================================
 
@@ -181,42 +166,31 @@ export async function handleExerciseSearch(
   const startTime = Date.now();
 
   try {
-    // 1. Parse and validate query parameters
+    // 1. Parse and validate query parameters.
+    // Query params arrive as strings (or string[] for repeated keys). Coerce
+    // comma-separated strings into arrays and strings into numbers so the Zod
+    // schema can validate enum values and apply defaults.
     const queryParams = c.req.query();
 
-    // Convert query params to proper types
-    // FIX G: Use safeParseInt to avoid NaN propagating when params are non-numeric
-    const parsedParams: any = {
+    function toArray(val: string | string[] | undefined): string[] | undefined {
+      if (val === undefined) return undefined;
+      if (Array.isArray(val)) return val;
+      return val.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+
+    const rawInput: Record<string, unknown> = {
       query: queryParams.query,
-      limit: safeParseInt(queryParams.limit, 20, 1, 100),
-      offset: safeParseInt(queryParams.offset, 0, 0, 10000),
+      equipment: toArray(queryParams.equipment),
+      bodyParts: toArray(queryParams.bodyParts),
+      muscles: toArray(queryParams.muscles),
+      experienceLevel: queryParams.experienceLevel,
+      limit: queryParams.limit !== undefined ? Number(queryParams.limit) : undefined,
+      offset: queryParams.offset !== undefined ? Number(queryParams.offset) : undefined,
     };
 
-    // Parse array parameters
-    if (queryParams.equipment) {
-      parsedParams.equipment = Array.isArray(queryParams.equipment)
-        ? queryParams.equipment
-        : queryParams.equipment.split(',');
-    }
-
-    if (queryParams.bodyParts) {
-      parsedParams.bodyParts = Array.isArray(queryParams.bodyParts)
-        ? queryParams.bodyParts
-        : queryParams.bodyParts.split(',');
-    }
-
-    if (queryParams.muscles) {
-      parsedParams.muscles = Array.isArray(queryParams.muscles)
-        ? queryParams.muscles
-        : queryParams.muscles.split(',');
-    }
-
-    if (queryParams.experienceLevel) {
-      parsedParams.experienceLevel = queryParams.experienceLevel;
-    }
-
-    // Validate request (simple validation - most params are optional)
-    const filters: ExerciseSearchRequest = parsedParams as ExerciseSearchRequest;
+    // Validate via the Zod schema — rejects invalid enum values instead of
+    // silently passing them through. Applies defaults (limit=20, offset=0).
+    const filters: ExerciseSearchRequest = validateRequest(ExerciseSearchRequestSchema, rawInput);
 
     console.log('[Exercise Search] Request validated:', {
       query: filters.query,
