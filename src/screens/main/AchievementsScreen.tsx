@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -171,12 +171,12 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     return { total, completed, totalFitCoins, completionRate };
   }, [achievements, unlocked, userAchievements]);
 
-  const handleAchievementPress = (achievement: Achievement) => {
+  const handleAchievementPress = useCallback((achievement: Achievement) => {
     setSelectedAchievement(achievement);
     setModalVisible(true);
-  };
+  }, []);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     const userId = user?.id || guestId || "guest";
     try {
@@ -186,28 +186,30 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [user?.id, guestId, initialize]);
 
-  const renderItem = ({ item }: { item: Achievement }) => {
-    const userProgress = userAchievements.get(item.id);
-    return (
-      <AchievementCard
-        achievement={item}
-        userProgress={userProgress}
-        onPress={() => handleAchievementPress(item)}
-      />
-    );
-  };
+  const renderItem = useCallback(
+    ({ item }: { item: Achievement }) => {
+      const userProgress = userAchievements.get(item.id);
+      return (
+        <AchievementCard
+          achievement={item}
+          userProgress={userProgress}
+          onPress={() => handleAchievementPress(item)}
+        />
+      );
+    },
+    [userAchievements, handleAchievementPress]
+  );
 
-  const renderSectionHeader = ({
-    section,
-  }: {
-    section: AchievementSection;
-  }) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle} numberOfLines={1}>{section.title}</Text>
-      <Text style={styles.sectionSubtitle} numberOfLines={1}>{section.subtitle}</Text>
-    </View>
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: AchievementSection }) => (
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle} numberOfLines={1}>{section.title}</Text>
+        <Text style={styles.sectionSubtitle} numberOfLines={1}>{section.subtitle}</Text>
+      </View>
+    ),
+    []
   );
 
   // Loading state: store still initializing on first mount.
@@ -301,7 +303,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
           />
         ) : (
           <Animated.View
-            style={{ flex: 1 }}
+            style={styles.flexContainer}
             entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
           >
             <SectionList
@@ -349,6 +351,9 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  flexContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
