@@ -1,3 +1,4 @@
+import { flatColors as colors } from "../../theme/aurora-tokens";
 export interface CountryState {
   name: string;
   states: string[];
@@ -97,35 +98,35 @@ export const OCCUPATION_OPTIONS = [
     value: "desk_job",
     label: "Desk Job",
     iconName: "laptop-outline",
-    gradient: ["#FF6B35", "#FF8A5C"],
+    gradient: [colors.primary, colors.primaryLight],
     description: "Office worker, programmer, student - mostly sitting",
   },
   {
     value: "light_active",
     label: "Light Activity",
     iconName: "walk-outline",
-    gradient: ["#3B82F6", "#06B6D4"],
+    gradient: [colors.blue, colors.cyan],
     description: "Teacher, retail, light housework - some movement",
   },
   {
     value: "moderate_active",
     label: "Moderate Activity",
     iconName: "fitness-outline",
-    gradient: ["#10B981", "#14B8A6"],
+    gradient: [colors.successAlt, colors.teal],
     description: "Nurse, server, active parent - regular movement",
   },
   {
     value: "heavy_labor",
     label: "Heavy Labor",
     iconName: "construct-outline",
-    gradient: ["#F59E0B", "#EF4444"],
+    gradient: [colors.warningAlt, colors.errorAlt],
     description: "Construction, farming, warehouse - physical work",
   },
   {
     value: "very_active",
     label: "Very Active",
     iconName: "barbell-outline",
-    gradient: ["#EF4444", "#DC2626"],
+    gradient: [colors.errorAlt, colors.error],
     description: "Athlete, trainer, manual labor - constant activity",
   },
 ] as const;
