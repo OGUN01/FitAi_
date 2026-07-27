@@ -135,7 +135,7 @@ export const useOnboardingIntegration = () => {
           );
         }
       } else {
-        console.log("📱 Guest mode: Personal info saved locally only");
+        logger.info("Guest mode: Personal info saved locally only");
       }
 
       return { success: true };
@@ -200,7 +200,7 @@ export const useOnboardingIntegration = () => {
           );
         }
       } else {
-        console.log("📱 Guest mode: Fitness goals saved locally only");
+        logger.info("Guest mode: Fitness goals saved locally only");
       }
 
       return { success: true };
@@ -276,7 +276,7 @@ export const useOnboardingIntegration = () => {
           );
         }
       } else {
-        console.log("📱 Guest mode: Diet preferences saved locally only");
+        logger.info("Guest mode: Diet preferences saved locally only");
       }
 
       return { success: true };
@@ -342,7 +342,7 @@ export const useOnboardingIntegration = () => {
           );
         }
       } else {
-        console.log("📱 Guest mode: Workout preferences saved locally only");
+        logger.info("Guest mode: Workout preferences saved locally only");
       }
 
       return { success: true };
@@ -370,7 +370,7 @@ export const useOnboardingIntegration = () => {
 
       // Body analysis stored locally only (optional feature)
       // Future enhancement: implement remote storage
-      console.log("📱 Body analysis saved locally only (feature is optional)");
+      logger.info("Body analysis saved locally only (feature is optional)");
 
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
