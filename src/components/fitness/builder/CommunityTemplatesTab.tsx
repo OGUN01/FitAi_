@@ -388,6 +388,8 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
         borderRadius="xl"
         pressable
         onPress={() => onPress(template)}
+        accessibilityLabel={template.name}
+        accessibilityHint="Opens template details"
         contentStyle={styles.cardContent}
         style={styles.card}
       >

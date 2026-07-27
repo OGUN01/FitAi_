@@ -69,6 +69,16 @@ interface GlassCardProps {
   onPress?: () => void;
 
   /**
+   * Accessibility label for screen readers (used when `pressable` is true).
+   */
+  accessibilityLabel?: string;
+
+  /**
+   * Accessibility hint for screen readers (used when `pressable` is true).
+   */
+  accessibilityHint?: string;
+
+  /**
    * Children components
    */
   children: React.ReactNode;
@@ -134,6 +144,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   showBorder = false,
   pressable = false,
   onPress,
+  accessibilityLabel,
+  accessibilityHint,
   children,
   style,
   contentStyle,
@@ -179,6 +191,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
         scaleValue={0.98}
         springConfig="smooth"
         hapticType="light"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
         style={{ borderRadius: borderRadiusValue, overflow: "hidden" }}
       >
         {renderContent}
