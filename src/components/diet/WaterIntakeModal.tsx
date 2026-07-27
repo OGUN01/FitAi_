@@ -26,7 +26,7 @@ import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { haptics } from "../../utils/haptics";
-import { flatColors as colors, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, borderRadius, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { rf, rp } from "../../utils/responsive";
 
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(20),
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.white,
   },
   closeButton: {
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   },
   progressValue: {
     fontSize: rf(16),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
   },
   progressBar: {
@@ -360,11 +360,11 @@ const styles = StyleSheet.create({
   goalReachedText: {
     fontSize: rf(13),
     color: colors.successAlt,
-    fontWeight: "500",
+    fontWeight: String(typography.fontWeight.medium) as any,
   },
   sectionTitle: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: "rgba(255,255,255,0.7)",
     marginBottom: rp(12),
   },
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   },
   quickOptionLabel: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
     marginTop: rp(8),
   },
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
   },
   customButtonText: {
     fontSize: rf(14),
-    fontWeight: "500",
+    fontWeight: String(typography.fontWeight.medium) as any,
     color: colors.primary,
   },
   inputContainer: {
@@ -422,13 +422,13 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: rf(18),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
     paddingVertical: rp(16),
   },
   unitLabel: {
     fontSize: rf(16),
-    fontWeight: "500",
+    fontWeight: String(typography.fontWeight.medium) as any,
     color: "rgba(255,255,255,0.5)",
     marginLeft: rp(8),
   },
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
   },
   submitButton: {
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
   },
 });
