@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   LayoutChangeEvent,
-  Animated as RNAnimated,
   StyleProp,
   ViewStyle,
 } from "react-native";
@@ -55,7 +54,6 @@ export const Slider: React.FC<SliderProps> = ({
   disabled = false,
 }) => {
   const [sliderWidth, setSliderWidth] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Reanimated values for native platforms
   const translateX = useSharedValue(0);
@@ -63,10 +61,6 @@ export const Slider: React.FC<SliderProps> = ({
   const tooltipOpacity = useSharedValue(1);
   const thumbScale = useSharedValue(1);
   const lastHapticValue = useRef(value);
-
-  // Regular Animated values for web platform
-  const webThumbPosition = useRef(new RNAnimated.Value(0)).current;
-  const webThumbScale = useRef(new RNAnimated.Value(1)).current;
 
   // Calculate initial position based on value
   const getPositionFromValue = useCallback(
@@ -76,23 +70,6 @@ export const Slider: React.FC<SliderProps> = ({
       return percentage * sliderWidth;
     },
     [sliderWidth, minimumValue, maximumValue],
-  );
-
-  // Calculate value from position
-  const getValueFromPosition = useCallback(
-    (position: number) => {
-      const percentage = Math.max(0, Math.min(1, position / sliderWidth));
-      let newValue = minimumValue + percentage * (maximumValue - minimumValue);
-
-      // Apply step
-      if (step > 0) {
-        newValue = Math.round(newValue / step) * step;
-      }
-
-      // Clamp to min/max
-      return Math.max(minimumValue, Math.min(maximumValue, newValue));
-    },
-    [sliderWidth, minimumValue, maximumValue, step],
   );
 
   // Trigger haptic feedback when value changes

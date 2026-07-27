@@ -16,7 +16,6 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 

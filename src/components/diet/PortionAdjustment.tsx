@@ -12,8 +12,8 @@ import {
   Keyboard,
   StyleProp,
   ViewStyle,
+  SafeAreaView,
 } from "react-native";
-import { SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
@@ -37,7 +37,7 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
   onValueChange,
   style,
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
+  const isDragging = false;
   const [trackWidth, setTrackWidth] = useState(0);
 
   const handleTrackPress = (event: any) => {
@@ -90,7 +90,7 @@ interface PortionAdjustmentProps {
   onAdjustmentComplete: (adjustedFoods: RecognizedFood[]) => void;
 }
 
-interface PortionAdjustment {
+interface PortionAdjustmentData {
   foodId: string;
   originalGrams: number;
   adjustedGrams: number;
@@ -103,7 +103,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   onClose,
   onAdjustmentComplete,
 }) => {
-  const [adjustments, setAdjustments] = useState<PortionAdjustment[]>([]);
+  const [adjustments, setAdjustments] = useState<PortionAdjustmentData[]>([]);
   const [currentFoodIndex, setCurrentFoodIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -732,17 +732,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: rh(40),
     marginVertical: spacing.md,
-  },
-
-  sliderThumb: {
-    backgroundColor: colors.primary,
-    width: rw(24),
-    height: rh(24),
-  },
-
-  sliderTrack: {
-    height: rh(4),
-    borderRadius: rbr(2),
   },
 
   sliderLabels: {

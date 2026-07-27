@@ -1,16 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
-import Animated, {
+import {
   useSharedValue,
-  useAnimatedStyle,
   withSpring,
-  interpolate,
-  Extrapolate,
   cancelAnimation,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
-import { rf, rp, rw, rh } from "../../utils/responsive";
+import { rf } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hexToRgba } from "../../utils/colors";
 import { ChartTooltip } from "../ui/ChartTooltip";
@@ -220,31 +217,6 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         }
       }, 2000);
     });
-
-  // Pre-calculate Y values outside the worklet (worklets can't call JS functions)
-  const startY = valueToY(currentValue);
-  const endY = valueToY(targetValue);
-
-  // Animated progress indicator
-  const animatedProgressStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(
-      progress.value,
-      [0, 1],
-      [paddingLeft, paddingLeft + chartWidth],
-      Extrapolate.CLAMP,
-    );
-
-    const translateY = interpolate(
-      progress.value,
-      [0, 1],
-      [startY, endY],
-      Extrapolate.CLAMP,
-    );
-
-    return {
-      transform: [{ translateX }, { translateY }],
-    };
-  });
 
   // Calculate percentage change — guard against zero currentValue (NaN/Infinity
   // would otherwise render "NaN% increase" / "Infinity% increase" in the header).

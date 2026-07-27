@@ -9,8 +9,8 @@ import {
   TextInput,
 
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
-import { SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { Button, Card } from "../ui";
@@ -49,7 +49,7 @@ export const FoodRecognitionFeedback: React.FC<
   recognizedFoods,
   onClose,
   onSubmitFeedback,
-  originalImageUri,
+  originalImageUri: _originalImageUri,
 }) => {
   const [feedback, setFeedback] = useState<FoodFeedback[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,7 +88,7 @@ export const FoodRecognitionFeedback: React.FC<
       );
 
       onClose();
-    } catch (error) {
+    } catch {
       crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -395,12 +395,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  closeText: {
-    fontSize: rf(16),
-    color: colors.text,
-    fontWeight: String(typography.fontWeight.semibold) as any,
-  },
-
   progressIndicator: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -509,10 +503,6 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  star: {
-    fontSize: rf(24),
   },
 
   ratingLabel: {
