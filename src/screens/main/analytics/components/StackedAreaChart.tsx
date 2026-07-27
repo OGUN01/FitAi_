@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
 import { rf, rh } from "../../../../utils/responsive";
@@ -13,15 +13,16 @@ interface StackedAreaChartProps {
   burnedData: ChartData[];
 }
 
-export const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
+export const StackedAreaChart: React.FC<StackedAreaChartProps> = React.memo(({
   consumedData,
   burnedData,
 }) => {
-  const maxValue = Math.max(
-    ...consumedData.map((d) => d.value),
-    ...burnedData.map((d) => d.value),
-    1,
-  );
+  const maxValue = useMemo(() => {
+    const values: number[] = [1];
+    for (const d of consumedData) values.push(d.value);
+    for (const d of burnedData) values.push(d.value);
+    return Math.max(...values);
+  }, [consumedData, burnedData]);
 
   return (
     <View style={styles.areaChartContainer}>
@@ -55,7 +56,7 @@ export const StackedAreaChart: React.FC<StackedAreaChartProps> = ({
       })}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   areaChartContainer: {
