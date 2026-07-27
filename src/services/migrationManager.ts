@@ -9,11 +9,6 @@ import { dataBridge } from "./DataBridge";
 import { profileValidator } from "./profileValidator";
 import { supabase } from "./supabase";
 import {
-  PersonalInfo,
-  FitnessGoals,
-  DietPreferences,
-  WorkoutPreferences,
-  SyncConflict,
   MigrationResult,
 } from "../types/profileData";
 
@@ -21,7 +16,6 @@ import {
 // CONSTANTS
 // ============================================================================
 
-const MIGRATION_STATE_KEY = "fitai_migration_state";
 const MIGRATION_BACKUP_KEY = "fitai_migration_backup";
 const MIGRATION_CHECKPOINT_KEY = "fitai_migration_checkpoint";
 
@@ -1089,10 +1083,10 @@ export class MigrationManager {
       await dataBridge.testMigrationDetection();
 
       // Step 2: Test migration detection
-      const migrationNeeded = await this.checkProfileMigrationNeeded(userId);
+      await this.checkProfileMigrationNeeded(userId);
 
       // Step 3: Test profile data validation
-      const validationResult = await this.validateProfileData();
+      await this.validateProfileData();
     } catch (error) {
       console.error("❌ Migration flow test failed:", error);
     }
