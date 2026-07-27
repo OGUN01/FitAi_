@@ -96,7 +96,7 @@ const ZoneRow: React.FC<ZoneRowProps> = ({ zone, index }) => {
 
 export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({
   zones,
-  maxHR = 180,
+  _maxHR = 180,
   style,
 }) => {
   return (
