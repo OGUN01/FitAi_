@@ -146,8 +146,8 @@ function buildWorkerProfile():
       fitnessGoal: string;
       experienceLevel: "beginner" | "intermediate" | "advanced";
       availableEquipment: string[];
-      workoutDuration: number;
-      workoutsPerWeek: number;
+      workoutDuration: number | undefined;
+      workoutsPerWeek: number | undefined;
       injuries?: string[];
       medicalConditions?: string[];
       pregnancyStatus?: boolean;
@@ -162,6 +162,7 @@ function buildWorkerProfile():
     available_equipment?: string[];
     equipment?: string[];
     time_preference?: number;
+    workout_frequency_per_week?: number;
   }) | null;
   const bodyAnalysis = state.bodyAnalysis as (BodyAnalysisData & {
     medical_conditions?: string[];
@@ -175,8 +176,12 @@ function buildWorkerProfile():
     return null;
   }
 
+  // MIN_VALID_AGE = 13 — the worker Zod schema enforces age >= 13
+  // (fitai-workers UserProfileSchema). Rejecting below this here avoids a
+  // wasted round-trip and surfaces the profile-incomplete state to the caller.
+  const MIN_VALID_AGE = 13;
   const age = personalInfo.age ?? 0;
-  if (!age || age < 13) {
+  if (!age || age < MIN_VALID_AGE) {
     console.warn("[workoutBuilderAi] Missing or invalid age — worker profile incomplete");
     return null;
   }
@@ -189,6 +194,19 @@ function buildWorkerProfile():
   );
   const availableEquipment = (workoutPreferences.available_equipment ?? workoutPreferences.equipment ?? ["body weight"]).map((e: string) => e.toLowerCase());
 
+  // Per CLAUDE.md §8: no hardcoded fallbacks for user data. Surface real
+  // values from workoutPreferences; warn when missing so the developer sees
+  // the gap. The worker treats workoutDuration/workoutsPerWeek as optional
+  // on the profile object, so undefined is the correct "missing" signal.
+  const workoutDuration = workoutPreferences.time_preference;
+  if (workoutDuration === undefined) {
+    console.warn("[workoutBuilderAi] time_preference missing on workoutPreferences — workoutDuration will be undefined");
+  }
+  const workoutsPerWeek = workoutPreferences.workout_frequency_per_week;
+  if (workoutsPerWeek === undefined) {
+    console.warn("[workoutBuilderAi] workout_frequency_per_week missing on workoutPreferences — workoutsPerWeek will be undefined");
+  }
+
   return {
     age,
     gender,
@@ -197,8 +215,8 @@ function buildWorkerProfile():
     fitnessGoal,
     experienceLevel,
     availableEquipment,
-    workoutDuration: workoutPreferences.time_preference ?? 45,
-    workoutsPerWeek: 4,
+    workoutDuration,
+    workoutsPerWeek,
     injuries: bodyAnalysis?.physical_limitations,
     medicalConditions: bodyAnalysis?.medical_conditions,
     pregnancyStatus: bodyAnalysis?.pregnancy_status,
