@@ -104,6 +104,9 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                 selectedRange === range.id && styles.timeRangeButtonActive,
               ]}
               onPress={() => handleRangeChange(range.id)}
+              accessibilityRole="tab"
+              accessibilityLabel={range.label}
+              accessibilityState={{ selected: selectedRange === range.id }}
             >
               <Text style={styles.timeRangeIcon}>{range.icon}</Text>
               <Text
