@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
-import { rf, rw } from '../../utils/responsive';
+import { rf } from '../../utils/responsive';
 import { FoodItem } from "../../hooks/useMealDetailLogic";
 
 interface FoodItemsListProps {
