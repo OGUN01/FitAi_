@@ -102,7 +102,12 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
       <Modal visible={visible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.errorText}>
@@ -133,7 +138,12 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
             <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ingredient Details</Text>
@@ -266,6 +276,8 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             <TouchableOpacity
               style={[styles.navButton, styles.previousButton]}
               onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Back"
             >
               <Ionicons name="chevron-back" size={24} color="#6B7280" />
               <Text style={[styles.navButtonText, styles.previousButtonText]}>
@@ -283,6 +295,12 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               onPress={handleMarkComplete}
               disabled={isCompleted || isCompleting}
               activeOpacity={isCompleted ? 1.0 : 0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Mark ingredient complete"
+              accessibilityState={{
+                disabled: isCompleted || isCompleting,
+                busy: isCompleting,
+              }}
             >
               {isCompleting ? (
                 <>
