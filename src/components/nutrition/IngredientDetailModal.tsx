@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rw, rbr, rh } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   content: {
@@ -439,14 +439,14 @@ const styles = StyleSheet.create({
   },
   ingredientName: {
     fontSize: fontSize.xxl,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     marginBottom: spacing.xs,
   },
   ingredientCategory: {
     fontSize: fontSize.md,
     color: colors.primary,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     marginBottom: spacing.xs,
   },
   quantityText: {
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -479,12 +479,12 @@ const styles = StyleSheet.create({
   },
   calorieLabel: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
   },
   calorieValue: {
     fontSize: fontSize.xxl,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.errorLight,
   },
   divider: {
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
   nutritionLabel: {
     fontSize: fontSize.md,
     color: colors.text,
-    fontWeight: "500",
+    fontWeight: String(typography.fontWeight.medium) as any,
     flex: 1,
   },
   nutritionValueContainer: {
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   },
   nutritionValue: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     marginRight: spacing.md,
   },
   percentageContainer: {
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
 
   navButtonText: {
     fontSize: fontSize.md,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     marginHorizontal: spacing.xs,
   },
 
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
 
   completionBannerText: {
     fontSize: fontSize.md,
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.success,
     marginLeft: spacing.sm,
   },
