@@ -199,14 +199,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   // SSOT: currentWorkoutSession.exercises[].sets[] (CompletedSet uses `weight`
   // in kg + `reps`). Derived here, not duplicated in the store.
   const mesocycleWeek = useFitnessStore((s) => s.getMesocycleWeek());
-  const sessionExercisesForVolume =
-    useFitnessStore.getState().currentWorkoutSession?.exercises ?? [];
-  const sessionVolume = sessionExercisesForVolume.reduce((sum, ex) => {
-    const sets = (ex.sets ?? [])
-      .filter((s) => s?.weight != null && s?.reps != null)
-      .map((s) => ({ weightKg: s.weight!, reps: s.reps! }));
-    return sum + totalVolume(sets);
-  }, 0);
+  // Memoize the live session volume — only recompute when the exercises array
+  // reference changes, not on every render (e.g. per-second timer ticks).
+  const sessionVolume = useMemo(() => {
+    const exercises =
+      useFitnessStore.getState().currentWorkoutSession?.exercises ?? [];
+    return exercises.reduce((sum, ex) => {
+      const sets = (ex.sets ?? [])
+        .filter((s) => s?.weight != null && s?.reps != null)
+        .map((s) => ({ weightKg: s.weight!, reps: s.reps! }));
+      return sum + totalVolume(sets);
+    }, 0);
+    // Depend on the exercises array reference so the memo recomputes when sets
+    // are added/updated (the store replaces the exercises array on each set save).
+  }, [useFitnessStore.getState().currentWorkoutSession?.exercises]);
 
   const getExerciseName = useCallback((exerciseId: string): string => {
     if (!exerciseId) return "Exercise";
