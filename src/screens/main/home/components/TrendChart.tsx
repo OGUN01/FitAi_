@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Svg, {
   Path,
@@ -24,8 +24,59 @@ export const TrendChart: React.FC<TrendChartProps> = ({
   height,
   color,
 }) => {
-  // Filter out NaN and invalid values
-  const validData = data.filter((v) => Number.isFinite(v));
+  // Filter out NaN and invalid values (memoized — used by the guard below)
+  const validData = useMemo(
+    () => data.filter((v) => Number.isFinite(v)),
+    [data],
+  );
+
+  const padding = 8;
+
+  // Memoize the expensive SVG path computations — only recompute when
+  // data/width/height change, not on every parent re-render.
+  const chartGeom = useMemo(() => {
+    if (validData.length < 2) {
+      // Sentinel — never reaches JSX; the early return below catches this case.
+      return { points: [], pathData: "", areaPath: "", lastPoint: { x: 0, y: 0 } };
+    }
+
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+
+    const minValue = Math.min(...validData) - 1;
+    const maxValue = Math.max(...validData) + 1;
+    const range = maxValue - minValue || 1;
+
+    const pts = validData.map((value, index) => {
+      // Guard against division by zero when only 1 data point
+      const xDivisor = validData.length > 1 ? validData.length - 1 : 1;
+      const x = Math.round(padding + (index / xDivisor) * chartWidth);
+      const y = Math.round(
+        padding + chartHeight - ((value - minValue) / range) * chartHeight,
+      );
+      return { x, y };
+    });
+
+    // Create smooth curve path - round all values to prevent NaN in Android native
+    const pPath = pts.reduce((acc, point, index) => {
+      if (index === 0) {
+        return `M ${point.x} ${point.y}`;
+      }
+      const prev = pts[index - 1];
+      const cpX = Math.round((prev.x + point.x) / 2);
+      const cpY = Math.round((prev.y + point.y) / 2);
+      return `${acc} Q ${cpX} ${prev.y}, ${cpX} ${cpY} T ${point.x} ${point.y}`;
+    }, "");
+
+    // Area fill path
+    const lastX = pts[pts.length - 1]?.x ?? padding;
+    const aPath = `${pPath} L ${lastX} ${height - padding} L ${padding} ${height - padding} Z`;
+
+    const lPoint = pts[pts.length - 1];
+
+    return { points: pts, pathData: pPath, areaPath: aPath, lastPoint: lPoint };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, width, height, validData, padding]);
 
   if (validData.length < 2) {
     return (
@@ -35,40 +86,8 @@ export const TrendChart: React.FC<TrendChartProps> = ({
     );
   }
 
-  const padding = 8;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
-
-  const minValue = Math.min(...validData) - 1;
-  const maxValue = Math.max(...validData) + 1;
-  const range = maxValue - minValue || 1;
-
-  const points = validData.map((value, index) => {
-    // Guard against division by zero when only 1 data point
-    const xDivisor = validData.length > 1 ? validData.length - 1 : 1;
-    const x = Math.round(padding + (index / xDivisor) * chartWidth);
-    const y = Math.round(
-      padding + chartHeight - ((value - minValue) / range) * chartHeight,
-    );
-    return { x, y };
-  });
-
-  // Create smooth curve path - round all values to prevent NaN in Android native
-  const pathData = points.reduce((acc, point, index) => {
-    if (index === 0) {
-      return `M ${point.x} ${point.y}`;
-    }
-    const prev = points[index - 1];
-    const cpX = Math.round((prev.x + point.x) / 2);
-    const cpY = Math.round((prev.y + point.y) / 2);
-    return `${acc} Q ${cpX} ${prev.y}, ${cpX} ${cpY} T ${point.x} ${point.y}`;
-  }, "");
-
-  // Area fill path
-  const lastX = points[points.length - 1]?.x ?? padding;
-  const areaPath = `${pathData} L ${lastX} ${height - padding} L ${padding} ${height - padding} Z`;
-
-  const lastPoint = points[points.length - 1];
+  // Early return above guarantees validData.length >= 2, so lastPoint is non-null.
+  const { points, pathData, areaPath, lastPoint } = chartGeom;
 
   return (
     <Svg width={width} height={height}>
