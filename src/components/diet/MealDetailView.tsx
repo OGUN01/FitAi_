@@ -51,6 +51,7 @@ import {
   flatColors as colors,
   flatFontSize as fontSize,
   spacing,
+  typography,
 } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rh } from "../../utils/responsive";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
@@ -434,7 +435,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     fontSize: fontSize.lg,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   headerSpacer: {
@@ -465,7 +466,7 @@ const styles = StyleSheet.create({
   },
   typeChipText: {
     fontSize: fontSize.xs,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   metaItem: {
     flexDirection: "row" as const,
@@ -475,7 +476,7 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: "500" as const,
+    fontWeight: String(typography.fontWeight.medium) as any,
   },
   description: {
     fontSize: fontSize.sm,
@@ -497,7 +498,7 @@ const styles = StyleSheet.create({
   },
   calorieValue: {
     fontSize: fontSize.xxl,
-    fontWeight: "bold" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
   },
   calorieLabel: {
@@ -527,7 +528,7 @@ const styles = StyleSheet.create({
   },
   macroPillText: {
     fontSize: fontSize.xs,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   // Food items
   foodItemsSection: {
@@ -535,7 +536,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: fontSize.sm,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
     marginBottom: spacing.sm,
   },
@@ -559,7 +560,7 @@ const styles = StyleSheet.create({
   },
   foodItemName: {
     fontSize: fontSize.md,
-    fontWeight: "600" as const,
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
   },
   foodItemRight: {
@@ -572,7 +573,7 @@ const styles = StyleSheet.create({
   },
   foodItemCalories: {
     fontSize: fontSize.sm,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
   },
   bottomSpacing: {
@@ -599,7 +600,7 @@ const styles = StyleSheet.create({
   },
   logButtonText: {
     fontSize: fontSize.md,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.white,
   },
   completedBadge: {
@@ -616,7 +617,7 @@ const styles = StyleSheet.create({
   },
   completedText: {
     fontSize: fontSize.md,
-    fontWeight: "700" as const,
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
   },
 });
