@@ -1,4 +1,4 @@
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Animated, {
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
     marginBottom: rp(2),
   },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   recommendedText: {
     fontSize: rf(9),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.warningAlt,
     marginLeft: rp(3),
     textTransform: "uppercase",
@@ -335,14 +335,14 @@ const styles = StyleSheet.create({
   },
   prosTitle: {
     fontSize: rf(10),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.successAlt,
     marginLeft: rp(4),
     textTransform: "uppercase",
   },
   consTitle: {
     fontSize: rf(10),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.warningAlt,
     marginLeft: rp(4),
     textTransform: "uppercase",
