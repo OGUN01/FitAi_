@@ -10,10 +10,6 @@ import {
   OnboardingData,
   CreateProfileRequest,
 } from "../types/user";
-import {
-  PersonalInfo as ProfilePersonalInfo,
-  FitnessGoals as ProfileFitnessGoals,
-} from "../types/profileData";
 import { api, supabase } from "../services/api";
 import { dataBridge } from "../services/DataBridge";
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
@@ -29,16 +25,14 @@ import { buildLegacyProfileAdapter } from "./profileLegacyAdapter";
  * Provides functions to save onboarding data to the backend
  */
 export const useOnboardingIntegration = () => {
-  const { user: authUser, isAuthenticated, isGuestMode, guestId } = useAuth();
+  const { user: authUser, isAuthenticated, guestId } = useAuth();
   const {
     createProfile,
     updateProfile,
-    createFitnessGoals,
-    updateFitnessGoals,
     updatePersonalInfo,
     updateFitnessGoalsLocal,
   } = useUserStore();
-  const { optimisticCreate } = useOffline();
+  useOffline();
 
   // Helper function to get user ID (authenticated user or guest)
   const getUserId = () => {
@@ -254,7 +248,7 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from("diet_preferences")
             .upsert({
               user_id: authUser.id,
@@ -314,7 +308,7 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from("workout_preferences")
             .upsert({
               user_id: authUser.id,
@@ -366,8 +360,6 @@ export const useOnboardingIntegration = () => {
     bodyAnalysis: NonNullable<OnboardingData["bodyAnalysis"]>,
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const currentUserId = getUserId();
-
       // Body analysis stored locally only (optional feature)
       // Future enhancement: implement remote storage
       logger.info("Body analysis saved locally only (feature is optional)");
@@ -375,7 +367,7 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase.from("body_analysis").upsert({
+          const { error } = await supabase.from("body_analysis").upsert({
             user_id: authUser.id,
             photos: bodyAnalysis.photos,
             analysis: bodyAnalysis.analysis,
