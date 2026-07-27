@@ -38,7 +38,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Pressable,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -60,6 +59,7 @@ import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { GlassButton } from "../../components/ui/aurora/GlassButton";
 import { ProgressRing } from "../../components/ui/aurora/ProgressRing";
 import { SupersetConnector } from "../../components/ui/aurora/SupersetConnector";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { GradientBarChart, type BarData } from "../../components/ui/GradientBarChart";
 import { BuilderAnalyticsPanel } from "../../components/fitness/builder/BuilderAnalyticsPanel";
 import { useFitnessStore } from "../../stores/fitnessStore";
@@ -719,7 +719,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         showBorder
         contentStyle={styles.sectionContent}
       >
-        <Pressable
+        <AnimatedPressable
           onPress={handleToggle}
           accessibilityRole="button"
           accessibilityLabel={`${title}. ${count} items. ${
@@ -728,6 +728,9 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           accessibilityState={{ expanded }}
           style={styles.sectionHeader}
           testID={testID}
+          scaleValue={0.99}
+          springConfig="snappy"
+          hapticType="selection"
         >
           <View style={[styles.sectionIcon, { backgroundColor: accentColor }]}>
             <Ionicons name={icon} size={rf(14)} color={colors.text.primary} />
@@ -743,7 +746,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
               color={colors.text.secondary}
             />
           </Animated.View>
-        </Pressable>
+        </AnimatedPressable>
 
         {expanded && (
           <Animated.View
@@ -812,13 +815,16 @@ const DetailExerciseRow: React.FC<DetailExerciseRowProps> = ({
   }, [onOpenEditor, dayIndex, index]);
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handleTap}
       accessibilityRole="button"
       accessibilityLabel={`${exercise.name}. ${setCount} sets of ${repsLabel}. ${
         exercise.targetRpe != null ? `RPE ${exercise.targetRpe}.` : ""
       } ${expanded ? "Tap to collapse." : "Tap for details."}`}
       style={styles.detailRow}
+      scaleValue={0.99}
+      springConfig="snappy"
+      hapticType="light"
     >
       {supersetActive && <View style={styles.supersetRail} />}
       <View style={styles.detailRowInner}>
@@ -928,7 +934,7 @@ const DetailExerciseRow: React.FC<DetailExerciseRowProps> = ({
           )}
         </Animated.View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 };
 

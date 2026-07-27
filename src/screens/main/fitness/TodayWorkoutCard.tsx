@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -140,11 +140,14 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
       >
         <Animated.View>
           <View style={styles.container}>
-            <Pressable
+            <AnimatedPressable
               onPress={onViewDetails}
               accessibilityRole="button"
               accessibilityLabel={`View workout details for ${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}`}
               accessibilityHint="Double tap to view workout details"
+              scaleValue={0.99}
+              springConfig="smooth"
+              hapticType="light"
             >
             {/* Top Section - Status + Info */}
             <View style={styles.topSection}>
@@ -265,7 +268,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 </View>
               </View>
             )}
-            </Pressable>
+            </AnimatedPressable>
 
             {/* Bottom Section - Action Button */}
             <View style={styles.bottomSection}>

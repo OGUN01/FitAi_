@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
@@ -188,7 +188,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
           </View>
           <View style={styles.headerActions}>
           {onRegeneratePlan && (
-            <Pressable
+            <AnimatedPressable
               onPress={onRegeneratePlan}
               disabled={isRegenerating}
               accessibilityRole="button"
@@ -196,6 +196,9 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               accessibilityState={{ disabled: isRegenerating }}
               style={styles.regenerateButton}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="medium"
             >
               <View style={styles.regenerateButtonInner}>
                 <Ionicons
@@ -214,7 +217,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                   {isRegenerating ? "Generating..." : "Regenerate"}
                 </Text>
               </View>
-            </Pressable>
+            </AnimatedPressable>
           )}
             <AnimatedPressable
               onPress={onViewFullPlan}
