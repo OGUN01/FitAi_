@@ -2,9 +2,11 @@
 // Displays key metrics and insights in a beautiful card format
 
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rh } from "../../utils/responsive";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface AnalyticsCardProps {
   title: string;
@@ -33,25 +35,25 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
   const getBackgroundColor = () => {
     const bgColors = {
       blue: colors.primary,
-      green: "#10B981",
-      purple: "#FF8A5C",
-      orange: "#F59E0B",
-      red: "#EF4444",
-      gray: "#6B7280",
+      green: colors.success,
+      purple: colors.primary,
+      orange: colors.warning,
+      red: colors.error,
+      gray: colors.neutral,
     };
     return bgColors[color as keyof typeof bgColors] || bgColors.blue;
   };
 
-  const getTrendIcon = () => {
+  const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
       case "up":
-        return "📈";
+        return "trending-up";
       case "down":
-        return "📉";
+        return "trending-down";
       case "stable":
-        return "➡️";
+        return "remove";
       default:
-        return "";
+        return "remove";
     }
   };
 
@@ -116,7 +118,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 
         {trend && trendValue && (
           <View style={styles.trendContainer}>
-            <Text style={styles.trendIcon}>{getTrendIcon()}</Text>
+            <Ionicons name={getTrendIcon()} size={rf(14)} color="#fff" />
             <Text style={[styles.trendValue, sizeStyles.subtitle]}>
               {trendValue}
             </Text>
@@ -128,9 +130,16 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={styles.pressable} accessibilityRole="button" accessibilityLabel={title}>
+      <AnimatedPressable
+        onPress={onPress}
+        scaleValue={0.97}
+        hapticType="light"
+        style={styles.pressable}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+      >
         <CardContent />
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
@@ -180,11 +189,7 @@ const styles = StyleSheet.create({
   trendContainer: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  trendIcon: {
-    fontSize: rf(14),
-    marginRight: rp(4),
-    color: "#fff",
+    gap: rp(4),
   },
   trendValue: {
     color: "rgba(255, 255, 255, 0.9)",
