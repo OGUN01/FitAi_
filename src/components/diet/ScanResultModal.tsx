@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   badgeDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: borderRadius.full,
   },
   badgeText: {
     fontSize: rf(11),
