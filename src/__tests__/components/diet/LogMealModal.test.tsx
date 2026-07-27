@@ -34,6 +34,7 @@ jest.mock("react-native", () => {
       select: (options: Record<string, unknown>) =>
         options.ios ?? options.default,
     },
+    useWindowDimensions: () => ({ width: 393, height: 852 }),
   };
 });
 
