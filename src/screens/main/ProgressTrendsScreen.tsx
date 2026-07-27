@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
+import { EmptyState } from "../../components/ui/aurora/EmptyState";
 import { colors, spacing } from "../../theme/aurora-tokens";
 import { rh, rw } from "../../utils/responsive";
 
@@ -33,6 +34,7 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
     selectedPeriod,
     refreshing,
     loading,
+    loadError,
     metricsHistory,
     calculatedMetrics,
     weightTrend,
@@ -96,6 +98,15 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
             <View style={styles.loadingContainer}>
               <AuroraSpinner size="lg" />
             </View>
+          ) : loadError && metricsHistory.length === 0 ? (
+            <View style={styles.errorWrap}>
+              <EmptyState
+                icon="cloud-offline-outline"
+                iconColor={colors.error.DEFAULT}
+                title="Couldn't load trends"
+                subtitle="Check your connection and pull down to refresh."
+              />
+            </View>
           ) : (
             <>
               <SummaryCard
@@ -156,6 +167,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: spacing.xxl,
+  },
+  errorWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: rh(40),
   },
 });
 

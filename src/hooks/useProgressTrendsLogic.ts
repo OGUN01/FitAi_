@@ -21,6 +21,7 @@ export const useProgressTrendsLogic = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<TrendPeriod>("month");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const { user } = useAuthStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
@@ -73,6 +74,7 @@ export const useProgressTrendsLogic = () => {
 
       setLoading(true);
       try {
+        setLoadError(false);
         const data = await analyticsDataService.loadMetricsHistory(
           user.id,
           periodDays,
@@ -80,6 +82,7 @@ export const useProgressTrendsLogic = () => {
         setDailyMetricsHistory(data, periodDays);
       } catch (error) {
         console.error("Failed to load metrics history:", error);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -165,6 +168,7 @@ export const useProgressTrendsLogic = () => {
     selectedPeriod,
     refreshing,
     loading,
+    loadError,
     metricsHistory: selectedMetricsHistory,
     // SSOT: callers should use profileStore.personalInfo/bodyAnalysis directly;
     // calculatedMetrics provides the authoritative computed health stats (BMI/BMR/TDEE)
