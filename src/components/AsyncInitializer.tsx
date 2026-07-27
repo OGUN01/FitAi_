@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
   },
   errorText: {
-    color: colors.error || "#ff6b6b",
+    color: colors.error,
     fontSize: rf(14),
     marginTop: rp(8),
     textAlign: "center",
