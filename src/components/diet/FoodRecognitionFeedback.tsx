@@ -234,6 +234,9 @@ export const FoodRecognitionFeedback: React.FC<
                     correctName: undefined,
                   })
                 }
+                accessibilityRole="button"
+                accessibilityLabel="Food name is correct"
+                accessibilityState={{ selected: currentFeedback.isCorrect }}
               >
                 <Ionicons
                   name="checkmark-circle-outline"
@@ -260,6 +263,9 @@ export const FoodRecognitionFeedback: React.FC<
                 onPress={() =>
                   updateFeedback(currentFoodIndex, { isCorrect: false })
                 }
+                accessibilityRole="button"
+                accessibilityLabel="Food name is incorrect"
+                accessibilityState={{ selected: !currentFeedback.isCorrect }}
               >
                 <Ionicons
                   name="close-circle-outline"
