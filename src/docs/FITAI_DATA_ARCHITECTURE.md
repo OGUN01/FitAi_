@@ -1,7 +1,7 @@
 # FitAI Data Architecture
 
-> **Last updated:** 2026-06-20 (Wave 3 — `health_metrics` Supabase persistence for Health Connect data + manual health-data entry fallback for unsupported watches. Plus Wave 2: Health Connect as sole Android health-data path; Google Fit removed. Plus nutrition/analytics/auth layer hardening — P0–P3 fixes)
-> **Status:** All issues from Waves 1–10 resolved. Onboarding calculation engine hardened. Choose Your Pace is now unambiguous. Nutrition/analytics/auth SSOT fixes (P0-1…P3-23) applied. Wave 2: Android wearable subsystem migrated from Google Fit to Health Connect. Wave 3: Health Connect metrics now persist to `health_metrics` Supabase table; manual entry fallback live for unsupported watches (Noise/boAt/Fire-Boltt/Huawei).
+> **Last updated:** 2026-07-27 (Wave 4 — AG14/AG15 doc sync: notification_preferences column, recognition_accuracy_metrics feedback columns, calorieCalculator MET weighting fix, mealSchedule validation, userStore silent-failure hardening, workoutTemplateService draft column fix)
+> **Status:** All issues from Waves 1–10 resolved. Onboarding calculation engine hardened. Choose Your Pace is now unambiguous. Nutrition/analytics/auth SSOT fixes (P0-1…P3-23) applied. Wave 2: Android wearable subsystem migrated from Google Fit to Health Connect. Wave 3: Health Connect metrics now persist to `health_metrics` Supabase table; manual entry fallback live for unsupported watches (Noise/boAt/Fire-Boltt/Huawei). Wave 4: AG14/AG15 schema/calc hardening — `profiles.notification_preferences` column added, `recognition_accuracy_metrics` feedback columns added, calorieCalculator MET weighting fixed, mealSchedule validation, userStore silent-failure hardening, workoutTemplateService draft column fix.
 
 ## Table of Contents
 
@@ -59,6 +59,7 @@
 | 10 | Sleep Time | `sleep_time` | string | `"23:00"` | HH:MM format | `profiles.sleep_time` |
 | 11 | ⚠️ Occupation Type | `occupation_type` | string | `"desk_job"` | DEPRECATED — still saved to DB | `profiles.occupation_type` |
 | 12 | Email | `email` | string | `""` | auto-populated from auth | `profiles.email` |
+| 13 | Notification Preferences | `notification_preferences` | JSONB | `{}` | optional, user toggles + reminder times | `profiles.notification_preferences` |
 
 **Derived (UI only, not persisted):**
 - `calculateSleepDuration()` — computed from wake_time and sleep_time for display
@@ -331,6 +332,7 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 | `exercise_prs` | `id` | `user_id → profiles` | Personal records |
 | `weekly_workout_plans` | `id` | `user_id → profiles` | AI/custom weekly plans |
 | `health_metrics` | `id` (uuid) | `user_id → auth.users` (ON DELETE CASCADE) | Daily health-metric history from Health Connect (automatic) and manual entry (Wave 3). One authoritative value per user/day/metric via UNIQUE(user_id, date, metric_type). See §I.4. |
+| `recognition_accuracy_metrics` | `id` | `user_id → auth.users` | Daily food-recognition accuracy metrics from feedback aggregation (feedback_count, correct_count, average_rating, accuracy_percentage, cuisine_breakdown, enhancement_breakdown). Created in 20260124000001, feedback columns added in 20260727000009. UNIQUE(date) — one row per day. |
 | ⚠️ `fitness_goals` | `id` | `user_id → profiles` | DEPRECATED — fully migrated to `workout_preferences` (Wave 10). No runtime reads/writes. |
 
 ### A.8 Zustand Stores
@@ -1170,6 +1172,21 @@ All issues discovered during the 2026-04-02 data audit and their resolution:
 | P3-23 | P3 | `exerciseVolumeHistory`/`personalRecords` not persisted + no loading flag → empty UI with no loading state | Added `isLoadingExerciseAnalytics` flag; set true at start of `loadExerciseAnalytics`, false in `finally`. Reset on logout. | `analyticsStore.ts` |
 
 **Total: 23 issues resolved (P0–P3), zero new TypeScript errors introduced (`npx tsc --noEmit` passes).**
+
+### DB Schema / Calc Hardening (2026-07-27 — AG14/AG15)
+
+| ID | Severity | Issue | Resolution | Files Changed |
+|----|----------|-------|------------|---------------|
+| AG15-1 | P0 | `profiles.notification_preferences` JSONB column read/written by notificationService.ts and declared in supabase-types.generated.ts, but no migration had added the column — every write failed silently | Migration `20260727000008` adds `notification_preferences JSONB DEFAULT '{}'`. Notification toggles now persist to the cloud (Zustand `notification-store` was already the local source). | migration `20260727000008_add_notification_preferences_to_profiles.sql` |
+| AG15-2 | P1 | `recognition_accuracy_metrics` table had only the base columns (total_recognitions, correct_recognitions, etc.) — every `foodRecognitionFeedbackService.updateAccuracyMetrics` insert failed with a PostgrestError ("Could not find the column"), silently dropping the day's accuracy metrics | Migration `20260727000009` adds 6 columns: `feedback_count`, `correct_count`, `average_rating`, `accuracy_percentage`, `cuisine_breakdown` (JSONB), `enhancement_breakdown` (JSONB). Inserts now succeed. | migration `20260727000009_add_recognition_accuracy_metrics_feedback_columns.sql` |
+| AG15-3 | P2 | `workoutTemplateService.saveDraft/loadDraft` used `plan_data` column + wrote `total_workouts`/`duration_range` fields that don't exist on the draft path; loadDraft selected `plan_data` causing a column-not-found error | saveDraft now inserts `workouts: planData` (the correct draft column), loadDraft selects `workouts`. Removed `total_workouts` and `duration_range` from the draft insert. | `src/services/workoutTemplateService.ts` |
+| AG15-4 | P2 | `recognizedFoodLogger.ts` swallowed the `meal_recognition_metadata` insert error (empty catch) — failed metadata inserts were invisible | Added `console.error` in the catch block (CLAUDE.md #5 — no silent failures). | `src/services/recognizedFoodLogger.ts` |
+| AG14-1 | P2 | `calculateWorkoutCalories` computed `averageMET` as an unweighted mean across exercises — inaccurate when exercises had different durations (a 5-min cardio block was weighted equally to a 30-min strength block) | `averageMET` now weights each exercise's MET by its duration: `totalWeightedMET += met * durationMinutes; averageMET = totalWeightedMET / totalDurationMinutes`. | `src/services/calorieCalculator.ts` |
+| AG14-2 | P2 | `parseTimeToMinutes` in `mealSchedule.ts` accepted out-of-range hours/minutes (e.g. "24:99") producing garbage meal schedules; also carried a dead `awakeDuration` computation never read | Added range validation (hours 0-23, minutes 0-59 → return null). Removed dead `awakeDuration` block. | `src/utils/mealSchedule.ts` |
+| AG14-3 | P1 | `userStore.ts` had 3 catch blocks (createProfile, getProfile, createFitnessGoals) that swallowed errors with no `console.error` — DB failures were invisible (violates CLAUDE.md #5) | All 3 catch blocks now `console.error` before setting error state. | `src/stores/userStore.ts` |
+| AG14-4 | P2 | `userStore.ts` dropped `fitnessGoals` when `profile` was null (e.g. goals created before profile finalized) — user data lost on store reset | Added `fitnessGoals: FitnessGoals | null` runtime field, persisted via `partialize`, synced from `profile.fitnessGoals` when profile present, preserved when profile is null (rule 6 — store is runtime source, never drop user data). `reset()` now clears it. | `src/stores/userStore.ts` |
+
+**Total: 8 issues resolved (AG14/AG15), zero new TypeScript errors introduced.**
 
 ---
 
