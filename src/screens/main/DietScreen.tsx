@@ -26,7 +26,7 @@ import {
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 
-import { NutritionSummaryCard } from "../../components/diet/NutritionSummaryCard";
+import { CompactDietCard } from "../../components/diet/CompactDietCard";
 import { MealPlanView } from "../../components/diet/MealPlanView";
 import { WaterIntakeModal } from "../../components/diet/WaterIntakeModal";
 import { DietScreenHeader } from "../../components/diet/DietScreenHeader";
@@ -76,6 +76,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [logMealScanResult, setLogMealScanResult] =
     useState<LogMealScanResult | null>(null);
   const [showMealDetailModal, setShowMealDetailModal] = useState(false);
+  // AG3: placeholder for the meals-list view (another agent wires real navigation).
+  const [showMealsList, setShowMealsList] = useState(false);
   const [selectedMealForDetail, setSelectedMealForDetail] =
     useState<DayMeal | null>(null);
   const [showBarcodeOptions, setShowBarcodeOptions] = useState(false);
@@ -374,8 +376,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   };
 
   const macroTargets = getMacroTargets();
-  // 0 when target not set â€” NutritionSummaryCard handles all-zeros with a
-  // "Using estimated targets â€” complete your profile" notice banner.
+  // 0 when target not set â€” CompactDietCard renders the ring/pills against
+  // these targets; a zero target shows an empty ring (no fabricated fallback).
   const calorieTarget = getCalorieTarget() || 0;
 
   const nutritionTargets = {
@@ -563,6 +565,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setShowMealDetailModal(false);
     setSelectedMealForDetail(null);
   }, []);
+  // AG3: opens the "today" meals view. Placeholder until the meals-list agent
+  // wires real navigation — toggling showMealsList gives the next agent a hook.
+  const handleViewToday = useCallback(() => {
+    setShowMealsList((prev) => !prev);
+    console.log("[DietScreen] View Today tapped", { showMealsList });
+  }, [showMealsList]);
   const handleCloseLogMealModal = useCallback(
     () => setShowLogMealModal(false),
     [],
@@ -754,7 +762,41 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               </GlassCard>
             ) : null}
 
-            <NutritionSummaryCard nutritionTargets={nutritionTargets} />
+            <CompactDietCard
+              calories={{
+                current: nutritionTargets.calories.current,
+                target: nutritionTargets.calories.target,
+              }}
+              protein={{
+                current: nutritionTargets.protein.current,
+                target: nutritionTargets.protein.target,
+              }}
+              carbs={{
+                current: nutritionTargets.carbs.current,
+                target: nutritionTargets.carbs.target,
+              }}
+              fat={{
+                current: nutritionTargets.fat.current,
+                target: nutritionTargets.fat.target,
+              }}
+              fiber={{
+                current: nutritionTargets.fiber.current,
+                target: nutritionTargets.fiber.target,
+              }}
+              onViewToday={handleViewToday}
+              testID="compact-diet-view-today"
+            />
+
+            {/* AG3: meals-list placeholder. Another agent swaps this for the
+                real "today's meals" view. Kept minimal so the card stays the
+                focal point until the meals list is built. */}
+            {showMealsList ? (
+              <View style={styles.mealsListPlaceholder}>
+                <Text style={styles.mealsListPlaceholderText}>
+                  Today's meals list goes here
+                </Text>
+              </View>
+            ) : null}
 
             <DietQuickActions
               onScanFood={handleScanFood}
@@ -1268,6 +1310,20 @@ const styles = StyleSheet.create({
   },
   errorBannerIcon: {
     marginRight: spacing.sm,
+  },
+  // AG3: meals-list placeholder (replaced by the meals-list agent later).
+  mealsListPlaceholder: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center" as const,
+  },
+  mealsListPlaceholderText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
   },
   bottomSpacing: { height: rh(80) },
   barcodeLoadingOverlay: {
