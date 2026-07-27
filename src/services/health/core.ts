@@ -715,7 +715,7 @@ class HealthConnectService {
             },
           ]);
         } catch (calorieError) {
-          console.warn("⚠️ Failed to write calories:", calorieError);
+          console.error("⚠️ Failed to write calories:", calorieError);
         }
       }
 

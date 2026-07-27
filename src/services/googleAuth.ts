@@ -228,8 +228,8 @@ class GoogleAuthService {
         });
 
         if (profileError) {
-          console.warn('⚠️ Failed to create profile for Google user:', profileError);
-          console.warn('⚠️ Profile error details:', JSON.stringify(profileError, null, 2));
+          console.error('⚠️ Failed to create profile for Google user:', profileError);
+          console.error('⚠️ Profile error details:', JSON.stringify(profileError, null, 2));
         } else {
         }
       } else {
@@ -382,7 +382,7 @@ class GoogleAuthService {
         });
 
         if (profileError) {
-          console.warn('⚠️ Failed to create profile for Google user:', profileError);
+          console.error('⚠️ Failed to create profile for Google user:', profileError);
         }
       }
 
