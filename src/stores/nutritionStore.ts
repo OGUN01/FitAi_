@@ -576,6 +576,27 @@ export const useNutritionStore = create<NutritionState>()(
                 deviceId: Platform.OS ?? "unknown",
               },
             });
+
+            // Persist completion to Supabase so loadData can restore progress=100
+            // (crudOperations.updateMealLog only writes AsyncStorage; the DB column
+            // must be updated or reload/other-device sees the meal as incomplete.)
+            try {
+              const { error: completeUpdateError } = await supabase
+                .from("meal_logs")
+                .update({ is_completed: true })
+                .eq("id", logId);
+              if (completeUpdateError) {
+                console.error(
+                  "[nutritionStore.completeMeal] Failed to set meal_logs.is_completed:",
+                  completeUpdateError,
+                );
+              }
+            } catch (supabaseErr) {
+              console.error(
+                "[nutritionStore.completeMeal] Supabase is_completed update threw:",
+                supabaseErr,
+              );
+            }
           }
 
           // THEN update Zustand cache
@@ -777,6 +798,27 @@ export const useNutritionStore = create<NutritionState>()(
           await crudOperations.updateMealLog(logId, {
             isCompleted: true,
           });
+
+          // Persist completion to Supabase so loadData can restore progress=100
+          // (crudOperations.updateMealLog only writes AsyncStorage; the DB column
+          // must be updated or reload/other-device sees the meal as incomplete.)
+          try {
+            const { error: completeUpdateError } = await supabase
+              .from("meal_logs")
+              .update({ is_completed: true })
+              .eq("id", logId);
+            if (completeUpdateError) {
+              console.error(
+                "[nutritionStore.endMealSession] Failed to set meal_logs.is_completed:",
+                completeUpdateError,
+              );
+            }
+          } catch (supabaseErr) {
+            console.error(
+              "[nutritionStore.endMealSession] Supabase is_completed update threw:",
+              supabaseErr,
+            );
+          }
 
           // Complete the meal
           await get().completeMeal(currentSession.mealId, logId);
