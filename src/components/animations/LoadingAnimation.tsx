@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rbr, rp } from "../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
+import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface LoadingAnimationProps {
   type?: "spinner" | "dots" | "pulse" | "wave";
