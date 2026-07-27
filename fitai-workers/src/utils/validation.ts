@@ -428,7 +428,7 @@ export type DietResponse = z.infer<typeof DietResponseSchema>;
 
 const DietProfileOverrideSchema = z.object({
 	age: z.number().int().min(13).max(120).optional(),
-	gender: z.string().optional(),
+	gender: GenderSchema.optional(),
 	weight: z.number().min(30).max(300).optional(),
 	height: z.number().min(100).max(250).optional(),
 	country: z.string().optional(),
@@ -436,16 +436,26 @@ const DietProfileOverrideSchema = z.object({
 	occupation_type: z.string().optional(),
 	wake_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
 	sleep_time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
-	// activity_level accepts both onboarding values ('sedentary','lightly_active','moderately_active',
-	// 'very_active','extra_active','extreme') and health-calc mapped values ('light','moderate',
-	// 'active','very_active'). Both sets can arrive here, so we keep z.string() rather than a
-	// strict enum — invalid values are caught downstream in the TDEE calculation.
-	activity_level: z.string().optional(),
-	fitness_goal: z.string().optional(),
+	// activity_level: the diet path runs the client's mapActivityLevelForHealthCalc before
+	// sending, so the worker receives health-calc values ('sedentary','light','moderate',
+	// 'active','very_active'). The legacy onboarding value 'extreme' is also accepted for
+	// safety — it is a valid onboarding activity_level and an unmapped client would send it
+	// verbatim. Any other value is a client bug and is rejected here rather than silently
+	// flowing into the TDEE calculation.
+	activity_level: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active', 'extreme']).optional(),
+	// fitness_goal: must match FitnessGoalSchema (the same enum the workout path enforces).
+	fitness_goal: FitnessGoalSchema.optional(),
 });
 
 const DietPreferencesOverrideSchema = z.object({
-	diet_type: z.string().optional(),
+	// diet_type: onboarding values are 'vegetarian|vegan|non-veg|pescatarian|balanced'.
+	// The DB CHECK constraint also allows 'non_veg|omnivore|keto|paleo' (see migrations),
+	// so the worker accepts the union. Anything else is rejected here rather than reaching
+	// the AI prompt as a garbage diet label.
+	diet_type: z.enum([
+		'vegetarian', 'vegan', 'non-veg', 'non_veg', 'pescatarian', 'balanced',
+		'omnivore', 'keto', 'paleo',
+	]).optional(),
 	allergies: z.array(z.string()).optional(),
 	restrictions: z.array(z.string()).optional(),
 	dislikes: z.array(z.string()).optional(),
@@ -456,9 +466,11 @@ const DietPreferencesOverrideSchema = z.object({
 	dinner_enabled: z.boolean().optional(),
 	snacks_enabled: z.boolean().optional(),
 	cooking_methods: z.array(z.string()).optional(),
-	cooking_skill_level: z.string().optional(),
+	// cooking_skill_level: matches DietPreferencesData union (diet-preferences.ts).
+	cooking_skill_level: z.enum(['beginner', 'intermediate', 'advanced', 'not_applicable']).optional(),
 	max_prep_time_minutes: z.number().int().min(0).max(240).nullable().optional(),
-	budget_level: z.string().optional(),
+	// budget_level: matches DietPreferencesData union (diet-preferences.ts).
+	budget_level: z.enum(['low', 'medium', 'high']).optional(),
 	keto_ready: z.boolean().optional(),
 	intermittent_fasting_ready: z.boolean().optional(),
 	paleo_ready: z.boolean().optional(),
@@ -492,7 +504,10 @@ const BodyMetricsOverrideSchema = z.object({
 	pregnancy_status: z.boolean().optional(),
 	pregnancy_trimester: z.number().int().min(1).max(3).optional(),
 	breastfeeding_status: z.boolean().optional(),
-	stress_level: z.string().optional(),
+	// stress_level: must match UserProfileSchema.stressLevel enum (low|moderate|high).
+	// Keeping the two schemas in sync prevents an invalid value from passing diet
+	// validation while being rejected on the workout path (or vice versa).
+	stress_level: z.enum(['low', 'moderate', 'high']).optional(),
 });
 
 const AdvancedReviewOverrideSchema = z.object({
@@ -573,6 +588,12 @@ export type DietGenerationRequest = z.infer<typeof DietGenerationRequestSchema>;
  */
 export const ChatRequestSchema = z.object({
 	userId: z.string().uuid().optional(),
+
+	// Optional client-supplied conversation ID. chatHandler reads request.conversationId
+	// (falling back to a generated UUID when absent) to thread messages into one
+	// conversation. Without this field Zod strips it, so a client that sent a
+	// conversationId always got a new conversation back.
+	conversationId: z.string().uuid().optional(),
 
 	// Chat parameters
 	messages: z
