@@ -10,6 +10,9 @@ try {
   GoogleSignin = googleSigninModule.GoogleSignin;
   statusCodes = googleSigninModule.statusCodes;
 } catch (error) {
+  // Expected on platforms without the native module (e.g. web). Log so a
+  // developer tracing a missing GoogleSignin sees the cause (CLAUDE.md #5).
+  console.warn("[google-auth/config] @react-native-google-signin/google-signin module not loaded:", error);
 }
 
 export { GoogleSignin, statusCodes };
