@@ -84,8 +84,6 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
     totalMacros > 0 ? (data.protein / totalMacros) * 100 : 0;
   const fatPercentage = totalMacros > 0 ? (data.fat / totalMacros) * 100 : 0;
 
-  // Calculate calories from macros (4 cal/g for carbs and protein, 9 cal/g for fat)
-  const calculatedCalories = data.carbs * 4 + data.protein * 4 + data.fat * 9;
   const caloriesProgress =
     (targetCalories ?? 0) > 0
       ? (data.calories / (targetCalories ?? 1)) * 100
