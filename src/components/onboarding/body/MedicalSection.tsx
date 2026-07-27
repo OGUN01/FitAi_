@@ -124,7 +124,7 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
                   ]}
                 >
                   {formData.pregnancy_status && (
-                    <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
                   )}
                 </View>
                 <Text style={styles.checkboxLabel}>Currently Pregnant</Text>
@@ -195,7 +195,7 @@ export const MedicalSection: React.FC<MedicalSectionProps> = ({
                   ]}
                 >
                   {formData.breastfeeding_status && (
-                    <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
                   )}
                 </View>
                 <Text style={styles.checkboxLabel}>
