@@ -99,8 +99,8 @@ export class ConflictResolutionService {
    * Detect conflicts between local and remote data
    */
   detectConflicts(
-    localData: any,
-    remoteData: any,
+    localData: Record<string, unknown>,
+    remoteData: Record<string, unknown>,
     context: ConflictContext,
   ): DataConflict[] {
     const conflicts: DataConflict[] = [];
@@ -155,7 +155,7 @@ export class ConflictResolutionService {
   ): Promise<ConflictResolutionResult> {
     const resolvedConflicts: ConflictResolution[] = [];
     const unresolvedConflicts: DataConflict[] = [];
-    const mergedData: any = {};
+    const mergedData: Record<string, unknown> = {};
     let requiresUserInput = false;
 
     for (const conflict of conflicts) {
@@ -259,8 +259,8 @@ export class ConflictResolutionService {
 
   private compareValues(
     field: string,
-    localValue: any,
-    remoteValue: any,
+    localValue: unknown,
+    remoteValue: unknown,
     context: ConflictContext,
   ): DataConflict | null {
     // Skip if values are identical
@@ -379,7 +379,7 @@ export class ConflictResolutionService {
   private applyResolutionStrategy(
     strategy: ResolutionStrategy,
     conflict: DataConflict,
-  ): any {
+  ): unknown {
     switch (strategy) {
       case "local_wins":
         return conflict.localValue;
@@ -413,22 +413,30 @@ export class ConflictResolutionService {
     }
   }
 
-  private mergeValues(localValue: any, remoteValue: any): any {
+  private mergeValues(localValue: unknown, remoteValue: unknown): unknown {
     if (Array.isArray(localValue) && Array.isArray(remoteValue)) {
       // Merge arrays, removing duplicates
       return [...new Set([...localValue, ...remoteValue])];
     }
 
-    if (typeof localValue === "object" && typeof remoteValue === "object") {
+    if (
+      typeof localValue === "object" &&
+      localValue !== null &&
+      typeof remoteValue === "object" &&
+      remoteValue !== null
+    ) {
       // Merge objects
-      return { ...remoteValue, ...localValue };
+      return {
+        ...(remoteValue as Record<string, unknown>),
+        ...(localValue as Record<string, unknown>),
+      };
     }
 
     // For primitive values, prefer the more recent or non-null value
     return localValue != null ? localValue : remoteValue;
   }
 
-  private createMergedValue(localValue: any, remoteValue: any): any {
+  private createMergedValue(localValue: unknown, remoteValue: unknown): unknown {
     // Create a new value that combines both
     if (typeof localValue === "string" && typeof remoteValue === "string") {
       return `${localValue} | ${remoteValue}`;
@@ -443,8 +451,8 @@ export class ConflictResolutionService {
 
   private determineSeverity(
     field: string,
-    _localValue: any,
-    _remoteValue: any,
+    _localValue: unknown,
+    _remoteValue: unknown,
   ): "low" | "medium" | "high" | "critical" {
     // Critical fields that affect core functionality
     const criticalFields = ["id", "user_id", "email", "password"];
@@ -469,8 +477,8 @@ export class ConflictResolutionService {
 
   private isAutoResolvable(
     field: string,
-    localValue: any,
-    remoteValue: any,
+    localValue: unknown,
+    remoteValue: unknown,
   ): boolean {
     // Auto-resolvable if it's a low-severity field or has clear resolution logic
     const severity = this.determineSeverity(field, localValue, remoteValue);
@@ -487,8 +495,8 @@ export class ConflictResolutionService {
 
   private suggestResolution(
     field: string,
-    localValue: any,
-    remoteValue: any,
+    localValue: unknown,
+    remoteValue: unknown,
     context: ConflictContext,
   ): ResolutionStrategy {
     // Use timestamp-based resolution if available
@@ -564,7 +572,7 @@ export class ConflictResolutionService {
     this.registerResolutionRule(".*settings.*", () => "local_wins");
   }
 
-  private deepEqual(a: any, b: any): boolean {
+  private deepEqual(a: unknown, b: unknown): boolean {
     if (a === b) return true;
     if (a == null || b == null) return a === b;
     if (typeof a !== typeof b) return false;
@@ -574,11 +582,13 @@ export class ConflictResolutionService {
       return a.every((item, index) => this.deepEqual(item, b[index]));
     }
 
-    if (typeof a === "object") {
-      const keysA = Object.keys(a);
-      const keysB = Object.keys(b);
+    if (typeof a === "object" && a !== null && b !== null) {
+      const objA = a as Record<string, unknown>;
+      const objB = b as Record<string, unknown>;
+      const keysA = Object.keys(objA);
+      const keysB = Object.keys(objB);
       if (keysA.length !== keysB.length) return false;
-      return keysA.every((key) => this.deepEqual(a[key], b[key]));
+      return keysA.every((key) => this.deepEqual(objA[key], objB[key]));
     }
 
     return false;
