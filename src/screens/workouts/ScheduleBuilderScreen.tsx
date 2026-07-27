@@ -78,6 +78,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   // ── Shared state ──
   const [mode, setMode] = useState<BuilderMode>("templates");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // ── Template mode state ──
@@ -100,15 +101,24 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
 
   const { setCustomWeeklyPlan, saveCustomWeeklyPlan, setActivePlanSource, setMesocycleStartDate, mesocycleStartDate, getMesocycleWeek } = useFitnessStore();
 
-  // ── Load templates on mount ──
-  useEffect(() => {
+  // ── Load templates (extracted so the error-state retry can call it) ──
+  const loadTemplates = useCallback(() => {
     const userId = getCurrentUserId();
     if (!userId) { setLoading(false); return; }
+    setLoadError(false);
     workoutTemplateService.getTemplates(userId)
       .then(setTemplates)
-      .catch((err) => console.error("[ScheduleBuilder] Failed to load templates:", err))
+      .catch((err) => {
+        console.error("[ScheduleBuilder] Failed to load templates:", err);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  // ── Load templates on mount ──
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   // ── Filtered curated exercises for picker ──
   const filteredExercises = useMemo(() => {
@@ -273,6 +283,30 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
           />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex} edges={["top"]}>
+          <GlassHeader
+            title="Build My Schedule"
+            onBack={() => navigation.goBack()}
+            backAccessibilityLabel="Go back"
+          />
+          <View style={styles.emptyWrap} testID="schedule-load-error">
+            <EmptyState
+              icon="cloud-offline-outline"
+              iconColor={colors.error.DEFAULT}
+              title="Couldn't load your workouts"
+              subtitle="Check your connection and try again."
+              ctaText="Try Again"
+              onCta={() => { setLoading(true); loadTemplates(); }}
+            />
           </View>
         </SafeAreaView>
       </AuroraBackground>
