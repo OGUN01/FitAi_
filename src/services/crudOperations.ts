@@ -189,7 +189,7 @@ export class CrudOperationsService {
       );
 
       if (error) {
-        console.warn(
+        console.error(
           "⚠️ Failed to sync workout session to Supabase:",
           error.message,
         );
@@ -212,7 +212,7 @@ export class CrudOperationsService {
         await offlineService.clearFailedActionsForTable("workout_sessions");
       }
     } catch (syncError) {
-      console.warn("⚠️ Supabase sync error (will retry later):", syncError);
+      console.error("⚠️ Supabase sync error (will retry later):", syncError);
       const planIdentity = getPlanIdentityForWorkoutId(
         session.workoutId,
         require("../stores/fitnessStore").useFitnessStore.getState()
