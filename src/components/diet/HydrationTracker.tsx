@@ -11,14 +11,7 @@
 
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  FadeIn,
-} from "react-native-reanimated";
 import Svg, {
-  Circle,
   Defs,
   LinearGradient,
   Stop,
@@ -53,10 +46,6 @@ const WaterDrop: React.FC<{ progress: number; size: number }> = ({
   const progress = Number.isFinite(rawProgress)
     ? Math.max(0, Math.min(100, rawProgress))
     : 0;
-
-  const fillHeight = (progress / 100) * (size * 0.7);
-  const dropWidth = size * 0.6;
-  const dropHeight = size * 0.75;
 
   return (
     <View style={[styles.dropContainer, { width: size, height: size }]}>
@@ -127,7 +116,7 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
   currentIntake,
   dailyGoal,
   onAddWater,
-  onPress,
+  onPress: _onPress,
 }) => {
   const progress = useMemo(() => {
     // Guard against division by zero
