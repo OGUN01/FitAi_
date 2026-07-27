@@ -6,6 +6,7 @@ import { migrationManager } from "./migrationManager";
 import { backupRecoveryService } from "./backupRecoveryService";
 import { dataBridge } from "./DataBridge";
 import { enhancedLocalStorage } from "./localStorage";
+import type { OnboardingData } from "../types/localData";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -462,7 +463,9 @@ export class TrackIntegrationService {
 
       // Store onboarding data in local storage
       if (authData.onboardingData) {
-        await dataBridge.storeOnboardingData(authData.onboardingData);
+        await dataBridge.storeOnboardingData(
+          authData.onboardingData as unknown as OnboardingData,
+        );
       }
 
       // Create initial backup

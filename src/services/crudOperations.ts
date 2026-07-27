@@ -239,7 +239,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      return await dataBridge.getWorkoutSessions(limit);
+      return (await dataBridge.getWorkoutSessions(limit)) as unknown as LocalWorkoutSession[];
     } catch (error) {
       console.error("Failed to read workout sessions:", error);
       return [];
@@ -252,7 +252,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      const sessions = await dataBridge.getWorkoutSessions();
+      const sessions = (await dataBridge.getWorkoutSessions()) as unknown as LocalWorkoutSession[];
       return sessions.find((session) => session.id === sessionId) || null;
     } catch (error) {
       console.error("Failed to read workout session:", error);
@@ -590,7 +590,14 @@ export class CrudOperationsService {
     lastUpdated: string | null;
   }> {
     try {
-      return await dataBridge.getDataStatistics();
+      return (await dataBridge.getDataStatistics()) as unknown as {
+        totalWorkoutSessions: number;
+        totalMealLogs: number;
+        totalMeasurements: number;
+        pendingSyncItems: number;
+        storageUsed: number;
+        lastUpdated: string | null;
+      };
     } catch (error) {
       console.error("Failed to get data statistics:", error);
       return {

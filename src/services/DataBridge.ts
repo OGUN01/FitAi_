@@ -1700,9 +1700,10 @@ class DataBridge {
   // IMPORT DATA (backward compatibility)
   // ============================================================================
 
-  async importData(data: Record<string, unknown>): Promise<boolean> {
+  async importData(data: unknown): Promise<boolean> {
     try {
-      const user = data.user as Record<string, unknown> | undefined;
+      const record = data as Record<string, unknown>;
+      const user = record.user as Record<string, unknown> | undefined;
       if (user) {
         if (user.personalInfo)
           await this.savePersonalInfo(user.personalInfo as PersonalInfoData | PersonalInfo);
@@ -1711,10 +1712,10 @@ class DataBridge {
         if (user.workoutPreferences)
           await this.saveWorkoutPreferences(user.workoutPreferences as WorkoutPreferencesData | WorkoutPreferences);
       }
-      const fitness = data.fitness as Record<string, unknown> | undefined;
+      const fitness = record.fitness as Record<string, unknown> | undefined;
       if (fitness?.bodyAnalysis)
         await this.saveBodyAnalysis(fitness.bodyAnalysis as BodyAnalysisData);
-      const progress = data.progress as Record<string, unknown> | undefined;
+      const progress = record.progress as Record<string, unknown> | undefined;
       if (progress?.advancedReview)
         await this.saveAdvancedReview(progress.advancedReview as AdvancedReviewData);
       return true;
@@ -1724,18 +1725,19 @@ class DataBridge {
     }
   }
 
-  async importAllData(data: Record<string, unknown>): Promise<boolean> {
+  async importAllData(data: unknown): Promise<boolean> {
     return this.importData(data);
   }
 
-  async importUserData(data: Record<string, unknown>): Promise<boolean> {
+  async importUserData(data: unknown): Promise<boolean> {
+    const record = data as Record<string, unknown>;
     try {
-      if (data.personalInfo)
-        await this.savePersonalInfo(data.personalInfo as PersonalInfoData | PersonalInfo);
-      if (data.dietPreferences)
-        await this.saveDietPreferences(data.dietPreferences as DietPreferencesData | DietPreferences);
-      if (data.workoutPreferences)
-        await this.saveWorkoutPreferences(data.workoutPreferences as WorkoutPreferencesData | WorkoutPreferences);
+      if (record.personalInfo)
+        await this.savePersonalInfo(record.personalInfo as PersonalInfoData | PersonalInfo);
+      if (record.dietPreferences)
+        await this.saveDietPreferences(record.dietPreferences as DietPreferencesData | DietPreferences);
+      if (record.workoutPreferences)
+        await this.saveWorkoutPreferences(record.workoutPreferences as WorkoutPreferencesData | WorkoutPreferences);
       return true;
     } catch (error) {
       console.error("[DataBridge] importUserData error:", error);
@@ -1743,12 +1745,13 @@ class DataBridge {
     }
   }
 
-  async importFitnessData(data: Record<string, unknown>): Promise<boolean> {
+  async importFitnessData(data: unknown): Promise<boolean> {
+    const record = data as Record<string, unknown>;
     try {
-      if (data.bodyAnalysis)
-        await this.saveBodyAnalysis(data.bodyAnalysis as BodyAnalysisData);
-      if (data.workoutSessions) {
-        for (const session of data.workoutSessions as WorkoutSession[]) {
+      if (record.bodyAnalysis)
+        await this.saveBodyAnalysis(record.bodyAnalysis as BodyAnalysisData);
+      if (record.workoutSessions) {
+        for (const session of record.workoutSessions as WorkoutSession[]) {
           await this.storeWorkoutSession(session);
         }
       }
@@ -1759,10 +1762,11 @@ class DataBridge {
     }
   }
 
-  async importNutritionData(data: Record<string, unknown>): Promise<boolean> {
+  async importNutritionData(data: unknown): Promise<boolean> {
+    const record = data as Record<string, unknown>;
     try {
-      if (data.mealLogs) {
-        for (const log of data.mealLogs as MealLog[]) {
+      if (record.mealLogs) {
+        for (const log of record.mealLogs as MealLog[]) {
           await this.storeMealLog(log);
         }
       }
@@ -1773,15 +1777,16 @@ class DataBridge {
     }
   }
 
-  async importProgressData(data: Record<string, unknown>): Promise<boolean> {
+  async importProgressData(data: unknown): Promise<boolean> {
+    const record = data as Record<string, unknown>;
     try {
-      if (data.bodyMeasurements) {
-        for (const measurement of data.bodyMeasurements as BodyMeasurement[]) {
+      if (record.bodyMeasurements) {
+        for (const measurement of record.bodyMeasurements as BodyMeasurement[]) {
           await this.storeBodyMeasurement(measurement);
         }
       }
-      if (data.advancedReview)
-        await this.saveAdvancedReview(data.advancedReview as AdvancedReviewData);
+      if (record.advancedReview)
+        await this.saveAdvancedReview(record.advancedReview as AdvancedReviewData);
       return true;
     } catch (error) {
       console.error("[DataBridge] importProgressData error:", error);

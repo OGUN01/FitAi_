@@ -249,7 +249,16 @@ export const useOfflineStore = create<OfflineState>()(
       updateDataStats: async () => {
         try {
           const stats = await dataBridge.getDataStatistics();
-          set({ dataStats: stats });
+          set({
+            dataStats: stats as unknown as {
+              totalWorkoutSessions: number;
+              totalMealLogs: number;
+              totalMeasurements: number;
+              pendingSyncItems: number;
+              storageUsed: number;
+              lastUpdated: string | null;
+            },
+          });
         } catch (error) {
           console.error("Failed to update data stats:", error);
         }
