@@ -164,7 +164,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 >
                   <LinearGradient
                     colors={
-                      saveDisabled ? ["#666", "#555"] : [colors.errorLight, colors.primaryLight]
+                      saveDisabled ? [colors.neutral, colors.neutral] : [colors.errorLight, colors.primaryLight]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
