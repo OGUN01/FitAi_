@@ -1,4 +1,4 @@
-import { flatColors as colors, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { flatColors as colors, flatFontSize as fontSize, typography, borderRadius } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: 'rgba(245,158,11,0.12)',
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     padding: rp(8),
     marginBottom: rp(10),
     gap: rp(6),
