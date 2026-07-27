@@ -25,8 +25,8 @@ export async function rollbackFitnessDataStep(
 ): Promise<void> {
   if (context.uploadedData.fitness) {
     try {
-      const query = `DELETE FROM workouts WHERE user_id = '${context.userId}'`;
-      const query2 = `DELETE FROM workout_exercises WHERE workout_id IN (SELECT id FROM workouts WHERE user_id = '${context.userId}')`;
+      // Remote rollback not yet implemented (REMOTE_MIGRATION_SUPPORTED = false);
+      // clear local tracking only.
       delete context.uploadedData.fitness;
     } catch (error) {
       context.warnings.push(
@@ -41,8 +41,8 @@ export async function rollbackNutritionDataStep(
 ): Promise<void> {
   if (context.uploadedData.nutrition) {
     try {
-      const query = `DELETE FROM meals WHERE user_id = '${context.userId}'`;
-      const query2 = `DELETE FROM meal_foods WHERE meal_id IN (SELECT id FROM meals WHERE user_id = '${context.userId}')`;
+      // Remote rollback not yet implemented (REMOTE_MIGRATION_SUPPORTED = false);
+      // clear local tracking only.
       delete context.uploadedData.nutrition;
     } catch (error) {
       context.warnings.push(
@@ -57,8 +57,8 @@ export async function rollbackProgressDataStep(
 ): Promise<void> {
   if (context.uploadedData.progress) {
     try {
-      const query = `DELETE FROM progress_entries WHERE user_id = '${context.userId}'`;
-      const query2 = `DELETE FROM achievements WHERE user_id = '${context.userId}'`;
+      // Remote rollback not yet implemented (REMOTE_MIGRATION_SUPPORTED = false);
+      // clear local tracking only.
       delete context.uploadedData.progress;
     } catch (error) {
       context.warnings.push(
