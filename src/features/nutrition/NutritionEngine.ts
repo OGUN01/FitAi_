@@ -12,6 +12,7 @@ import {
   AIResponse,
 } from "../../types/ai";
 import { PersonalInfo, FitnessGoals } from "../../types/user";
+import { logger } from "../../utils/logger";
 
 // LAZY IMPORT: Avoid circular dependency with ai/index.ts
 // ai/index.ts exports nutritionEngine, and NutritionEngine imports aiService from ai/index.ts
@@ -43,9 +44,9 @@ class NutritionEngineService {
     },
   ): Promise<AIResponse<Meal>> {
     try {
-      console.log(
-        "🍽️ [NutritionEngine] Delegating to aiService.generateMeal for:",
-        mealType,
+      logger.info(
+        "[NutritionEngine] Delegating to aiService.generateMeal for:",
+        { mealType },
       );
 
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
@@ -80,8 +81,8 @@ class NutritionEngineService {
         preferences?.dietaryRestrictions || [],
       );
 
-      console.log(
-        "✅ [NutritionEngine] Meal generated and enhanced successfully",
+      logger.info(
+        "[NutritionEngine] Meal generated and enhanced successfully",
       );
       return {
         success: true,
@@ -110,8 +111,8 @@ class NutritionEngineService {
     },
   ): Promise<AIResponse<DailyMealPlan>> {
     try {
-      console.log(
-        "🍽️ [NutritionEngine] Delegating to aiService.generateDailyMealPlan",
+      logger.info(
+        "[NutritionEngine] Delegating to aiService.generateDailyMealPlan",
       );
 
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
@@ -135,8 +136,8 @@ class NutritionEngineService {
         };
       }
 
-      console.log(
-        "✅ [NutritionEngine] Daily meal plan generated successfully",
+      logger.info(
+        "[NutritionEngine] Daily meal plan generated successfully",
       );
       return {
         success: true,
@@ -258,8 +259,8 @@ class NutritionEngineService {
     // AI-first approach: Return empty array and let AI handle recommendations
     // AI has full knowledge of all foods and will generate appropriate meals
     // based on user's fitness goals, dietary restrictions, and preferences
-    console.log(
-      "Food recommendations requested - delegating to AI for generation",
+    logger.debug(
+      "[NutritionEngine] Food recommendations requested - delegating to AI for generation",
       { mealType, fitnessGoals, dietaryRestrictions },
     );
     return [];
@@ -373,7 +374,7 @@ class NutritionEngineService {
     },
   ): Food[] {
     // AI-first approach: Food search is delegated to AI which has full knowledge
-    console.log("Food search requested - delegating to AI", { query, filters });
+    logger.debug("[NutritionEngine] Food search requested - delegating to AI", { query, filters });
     return [];
   }
 
