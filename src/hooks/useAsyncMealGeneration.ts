@@ -126,9 +126,6 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
       setError(null);
 
       try {
-        console.log(
-          "[useAsyncMealGeneration] Submitting async meal generation request",
-        );
         const response =
           await fitaiWorkersClient.generateDietPlanAsync(request);
 
@@ -138,7 +135,6 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
 
         // Check for cache hit (200 with immediate result)
         if (isDietPlanResponse(response.data)) {
-          console.log("[useAsyncMealGeneration] Cache hit - immediate result");
           const completedJob: AsyncMealJob = {
             jobId: "cache-hit",
             status: "completed",
@@ -260,9 +256,6 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
           job.status === "failed" ||
           job.status === "cancelled"
         ) {
-          console.log(
-            `[useAsyncMealGeneration] Job ${jobId} finished with status: ${job.status}`,
-          );
           return;
         }
 
@@ -274,9 +267,6 @@ export function useAsyncMealGeneration(): UseAsyncMealGenerationResult {
             POLL_INTERVAL_MAX,
           );
 
-          console.log(
-            `[useAsyncMealGeneration] Polling again in ${interval}ms (attempt ${pollAttemptRef.current})`,
-          );
           pollingRef.current = setTimeout(poll, interval);
         } else {
           // Timeout after max attempts

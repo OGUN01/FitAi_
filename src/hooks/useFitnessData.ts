@@ -377,9 +377,6 @@ export const useFitnessData = (): UseFitnessDataReturn => {
       // For guest users, we should skip the database call and return true
       // since workout sessions for guests are handled locally in the fitnessStore
       if (!user?.id) {
-        console.log(
-          "🏃 Guest user - skipping database workout session, using local store only",
-        );
         return true; // Return success since local store will handle it
       }
 
@@ -415,7 +412,6 @@ export const useFitnessData = (): UseFitnessDataReturn => {
   const getRecommendedExercises = useCallback(
     async (workoutType?: string, limit: number = 5): Promise<Exercise[]> => {
       if (!user?.id) {
-        console.log("No user ID available for recommended exercises");
         return [];
       }
 
