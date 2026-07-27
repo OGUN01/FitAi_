@@ -35,7 +35,7 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
   maxValue: rawMaxValue = 100,
   size: rawSize = 200,
   strokeWidth: rawStrokeWidth = 16,
-  gradient = [colors.success, "#45A049"],
+  gradient = [colors.success, colors.successAltDark],
   showGlow = true,
   showValue = true,
   label,
