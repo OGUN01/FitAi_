@@ -50,15 +50,12 @@ export class NutritionRefreshService {
    */
   async triggerRefresh(): Promise<void> {
     if (this.isRefreshing) {
-      console.log("🔄 Nutrition refresh already in progress, skipping...");
       return;
     }
 
     this.isRefreshing = true;
 
     try {
-      console.log("🔄 Triggering nutrition data refresh...");
-
       const errors: Error[] = [];
       await Promise.all(
         this.refreshCallbacks.map(async (callback) => {
@@ -81,8 +78,6 @@ export class NutritionRefreshService {
           `❌ ${errors.length}/${this.refreshCallbacks.length} nutrition refresh callbacks failed`,
         );
       }
-
-      console.log("✅ Nutrition data refresh completed");
     } catch (error) {
       console.error("❌ Error during nutrition refresh:", error);
     } finally {
@@ -104,8 +99,6 @@ export class NutritionRefreshService {
 
       // Trigger the general refresh
       await this.triggerRefresh();
-
-      console.log("✅ Post-meal nutrition refresh completed");
     } catch (error) {
       console.error("❌ Error refreshing nutrition after meal logging:", error);
       // Still try to trigger the general refresh even if optimized refresh fails
