@@ -6,13 +6,10 @@ import { persist } from "zustand/middleware";
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import {
   healthKitService,
-  HealthKitData,
   HealthKitWorkout,
-  HealthSyncResult,
 } from "../services/healthKit";
 import {
   healthConnectService,
-  HealthConnectData,
   HealthConnectSyncResult,
   MetricSource,
   DataSource,
@@ -413,7 +410,7 @@ export const useHealthDataStore = create<HealthDataState>()(
             const hasPermissions = await healthConnectService.hasPermissions();
 
             // Update store state
-            set((state) => ({
+            set(() => ({
               isHealthConnectAvailable: isAvailable,
               isHealthConnectAuthorized: hasPermissions,
             }));
@@ -437,7 +434,7 @@ export const useHealthDataStore = create<HealthDataState>()(
             await healthConnectService.requestPermissions();
 
           // Update store state based on permission result
-          set((state) => ({
+          set(() => ({
             isHealthConnectAuthorized: permissionGranted,
             syncStatus: permissionGranted ? "idle" : "error",
           }));
@@ -462,7 +459,7 @@ export const useHealthDataStore = create<HealthDataState>()(
           const success = await healthConnectService.reauthorize();
 
           // Update store state based on result
-          set((state) => ({
+          set(() => ({
             isHealthConnectAuthorized: success,
             syncStatus: success ? "idle" : "error",
           }));
@@ -944,7 +941,7 @@ export const useHealthDataStore = create<HealthDataState>()(
         }
       },
 
-      exportNutritionToHealthKit: async (nutrition): Promise<boolean> => {
+      exportNutritionToHealthKit: async (_nutrition): Promise<boolean> => {
         try {
           const { settings, isHealthKitAuthorized } = get();
 
