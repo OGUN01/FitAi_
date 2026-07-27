@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
@@ -16,13 +16,18 @@ interface BarChartProps {
   maxValue?: number;
 }
 
-export const BarChart: React.FC<BarChartProps> = ({
+export const BarChart: React.FC<BarChartProps> = React.memo(({
   data,
   color,
   gradientColors,
   maxValue,
 }) => {
-  const max = maxValue || Math.max(...data.map((d) => d.value), 1);
+  const max = useMemo(() => {
+    if (maxValue) return maxValue;
+    const values: number[] = [1];
+    for (const d of data) values.push(d.value);
+    return Math.max(...values);
+  }, [data, maxValue]);
 
   return (
     <View style={styles.barChartContainer}>
@@ -47,7 +52,7 @@ export const BarChart: React.FC<BarChartProps> = ({
       })}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   barChartContainer: {
