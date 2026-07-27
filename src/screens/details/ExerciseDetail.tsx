@@ -1,19 +1,23 @@
 import React from "react";
 import {
   View,
+  Text,
   StyleSheet,
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../components/ui";
 import {
   AuroraBackground,
   AuroraSpinner,
   GlassHeader,
   EmptyState,
+  AnimatedPressable,
 } from "../../components/ui/aurora";
-import { colors, spacing } from "../../theme/aurora-tokens";
-import { rp } from "../../utils/responsive";
+import { colors, spacing, typography, borderRadius } from "../../theme/aurora-tokens";
+import { rf, rp } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { useExerciseData } from "./hooks/useExerciseData";
 import { useExerciseVisual } from "./hooks/useExerciseVisual";
 import { useStepAnimation } from "./hooks/useStepAnimation";
@@ -41,7 +45,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   onStartExercise,
 }) => {
   const exercise = useExerciseData(exerciseId);
-  const { isLoading, visualData } = useExerciseVisual(exercise?.name);
+  const { isLoading, visualData, loadError, retry } = useExerciseVisual(exercise?.name);
 
   const displayInstructions: ExerciseInstruction[] =
     visualData?.instructions && visualData.instructions.length > 0
@@ -114,14 +118,31 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           targetMuscles={displayTargetMuscles}
         />
 
-        <ExerciseAnimation
-          gifUrl={visualData?.gifUrl}
-          isPlaying={isPlaying}
-          currentStep={currentStep}
-          instructionsCount={displayInstructions.length}
-          onTogglePlay={() => setIsPlaying(!isPlaying)}
-          onStepChange={animateToStep}
-        />
+        {loadError && !visualData ? (
+          <View style={styles.visualErrorWrap}>
+            <Ionicons name="cloud-offline-outline" size={rf(24)} color={colors.error.DEFAULT} />
+            <Text style={styles.visualErrorText} numberOfLines={2}>
+              Couldn't load exercise animation
+            </Text>
+            <AnimatedPressable
+              onPress={retry}
+              style={styles.visualRetryBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading animation"
+            >
+              <Text style={styles.visualRetryText}>Retry</Text>
+            </AnimatedPressable>
+          </View>
+        ) : (
+          <ExerciseAnimation
+            gifUrl={visualData?.gifUrl}
+            isPlaying={isPlaying}
+            currentStep={currentStep}
+            instructionsCount={displayInstructions.length}
+            onTogglePlay={() => setIsPlaying(!isPlaying)}
+            onStepChange={animateToStep}
+          />
+        )}
 
         <InstructionsList
           instructions={displayInstructions}
@@ -166,5 +187,31 @@ const styles = StyleSheet.create({
     padding: rp(spacing.md),
     borderTopWidth: 1,
     borderTopColor: colors.glass.border,
+  },
+  visualErrorWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: rp(spacing.lg),
+    gap: rp(spacing.sm),
+  },
+  visualErrorText: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
+  visualRetryBtn: {
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.xs),
+    borderRadius: borderRadius.md,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.15),
+    borderWidth: 1,
+    borderColor: colors.primary.DEFAULT,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  visualRetryText: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.primary.DEFAULT,
+    fontWeight: "600",
   },
 });

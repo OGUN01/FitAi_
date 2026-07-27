@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   exerciseVisualService,
   ExerciseData,
@@ -7,29 +7,35 @@ import {
 export function useExerciseVisual(exerciseName?: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [visualData, setVisualData] = useState<ExerciseData | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    async function fetchVisualData() {
-      if (!exerciseName) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const result = await exerciseVisualService.findExercise(exerciseName);
-        if (result) {
-          setVisualData(result.exercise);
-        }
-      } catch (error) {
-        console.error("Failed to fetch exercise visual data:", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchVisualData = useCallback(async () => {
+    if (!exerciseName) {
+      setIsLoading(false);
+      return;
     }
-
-    fetchVisualData();
+    try {
+      setIsLoading(true);
+      setLoadError(false);
+      const result = await exerciseVisualService.findExercise(exerciseName);
+      if (result) {
+        setVisualData(result.exercise);
+      }
+    } catch (error) {
+      console.error("Failed to fetch exercise visual data:", error);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, [exerciseName]);
 
-  return { isLoading, visualData };
+  useEffect(() => {
+    fetchVisualData();
+  }, [fetchVisualData]);
+
+  const retry = useCallback(() => {
+    fetchVisualData();
+  }, [fetchVisualData]);
+
+  return { isLoading, visualData, loadError, retry };
 }
