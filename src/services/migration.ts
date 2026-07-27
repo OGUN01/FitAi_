@@ -3,17 +3,14 @@
 
 import * as crypto from "expo-crypto";
 import { enhancedLocalStorage } from "./localStorage";
-import { dataTransformation } from "./dataTransformation";
 import { validationService } from "../utils/validation";
 import { dataBridge } from "./DataBridge";
 import {
   LocalStorageSchema,
-  ValidationResult,
-  OnboardingData,
   WorkoutSession,
-  MealLog,
   BodyMeasurement,
 } from "../types/localData";
+import type { MealLog } from "../types/diet";
 
 // ============================================================================
 // MIGRATION TYPES AND INTERFACES
@@ -29,11 +26,50 @@ export interface MigrationConfig {
   validateBeforeMigration: boolean;
 }
 
+// Record-level type: each row uploaded to Supabase is a flat object keyed by
+// column name. We keep values as `unknown` because the migration engine itself
+// only inspects keys and stringifies values — it never assumes a concrete shape.
+export type MigrationRecord = Record<string, unknown>;
+
+/** Shape of context.transformedData — grouped by domain, same as the upload steps. */
+export interface TransformedData {
+  user?: {
+    profile?: MigrationRecord;
+    fitnessGoals?: MigrationRecord;
+    dietPreferences?: MigrationRecord;
+    workoutPreferences?: MigrationRecord;
+    bodyAnalysis?: MigrationRecord;
+  };
+  fitness?: {
+    workouts?: MigrationRecord[];
+    workoutExercises?: MigrationRecord[];
+    sessions?: unknown[];
+  };
+  nutrition?: {
+    meals?: MigrationRecord[];
+    mealFoods?: MigrationRecord[];
+    logs?: unknown[];
+  };
+  progress?: {
+    progressEntries?: MigrationRecord[];
+    achievements?: MigrationRecord[];
+    measurements?: unknown[];
+  };
+}
+
+/** Shape of context.uploadedData — populated by each upload step. */
+export interface UploadedData {
+  user?: TransformedData["user"];
+  fitness?: TransformedData["fitness"];
+  nutrition?: TransformedData["nutrition"];
+  progress?: TransformedData["progress"];
+}
+
 export interface MigrationStep {
   name: string;
   description: string;
   weight: number; // For progress calculation (0-1)
-  handler: (data: any, context: MigrationContext) => Promise<void>;
+  handler: (data: LocalStorageSchema, context: MigrationContext) => Promise<void>;
   rollbackHandler?: (context: MigrationContext) => Promise<void>;
   retryable: boolean;
   critical: boolean; // If true, failure stops entire migration
@@ -47,8 +83,8 @@ export interface MigrationContext {
   completedSteps: string[];
   failedSteps: string[];
   backupData?: LocalStorageSchema;
-  transformedData?: any;
-  uploadedData: Record<string, any>;
+  transformedData?: TransformedData;
+  uploadedData: UploadedData;
   errors: MigrationError[];
   warnings: string[];
 }
@@ -86,9 +122,9 @@ export interface MigrationResult {
     achievements: number;
   };
   migratedData?: {
-    workoutSessions?: any[];
-    mealLogs?: any[];
-    bodyMeasurements?: any[];
+    workoutSessions?: WorkoutSession[];
+    mealLogs?: MealLog[];
+    bodyMeasurements?: BodyMeasurement[];
   };
   migratedKeys?: string[];
   localSyncKeys?: string[];
@@ -102,7 +138,7 @@ export interface MigrationError {
   step: string;
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
   retryCount: number;
   recoverable: boolean;
@@ -110,7 +146,7 @@ export interface MigrationError {
 
 export interface MigrationErrorWithMessage {
   message: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ============================================================================
@@ -223,7 +259,7 @@ export class MigrationEngine {
   /**
    * Resume a failed migration from the last successful step
    */
-  async resumeMigration(migrationId: string): Promise<MigrationResult> {
+  async resumeMigration(_migrationId: string): Promise<MigrationResult> {
     // Implementation for resuming migration
     throw new Error("Resume migration not yet implemented");
   }
@@ -231,7 +267,7 @@ export class MigrationEngine {
   /**
    * Rollback a migration and restore from backup
    */
-  async rollbackMigration(migrationId: string): Promise<void> {
+  async rollbackMigration(_migrationId: string): Promise<void> {
     // Implementation for rollback
     throw new Error("Rollback migration not yet implemented");
   }
@@ -375,7 +411,7 @@ export class MigrationEngine {
 
   private async executeStepWithRetry(
     step: MigrationStep,
-    data: any,
+    data: LocalStorageSchema,
     context: MigrationContext,
   ): Promise<void> {
     let lastError: Error | null = null;
@@ -442,7 +478,7 @@ export class MigrationEngine {
 
   private async transformDataStep(
     data: LocalStorageSchema,
-    context: MigrationContext,
+    _context: MigrationContext,
   ): Promise<void> {
     try {
       // Transform user data
@@ -545,15 +581,17 @@ export class MigrationEngine {
       const fitnessData = context.transformedData.fitness;
 
       // Upload workouts
-      if (fitnessData.workouts?.length > 0) {
-        for (const workout of fitnessData.workouts) {
+      const workouts = fitnessData.workouts;
+      if (workouts && workouts.length > 0) {
+        for (const workout of workouts) {
           await this.uploadToSupabase("workouts", workout, context);
         }
       }
 
       // Upload workout exercises
-      if (fitnessData.workoutExercises?.length > 0) {
-        for (const workoutExercise of fitnessData.workoutExercises) {
+      const workoutExercises = fitnessData.workoutExercises;
+      if (workoutExercises && workoutExercises.length > 0) {
+        for (const workoutExercise of workoutExercises) {
           await this.uploadToSupabase(
             "workout_exercises",
             workoutExercise,
@@ -583,15 +621,17 @@ export class MigrationEngine {
       const nutritionData = context.transformedData.nutrition;
 
       // Upload meals
-      if (nutritionData.meals?.length > 0) {
-        for (const meal of nutritionData.meals) {
+      const meals = nutritionData.meals;
+      if (meals && meals.length > 0) {
+        for (const meal of meals) {
           await this.uploadToSupabase("meals", meal, context);
         }
       }
 
       // Upload meal foods
-      if (nutritionData.mealFoods?.length > 0) {
-        for (const mealFood of nutritionData.mealFoods) {
+      const mealFoods = nutritionData.mealFoods;
+      if (mealFoods && mealFoods.length > 0) {
+        for (const mealFood of mealFoods) {
           await this.uploadToSupabase("meal_foods", mealFood, context);
         }
       }
@@ -617,15 +657,17 @@ export class MigrationEngine {
       const progressData = context.transformedData.progress;
 
       // Upload progress entries (body measurements)
-      if (progressData.progressEntries?.length > 0) {
-        for (const entry of progressData.progressEntries) {
+      const progressEntries = progressData.progressEntries;
+      if (progressEntries && progressEntries.length > 0) {
+        for (const entry of progressEntries) {
           await this.uploadToSupabase("progress_entries", entry, context);
         }
       }
 
       // Upload achievements
-      if (progressData.achievements?.length > 0) {
-        for (const achievement of progressData.achievements) {
+      const achievements = progressData.achievements;
+      if (achievements && achievements.length > 0) {
+        for (const achievement of achievements) {
           await this.uploadToSupabase("achievements", achievement, context);
         }
       }
@@ -707,10 +749,7 @@ export class MigrationEngine {
     // Implementation for rolling back fitness data upload
     if (context.uploadedData.fitness) {
       try {
-        // Delete fitness data by user_id
-        const query = `DELETE FROM workouts WHERE user_id = '${context.userId}'`;
-        const query2 = `DELETE FROM workout_exercises WHERE workout_id IN (SELECT id FROM workouts WHERE user_id = '${context.userId}')`;
-        // Execute rollback queries
+        // Delete fitness data by user_id (rollback query execution not yet implemented)
         delete context.uploadedData.fitness;
       } catch (error) {
         context.warnings.push(
@@ -726,10 +765,7 @@ export class MigrationEngine {
     // Implementation for rolling back nutrition data upload
     if (context.uploadedData.nutrition) {
       try {
-        // Delete nutrition data by user_id
-        const query = `DELETE FROM meals WHERE user_id = '${context.userId}'`;
-        const query2 = `DELETE FROM meal_foods WHERE meal_id IN (SELECT id FROM meals WHERE user_id = '${context.userId}')`;
-        // Execute rollback queries
+        // Delete nutrition data by user_id (rollback query execution not yet implemented)
         delete context.uploadedData.nutrition;
       } catch (error) {
         context.warnings.push(
@@ -745,10 +781,7 @@ export class MigrationEngine {
     // Implementation for rolling back progress data upload
     if (context.uploadedData.progress) {
       try {
-        // Delete progress data by user_id
-        const query = `DELETE FROM progress_entries WHERE user_id = '${context.userId}'`;
-        const query2 = `DELETE FROM achievements WHERE user_id = '${context.userId}'`;
-        // Execute rollback queries
+        // Delete progress data by user_id (rollback query execution not yet implemented)
         delete context.uploadedData.progress;
       } catch (error) {
         context.warnings.push(
@@ -764,33 +797,14 @@ export class MigrationEngine {
 
   private async uploadToSupabase(
     table: string,
-    data: any,
-    context: MigrationContext,
+    data: MigrationRecord,
+    _context: MigrationContext,
   ): Promise<void> {
     try {
-      // Use Supabase MCP tools to insert data
-      const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
-
-      // Prepare the SQL insert query
-      const columns = Object.keys(data).join(", ");
-      const values = Object.values(data)
-        .map((value) => {
-          if (value === null || value === undefined) return "NULL";
-          if (typeof value === "string")
-            return `'${value.replace(/'/g, "''")}'`;
-          if (typeof value === "boolean") return value.toString();
-          if (Array.isArray(value))
-            return `ARRAY[${value.map((v) => `'${v}'`).join(", ")}]`;
-          if (typeof value === "object")
-            return `'${JSON.stringify(value)}'::jsonb`;
-          return value.toString();
-        })
-        .join(", ");
-
-      const query = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
-
-      // Execute the query using Supabase MCP tools
-      // Note: This will be replaced with actual MCP tool calls in the next implementation
+      // TODO: replace with actual Supabase client / RPC call.
+      // The previous implementation built a raw SQL string but never executed
+      // it; the upload was simulated with a delay. Keeping that behavior until
+      // the real client wiring lands.
       console.log(`Uploading to ${table}:`, data);
 
       // For now, simulate the upload with a small delay
@@ -805,13 +819,10 @@ export class MigrationEngine {
   private async deleteFromSupabase(
     table: string,
     id: string,
-    context: MigrationContext,
+    _context: MigrationContext,
   ): Promise<void> {
     try {
-      const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
-      const query = `DELETE FROM ${table} WHERE id = '${id}'`;
-
-      // Execute the query using Supabase MCP tools
+      // TODO: replace with actual Supabase client / RPC call.
       console.log(`Deleting from ${table}: ${id}`);
       await this.sleep(50 + Math.random() * 100);
     } catch (error) {
@@ -823,33 +834,24 @@ export class MigrationEngine {
 
   private async verifyDataInSupabase(context: MigrationContext): Promise<void> {
     try {
-      const projectId = process.env.EXPO_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1] ?? "";
-
+      // TODO: replace these stubs with real COUNT queries via the Supabase client.
       // Verify user profile exists
       if (context.uploadedData.user) {
-        const query = `SELECT COUNT(*) as count FROM profiles WHERE id = '${context.userId}'`;
-        // Execute verification query
         console.log("Verifying user profile in Supabase");
       }
 
       // Verify fitness data exists
       if (context.uploadedData.fitness) {
-        const query = `SELECT COUNT(*) as count FROM workouts WHERE user_id = '${context.userId}'`;
-        // Execute verification query
         console.log("Verifying fitness data in Supabase");
       }
 
       // Verify nutrition data exists
       if (context.uploadedData.nutrition) {
-        const query = `SELECT COUNT(*) as count FROM meals WHERE user_id = '${context.userId}'`;
-        // Execute verification query
         console.log("Verifying nutrition data in Supabase");
       }
 
       // Verify progress data exists
       if (context.uploadedData.progress) {
-        const query = `SELECT COUNT(*) as count FROM progress_entries WHERE user_id = '${context.userId}'`;
-        // Execute verification query
         console.log("Verifying progress data in Supabase");
       }
 
@@ -891,12 +893,26 @@ export class MigrationEngine {
   private handleMigrationFailure(
     migrationId: string,
     startTime: Date,
-    error: any,
+    error: unknown,
   ): MigrationResult {
+    // Narrow the error to an object with optional `code`/`message` fields.
+    // The `unknown` branch of `executeStepWithRetry` and direct throws may pass
+    // non-Error values, so guard each access.
+    const errObj =
+      (typeof error === "object" && error !== null
+        ? (error as MigrationErrorWithMessage)
+        : null) ?? null;
+    const code =
+      (errObj && typeof errObj.code === "string" && errObj.code) ||
+      "MIGRATION_FAILED";
+    const message =
+      (errObj && typeof errObj.message === "string" && errObj.message) ||
+      "Unknown migration error";
+
     const migrationError: MigrationError = {
       step: this.currentMigration?.currentStep || "unknown",
-      code: error.code || "MIGRATION_FAILED",
-      message: error.message || "Unknown migration error",
+      code,
+      message,
       details: error,
       timestamp: new Date(),
       retryCount: 0,
@@ -915,7 +931,7 @@ export class MigrationEngine {
         percentage: 0,
         startTime,
         endTime: new Date(),
-        message: `Migration failed: ${error.message}`,
+        message: `Migration failed: ${message}`,
         errors: [migrationError],
         warnings: this.currentMigration?.warnings || [],
       },
