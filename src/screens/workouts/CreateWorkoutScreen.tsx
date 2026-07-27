@@ -33,6 +33,7 @@ import { getCurrentUserId } from "../../services/authUtils";
 import { haptics } from "../../utils/haptics";
 import {
   AuroraBackground,
+  EmptyState,
   GlassCard,
   GlassHeader,
   AnimatedPressable,
@@ -147,6 +148,11 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   const [addedExercises, setAddedExercises] = useState<TemplateExercise[]>([]);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  // Edit-hydration state: true only on the edit path (templateId present) so a
+  // spinner shows immediately while the existing template is fetched. The
+  // create-new path initializes both to false and never renders these branches.
+  const [loadingTemplate, setLoadingTemplate] = useState(!!templateId);
+  const [loadError, setLoadError] = useState(false);
 
   // ── Share-to-Community state (Phase 10) ─────────────────────────────────
   // When shareToCommunity is ON, the save flow prompts for category /
@@ -170,40 +176,46 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   }, [workoutPreferences?.equipment]);
   const userLocation = workoutPreferences?.location ?? "any";
 
+  // Load existing template when editing. Extracted into a useCallback so the
+  // error-state retry button can re-invoke it without re-running the effect.
+  const loadTemplate = useCallback(async () => {
+    if (!templateId) return;
+    const userId = getCurrentUserId();
+    if (!userId) {
+      setLoadingTemplate(false);
+      return;
+    }
+    setLoadError(false);
+    try {
+      const templates = await workoutTemplateService.getTemplates(userId);
+      const existing = templates.find((t) => t.id === templateId);
+      if (existing) {
+        setWorkoutName(existing.name);
+        setAddedExercises(existing.exercises);
+        setIsEditing(true);
+        // Hydrate Share-to-Community fields from the existing template so
+        // editing a public template preserves its community metadata.
+        setShareToCommunity(existing.isPublic);
+        setShareCategory(existing.category ?? null);
+        setShareDifficulty(existing.difficulty ?? null);
+        setShareTagsInput(
+          existing.tags && existing.tags.length > 0
+            ? existing.tags.join(", ")
+            : "",
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load template for editing:", err);
+      setLoadError(true);
+    } finally {
+      setLoadingTemplate(false);
+    }
+  }, [templateId]);
+
   // Load existing template when editing
   useEffect(() => {
-    if (!templateId) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const userId = getCurrentUserId();
-        if (!userId) return;
-
-        const templates = await workoutTemplateService.getTemplates(userId);
-        const existing = templates.find((t) => t.id === templateId);
-        if (existing && !cancelled) {
-          setWorkoutName(existing.name);
-          setAddedExercises(existing.exercises);
-          setIsEditing(true);
-          // Hydrate Share-to-Community fields from the existing template so
-          // editing a public template preserves its community metadata.
-          setShareToCommunity(existing.isPublic);
-          setShareCategory(existing.category ?? null);
-          setShareDifficulty(existing.difficulty ?? null);
-          setShareTagsInput(
-            existing.tags && existing.tags.length > 0
-              ? existing.tags.join(", ")
-              : "",
-          );
-        }
-      } catch (err) {
-        console.error("Failed to load template for editing:", err);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [templateId]);
+    loadTemplate();
+  }, [loadTemplate]);
 
   const availableExercises = useMemo(() => {
     const all = getCuratedExercises(
@@ -438,6 +450,58 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
       </AnimatedPressable>
     </View>
   );
+
+  // Edit-hydration loading state — only renders when templateId was set (edit
+  // mode). The create-new path has loadingTemplate=false from initialization.
+  if (loadingTemplate) {
+    return (
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex}>
+          <GlassHeader
+            title="Edit Workout"
+            onBack={() => navigation.goBack()}
+            backAccessibilityLabel="Go back"
+          />
+          <View style={styles.loader}>
+            <AuroraSpinner size="lg" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
+  // Edit-hydration error state — only renders when a template fetch failed.
+  // Surfaces a retry CTA instead of leaving the user in a blank editor (which
+  // would risk saving an empty template over the existing one).
+  if (loadError) {
+    return (
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex}>
+          <GlassHeader
+            title="Edit Workout"
+            onBack={() => navigation.goBack()}
+            backAccessibilityLabel="Go back"
+          />
+          <View
+            style={styles.emptyWrap}
+            testID="create-workout-load-error"
+          >
+            <EmptyState
+              icon="cloud-offline-outline"
+              iconColor={colors.error.DEFAULT}
+              title="Couldn't load workout"
+              subtitle="Check your connection and try again."
+              ctaText="Try Again"
+              onCta={() => {
+                setLoadingTemplate(true);
+                loadTemplate();
+              }}
+            />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
 
   return (
     <AuroraBackground theme="space">
@@ -785,6 +849,15 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
   headerSaveBtn: {
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
