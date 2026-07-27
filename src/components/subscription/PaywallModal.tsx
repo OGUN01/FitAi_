@@ -154,7 +154,13 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                 )}
               </View>
 
-              <Pressable onPress={handleDismiss} style={styles.closeBtn}>
+              <Pressable
+                onPress={handleDismiss}
+                accessibilityRole="button"
+                accessibilityLabel="Close paywall"
+                accessibilityHint="Dismisses the subscription screen"
+                style={styles.closeBtn}
+              >
                 <Text style={styles.closeBtnText}>✕</Text>
               </Pressable>
             </View>
@@ -188,6 +194,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             <View style={styles.toggleRow}>
               <Pressable
                 onPress={() => { setBillingCycle("monthly"); setSelectedPlanId(null); }}
+                accessibilityRole="button"
+                accessibilityLabel="Monthly billing"
+                accessibilityState={{ selected: billingCycle === "monthly" }}
                 style={[
                   styles.toggleBtn,
                   billingCycle === "monthly" && styles.toggleBtnActive,
@@ -205,6 +214,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
               <Pressable
                 onPress={() => { setBillingCycle("yearly"); setSelectedPlanId(null); }}
+                accessibilityRole="button"
+                accessibilityLabel="Yearly billing"
+                accessibilityState={{ selected: billingCycle === "yearly" }}
                 style={[
                   styles.toggleBtn,
                   billingCycle === "yearly" && styles.toggleBtnActive,
@@ -268,6 +280,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                     key={plan.id}
                     onPress={() => setSelectedPlanId(plan.id)}
                     disabled={isCurrent}
+                    accessibilityRole="button"
+                    accessibilityLabel={plan.name}
+                    accessibilityState={{ selected: isSelected, disabled: isCurrent }}
                     style={[
                       styles.planCard,
                       isSelected && styles.planCardSelected,
@@ -332,6 +347,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             <Pressable
               onPress={handleSubscribe}
               disabled={isLoading || !effectiveSelectedId || plansUnavailable}
+              accessibilityRole="button"
+              accessibilityLabel="Subscribe"
+              accessibilityState={{ disabled: isLoading || !effectiveSelectedId || plansUnavailable, busy: isLoading }}
               style={[
                 styles.subscribeBtn,
                 (isLoading || !effectiveSelectedId || plansUnavailable) &&
