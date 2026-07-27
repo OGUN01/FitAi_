@@ -92,15 +92,10 @@ jest.mock("../../components/ui", () => ({
   },
 }));
 
-// Real DietScreenHeader, MealPlanView, and MealDetailModal are used; the
-// remaining heavy/visual children are stubbed so the navigation contract is
-// the only thing under test.
-jest.mock("../../components/diet/NutritionSummaryCard", () => {
-  const React = require("react");
-  return {
-    NutritionSummaryCard: () => React.createElement("Text", null, "Nutrition Summary"),
-  };
-});
+// Real DietScreenHeader, CompactDietCard, MealsListView, MealDetailView, and
+// CalorieArc are used; the remaining heavy/visual children are stubbed so the
+// navigation contract is the only thing under test. CompactDietCard's real
+// "View Today" button must render so the onViewToday callback can fire.
 jest.mock("../../components/diet/DietQuickActions", () => {
   const React = require("react");
   return { DietQuickActions: () => React.createElement("Text", null, "Quick Actions") };
@@ -148,15 +143,23 @@ jest.mock("../../utils/responsive", () => ({
   rbr: (v: number) => v,
 }));
 
-jest.mock("../../utils/mealSchedule", () => ({
-  calculateMealSchedule: () => ({
-    breakfast: "7:45 AM",
-    morningSnack: "10:30 AM",
-    lunch: "12:00 PM",
-    afternoonSnack: "3:00 PM",
-    dinner: "8:00 PM",
-  }),
-}));
+// Keep the real getMealTime (used by MealsListView/MealDetailView to render
+// each meal's scheduled time slot) while stubbing calculateMealSchedule so the
+// navigation contract doesn't depend on wake/sleep-derived schedule calc.
+// Spreading requireActual preserves getMealTime, getMealTypeIcon, etc.
+jest.mock("../../utils/mealSchedule", () => {
+  const actual = jest.requireActual("../../utils/mealSchedule");
+  return {
+    ...actual,
+    calculateMealSchedule: () => ({
+      breakfast: "7:45 AM",
+      morningSnack: "10:30 AM",
+      lunch: "12:00 PM",
+      afternoonSnack: "3:00 PM",
+      dinner: "8:00 PM",
+    }),
+  };
+});
 
 jest.mock("../../utils/weekUtils", () => ({
   getLocalDateString: () => "2026-07-24",
@@ -338,32 +341,43 @@ jest.mock("../../hooks/useAIMealGeneration", () => ({
 
 import { DietScreen } from "../../screens/main/DietScreen";
 
-describe("DietScreen dashboard → plan → detail navigation", () => {
-  it("opens the plan and detail surfaces and returns in order", () => {
+describe("DietScreen dashboard → meals list → meal detail navigation", () => {
+  it("opens the meals list and meal detail overlays and returns in order", () => {
     const view = render(
       <DietScreen navigation={{ navigate: jest.fn(), setParams: jest.fn() }} route={{}} />,
     );
 
-    // Dashboard is mounted; the plan is not.
-    expect(view.getByText("Diet")).toBeTruthy();
-    expect(view.queryByText("Today's Plan")).toBeNull();
-    expect(view.getByTestId("main-diet-dashboard")).toBeTruthy();
+    // 1. Dashboard is mounted; the meals-list and meal-detail overlays are not.
+    expect(view.getByText("Nutrition Plan")).toBeTruthy();
+    expect(view.queryByTestId("diet-meals-list-view")).toBeNull();
+    expect(view.queryByTestId("diet-meal-detail-view")).toBeNull();
 
-    // Open the plan from the dashboard date pill.
-    fireEvent.press(view.getByLabelText(/Open .* meal plan/));
-    expect(view.getByText("Today's Plan")).toBeTruthy();
-    expect(view.queryByTestId("main-diet-dashboard")).toBeNull();
+    // 2. Open the meals list via CompactDietCard's "View Today" button.
+    // CompactDietCard renders an AnimatedPressable with
+    // accessibilityLabel="View today's meals" (verified in
+    // src/components/diet/CompactDietCard.tsx) which calls onViewToday.
+    fireEvent.press(view.getByLabelText("View today's meals"));
+    expect(view.getByTestId("diet-meals-list-view")).toBeTruthy();
+    expect(view.getByText("Today's Meals")).toBeTruthy();
 
-    // Open meal details from a plan card.
-    fireEvent.press(view.getByLabelText(`Open ${meal.name}`));
-    expect(view.getByText("Meal Details")).toBeTruthy();
+    // 3. Open meal detail via the meal row (testID "meals-list-row-<meal.id>").
+    fireEvent.press(view.getByTestId(`meals-list-row-${meal.id}`));
+    const mealDetailView = view.getByTestId("diet-meal-detail-view");
+    expect(mealDetailView).toBeTruthy();
+    // MealDetailView header title is meal.name || mealLabel. The meal name
+    // also appears in the MealsListView row behind the overlay (the overlay is
+    // absolute-fill, not unmounted), so assert at least one match rather than
+    // a unique one — the testID above is the authoritative presence check.
+    expect(view.getAllByText(meal.name).length).toBeGreaterThan(0);
 
-    // Detail → Plan.
-    fireEvent.press(view.getByLabelText("Back to meal plan"));
-    expect(view.getByText("Today's Plan")).toBeTruthy();
+    // 4. Detail → Meals list: press the detail back button.
+    fireEvent.press(view.getByTestId("meal-detail-back"));
+    expect(view.queryByTestId("diet-meal-detail-view")).toBeNull();
+    expect(view.getByTestId("diet-meals-list-view")).toBeTruthy();
 
-    // Plan → Dashboard.
-    fireEvent.press(view.getByLabelText("Back to diet dashboard"));
-    expect(view.getByTestId("main-diet-dashboard")).toBeTruthy();
+    // 5. Meals list → Dashboard: press the list back button.
+    fireEvent.press(view.getByTestId("meals-list-back"));
+    expect(view.queryByTestId("diet-meals-list-view")).toBeNull();
+    expect(view.getByText("Nutrition Plan")).toBeTruthy();
   });
 });
