@@ -288,17 +288,16 @@ export const useFitnessStore = create<FitnessState>()(
                   set({ weeklyWorkoutPlan: planWithDbId });
                   return planWithDbId;
                 }
-              } else {
               }
+              // No active plan found, or query returned 0 rows, or plan_data
+              // missing workouts: fall through to return null. The empty-else
+              // branch and the dead `workoutSessions` fallback below were
+              // removed — readWorkoutSessions() was never used to reconstruct a
+              // weekly plan (the comment was aspirational), so fetching it
+              // only wasted a round-trip on every miss.
             }
           } catch (dbError) {
             console.error("❌ Failed to load workout plan from DB:", dbError);
-          }
-
-          // Fallback: Try to load individual workout sessions
-          const workoutSessions = await crudOperations.readWorkoutSessions();
-          if (workoutSessions.length > 0) {
-            // Could reconstruct weekly plan from sessions if needed in the future
           }
 
           return null;
