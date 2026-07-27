@@ -57,28 +57,6 @@ export interface BarcodeSearchDetailedResult {
   error?: string;
 }
 
-interface USDAFood {
-  fdcId: number;
-  description: string;
-  foodNutrients: Array<{
-    nutrientId: number;
-    value: number;
-  }>;
-}
-
-interface OpenFoodFactsProduct {
-  nutriments: {
-    "energy-kcal_100g": number;
-    proteins_100g: number;
-    carbohydrates_100g: number;
-    fat_100g: number;
-    fiber_100g: number;
-    sugars_100g: number;
-    salt_100g: number;
-  };
-  product_name: string;
-}
-
 interface OFFv2Product {
   product_name?: string;
   product_name_en?: string;
@@ -153,11 +131,9 @@ export class FreeNutritionAPIs {
       const nutritionData: NutritionData[] = [];
 
       // Process results
-      results.forEach((result, index) => {
+      results.forEach((result) => {
         if (result.status === "fulfilled" && result.value) {
           nutritionData.push(result.value);
-        } else {
-          const apiNames = ["USDA", "OpenFoodFacts", "FatSecret"];
         }
       });
 
@@ -227,7 +203,7 @@ export class FreeNutritionAPIs {
         307: "sodium", // Sodium
       };
 
-      const nutritionData: any = {
+      const nutritionData: Omit<NutritionData, "source" | "confidence"> & Record<string, number> = {
         calories: 0,
         protein: 0,
         carbs: 0,
@@ -237,7 +213,7 @@ export class FreeNutritionAPIs {
         sodium: 0,
       };
 
-      nutrients.forEach((nutrient: any) => {
+      nutrients.forEach((nutrient: { nutrientId: number; value: number }) => {
         const key =
           nutritionMap[nutrient.nutrientId as keyof typeof nutritionMap];
         if (key) {
@@ -325,18 +301,10 @@ export class FreeNutritionAPIs {
     }
 
     try {
-      const apiKey = this.fatSecretKeys[this.currentFatSecretKeyIndex];
-
-      // FatSecret uses OAuth 1.0, but for simplicity using their basic API
-      // Note: This is a simplified implementation - production would need proper OAuth
-      const searchUrl = `https://platform.fatsecret.com/rest/server.api`;
-      // Manual query string building for React Native compatibility
-      const params = `method=foods.search&search_expression=${encodeURIComponent(foodName)}&format=json&max_results=5`;
-
-      // For now, return null as FatSecret requires complex OAuth implementation
-      // This can be implemented later with proper OAuth 1.0 signing
+      // FatSecret requires OAuth 1.0 signing — not yet implemented.
+      // Return null; key rotation handled in catch on any failure.
       return null;
-    } catch (error) {
+    } catch {
       // Rotate to next key
       this.currentFatSecretKeyIndex =
         (this.currentFatSecretKeyIndex + 1) % this.fatSecretKeys.length;
