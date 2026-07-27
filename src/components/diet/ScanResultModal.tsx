@@ -203,6 +203,8 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
             style={styles.primaryButton}
             activeOpacity={0.8}
             onPress={onAccept}
+            accessibilityRole="button"
+            accessibilityLabel="Accept and log"
           >
             <LinearGradient
               {...toLinearGradientProps(gradients.button.primary)}
@@ -222,6 +224,8 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               style={styles.outlineButton}
               activeOpacity={0.7}
               onPress={onAdjustPortions}
+              accessibilityRole="button"
+              accessibilityLabel="Adjust portions"
             >
               <Ionicons
                 name="resize-outline"
@@ -234,6 +238,8 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               style={styles.outlineButton}
               activeOpacity={0.7}
               onPress={onFeedback}
+              accessibilityRole="button"
+              accessibilityLabel="Feedback"
             >
               <Ionicons
                 name="chatbubble-outline"
@@ -248,6 +254,8 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
             style={styles.cancelButton}
             activeOpacity={0.7}
             onPress={onDismiss}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
           >
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
