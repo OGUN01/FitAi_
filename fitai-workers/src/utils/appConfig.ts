@@ -59,8 +59,8 @@ export async function getAIConfig(env: Env): Promise<AIConfig> {
   try {
     const cached = await env.RATE_LIMIT_KV.get<AIConfig>(AI_CONFIG_CACHE_KEY, 'json');
     if (cached) return cached;
-  } catch {
-    // KV unavailable — fall through to DB
+  } catch (kvReadError) {
+    console.warn('[AppConfig] KV read failed for AI config — falling through to DB:', kvReadError);
   }
 
   // Fetch from Supabase
@@ -88,14 +88,14 @@ export async function getAIConfig(env: Env): Promise<AIConfig> {
           JSON.stringify(config),
           { expirationTtl: AI_CONFIG_TTL_SECONDS },
         );
-      } catch {
-        // Ignore KV write errors
+      } catch (kvWriteError) {
+        console.warn('[AppConfig] KV write failed for AI config:', kvWriteError);
       }
 
       return config;
     }
-  } catch {
-    // DB unavailable — return defaults below
+  } catch (dbError) {
+    console.warn('[AppConfig] DB read failed for AI config — returning defaults:', dbError);
   }
 
   // Hard-coded defaults
@@ -114,8 +114,8 @@ export async function getPublicAppConfig(env: Env): Promise<PublicAppConfig> {
   try {
     const cached = await env.RATE_LIMIT_KV.get<PublicAppConfig>(PUBLIC_CONFIG_CACHE_KEY, 'json');
     if (cached) return cached;
-  } catch {
-    // KV unavailable — fall through to DB
+  } catch (kvReadError) {
+    console.warn('[AppConfig] KV read failed for public config — falling through to DB:', kvReadError);
   }
 
   try {
@@ -153,14 +153,14 @@ export async function getPublicAppConfig(env: Env): Promise<PublicAppConfig> {
           JSON.stringify(config),
           { expirationTtl: PUBLIC_CONFIG_TTL_SECONDS },
         );
-      } catch {
-        // Ignore KV write errors
+      } catch (kvWriteError) {
+        console.warn('[AppConfig] KV write failed for public config:', kvWriteError);
       }
 
       return config;
     }
-  } catch {
-    // DB unavailable — return defaults below
+  } catch (dbError) {
+    console.warn('[AppConfig] DB read failed for public config — returning defaults:', dbError);
   }
 
   return {
@@ -181,15 +181,15 @@ export async function getPublicAppConfig(env: Env): Promise<PublicAppConfig> {
 export async function invalidateAIConfigCache(env: Env): Promise<void> {
   try {
     await env.RATE_LIMIT_KV.delete(AI_CONFIG_CACHE_KEY);
-  } catch {
-    // Ignore
+  } catch (kvError) {
+    console.warn('[AppConfig] KV delete failed for AI config cache invalidation:', kvError);
   }
 }
 
 export async function invalidatePublicAppConfigCache(env: Env): Promise<void> {
   try {
     await env.RATE_LIMIT_KV.delete(PUBLIC_CONFIG_CACHE_KEY);
-  } catch {
-    // Ignore
+  } catch (kvError) {
+    console.warn('[AppConfig] KV delete failed for public config cache invalidation:', kvError);
   }
 }

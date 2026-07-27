@@ -149,7 +149,8 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 					planFeatures = extractFeatures(planRow);
 				}
 			}
-		} catch {
+		} catch (gateError) {
+			console.error('[SubscriptionGate] Subscription lookup threw:', gateError);
 			return c.json(
 				{
 					success: false,
@@ -171,7 +172,8 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 
 		try {
 			limitCheck = await checkUsageLimit(c.env, userId, featureKey, periodType, planFeatures!);
-		} catch {
+		} catch (usageError) {
+			console.error('[SubscriptionGate] Usage limit check threw:', usageError);
 			return c.json(
 				{
 					success: false,

@@ -58,8 +58,8 @@ export async function resolveMealImage(
 			// don't hit Wikimedia again for this name.
 			return cached || undefined;
 		}
-	} catch {
-		// KV read failure — proceed to live lookup (non-fatal)
+	} catch (kvReadError) {
+		console.warn('[MealImageResolver] KV read failed for', normalized, '— proceeding to live lookup:', kvReadError);
 	}
 
 	// 2. Live Wikimedia Commons search — try the full name, then progressively
@@ -78,8 +78,8 @@ export async function resolveMealImage(
 		await env.MEAL_CACHE.put(cacheKey, imageUrl ?? '', {
 			expirationTtl: KV_CACHE_TTL,
 		});
-	} catch {
-		// KV write failure — non-fatal, we just won't cache this lookup
+	} catch (kvWriteError) {
+		console.warn('[MealImageResolver] KV write failed for', normalized, '— non-fatal, lookup result not cached:', kvWriteError);
 	}
 
 	return imageUrl;
