@@ -271,7 +271,8 @@ const styles = StyleSheet.create({
     gap: rp(6),
   },
   macroPill: {
-    flex: 1,
+    flexBasis: "47%",
+    flexGrow: 0,
     minWidth: rw(64),
     borderRadius: rbr(borderRadius.md),
     paddingHorizontal: rp(8),
