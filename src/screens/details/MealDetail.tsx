@@ -20,6 +20,7 @@ import { MealInfoCard } from "../../components/details/MealInfoCard";
 import { FoodItemsList } from "../../components/details/FoodItemsList";
 import { MealInsights } from "../../components/details/MealInsights";
 import { MealActions } from "../../components/details/MealActions";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface MealDetailProps {
   mealId: string;
@@ -111,6 +112,20 @@ export const MealDetail: React.FC<MealDetailProps> = ({
         <FoodItemsList foods={meal.foods} />
 
         <MealInsights insights={insights} notes={meal.notes} />
+
+        <Button
+          title="Log this meal"
+          onPress={() => {
+            crossPlatformAlert(
+              "Meal Logged",
+              `${meal.name} (${meal.totalCalories} cal) added to your daily intake.`
+            );
+          }}
+          variant="primary"
+          size="lg"
+          style={styles.logCta}
+          accessibilityLabel="Log this meal"
+        />
       </ScrollView>
 
       {(onEdit || onDelete) && <MealActions onEdit={onEdit} onDelete={onDelete} />}
@@ -138,5 +153,9 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     marginBottom: rp(spacing.md),
+  },
+  logCta: {
+    marginTop: rp(spacing.md),
+    marginBottom: rp(spacing.sm),
   },
 });

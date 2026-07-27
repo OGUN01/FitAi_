@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
 
   caloriesValue: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.xxl,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
     fontVariant: ['tabular-nums'],
