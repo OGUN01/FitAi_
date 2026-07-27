@@ -346,7 +346,7 @@ class SyncEngine {
 
     if (error && error.code !== "PGRST116") {
       // PGRST116 = no rows found, which is fine
-      console.warn(
+      console.error(
         `[SyncEngine] Failed to fetch remote data for ${type}:`,
         error.message,
       );

@@ -157,7 +157,7 @@ export class NutritionRefreshService {
 
         return stats;
       } else {
-        console.warn("⚠️ Failed to get daily nutrition:", response.error);
+        console.error("⚠️ Failed to get daily nutrition:", response.error);
         return {
           calories: 0,
           protein: 0,

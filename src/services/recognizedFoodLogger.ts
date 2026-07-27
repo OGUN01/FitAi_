@@ -369,7 +369,7 @@ export class RecognizedFoodLogger {
         console.error("Failed to store meal recognition metadata:", metaError);
       }
     } catch (error) {
-      console.warn("Warning: Failed to store recognition metadata:", error);
+      console.error("Warning: Failed to store recognition metadata:", error);
     }
   }
 
