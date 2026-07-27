@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   StyleProp,
   ViewStyle,
   useWindowDimensions,
@@ -12,6 +11,7 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { ChartTooltip } from "../ui/ChartTooltip";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { hapticSelection } from "../../utils/haptics";
 import { rh } from "../../utils/responsive";
 
@@ -159,12 +159,12 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   const trend = getTrend();
 
   // Handle data point click (debounced to 300ms to prevent rapid-tap duplicates)
-  const handleDataPointClick = (data: any) => {
+  const handleDataPointClick = (payload: any) => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) return;
     lastTapRef.current = now;
 
-    const { value, index, x, y } = data;
+    const { value, index, x, y } = payload;
 
     hapticSelection();
 

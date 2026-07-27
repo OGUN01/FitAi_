@@ -73,16 +73,18 @@ export const useMigrationProgress = (
   );
   const [pulseAnimation] = useState(new Animated.Value(1));
   const [celebrationAnimation] = useState(new Animated.Value(0));
-  const loopsRef = useRef<Animated.CompositeAnimation[]>([]);
+  const animationsRef = useRef<Animated.CompositeAnimation[]>([]);
 
   // Progress bar animation
   useEffect(() => {
     if (progress) {
-      Animated.timing(progressAnimation, {
+      const progressAnim = Animated.timing(progressAnimation, {
         toValue: progress.percentage / 100,
         duration: 500,
         useNativeDriver: false,
-      }).start();
+      });
+      progressAnim.start();
+      animationsRef.current.push(progressAnim);
 
       // Animate current step
       const currentStepIndex = MIGRATION_STEPS.findIndex(
@@ -91,14 +93,15 @@ export const useMigrationProgress = (
 
       if (currentStepIndex >= 0) {
         // Animate completed steps
-        const loops: Animated.CompositeAnimation[] = [];
         stepAnimations.forEach((animation, index) => {
           if (index < currentStepIndex) {
-            Animated.timing(animation, {
+            const stepAnim = Animated.timing(animation, {
               toValue: 1,
               duration: 300,
               useNativeDriver: true,
-            }).start();
+            });
+            stepAnim.start();
+            animationsRef.current.push(stepAnim);
           } else if (index === currentStepIndex) {
             // Pulse current step
             const loop = Animated.loop(
@@ -115,20 +118,22 @@ export const useMigrationProgress = (
                 }),
               ]),
             );
-            loops.push(loop);
             loop.start();
+            animationsRef.current.push(loop);
           }
         });
-        loopsRef.current = loops;
       }
     }
-    return () => { loopsRef.current.forEach(l => l.stop()); };
+    return () => {
+      animationsRef.current.forEach(a => a.stop());
+      animationsRef.current = [];
+    };
   }, [progress]);
 
   // Celebration animation
   useEffect(() => {
     if (result?.success) {
-      Animated.sequence([
+      const celebration = Animated.sequence([
         Animated.timing(celebrationAnimation, {
           toValue: 1,
           duration: 800,
@@ -139,7 +144,9 @@ export const useMigrationProgress = (
           duration: 400,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+      celebration.start();
+      return () => { celebration.stop(); };
     }
   }, [result]);
 
