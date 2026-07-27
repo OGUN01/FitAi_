@@ -56,9 +56,11 @@ import { rp, rf, dimensions } from "../../../utils/responsive";
 
 // Clamped screen height from responsive.ts (capped to 900 on web/tablet so the
 // sheet sizes against the mobile design height, not a 1080px desktop window).
-// `dimensions` already has its own fallback when Dimensions is mocked (jest),
-// so it is safe to import in test environments that stub react-native.
-const SCREEN_HEIGHT = dimensions.screenHeight;
+// NOTE: do NOT read `dimensions.screenHeight` at module load — several Jest
+// suites mock `@/utils/responsive` without exporting `dimensions`, so the
+// import is `undefined` at module-load and a top-level read throws. We read
+// it lazily inside the component body via `getScreenHeight()` instead.
+const getScreenHeight = (): number => dimensions.screenHeight;
 const DISMISS_THRESHOLD = 120; // px dragged before dismissing
 
 export interface BottomSheetProps {
@@ -100,6 +102,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   testID,
 }) => {
   const insets = useSafeAreaInsets();
+  // Lazy screen-height read — evaluated on first render, NOT at module load.
+  const SCREEN_HEIGHT = getScreenHeight();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacitySV = useSharedValue(0);
 
