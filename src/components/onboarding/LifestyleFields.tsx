@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { GlassCard } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../utils/responsive";import { PersonalInfoData } from "../../types/onboarding";
+import { rf } from "../../utils/responsive";import { PersonalInfoData } from "../../types/onboarding";
 import TimePicker from "./TimePicker";
 
 interface LifestyleFieldsProps {
@@ -36,7 +36,6 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
   actions,
 }) => {
   const {
-    updateField,
     handleTimeChange,
     calculateSleepDuration,
     setShowWakeTimePicker,
@@ -233,56 +232,6 @@ const styles = StyleSheet.create({
   },
   sectionBottomPad: {
     height: spacing.lg,
-  },
-  scrollContainerInset: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    overflow: "hidden",
-    borderRadius: borderRadius.md,
-  },
-  scrollContentInset: {
-    paddingVertical: spacing.sm,
-    gap: rw(10),
-  },
-  activityCardItem: {
-    width: rw(105),
-  },
-  activityCard: {
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.sm,
-    minHeight: rh(12),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activityCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  activityIconContainer: {
-    width: rf(44),
-    height: rf(44),
-    borderRadius: rf(22),
-    backgroundColor: colors.backgroundSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.xs,
-  },
-  activityIconContainerSelected: {
-    backgroundColor: `${colors.primary}20`,
-  },
-  activityCardTitle: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(14),
-  },
-  activityCardTitleSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
   },
   errorText: {
     color: colors.error,
