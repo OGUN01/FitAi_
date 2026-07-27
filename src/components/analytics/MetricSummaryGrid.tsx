@@ -101,8 +101,8 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({
 
   // Get color based on streak length
   const getStreakColor = () => {
-    if (days >= 30) return [colors.gold, "#FFA500"]; // Gold for 30+
-    if (days >= 14) return [colors.errorLight, "#FF8E53"]; // Red-orange for 14+
+    if (days >= 30) return [colors.gold, colors.orange]; // Gold for 30+
+    if (days >= 14) return [colors.errorLight, colors.primary]; // Red-orange for 14+
     if (days >= 7) return [colors.success, colors.successLight]; // Green for 7+
     return [colors.primary, colors.accent]; // Aurora primary for starting
   };
@@ -123,7 +123,7 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.1)"
+          stroke={colors.glassSurface}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
