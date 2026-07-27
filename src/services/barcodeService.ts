@@ -425,7 +425,7 @@ class BarcodeService {
         }
       } catch (dbLookupError) {
         sawRetryableFailure = true;
-        console.warn(
+        console.error(
           "DB barcode lookup failed, falling back to live API:",
           dbLookupError,
         );
@@ -481,7 +481,7 @@ class BarcodeService {
             p_is_ai_estimated: scannedProduct.isAIEstimated ?? false,
           })
           .then(undefined, (e: unknown) =>
-            console.warn("upsert_barcode_cache failed:", e),
+            console.error("upsert_barcode_cache failed:", e),
           );
 
         return this.buildLookupResult(
