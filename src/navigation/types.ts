@@ -18,16 +18,6 @@ export type RootStackParamList = {
   PasswordReset: { token?: string };
 };
 
-/**
- * Auth deep-link target screens. These are rendered as conditional overlays
- * from App.tsx (the app does not use React Navigation for the auth stack —
- * auth screens are conditionally rendered above the Welcome/Onboarding/Main
- * flow). This param list is consumed by `useAuthDeepLinks` + App.tsx state.
- */
-export type AuthStackParamList = {
-  PasswordReset: { token?: string };
-};
-
 export type OnboardingStackParamList = {
   PersonalInfo: undefined;
   WorkoutPreferences: undefined;
