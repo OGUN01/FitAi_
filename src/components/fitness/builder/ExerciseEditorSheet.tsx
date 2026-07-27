@@ -45,16 +45,13 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
-  interpolate,
   FadeIn,
   FadeOut,
   Layout,
 } from "react-native-reanimated";
 import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { GlassCard } from "../../ui/aurora/GlassCard";
-import { GlassButton } from "../../ui/aurora/GlassButton";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 import { Slider } from "../../ui/Slider";
 import { SegmentedControl, SegmentOption } from "../../ui/SegmentedControl";
@@ -65,7 +62,7 @@ import { SetRow } from "./SetRow";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { useAnalyticsStore } from "../../../stores/analyticsStore";
 import { CURATED_EXERCISES } from "../../../data/curatedExercises";
-import { animations, duration } from "../../../theme/animations";
+import { duration } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 import {
@@ -123,8 +120,6 @@ const RPE_LABELS: Record<number, string> = {
 export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
   testID,
 }) => {
-  const reduceMotion = useReducedMotion();
-
   // ── Store subscriptions ──
   const editorOpen = useWorkoutBuilderStore((s) => s.editorOpen);
   const editorContext = useWorkoutBuilderStore((s) => s.editorContext);
