@@ -29,7 +29,6 @@ import type {
 import type {
   WeeklyMealPlan,
   WeeklyWorkoutPlan,
-  Meal,
   DayMeal,
   Workout,
 } from "../types/ai";
@@ -435,37 +434,6 @@ const EQUIPMENT_MAP: Record<string, string> = {
 };
 
 /**
- * Map onboarding workout preferences to API workout type
- * Onboarding: What user LIKES (strength, cardio, yoga)
- * API: What workout to GENERATE (full_body, upper_body, cardio, etc.)
- */
-const WORKOUT_TYPE_MAP: Record<string, string> = {
-  strength: "full_body",
-  cardio: "cardio",
-  hiit: "full_body", // HIIT is full body with intensity
-  yoga: "full_body", // Yoga → full body, not just core
-  pilates: "full_body", // Pilates → full body functional movement
-  flexibility: "full_body", // Flexibility training → full body
-  functional: "full_body",
-  sports: "full_body",
-  dance: "cardio",
-  "martial-arts": "full_body",
-
-  // Already correct format
-  full_body: "full_body",
-  upper_body: "upper_body",
-  lower_body: "lower_body",
-  push: "push",
-  pull: "pull",
-  legs: "legs",
-  chest: "chest",
-  back: "back",
-  shoulders: "shoulders",
-  arms: "arms",
-  core: "core",
-};
-
-/**
  * Transform frontend types to WorkoutGenerationRequest for backend
  *
  * IMPORTANT: This function maps onboarding data to Workers API format:
@@ -517,8 +485,7 @@ export function transformForWorkoutRequest(
   // Get physical limitations/injuries
   const injuries = bodyMetrics?.physical_limitations || [];
 
-  // ✅ CRITICAL: Get medical conditions and medications
-  const medicalConditions = bodyMetrics?.medical_conditions || [];
+  // ✅ CRITICAL: Get medications
   const medications = bodyMetrics?.medications || [];
 
   // ✅ CRITICAL: Get pregnancy/breastfeeding status
@@ -539,7 +506,7 @@ export function transformForWorkoutRequest(
 
   const weeklyPlan = {
     workoutsPerWeek: workoutsPerWeek ?? 3,
-    preferredDays: preferredDays,
+    preferredDays,
     workoutTypes: workoutPreferences?.workout_types || [],
     prefersVariety: workoutPreferences?.prefers_variety || false,
     // Pass activity_level through UNMAPPED. The workout worker's Zod enum
@@ -549,7 +516,7 @@ export function transformForWorkoutRequest(
     // inside the worker treats 'extreme' as an alias for 'very_active', so the
     // raw onboarding value is correct at this boundary. (Diet path still maps.)
     activityLevel: workoutPreferences?.activity_level ?? undefined,
-    preferredWorkoutTime: preferredWorkoutTime, // ✅ NEW
+    preferredWorkoutTime, // ✅ NEW
   };
   const resolvedCurrentWeight = resolveCurrentWeight({
     bodyAnalysisWeight:
@@ -583,23 +550,23 @@ export function transformForWorkoutRequest(
       weight: resolvedCurrentWeight.value ?? personalInfo.weight ?? undefined,
       height: bodyMetrics?.height_cm ?? personalInfo.height ?? undefined,
       fitnessGoal: primaryGoal,
-      experienceLevel: experienceLevel,
+      experienceLevel,
       availableEquipment: equipment,
       // Base strength session duration — does NOT include boost cardio minutes.
       // The boost cardio component is passed separately as boostExtraCardioMinutes
       // so the rule-based generator can produce explicit cardio exercise blocks
       // with accurate per-component calorie estimates.
       workoutDuration: options?.duration ?? (workoutPreferences?.time_preference ?? 45),
-      injuries: injuries,
-      medications: medications,
+      injuries,
+      medications,
       // GAP-04: medicalConditions and stressLevel were missing — Worker safety filter needs them
       medicalConditions: bodyMetrics?.medical_conditions ?? [],
       stressLevel: (bodyMetrics?.stress_level as 'low' | 'moderate' | 'high' | undefined),
-      pregnancyStatus: pregnancyStatus,
-      pregnancyTrimester: pregnancyTrimester,
-      breastfeedingStatus: breastfeedingStatus,
+      pregnancyStatus,
+      pregnancyTrimester,
+      breastfeedingStatus,
     },
-    weeklyPlan: weeklyPlan,
+    weeklyPlan,
     // H13: Fitness Assessment (Priority 1 - concrete ability indicators)
     fitnessAssessment: {
       pushupCount: workoutPreferences?.can_do_pushups ?? 0,
