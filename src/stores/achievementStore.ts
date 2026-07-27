@@ -372,8 +372,6 @@ export const useAchievementStore = create<AchievementStore>()(
 
         achievementInitializationPromise = (async () => {
           try {
-            console.log("🎯 Initializing achievement store...");
-
             // Initialize the achievement engine
             await achievementEngine.initialize();
 
@@ -414,8 +412,6 @@ export const useAchievementStore = create<AchievementStore>()(
                   });
                 }
 
-                console.log(`🏆 Achievement unlocked: ${achievement.title}`);
-
                 // Sync newly unlocked achievement to Supabase
                 achievementDataService
                   .saveUserAchievement(userId, userAchievement)
@@ -442,10 +438,6 @@ export const useAchievementStore = create<AchievementStore>()(
             // SSOT Fix 19: seed currentStreak immediately from live completedSessions
             get().updateCurrentStreak();
             await get().reconcileWithCurrentData(userId);
-
-            console.log(
-              `✅ Achievement store initialized with ${achievements.length} achievements`,
-            );
 
             // Load and merge achievements from Supabase (for returning users)
             // This runs async after local init to not block the UI
@@ -499,10 +491,7 @@ export const useAchievementStore = create<AchievementStore>()(
                   : state.unlockedToday,
             });
 
-            if (newlyUnlocked.length > 0)
-              console.log(
-                `🎉 ${newlyUnlocked.length} new achievements unlocked!`,
-              );
+            // newlyUnlocked is reflected in the set() above; no further action needed.
           }
         } catch (error) {
           console.error("❌ Error checking achievement progress:", error);
@@ -729,7 +718,6 @@ export const useAchievementStore = create<AchievementStore>()(
       syncWithSupabase: async (userId: string) => {
         try {
           const state = get();
-          console.log("☁️ Syncing achievements to Supabase...");
 
           const result = await achievementDataService.saveAllAchievements(
             userId,
@@ -737,7 +725,7 @@ export const useAchievementStore = create<AchievementStore>()(
           );
 
           if (result.success) {
-            console.log(`✅ Synced ${result.synced} achievements to Supabase`);
+            // success path — no debug telemetry in production
           } else {
             console.warn(
               `⚠️ Achievement sync had errors: ${result.errors.join(", ")}`,
@@ -765,8 +753,6 @@ export const useAchievementStore = create<AchievementStore>()(
       // the guest's earned progress survives the login transition.
       loadFromSupabase: async (userId: string) => {
         try {
-          console.log("☁️ Loading achievements from Supabase...");
-
           // P1-20: guest→user transition. If the store was previously
           // initialized for a guest (guest-earned achievements live under the
           // guest key in the engine + store), migrate that progress to the
@@ -846,10 +832,6 @@ export const useAchievementStore = create<AchievementStore>()(
               totalFitCoinsEarned: totalFitCoins,
               completionRate,
             });
-
-            console.log(
-              `✅ Loaded and merged ${cloudAchievements.size} achievements from Supabase`,
-            );
           }
 
           // Offline recovery + guest migration push: push any locally-completed
