@@ -21,6 +21,11 @@ export class NetworkManager {
         }
       });
     } catch (error) {
+      // NetInfo init failure is non-fatal (default isOnline=true keeps the app
+      // usable) but MUST be logged per CLAUDE.md #5 — a silent swallow here would
+      // hide a broken network-detection layer and leave the app falsely reporting
+      // "online" with no trace of why.
+      console.error("[offline/network] NetworkManager.initialize failed — defaulting isOnline=true:", error);
     }
   }
 
