@@ -581,31 +581,3 @@ export function generateGentleMovementFallback(
 		totalEstimatedCalories: 200,
 	};
 }
-
-// ============================================================================
-// PERFORMANCE MONITORING
-// ============================================================================
-
-/**
- * Wrapper with performance monitoring
- */
-export async function generateRuleBasedWorkoutWithMetrics(
-	request: WorkoutGenerationRequest,
-): Promise<{ response: WorkoutResponse; metrics: any }> {
-	// Note: Cloudflare Workers don't have process.memoryUsage()
-	// Use performance.now() for timing only
-	const startTime = performance.now();
-
-	const response = await generateRuleBasedWorkout(request);
-
-	const endTime = performance.now();
-
-	const metrics = {
-		durationMs: Math.round(endTime - startTime),
-		workoutsGenerated: response.workouts.length,
-		totalExercises: response.workouts.reduce((sum, w) => sum + w.workout.exercises.length, 0),
-		timestamp: new Date().toISOString(),
-	};
-
-	return { response, metrics };
-}
