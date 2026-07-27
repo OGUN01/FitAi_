@@ -241,7 +241,6 @@ class FoodRecognitionService {
    */
   clearCache(): void {
     this.cache.clear();
-    console.log("🗑️ Food recognition cache cleared");
   }
 }
 
