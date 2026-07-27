@@ -21,31 +21,8 @@ import type { SettingItem } from "../screens/main/profile";
 const STORAGE_KEY_UNITS = "@fitai_units_preference";
 export type UnitsPreference = "metric" | "imperial";
 
-function getSubscriptionSubtitle(
-  tier: string | undefined,
-  status: string | null | undefined,
-): string {
-  if (!tier || tier === "free") {
-    return "Free tier - view plans and premium benefits";
-  }
-
-  if (status === "cancelled") {
-    return "Cancellation scheduled - review billing and access";
-  }
-
-  if (status === "paused") {
-    return "Paused - resume or adjust your subscription";
-  }
-
-  if (status === "authenticated" || status === "pending") {
-    return "Payment received - premium access is still being confirmed";
-  }
-
-  return `Current tier: ${tier.charAt(0).toUpperCase() + tier.slice(1)} - manage billing and premium access`;
-}
-
 export const useProfileLogic = () => {
-  const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
+  const { user, isAuthenticated, isGuestMode, logout } = useAuth();
   const rawProfile = useUserStore((s) => s.profile);
   const clearProfile = useUserStore((s) => s.clearProfile);
   const userStats = useUnifiedStats();
@@ -335,7 +312,7 @@ export const useProfileLogic = () => {
             "Syncing...",
             "Fetching latest data from Health Connect.",
           );
-          syncFromHealthConnect(7).catch((e: any) =>
+          syncFromHealthConnect(7).catch((e: unknown) =>
             console.warn("[useProfileLogic] Health sync failed:", e),
           );
         } else if (isHealthKitAuthorized) {
@@ -343,7 +320,7 @@ export const useProfileLogic = () => {
             "Syncing...",
             "Fetching latest data from HealthKit.",
           );
-          syncHealthData(true).catch((e: any) =>
+          syncHealthData(true).catch((e: unknown) =>
             console.warn("[useProfileLogic] HealthKit sync failed:", e),
           );
         } else {
@@ -422,7 +399,7 @@ export const useProfileLogic = () => {
   // Check profile completion
   const isProfileIncomplete = (section: string): boolean => {
     switch (section) {
-      case "personal-info":
+      case "personal-info": {
         // SSOT: profileStore.personalInfo is authoritative (onboarding_data table)
         // Compute name from first+last fields first, then fall back to name field, then userStore
         const profileName =
@@ -435,13 +412,15 @@ export const useProfileLogic = () => {
         const resolvedAge =
           profileStorePersonalInfo?.age || profile?.personalInfo?.age;
         return !resolvedName || !resolvedAge;
-      case "goals":
+      }
+      case "goals": {
         // SSOT: profileStore.workoutPreferences.primary_goals is authoritative; profile.fitnessGoals is legacy fallback
         const resolvedGoals =
           useProfileStore.getState().workoutPreferences?.primary_goals ||
           profile?.fitnessGoals?.primary_goals;
         return !resolvedGoals || resolvedGoals.length === 0;
-      case "measurements":
+      }
+      case "measurements": {
         // SSOT: height from profileStore.bodyAnalysis; weight from the
         // canonical cross-store resolver (manual log > body analysis), not
         // bodyAnalysis.current_weight_kg alone (stale when a manual log exists).
@@ -451,6 +430,7 @@ export const useProfileLogic = () => {
             bodyAnalysisWeight: bodyAnalysis?.current_weight_kg ?? null,
           }).value ?? null;
         return !height || !weight;
+      }
       default:
         return false;
     }
