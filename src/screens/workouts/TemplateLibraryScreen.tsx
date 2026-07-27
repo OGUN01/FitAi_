@@ -15,6 +15,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
+// NOTE: Pressable intentionally removed — all interactive buttons use AnimatedPressable.
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
