@@ -422,15 +422,13 @@ export class EnhancedLocalStorageService {
     fromVersion: string,
     toVersion: string,
   ): Promise<void> {
-    console.log(`🔄 Migrating schema from ${fromVersion} to ${toVersion}`);
+    logger.info(`Migrating schema from ${fromVersion} to ${toVersion}`);
 
     const schema = await this.retrieveDataDuringInit<LocalStorageSchema>(
       STORAGE_KEYS.SCHEMA,
     );
     if (!schema) {
-      console.warn(
-        "⚠️ No schema found during migration, initializing fresh schema",
-      );
+      logger.warn("No schema found during migration, initializing fresh schema");
       await this.initializeSchema();
       return;
     }
@@ -508,7 +506,7 @@ export class EnhancedLocalStorageService {
         const migrationFn = migrations[migrationKey];
 
         if (migrationFn) {
-          console.log(`  📦 Applying migration: ${migrationKey}`);
+          logger.info(`Applying migration: ${migrationKey}`);
           try {
             migratedSchema = migrationFn(migratedSchema);
             migrationsApplied++;
@@ -517,13 +515,13 @@ export class EnhancedLocalStorageService {
             // Continue with remaining migrations
           }
         } else {
-          console.log(`  ⏭️ No migration needed for: ${migrationKey}`);
+          logger.debug(`No migration needed for: ${migrationKey}`);
         }
       }
     } else {
       // Version not in known list - just update version number
-      console.log(
-        `  ⚠️ Unknown version path ${fromVersion} -> ${toVersion}, updating version only`,
+      logger.warn(
+        `Unknown version path ${fromVersion} -> ${toVersion}, updating version only`,
       );
     }
 
@@ -534,10 +532,10 @@ export class EnhancedLocalStorageService {
     // Save migrated schema
     await this.storeDataDuringInit(STORAGE_KEYS.SCHEMA, migratedSchema);
 
-    console.log(
-      `✅ Schema migration complete: ${migrationsApplied} migrations applied`,
+    logger.info(
+      `Schema migration complete: ${migrationsApplied} migrations applied`,
     );
-    console.log(`   Version updated: ${fromVersion} -> ${toVersion}`);
+    logger.info(`Version updated: ${fromVersion} -> ${toVersion}`);
   }
 
   // ============================================================================
