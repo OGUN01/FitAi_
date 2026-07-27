@@ -57,6 +57,14 @@ import {
   DietPreferences,
   WorkoutPreferences,
 } from "../types/profileData";
+import type {
+  OnboardingData,
+  WorkoutSession,
+  MealLog,
+  BodyMeasurement,
+  LocalStorageSchema,
+  UserPreferences,
+} from "../types/localData";
 
 // ============================================================================
 // TYPES
@@ -69,8 +77,8 @@ interface DataBridgeConfig {
 
 interface ShadowModeDiscrepancy {
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   timestamp: string;
 }
 
@@ -85,9 +93,9 @@ interface ShadowModeReport {
 interface AllDataResult {
   personalInfo: PersonalInfoData | PersonalInfo | null;
   dietPreferences: DietPreferencesData | DietPreferences | null;
-  bodyAnalysis: BodyAnalysisData | any | null;
+  bodyAnalysis: BodyAnalysisData | null;
   workoutPreferences: WorkoutPreferencesData | WorkoutPreferences | null;
-  advancedReview: AdvancedReviewData | any | null;
+  advancedReview: AdvancedReviewData | null;
   source: "old_system" | "new_system" | "merged" | "local" | "database";
   failedSections?: string[];
 }
@@ -103,11 +111,104 @@ interface MigrationResult {
   success: boolean;
   migratedKeys: string[];
   errors: string[];
-  oldSystemMigration?: any;
-  newSystemMigration?: any;
+  oldSystemMigration?: Record<string, unknown>;
+  newSystemMigration?: Record<string, unknown>;
   // NEW: Track local vs remote sync separately for 100% sync precision
   localSyncKeys?: string[];
   remoteSyncKeys?: string[];
+}
+
+// Legacy onboarding body-analysis shape persisted by older app versions.
+// Used only by the guest->user migration transform to map old field names onto
+// the canonical BodyAnalysisData. All fields optional because legacy payloads
+// were assembled incrementally and rarely contained every field.
+interface LegacyBodyAnalysisInput {
+  measurements?: {
+    height?: number;
+    height_cm?: number;
+    weight?: number;
+    current_weight_kg?: number;
+    targetWeight?: number;
+    target_weight_kg?: number;
+    targetTimeline?: number;
+    target_timeline_weeks?: number;
+    bodyFat?: number;
+    body_fat_percentage?: number;
+    waist?: number;
+    waist_cm?: number;
+    hips?: number;
+    hip_cm?: number;
+    chest?: number;
+    chest_cm?: number;
+  };
+  photos?: { front?: string; side?: string; back?: string };
+  aiAnalysis?: {
+    estimatedBodyFat?: number;
+    bodyType?: "ectomorph" | "mesomorph" | "endomorph";
+    confidence?: number;
+  };
+  medicalConditions?: string[];
+  medical_conditions?: string[];
+  medications?: string[];
+  physicalLimitations?: string[];
+  physical_limitations?: string[];
+  pregnancyStatus?: boolean;
+  pregnancy_status?: boolean;
+  breastfeedingStatus?: boolean;
+  breastfeeding_status?: boolean;
+  stressLevel?: "low" | "moderate" | "high";
+  stress_level?: "low" | "moderate" | "high";
+}
+
+// Legacy onboarding workout-preferences shape persisted by older app versions.
+// Used only by the guest->user migration transform to map old field names onto
+// the canonical WorkoutPreferencesData.
+interface LegacyWorkoutPreferencesInput {
+  location?: "home" | "gym" | "both";
+  equipment?: string[];
+  time_preference?: number;
+  timePreference?: number;
+  timeCommitment?: string | number;
+  time_commitment?: string | number;
+  experience_level?: "beginner" | "intermediate" | "advanced";
+  experienceLevel?: "beginner" | "intermediate" | "advanced";
+  intensity?: "beginner" | "intermediate" | "advanced";
+  workoutTypes?: string[];
+  workout_types?: string[];
+  primary_goals?: string[];
+  primaryGoals?: string[];
+  activity_level?: string;
+  activityLevel?: string;
+  workout_experience_years?: number;
+  experienceYears?: number;
+  workout_frequency_per_week?: number;
+  workoutsPerWeek?: number;
+  can_do_pushups?: number;
+  canDoPushups?: number;
+  can_run_minutes?: number;
+  canRunMinutes?: number;
+  flexibility_level?: "poor" | "fair" | "good" | "excellent";
+  flexibilityLevel?: "poor" | "fair" | "good" | "excellent";
+  weekly_weight_loss_goal?: number;
+  weeklyWeightLossGoal?: number;
+  original_weekly_rate?: number;
+  originalWeeklyRate?: number;
+  boost_extra_cardio_minutes?: number;
+  boostExtraCardioMinutes?: number;
+  preferred_workout_times?: string[];
+  preferredWorkoutTimes?: string[];
+  enjoys_cardio?: boolean;
+  enjoysCardio?: boolean;
+  enjoys_strength_training?: boolean;
+  enjoysStrengthTraining?: boolean;
+  enjoys_group_classes?: boolean;
+  enjoysGroupClasses?: boolean;
+  prefers_outdoor_activities?: boolean;
+  prefersOutdoorActivities?: boolean;
+  needs_motivation?: boolean;
+  needsMotivation?: boolean;
+  prefers_variety?: boolean;
+  prefersVariety?: boolean;
 }
 
 // Storage keys
@@ -809,10 +910,12 @@ class DataBridge {
    * Transform old onboarding format to new database format
    * Handles nested structures like bodyAnalysis.measurements
    */
-  private transformBodyAnalysisForDB(data: any): BodyAnalysisData {
+  private transformBodyAnalysisForDB(
+    data: LegacyBodyAnalysisInput,
+  ): BodyAnalysisData {
     // Check if data is in old format (nested measurements)
     if (data.measurements) {
-      const transformed: any = {
+      const transformed: Record<string, unknown> = {
         height_cm: data.measurements.height || data.measurements.height_cm,
         current_weight_kg:
           data.measurements.weight || data.measurements.current_weight_kg,
@@ -856,19 +959,21 @@ class DataBridge {
         transformed.ai_confidence_score = data.aiAnalysis.confidence || null;
       }
 
-      return transformed as BodyAnalysisData;
+      return transformed as unknown as BodyAnalysisData;
     }
 
     // Data is already in correct format
-    return data as BodyAnalysisData;
+    return data as unknown as BodyAnalysisData;
   }
 
   /**
    * Transform old workoutPreferences format to new database format
    */
-  private transformWorkoutPreferencesForDB(data: any): WorkoutPreferencesData {
+  private transformWorkoutPreferencesForDB(
+    data: LegacyWorkoutPreferencesInput,
+  ): WorkoutPreferencesData {
     // Map old field names to new ones
-    const transformed: any = {
+    const transformed: Record<string, unknown> = {
       location: data.location,
       equipment: data.equipment || [],
       time_preference: data.time_preference ?? data.timePreference ?? (() => {
@@ -915,7 +1020,7 @@ class DataBridge {
       prefers_variety: data.prefers_variety ?? data.prefersVariety ?? true,
     };
 
-    return transformed as WorkoutPreferencesData;
+    return transformed as unknown as WorkoutPreferencesData;
   }
 
   async migrateGuestToUser(userId: string): Promise<MigrationResult> {
@@ -968,12 +1073,18 @@ class DataBridge {
       // Step 2: Set the user ID
       this.setUserId(userId);
 
-      // Helper function to migrate a data type
-      const migrateDataType = async (
+      // Helper function to migrate a data type.
+      // Generic over the section's data type T: each migration step handles a
+      // different onboarding section (personalInfo, bodyAnalysis, ...) with its
+      // own concrete type. The bound save methods accept that exact type, and the
+      // optional transform maps legacy-shaped data back to T. The original code
+      // relied on `any` here; the generic preserves the per-section type without
+      // forcing a single shared type across heterogeneous sections.
+      const migrateDataType = async <T>(
         key: string,
-        data: any,
-        saveFn: (data: any, userId: string) => Promise<SaveResult>,
-        transform?: (data: any) => any,
+        data: T,
+        saveFn: (data: T, userId: string) => Promise<SaveResult>,
+        transform?: (data: T) => T,
       ) => {
         const dataToSave = transform ? transform(data) : data;
         const saveResult = await saveFn.call(this, dataToSave, userId);
@@ -1018,7 +1129,9 @@ class DataBridge {
           "bodyAnalysis",
           localData.bodyAnalysis,
           this.saveBodyAnalysis,
-          this.transformBodyAnalysisForDB.bind(this),
+          this.transformBodyAnalysisForDB.bind(this) as unknown as (
+            data: BodyAnalysisData,
+          ) => BodyAnalysisData,
         );
       }
 
@@ -1028,7 +1141,9 @@ class DataBridge {
           "workoutPreferences",
           localData.workoutPreferences,
           this.saveWorkoutPreferences,
-          this.transformWorkoutPreferencesForDB.bind(this),
+          this.transformWorkoutPreferencesForDB.bind(this) as unknown as (
+            data: WorkoutPreferencesData | WorkoutPreferences,
+          ) => WorkoutPreferencesData | WorkoutPreferences,
         );
       }
 
@@ -1047,6 +1162,7 @@ class DataBridge {
       if (allRemoteSynced) {
         await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
       } else {
+        // Remote sync incomplete - keep guest data in AsyncStorage for retry
       }
 
       // Migration is successful if local sync worked (data available in app)
@@ -1090,7 +1206,7 @@ class DataBridge {
       // Check AsyncStorage
       const dataStr = await AsyncStorage.getItem(ONBOARDING_DATA_KEY);
       if (dataStr) {
-        const data = JSON.parse(dataStr);
+        const data = JSON.parse(dataStr) as Record<string, unknown>;
         return !!(
           data.personalInfo ||
           data.dietPreferences ||
@@ -1190,7 +1306,7 @@ class DataBridge {
   // ONBOARDING DATA METHODS (backward compatibility)
   // ============================================================================
 
-  async storeOnboardingData(data: any): Promise<boolean> {
+  async storeOnboardingData(data: OnboardingData): Promise<boolean> {
     try {
       await AsyncStorage.setItem(
         ONBOARDING_DATA_KEY,
@@ -1200,16 +1316,21 @@ class DataBridge {
         }),
       );
 
-      // Also update ProfileStore
+      // Also update ProfileStore. The persisted payload may carry extra
+      // section keys (dietPreferences, bodyAnalysis, ...) beyond the canonical
+      // OnboardingData shape, so cast to a record for optional field access.
       const profileStore = useProfileStore.getState();
-      if (data.personalInfo) profileStore.updatePersonalInfo(data.personalInfo);
-      if (data.dietPreferences)
-        profileStore.updateDietPreferences(data.dietPreferences);
-      if (data.bodyAnalysis) profileStore.updateBodyAnalysis(data.bodyAnalysis);
-      if (data.workoutPreferences)
-        profileStore.updateWorkoutPreferences(data.workoutPreferences);
-      if (data.advancedReview)
-        profileStore.updateAdvancedReview(data.advancedReview);
+      const record = data as unknown as Record<string, unknown>;
+      if (record.personalInfo)
+        profileStore.updatePersonalInfo(record.personalInfo as PersonalInfoData);
+      if (record.dietPreferences)
+        profileStore.updateDietPreferences(record.dietPreferences as DietPreferencesData);
+      if (record.bodyAnalysis)
+        profileStore.updateBodyAnalysis(record.bodyAnalysis as BodyAnalysisData);
+      if (record.workoutPreferences)
+        profileStore.updateWorkoutPreferences(record.workoutPreferences as WorkoutPreferencesData);
+      if (record.advancedReview)
+        profileStore.updateAdvancedReview(record.advancedReview as AdvancedReviewData);
 
       return true;
     } catch (error) {
@@ -1218,10 +1339,10 @@ class DataBridge {
     }
   }
 
-  async getOnboardingData(): Promise<any | null> {
+  async getOnboardingData(): Promise<OnboardingData | null> {
     try {
       const dataStr = await AsyncStorage.getItem(ONBOARDING_DATA_KEY);
-      return dataStr ? JSON.parse(dataStr) : null;
+      return dataStr ? (JSON.parse(dataStr) as OnboardingData) : null;
     } catch (error) {
       console.error("[DataBridge] getOnboardingData error:", error);
       return null;
@@ -1232,25 +1353,31 @@ class DataBridge {
   // WORKOUT SESSIONS (backward compatibility)
   // ============================================================================
 
-  async storeWorkoutSession(session: any): Promise<boolean> {
+  async storeWorkoutSession(session: WorkoutSession): Promise<boolean> {
     try {
       const existingStr = await AsyncStorage.getItem(WORKOUT_SESSIONS_KEY);
-      const existing = existingStr ? JSON.parse(existingStr) : [];
+      const existing: WorkoutSession[] = existingStr
+        ? JSON.parse(existingStr)
+        : [];
       const id = session.id || Date.now().toString();
-      const existingIndex = existing.findIndex((s: any) => s.id === id);
+      const existingIndex = existing.findIndex((s) => s.id === id);
       const existingSession =
         existingIndex >= 0 ? existing[existingIndex] : null;
-      const next = existing.filter((s: any) => s.id !== id);
+      const next = existing.filter((s) => s.id !== id);
+      // Stored rows carry legacy createdAt/updatedAt fields not on WorkoutSession;
+      // cast to a record for those optional accesses.
+      const sessionRec = session as unknown as Record<string, unknown>;
+      const existingRec = existingSession as unknown as Record<string, unknown> | null;
       next.unshift({
         ...existingSession,
         ...session,
         id,
         createdAt:
-          existingSession?.createdAt ||
-          session.createdAt ||
+          existingRec?.createdAt ||
+          sessionRec.createdAt ||
           new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      } as unknown as WorkoutSession);
       await AsyncStorage.setItem(
         WORKOUT_SESSIONS_KEY,
         JSON.stringify(next.slice(0, 100)),
@@ -1262,10 +1389,14 @@ class DataBridge {
     }
   }
 
-  async getWorkoutSessions(limit: number = 10): Promise<any[]> {
+  async getWorkoutSessions(
+    limit: number = 10,
+  ): Promise<WorkoutSession[]> {
     try {
       const dataStr = await AsyncStorage.getItem(WORKOUT_SESSIONS_KEY);
-      const sessions = dataStr ? JSON.parse(dataStr) : [];
+      const sessions: WorkoutSession[] = dataStr
+        ? JSON.parse(dataStr)
+        : [];
       return sessions.slice(0, limit);
     } catch (error) {
       console.error("[DataBridge] getWorkoutSessions error:", error);
@@ -1275,18 +1406,20 @@ class DataBridge {
 
   async updateWorkoutSession(
     sessionId: string,
-    updates: any,
+    updates: Partial<WorkoutSession>,
   ): Promise<boolean> {
     try {
       const dataStr = await AsyncStorage.getItem(WORKOUT_SESSIONS_KEY);
-      const sessions = dataStr ? JSON.parse(dataStr) : [];
-      const index = sessions.findIndex((s: any) => s.id === sessionId);
+      const sessions: WorkoutSession[] = dataStr
+        ? JSON.parse(dataStr)
+        : [];
+      const index = sessions.findIndex((s) => s.id === sessionId);
       if (index !== -1) {
         sessions[index] = {
           ...sessions[index],
           ...updates,
           updatedAt: new Date().toISOString(),
-        };
+        } as unknown as WorkoutSession;
         await AsyncStorage.setItem(
           WORKOUT_SESSIONS_KEY,
           JSON.stringify(sessions),
@@ -1304,24 +1437,30 @@ class DataBridge {
   // MEAL LOGS (backward compatibility)
   // ============================================================================
 
-  async storeMealLog(mealLog: any): Promise<boolean> {
+  async storeMealLog(mealLog: MealLog): Promise<boolean> {
     try {
       const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
-      const existing = existingStr ? JSON.parse(existingStr) : [];
+      const existing: MealLog[] = existingStr
+        ? JSON.parse(existingStr)
+        : [];
       const id = mealLog.id || Date.now().toString();
-      const existingIndex = existing.findIndex((log: any) => log.id === id);
+      const existingIndex = existing.findIndex((log) => log.id === id);
       const existingLog = existingIndex >= 0 ? existing[existingIndex] : null;
-      const next = existing.filter((log: any) => log.id !== id);
+      const next = existing.filter((log) => log.id !== id);
+      // Stored rows carry legacy createdAt/updatedAt fields not on MealLog;
+      // cast to a record for those optional accesses.
+      const mealLogRec = mealLog as unknown as Record<string, unknown>;
+      const existingRec = existingLog as unknown as Record<string, unknown> | null;
       next.unshift({
         ...existingLog,
         ...mealLog,
         id,
         createdAt:
-          existingLog?.createdAt ||
-          mealLog.createdAt ||
+          existingRec?.createdAt ||
+          mealLogRec.createdAt ||
           new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      } as unknown as MealLog);
       await AsyncStorage.setItem(
         MEAL_LOGS_KEY,
         JSON.stringify(next.slice(0, 500)),
@@ -1333,27 +1472,34 @@ class DataBridge {
     }
   }
 
-  async updateMealLog(logId: string, updates: any): Promise<boolean> {
+  async updateMealLog(
+    logId: string,
+    updates: Partial<MealLog>,
+  ): Promise<boolean> {
     try {
       const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
-      const existing = existingStr ? JSON.parse(existingStr) : [];
-      const existingIndex = existing.findIndex((log: any) => log.id === logId);
+      const existing: MealLog[] = existingStr
+        ? JSON.parse(existingStr)
+        : [];
+      const existingIndex = existing.findIndex((log) => log.id === logId);
       if (existingIndex === -1) {
         return false;
       }
 
       const existingLog = existing[existingIndex];
-      const next = existing.filter((log: any) => log.id !== logId);
+      const next = existing.filter((log) => log.id !== logId);
+      // existingLog may carry a legacy createdAt; cast for the fallback chain.
+      const existingRec = existingLog as unknown as Record<string, unknown>;
       next.unshift({
         ...existingLog,
         ...updates,
         id: logId,
         createdAt:
-          existingLog.createdAt ||
+          existingRec.createdAt ||
           existingLog.loggedAt ||
           new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      });
+      } as unknown as MealLog);
 
       await AsyncStorage.setItem(
         MEAL_LOGS_KEY,
@@ -1366,17 +1512,24 @@ class DataBridge {
     }
   }
 
-  async getMealLogs(date?: string, limit: number = 50): Promise<any[]> {
+  async getMealLogs(
+    date?: string,
+    limit: number = 50,
+  ): Promise<MealLog[]> {
     try {
       const dataStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
-      let logs = dataStr ? JSON.parse(dataStr) : [];
+      let logs: MealLog[] = dataStr ? JSON.parse(dataStr) : [];
       if (date) {
         logs = logs.filter(
-          (log: any) =>
-            log.date === date ||
-            log.loggedAt?.startsWith(date) ||
-            log.logged_at?.startsWith(date) ||
-            log.createdAt?.startsWith(date),
+          (log) => {
+            const rec = log as unknown as Record<string, unknown>;
+            return (
+              log.date === date ||
+              log.loggedAt?.startsWith(date) ||
+              (rec.logged_at as string | undefined)?.startsWith(date) ||
+              (rec.createdAt as string | undefined)?.startsWith(date)
+            );
+          },
         );
       }
       return logs.slice(0, limit);
@@ -1396,8 +1549,10 @@ class DataBridge {
   async deleteMealLog(logId: string): Promise<boolean> {
     try {
       const existingStr = await AsyncStorage.getItem(MEAL_LOGS_KEY);
-      const existing = existingStr ? JSON.parse(existingStr) : [];
-      const next = existing.filter((log: any) => log.id !== logId);
+      const existing: MealLog[] = existingStr
+        ? JSON.parse(existingStr)
+        : [];
+      const next = existing.filter((log) => log.id !== logId);
       await AsyncStorage.setItem(
         MEAL_LOGS_KEY,
         JSON.stringify(next.slice(0, 500)),
@@ -1413,13 +1568,15 @@ class DataBridge {
   // BODY MEASUREMENTS (backward compatibility)
   // ============================================================================
 
-  async storeBodyMeasurement(measurement: any): Promise<boolean> {
+  async storeBodyMeasurement(
+    measurement: BodyMeasurement,
+  ): Promise<boolean> {
     try {
       const legacyStr = await AsyncStorage.getItem(
         LEGACY_BODY_MEASUREMENTS_KEY,
       );
       const existingStr = await AsyncStorage.getItem(BODY_ANALYSIS_KEY);
-      const existing = existingStr
+      const existing: BodyMeasurement[] = existingStr
         ? JSON.parse(existingStr)
         : legacyStr
           ? JSON.parse(legacyStr)
@@ -1431,7 +1588,7 @@ class DataBridge {
         ...measurement,
         id: measurement.id || Date.now().toString(),
         createdAt: new Date().toISOString(),
-      });
+      } as unknown as BodyMeasurement);
       await AsyncStorage.setItem(
         BODY_ANALYSIS_KEY,
         JSON.stringify(existing.slice(0, 100)),
@@ -1443,7 +1600,9 @@ class DataBridge {
     }
   }
 
-  async getBodyMeasurements(limit: number = 10): Promise<any[]> {
+  async getBodyMeasurements(
+    limit: number = 10,
+  ): Promise<BodyMeasurement[]> {
     try {
       const dataStr = await AsyncStorage.getItem(BODY_ANALYSIS_KEY);
       if (!dataStr) {
@@ -1453,12 +1612,12 @@ class DataBridge {
         if (legacyStr) {
           await AsyncStorage.setItem(BODY_ANALYSIS_KEY, legacyStr);
           await AsyncStorage.removeItem(LEGACY_BODY_MEASUREMENTS_KEY);
-          const measurements = JSON.parse(legacyStr);
+          const measurements: BodyMeasurement[] = JSON.parse(legacyStr);
           return measurements.slice(0, limit);
         }
         return [];
       }
-      const measurements = JSON.parse(dataStr);
+      const measurements: BodyMeasurement[] = JSON.parse(dataStr);
       return measurements.slice(0, limit);
     } catch (error) {
       console.error("[DataBridge] getBodyMeasurements error:", error);
@@ -1470,7 +1629,7 @@ class DataBridge {
   // EXPORT/IMPORT DATA (backward compatibility)
   // ============================================================================
 
-  async exportAllData(): Promise<any> {
+  async exportAllData(): Promise<LocalStorageSchema | null> {
     try {
       const allData = await this.loadAllData();
       const workoutSessions = await this.getWorkoutSessions(100);
@@ -1496,14 +1655,21 @@ class DataBridge {
         },
         exportedAt: new Date().toISOString(),
         version: "2.0",
-      };
+      } as unknown as LocalStorageSchema;
     } catch (error) {
       console.error("[DataBridge] exportAllData error:", error);
       return null;
     }
   }
 
-  async getDataStatistics(): Promise<any> {
+  async getDataStatistics(): Promise<{
+    workoutSessionsCount: number;
+    mealLogsCount: number;
+    bodyMeasurementsCount: number;
+    hasPersonalInfo: boolean;
+    hasDietPreferences: boolean;
+    hasWorkoutPreferences: boolean;
+  }> {
     try {
       const workoutSessions = await this.getWorkoutSessions(100);
       const mealLogs = await this.getMealLogs(undefined, 500);
@@ -1519,7 +1685,14 @@ class DataBridge {
       };
     } catch (error) {
       console.error("[DataBridge] getDataStatistics error:", error);
-      return {};
+      return {
+        workoutSessionsCount: 0,
+        mealLogsCount: 0,
+        bodyMeasurementsCount: 0,
+        hasPersonalInfo: false,
+        hasDietPreferences: false,
+        hasWorkoutPreferences: false,
+      };
     }
   }
 
@@ -1527,20 +1700,23 @@ class DataBridge {
   // IMPORT DATA (backward compatibility)
   // ============================================================================
 
-  async importData(data: any): Promise<boolean> {
+  async importData(data: Record<string, unknown>): Promise<boolean> {
     try {
-      if (data.user) {
-        if (data.user.personalInfo)
-          await this.savePersonalInfo(data.user.personalInfo);
-        if (data.user.dietPreferences)
-          await this.saveDietPreferences(data.user.dietPreferences);
-        if (data.user.workoutPreferences)
-          await this.saveWorkoutPreferences(data.user.workoutPreferences);
+      const user = data.user as Record<string, unknown> | undefined;
+      if (user) {
+        if (user.personalInfo)
+          await this.savePersonalInfo(user.personalInfo as PersonalInfoData | PersonalInfo);
+        if (user.dietPreferences)
+          await this.saveDietPreferences(user.dietPreferences as DietPreferencesData | DietPreferences);
+        if (user.workoutPreferences)
+          await this.saveWorkoutPreferences(user.workoutPreferences as WorkoutPreferencesData | WorkoutPreferences);
       }
-      if (data.fitness?.bodyAnalysis)
-        await this.saveBodyAnalysis(data.fitness.bodyAnalysis);
-      if (data.progress?.advancedReview)
-        await this.saveAdvancedReview(data.progress.advancedReview);
+      const fitness = data.fitness as Record<string, unknown> | undefined;
+      if (fitness?.bodyAnalysis)
+        await this.saveBodyAnalysis(fitness.bodyAnalysis as BodyAnalysisData);
+      const progress = data.progress as Record<string, unknown> | undefined;
+      if (progress?.advancedReview)
+        await this.saveAdvancedReview(progress.advancedReview as AdvancedReviewData);
       return true;
     } catch (error) {
       console.error("[DataBridge] importData error:", error);
@@ -1548,17 +1724,18 @@ class DataBridge {
     }
   }
 
-  async importAllData(data: any): Promise<boolean> {
+  async importAllData(data: Record<string, unknown>): Promise<boolean> {
     return this.importData(data);
   }
 
-  async importUserData(data: any): Promise<boolean> {
+  async importUserData(data: Record<string, unknown>): Promise<boolean> {
     try {
-      if (data.personalInfo) await this.savePersonalInfo(data.personalInfo);
+      if (data.personalInfo)
+        await this.savePersonalInfo(data.personalInfo as PersonalInfoData | PersonalInfo);
       if (data.dietPreferences)
-        await this.saveDietPreferences(data.dietPreferences);
+        await this.saveDietPreferences(data.dietPreferences as DietPreferencesData | DietPreferences);
       if (data.workoutPreferences)
-        await this.saveWorkoutPreferences(data.workoutPreferences);
+        await this.saveWorkoutPreferences(data.workoutPreferences as WorkoutPreferencesData | WorkoutPreferences);
       return true;
     } catch (error) {
       console.error("[DataBridge] importUserData error:", error);
@@ -1566,11 +1743,12 @@ class DataBridge {
     }
   }
 
-  async importFitnessData(data: any): Promise<boolean> {
+  async importFitnessData(data: Record<string, unknown>): Promise<boolean> {
     try {
-      if (data.bodyAnalysis) await this.saveBodyAnalysis(data.bodyAnalysis);
+      if (data.bodyAnalysis)
+        await this.saveBodyAnalysis(data.bodyAnalysis as BodyAnalysisData);
       if (data.workoutSessions) {
-        for (const session of data.workoutSessions) {
+        for (const session of data.workoutSessions as WorkoutSession[]) {
           await this.storeWorkoutSession(session);
         }
       }
@@ -1581,10 +1759,10 @@ class DataBridge {
     }
   }
 
-  async importNutritionData(data: any): Promise<boolean> {
+  async importNutritionData(data: Record<string, unknown>): Promise<boolean> {
     try {
       if (data.mealLogs) {
-        for (const log of data.mealLogs) {
+        for (const log of data.mealLogs as MealLog[]) {
           await this.storeMealLog(log);
         }
       }
@@ -1595,15 +1773,15 @@ class DataBridge {
     }
   }
 
-  async importProgressData(data: any): Promise<boolean> {
+  async importProgressData(data: Record<string, unknown>): Promise<boolean> {
     try {
       if (data.bodyMeasurements) {
-        for (const measurement of data.bodyMeasurements) {
+        for (const measurement of data.bodyMeasurements as BodyMeasurement[]) {
           await this.storeBodyMeasurement(measurement);
         }
       }
       if (data.advancedReview)
-        await this.saveAdvancedReview(data.advancedReview);
+        await this.saveAdvancedReview(data.advancedReview as AdvancedReviewData);
       return true;
     } catch (error) {
       console.error("[DataBridge] importProgressData error:", error);
@@ -1615,7 +1793,9 @@ class DataBridge {
   // USER PREFERENCES (backward compatibility)
   // ============================================================================
 
-  async updateUserPreferences(preferences: any): Promise<boolean> {
+  async updateUserPreferences(
+    preferences: Partial<UserPreferences>,
+  ): Promise<boolean> {
     try {
       // Store in ProfileStore and local
       const profileStore = useProfileStore.getState();
@@ -1630,12 +1810,12 @@ class DataBridge {
     }
   }
 
-  async getUserPreferences(): Promise<any | null> {
+  async getUserPreferences(): Promise<UserPreferences | null> {
     try {
       const dataStr = await AsyncStorage.getItem(ONBOARDING_DATA_KEY);
       if (dataStr) {
-        const data = JSON.parse(dataStr);
-        return data.userPreferences || null;
+        const data = JSON.parse(dataStr) as Record<string, unknown>;
+        return (data.userPreferences as UserPreferences) || null;
       }
       return null;
     } catch (error) {
@@ -1652,7 +1832,7 @@ class DataBridge {
     return this.clearLocalData();
   }
 
-  async getStorageInfo(): Promise<any> {
+  async getStorageInfo(): Promise<{ totalKeys: number; [key: string]: unknown }> {
     try {
       const keys = await AsyncStorage.getAllKeys();
       const stats = await this.getDataStatistics();
@@ -1677,9 +1857,9 @@ class DataBridge {
 
   async testLocalStorageMethods(): Promise<{
     success: boolean;
-    results: any[];
+    results: Record<string, unknown>[];
   }> {
-    const results: any[] = [];
+    const results: Record<string, unknown>[] = [];
     try {
       // Test save
       const testData = { test: true, timestamp: Date.now() };
@@ -1734,7 +1914,7 @@ class DataBridge {
     }
   }
 
-  async getProfileDataSummary(): Promise<any> {
+  async getProfileDataSummary(): Promise<Record<string, unknown>> {
     const data = await this.loadAllData();
     return {
       hasPersonalInfo: !!data.personalInfo,
@@ -1750,10 +1930,15 @@ class DataBridge {
   // PRIVATE HELPERS
   // ============================================================================
 
-  private async saveToLocal(field: string, data: any): Promise<void> {
+  private async saveToLocal(
+    field: string,
+    data: unknown,
+  ): Promise<void> {
     try {
       const existingDataStr = await AsyncStorage.getItem(ONBOARDING_DATA_KEY);
-      const existingData = existingDataStr ? JSON.parse(existingDataStr) : {};
+      const existingData: Record<string, unknown> = existingDataStr
+        ? JSON.parse(existingDataStr)
+        : {};
 
       const updatedData = {
         ...existingData,
