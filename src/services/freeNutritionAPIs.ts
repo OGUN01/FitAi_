@@ -294,7 +294,7 @@ export class FreeNutritionAPIs {
    * Free tier: 150K requests/month
    */
   private async searchFatSecret(
-    foodName: string,
+    _foodName: string,
   ): Promise<NutritionData | null> {
     if (this.fatSecretKeys.length === 0) {
       return null;
