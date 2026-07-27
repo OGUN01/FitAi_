@@ -26,6 +26,7 @@ import type { FitnessGoals } from "../types/user";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 // usePaywall import removed â€” triggerPaywall now via subscriptionStore
 import { LogMealScanResult } from "../components/diet/LogMealModal";
+import type { FoodFeedback } from "../components/diet/FoodRecognitionFeedback";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import {
   clampPackagedFoodGrams,
@@ -83,7 +84,7 @@ const buildPackagedFoodEntry = (product: ScannedProduct, grams: number) => {
   };
 };
 
-const getNormalizedRecognizedFoodFiber = (food: any) =>
+const getNormalizedRecognizedFoodFiber = (food: RecognizedFood) =>
   normalizeMealLogFiberValue(food?.nutrition?.fiber) ?? 0;
 
 /**
@@ -100,9 +101,9 @@ const getNormalizedRecognizedFoodFiber = (food: any) =>
  * from its `nutritionPer100g` (preferred) or by ratio against `estimatedGrams`.
  */
 const scaleRecognizedFoodsToGrams = (
-  foods: any[],
+  foods: RecognizedFood[],
   requestedGrams: number,
-): any[] => {
+): RecognizedFood[] => {
   const totalEstimated = foods.reduce(
     (sum, f) => sum + (f.estimatedGrams > 0 ? f.estimatedGrams : 0),
     0,
@@ -140,7 +141,7 @@ const scaleRecognizedFoodsToGrams = (
     }
     // Fallback: scale the per-serving values by the ratio against the base portion.
     const ratio = foodGrams / baseGrams;
-    const scaledNutrition: any = {
+    const scaledNutrition: RecognizedFood["nutrition"] = {
       calories: Math.round(food.nutrition.calories * ratio),
       protein: Math.round(food.nutrition.protein * ratio * 10) / 10,
       carbs: Math.round(food.nutrition.carbs * ratio * 10) / 10,
@@ -200,6 +201,29 @@ type BarcodeDebugEvent = {
     | "label_scan"
     | "manual_entry"
     | "contribute_product";
+};
+
+/**
+ * Recognized food with an optional portionSize wrapper used by the portion
+ * adjustment flow. The worker's RecognizedFood type carries estimatedGrams at
+ * the top level, but the adjustment UI historically reads/writes a nested
+ * `portionSize.estimatedGrams`. Keep both accessible without narrowing the
+ * underlying type.
+ */
+type RecognizedFoodWithPortion = RecognizedFood & {
+  portionSize?: { estimatedGrams?: number; [k: string]: unknown };
+};
+
+/**
+ * Structural shape used by the post-generation allergen safety check. AI meal
+ * responses (DayMeal) expose `name`/`items`/`foods`, but legacy/worker payloads
+ * sometimes use `title`/`ingredients`. Accept the union so the check is robust
+ * without `any`.
+ */
+type AllergenCheckMeal = {
+  name?: string;
+  title?: string;
+  ingredients?: unknown[];
 };
 
 export const useAIMealGeneration = (options?: {
@@ -278,13 +302,13 @@ export const useAIMealGeneration = (options?: {
   const [selectedMealType, setSelectedMealType] = useState<MealType>("lunch");
 
   const [portionData, setPortionData] = useState<{
-    recognizedFoods: any[];
+    recognizedFoods: RecognizedFoodWithPortion[];
     imageUri: string;
   } | null>(null);
   const [showPortionAdjustment, setShowPortionAdjustment] = useState(false);
 
   const [feedbackData, setFeedbackData] = useState<{
-    recognizedFoods: any[];
+    recognizedFoods: RecognizedFoodWithPortion[];
     imageUri: string;
     mealId: string;
   } | null>(null);
@@ -427,18 +451,18 @@ export const useAIMealGeneration = (options?: {
     clearBarcodeSession();
   }, [activeBarcodeEntryPoint, clearBarcodeSession, emitBarcodeDebugEvent]);
 
-  const getAverageRecognitionConfidence = (recognizedFoods: any[]) => {
+  const getAverageRecognitionConfidence = (recognizedFoods: RecognizedFood[]) => {
     if (!recognizedFoods.length) return undefined;
     return (
       recognizedFoods.reduce(
-        (sum: number, food: any) => sum + (food.confidence || 0),
+        (sum: number, food: RecognizedFood) => sum + (food.confidence || 0),
         0,
       ) / recognizedFoods.length
     );
   };
 
   const logRecognizedMealWithReview = async (
-    recognizedFoods: any[],
+    recognizedFoods: RecognizedFood[],
     mealType: MealType,
     options?: {
       confidence?: number;
@@ -494,7 +518,7 @@ export const useAIMealGeneration = (options?: {
   };
 
   const promptMealPhotoCatalogSave = (
-    recognizedFoods: any[],
+    recognizedFoods: RecognizedFood[],
     mealType: MealType,
     options?: {
       confidence?: number;
@@ -606,7 +630,7 @@ export const useAIMealGeneration = (options?: {
 
   const confirmPhotoRecognition = async (weightGrams?: number) => {
     const imageUri = pendingPhotoUriRef.current;
-    const setShowGuestSignUp = pendingPhotoGuestRef.current;
+    const _setShowGuestSignUp = pendingPhotoGuestRef.current;
     pendingPhotoUriRef.current = null;
     pendingPhotoGuestRef.current = null;
     setShowWeightPrompt(false);
@@ -644,7 +668,7 @@ export const useAIMealGeneration = (options?: {
           ? scaleRecognizedFoodsToGrams(result.foods, requestedGrams)
           : result.foods;
         const totalCalories = recognizedFoods.reduce(
-          (sum: number, food: any) => sum + food.nutrition.calories,
+          (sum: number, food: RecognizedFood) => sum + food.nutrition.calories,
           0,
         );
 
@@ -666,19 +690,19 @@ export const useAIMealGeneration = (options?: {
         }
 
         const totalProteinScan = recognizedFoods.reduce(
-          (s: number, f: any) => s + (f.nutrition?.protein || 0),
+          (s: number, f: RecognizedFood) => s + (f.nutrition?.protein || 0),
           0,
         );
         const totalCarbsScan = recognizedFoods.reduce(
-          (s: number, f: any) => s + (f.nutrition?.carbs || 0),
+          (s: number, f: RecognizedFood) => s + (f.nutrition?.carbs || 0),
           0,
         );
         const totalFatScan = recognizedFoods.reduce(
-          (s: number, f: any) => s + (f.nutrition?.fat || 0),
+          (s: number, f: RecognizedFood) => s + (f.nutrition?.fat || 0),
           0,
         );
         const totalFiberScan = recognizedFoods.reduce(
-          (s: number, f: any) => s + getNormalizedRecognizedFoodFiber(f),
+          (s: number, f: RecognizedFood) => s + getNormalizedRecognizedFoodFiber(f),
           0,
         );
 
@@ -707,7 +731,7 @@ export const useAIMealGeneration = (options?: {
     }
   };
 
-  const handleFeedbackSubmit = async (feedback: any[]) => {
+  const handleFeedbackSubmit = async (feedback: FoodFeedback[]) => {
     if (!feedbackData) return;
     try {
       if (!user?.id) {
@@ -731,7 +755,7 @@ export const useAIMealGeneration = (options?: {
           "Failed to submit feedback. Please try again.",
         );
       }
-    } catch (error) {
+    } catch {
       crossPlatformAlert(
         "Error",
         "Failed to submit feedback. Please try again.",
@@ -739,23 +763,23 @@ export const useAIMealGeneration = (options?: {
     }
   };
 
-  const handlePortionAdjustmentComplete = async (adjustedFoods: any[]) => {
+  const handlePortionAdjustmentComplete = async (adjustedFoods: RecognizedFoodWithPortion[]) => {
     setShowPortionAdjustment(false);
     const totalCalories = adjustedFoods.reduce(
-      (sum: number, food: any) => sum + food.nutrition.calories,
+      (sum: number, food: RecognizedFoodWithPortion) => sum + food.nutrition.calories,
       0,
     );
     const adjustedCount = adjustedFoods.filter(
-      (food: any) =>
-        food.portionSize.estimatedGrams !==
+      (food: RecognizedFoodWithPortion) =>
+        food.portionSize?.estimatedGrams !==
         portionData?.recognizedFoods.find((orig) => orig.id === food.id)
-          ?.portionSize.estimatedGrams,
+          ?.portionSize?.estimatedGrams,
     ).length;
 
     crossPlatformAlert(
       "Portions Updated!",
       `${adjustedCount > 0 ? `Updated ${adjustedCount} portion size${adjustedCount !== 1 ? "s" : ""}!\n\n` : ""}` +
-        `${adjustedFoods.map((food: any) => `- ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
+        `${adjustedFoods.map((food: RecognizedFoodWithPortion) => `- ${food.name} (${food.portionSize?.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
         `Total: ${Math.round(totalCalories)} calories`,
       [
         { text: "Cancel", style: "cancel" },
@@ -1183,7 +1207,7 @@ export const useAIMealGeneration = (options?: {
 
     try {
       await runLookup(0);
-    } catch (error) {
+    } catch {
       showInlineBarcodeResolution("Unexpected barcode error. Retry or use a fallback.", [
         {
           id: "retry",
@@ -1303,22 +1327,27 @@ export const useAIMealGeneration = (options?: {
       setShowProductModal(false);
       await loadDailyNutrition();
       await refreshAll();
-    } catch (error) {
+    } catch {
       crossPlatformAlert("Error", "Failed to add product to meal.");
     }
   };
 
   // Post-generation allergen safety check — called after any AI meal response
-  const checkAllergenViolations = (meals: any[]): void => {
+  const checkAllergenViolations = (meals: AllergenCheckMeal[]): void => {
     if (!mergedDietPrefs?.allergies?.length || !meals?.length) return;
     const allergyKeywords = mergedDietPrefs.allergies.map((a: string) => a.toLowerCase());
     const violations: string[] = [];
 
     for (const meal of meals) {
       const mealName = (meal?.name ?? meal?.title ?? '').toLowerCase();
-      const ingredients = (meal?.ingredients ?? []).map((i: any) =>
-        (typeof i === 'string' ? i : i.name ?? '').toLowerCase()
-      );
+      const ingredients = (meal?.ingredients ?? []).map((i: unknown) => {
+        if (typeof i === 'string') return i.toLowerCase();
+        if (i && typeof i === 'object' && 'name' in i) {
+          const named = (i as { name?: unknown }).name;
+          return typeof named === 'string' ? named.toLowerCase() : '';
+        }
+        return '';
+      });
       const allText = [mealName, ...ingredients].join(' ');
 
       for (const allergen of allergyKeywords) {
@@ -1339,7 +1368,12 @@ export const useAIMealGeneration = (options?: {
   const generateAIMeal = async (
     mealType: string,
     setShowGuestSignUp: (show: boolean) => void,
-    options?: any,
+    options?: {
+      cuisinePreference?: string;
+      quickEasy?: boolean;
+      customOptions?: Record<string, unknown>;
+      suggestions?: string[];
+    },
   ) => {
     if (mealType === "daily_plan") {
       return generateDailyMealPlan(setShowGuestSignUp);
@@ -1385,7 +1419,7 @@ export const useAIMealGeneration = (options?: {
         // dietPreferences.allergies as authoritative; dietaryRestrictions is a redundant
         // copy kept for legacy prompt templates that only read the top-level field.
         dietPreferences: snapshotDietPreferences,
-        calorieTarget: calorieTarget,
+        calorieTarget,
         dietaryRestrictions: mergedDietPrefs?.allergies || [],
         cuisinePreference: options?.cuisinePreference || "any",
         prepTimeLimit: options?.quickEasy ? 20 : 30,
@@ -1418,7 +1452,7 @@ export const useAIMealGeneration = (options?: {
 
       if (response.success && response.data) {
         // Post-generation allergen check
-        checkAllergenViolations([response.data]);
+        checkAllergenViolations([response.data as unknown as AllergenCheckMeal]);
 
         // Push generated meal to Zustand nutrition store so DietScreen renders it
         const currentMeals = weeklyMealPlan?.meals || [];
@@ -1526,7 +1560,7 @@ export const useAIMealGeneration = (options?: {
         const generatedMeals = response.data.meals as unknown as DayMeal[];
 
         // Post-generation allergen check
-        checkAllergenViolations(generatedMeals);
+        checkAllergenViolations(generatedMeals as unknown as AllergenCheckMeal[]);
 
         // Push to weeklyMealPlan store so MealPlanView renders the new meals immediately
         const currentPlan = weeklyMealPlan || {
@@ -1746,19 +1780,19 @@ export const useAIMealGeneration = (options?: {
   };
 
   const mapRecognizedFoodsToScanResult = (
-    foods: any[],
+    foods: RecognizedFood[],
     mealType?: MealType,
     confidence?: number,
   ): LogMealScanResult => ({
     type: "food",
-    mealName: foods.map((f: any) => f.localName || f.name).join(", "),
+    mealName: foods.map((f: RecognizedFood) => f.localName || f.name).join(", "),
     suggestedMealType: mealType,
     portionAssumptionGrams:
       foods.reduce(
-        (sum: number, f: any) => sum + (f.userGrams ?? f.estimatedGrams ?? 0),
+        (sum: number, f: RecognizedFood) => sum + (f.userGrams ?? f.estimatedGrams ?? 0),
         0,
       ) || undefined,
-    ingredients: foods.map((f: any) => ({
+    ingredients: foods.map((f: RecognizedFood) => ({
       name: f.localName || f.name,
       grams: (f.userGrams ?? f.estimatedGrams ?? 100).toFixed(0),
       protein: (f.nutrition?.protein ?? 0).toFixed(1),
