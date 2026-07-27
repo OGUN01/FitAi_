@@ -207,7 +207,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
       <GoalBar
         label="Workouts This Week"
         icon="barbell-outline"
-        iconColor="#3B82F6"
+        iconColor={colors.blue}
         current={workoutsCompleted}
         target={workoutTarget}
         unit=" sessions"
@@ -220,7 +220,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
         <GoalBar
           label="Calorie Adherence (Week)"
           icon="flame-outline"
-          iconColor="#F97316"
+          iconColor={colors.orange}
           current={weeklyCalories}
           target={weeklyCalorieTarget}
           unit=" kcal"
