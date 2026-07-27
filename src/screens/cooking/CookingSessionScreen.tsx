@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -61,10 +61,10 @@ export default function CookingSessionScreen({
     scrollViewRef,
   } = useCookingFlow(meal);
 
-  const handleIngredientPress = (ingredient: string) => {
+  const handleIngredientPress = useCallback((ingredient: string) => {
     setSelectedIngredient(ingredient);
     setShowIngredientModal(true);
-  };
+  }, []);
 
   const completeCooking = useCallback(async () => {
     if (!cookingFlow) return;
@@ -104,12 +104,12 @@ export default function CookingSessionScreen({
     ]);
   }, [cookingFlow, completedSteps, meal, navigation]);
 
-  const mealProgress = (() => {
+  const mealProgress = useMemo(() => {
     if (!cookingFlow) return 0;
     const totalSteps = cookingFlow.steps.length;
     const completedStepsCount = completedSteps.size;
     return totalSteps > 0 ? Math.round((completedStepsCount / totalSteps) * 100) : 0;
-  })();
+  }, [cookingFlow, completedSteps]);
 
   return (
     <AuroraBackground theme="space" animated intensity={0.3}>
