@@ -24,7 +24,6 @@ const BASE64_CHARS =
  */
 function binaryToBase64(binary: string): string {
   let result = "";
-  let padding = 0;
 
   for (let i = 0; i < binary.length; i += 3) {
     const b1 = binary.charCodeAt(i) & 0xff;
@@ -202,7 +201,7 @@ export interface BackupError {
 export class BackupRecoveryService {
   private config: BackupConfig;
   private status: BackupStatus;
-  private backupTimer: NodeJS.Timeout | null = null;
+  private backupTimer: ReturnType<typeof setTimeout> | null = null;
   private isInitialized = false;
   private statusCallbacks: ((status: BackupStatus) => void)[] = [];
   private resultCallbacks: ((result: BackupResult) => void)[] = [];
@@ -428,31 +427,7 @@ export class BackupRecoveryService {
 
       return result;
     } catch (error) {
-      const endTime = new Date();
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      const result: BackupResult = {
-        success: false,
-        backupId: this.generateBackupId(),
-        type: "full",
-        location: "local",
-        startTime,
-        endTime,
-        duration: endTime.getTime() - startTime.getTime(),
-        size: 0,
-        errors: [
-          {
-            id: this.generateErrorId(),
-            type: "unknown",
-            message: errorMessage,
-            details: error,
-            timestamp: new Date(),
-            retryable: true,
-          },
-        ],
-        warnings: [],
-      };
-
+      console.error("Backup recovery failed:", error);
       throw error;
     }
   }
@@ -505,7 +480,6 @@ export class BackupRecoveryService {
    */
   updateConfig(newConfig: Partial<BackupConfig>): void {
     const oldInterval = this.config.backupIntervalMs;
-    const wasAutoBackupEnabled = this.config.enableAutoBackup;
 
     this.config = { ...this.config, ...newConfig };
 
@@ -857,7 +831,7 @@ export class BackupRecoveryService {
     // For now, we use base64 encoding with a marker
     try {
       // Basic run-length encoding for repeated characters
-      let compressed = data.replace(/(.)\1{4,}/g, (match, char) => {
+      const compressed = data.replace(/(.)\1{4,}/g, (match, char) => {
         return `${char}#${match.length}#`;
       });
       return `COMPRESSED:${compressed}`;
@@ -873,7 +847,7 @@ export class BackupRecoveryService {
     try {
       let decompressed = data.slice(11); // Remove "COMPRESSED:" prefix
       // Reverse run-length encoding
-      decompressed = decompressed.replace(/(.)\#(\d+)\#/g, (_, char, count) => {
+      decompressed = decompressed.replace(/(.)#(\d+)#/g, (_, char, count) => {
         return char.repeat(parseInt(count, 10));
       });
       return decompressed;
@@ -990,6 +964,7 @@ export class BackupRecoveryService {
         console.error("Failed to upload backup to cloud:", error);
         // Don't throw - cloud backup is optional
       } else {
+        // cloud upload succeeded; no further action needed
       }
     } catch (error) {
       console.error("Cloud backup storage error:", error);
@@ -1141,10 +1116,13 @@ export class BackupRecoveryService {
 
       // Verify checksum
       const calculatedChecksum = await this.calculateChecksum(dataStr);
-      if (
-        backup.metadata.checksum &&
-        calculatedChecksum !== backup.metadata.checksum
-      ) {
+      const expectedChecksum = backup.metadata.checksum;
+      if (expectedChecksum && calculatedChecksum !== expectedChecksum) {
+        console.error(
+          "[BackupRecovery] Backup checksum mismatch:",
+          "expected=" + expectedChecksum,
+          "calculated=" + calculatedChecksum,
+        );
       }
 
       return {
