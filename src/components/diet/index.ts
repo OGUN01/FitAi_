@@ -10,10 +10,4 @@ export type { MealDetailViewProps } from "./MealDetailView";
 export { PremiumMealCard } from "./PremiumMealCard";
 export { HealthScoreIndicator } from "./HealthScoreIndicator";
 export { ProductDetailsModal } from "./ProductDetailsModal";
-export {
-  ValidationAlert,
-  validationErrorToAlertProps,
-  validationWarningToAlertProps,
-} from "./ValidationAlert";
-export { CacheIndicator } from "./CacheIndicator";
 export { JobStatusIndicator } from "./JobStatusIndicator";
