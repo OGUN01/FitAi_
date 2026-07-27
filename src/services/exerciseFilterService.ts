@@ -33,14 +33,6 @@ class ExerciseFilterService {
   constructor() {
     // Load and process exercises with difficulty categorization
     this.exercises = this.categorizeExercises();
-
-    if (__DEV__) {
-      // Debug: Check if specific exercise IDs exist (dev only)
-      const testIds = ["75Bgtjy", "cuC7529", "50BETrz"];
-      testIds.forEach((id) => {
-        const found = this.exercises.find((ex) => ex.exerciseId === id);
-      });
-    }
   }
 
   /**
@@ -378,15 +370,10 @@ class ExerciseFilterService {
    */
   getExerciseById(exerciseId: string): FilteredExercise | null {
     if (!exerciseId) {
-      if (__DEV__) {
-      }
       return null;
     }
 
     const exercise = this.exercises.find((ex) => ex.exerciseId === exerciseId);
-
-    if (!exercise && __DEV__) {
-    }
 
     return exercise || null;
   }
