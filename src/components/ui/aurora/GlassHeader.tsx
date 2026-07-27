@@ -13,7 +13,7 @@ import { StyleSheet, Text, View, ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "./AnimatedPressable";
-import { colors, spacing, typography } from "../../../theme/aurora-tokens";
+import { colors, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
 import { rp, rf } from "../../../utils/responsive";
 
 export interface GlassHeaderProps {
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: Math.max(rf(40), 44),
     height: Math.max(rf(40), 44),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.glass.background,
