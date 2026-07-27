@@ -1,15 +1,10 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh, rs } from "../../utils/responsive";
 import { getLocalDateString } from "../../utils/weekUtils";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 export interface DayInfo {
   dayName: string;
@@ -124,12 +119,19 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     <View style={styles.container}>
       {/* Week Navigation Header */}
       <View style={styles.weekHeader}>
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.weekNavButton}
           onPress={() => handleWeekChange("prev")}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="light"
         >
-          <Text style={styles.weekNavText}>‹</Text>
-        </TouchableOpacity>
+          <Ionicons
+            name="chevron-back"
+            size={rf(22)}
+            color={colors.textSecondary}
+          />
+        </AnimatedPressable>
 
         <View style={styles.weekInfo}>
           <Text style={styles.weekTitle} numberOfLines={1}>
@@ -144,12 +146,19 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           <Text style={styles.weekRange} numberOfLines={1}>{getWeekDateRange(days)}</Text>
         </View>
 
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.weekNavButton}
           onPress={() => handleWeekChange("next")}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="light"
         >
-          <Text style={styles.weekNavText}>›</Text>
-        </TouchableOpacity>
+          <Ionicons
+            name="chevron-forward"
+            size={rf(22)}
+            color={colors.textSecondary}
+          />
+        </AnimatedPressable>
       </View>
 
       {/* Days Selector */}
@@ -164,7 +173,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
         }}
       >
         {days.map((day) => (
-          <TouchableOpacity
+          <AnimatedPressable
             key={day.dayName}
             testID={`day-${day.dayName}`}
             accessibilityLabel={`day ${day.dayName}`}
@@ -175,6 +184,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
               day.isRestDay && styles.dayButtonRest,
             ]}
             onPress={() => onDaySelect(day.dayName)}
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="light"
           >
             <Text
               style={[
@@ -224,7 +236,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 </View>
               )}
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ))}
       </ScrollView>
     </View>
