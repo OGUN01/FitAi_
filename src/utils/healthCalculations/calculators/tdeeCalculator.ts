@@ -31,7 +31,7 @@ export class ClimateAdaptiveTDEECalculator implements TDEECalculator {
       extreme: 1.9,       // Alias for very_active (onboarding uses "extreme")
     };
 
-    let tdee = bmr * (activityMultipliers[activityLevel] ?? 1.55);
+    let tdee = bmr * (activityMultipliers[activityLevel] ?? 1.2);
 
     // Climate adjustments (research-backed)
     const climateMultipliers: Record<ClimateType, number> = {

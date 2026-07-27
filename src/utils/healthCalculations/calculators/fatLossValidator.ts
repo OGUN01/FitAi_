@@ -29,9 +29,6 @@ export class FatLossValidator {
     const weightToLose = currentWeight - targetWeight;
     const weeklyRate = weightToLose / timelineWeeks;
 
-    // Calculate safe deficit based on BMI
-    const maxDeficit = bmi > 35 ? 1500 : bmi > 30 ? 1200 : 1000;
-
     // Tier 1: Standard (0.5-1 kg/week) - OPTIMAL
     if (weeklyRate <= 1.0) {
       return {
@@ -117,7 +114,7 @@ export class FatLossValidator {
       severity: "error",
       message: `${weeklyRate.toFixed(1)}kg/week is extremely aggressive and likely unsustainable. Strong risk of muscle loss, metabolic damage, and rebound weight gain.`,
       achievementProbability: 10,
-      suggestion: `To lose ${weightToLose.toFixed(1)}kg safely, consider ${Math.ceil(weightToLose / 1)}weeks (1kg/week) or ${Math.ceil(weightToLose / 0.75)}weeks (0.75kg/week).`,
+      suggestion: `To lose ${weightToLose.toFixed(1)}kg safely, consider ${Math.ceil(weightToLose / 1)} weeks (1kg/week) or ${Math.ceil(weightToLose / 0.75)} weeks (0.75kg/week).`,
       allowOverride: true,
       recommendations: [
         "Strongly reconsider timeline",

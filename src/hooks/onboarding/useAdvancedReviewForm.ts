@@ -214,7 +214,7 @@ export const useAdvancedReviewForm = ({
           // Boost options: keep existing workout plan untouched
         } else if (isFreqUpgrade) {
           onUpdateWorkoutPreferences({
-            workout_frequency_per_week: alternative.exerciseSessions ?? workoutPreferences?.workout_frequency_per_week,
+            workout_frequency_per_week: alternative.exerciseSessions ?? workoutPreferencesRef.current?.workout_frequency_per_week,
           });
         } else {
           // Legacy exercise type (LIGHT/MODERATE/INTENSE activity): replace workout plan
@@ -229,7 +229,7 @@ export const useAdvancedReviewForm = ({
           onUpdateWorkoutPreferences({
             workout_frequency_per_week: alternative.exerciseSessions ?? DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
             workout_types: exerciseMeta.types,
-            time_preference: alternative.exerciseMinutes ?? workoutPreferences?.time_preference,
+            time_preference: alternative.exerciseMinutes ?? workoutPreferencesRef.current?.time_preference,
             intensity: exerciseMeta.intensity,
           });
         }
