@@ -43,6 +43,7 @@ import {
 import { AdvancedReviewData } from "../types/onboarding";
 import {
   Workout,
+  DayWorkout,
   Meal,
   DayMeal,
   DailyMealPlan,
@@ -73,22 +74,12 @@ import {
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { getLocalDateString } from "../utils/weekUtils";
 import { getCurrentUserId } from "../services/authUtils";
-import { exerciseHistoryService } from "../services/exerciseHistoryService";
+import type { AIServiceMetadata } from "./types";
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-
-export interface AIServiceMetadata {
-  cached: boolean;
-  cacheSource?: "kv" | "database" | "fresh";
-  generationTime: number;
-  model?: string;
-  tokensUsed?: number;
-  costUsd?: number;
-  cuisineDetected?: string;
-}
+// Re-export AIServiceMetadata so existing `import { AIServiceMetadata } from "../ai"`
+// callers keep resolving after the duplicate interface below was removed in
+// favor of the canonical definition in ./types.ts.
+export type { AIServiceMetadata };
 
 // ============================================================================
 // UNIFIED AI SERVICE (Connected to Cloudflare Workers)
@@ -152,7 +143,6 @@ class UnifiedAIService {
    * exercise list (selection happens in the worker) — the AI matches by id/name.
    */
   private async fetchPriorPerformance(
-    focusMuscles?: string[],
     excludeExerciseIds?: string[],
   ): Promise<PriorPerformanceEntry[]> {
     try {
@@ -176,10 +166,20 @@ class UnifiedAIService {
       if (!data || data.length === 0) return [];
 
       // Group by exercise_id, keep only the latest session per exercise (top 8).
-      const byExercise = new Map<string, any[]>();
-      for (const row of data) {
+      type ExerciseSetRow = {
+        exercise_id: string;
+        session_id: string;
+        set_number: number;
+        weight_kg: number | null;
+        reps: number | null;
+        rpe: 1 | 2 | 3 | null;
+        set_type: string | null;
+        completed_at: string;
+      };
+      const byExercise = new Map<string, ExerciseSetRow[]>();
+      for (const row of data as ExerciseSetRow[]) {
         if (byExercise.size >= 8 && !byExercise.has(row.exercise_id)) continue;
-        const arr = byExercise.get(row.exercise_id) || [];
+        const arr = byExercise.get(row.exercise_id) ?? [];
         if (arr.length === 0 || arr[0].session_id === row.session_id) {
           arr.push(row);
         }
@@ -195,7 +195,7 @@ class UnifiedAIService {
             setNumber: r.set_number,
             weightKg: r.weight_kg ?? null,
             reps: r.reps ?? null,
-            rpe: (r.rpe as 1 | 2 | 3 | null) ?? null,
+            rpe: r.rpe ?? null,
           }));
         entries.push({
           exerciseId,
@@ -255,7 +255,6 @@ class UnifiedAIService {
       // sets per exercise so the AI/rule engine prescribes progressions on actual
       // lifted weights. Non-fatal: [] for guests/first-time users.
       request.priorPerformance = await this.fetchPriorPerformance(
-        preferences?.focusMuscles,
         request.excludeExercises,
       );
 
@@ -425,22 +424,32 @@ class UnifiedAIService {
       // P2-fix: Sum fiber from the actual meal/food data instead of hardcoding
       // 0. Falls back to dailyTotals.fiber if the AI provided it, else sums per-
       // food fiber from the raw response meals. Per CLAUDE.md principle 8.
-      const rawMeals = (response.data?.meals || []) as any[];
-      const summedFiber = rawMeals.reduce((sum: number, meal: any) => {
-        const foods: any[] = meal?.foods || [];
-        const mealFiber = foods.reduce((fs: number, f: any) => fs + (f?.nutrition?.fiber ?? f?.fiber ?? 0), 0);
+      //
+      // The worker's DietPlan type (services/fitaiWorkersClient.ts) declares
+      // dailyTotals as { calories, protein, carbs, fat } only, but the AI
+      // backend frequently returns extra optional fields (fiber/sugar/water).
+      // We type the raw shape here so the summing logic is type-safe without
+      // `any`, and fall back to 0 when fields are absent — no hardcoded values.
+      type RawFood = { nutrition?: { fiber?: number }; fiber?: number };
+      type RawMeal = { foods?: RawFood[]; fiber?: number };
+      type RawDailyTotals = { calories?: number; protein?: number; carbs?: number; fat?: number; fiber?: number };
+      const rawData = response.data as { meals?: RawMeal[]; dailyTotals?: RawDailyTotals } | undefined;
+      const rawMeals: RawMeal[] = rawData?.meals ?? [];
+      const summedFiber = rawMeals.reduce((sum: number, meal: RawMeal) => {
+        const foods: RawFood[] = meal?.foods ?? [];
+        const mealFiber = foods.reduce((fs: number, f: RawFood) => fs + (f?.nutrition?.fiber ?? f?.fiber ?? 0), 0);
         return sum + (mealFiber || 0);
       }, 0);
 
       const dailyPlan: DailyMealPlan = {
         date: getLocalDateString(),
         meals: transformedMeals as unknown as Meal[],
-        totalCalories: response.data.dailyTotals?.calories || 0,
+        totalCalories: rawData?.dailyTotals?.calories || 0,
         totalMacros: {
-          protein: response.data.dailyTotals?.protein || 0,
-          carbohydrates: response.data.dailyTotals?.carbs || 0,
-          fat: response.data.dailyTotals?.fat || 0,
-          fiber: (response.data as any)?.dailyTotals?.fiber ?? summedFiber,
+          protein: rawData?.dailyTotals?.protein || 0,
+          carbohydrates: rawData?.dailyTotals?.carbs || 0,
+          fat: rawData?.dailyTotals?.fat || 0,
+          fiber: rawData?.dailyTotals?.fiber ?? summedFiber,
         },
         waterIntake: 0, // Tracked separately by the hydration store
       };
@@ -547,7 +556,6 @@ class UnifiedAIService {
 
       // P1-4 — Closed-loop progressive overload: attach last-completed history.
       request.priorPerformance = await this.fetchPriorPerformance(
-        undefined,
         request.excludeExercises,
       );
 
@@ -568,11 +576,11 @@ class UnifiedAIService {
       }
 
       // ✅ Backend ALWAYS returns weekly plan (NO FALLBACK)
-      const weeklyPlanData = response.data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+      const weeklyPlanData = response.data as unknown as RawWorkerWeeklyPlan;
 
       // Transform each workout in the weekly plan
       const daySlotCounts = new Map<string, number>();
-      const workouts = (weeklyPlanData.workouts || []).map((w: any) => {
+      const workouts = (weeklyPlanData.workouts ?? []).map((w) => {
         const currentSlot = daySlotCounts.get(w.dayOfWeek) ?? 0;
         daySlotCounts.set(w.dayOfWeek, currentSlot + 1);
         return transformWorkoutData(w.workout, w.dayOfWeek, currentSlot);
@@ -719,17 +727,8 @@ class UnifiedAIService {
 
       const response = await fitaiWorkersClient.generateDietPlanAsync(request);
 
-      console.warn('[DIET:AI] generateWeeklyMealPlanAsync → backend response', {
-        success: response.success,
-        hasDietPlanData: isDietPlanResponse(response.data),
-        hasJobData: isAsyncJobResponse(response.data),
-        error: response.error ?? 'none',
-        requestCalories: request.calorieTarget ?? 'unset',
-        requestDietType: request.dietPreferences?.diet_type ?? 'unset',
-      });
-
       if (!response.success || !response.data) {
-        console.error("[DIET:AI] ❌ Backend returned error:", response.error);
+        console.error("[DIET:AI] Backend returned error:", response.error);
         return {
           success: false,
           error: response.error || "Failed to generate meal plan",
@@ -751,14 +750,8 @@ class UnifiedAIService {
           { requestedDaysCount: 7 },
         );
 
-        console.warn('[DIET:AI] ⚡ cache_hit transform result', {
-          ok: !!weeklyPlan,
-          title: weeklyPlan?.planTitle ?? 'n/a',
-          days: weeklyPlan?.meals?.length ?? 0,
-          totalCals: weeklyPlan?.totalEstimatedCalories ?? 'n/a',
-        });
-
         if (!weeklyPlan) {
+          console.error('[DIET:AI] cache_hit: transformDietResponseToWeeklyPlan returned null');
           return {
             success: false,
             error: "Failed to transform diet response",
@@ -773,10 +766,6 @@ class UnifiedAIService {
 
       // Async job was created
       if (isAsyncJobResponse(response.data)) {
-        console.warn('[DIET:AI] 🎯 job_started', {
-          jobId: response.data.jobId,
-          estimatedTimeMinutes: response.data.estimatedTimeMinutes,
-        });
         return {
           success: true,
           data: {
@@ -853,17 +842,8 @@ class UnifiedAIService {
         typeof rawError === 'string'
           ? rawError
           : rawError && typeof rawError === 'object'
-            ? ((rawError as any).message ?? JSON.stringify(rawError))
+            ? (((rawError as { message?: unknown }).message as string | undefined) ?? JSON.stringify(rawError))
             : undefined;
-
-      console.warn('[DIET:AI] 📡 checkMealPlanJobStatus result', {
-        jobId,
-        status: jobData.status,
-        hasResult: !!jobData.result,
-        rawErrorType: typeof rawError,
-        normalizedError: normalizedError ?? 'none',
-        genMs: jobData.metadata?.generationTimeMs ?? '-',
-      });
 
       // Return current status
       return {
@@ -1040,13 +1020,67 @@ class UnifiedAIService {
 // ============================================================================
 
 /**
- * ✅ NEW: Transform workout data from backend to frontend Workout format
+ * Shape of a single exercise as returned by the Cloudflare Workers backend
+ * workout-generation endpoint. The worker emits `restSeconds` (canonical) and
+ * sometimes a legacy `restTime` field; both are tolerated. `reps` may be a
+ * number or a string range (e.g. "8-12") — preserved as-is per the
+ * WorkoutSet.reps union.
+ */
+interface RawWorkerExercise {
+  exerciseId?: string;
+  sets?: number;
+  reps?: number | string;
+  duration?: number;
+  restSeconds?: number;
+  restTime?: number;
+  notes?: string;
+}
+
+/**
+ * Shape of a single workout entry returned by the backend within a weekly plan.
+ * `difficulty` may be any string; unknown values fall back to "intermediate".
+ */
+interface RawWorkerWorkout {
+  title?: string;
+  description?: string;
+  difficulty?: string;
+  totalDuration?: number;
+  estimatedCalories?: number;
+  exercises?: RawWorkerExercise[];
+  warmup?: RawWorkerExercise[];
+  cooldown?: RawWorkerExercise[];
+}
+
+/**
+ * Shape of a weekly workout plan response from the backend. The worker's
+ * typed response (services/fitaiWorkersClient.ts) uses `any` for the workouts
+ * array, so we type the shape we actually consume here.
+ */
+interface RawWorkerWeeklyPlan {
+  id?: string;
+  planTitle?: string;
+  planDescription?: string;
+  restDays?: string[];
+  totalEstimatedCalories?: number;
+  workouts: Array<{ dayOfWeek: string; workout: RawWorkerWorkout }>;
+}
+
+/**
+ * Transform workout data from backend to frontend DayWorkout format.
+ *
+ * NOTE: The backend weekly-plan payload only includes the fields below; the
+ * DayWorkout-specific fields (subCategory, intensityLevel, warmUp/coolDown as
+ * ExerciseInstruction[], progressionNotes, etc.) are not emitted by the worker
+ * for the weekly-plan flow. They are populated later by the workout-builder
+ * pipeline when present. We cast to DayWorkout to satisfy the
+ * WeeklyWorkoutPlan.workouts type — the runtime shape is identical to the
+ * previous `any`-typed implementation.
  */
 function transformWorkoutData(
-  workoutPlan: any,
+  workoutPlan: RawWorkerWorkout,
   dayOfWeek: string,
   slotIndex: number = 0,
-): Workout {
+): DayWorkout {
   // Map difficulty
   const difficultyMap: Record<
     string,
@@ -1056,13 +1090,13 @@ function transformWorkoutData(
     intermediate: "intermediate",
     advanced: "advanced",
   };
-  const difficulty = difficultyMap[workoutPlan.difficulty] || "intermediate";
+  const difficulty = difficultyMap[workoutPlan.difficulty ?? ""] || "intermediate";
 
   // Transform exercises
-  const exercises: WorkoutSet[] = (workoutPlan.exercises || []).map(
-    (ex: any, idx: number) => ({
+  const exercises: WorkoutSet[] = (workoutPlan.exercises ?? []).map(
+    (ex: RawWorkerExercise, idx: number) => ({
       id: `${dayOfWeek}_ex_${idx}`,
-      exerciseId: ex.exerciseId,
+      exerciseId: ex.exerciseId ?? "",
       sets: ex.sets || 3,
       reps: typeof ex.reps === "number" ? ex.reps : (ex.reps || "8-12"),
       duration: ex.duration,
@@ -1072,10 +1106,10 @@ function transformWorkoutData(
   );
 
   // Transform warmup
-  const warmup: WorkoutSet[] = (workoutPlan.warmup || []).map(
-    (ex: any, idx: number) => ({
+  const warmup: WorkoutSet[] = (workoutPlan.warmup ?? []).map(
+    (ex: RawWorkerExercise, idx: number) => ({
       id: `${dayOfWeek}_warmup_${idx}`,
-      exerciseId: ex.exerciseId,
+      exerciseId: ex.exerciseId ?? "",
       sets: ex.sets || 1,
       reps: typeof ex.reps === "number" ? ex.reps : (ex.reps || "10"),
       duration: ex.duration,
@@ -1085,10 +1119,10 @@ function transformWorkoutData(
   );
 
   // Transform cooldown
-  const cooldown: WorkoutSet[] = (workoutPlan.cooldown || []).map(
-    (ex: any, idx: number) => ({
+  const cooldown: WorkoutSet[] = (workoutPlan.cooldown ?? []).map(
+    (ex: RawWorkerExercise, idx: number) => ({
       id: `${dayOfWeek}_cooldown_${idx}`,
-      exerciseId: ex.exerciseId,
+      exerciseId: ex.exerciseId ?? "",
       sets: ex.sets || 1,
       reps: typeof ex.reps === "number" ? ex.reps : (ex.reps || "10"),
       duration: ex.duration,
@@ -1116,7 +1150,7 @@ function transformWorkoutData(
     aiGenerated: true,
     dayOfWeek: dayOfWeek,
     createdAt: new Date().toISOString(),
-  };
+  } as unknown as DayWorkout;
 }
 
 // ============================================================================
