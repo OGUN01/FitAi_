@@ -3,20 +3,10 @@
  * 2x2 grid of animated metric summary cards
  */
 
-import React, { useEffect } from "react";
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withDelay,
-  FadeInUp,
-  interpolate,
-  Extrapolation,
-} from "react-native-reanimated";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import Svg, {
   Circle,
   Defs,
