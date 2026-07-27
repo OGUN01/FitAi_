@@ -113,7 +113,7 @@ export async function syncSteps(ctx: SyncContext): Promise<void> {
     } else {
       ctx.healthData.steps = 0;
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("steps");
   }
@@ -141,7 +141,7 @@ export async function syncHeartRate(ctx: SyncContext): Promise<void> {
       // fake values). True resting HR needs a dedicated query not available here.
       addOriginSource(ctx, "heartRate", heartRateAggregate.dataOrigins || []);
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("heartRate");
   }
@@ -206,7 +206,7 @@ export async function syncActiveCalories(ctx: SyncContext): Promise<void> {
         addOriginSource(ctx, "activeCalories", origins);
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("activeCalories");
   }
@@ -238,7 +238,7 @@ export async function syncTotalCaloriesWithBMRFallback(
         totalCaloriesAggregate.dataOrigins || [],
       );
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("totalCalories");
   }
@@ -329,7 +329,7 @@ export async function syncDistance(ctx: SyncContext): Promise<void> {
         addOriginSource(ctx, "distance", origins);
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("distance");
   }
@@ -360,7 +360,7 @@ export async function syncWeight(ctx: SyncContext): Promise<void> {
         };
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("weight");
   }
@@ -457,7 +457,7 @@ export async function syncExerciseSessions(ctx: SyncContext): Promise<void> {
         };
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("exerciseSessions");
   }
@@ -489,7 +489,7 @@ export async function syncHRV(ctx: SyncContext): Promise<void> {
         };
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("heartRateVariability");
   }
@@ -520,7 +520,7 @@ export async function syncSpO2(ctx: SyncContext): Promise<void> {
         };
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("oxygenSaturation");
   }
@@ -551,7 +551,7 @@ export async function syncBodyFat(ctx: SyncContext): Promise<void> {
         };
       }
     }
-  } catch (error) {
+  } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("bodyFat");
   }
