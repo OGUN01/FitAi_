@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const openUrl = (url: string) => {
   if (Platform.OS === 'web') {
-    window.open(url, '_blank');
+    globalThis.open(url, '_blank');
   } else {
     Linking.openURL(url);
   }
@@ -78,7 +78,7 @@ export const useAboutFitAILogic = () => {
 
   const handleRateApp = useCallback(() => {
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
+      const confirmed = globalThis.confirm(
         "Rate FitAI\n\nThank you for using FitAI! Your feedback helps us improve.\n\nClick OK to rate on the App Store."
       );
       if (confirmed) {
@@ -111,7 +111,7 @@ export const useAboutFitAILogic = () => {
 
   const handleShareApp = useCallback(() => {
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
+      const confirmed = globalThis.confirm(
         "Share FitAI\n\nInvite your friends to join you on your fitness journey!\n\nClick OK to share."
       );
       if (confirmed) {
@@ -152,7 +152,7 @@ export const useAboutFitAILogic = () => {
     if (url) {
       haptics.light();
       if (Platform.OS === 'web') {
-        window.open(url, '_blank');
+        globalThis.open(url, '_blank');
       } else {
         Linking.openURL(url).catch(() => {
           crossPlatformAlert("Error", "Could not open social media link.");
@@ -165,7 +165,7 @@ export const useAboutFitAILogic = () => {
     haptics.light();
     const url = "https://fitai.app/terms";
     if (Platform.OS === 'web') {
-      window.open(url, '_blank');
+      globalThis.open(url, '_blank');
     } else {
       Linking.openURL(url).catch(() =>
         crossPlatformAlert(
@@ -180,7 +180,7 @@ export const useAboutFitAILogic = () => {
     haptics.light();
     const url = "https://fitai.app/privacy";
     if (Platform.OS === 'web') {
-      window.open(url, '_blank');
+      globalThis.open(url, '_blank');
     } else {
       Linking.openURL(url).catch(() =>
         crossPlatformAlert(
@@ -195,7 +195,7 @@ export const useAboutFitAILogic = () => {
     haptics.light();
     const url = "https://fitai.app/licenses";
     if (Platform.OS === 'web') {
-      window.open(url, '_blank');
+      globalThis.open(url, '_blank');
     } else {
       Linking.openURL(url).catch(() =>
         crossPlatformAlert(

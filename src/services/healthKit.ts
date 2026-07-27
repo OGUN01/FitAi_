@@ -83,7 +83,7 @@ export interface HealthSyncResult {
 class HealthKitService {
   private static instance: HealthKitService;
   private isInitialized = false;
-  private syncInterval: NodeJS.Timeout | null = null;
+  private syncInterval: ReturnType<typeof setInterval> | null = null;
   private lastSyncTime: Date | null = null;
 
   private constructor() {}
@@ -318,9 +318,6 @@ class HealthKitService {
 
       const success = await saveWorkout(workoutData);
 
-      if (success) {
-      }
-
       return success;
     } catch (error) {
       console.error("Failed to save workout to HealthKit:", error);
@@ -341,9 +338,6 @@ class HealthKitService {
       };
 
       const success = await saveSteps(stepData);
-
-      if (success) {
-      }
 
       return success;
     } catch (error) {
@@ -370,9 +364,6 @@ class HealthKitService {
       };
 
       const success = await saveBodyMass(weightData);
-
-      if (success) {
-      }
 
       return success;
     } catch (error) {
@@ -497,7 +488,7 @@ class HealthKitService {
     });
   }
 
-  async exportNutritionToHealthKit(nutrition: {
+  async exportNutritionToHealthKit(_nutrition: {
     calories: number;
     protein: number;
     carbs: number;
@@ -519,7 +510,7 @@ class HealthKitService {
 
   async exportBodyWeightToHealthKit(
     weight: number,
-    date: Date = new Date(),
+    _date: Date = new Date(),
   ): Promise<boolean> {
     return this.saveWeightToHealthKit(weight, "kg");
   }
@@ -629,7 +620,6 @@ class HealthKitService {
   async getActivityAdjustedCalories(baseCalories: number): Promise<any> {
     const data = await this.fetchHealthData();
     const activeEnergy = data.activeEnergy || 0;
-    const steps = data.steps || 0;
 
     let activityMultiplier = 1.0;
     if (activeEnergy > 600) activityMultiplier = 1.15;

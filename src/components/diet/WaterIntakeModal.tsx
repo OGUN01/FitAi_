@@ -47,7 +47,6 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [customAmount, setCustomAmount] = useState<string>("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Calculate progress
@@ -390,22 +389,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     marginTop: rp(8),
   },
-  customButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: rp(8),
-    paddingVertical: rp(14),
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
-    borderStyle: "dashed",
-  },
-  customButtonText: {
-    fontSize: rf(14),
-    fontWeight: String(typography.fontWeight.medium) as any,
-    color: colors.primary,
-  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -442,23 +425,6 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: rf(13),
     color: colors.errorLight,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: rp(12),
-  },
-  cancelButton: {
-    flex: 0.4,
-    paddingVertical: rp(14),
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.glassHighlight,
-  },
-  cancelButtonText: {
-    fontSize: rf(15),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.white,
   },
   submitButton: {
     overflow: "hidden",

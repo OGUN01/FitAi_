@@ -53,7 +53,7 @@ export class DataTransformationService {
     userId: string,
     email: string,
   ): SupabaseProfile {
-    const { personalInfo, fitnessGoals } = onboardingData;
+    const { personalInfo } = onboardingData;
 
     return {
       id: userId,
@@ -333,7 +333,7 @@ export class DataTransformationService {
         }
         break;
 
-      case "workout":
+      case "workout": {
         if (!data.id || !data.user_id || !data.workout_id) {
           errors.push("Workout session must have id, user_id, and workout_id");
         }
@@ -343,6 +343,7 @@ export class DataTransformationService {
           errors.push("Workout session must have a positive duration");
         }
         break;
+      }
 
       case "meal":
         if (!data.id || !data.user_id || !data.logged_at) {
@@ -529,7 +530,7 @@ export class DataTransformationService {
         }
         break;
 
-      case "meal":
+      case "meal": {
         // Merge food items if different
         // Handle food_items as JSONB (could be object, array, or string)
         let localFoods: unknown[] = [];
@@ -567,8 +568,9 @@ export class DataTransformationService {
           merged.total_fat = localData.total_fat;
         }
         break;
+      }
 
-      case "progress":
+      case "progress": {
         // Use the measurement with the more recent timestamp
         const localTime = new Date(localData.created_at).getTime();
         const remoteTime = new Date(remoteData.created_at).getTime();
@@ -580,6 +582,7 @@ export class DataTransformationService {
           merged.measurements = localData.measurements;
         }
         break;
+      }
     }
 
     merged.updated_at = new Date().toISOString();
