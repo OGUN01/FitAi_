@@ -43,23 +43,23 @@ const NutritionLabelSchema = z.object({
 	brand: z.string().optional().describe('Brand name if visible on packaging'),
 
 	// Serving information — critical for correct scaling
-	servingSize: z.number().describe('Serving size value as printed (e.g. 30, 100)'),
+	servingSize: z.number().min(0).describe('Serving size value as printed (e.g. 30, 100)'),
 	servingUnit: z.string().describe('Serving size unit as printed (e.g. "g", "ml", "cup")'),
 
 	// Per-serving macros — extract EXACTLY as printed
-	caloriesPerServing: z.number().describe('Calories/Energy (kcal) per serving as printed on label'),
-	proteinPerServing: z.number().describe('Protein in grams per serving as printed'),
-	carbsPerServing: z.number().describe('Total Carbohydrates in grams per serving as printed'),
-	fatPerServing: z.number().describe('Total Fat in grams per serving as printed'),
-	fiberPerServing: z.number().optional().describe('Dietary fiber in grams per serving if printed, otherwise omit'),
-	sugarPerServing: z.number().optional().describe('Total sugars in grams per serving if printed, otherwise omit'),
-	sodiumPerServing: z.number().optional().describe('Sodium in milligrams (mg) PER SERVING exactly as printed — do NOT convert to grams'),
+	caloriesPerServing: z.number().min(0).describe('Calories/Energy (kcal) per serving as printed on label'),
+	proteinPerServing: z.number().min(0).describe('Protein in grams per serving as printed'),
+	carbsPerServing: z.number().min(0).describe('Total Carbohydrates in grams per serving as printed'),
+	fatPerServing: z.number().min(0).describe('Total Fat in grams per serving as printed'),
+	fiberPerServing: z.number().min(0).optional().describe('Dietary fiber in grams per serving if printed, otherwise omit'),
+	sugarPerServing: z.number().min(0).optional().describe('Total sugars in grams per serving if printed, otherwise omit'),
+	sodiumPerServing: z.number().min(0).optional().describe('Sodium in milligrams (mg) PER SERVING exactly as printed — do NOT convert to grams'),
 
 	// Per-100g values if explicitly printed on the label (many Indian/EU labels have both)
-	caloriesPer100g: z.number().optional().describe('Calories per 100g if EXPLICITLY printed on label, otherwise omit'),
-	proteinPer100g: z.number().optional().describe('Protein per 100g if EXPLICITLY printed, otherwise omit'),
-	carbsPer100g: z.number().optional().describe('Carbs per 100g if EXPLICITLY printed, otherwise omit'),
-	fatPer100g: z.number().optional().describe('Fat per 100g if EXPLICITLY printed, otherwise omit'),
+	caloriesPer100g: z.number().min(0).optional().describe('Calories per 100g if EXPLICITLY printed on label, otherwise omit'),
+	proteinPer100g: z.number().min(0).optional().describe('Protein per 100g if EXPLICITLY printed, otherwise omit'),
+	carbsPer100g: z.number().min(0).optional().describe('Carbs per 100g if EXPLICITLY printed, otherwise omit'),
+	fatPer100g: z.number().min(0).optional().describe('Fat per 100g if EXPLICITLY printed, otherwise omit'),
 
 	// Extras
 	ingredients: z.string().optional().describe('Ingredients list as text if visible on label'),

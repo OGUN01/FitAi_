@@ -64,15 +64,15 @@ const RecognizedFoodSchema = z.object({
 		.describe('Cuisine type - be specific'),
 
 	// Portion estimation (AI suggestion - user can override)
-	estimatedGrams: z.number().describe('Estimated portion weight in grams based on visual size'),
+	estimatedGrams: z.number().min(0).max(5000).describe('Estimated portion weight in grams based on visual size'),
 	servingDescription: z.string().describe("Human-readable serving description (e.g., '1 bowl', '2 pieces', '1 plate')"),
 
 	// Nutrition for estimated portion (core macros only)
-	calories: z.number().describe('Calories for the estimated portion'),
-	protein: z.number().describe('Protein in grams'),
-	carbs: z.number().describe('Carbohydrates in grams'),
-	fat: z.number().describe('Fat in grams'),
-	fiber: z.number().describe('Fiber in grams'),
+	calories: z.number().min(0).describe('Calories for the estimated portion'),
+	protein: z.number().min(0).describe('Protein in grams'),
+	carbs: z.number().min(0).describe('Carbohydrates in grams'),
+	fat: z.number().min(0).describe('Fat in grams'),
+	fiber: z.number().min(0).describe('Fiber in grams'),
 
 	// Confidence (important for user trust)
 	confidence: z.number().min(0).max(100).describe('Recognition confidence (0-100). Lower if uncertain.'),
@@ -81,7 +81,7 @@ const RecognizedFoodSchema = z.object({
 const FoodRecognitionResponseSchema = z.object({
 	foods: z.array(RecognizedFoodSchema).describe('List of recognized food items'),
 	overallConfidence: z.number().min(0).max(100).describe('Overall confidence score'),
-	totalCalories: z.number().describe('Sum of all food calories'),
+	totalCalories: z.number().min(0).describe('Sum of all food calories'),
 	mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).describe('Meal type'),
 });
 
