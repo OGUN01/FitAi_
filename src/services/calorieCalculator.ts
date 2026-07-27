@@ -232,129 +232,6 @@ export function calculateWorkoutCalories(
   };
 }
 
-/**
- * Calculate calories for a completed workout based on actual progress
- * This accounts for exercises that were skipped or partially completed
- * 
- * @param workout - The workout plan with exercises
- * @param exerciseProgress - Progress tracking for each exercise
- * @param userWeightKg - User's weight in kilograms
- * @returns Actual calories burned
- */
-export function calculateCompletedWorkoutCalories(
-  workout: {
-    exercises: ExerciseCalorieInput[];
-    duration?: number;
-  },
-  exerciseProgress: Record<string, {
-    completed: boolean;
-    completedSets?: boolean[];
-    actualReps?: number[];
-    actualDuration?: number;
-  }>,
-  userWeightKg: number
-): number {
-  let totalCalories = 0;
-  
-  for (const exercise of workout.exercises) {
-    const progress = exerciseProgress[exercise.exerciseId || ''];
-    
-    // Skip if exercise wasn't attempted
-    if (!progress) continue;
-    
-    // Get exercise data
-    let exerciseData: FilteredExercise | ExerciseCalorieInput = exercise;
-    if (exercise.exerciseId) {
-      const dbExercise = exerciseFilterService.getExerciseById(exercise.exerciseId);
-      if (dbExercise) {
-        exerciseData = { ...dbExercise, ...exercise };
-      }
-    }
-    
-    // Calculate based on actual progress
-    let completedSets = exercise.sets || 3;
-    let avgReps = typeof exercise.reps === 'number' ? exercise.reps : 10;
-    
-    if (progress.completedSets) {
-      completedSets = progress.completedSets.filter(Boolean).length;
-    }
-    if (progress.actualReps && progress.actualReps.length > 0) {
-      avgReps = progress.actualReps.reduce((a, b) => a + b, 0) / progress.actualReps.length;
-    }
-    
-    // Estimate duration based on actual progress
-    const durationMinutes = estimateExerciseDuration(
-      completedSets,
-      avgReps,
-      exercise.restTime,
-      progress.actualDuration,
-      exerciseData.bodyParts
-    );
-    
-    // Calculate calories
-    const calories = calculateExerciseCalories(exerciseData, durationMinutes, userWeightKg);
-    totalCalories += calories;
-  }
-  
-  return totalCalories;
-}
-
-/**
- * Quick estimate for workout calories based on duration and difficulty
- * Used when exercise details aren't available but user weight is known
- * 
- * @param durationMinutes - Workout duration in minutes
- * @param difficulty - Workout difficulty level
- * @param userWeightKg - User's weight in kilograms (REQUIRED - no fallback)
- * @returns Estimated calories, or 0 if weight not available
- */
-export function quickEstimateCalories(
-  durationMinutes: number,
-  difficulty: 'beginner' | 'intermediate' | 'advanced',
-  userWeightKg: number | undefined | null
-): number {
-  // NO FALLBACK - return 0 if weight not available
-  if (!userWeightKg || userWeightKg <= 0) {
-    console.warn('[calorieCalculator] Cannot quick estimate calories: user weight not available');
-    return 0;
-  }
-  
-  if (durationMinutes <= 0) {
-    return 0;
-  }
-  
-  // Average MET by difficulty
-  const difficultyMET: Record<string, number> = {
-    beginner: 4.0,
-    intermediate: 5.5,
-    advanced: 7.0,
-  };
-  
-  const met = difficultyMET[difficulty] || 5.5;
-  const durationHours = durationMinutes / 60;
-  
-  return Math.round(met * userWeightKg * durationHours);
-}
-
-/**
- * Get calories per minute for display purposes
- * Shows users how intense an exercise is
- * 
- * @param exercise - Exercise data
- * @param userWeightKg - User's weight in kilograms (REQUIRED - no fallback)
- * @returns Calories per minute, or 0 if weight not available
- */
-export function getCaloriesPerMinute(
-  exercise: FilteredExercise | ExerciseCalorieInput,
-  userWeightKg: number | undefined | null
-): number {
-  if (!userWeightKg || userWeightKg <= 0) {
-    return 0;
-  }
-  const met = getExerciseMET(exercise);
-  return Math.round((met * userWeightKg) / 60);
-}
-
 // =============================================================================
 // EXPORT DEFAULT SERVICE
 // =============================================================================
@@ -364,9 +241,6 @@ export const calorieCalculator = {
   estimateExerciseDuration,
   calculateExerciseCalories,
   calculateWorkoutCalories,
-  calculateCompletedWorkoutCalories,
-  quickEstimateCalories,
-  getCaloriesPerMinute,
 };
 
 export default calorieCalculator;
