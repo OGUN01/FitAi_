@@ -145,6 +145,7 @@ export const Button: React.FC<ButtonProps> = React.memo(({
         activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? title}
+        accessibilityState={{ disabled: disabled || loading, busy: loading }}
       >
         <LinearGradient
           colors={[colors.primary, colors.primaryLight]}
@@ -171,6 +172,7 @@ export const Button: React.FC<ButtonProps> = React.memo(({
       activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
     >
       {buttonContent}
     </AnimatedTouchable>
