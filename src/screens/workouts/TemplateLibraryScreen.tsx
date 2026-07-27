@@ -141,6 +141,7 @@ const DIFFICULTY_LABEL: Record<
 export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("mine");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -177,6 +178,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const userWeightKg = bodyAnalysis?.current_weight_kg ?? null;
 
   const loadTemplates = useCallback(async () => {
+    setLoadError(false);
     const userId = getCurrentUserId();
     if (!userId) {
       setLoading(false);
@@ -187,6 +189,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       setTemplates(result);
     } catch (err) {
       console.error("Failed to load templates:", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -600,6 +603,33 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  if (loadError) {
+    return (
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex} edges={["top"]}>
+          <GlassHeader
+            title="Template Library"
+            onBack={() => navigation.goBack()}
+            backAccessibilityLabel="Go back"
+          />
+          <View style={styles.emptyWrap} testID="template-load-error">
+            <EmptyState
+              icon="cloud-offline-outline"
+              iconColor={colors.error.DEFAULT}
+              title="Couldn't load templates"
+              subtitle="Check your connection and try again."
+              ctaText="Try Again"
+              onCta={() => {
+                setLoading(true);
+                loadTemplates();
+              }}
+            />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={["top"]}>
