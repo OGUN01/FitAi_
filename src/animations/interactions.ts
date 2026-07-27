@@ -345,7 +345,7 @@ export const animateCountUp = (
   from: number,
   to: number,
   duration: number = 1000,
-  onUpdate?: (value: number) => void,
+  onUpdate?: (_value: number) => void,
   decimals: number = 0
 ) => {
   animatedValue.setValue(from);
@@ -550,7 +550,7 @@ export const createLoopAnimation = (
   animatedValue: Animated.Value,
   toValue: number,
   duration: number,
-  easing: ((value: number) => number) = Easing.inOut(Easing.ease)
+  easing: ((_value: number) => number) = Easing.inOut(Easing.ease)
 ): Animated.CompositeAnimation => {
   return Animated.loop(
     Animated.sequence([
@@ -594,7 +594,7 @@ export const createTimingAnimation = (
   animatedValue: Animated.Value,
   toValue: number,
   duration: number,
-  easing: ((value: number) => number) = Easing.out(Easing.ease),
+  easing: ((_value: number) => number) = Easing.out(Easing.ease),
   useNativeDriver: boolean = true
 ): Animated.CompositeAnimation => {
   return Animated.timing(animatedValue, {

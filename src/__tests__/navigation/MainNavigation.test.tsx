@@ -25,6 +25,10 @@ jest.mock("react-native", () => ({
   Platform: {
     OS: "ios",
   },
+  Linking: {
+    getInitialURL: jest.fn(() => Promise.resolve(null)),
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  },
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
