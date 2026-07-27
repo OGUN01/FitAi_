@@ -197,6 +197,7 @@ export const useBodyAnalysis = ({
     formData.current_weight_kg,
     calculateBMRMemo,
     calculateIdealWeightRangeMemo,
+    onUpdate,
   ]);
 
   // Calculate waist-hip ratio when measurements change
@@ -216,7 +217,7 @@ export const useBodyAnalysis = ({
         onUpdate({ waist_hip_ratio });
       }
     }
-  }, [formData.waist_cm, formData.hip_cm]);
+  }, [formData.waist_cm, formData.hip_cm, onUpdate]);
 
   // Helpers
   const getBMICategory = (

@@ -131,7 +131,7 @@ export const useWorkoutPreferences = ({
         onUpdate({ time_preference: minutes });
       }
     }
-  }, [data]);
+  }, [data, onUpdate]);
 
   // Sync formData with data prop when it changes
   const isSyncingFromProps = useRef(false);
@@ -236,7 +236,7 @@ export const useWorkoutPreferences = ({
         }
       }
     }
-  }, [bodyAnalysisData, data?.weekly_weight_loss_goal]);
+  }, [bodyAnalysisData, data?.weekly_weight_loss_goal, onUpdate]);
 
   // Form Handlers
   const updateField = <K extends keyof WorkoutPreferencesData>(

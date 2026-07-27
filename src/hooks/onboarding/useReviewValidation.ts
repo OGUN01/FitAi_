@@ -550,6 +550,7 @@ export const useReviewValidation = ({
     bodyAnalysis,
     workoutPreferences,
     onUpdate,
+    onUpdateWorkoutPreferences,
   ]);
 
   return {

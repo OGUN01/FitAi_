@@ -97,7 +97,9 @@ export const useHealthKitSync = (
   // Initialize HealthKit on mount
   useEffect(() => {
     if (autoInitialize && Platform.OS === "ios") {
+      let mounted = true;
       const init = async () => {
+        if (!mounted) return;
         setIsLoading(true);
         try {
           await initializeHealthKit();
@@ -106,10 +108,11 @@ export const useHealthKitSync = (
             error: String(error),
           });
         } finally {
-          setIsLoading(false);
+          if (mounted) setIsLoading(false);
         }
       };
       init();
+      return () => { mounted = false; };
     }
   }, [autoInitialize, initializeHealthKit]);
 
