@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../ui";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rh, rf, rbr } from "../../utils/responsive";
+import { rf, rbr } from "../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
 
 interface DatePickerProps {
