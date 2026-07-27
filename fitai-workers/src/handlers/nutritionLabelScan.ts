@@ -15,10 +15,11 @@
  */
 
 import { Context } from 'hono';
-import { generateObject, createGateway } from 'ai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
+import { createAIProvider } from '../utils/aiProvider';
 import { APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
 
@@ -71,15 +72,6 @@ const NutritionLabelSchema = z.object({
 	),
 	extractionNotes: z.string().optional().describe('Any caveats — e.g. "label partially obscured", "values may be per 100g not per serving"'),
 });
-
-// ============================================================================
-// AI PROVIDER
-// ============================================================================
-
-function createAIProvider(env: Env) {
-	const gateway = createGateway({ apiKey: env.AI_GATEWAY_API_KEY });
-	return gateway('google/gemini-3.5-flash-lite');
-}
 
 // ============================================================================
 // PROMPT
@@ -159,7 +151,8 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 
 		console.log(`[LabelScan] Processing label image for user ${user.id}`);
 
-		const model = createAIProvider(c.env);
+		const modelId = (c.env as any).NUTRITION_LABEL_SCAN_MODEL ?? 'google/gemini-3.5-flash-lite';
+		const model = createAIProvider(c.env, modelId);
 		const prompt = buildLabelPrompt(request.productName);
 
 		const { object } = await generateObject({
@@ -247,7 +240,7 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 			},
 			metadata: {
 				processingTime,
-				model: 'google/gemini-3.5-flash-lite',
+				model: modelId,
 				userId: user.id,
 			},
 		});
