@@ -81,7 +81,8 @@ describe("WorkoutCompleteDialog", () => {
     expect(screen.getByText("Done")).toBeTruthy();
 
     const keyboardView = screen.UNSAFE_getByType("KeyboardAvoidingView");
-    expect(keyboardView.props.behavior).toBe("height");
+    // behavior is "padding" on iOS, undefined on Android (system handles keyboard)
+    expect(keyboardView.props.behavior).toBeUndefined();
 
     const safeArea = screen.UNSAFE_getByType("SafeAreaView");
     expect(StyleSheet.flatten(safeArea.props.style)).toMatchObject({
