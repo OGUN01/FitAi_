@@ -184,7 +184,7 @@ export function calculateWorkoutCalories(
   }
   const exerciseBreakdown: WorkoutCalorieResult['exerciseBreakdown'] = [];
   let totalCalories = 0;
-  let totalMET = 0;
+  let totalWeightedMET = 0;
   let totalDurationMinutes = 0;
   
   for (const exercise of exercises) {
@@ -212,7 +212,7 @@ export function calculateWorkoutCalories(
     
     // Add to totals
     totalCalories += calories;
-    totalMET += met;
+    totalWeightedMET += met * durationMinutes;
     totalDurationMinutes += durationMinutes;
     
     exerciseBreakdown.push({
@@ -227,7 +227,7 @@ export function calculateWorkoutCalories(
   return {
     totalCalories,
     exerciseBreakdown,
-    averageMET: exercises.length > 0 ? totalMET / exercises.length : 0,
+    averageMET: totalDurationMinutes > 0 ? totalWeightedMET / totalDurationMinutes : 0,
     totalDurationMinutes,
   };
 }
