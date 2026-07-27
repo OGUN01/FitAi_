@@ -18,18 +18,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
-  useSharedValue,
   withSpring,
   withTiming,
-  runOnJS,
-  interpolate,
-  Extrapolate,
 } from "react-native-reanimated";
 import {
   useDragToReorder,
-  type DragToReorderConfig,
 } from "../../../gestures/handlers";
-import { colors, shadows, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { colors, spacing } from "../../../theme/aurora-tokens";
 import { animations, springConfig, duration } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
