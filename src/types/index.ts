@@ -12,13 +12,12 @@ export {
 
 // Workout domain
 export { Workout, WorkoutPlan, WorkoutSession } from './workout';
-export type { WorkoutGenerationApiPreferences as ApiWorkoutPreferences } from './api';
 
 // Diet domain
-export { DailyMealPlan, Meal, MealItem, Macronutrients, ShoppingListItem } from './diet';
+export { DailyMealPlan, Meal, MealItem, Macronutrients } from './diet';
 
 // API domain (export only stable request/response types to avoid naming overlaps)
-export { ApiResponse, ApiError, PaginatedResponse, ApiRequestOptions } from './api';
+export { ApiResponse, ApiError } from './api';
 
 // AI domain
 // NOTE: Keep AI exports minimal to prevent name drift; export types only if they exist
