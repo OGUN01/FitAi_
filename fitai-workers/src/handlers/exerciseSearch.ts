@@ -234,9 +234,9 @@ export async function handleExerciseSearch(
       database = await loadExerciseDatabase();
     } catch (err) {
       console.error('[exerciseSearch] Failed to load exercise database:', err);
-      return new Response(
-        JSON.stringify({ error: 'Exercise database temporarily unavailable', exercises: [] }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      return c.json(
+        { success: false, error: 'Exercise database temporarily unavailable', exercises: [] },
+        503,
       );
     }
     const allExercises = database.exercises;

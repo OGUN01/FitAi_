@@ -200,11 +200,20 @@ export async function handleChat(
       }
 
       // Return SSE stream
+      // Include CORS headers explicitly — toDataStreamResponse builds a raw
+      // Response that bypasses Hono's context header merging, so CORS headers
+      // set by the global CORS middleware would be stripped without this.
+      const origin = c.req.header('Origin');
+      const allowedOrigins = (c.env as { ALLOWED_ORIGINS?: string }).ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) || ['*'];
+      const allowOrigin = allowedOrigins.includes('*') ? (origin || '*') : (origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0]);
+
       return result.toDataStreamResponse({
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           Connection: 'keep-alive',
+          'Access-Control-Allow-Origin': allowOrigin,
+          ...(allowOrigin !== '*' ? { 'Access-Control-Allow-Credentials': 'true' } : {}),
         },
       });
     } else {
