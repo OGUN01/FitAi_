@@ -288,6 +288,11 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                         setMealTime(MEAL_TIMES[type]);
                         haptics.light();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        type.charAt(0).toUpperCase() + type.slice(1)
+                      }
+                      accessibilityState={{ selected: mealType === type }}
                     >
                       <Text
                         style={[
@@ -332,6 +337,8 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                             )
                           }
                           style={styles.quantityButton}
+                          accessibilityRole="button"
+                          accessibilityLabel="Decrease quantity by 10 grams"
                         >
                           <Ionicons
                             name="remove"
@@ -347,6 +354,8 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                             handleQuantityChange(index, item.quantity + 10)
                           }
                           style={styles.quantityButton}
+                          accessibilityRole="button"
+                          accessibilityLabel="Increase quantity by 10 grams"
                         >
                           <Ionicons
                             name="add"
@@ -362,6 +371,8 @@ export const MealEditModal: React.FC<MealEditModalProps> = ({
                     <TouchableOpacity
                       onPress={() => handleRemoveIngredient(index)}
                       style={styles.removeButton}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove ingredient"
                     >
                       <Ionicons
                         name="trash-outline"
