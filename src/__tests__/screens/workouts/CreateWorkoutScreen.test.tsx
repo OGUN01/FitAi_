@@ -30,6 +30,11 @@ jest.mock("react-native", () => {
       RealReact.createElement("View", props, children),
     KeyboardAvoidingView: ({ children, ...props }: any) =>
       RealReact.createElement("View", props, children),
+    // Switch is rendered by the Share-to-Community toggle (always in the
+    // render path). Without this export it resolves to undefined and the
+    // suite fails with "Element type is invalid: got undefined".
+    Switch: (props: any) =>
+      RealReact.createElement("Switch", props),
     StyleSheet: {
       create: (s: any) => s,
       flatten: (style: any) =>
@@ -38,6 +43,117 @@ jest.mock("react-native", () => {
           : (style ?? {}),
     },
     Platform: { OS: "ios" },
+  };
+});
+
+// react-native-reanimated + react-native-gesture-handler are not part of the
+// minimal RN mock above. CreateWorkoutScreen renders DraggableRow (which uses
+// GestureDetector + Animated.View via useDragToReorder) and the aurora
+// primitives (GlassHeader/GlassCard/AnimatedPressable/EmptyState/AuroraSpinner
+// all read from reanimated at module-eval/render time). The global
+// jest.setup.js mocks cover both, but the local reanimated mock below mirrors
+// the established pattern from TemplateLibraryScreen.test.tsx — it provides
+// forwardRef passthrough components instead of the global mock's string host
+// names, so Animated.View renders children correctly under react-test-renderer.
+jest.mock("react-native-reanimated", () => {
+  const RealReact = require("react");
+  const chainable = {
+    delay: () => chainable,
+    duration: () => chainable,
+  };
+  // Easing is imported by theme/animations.ts at module-eval time. Provide a
+  // stub where every method is an identity that returns a function (the real
+  // Easing.* calls return easing factories used only inside Reanimated
+  // worklets, which never execute in the node test env).
+  const easingFn = () => () => 0;
+  const Easing = {
+    in: easingFn,
+    out: easingFn,
+    inOut: easingFn,
+    ease: easingFn,
+    bezier: easingFn,
+    bounce: easingFn,
+    elastic: easingFn,
+    linear: easingFn,
+  };
+  const Animated = {
+    View: RealReact.forwardRef((props: any, ref: any) =>
+      RealReact.createElement("View", { ...props, ref }, props.children),
+    ),
+    Text: RealReact.forwardRef((props: any, ref: any) =>
+      RealReact.createElement("Text", { ...props, ref }, props.children),
+    ),
+    ScrollView: RealReact.forwardRef((props: any, ref: any) =>
+      RealReact.createElement("ScrollView", { ...props, ref }, props.children),
+    ),
+    createAnimatedComponent: (Comp: any) => Comp,
+    FadeIn: chainable,
+    FadeInDown: chainable,
+    FadeInUp: chainable,
+    Easing,
+    // Hooks used by Aurora primitives + useDragToReorder at module-eval/render
+    // time. All no-ops in the node test env — they return stubs so the
+    // components render without driving a real Reanimated UI thread.
+    useSharedValue: (initial: any) => ({ value: initial }),
+    useAnimatedStyle: () => ({}),
+    useDerivedValue: (fn: any) => ({ value: typeof fn === "function" ? fn() : fn }),
+    useAnimatedGestureHandler: () => undefined,
+    withSpring: (v: any) => v,
+    withTiming: (v: any) => v,
+    withRepeat: (v: any) => v,
+    withSequence: (...vals: any[]) => vals[0],
+    withDelay: (_d: any, v: any) => v,
+    runOnJS: (fn: any) => fn,
+    interpolate: (_v: any, _input: any, output: any) =>
+      Array.isArray(output) ? output[0] : output,
+    Extrapolate: { CLAMP: "clamp", EXTEND: "extend", IDENTITY: "identity" },
+    cancelAnimation: () => undefined,
+  };
+  return {
+    __esModule: true,
+    default: Animated,
+    ...Animated,
+  };
+});
+
+// GestureDetector wraps a gesture-aware component; in tests just render
+// children. Gesture builders are chainable (Gesture.Pan().onUpdate(...).onEnd())
+// — the proxy makes any chain resolve to a plain object the mock
+// GestureDetector ignores. This mirrors the global gesture-handler mock but
+// is local so this suite is self-contained.
+jest.mock("react-native-gesture-handler", () => {
+  const RealReact = require("react");
+  const GestureDetector = ({ children }: { children: RealReact.ReactNode }) =>
+    RealReact.createElement(RealReact.Fragment, null, children);
+  const passthrough = (name: string) => ({ children, ...props }: any) =>
+    RealReact.createElement(name, props, children);
+  return {
+    __esModule: true,
+    State: {},
+    GestureHandlerRootView: passthrough("GestureHandlerRootView"),
+    GestureDetector,
+    PanGestureHandler: passthrough("PanGestureHandler"),
+    TapGestureHandler: passthrough("TapGestureHandler"),
+    NativeViewGestureHandler: passthrough("NativeViewGestureHandler"),
+    Directions: {},
+    Gesture: new Proxy(
+      {},
+      {
+        get: () => () =>
+          new Proxy(
+            function () {
+              return {};
+            },
+            {
+              get: (_t: any, prop: string | symbol) =>
+                prop === "then" || prop === "catch"
+                  ? undefined // not a thenable
+                  : () =>
+                      new Proxy(function () {}, { get: () => () => ({}) }),
+            },
+          ),
+      },
+    ),
   };
 });
 
