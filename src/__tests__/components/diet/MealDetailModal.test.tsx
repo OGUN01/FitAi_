@@ -1,6 +1,5 @@
 import React from "react";
-import { Alert, StyleSheet } from "react-native";
-import { fireEvent, render, within } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 jest.mock("@expo/vector-icons", () => ({
   Ionicons: () => null,
@@ -19,8 +18,12 @@ jest.mock("@/utils/haptics", () => ({
   haptics: { trigger: jest.fn() },
 }));
 
+jest.mock("@/utils/crossPlatformAlert", () => ({
+  crossPlatformAlert: jest.fn(),
+}));
+
 import { MealDetailModal } from "@/components/diet/MealDetailModal";
-import { flatColors as colors } from "@/theme/aurora-tokens";
+import { crossPlatformAlert as mockCrossPlatformAlert } from "@/utils/crossPlatformAlert";
 import type { DayMeal } from "@/types/ai";
 
 const meal: DayMeal = {
@@ -36,6 +39,7 @@ const meal: DayMeal = {
   ],
   totalCalories: 640,
   totalMacros: { protein: 77, carbohydrates: 40, fat: 18, fiber: 5 },
+  timing: "30 min",
   preparationTime: 20,
   cookingTime: 20,
   difficulty: "easy",
@@ -54,100 +58,94 @@ const renderModal = (overrides: Partial<React.ComponentProps<typeof MealDetailMo
       onClose={jest.fn()}
       onMarkComplete={jest.fn()}
       onDelete={jest.fn()}
-      onSwap={jest.fn()}
       {...overrides}
     />,
   );
 
 describe("MealDetailModal", () => {
-  it("renders the full-screen header, nutrition strip, and meta tiles", () => {
-    const view = renderModal();
-
-    expect(view.getByText("Meal Details")).toBeTruthy();
-    expect(view.getAllByTestId("nutrition-stat")).toHaveLength(5);
-    expect(view.getAllByTestId("meal-meta-tile")).toHaveLength(3);
-    expect(view.getByText("Ingredients")).toBeTruthy();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("fires completion and swap callbacks with the meal", () => {
-    const onMarkComplete = jest.fn();
-    const onSwap = jest.fn();
-    const view = renderModal({ onMarkComplete, onSwap });
-
-    fireEvent.press(view.getByText("Mark as Completed"));
-    expect(onMarkComplete).toHaveBeenCalledWith(meal);
-
-    fireEvent.press(view.getByText("Swap This Meal"));
-    expect(onSwap).toHaveBeenCalledWith(meal);
-  });
-
-  it("opens Ingredients by default and toggles an accordion section", () => {
+  it("renders meal name, description, type chip, calories, and macro cards", () => {
     const view = renderModal();
 
-    // Ingredients body is open by default — at least one ingredient name renders.
+    expect(view.getByText("Paneer Stuffed Moong Dal Chilla")).toBeTruthy();
+    expect(view.getByText("Protein-rich breakfast")).toBeTruthy();
+    expect(view.getByText("Breakfast")).toBeTruthy();
+    expect(view.getByText("640")).toBeTruthy();
+    expect(view.getByText("calories")).toBeTruthy();
+    expect(view.getByText("Protein")).toBeTruthy();
+    expect(view.getByText("Carbs")).toBeTruthy();
+    expect(view.getByText("Fat")).toBeTruthy();
+    expect(view.getByText("Fiber")).toBeTruthy();
     expect(view.getByText("Moong Dal")).toBeTruthy();
-
-    // Toggle Recipe closed→open: its summary is visible while collapsed.
-    const recipeHeader = view.getByText("Recipe");
-    expect(view.queryByText("No recipe available")).toBeNull();
-    fireEvent.press(recipeHeader);
-    expect(view.getByText("No recipe available")).toBeTruthy();
   });
 
-  it("shows a completed state while keeping the swap action", () => {
-    const onSwap = jest.fn();
-    const view = renderModal({ isCompleted: true, onSwap });
+  it("renders meta row items when timing, difficulty, and prep time are present", () => {
+    const view = renderModal();
 
-    expect(view.queryByText("Mark as Completed")).toBeNull();
-    expect(view.getAllByText("Completed").length).toBeGreaterThan(0);
-    expect(view.getByText("Swap This Meal")).toBeTruthy();
-
-    fireEvent.press(view.getByText("Swap This Meal"));
-    expect(onSwap).toHaveBeenCalledWith(meal);
+    expect(view.getByText("30 min")).toBeTruthy();
+    expect(view.getByText("Easy")).toBeTruthy();
+    expect(view.getByText("20 min prep")).toBeTruthy();
   });
 
-  it("falls back to the gradient placeholder when the meal image errors", () => {
-    const withImage: DayMeal = { ...meal, imageUrl: "https://example.com/breakfast.jpg" };
-    const view = renderModal({ meal: withImage });
+  it("fires onMarkComplete with the meal when Mark Complete pressed", () => {
+    const onMarkComplete = jest.fn();
+    const view = renderModal({ onMarkComplete });
 
-    const image = view.getByLabelText(`${withImage.name} photo`);
-    fireEvent(image, "error");
-
-    // After error, the initials placeholder takes over — the photo is gone.
-    expect(view.queryByLabelText(`${withImage.name} photo`)).toBeNull();
-    expect(view.getByTestId("meal-image-fallback")).toBeTruthy();
+    fireEvent.press(view.getByText("Mark Complete"));
+    expect(onMarkComplete).toHaveBeenCalledWith(meal);
   });
 
-  it("exposes the overflow menu and deletes only after confirmation", () => {
+  it("shows Completed badge and hides Mark Complete when isCompleted", () => {
+    const view = renderModal({ isCompleted: true });
+
+    expect(view.queryByText("Mark Complete")).toBeNull();
+    expect(view.getByText("Completed")).toBeTruthy();
+    expect(view.getByLabelText(`${meal.name} completed`)).toBeTruthy();
+  });
+
+  it("opens delete confirmation via crossPlatformAlert and deletes only after destructive button pressed", () => {
     const onDelete = jest.fn();
-    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(jest.fn());
     const view = renderModal({ onDelete });
 
-    fireEvent.press(view.getByLabelText("Open meal actions"));
-    fireEvent.press(view.getByLabelText("Delete meal"));
+    fireEvent.press(view.getByLabelText(`Delete ${meal.name}`));
 
-    expect(alertSpy).toHaveBeenCalledWith(
+    const mockedAlert = jest.mocked(mockCrossPlatformAlert);
+    expect(mockedAlert).toHaveBeenCalledWith(
       "Delete Meal",
       `Are you sure you want to delete "${meal.name}"?`,
       expect.any(Array),
-      undefined,
     );
-    const buttons = alertSpy.mock.calls[0]?.[2] ?? [];
-    const deleteAction = buttons.find((button) => button.style === "destructive");
+
+    const buttons = mockedAlert.mock.calls[0]?.[2] ?? [];
+    const cancelButton = buttons.find((b) => b.style === "cancel");
+    expect(cancelButton).toBeDefined();
+
+    const deleteAction = buttons.find((b) => b.style === "destructive");
     expect(deleteAction).toBeDefined();
     deleteAction?.onPress?.();
 
     expect(onDelete).toHaveBeenCalledWith(meal);
-    alertSpy.mockRestore();
   });
 
-  it("closes back to the plan via the back button", () => {
+  it("closes via the close button (accessibilityLabel Close meal details)", () => {
     const onClose = jest.fn();
     const view = renderModal({ onClose });
 
-    const back = view.getByLabelText("Back to meal plan");
-    expect(StyleSheet.flatten(back.props.style)).toMatchObject({ width: 44, height: 44 });
-    fireEvent.press(back);
+    fireEvent.press(view.getByLabelText("Close meal details"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders null-meal overlay and closes on backdrop press", () => {
+    const onClose = jest.fn();
+    const view = renderModal({ meal: null, onClose });
+
+    expect(view.queryByText("Mark Complete")).toBeNull();
+    expect(view.queryByText(meal.name)).toBeNull();
+
+    fireEvent.press(view.getByLabelText("Close meal details"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
