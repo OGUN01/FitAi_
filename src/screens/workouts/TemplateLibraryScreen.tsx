@@ -15,7 +15,6 @@ import {
   type TextStyle,
   type ViewStyle,
 } from "react-native";
-// NOTE: Pressable intentionally removed — all interactive buttons use AnimatedPressable.
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -1196,10 +1195,9 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
               onPress={() => onStart(template)}
               disabled={template.exercises.length === 0}
               testID={`start-button-${template.id}`}
-              style={({ pressed }) => [
+              style={[
                 styles.gridStartBtn,
                 template.exercises.length === 0 && styles.gridStartBtnDisabled,
-                pressed && styles.gridStartBtnPressed,
               ]}
               accessibilityRole="button"
               accessibilityLabel={`Start ${template.name}`}
