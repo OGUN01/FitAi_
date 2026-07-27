@@ -1,4 +1,4 @@
-import { flatColors as colors, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { flatColors as colors, flatFontSize as fontSize, typography, borderRadius } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   summaryScrollIconBg: {
     width: rf(32),
     height: rf(32),
-    borderRadius: rf(16),
+    borderRadius: rf(borderRadius.xl),
     backgroundColor: `${colors.primary}20`,
     alignItems: "center",
     justifyContent: "center",
