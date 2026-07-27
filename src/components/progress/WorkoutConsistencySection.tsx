@@ -82,7 +82,7 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
             colors={["rgba(59,130,246,0.25)", "rgba(59,130,246,0.05)"]}
             style={styles.iconBg}
           >
-            <Ionicons name="calendar-outline" size={rf(16)} color="#3B82F6" />
+            <Ionicons name="calendar-outline" size={rf(16)} color={colors.blue} />
           </LinearGradient>
           <Text style={styles.sectionTitle}>Workout Consistency</Text>
         </View>
@@ -90,7 +90,7 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
         {/* Streak badge */}
         {streak > 0 && (
           <View style={styles.streakBadge}>
-            <Ionicons name="flame" size={rf(13)} color="#F97316" />
+            <Ionicons name="flame" size={rf(13)} color={colors.orange} />
             <Text style={styles.streakText}>{streak}d</Text>
           </View>
         )}
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: rf(12),
     fontWeight: "700",
-    color: "#F97316",
+    color: colors.orange,
   },
   statsRow: {
     flexDirection: "row",
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   cellWorked: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: colors.blue,
   },
   cellToday: {
     borderWidth: 2,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: rbr(3),
   },
   legendDotWorked: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: colors.blue,
   },
   legendDotEmpty: {
     backgroundColor: colors.glassSurface,
