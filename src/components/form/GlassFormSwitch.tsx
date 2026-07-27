@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, Switch, Platform } from "react-native";
+import { View, Text, StyleSheet, Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
