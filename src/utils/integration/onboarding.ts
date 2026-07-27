@@ -17,16 +17,13 @@ import {
 } from "./types";
 
 export const useOnboardingIntegration = () => {
-  const { user: authUser, isAuthenticated, isGuestMode, guestId } = useAuth();
+  const { user: authUser, isAuthenticated, guestId } = useAuth();
   const {
     createProfile,
     updateProfile,
-    createFitnessGoals,
-    updateFitnessGoals,
-    updatePersonalInfo,
     updateFitnessGoalsLocal,
   } = useUserStore();
-  const { optimisticCreate } = useOffline();
+  useOffline();
 
   const getUserId: GetUserIdFn = () => {
     if (isAuthenticated && authUser) {
@@ -208,7 +205,7 @@ export const useOnboardingIntegration = () => {
 
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from("diet_preferences")
             .upsert({
               user_id: authUser.id,
@@ -260,7 +257,7 @@ export const useOnboardingIntegration = () => {
 
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from("workout_preferences")
             .upsert({
               user_id: authUser.id,
@@ -306,12 +303,10 @@ export const useOnboardingIntegration = () => {
     bodyAnalysis: NonNullable<OnboardingData["bodyAnalysis"]>,
   ): Promise<IntegrationResponse> => {
     try {
-      const currentUserId = getUserId();
-
       if (isAuthenticated && authUser) {
         try {
           const photoUrls = bodyAnalysis.photos || {};
-          const { data, error } = await supabase.from("body_analysis").upsert({
+          const { error } = await supabase.from("body_analysis").upsert({
             user_id: authUser.id,
             front_photo_url: photoUrls.front || null,
             side_photo_url: photoUrls.side || null,
