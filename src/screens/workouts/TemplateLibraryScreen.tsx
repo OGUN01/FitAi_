@@ -55,6 +55,7 @@ import {
   spacing,
   typography,
 } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { animations } from "../../theme/animations";
 import { haptics } from "../../utils/haptics";
 import { rf, rp, rw, rh, rbr } from "../../utils/responsive";
@@ -931,16 +932,14 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
             />
           </View>
         ) : !hasContent ? (
-          <View style={styles.emptyWrap} testID="empty-state">
-            <EmptyState
-              icon={emptyIconFor(activeTab)}
-              title={emptyTitleFor(activeTab)}
-              subtitle={emptySubtitleFor(activeTab)}
-              iconColor={colors.primary}
-              ctaText="Create Workout"
-              onCta={() => navigation.navigate("CreateWorkout")}
-            />
-          </View>
+          <HeroEmptyState
+            tab={activeTab}
+            onCreate={() => navigation.navigate("CreateWorkout")}
+            onAIGenerate={() => {
+              haptics.light();
+              navigation.goBack();
+            }}
+          />
         ) : (
           <FlatList
             data={filteredTemplates}
@@ -1090,6 +1089,121 @@ function emptySubtitleFor(tab: TabKey): string {
       return "Tap + to create your first workout template.";
   }
 }
+
+// ============================================================================
+// HERO EMPTY STATE — premium first-run experience (replaces generic EmptyState
+// for the "no templates yet" case). A gradient icon orb with a soft glow,
+// aspirational copy, and two CTAs (create + AI generate). Used only for the
+// `mine`/`recent`/`pinned` empty cases; locked/error tabs keep the generic
+// EmptyState since their copy is contextual, not first-run hero copy.
+// ============================================================================
+
+const HERO_COPY: Partial<Record<TabKey, { eyebrow: string; title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }>> = {
+  mine: {
+    eyebrow: "Get Started",
+    title: "Build your first workout",
+    subtitle: "Design a routine from scratch, or let AI generate one tailored to your goals.",
+    icon: "barbell-outline",
+  },
+  recent: {
+    eyebrow: "Nothing yet",
+    title: "Your recent workouts appear here",
+    subtitle: "Start or finish a workout to see it show up in this list.",
+    icon: "time-outline",
+  },
+  pinned: {
+    eyebrow: "No bookmarks",
+    title: "Pin the ones you love",
+    subtitle: "Tap the bookmark on any template to keep it here for quick access.",
+    icon: "bookmark-outline",
+  },
+  collections: {
+    eyebrow: "Empty collection",
+    title: "No templates here yet",
+    subtitle: "Create a template and tag it with this category to fill this collection.",
+    icon: "albums-outline",
+  },
+};
+
+interface HeroEmptyStateProps {
+  tab: TabKey;
+  onCreate: () => void;
+  onAIGenerate: () => void;
+}
+
+const HeroEmptyState: React.FC<HeroEmptyStateProps> = ({ tab, onCreate, onAIGenerate }) => {
+  const copy = HERO_COPY[tab] ?? HERO_COPY.mine!;
+  // Only the "mine" first-run state shows the AI-generate secondary CTA — the
+  // other tabs (recent/pinned/collections) are secondary list states where a
+  // second CTA would be noise.
+  const showAICta = tab === "mine";
+  return (
+    <View style={styles.heroEmpty} testID="empty-state">
+      {/* Gradient icon orb + soft glow */}
+      <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.heroIconWrap}>
+        <View style={styles.heroGlow} />
+        <LinearGradient
+          colors={[colors.primary, colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroIconDisc}
+        >
+          <Ionicons name={copy.icon} size={rf(40)} color={colors.text} />
+        </LinearGradient>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+        <Text style={styles.heroEyebrow}>{copy.eyebrow}</Text>
+      </Animated.View>
+      <Animated.View entering={FadeInDown.delay(260).duration(500)}>
+        <Text style={styles.heroTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+          {copy.title}
+        </Text>
+      </Animated.View>
+      <Animated.View entering={FadeInDown.delay(320).duration(500)}>
+        <Text style={styles.heroSubtitle} numberOfLines={3}>
+          {copy.subtitle}
+        </Text>
+      </Animated.View>
+
+      <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.heroCtaRow}>
+        <AnimatedPressable
+          onPress={onCreate}
+          scaleValue={0.96}
+          springConfig="snappy"
+          hapticType="light"
+          style={styles.heroPrimaryCta}
+          accessibilityRole="button"
+          accessibilityLabel="Create Workout"
+        >
+          <LinearGradient
+            colors={[colors.primary, colors.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Ionicons name="add" size={rf(18)} color={colors.text} style={styles.heroCtaIcon} />
+          <Text style={styles.heroPrimaryCtaText} numberOfLines={1}>Create Workout</Text>
+        </AnimatedPressable>
+
+        {showAICta ? (
+          <AnimatedPressable
+            onPress={onAIGenerate}
+            scaleValue={0.96}
+            springConfig="snappy"
+            hapticType="light"
+            style={styles.heroSecondaryCta}
+            accessibilityRole="button"
+            accessibilityLabel="Generate with AI"
+          >
+            <Ionicons name="sparkles-outline" size={rf(16)} color={colors.primary} style={styles.heroCtaIcon} />
+            <Text style={styles.heroSecondaryCtaText} numberOfLines={1}>Generate with AI</Text>
+          </AnimatedPressable>
+        ) : null}
+      </Animated.View>
+    </View>
+  );
+};
 
 // ============================================================================
 // FLAT START CTA — gradient button (radius 16, minHeight 52)
@@ -1595,6 +1709,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.textSecondary,
     textTransform: "uppercase",
@@ -1602,6 +1717,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(22),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
     marginTop: rp(2),
@@ -1776,6 +1892,106 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emptyWrap: { flex: 1, justifyContent: "center" },
+  // ── Hero empty state ────────────────────────────────────────────────────────
+  heroEmpty: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: rp(spacing.xl),
+    paddingVertical: rp(spacing.xxl),
+  },
+  heroIconWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: rp(spacing.xl),
+  },
+  heroGlow: {
+    position: "absolute",
+    width: rp(160),
+    height: rp(160),
+    borderRadius: 999,
+    backgroundColor: hexToRgba(colors.primary, 0.18),
+    transform: [{ scale: 1.1 }],
+  },
+  heroIconDisc: {
+    width: rp(104),
+    height: rp(104),
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  heroEyebrow: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+    marginBottom: rp(spacing.sm),
+  },
+  heroTitle: {
+    fontSize: rf(26),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: "800",
+    color: colors.text,
+    textAlign: "center",
+    lineHeight: rf(32),
+  },
+  heroSubtitle: {
+    fontSize: rf(14),
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: rp(spacing.sm),
+    lineHeight: rf(20),
+    maxWidth: rw(300),
+  },
+  heroCtaRow: {
+    marginTop: rp(spacing.xxl),
+    alignItems: "center",
+    gap: rp(spacing.sm),
+    width: "100%",
+  },
+  heroPrimaryCta: {
+    minHeight: Math.max(rh(54), 54),
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: rbr(16),
+    overflow: "hidden",
+    paddingHorizontal: rp(spacing.xl),
+    paddingVertical: rp(spacing.md),
+    flexDirection: "row",
+    width: rw(260),
+  } as ViewStyle,
+  heroPrimaryCtaText: {
+    color: colors.text,
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+  },
+  heroSecondaryCta: {
+    minHeight: Math.max(rh(48), 48),
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: rbr(14),
+    paddingHorizontal: rp(spacing.lg),
+    paddingVertical: rp(spacing.sm),
+    flexDirection: "row",
+    backgroundColor: hexToRgba(colors.primary, 0.12),
+  },
+  heroSecondaryCtaText: {
+    color: colors.primary,
+    fontSize: rf(14),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: "600",
+  },
+  heroCtaIcon: {
+    marginRight: rp(spacing.xs),
+  },
   list: {
     padding: rp(spacing.lg),
   },
