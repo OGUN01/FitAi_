@@ -11,25 +11,30 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInUp, FadeInDown } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { workoutTemplateService, WorkoutTemplate, TemplateExercise } from "../../services/workoutTemplateService";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
+import { haptics } from "../../utils/haptics";
 import { generateUUID } from "../../utils/uuid";
 import { buildDayWorkoutFromTemplate, buildDayWorkoutFromExercises } from "../../utils/workoutBuilders";
 import { CURATED_EXERCISES, CuratedExercise } from "../../data/curatedExercises";
-import { SegmentedControl, SegmentOption } from "../../components/ui/SegmentedControl";
 import type { DayWorkout, WeeklyWorkoutPlan } from "../../types/ai";
 import {
   AuroraBackground,
-  GlassCard,
-  GlassHeader,
   BottomSheet,
   AuroraSpinner,
   EmptyState,
   AnimatedPressable,
 } from "../../components/ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+} from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { hexToRgba } from "../../utils/colors";
 import { rp, rf, rw } from "../../utils/responsive";
 
@@ -57,9 +62,9 @@ type ExerciseAssignments = Record<string, TemplateExercise[]>;
 
 type BuilderMode = "templates" | "exercises";
 
-const MODE_OPTIONS: SegmentOption[] = [
-  { id: "templates", label: "Assign Templates", value: "templates" },
-  { id: "exercises", label: "Build from Exercises", value: "exercises" },
+const MODE_OPTIONS: { id: BuilderMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: "templates", label: "Templates", icon: "library-outline" },
+  { id: "exercises", label: "Exercises", icon: "barbell-outline" },
 ];
 
 const EXERCISE_CATEGORIES = [
@@ -274,13 +279,21 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <AuroraBackground theme="space">
-        <SafeAreaView style={styles.flex} edges={["top"]}>
-          <GlassHeader
-            title="Build My Schedule"
-            onBack={() => navigation.goBack()}
-            backAccessibilityLabel="Go back"
-          />
+      <AuroraBackground theme="space" animated intensity={0.3}>
+        <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
+            <View style={styles.topRowSpacer} />
+          </View>
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -291,17 +304,25 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
 
   if (loadError) {
     return (
-      <AuroraBackground theme="space">
-        <SafeAreaView style={styles.flex} edges={["top"]}>
-          <GlassHeader
-            title="Build My Schedule"
-            onBack={() => navigation.goBack()}
-            backAccessibilityLabel="Go back"
-          />
+      <AuroraBackground theme="space" animated intensity={0.3}>
+        <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
+            <View style={styles.topRowSpacer} />
+          </View>
           <View style={styles.emptyWrap} testID="schedule-load-error">
             <EmptyState
               icon="cloud-offline-outline"
-              iconColor={colors.error.DEFAULT}
+              iconColor={colors.error}
               title="Couldn't load your workouts"
               subtitle="Check your connection and try again."
               ctaText="Try Again"
@@ -314,305 +335,470 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   }
 
   return (
-    <AuroraBackground theme="space">
-      <SafeAreaView style={styles.flex} edges={["top"]}>
-        {/* Header */}
-        <GlassHeader
-          title="Build My Schedule"
-          onBack={() => navigation.goBack()}
-          rightAction={
-            <AnimatedPressable
-              onPress={handleSave}
-              disabled={saving || assignedCount === 0}
-              style={[styles.saveBtn, (saving || assignedCount === 0) && styles.saveBtnDisabled]}
-              accessibilityRole="button"
-              accessibilityLabel="Save schedule"
-              accessibilityState={{ disabled: saving || assignedCount === 0 }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    <AuroraBackground theme="space" animated intensity={0.3}>
+      <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+        {/* Compact top row — plain back + eyebrow */}
+        <View style={styles.topRow}>
+          <AnimatedPressable
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
+          <View style={styles.topRowSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View entering={FadeInUp.delay(60).duration(450)}>
+            <Text style={styles.title}>Build your schedule</Text>
+            <Text style={styles.subtitle}>
+              {mode === "templates"
+                ? "Assign your saved workouts to days of the week"
+                : "Pick exercises for each day of the week"}
+            </Text>
+          </Animated.View>
+
+          {/* Mode toggle — flat 2-segment split */}
+          <View style={styles.modeToggle}>
+            {MODE_OPTIONS.map((opt) => {
+              const active = mode === opt.id;
+              return (
+                <AnimatedPressable
+                  key={opt.id}
+                  style={[styles.modeSegment, active && styles.modeSegmentActive]}
+                  onPress={() => {
+                    haptics.selection();
+                    setMode(opt.id);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={opt.label}
+                  accessibilityState={{ selected: active }}
+                  scaleValue={0.98}
+                  springConfig="smooth"
+                  hapticType="light"
+                >
+                  <Ionicons
+                    name={opt.icon}
+                    size={rf(16)}
+                    color={active ? colors.white : colors.textSecondary}
+                    style={styles.modeSegmentIcon}
+                  />
+                  <Text
+                    style={[
+                      styles.modeSegmentText,
+                      active && styles.modeSegmentTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </AnimatedPressable>
+              );
+            })}
+          </View>
+
+          {/* ═══════════ TEMPLATE MODE ═══════════ */}
+          {mode === "templates" && (
+            <>
+              {templates.length === 0 ? (
+                <View style={styles.emptyWrap}>
+                  <EmptyState
+                    icon="calendar-outline"
+                    title="No saved workouts yet"
+                    subtitle="Create workout templates first, then come back to build your schedule."
+                    ctaText="Create Workout"
+                    onCta={() => navigation.navigate("CreateWorkout")}
+                  />
+                </View>
+              ) : (
+                <View style={styles.dayList}>
+                  {DAYS.map((day, idx) => {
+                    const assigned = assignments[day.key];
+                    const hasWorkout = assigned !== null;
+                    return (
+                      <Animated.View
+                        key={day.key}
+                        entering={FadeInUp.delay(120 + idx * 50).duration(400)}
+                        style={[
+                          styles.dayRow,
+                          idx < DAYS.length - 1 && styles.dayRowSeparator,
+                        ]}
+                      >
+                        {/* Day indicator disc — filled primary if assigned, hollow if rest */}
+                        <View
+                          style={[
+                            styles.dayDisc,
+                            hasWorkout ? styles.dayDiscFilled : styles.dayDiscHollow,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.dayDiscText,
+                              hasWorkout
+                                ? styles.dayDiscTextFilled
+                                : styles.dayDiscTextHollow,
+                            ]}
+                          >
+                            {day.short.slice(0, 1)}
+                          </Text>
+                          {hasWorkout && <View style={styles.dayDotIndicator} />}
+                        </View>
+
+                        <View style={styles.dayRowBody}>
+                          <Text style={styles.dayLabel}>{day.label}</Text>
+                          {assigned ? (
+                            <View style={styles.assignedRow}>
+                              <View style={styles.assignedInfo}>
+                                <Text
+                                  style={styles.assignedName}
+                                  numberOfLines={1}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.7}
+                                >
+                                  {assigned.name}
+                                </Text>
+                                <Text style={styles.assignedMeta} numberOfLines={1}>
+                                  {assigned.exercises.length} exercises
+                                  {assigned.estimatedDurationMinutes
+                                    ? ` · ${assigned.estimatedDurationMinutes} min`
+                                    : ""}
+                                </Text>
+                              </View>
+                              <AnimatedPressable
+                                onPress={() => setPickerDay(day.key)}
+                                style={styles.ghostBtn}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Change workout for ${day.label}`}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                scaleValue={0.97}
+                                springConfig="smooth"
+                                hapticType="light"
+                              >
+                                <Text style={styles.ghostBtnText}>Change</Text>
+                              </AnimatedPressable>
+                              <AnimatedPressable
+                                onPress={() => clearDay(day.key)}
+                                style={styles.iconBtn}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Clear ${day.label}`}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                scaleValue={0.97}
+                                springConfig="smooth"
+                                hapticType="light"
+                              >
+                                <Ionicons name="close" size={rf(16)} color={colors.error} />
+                              </AnimatedPressable>
+                            </View>
+                          ) : (
+                            <AnimatedPressable
+                              style={styles.restRow}
+                              onPress={() => setPickerDay(day.key)}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Add workout to ${day.label}`}
+                              accessibilityState={{ selected: false }}
+                              scaleValue={0.98}
+                              springConfig="smooth"
+                              hapticType="light"
+                            >
+                              <Text style={styles.restText}>Rest day</Text>
+                              <Text style={styles.addText}>+ Add workout</Text>
+                            </AnimatedPressable>
+                          )}
+                        </View>
+                      </Animated.View>
+                    );
+                  })}
+
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryText}>
+                      {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* ═══════════ EXERCISE MODE ═══════════ */}
+          {mode === "exercises" && (
+            <View style={styles.dayList}>
+              {DAYS.map((day, idx) => {
+                const dayExercises = exerciseAssignments[day.key] || [];
+                const isExpanded = expandedDay === day.key;
+                const hasWorkout = dayExercises.length > 0;
+                return (
+                  <Animated.View
+                    key={day.key}
+                    entering={FadeInUp.delay(120 + idx * 50).duration(400)}
+                    style={[
+                      styles.dayRow,
+                      idx < DAYS.length - 1 && styles.dayRowSeparator,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.dayDisc,
+                        hasWorkout ? styles.dayDiscFilled : styles.dayDiscHollow,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayDiscText,
+                          hasWorkout
+                            ? styles.dayDiscTextFilled
+                            : styles.dayDiscTextHollow,
+                        ]}
+                      >
+                        {day.short.slice(0, 1)}
+                      </Text>
+                      {hasWorkout && <View style={styles.dayDotIndicator} />}
+                    </View>
+
+                    <View style={styles.dayRowBody}>
+                      {/* Day header — tap to expand */}
+                      <AnimatedPressable
+                        style={styles.exerciseDayHeader}
+                        onPress={() => toggleExpandDay(day.key)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${day.label} — ${dayExercises.length} exercises`}
+                        scaleValue={0.98}
+                        springConfig="smooth"
+                        hapticType="light"
+                      >
+                        <Text style={styles.dayLabel}>{day.label}</Text>
+                        <View style={styles.exerciseDayHeaderRight}>
+                          {hasWorkout ? (
+                            <Text style={styles.exerciseDayCount}>
+                              {dayExercises.length} exercise{dayExercises.length !== 1 ? "s" : ""}
+                            </Text>
+                          ) : (
+                            <Text style={styles.exerciseDayRest}>Rest</Text>
+                          )}
+                          <Ionicons
+                            name={isExpanded ? "chevron-up" : "chevron-down"}
+                            size={rf(14)}
+                            color={colors.textSecondary}
+                          />
+                        </View>
+                      </AnimatedPressable>
+
+                      {/* Expanded detail */}
+                      {isExpanded && (
+                        <Animated.View entering={FadeInDown.duration(200)} style={styles.exerciseDayDetail}>
+                          {dayExercises.length === 0 && (
+                            <Text style={styles.exerciseDayEmptyHint}>
+                              No exercises yet. Tap "+ Add Exercise" below.
+                            </Text>
+                          )}
+
+                          {dayExercises.map((ex, edx) => (
+                            <View
+                              key={`${ex.exerciseId}_${edx}`}
+                              style={[
+                                styles.exerciseItemRow,
+                                edx < dayExercises.length - 1 &&
+                                  styles.exerciseItemRowSeparator,
+                              ]}
+                            >
+                              <View style={styles.exerciseItemInfo}>
+                                <Text
+                                  style={styles.exerciseItemName}
+                                  numberOfLines={1}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.7}
+                                >
+                                  {ex.name}
+                                </Text>
+                                <View style={styles.exerciseItemControls}>
+                                  {/* Sets */}
+                                  <View style={styles.controlGroup}>
+                                    <Text style={styles.controlLabel}>Sets</Text>
+                                    <View style={styles.stepperRow}>
+                                      <AnimatedPressable
+                                        style={styles.stepperBtn}
+                                        onPress={() => ex.sets > 1 && updateExerciseInDay(day.key, edx, { sets: ex.sets - 1 })}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Decrease sets"
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        scaleValue={0.9}
+                                        springConfig="snappy"
+                                        hapticType="light"
+                                      >
+                                        <Text style={styles.stepperBtnText}>−</Text>
+                                      </AnimatedPressable>
+                                      <Text style={styles.stepperValue}>{ex.sets}</Text>
+                                      <AnimatedPressable
+                                        style={styles.stepperBtn}
+                                        onPress={() => updateExerciseInDay(day.key, edx, { sets: ex.sets + 1 })}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Increase sets"
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        scaleValue={0.9}
+                                        springConfig="snappy"
+                                        hapticType="light"
+                                      >
+                                        <Text style={styles.stepperBtnText}>+</Text>
+                                      </AnimatedPressable>
+                                    </View>
+                                  </View>
+
+                                  {/* Reps */}
+                                  <View style={styles.controlGroup}>
+                                    <Text style={styles.controlLabel}>Reps</Text>
+                                    <View style={styles.stepperRow}>
+                                      <AnimatedPressable
+                                        style={styles.stepperBtn}
+                                        onPress={() => {
+                                          if (ex.repRange[0] <= 1) return;
+                                          updateExerciseInDay(day.key, edx, {
+                                            repRange: [ex.repRange[0] - 1, ex.repRange[1] - 1],
+                                          });
+                                        }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Decrease reps"
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        scaleValue={0.9}
+                                        springConfig="snappy"
+                                        hapticType="light"
+                                      >
+                                        <Text style={styles.stepperBtnText}>−</Text>
+                                      </AnimatedPressable>
+                                      <Text style={styles.stepperValue}>
+                                        {ex.repRange[0] === ex.repRange[1]
+                                          ? `${ex.repRange[0]}`
+                                          : `${ex.repRange[0]}-${ex.repRange[1]}`}
+                                      </Text>
+                                      <AnimatedPressable
+                                        style={styles.stepperBtn}
+                                        onPress={() => {
+                                          updateExerciseInDay(day.key, edx, {
+                                            repRange: [ex.repRange[0] + 1, ex.repRange[1] + 1],
+                                          });
+                                        }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Increase reps"
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        scaleValue={0.9}
+                                        springConfig="snappy"
+                                        hapticType="light"
+                                      >
+                                        <Text style={styles.stepperBtnText}>+</Text>
+                                      </AnimatedPressable>
+                                    </View>
+                                  </View>
+
+                                  {/* Rest */}
+                                  <View style={styles.controlGroup}>
+                                    <Text style={styles.controlLabel}>Rest</Text>
+                                    <Text style={styles.controlValue}>{ex.restSeconds}s</Text>
+                                  </View>
+                                </View>
+                              </View>
+                              <AnimatedPressable
+                                style={styles.removeExBtn}
+                                onPress={() => removeExerciseFromDay(day.key, edx)}
+                                accessibilityRole="button"
+                                accessibilityLabel="Remove exercise"
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                scaleValue={0.9}
+                                springConfig="snappy"
+                                hapticType="light"
+                              >
+                                <Ionicons name="close" size={rf(14)} color={colors.error} />
+                              </AnimatedPressable>
+                            </View>
+                          ))}
+
+                          {/* Actions */}
+                          <View style={styles.exerciseDayActions}>
+                            <AnimatedPressable
+                              style={styles.addExerciseBtn}
+                              onPress={() => {
+                                setExercisePickerDay(day.key);
+                                setExerciseCategory("all");
+                                setExerciseSearch("");
+                              }}
+                              accessibilityRole="button"
+                              accessibilityLabel="Add exercise"
+                              hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
+                              scaleValue={0.97}
+                              springConfig="smooth"
+                              hapticType="light"
+                            >
+                              <Ionicons name="add" size={rf(16)} color={colors.primary} />
+                              <Text style={styles.addExerciseBtnText}>Add Exercise</Text>
+                            </AnimatedPressable>
+                            {dayExercises.length > 0 && (
+                              <AnimatedPressable
+                                style={styles.clearDayBtn}
+                                onPress={() => clearDayExercises(day.key)}
+                                accessibilityRole="button"
+                                accessibilityLabel="Clear all exercises"
+                                hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
+                                scaleValue={0.97}
+                                springConfig="smooth"
+                                hapticType="light"
+                              >
+                                <Text style={styles.clearDayBtnText}>Clear All</Text>
+                              </AnimatedPressable>
+                            )}
+                          </View>
+                        </Animated.View>
+                      )}
+                    </View>
+                  </Animated.View>
+                );
+              })}
+
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryText}>
+                  {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Bottom spacer so content isn't hidden behind sticky CTA */}
+          <View style={styles.footerSpacer} />
+        </ScrollView>
+
+        {/* Sticky bottom gradient CTA — Save schedule */}
+        <View style={styles.footer}>
+          <AnimatedPressable
+            onPress={handleSave}
+            disabled={saving || assignedCount === 0}
+            accessibilityRole="button"
+            accessibilityLabel="Save schedule"
+            accessibilityState={{ disabled: saving || assignedCount === 0 }}
+            scaleValue={0.97}
+            hapticType="medium"
+            style={[styles.cta, (saving || assignedCount === 0) && styles.ctaDisabled]}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaGradient}
             >
               <Ionicons
                 name={saving ? "hourglass-outline" : "checkmark-circle-outline"}
-                size={rf(16)}
-                color={colors.text.primary}
-                style={styles.saveBtnIcon}
+                size={rf(18)}
+                color={colors.white}
               />
-              <Text style={styles.saveText} numberOfLines={1}>
-                {saving ? "Saving" : "Save"}
+              <Text style={styles.ctaText} numberOfLines={1}>
+                {saving ? "Saving" : "Save Schedule"}
               </Text>
-            </AnimatedPressable>
-          }
-        />
-
-        {/* Mode Toggle */}
-        <View style={styles.modeToggleContainer}>
-          <SegmentedControl
-            options={MODE_OPTIONS}
-            selectedId={mode}
-            onSelect={(id) => setMode(id as BuilderMode)}
-          />
+            </LinearGradient>
+          </AnimatedPressable>
         </View>
-
-        <Text style={styles.subtitle}>
-          {mode === "templates"
-            ? "Assign your saved workouts to days of the week"
-            : "Pick exercises for each day of the week"}
-        </Text>
-
-        {/* ═══════════ TEMPLATE MODE ═══════════ */}
-        {mode === "templates" && (
-          <>
-            {templates.length === 0 ? (
-              <View style={styles.emptyWrap}>
-                <EmptyState
-                  icon="calendar-outline"
-                  title="No saved workouts yet"
-                  subtitle="Create workout templates first, then come back to build your schedule."
-                  ctaText="Create Workout"
-                  onCta={() => navigation.navigate("CreateWorkout")}
-                />
-              </View>
-            ) : (
-              <ScrollView contentContainerStyle={styles.dayList}>
-                {DAYS.map((day) => {
-                  const assigned = assignments[day.key];
-                  return (
-                    <View key={day.key} style={styles.dayRow}>
-                      <View style={styles.dayLabelBox}>
-                        <Text style={styles.dayShort}>{day.short}</Text>
-                        <Text style={styles.dayFull}>{day.label}</Text>
-                      </View>
-
-                      {assigned ? (
-                        <View style={styles.assignedBox}>
-                          <View style={styles.assignedInfo}>
-                            <Text style={styles.assignedName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                              {assigned.name}
-                            </Text>
-                            <Text style={styles.assignedMeta} numberOfLines={1}>
-                              {assigned.exercises.length} exercises
-                              {assigned.estimatedDurationMinutes
-                                ? ` · ${assigned.estimatedDurationMinutes} min`
-                                : ""}
-                            </Text>
-                          </View>
-                          <AnimatedPressable
-                            onPress={() => setPickerDay(day.key)}
-                            style={styles.changeBtn}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Change workout for ${day.label}`}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          >
-                            <Text style={styles.changeBtnText}>Change</Text>
-                          </AnimatedPressable>
-                          <AnimatedPressable
-                            onPress={() => clearDay(day.key)}
-                            style={styles.clearBtn}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Clear ${day.label}`}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          >
-                            <Ionicons name="close" size={rf(16)} color={colors.error.DEFAULT} />
-                          </AnimatedPressable>
-                        </View>
-                      ) : (
-                        <AnimatedPressable
-                          style={styles.restBox}
-                          onPress={() => setPickerDay(day.key)}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Add workout to ${day.label}`}
-                          accessibilityState={{ selected: false }}
-                        >
-                          <Text style={styles.restText}>Rest Day</Text>
-                          <Text style={styles.addText}>+ Add Workout</Text>
-                        </AnimatedPressable>
-                      )}
-                    </View>
-                  );
-                })}
-
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryText}>
-                    {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
-                  </Text>
-                </View>
-              </ScrollView>
-            )}
-          </>
-        )}
-
-        {/* ═══════════ EXERCISE MODE ═══════════ */}
-        {mode === "exercises" && (
-          <ScrollView contentContainerStyle={styles.dayList}>
-            {DAYS.map((day) => {
-              const dayExercises = exerciseAssignments[day.key] || [];
-              const isExpanded = expandedDay === day.key;
-              return (
-                <View key={day.key} style={styles.exerciseDayBlock}>
-                  {/* Day header — tap to expand */}
-                  <AnimatedPressable
-                    style={[styles.exerciseDayHeader, isExpanded && styles.exerciseDayHeaderExpanded]}
-                    onPress={() => toggleExpandDay(day.key)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${day.label} — ${dayExercises.length} exercises`}
-                  >
-                    <View style={styles.exerciseDayHeaderLeft}>
-                      <Text style={styles.dayShort}>{day.short}</Text>
-                      <Text style={styles.exerciseDayLabel}>{day.label}</Text>
-                    </View>
-                    <View style={styles.exerciseDayHeaderRight}>
-                      {dayExercises.length > 0 ? (
-                        <Text style={styles.exerciseDayCount}>
-                          {dayExercises.length} exercise{dayExercises.length !== 1 ? "s" : ""}
-                        </Text>
-                      ) : (
-                        <Text style={styles.exerciseDayRest}>Rest</Text>
-                      )}
-                      <Ionicons
-                        name={isExpanded ? "chevron-up" : "chevron-down"}
-                        size={rf(12)}
-                        color={colors.text.secondary}
-                      />
-                    </View>
-                  </AnimatedPressable>
-
-                  {/* Expanded detail */}
-                  {isExpanded && (
-                    <View style={styles.exerciseDayDetail}>
-                      {dayExercises.length === 0 && (
-                        <Text style={styles.exerciseDayEmptyHint}>
-                          No exercises yet. Tap "+ Add Exercise" below.
-                        </Text>
-                      )}
-
-                      {dayExercises.map((ex, idx) => (
-                        <View key={`${ex.exerciseId}_${idx}`} style={styles.exerciseItemRow}>
-                          <View style={styles.exerciseItemInfo}>
-                            <Text style={styles.exerciseItemName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{ex.name}</Text>
-                            <View style={styles.exerciseItemControls}>
-                              {/* Sets */}
-                              <View style={styles.controlGroup}>
-                                <Text style={styles.controlLabel}>Sets</Text>
-                                <View style={styles.stepperRow}>
-                                  <AnimatedPressable
-                                    style={styles.stepperBtn}
-                                    onPress={() => ex.sets > 1 && updateExerciseInDay(day.key, idx, { sets: ex.sets - 1 })}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Decrease sets"
-                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                  >
-                                    <Text style={styles.stepperBtnText}>−</Text>
-                                  </AnimatedPressable>
-                                  <Text style={styles.stepperValue}>{ex.sets}</Text>
-                                  <AnimatedPressable
-                                    style={styles.stepperBtn}
-                                    onPress={() => updateExerciseInDay(day.key, idx, { sets: ex.sets + 1 })}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Increase sets"
-                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                  >
-                                    <Text style={styles.stepperBtnText}>+</Text>
-                                  </AnimatedPressable>
-                                </View>
-                              </View>
-
-                              {/* Reps */}
-                              <View style={styles.controlGroup}>
-                                <Text style={styles.controlLabel}>Reps</Text>
-                                <View style={styles.stepperRow}>
-                                  <AnimatedPressable
-                                    style={styles.stepperBtn}
-                                    onPress={() => {
-                                      if (ex.repRange[0] <= 1) return;
-                                      updateExerciseInDay(day.key, idx, {
-                                        repRange: [ex.repRange[0] - 1, ex.repRange[1] - 1],
-                                      });
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Decrease reps"
-                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                  >
-                                    <Text style={styles.stepperBtnText}>−</Text>
-                                  </AnimatedPressable>
-                                  <Text style={styles.stepperValue}>
-                                    {ex.repRange[0] === ex.repRange[1]
-                                      ? `${ex.repRange[0]}`
-                                      : `${ex.repRange[0]}-${ex.repRange[1]}`}
-                                  </Text>
-                                  <AnimatedPressable
-                                    style={styles.stepperBtn}
-                                    onPress={() => {
-                                      updateExerciseInDay(day.key, idx, {
-                                        repRange: [ex.repRange[0] + 1, ex.repRange[1] + 1],
-                                      });
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Increase reps"
-                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                                  >
-                                    <Text style={styles.stepperBtnText}>+</Text>
-                                  </AnimatedPressable>
-                                </View>
-                              </View>
-
-                              {/* Rest */}
-                              <View style={styles.controlGroup}>
-                                <Text style={styles.controlLabel}>Rest</Text>
-                                <Text style={styles.controlValue}>{ex.restSeconds}s</Text>
-                              </View>
-                            </View>
-                          </View>
-                          <AnimatedPressable
-                            style={styles.removeExBtn}
-                            onPress={() => removeExerciseFromDay(day.key, idx)}
-                            accessibilityRole="button"
-                            accessibilityLabel="Remove exercise"
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          >
-                            <Ionicons name="close" size={rf(14)} color={colors.error.DEFAULT} />
-                          </AnimatedPressable>
-                        </View>
-                      ))}
-
-                      {/* Actions */}
-                      <View style={styles.exerciseDayActions}>
-                        <AnimatedPressable
-                          style={styles.addExerciseBtn}
-                          onPress={() => {
-                            setExercisePickerDay(day.key);
-                            setExerciseCategory("all");
-                            setExerciseSearch("");
-                          }}
-                          accessibilityRole="button"
-                          accessibilityLabel="Add exercise"
-                          hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
-                        >
-                          <Text style={styles.addExerciseBtnText}>+ Add Exercise</Text>
-                        </AnimatedPressable>
-                        {dayExercises.length > 0 && (
-                          <AnimatedPressable
-                            style={styles.clearDayBtn}
-                            onPress={() => clearDayExercises(day.key)}
-                            accessibilityRole="button"
-                            accessibilityLabel="Clear all exercises"
-                            hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
-                          >
-                            <Text style={styles.clearDayBtnText}>Clear All</Text>
-                          </AnimatedPressable>
-                        )}
-                      </View>
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryText}>
-                {assignedCount} workout{assignedCount !== 1 ? "s" : ""} · {7 - assignedCount} rest day{7 - assignedCount !== 1 ? "s" : ""}
-              </Text>
-            </View>
-          </ScrollView>
-        )}
 
         {/* ═══════════ TEMPLATE PICKER MODAL ═══════════ */}
         <BottomSheet
@@ -623,36 +809,50 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
           <FlatList
             data={templates}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <AnimatedPressable
-                style={[
-                  styles.pickerItem,
-                  pickerDay && assignments[pickerDay]?.id === item.id &&
-                    styles.pickerItemSelected,
-                ]}
-                onPress={() => pickerDay && assignTemplate(pickerDay, item)}
-                accessibilityRole="button"
-                accessibilityLabel={`Assign ${item.name}`}
-              >
-                <View style={styles.pickerItemInfo}>
-                  <Text style={styles.pickerItemName}>{item.name}</Text>
-                  <Text style={styles.pickerItemMeta}>
-                    {item.exercises.length} exercises
-                    {item.estimatedDurationMinutes
-                      ? ` · ${item.estimatedDurationMinutes} min`
-                      : ""}
-                  </Text>
-                  {item.targetMuscleGroups.length > 0 && (
-                    <Text style={styles.pickerItemMuscles} numberOfLines={1}>
-                      {item.targetMuscleGroups.slice(0, 4).join(", ")}
+            renderItem={({ item }) => {
+              const selected = pickerDay && assignments[pickerDay]?.id === item.id;
+              return (
+                <AnimatedPressable
+                  style={[
+                    styles.pickerItem,
+                    selected && styles.pickerItemSelected,
+                  ]}
+                  onPress={() => pickerDay && assignTemplate(pickerDay, item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Assign ${item.name}`}
+                  scaleValue={0.98}
+                  springConfig="smooth"
+                  hapticType="light"
+                >
+                  <View style={styles.pickerItemInfo}>
+                    <Text style={styles.pickerItemName}>{item.name}</Text>
+                    <Text style={styles.pickerItemMeta}>
+                      {item.exercises.length} exercises
+                      {item.estimatedDurationMinutes
+                        ? ` · ${item.estimatedDurationMinutes} min`
+                        : ""}
                     </Text>
-                  )}
-                </View>
-                {pickerDay && assignments[pickerDay]?.id === item.id && (
-                  <Ionicons name="checkmark" size={rf(18)} color={colors.primary.DEFAULT} />
-                )}
-              </AnimatedPressable>
-            )}
+                    {item.targetMuscleGroups.length > 0 && (
+                      <Text style={styles.pickerItemMuscles} numberOfLines={1}>
+                        {item.targetMuscleGroups.slice(0, 4).join(", ")}
+                      </Text>
+                    )}
+                  </View>
+                  <View
+                    style={[
+                      styles.pickerCircle,
+                      selected
+                        ? styles.pickerCircleSelected
+                        : styles.pickerCircleUnselected,
+                    ]}
+                  >
+                    {selected && (
+                      <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
+                    )}
+                  </View>
+                </AnimatedPressable>
+              );
+            }}
             contentContainerStyle={styles.pickerList}
           />
         </BottomSheet>
@@ -674,7 +874,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
               <TextInput
                 style={styles.exerciseSearchInput}
                 placeholder="Search exercises..."
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={exerciseSearch}
                 onChangeText={setExerciseSearch}
                 autoCapitalize="none"
@@ -689,28 +889,34 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryTabsRow}
             >
-              {EXERCISE_CATEGORIES.map((cat) => (
-                <AnimatedPressable
-                  key={cat.key}
-                  style={[
-                    styles.categoryTab,
-                    exerciseCategory === cat.key && styles.categoryTabActive,
-                  ]}
-                  onPress={() => setExerciseCategory(cat.key)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Filter by ${cat.label}`}
-                  hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
-                >
-                  <Text
+              {EXERCISE_CATEGORIES.map((cat) => {
+                const active = exerciseCategory === cat.key;
+                return (
+                  <AnimatedPressable
+                    key={cat.key}
                     style={[
-                      styles.categoryTabText,
-                      exerciseCategory === cat.key && styles.categoryTabTextActive,
+                      styles.categoryTab,
+                      active && styles.categoryTabActive,
                     ]}
+                    onPress={() => setExerciseCategory(cat.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${cat.label}`}
+                    hitSlop={{ top: 4, bottom: 4, left: 0, right: 0 }}
+                    scaleValue={0.97}
+                    springConfig="smooth"
+                    hapticType="light"
                   >
-                    {cat.label}
-                  </Text>
-                </AnimatedPressable>
-              ))}
+                    <Text
+                      style={[
+                        styles.categoryTabText,
+                        active && styles.categoryTabTextActive,
+                      ]}
+                    >
+                      {cat.label}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
             </ScrollView>
 
             {/* Exercise list */}
@@ -726,10 +932,16 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                   : false;
                 return (
                   <AnimatedPressable
-                    style={[styles.pickerItem, alreadyAdded && styles.pickerItemSelected, alreadyAdded && { opacity: 0.6 }]}
+                    style={[
+                      styles.pickerItem,
+                      alreadyAdded && { opacity: 0.6 },
+                    ]}
                     onPress={() => exercisePickerDay && !alreadyAdded && addExerciseToDay(exercisePickerDay, item)}
                     accessibilityRole="button"
                     accessibilityLabel={`Add ${item.name}`}
+                    scaleValue={0.98}
+                    springConfig="smooth"
+                    hapticType="light"
                   >
                     <View style={styles.pickerItemInfo}>
                       <Text style={styles.pickerItemName}>{item.name}</Text>
@@ -741,7 +953,20 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
                         {item.difficulty} · {item.category}
                       </Text>
                     </View>
-                    {alreadyAdded && <Ionicons name="checkmark" size={rf(18)} color={colors.primary.DEFAULT} />}
+                    <View
+                      style={[
+                        styles.pickerCircle,
+                        alreadyAdded
+                          ? styles.pickerCircleSelected
+                          : styles.pickerCircleUnselected,
+                      ]}
+                    >
+                      <Ionicons
+                        name={alreadyAdded ? "checkmark" : "add"}
+                        size={rf(14)}
+                        color={alreadyAdded ? colors.white : colors.primary}
+                      />
+                    </View>
                   </AnimatedPressable>
                 );
               }}
@@ -761,116 +986,207 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  saveBtn: {
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primary.DEFAULT,
+    justifyContent: "space-between",
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.xl), 44),
-    borderRadius: borderRadius.md,
-    gap: rp(spacing.xs),
   },
-  saveBtnDisabled: { backgroundColor: colors.background.tertiary, opacity: 0.5 },
-  saveBtnIcon: { marginRight: 0 },
-  saveText: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.primary,
+  backBtn: {
+    width: rw(44),
+    height: rw(44),
+    alignItems: "center",
+    justifyContent: "center",
   },
-
-  modeToggleContainer: {
-    paddingHorizontal: rp(spacing.md),
-    paddingTop: rp(spacing.md),
-    paddingBottom: rp(spacing.xs),
+  topRowSpacer: {
+    width: rw(44),
   },
-
+  stepEyebrow: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.6,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: rp(spacing.lg),
+    paddingBottom: rp(spacing.md),
+  },
+  title: {
+    fontSize: rf(28),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: "800",
+    color: colors.text,
+    lineHeight: rf(34),
+    letterSpacing: -0.3,
+    marginBottom: rp(spacing.sm),
+  },
   subtitle: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-    paddingHorizontal: rp(spacing.md),
-    paddingBottom: rp(spacing.sm),
+    fontSize: rf(14),
+    color: colors.textSecondary,
+    lineHeight: rf(20),
+    marginBottom: rp(spacing.lg),
   },
-
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   emptyWrap: { flex: 1, justifyContent: "center" },
 
-  dayList: { paddingHorizontal: rp(spacing.md), paddingBottom: rp(spacing.xxl) },
+  // ── Mode toggle ──
+  modeToggle: {
+    flexDirection: "row",
+    gap: rp(spacing.xs),
+    marginBottom: rp(spacing.md),
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    borderRadius: borderRadius.xl,
+    padding: rp(spacing.xs),
+  },
+  modeSegment: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
+    minHeight: 44,
+    borderRadius: borderRadius.lg,
+  },
+  modeSegmentActive: {
+    backgroundColor: colors.primary,
+  },
+  modeSegmentIcon: {},
+  modeSegmentText: {
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: colors.textSecondary,
+  },
+  modeSegmentTextActive: {
+    color: colors.white,
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+  },
 
-  // ── Template mode day rows ──
+  // ── Day list ──
+  dayList: {
+    borderTopWidth: 1,
+    borderTopColor: hexToRgba(colors.white, 0.06),
+  },
   dayRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: rp(spacing.sm),
-    gap: rp(spacing.sm),
+    alignItems: "flex-start",
+    gap: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
+    minHeight: 44,
   },
-  dayLabelBox: {
-    width: rw(48),
-    alignItems: "center",
+  dayRowSeparator: {
+    borderBottomWidth: 1,
+    borderBottomColor: hexToRgba(colors.white, 0.06),
   },
-  dayShort: {
-    fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.primary.DEFAULT,
-  },
-  dayFull: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
 
-  assignedBox: {
+  // ── Day disc indicator ──
+  dayDisc: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: rp(spacing.xs),
+  },
+  dayDiscFilled: {
+    backgroundColor: colors.primary,
+  },
+  dayDiscHollow: {
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.white, 0.25),
+  },
+  dayDiscText: {
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+  },
+  dayDiscTextFilled: {
+    color: colors.white,
+  },
+  dayDiscTextHollow: {
+    color: colors.textTertiary,
+  },
+  dayDotIndicator: {
+    position: "absolute",
+    bottom: rp(-2),
+    width: rw(6),
+    height: rw(6),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.white,
+  },
+
+  dayRowBody: {
     flex: 1,
+    minWidth: 0,
+  },
+  dayLabel: {
+    fontSize: rf(15),
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: rp(spacing.xs),
+  },
+
+  // ── Template mode assigned row ──
+  assignedRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glass.background,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
     gap: rp(spacing.sm),
   },
-  assignedInfo: { flex: 1 },
+  assignedInfo: { flex: 1, minWidth: 0 },
   assignedName: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: colors.textSecondary,
   },
-  assignedMeta: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
-  changeBtn: {
-    paddingHorizontal: rp(spacing.sm),
+  assignedMeta: {
+    fontSize: rf(12),
+    color: colors.textTertiary,
+    marginTop: rp(2),
+  },
+  ghostBtn: {
+    paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.xl), 44),
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
+    borderRadius: borderRadius.lg,
+    backgroundColor: hexToRgba(colors.primary, 0.12),
   },
-  changeBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT },
-  clearBtn: {
-    padding: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.xl), 44),
+  ghostBtnText: {
+    fontSize: rf(13),
+    color: colors.primary,
+    fontWeight: "600",
+  },
+  iconBtn: {
     alignItems: "center",
     justifyContent: "center",
+    width: rw(36),
+    height: rw(36),
   },
 
-  restBox: {
-    flex: 1,
+  // ── Rest row (template mode, unassigned) ──
+  restRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colors.background.secondary,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.md),
-    minHeight: Math.max(rp(spacing.xl), 44),
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-    borderStyle: "dashed",
+    paddingVertical: rp(spacing.sm),
+    minHeight: 44,
   },
-  restText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
+  restText: {
+    fontSize: rf(13),
+    color: colors.textTertiary,
+  },
   addText: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.primary.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(13),
+    color: colors.primary,
+    fontWeight: "600",
   },
 
   summaryRow: {
@@ -878,42 +1194,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: rp(spacing.md),
     borderTopWidth: 1,
-    borderTopColor: colors.glass.border,
+    borderTopColor: hexToRgba(colors.white, 0.06),
   },
-  summaryText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
+  summaryText: {
+    fontSize: rf(13),
+    color: colors.textSecondary,
+  },
 
   // ── Exercise mode ──
-  exerciseDayBlock: {
-    marginBottom: rp(spacing.xs),
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-  },
   exerciseDayHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colors.background.secondary,
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.md),
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-    borderRadius: borderRadius.lg,
-  },
-  exerciseDayHeaderExpanded: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    borderBottomWidth: 0,
-    backgroundColor: colors.background.tertiary,
-  },
-  exerciseDayHeaderLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.sm),
-  },
-  exerciseDayLabel: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    paddingVertical: rp(spacing.sm),
+    minHeight: 44,
   },
   exerciseDayHeaderRight: {
     flexDirection: "row",
@@ -921,25 +1215,21 @@ const styles = StyleSheet.create({
     gap: rp(spacing.sm),
   },
   exerciseDayCount: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.primary.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(12),
+    color: colors.primary,
+    fontWeight: "600",
   },
-  exerciseDayRest: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary },
+  exerciseDayRest: {
+    fontSize: rf(12),
+    color: colors.textSecondary,
+  },
 
   exerciseDayDetail: {
-    backgroundColor: colors.background.secondary,
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: colors.glass.border,
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
   },
   exerciseDayEmptyHint: {
     fontSize: rf(13),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: "center",
     paddingVertical: rp(spacing.sm),
   },
@@ -947,32 +1237,41 @@ const styles = StyleSheet.create({
   exerciseItemRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glass.background,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.sm),
-    marginBottom: rp(spacing.xs),
+    paddingVertical: rp(spacing.md),
+    gap: rp(spacing.sm),
+    minHeight: 44,
   },
-  exerciseItemInfo: { flex: 1 },
+  exerciseItemRowSeparator: {
+    borderBottomWidth: 1,
+    borderBottomColor: hexToRgba(colors.white, 0.06),
+  },
+  exerciseItemInfo: { flex: 1, minWidth: 0 },
   exerciseItemName: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    fontSize: rf(14),
+    fontWeight: "600",
+    color: colors.text,
     marginBottom: rp(spacing.xs),
   },
   exerciseItemControls: {
     flexDirection: "row",
     flexWrap: "wrap",
     rowGap: rp(spacing.xs),
-    columnGap: rp(spacing.sm),
+    columnGap: rp(spacing.md),
     alignItems: "center",
   },
   controlGroup: { alignItems: "center" },
-  controlLabel: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginBottom: rp(spacing.xxs) },
+  controlLabel: {
+    fontSize: rf(11),
+    color: colors.textTertiary,
+    marginBottom: rp(2),
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    fontWeight: "600",
+  },
   controlValue: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(13),
+    color: colors.text,
+    fontWeight: "600",
   },
   stepperRow: {
     flexDirection: "row",
@@ -982,80 +1281,147 @@ const styles = StyleSheet.create({
   stepperBtn: {
     width: Math.max(rw(32), 44),
     height: Math.max(rw(32), 44),
-    borderRadius: 999,
-    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.white, 0.06),
     justifyContent: "center",
     alignItems: "center",
   },
   stepperBtnText: {
-    fontSize: rf(typography.fontSize.body),
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(16),
+    color: colors.text,
+    fontWeight: "600",
   },
   stepperValue: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(13),
+    color: colors.text,
+    fontWeight: "600",
     minWidth: rw(28),
     textAlign: "center",
   },
 
   removeExBtn: {
-    padding: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.xl), 44),
-    minWidth: Math.max(rp(spacing.xl), 44),
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: rp(spacing.xxs),
+    width: rw(36),
+    height: rw(36),
+    minHeight: 44,
+    minWidth: 44,
   },
 
   exerciseDayActions: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: rp(spacing.xxs),
+    marginTop: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
   },
   addExerciseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
-    minHeight: Math.max(rp(spacing.xl), 44),
-    justifyContent: "center",
+    minHeight: 44,
   },
   addExerciseBtnText: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.primary.DEFAULT,
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: colors.primary,
   },
   clearDayBtn: {
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
-    minHeight: Math.max(rp(spacing.xl), 44),
+    minHeight: 44,
     justifyContent: "center",
   },
-  clearDayBtnText: { fontSize: rf(typography.fontSize.micro), color: colors.error.DEFAULT },
+  clearDayBtnText: {
+    fontSize: rf(12),
+    color: colors.error,
+    fontWeight: "600",
+  },
+
+  // ── Footer CTA ──
+  footerSpacer: {
+    height: rp(100),
+  },
+  footer: {
+    paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.sm),
+  },
+  cta: {
+    borderRadius: borderRadius.xl,
+    overflow: "hidden",
+    minHeight: 52,
+  },
+  ctaDisabled: {
+    opacity: 0.4,
+  },
+  ctaGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.md),
+    paddingHorizontal: rp(spacing.xl),
+    minHeight: 52,
+  },
+  ctaText: {
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.white,
+  },
 
   // ── Picker sheets ──
   pickerList: { paddingBottom: rp(spacing.xxl) },
   pickerItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.md),
+    gap: rp(spacing.md),
     borderBottomWidth: 1,
-    borderBottomColor: colors.glass.border,
+    borderBottomColor: hexToRgba(colors.white, 0.06),
+    minHeight: 44,
   },
-  pickerItemSelected: { backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.1) },
-  pickerItemInfo: { flex: 1 },
+  pickerItemSelected: { backgroundColor: hexToRgba(colors.primary, 0.06) },
+  pickerItemInfo: { flex: 1, minWidth: 0 },
   pickerItemName: {
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    fontSize: rf(15),
+    fontWeight: "600",
+    color: colors.text,
   },
-  pickerItemMeta: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary, marginTop: rp(spacing.xxs) },
-  pickerItemMuscles: { fontSize: rf(typography.fontSize.micro), color: colors.primary.DEFAULT, marginTop: rp(spacing.xxs) },
+  pickerItemMeta: {
+    fontSize: rf(12),
+    color: colors.textSecondary,
+    marginTop: rp(2),
+  },
+  pickerItemMuscles: {
+    fontSize: rf(12),
+    color: colors.primary,
+    marginTop: rp(2),
+  },
+  pickerCircle: {
+    width: rw(26),
+    height: rw(26),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: rp(spacing.xs),
+  },
+  pickerCircleSelected: {
+    backgroundColor: colors.primary,
+  },
+  pickerCircleUnselected: {
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.white, 0.25),
+  },
 
   pickerEmpty: { padding: rp(spacing.xxl), alignItems: "center" },
-  pickerEmptyText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
+  pickerEmptyText: {
+    fontSize: rf(13),
+    color: colors.textSecondary,
+  },
 
   // ── Exercise picker extras ──
   pickerKav: { flex: 1 },
@@ -1064,13 +1430,13 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
   },
   exerciseSearchInput: {
-    backgroundColor: colors.glass.background,
-    borderRadius: borderRadius.md,
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    borderRadius: borderRadius.lg,
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.xl), 44),
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.primary,
+    minHeight: 44,
+    fontSize: rf(14),
+    color: colors.text,
   },
   categoryTabsRow: {
     paddingHorizontal: rp(spacing.md),
@@ -1081,21 +1447,23 @@ const styles = StyleSheet.create({
   categoryTab: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.lg), 44),
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.white, 0.06),
   },
   categoryTabActive: {
-    backgroundColor: colors.primary.DEFAULT,
+    backgroundColor: colors.primary,
   },
   categoryTabText: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(12),
+    color: colors.textSecondary,
+    fontWeight: "600",
   },
   categoryTabTextActive: {
-    color: colors.text.primary,
+    color: colors.white,
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
   },
 });

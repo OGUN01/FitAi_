@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { useProfileStore } from "../../../stores/profileStore";
@@ -374,6 +375,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: rf(18),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
   },
@@ -445,6 +447,7 @@ const styles = StyleSheet.create({
   },
   tipTitle: {
     fontSize: rf(14),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
     flex: 1,
@@ -509,6 +512,7 @@ const styles = StyleSheet.create({
   },
   gotItButtonText: {
     fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.white,
     letterSpacing: 0.5,

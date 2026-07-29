@@ -1,24 +1,25 @@
 /**
- * FitAI — Exercise History Screen (Aurora)
+ * FitAI — Exercise History Screen (Aurora flat, 2026 redesign)
  *
- * Per-exercise history: volume bar chart, estimated-1RM trend, session list,
- * and a Personal Records card. Previously a flat dark surface with hardcoded
- * hex (#0D0D1A / #1A1A2E / #4CAF50), raw SVG, 🏆 emoji, ActivityIndicator, and
- * a "← Back" text button.
+ * Per-exercise history with date-grouped flat rows, PR highlight in successAlt
+ * text (not a gold badge box), a flat Personal Records section, volume + 1RM
+ * charts, and a muted empty state.
  *
- * Aurora modernization:
- *  - Wrapped in AuroraBackground theme="space".
- *  - Hardcoded colors → aurora tokens.
- *  - ActivityIndicator → AuroraSpinner.
- *  - Added Personal Records card at top (renders ExercisePR.value + prType +
- *    achievedAt — the `prs` state was already fetched but never rendered).
- *  - 🏆 emoji → gold glass pill PR badge.
- *  - "← Back" text → GlassHeader (back chevron + title).
- *  - Ad-hoc empty state → shared EmptyState.
- *  - Volume bar chart + 1RM trend recolored with tokens.
+ * Design language (2026 flat):
+ *  - Custom flat header: back chevron + uppercase letterspaced "HISTORY"
+ *    eyebrow + bold exercise-name title. No glass cards anywhere.
+ *  - Personal Records: flat section directly on the aurora background (no
+ *    card chrome). PR label + value render in successAlt text (green); date
+ *    in muted tertiary. No gold pill badges.
+ *  - Sessions grouped by date under uppercase muted date eyebrows.
+ *  - Flat rows: sets summary (semibold) + est. 1RM. PR sessions highlight the
+ *    sets summary in successAlt text with a leading trophy glyph — no badge box.
+ *    Hairline separators between rows.
  *
  * Data flow unchanged: exerciseHistoryService.getHistory + getPersonalRecords
  * remain the source of truth; totalVolume from volumeCalculator is reused.
+ * handleRetry, prSessionIds memo, and the loading/error branches are preserved
+ * byte-for-byte.
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -32,14 +33,18 @@ import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Polyline, Line, Text as SvgText } from "react-native-svg";
 import {
   AuroraBackground,
-  GlassCard,
-  GlassHeader,
   AuroraSpinner,
   EmptyState,
+  AnimatedPressable,
 } from "../../components/ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import {
+  flatColors as colors,
+  spacing,
+  typography,
+} from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { hexToRgba } from "../../utils/colors";
-import { rp, rf } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
 import {
   exerciseHistoryService,
   ExerciseHistoryEntry,
@@ -82,6 +87,32 @@ function formatSets(sets: ExerciseHistoryEntry["sets"]): string {
   return `${sets.length} sets`;
 }
 
+// ── Date grouping (presentation-only) ───────────────────────────────────────
+interface DateGroup {
+  key: string;
+  label: string;
+  rows: ExerciseHistoryEntry[];
+}
+
+function groupByDate(entries: ExerciseHistoryEntry[]): DateGroup[] {
+  const map = new Map<string, ExerciseHistoryEntry[]>();
+  for (const e of entries) {
+    const d = new Date(e.completedAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const existing = map.get(key);
+    if (existing) existing.push(e);
+    else map.set(key, [e]);
+  }
+  return Array.from(map.entries()).map(([, rows]) => {
+    const d = new Date(rows[0].completedAt);
+    return {
+      key: `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`,
+      label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      rows,
+    };
+  });
+}
+
 function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
   if (entries.length === 0) return null;
 
@@ -114,7 +145,7 @@ function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
               y={y}
               width={barWidth}
               height={barH}
-              fill={colors.success.DEFAULT}
+              fill={colors.successAlt}
               rx={3}
             />
           );
@@ -124,7 +155,7 @@ function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
           y1={CHART_HEIGHT - 20}
           x2={CHART_WIDTH}
           y2={CHART_HEIGHT - 20}
-          stroke={colors.glass.border}
+          stroke={colors.glassBorder}
           strokeWidth={1}
         />
       </Svg>
@@ -159,7 +190,7 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
         <Polyline
           points={points}
           fill="none"
-          stroke={colors.warning.DEFAULT}
+          stroke={colors.warning}
           strokeWidth={2}
         />
         <Line
@@ -167,16 +198,16 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
           y1={CHART_HEIGHT - 20}
           x2={CHART_WIDTH}
           y2={CHART_HEIGHT - 20}
-          stroke={colors.glass.border}
+          stroke={colors.glassBorder}
           strokeWidth={1}
         />
-        <SvgText x={0} y={CHART_HEIGHT - 4} fill={colors.text.tertiary} fontSize={10}>
+        <SvgText x={0} y={CHART_HEIGHT - 4} fill={colors.textTertiary} fontSize={10}>
           {Math.round(minVal)}
         </SvgText>
         <SvgText
           x={CHART_WIDTH - 30}
           y={CHART_HEIGHT - 4}
-          fill={colors.text.tertiary}
+          fill={colors.textTertiary}
           fontSize={10}
         >
           {Math.round(maxVal)}
@@ -186,26 +217,25 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
   );
 }
 
-// ── Personal Records card ────────────────────────────────────────────────────
+// ── Personal Records section (flat, no card chrome) ──────────────────────────
 // Renders the already-fetched `prs` state (ExercisePR.value + prType +
-// achievedAt) that was previously loaded but never shown to the user.
-function PersonalRecordsCard({ prs }: { prs: ExercisePR[] }) {
+// achievedAt) that was previously loaded but never shown to the user. PR label +
+// value use successAlt text (green); the date stays muted. No gold pill badge.
+function PersonalRecordsSection({ prs }: { prs: ExercisePR[] }) {
   if (prs.length === 0) return null;
   return (
-    <GlassCard elevation={2} padding="md" borderRadius="lg" style={styles.prCard}>
-      <View style={styles.prHeader}>
-        <Text style={styles.prCardTitle}>Personal Records</Text>
-      </View>
+    <View style={styles.prSection}>
+      <Text style={styles.sectionEyebrow}>PERSONAL RECORDS</Text>
       <View style={styles.prList}>
         {prs.map((pr, i) => (
           <View key={`pr-${i}-${pr.prType}`} style={styles.prRow}>
-            <View style={styles.prBadge}>
+            <View style={styles.prLabelWrap}>
               <Ionicons
                 name="trophy"
                 size={rf(typography.fontSize.caption)}
-                color={colors.warning.DEFAULT}
+                color={colors.successAlt}
               />
-              <Text style={styles.prBadgeLabel}>
+              <Text style={styles.prLabel}>
                 {pr.prType === "weight" ? "Weight PR" : "Est. 1RM PR"}
               </Text>
             </View>
@@ -217,9 +247,44 @@ function PersonalRecordsCard({ prs }: { prs: ExercisePR[] }) {
           </View>
         ))}
       </View>
-    </GlassCard>
+    </View>
   );
 }
+
+// ── Flat header — back chevron + eyebrow + title ─────────────────────────────
+const ScreenHeader: React.FC<{
+  title: string;
+  onBack?: () => void;
+}> = ({ title, onBack }) => (
+  <View style={styles.header}>
+    {onBack ? (
+      <AnimatedPressable
+        onPress={onBack}
+        scaleValue={0.9}
+        springConfig="snappy"
+        hapticType="light"
+        style={styles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
+      </AnimatedPressable>
+    ) : (
+      <View style={styles.backButton} />
+    )}
+    <View style={styles.headerText}>
+      <Text style={styles.eyebrow} numberOfLines={1}>
+        History
+      </Text>
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
+    </View>
+    {/* Spacer balances the back button so the title block stays put */}
+    <View style={styles.backButton} />
+  </View>
+);
 
 export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   const { exerciseId, exerciseName } = route.params;
@@ -260,7 +325,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     };
   }, [exerciseId]);
 
-  // Memoize the Set so renderSession's useCallback stays stable across renders
+  // Memoize the Set so renderGroup's useCallback stays stable across renders
   // that don't change `prs` (a fresh Set every render would break the memo).
   const prSessionIds = useMemo(() => {
     const ids = new Set<string>();
@@ -272,40 +337,8 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     return ids;
   }, [prs]);
 
-  const renderSession = useCallback(
-    ({ item }: { item: ExerciseHistoryEntry }) => {
-      const hasPR = prSessionIds.has(item.sessionId);
-      return (
-        <GlassCard
-          elevation={1}
-          padding="md"
-          borderRadius="lg"
-          style={styles.sessionCard}
-        >
-          <View style={styles.sessionHeader}>
-            <Text style={styles.sessionDate}>{formatDate(item.completedAt)}</Text>
-            {hasPR && (
-              <View style={styles.prPill}>
-                <Ionicons
-                  name="trophy"
-                  size={rf(typography.fontSize.micro)}
-                  color={colors.warning.DEFAULT}
-                />
-                <Text style={styles.prPillText}>PR</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.sessionSets}>{formatSets(item.sets)}</Text>
-          {item.estimated1RM != null && (
-            <Text style={styles.sessionE1RM}>
-              Est. 1RM: {Math.round(item.estimated1RM)}kg
-            </Text>
-          )}
-        </GlassCard>
-      );
-    },
-    [prSessionIds],
-  );
+  // Date-grouped sessions (presentation-only transform).
+  const groups = useMemo(() => groupByDate(history), [history]);
 
   const handleRetry = useCallback(() => {
     setLoading(true);
@@ -336,10 +369,68 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     // No cleanup setter needed — component re-renders replace this closure.
   }, [exerciseId]);
 
+  const renderGroup = useCallback(
+    ({ item }: { item: DateGroup }) => (
+      <View style={styles.group}>
+        <View style={styles.groupHeader}>
+          <Text style={styles.groupLabel} numberOfLines={1}>
+            {item.label}
+          </Text>
+          <Text style={styles.groupCount} numberOfLines={1}>
+            {item.rows.length} set{item.rows.length === 1 ? "" : "s"}
+          </Text>
+        </View>
+        {item.rows.map((entry, idx) => {
+          const hasPR = prSessionIds.has(entry.sessionId);
+          return (
+            <View key={entry.sessionId} style={styles.sessionRow}>
+              <View style={styles.sessionMain}>
+                <View style={styles.sessionTop}>
+                  {hasPR ? (
+                    <Ionicons
+                      name="trophy"
+                      size={rf(typography.fontSize.caption)}
+                      color={colors.successAlt}
+                      style={styles.prGlyph}
+                    />
+                  ) : null}
+                  <Text
+                    style={[
+                      styles.sessionSets,
+                      hasPR && styles.sessionSetsPR,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {formatSets(entry.sets)}
+                  </Text>
+                </View>
+                {entry.estimated1RM != null ? (
+                  <Text style={styles.sessionE1RM} numberOfLines={1}>
+                    Est. 1RM: {Math.round(entry.estimated1RM)}kg
+                  </Text>
+                ) : null}
+                {hasPR ? (
+                  <Text style={styles.prTag} numberOfLines={1}>
+                    Personal Record
+                  </Text>
+                ) : null}
+              </View>
+              {idx < item.rows.length - 1 ? (
+                <View style={styles.separator} />
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
+    ),
+    [prSessionIds],
+  );
+
   if (loading) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.container}>
+          <ScreenHeader title={exerciseName} onBack={navigation?.goBack} />
           <View style={styles.loadingWrap}>
             <AuroraSpinner size="lg" theme="primary" />
           </View>
@@ -352,11 +443,11 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.container}>
-          <GlassHeader title={exerciseName} titleIcon="barbell" onBack={navigation?.goBack} />
+          <ScreenHeader title={exerciseName} onBack={navigation?.goBack} />
           <View style={styles.errorWrap}>
             <EmptyState
               icon="cloud-offline-outline"
-              iconColor={colors.error.DEFAULT}
+              iconColor={colors.error}
               title="Couldn't load history"
               subtitle="Check your connection and try again."
               ctaText="Try Again"
@@ -371,20 +462,16 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.container}>
-        <GlassHeader
-          title={exerciseName}
-          titleIcon="barbell"
-          onBack={navigation?.goBack}
-        />
+        <ScreenHeader title={exerciseName} onBack={navigation?.goBack} />
 
         <FlatList
           testID="history-list"
-          data={history}
-          keyExtractor={(item) => item.sessionId}
-          renderItem={renderSession}
+          data={groups}
+          keyExtractor={(item) => item.key}
+          renderItem={renderGroup}
           ListHeaderComponent={
             <View>
-              <PersonalRecordsCard prs={prs} />
+              <PersonalRecordsSection prs={prs} />
               {history.length > 0 && (
                 <>
                   <VolumeChart entries={history} />
@@ -398,7 +485,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
               icon="barbell-outline"
               title="No history yet"
               subtitle="Complete your first workout!"
-              iconColor={colors.primary.DEFAULT}
+              iconColor={colors.primary}
             />
           }
           contentContainerStyle={styles.listContent}
@@ -411,8 +498,39 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: rp(spacing.md),
-    paddingTop: rp(spacing.md),
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.xs),
+  },
+  backButton: {
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
+    borderRadius: rbr(22),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerText: {
+    flex: 1,
+    alignItems: "center",
+  },
+  eyebrow: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
+  title: {
+    fontSize: rf(22),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.text,
+    marginTop: rp(2),
   },
   loadingWrap: {
     flex: 1,
@@ -424,37 +542,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  subtitle: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.tertiary,
-    marginBottom: rp(spacing.md),
-  },
-  chartContainer: {
-    marginBottom: rp(spacing.md),
-    alignItems: "center",
-  },
-  chartTitle: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.text.tertiary,
-    marginBottom: rp(spacing.sm),
-    alignSelf: "flex-start",
-  },
   listContent: {
+    paddingHorizontal: rp(spacing.md),
+    paddingTop: rp(spacing.xs),
     paddingBottom: rp(spacing.xxl),
   },
-  // PR card
-  prCard: {
+  // ── Personal Records section (flat) ────────────────────────────────────────
+  prSection: {
+    marginTop: rp(spacing.sm),
     marginBottom: rp(spacing.md),
   },
-  prHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+  sectionEyebrow: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
     marginBottom: rp(spacing.sm),
-  },
-  prCardTitle: {
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.primary,
   },
   prList: {
     gap: rp(spacing.xs),
@@ -464,72 +569,108 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.sm),
+    minHeight: 44,
   },
-  // Gold glass pill PR badge
-  prBadge: {
+  prLabelWrap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(spacing.xxs),
-    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.13),
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),
-    borderRadius: borderRadius.full,
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
+    gap: rp(spacing.xs),
     flex: 1,
   },
-  prBadgeLabel: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.warning.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+  prLabel: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.successAlt,
+    fontWeight: "600",
   },
   prValue: {
     fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.primary,
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.text,
   },
   prDate: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.text.tertiary,
-  },
-  // Session rows
-  sessionCard: {
-    marginBottom: rp(spacing.sm),
-  },
-  sessionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: rp(spacing.xxs),
-  },
-  sessionDate: {
     fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    color: colors.textTertiary,
   },
-  prPill: {
+  // ── Charts (flat) ───────────────────────────────────────────────────────────
+  chartContainer: {
+    marginBottom: rp(spacing.md),
+    alignItems: "center",
+  },
+  chartTitle: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: rp(spacing.sm),
+    alignSelf: "flex-start",
+  },
+  // ── Date-grouped session rows ──────────────────────────────────────────────
+  group: {
+    marginBottom: rp(spacing.md),
+  },
+  groupHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: rp(spacing.xs),
+  },
+  groupLabel: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    flexShrink: 1,
+  },
+  groupCount: {
+    fontSize: rf(11),
+    fontWeight: "500",
+    color: colors.textTertiary,
+  },
+  sessionRow: {
+    // Wrapper for row + hairline.
+  },
+  sessionMain: {
+    paddingVertical: rp(spacing.sm),
+    minHeight: 44,
+    gap: rp(spacing.xxs),
+  },
+  sessionTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(spacing.xxs),
-    backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.13),
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.warning.DEFAULT, 0.4),
-    borderRadius: borderRadius.full,
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
-    marginLeft: rp(spacing.sm),
+    gap: rp(spacing.xs),
   },
-  prPillText: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.warning.DEFAULT,
-    fontWeight: String(typography.fontWeight.bold) as any,
+  prGlyph: {
+    flexShrink: 0,
   },
   sessionSets: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: "600",
+    color: colors.text,
+    flex: 1,
+  },
+  // PR highlight in successAlt text (not a badge box).
+  sessionSetsPR: {
+    color: colors.successAlt,
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
   },
   sessionE1RM: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.warning.DEFAULT,
-    marginTop: rp(spacing.xxs),
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.warning,
+  },
+  prTag: {
+    fontSize: rf(11),
+    fontWeight: "600",
+    color: colors.successAlt,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: hexToRgba(colors.text, 0.06),
   },
 });

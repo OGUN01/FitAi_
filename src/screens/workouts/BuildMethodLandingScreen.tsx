@@ -41,6 +41,7 @@ import {
   spacing,
   borderRadius,
 } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { haptics } from "../../utils/haptics";
@@ -332,6 +333,7 @@ const styles = StyleSheet.create({
   },
   stepEyebrow: {
     fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.textSecondary,
     textTransform: "uppercase",
@@ -346,6 +348,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(28),
+    fontFamily: FONT_FAMILY.extrabold,
     fontWeight: "800",
     color: colors.text,
     lineHeight: rf(34),
@@ -467,6 +470,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.white,
   },
