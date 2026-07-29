@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -394,6 +395,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
   },
@@ -438,6 +440,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: rf(11),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.white,
   },
@@ -468,6 +471,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(14),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.text,
   },
@@ -492,6 +496,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.accent,
   },
@@ -502,6 +507,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: rf(14),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.text,
   },
@@ -521,6 +527,7 @@ const styles = StyleSheet.create({
   },
   seeAllFooterText: {
     fontSize: rf(12),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.primary,
   },

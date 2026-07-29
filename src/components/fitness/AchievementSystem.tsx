@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rbr, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -531,6 +532,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: colors.surface,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 });

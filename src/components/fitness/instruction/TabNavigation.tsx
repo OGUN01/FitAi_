@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 
 interface TabNavigationProps {
@@ -81,6 +82,7 @@ const styles = StyleSheet.create({
 
   tabText: {
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.text,
   },

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Modal } from "react-native";
 import { Card } from "../ui";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 
 interface WorkoutTimerProps {
@@ -390,6 +391,7 @@ const styles = StyleSheet.create({
 
   modernControlText: {
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     textAlign: "center",
   },

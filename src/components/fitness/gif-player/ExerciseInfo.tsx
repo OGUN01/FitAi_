@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { hexToRgba } from "../../../utils/colors";
 
 interface Exercise {
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
   qualityText: {
     fontSize: fontSize.xs,
     color: colors.success,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 
@@ -143,6 +145,7 @@ const styles = StyleSheet.create({
   instructionsButtonText: {
     color: colors.primary,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 });

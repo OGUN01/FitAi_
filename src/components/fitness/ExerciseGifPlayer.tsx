@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../ui";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
@@ -512,6 +513,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
     marginBottom: spacing.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 
@@ -559,6 +561,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: colors.surface,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 
@@ -592,6 +595,7 @@ const styles = StyleSheet.create({
   qualityText: {
     fontSize: fontSize.xs,
     color: colors.white,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 
@@ -631,6 +635,7 @@ const styles = StyleSheet.create({
   instructionsButtonText: {
     color: colors.primary,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 

@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { WeeklyWorkoutPlan } from "../../types/ai";
@@ -270,6 +271,7 @@ const styles = StyleSheet.create({
   },
   planTitle: {
     fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
     flexShrink: 1,
@@ -292,6 +294,7 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     fontSize: rf(12),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.primary,
   },
@@ -312,10 +315,12 @@ const styles = StyleSheet.create({
   },
   dayLabelToday: {
     color: colors.primary,
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
   },
   dayLabelSelected: {
     color: colors.text,
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
   },
   dayCircle: {
@@ -365,6 +370,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: rf(16),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
   },

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 
 interface InstructionStepsProps {
@@ -158,6 +159,7 @@ const styles = StyleSheet.create({
 
   noDataText: {
     fontSize: fontSize.md,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.textSecondary,
     marginTop: spacing.md,

@@ -9,6 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 
@@ -115,6 +116,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: rf(22),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
     letterSpacing: -0.5,
@@ -137,6 +139,7 @@ const styles = StyleSheet.create({
   },
   weekText: {
     fontSize: rf(11),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.primary,
   },
@@ -172,6 +175,7 @@ const styles = StyleSheet.create({
   },
   progressIndicatorText: {
     fontSize: rf(10),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.white,
   },

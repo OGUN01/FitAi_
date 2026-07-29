@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rbr, rs } from "../../../utils/responsive";
 
 interface ModalHeaderProps {
@@ -79,6 +80,7 @@ const styles = StyleSheet.create({
   qualityBadgeText: {
     fontSize: fontSize.xs,
     color: colors.white,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 

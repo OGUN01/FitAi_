@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { ExerciseTipsCard } from "./ExerciseTipsCard";
@@ -136,6 +137,7 @@ const styles = StyleSheet.create({
   primaryChipText: {
     color: colors.primary,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     textTransform: "capitalize",
   },
@@ -147,6 +149,7 @@ const styles = StyleSheet.create({
   secondaryChipText: {
     color: colors.warningAlt,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     textTransform: "capitalize",
   },
@@ -158,6 +161,7 @@ const styles = StyleSheet.create({
   equipmentChipText: {
     color: colors.info,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     textTransform: "capitalize",
   },
@@ -169,6 +173,7 @@ const styles = StyleSheet.create({
   bodyPartChipText: {
     color: colors.success,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     textTransform: "capitalize",
   },
@@ -180,6 +185,7 @@ const styles = StyleSheet.create({
 
   noDataText: {
     fontSize: fontSize.md,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.textSecondary,
     marginTop: spacing.md,

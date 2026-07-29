@@ -9,6 +9,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 
 interface DayInfo {
@@ -191,6 +192,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: rf(11),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
     color: colors.textSecondary,
     marginBottom: rp(4),
@@ -204,6 +206,7 @@ const styles = StyleSheet.create({
   },
   dayDate: {
     fontSize: rf(18),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.text,
   },
@@ -226,6 +229,7 @@ const styles = StyleSheet.create({
   },
   mealCount: {
     fontSize: rf(9),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.white,
   },

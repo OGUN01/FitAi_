@@ -10,6 +10,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 
@@ -246,6 +247,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: colors.surface,
     fontSize: fontSize.sm,
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },
 
