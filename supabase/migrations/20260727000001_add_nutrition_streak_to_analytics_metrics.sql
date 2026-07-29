@@ -1,3 +1,0 @@
-ALTER TABLE analytics_metrics
-  ADD COLUMN IF NOT EXISTS nutrition_streak INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS longest_nutrition_streak INTEGER NOT NULL DEFAULT 0;
