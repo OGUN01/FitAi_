@@ -8,15 +8,19 @@
  *
  * Layout:
  *  - AuroraBackground theme="space"
- *  - GlassHeader: back chevron + workout title + "Start Workout" action
+ *  - Flat header: transparent back circle + workout title + "Start" pill
  *  - Sticky progress indicator (ProgressRing) — shows completion % when a
  *    session is in-progress (workoutProgress[workout.id].progress)
  *  - Stats bar: volume, calories (MET calc), duration, difficulty
- *  - Muscle heatmap: GradientBarChart per major body part
- *  - Collapsible sections: Warm-up / Main / Supersets / Finisher / Cooldown
- *  - Each exercise row: thumbnail disc, name, sets×reps, RPE, rest — tap opens
- *    ExerciseEditorSheet when in builder context (driven by optional
- *    onOpenEditor prop), otherwise expands inline details.
+ *  - Muscle heatmap: compact horizontal chip dialer (HeatmapChips) — one chip
+ *    per major body part, mini bar + set count, ~90px tall (was 220px bars).
+ *  - Exercise carousel: horizontal paging dialer (ExerciseCarousel) — one
+ *    full-width ExerciseCard per exercise, swipe left/right, section pills
+ *    (Warm-up/Main/Supersets/Finisher/Cooldown) filter the dialer, dot
+ *    indicator marks position. Replaces the old tall vertical list of
+ *    CollapsibleSection + DetailExerciseRow stacks. Card tap opens
+ *    ExerciseEditorSheet in builder context (onOpenEditor prop), else is
+ *    read-only (detail already shown on card).
  *
  * "Start Workout" → startWorkoutSession(workout) → navigate("WorkoutSession").
  *
@@ -32,52 +36,40 @@
  * All colors/sizes/radii from aurora-tokens. Spring animations from animations.ts.
  * Haptics on every interaction from src/utils/haptics.ts.
  */
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
+  useWindowDimensions,
   type TextStyle,
-  type ViewStyle,
-} from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import Animated, {
-  FadeInUp,
-  SlideInRight,
-  Layout,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  interpolate,
-} from "react-native-reanimated";
-import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
-import { GlassButton } from "../../components/ui/aurora/GlassButton";
-import { ProgressRing } from "../../components/ui/aurora/ProgressRing";
-import { SupersetConnector } from "../../components/ui/aurora/SupersetConnector";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { GradientBarChart, type BarData } from "../../components/ui/GradientBarChart";
-import { BuilderAnalyticsPanel } from "../../components/fitness/builder/BuilderAnalyticsPanel";
-import { useFitnessStore } from "../../stores/fitnessStore";
-import { useProfileStore } from "../../stores/profileStore";
-import { calculateWorkoutCalories } from "../../services/calorieCalculator";
-import { CURATED_EXERCISES } from "../../data/curatedExercises";
-import { haptics } from "../../utils/haptics";
-import { animations } from "../../theme/animations";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  typography,
-} from "../../theme/aurora-tokens";
-import { rp, rf, rw } from "../../utils/responsive";
-import { hexToRgba } from "../../utils/colors";
-import type { DayWorkout } from "../../types/ai";
-import type { PlannedExercise } from "../../types/workout";
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { ProgressRing } from '../../components/ui/aurora/ProgressRing';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { type BarData } from '../../components/ui/GradientBarChart';
+import { BuilderAnalyticsPanel } from '../../components/fitness/builder/BuilderAnalyticsPanel';
+import { useFitnessStore } from '../../stores/fitnessStore';
+import { useProfileStore } from '../../stores/profileStore';
+import { calculateWorkoutCalories } from '../../services/calorieCalculator';
+import { CURATED_EXERCISES } from '../../data/curatedExercises';
+import { exerciseFilterService } from '../../services/exerciseFilterService';
+import { haptics } from '../../utils/haptics';
+import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { FONT_FAMILY } from '../../theme/fonts';
+import { rp, rf, rw, rbr } from '../../utils/responsive';
+import { hexToRgba } from '../../utils/colors';
+import { titleCaseExerciseName } from '../../utils/textFormat';
+import type { DayWorkout } from '../../types/ai';
+import type { PlannedExercise } from '../../types/workout';
 
 // ----------------------------------------------------------------------------
 // TYPES
@@ -88,8 +80,8 @@ import type { PlannedExercise } from "../../types/workout";
  * `any` (TS strict). Same pattern as InlineValidationBanner.
  */
 const fw = (
-  w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight],
-): TextStyle["fontWeight"] => String(w) as TextStyle["fontWeight"];
+  w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight]
+): TextStyle['fontWeight'] => String(w) as TextStyle['fontWeight'];
 
 export interface WorkoutDetailScreenProps {
   /** The workout to render. Required. */
@@ -112,16 +104,86 @@ export interface WorkoutDetailScreenProps {
 
 // Major muscle groups surfaced in the heatmap (top-N by weekly sets).
 const HEATMAP_GROUPS = [
-  "chest",
-  "back",
-  "shoulders",
-  "biceps",
-  "triceps",
-  "quadriceps",
-  "hamstrings",
-  "glutes",
-  "core",
+  'chest',
+  'back',
+  'shoulders',
+  'biceps',
+  'triceps',
+  'quadriceps',
+  'hamstrings',
+  'glutes',
+  'core',
 ] as const;
+
+// ExerciseDB (exercisedb.dev API) target-muscle vocab → HEATMAP_GROUPS vocab.
+// The live plan stores exerciseDatabase ids (e.g. "aXcUyKb"), not curated ids
+// ("push_up"), so resolution must go through exerciseFilterService — the same
+// source WorkoutSessionScreen uses — and its muscle names ("delts",
+// "pectorals") mapped onto the heatmap's group names.
+const DB_MUSCLE_TO_GROUP: Record<string, string> = {
+  pectorals: 'chest',
+  lats: 'back',
+  'upper back': 'back',
+  traps: 'back',
+  rhomboids: 'back',
+  spine: 'back',
+  delts: 'shoulders',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  quads: 'quadriceps',
+  hamstrings: 'hamstrings',
+  glutes: 'glutes',
+  abs: 'core',
+  'cardiovascular system': 'cardio',
+};
+
+interface ResolvedExerciseMeta {
+  name: string | null;
+  muscleGroups: string[];
+  equipment: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+}
+
+// Section keys for the exercise carousel pills.
+type SectionKey = 'warmup' | 'main' | 'superset' | 'finisher' | 'cooldown';
+
+// Cooldown entries (ExerciseInstruction shape) — rendered in the carousel
+// alongside PlannedExercise cards, so both share the dialer.
+type CooldownItem = { name: string; duration?: number; instructions: string };
+
+// Resolve display metadata for an exerciseId from the real exercise DB first
+// (AI-plan ids), falling back to the curated list (legacy builder ids).
+const resolveExerciseMeta = (exerciseId: string | undefined): ResolvedExerciseMeta => {
+  const empty = { name: null, muscleGroups: [], equipment: [], difficulty: 'intermediate' as const };
+  if (!exerciseId) return empty;
+
+  const db = exerciseFilterService.getExerciseById(exerciseId);
+  if (db) {
+    const groups = new Set<string>();
+    for (const muscle of [...db.targetMuscles, ...db.secondaryMuscles]) {
+      const group = DB_MUSCLE_TO_GROUP[muscle.toLowerCase()];
+      if (group && group !== 'cardio') groups.add(group);
+    }
+    return {
+      name: titleCaseExerciseName(db.name),
+      muscleGroups: [...groups],
+      equipment: db.equipments,
+      difficulty: db.difficulty,
+    };
+  }
+
+  const curated = CURATED_EXERCISES.find((c) => c.id === exerciseId);
+  if (curated) {
+    return {
+      name: curated.name,
+      muscleGroups: curated.muscleGroups,
+      equipment: curated.equipment,
+      difficulty: curated.difficulty,
+    };
+  }
+
+  return empty;
+};
 
 // ----------------------------------------------------------------------------
 // COMPONENT
@@ -135,9 +197,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   testID,
 }) => {
   // ── Progress (sticky ring) — from fitnessStore.workoutProgress ──
-  const progress = useFitnessStore(
-    (s) => s.workoutProgress[workout.id]?.progress ?? 0,
-  );
+  const progress = useFitnessStore((s) => s.workoutProgress[workout.id]?.progress ?? 0);
   const startWorkoutSession = useFitnessStore((s) => s.startWorkoutSession);
 
   // ── User weight for MET calorie calc ──
@@ -156,13 +216,18 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     // type/RPE/tempo, which legacy shape doesn't carry).
     return (workout.exercises ?? []).map((ex, idx) => ({
       exerciseId: ex.exerciseId,
-      name: ex.exerciseName ?? ex.name ?? `Exercise ${idx + 1}`,
+      name: titleCaseExerciseName(
+        ex.exerciseName ??
+          ex.name ??
+          resolveExerciseMeta(ex.exerciseId).name ??
+          `Exercise ${idx + 1}`
+      ),
       sets: Array.from({ length: ex.sets || 1 }, (_, i) => ({
         setNumber: i + 1,
         reps: ex.reps,
         weightKg: ex.weight,
         durationSeconds: ex.duration,
-        setType: "normal" as const,
+        setType: 'normal' as const,
       })),
       restSeconds: ex.restTime ?? 60,
       notes: ex.notes,
@@ -179,21 +244,19 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
 
     // Build ExerciseCalorieInput[] for the MET calc.
     const calorieInputs = planned.map((p) => {
-      const curated = CURATED_EXERCISES.find((c) => c.id === p.exerciseId);
+      const meta = resolveExerciseMeta(p.exerciseId);
       const firstSet = p.sets[0];
       const reps = firstSet?.reps;
       const weight = firstSet?.weightKg ?? 0;
       // Volume = sum(sets × reps × weight)
       for (const set of p.sets) {
         const repCount =
-          typeof set.reps === "string"
-            ? parseInt(set.reps, 10) || 10
-            : set.reps || 0;
+          typeof set.reps === 'string' ? parseInt(set.reps, 10) || 10 : set.reps || 0;
         totalVolume += (set.weightKg ?? 0) * repCount;
         totalSets += 1;
       }
       // Muscle coverage
-      for (const muscle of curated?.muscleGroups ?? []) {
+      for (const muscle of meta.muscleGroups) {
         muscleCounts[muscle] = (muscleCounts[muscle] ?? 0) + p.sets.length;
       }
       return {
@@ -203,7 +266,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
         reps: reps ?? 8,
         weight,
         restTime: p.restSeconds,
-        bodyParts: curated?.muscleGroups ?? [],
+        bodyParts: meta.muscleGroups,
       };
     });
 
@@ -225,10 +288,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
 
   // ── Muscle heatmap data (top groups by set count) ──
   const heatmapData: BarData[] = useMemo(() => {
-    const maxSets = Math.max(
-      1,
-      ...HEATMAP_GROUPS.map((g) => stats.muscleCounts[g] ?? 0),
-    );
+    const maxSets = Math.max(1, ...HEATMAP_GROUPS.map((g) => stats.muscleCounts[g] ?? 0));
     return HEATMAP_GROUPS.map((g) => {
       const value = stats.muscleCounts[g] ?? 0;
       return {
@@ -241,7 +301,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
             : value < maxSets * 0.4
               ? [colors.warning.DEFAULT, colors.warning.light]
               : [colors.primary.DEFAULT, colors.primary.light],
-        unit: " sets",
+        unit: ' sets',
       };
     });
   }, [stats.muscleCounts]);
@@ -257,7 +317,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     const finisher: PlannedExercise[] = [];
     const superset: PlannedExercise[] = [];
     for (const ex of planned) {
-      const isWarmup = ex.sets.every((s) => s.setType === "warmup");
+      const isWarmup = ex.sets.every((s) => s.setType === 'warmup');
       const isFinisher = (ex.targetRpe ?? 0) >= 8;
       if (ex.supersetId) {
         superset.push(ex);
@@ -271,6 +331,48 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     }
     return { warmup, main, finisher, superset, cooldown: workout.coolDown ?? [] };
   }, [planned, workout.coolDown]);
+
+  // ── Exercise carousel state ──
+  // Sections surface as filter pills; the carousel dials through one section's
+  // exercises one card at a time (horizontal paging). Collapses the old tall
+  // vertical list of DetailExerciseRow + CollapsibleSection stacks into a
+  // single dialer, killing the long-scroll problem.
+  const sectionTabs = useMemo(() => {
+    const tabs: {
+      key: SectionKey;
+      label: string;
+      icon: keyof typeof Ionicons.glyphMap;
+      count: number;
+      accent: string;
+    }[] = [];
+    if (sections.warmup.length)
+      tabs.push({ key: 'warmup', label: 'Warm-up', icon: 'flame-outline', count: sections.warmup.length, accent: colors.warning.DEFAULT });
+    if (sections.main.length)
+      tabs.push({ key: 'main', label: 'Main', icon: 'barbell-outline', count: sections.main.length, accent: colors.primary.DEFAULT });
+    if (sections.superset.length)
+      tabs.push({ key: 'superset', label: 'Supersets', icon: 'git-merge-outline', count: sections.superset.length, accent: colors.secondary.DEFAULT });
+    if (sections.finisher.length)
+      tabs.push({ key: 'finisher', label: 'Finisher', icon: 'flash-outline', count: sections.finisher.length, accent: colors.error.DEFAULT });
+    if (sections.cooldown.length)
+      tabs.push({ key: 'cooldown', label: 'Cooldown', icon: 'walk-outline', count: sections.cooldown.length, accent: colors.secondary.light });
+    return tabs;
+  }, [sections]);
+
+  const [activeSection, setActiveSection] = useState<SectionKey | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const effectiveSection: SectionKey = activeSection ?? sectionTabs[0]?.key ?? 'main';
+  const activeExercises: PlannedExercise[] =
+    effectiveSection === 'cooldown'
+      ? []
+      : sections[effectiveSection as Exclude<SectionKey, 'cooldown'>];
+  const activeCount =
+    effectiveSection === 'cooldown' ? sections.cooldown.length : activeExercises.length;
+
+  const handleSelectSection = useCallback((k: SectionKey) => {
+    haptics.selection();
+    setActiveSection(k);
+    setCarouselIndex(0);
+  }, []);
 
   const inProgress = progress > 0 && progress < 100;
   const isCompleted = progress >= 100;
@@ -287,12 +389,12 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     haptics.buttonPress();
     try {
       const sessionId = await startWorkoutSession(workout);
-      navigation.navigate("WorkoutSession", {
+      navigation.navigate('WorkoutSession', {
         workout,
         sessionId,
       });
     } catch (err) {
-      console.error("[WorkoutDetailScreen] startWorkoutSession failed:", err);
+      console.error('[WorkoutDetailScreen] startWorkoutSession failed:', err);
       haptics.error();
       setStarting(false);
     }
@@ -305,64 +407,83 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
 
   // ── Difficulty label ──
   const difficultyLabel = useMemo(() => {
-    const diff = (workout.difficulty ?? "intermediate").toLowerCase();
-    if (diff === "advanced") return "Advanced";
-    if (diff === "beginner") return "Beginner";
-    return "Intermediate";
+    const diff = (workout.difficulty ?? 'intermediate').toLowerCase();
+    if (diff === 'advanced') return 'Advanced';
+    if (diff === 'beginner') return 'Beginner';
+    return 'Intermediate';
   }, [workout.difficulty]);
 
-  const intensityLevel = (workout.intensityLevel ?? "rest").toLowerCase();
+  // AI plans rarely set intensityLevel; defaulting to 'rest' mislabels a real
+  // Pull/Push/Legs day as a rest day. Derive: 0 exercises => rest, else moderate.
+  const intensityLevel = (
+    workout.intensityLevel ??
+    (planned.length === 0 ? 'rest' : 'moderate')
+  ).toLowerCase();
   const intensityColor =
-    intensityLevel === "intense" || intensityLevel === "high"
+    intensityLevel === 'intense' || intensityLevel === 'high'
       ? colors.primary.DEFAULT
-      : intensityLevel === "moderate" || intensityLevel === "medium"
+      : intensityLevel === 'moderate' || intensityLevel === 'medium'
         ? colors.warning.DEFAULT
         : colors.text.tertiary;
 
   return (
     <AuroraBackground theme="space">
-      <SafeAreaView style={styles.flex} edges={["top"]}>
-        <GlassHeader
-          title={workout.title || "Workout"}
-          titleIcon="barbell-outline"
-          onBack={handleBack}
-          backAccessibilityLabel="Go back to previous screen"
-          rightAction={
-            <GlassButton
-              label={starting ? "Starting…" : "Start"}
-              icon="play-circle-outline"
-              onPress={handleStartWorkout}
-              variant="primary"
-              loading={starting}
-              disabled={starting || planned.length === 0}
-              hapticType="medium"
-              style={styles.headerStartBtn}
-              textStyle={styles.headerStartText}
-              testID={`${testID ?? "workout-detail"}-start`}
-            />
-          }
-        />
+      <SafeAreaView style={styles.flex} edges={['top']}>
+        {/* ── Flat header — transparent back circle + plain title + gradient pill ── */}
+        <View style={styles.header}>
+          <AnimatedPressable
+            onPress={handleBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to previous screen"
+            style={styles.backBtn}
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Ionicons name="chevron-back" size={rf(26)} color={colors.text.primary} />
+          </AnimatedPressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {workout.title || 'Workout'}
+          </Text>
+          <AnimatedPressable
+            onPress={handleStartWorkout}
+            disabled={starting || planned.length === 0}
+            accessibilityRole="button"
+            accessibilityLabel={starting ? 'Starting workout' : 'Start workout'}
+            testID={`${testID ?? 'workout-detail'}-start`}
+            style={[styles.headerStartBtn, (starting || planned.length === 0) && styles.headerStartDisabled]}
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="medium"
+          >
+            <LinearGradient
+              colors={
+                starting
+                  ? [colors.primary.dark, colors.primary.dark]
+                  : [colors.primary.DEFAULT, colors.primary.dark]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.headerStartGradient}
+            >
+              <Ionicons name="play-circle-outline" size={rf(14)} color={colors.text.primary} />
+              <Text style={styles.headerStartText} numberOfLines={1}>
+                {starting ? 'Starting…' : 'Start'}
+              </Text>
+            </LinearGradient>
+          </AnimatedPressable>
+        </View>
 
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          testID={`${testID ?? "workout-detail"}-scroll`}
+          testID={`${testID ?? 'workout-detail'}-scroll`}
         >
           {/* ── Sticky progress + title hero ── */}
-          <Animated.View
-            entering={FadeInUp.springify()}
-            style={styles.heroCard}
-          >
-            <GlassCard
-              blurIntensity="default"
-              elevation={3}
-              padding="md"
-              borderRadius="xl"
-              showBorder
-            >
-              <View style={styles.heroRow}>
+          <Animated.View entering={FadeInUp.springify()} style={styles.heroCard}>
+            <View style={styles.heroRow}>
                 {/* Progress ring (sticky at top — shows % if in-progress) */}
                 <ProgressRing
                   progress={progress}
@@ -370,26 +491,14 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                   strokeWidth={6}
                   gradient
                   gradientColors={[
-                    isCompleted
-                      ? colors.success.DEFAULT
-                      : colors.primary[400],
+                    isCompleted ? colors.success.DEFAULT : colors.primary[400],
                     colors.secondary[500],
                   ]}
                   showText={inProgress || isCompleted}
-                  text={
-                    isCompleted
-                      ? "✓"
-                      : inProgress
-                        ? `${Math.round(progress)}%`
-                        : ""
-                  }
+                  text={isCompleted ? '✓' : inProgress ? `${Math.round(progress)}%` : ''}
                 >
                   {!(inProgress || isCompleted) ? (
-                    <Ionicons
-                      name="barbell-outline"
-                      size={rf(24)}
-                      color={colors.primary.DEFAULT}
-                    />
+                    <Ionicons name="barbell-outline" size={rf(24)} color={colors.primary.DEFAULT} />
                   ) : null}
                 </ProgressRing>
 
@@ -400,60 +509,41 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
                   >
-                    {workout.title || "Custom Workout"}
+                    {workout.title || 'Custom Workout'}
                   </Text>
                   {!!workout.description && (
-                    <Text
-                      style={styles.heroDesc}
-                      numberOfLines={3}
-                    >
+                    <Text style={styles.heroDesc} numberOfLines={3}>
                       {workout.description}
                     </Text>
                   )}
                   <View style={styles.heroMeta}>
-                    <View
-                      style={[
-                        styles.intensityChip,
-                        { backgroundColor: intensityColor },
-                      ]}
-                    >
+                    <View style={[styles.intensityChip, { backgroundColor: intensityColor }]}>
                       <Text style={styles.intensityChipText}>
-                        {intensityLevel === "rest"
-                          ? "REST"
-                          : intensityLevel.slice(0, 4).toUpperCase()}
+                        {intensityLevel === 'rest'
+                          ? 'REST'
+                          : intensityLevel === 'intense' || intensityLevel === 'high'
+                            ? 'HIGH'
+                            : intensityLevel === 'low'
+                              ? 'LOW'
+                              : 'MOD'}
                       </Text>
                     </View>
                     <Text style={styles.metaText}>
                       {planned.length} exercise
-                      {planned.length !== 1 ? "s" : ""}
+                      {planned.length !== 1 ? 's' : ''}
                     </Text>
                   </View>
                 </View>
               </View>
-            </GlassCard>
           </Animated.View>
 
           {/* ── Statistics bar ── */}
-          <Animated.View
-            entering={FadeInUp.springify().delay(40)}
-            style={styles.statsCard}
-          >
-            <GlassCard
-              blurIntensity="default"
-              elevation={2}
-              padding="sm"
-              borderRadius="lg"
-              showBorder
-            >
-              <View style={styles.statsRow}>
+          <Animated.View entering={FadeInUp.springify().delay(80)} style={styles.statsCard}>
+            <View style={styles.statsRow}>
                 <Stat
                   icon="barbell-outline"
                   label="Volume"
-                  value={
-                    stats.totalVolume > 0
-                      ? `${Math.round(stats.totalVolume)}kg`
-                      : "—"
-                  }
+                  value={stats.totalVolume > 0 ? `${Math.round(stats.totalVolume)}kg` : '—'}
                 />
                 <Divider />
                 <Stat
@@ -464,175 +554,57 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                       ? String(stats.calories)
                       : workout.estimatedCalories > 0
                         ? String(workout.estimatedCalories)
-                        : "—"
+                        : '—'
                   }
                 />
                 <Divider />
                 <Stat
                   icon="time-outline"
                   label="Duration"
-                  value={
-                    stats.duration > 0 ? `${Math.round(stats.duration)}m` : "—"
-                  }
+                  value={stats.duration > 0 ? `${Math.round(stats.duration)}m` : '—'}
                 />
                 <Divider />
-                <Stat
-                  icon="trending-up-outline"
-                  label="Difficulty"
-                  value={difficultyLabel}
-                />
+                <Stat icon="trending-up-outline" label="Difficulty" value={difficultyLabel} />
               </View>
-            </GlassCard>
           </Animated.View>
 
-          {/* ── Muscle heatmap ── */}
+          {/* ── Muscle heatmap (compact horizontal chips) ── */}
           {planned.length > 0 && (
-            <Animated.View
-              entering={FadeInUp.springify().delay(80)}
-              style={styles.heatmapCard}
-            >
-              <GlassCard
-                blurIntensity="default"
-                elevation={2}
-                padding="md"
-                borderRadius="lg"
-                showBorder
-              >
-                <View style={styles.sectionHeader}>
-                  <Ionicons
-                    name="body-outline"
-                    size={rf(16)}
-                    color={colors.primary.DEFAULT}
-                  />
-                  <Text style={styles.sectionTitle}>Muscle Heatmap</Text>
-                </View>
-                <GradientBarChart
-                  data={heatmapData}
-                  height={rp(220)}
-                  animated
-                  showValues
-                />
-              </GlassCard>
+            <Animated.View entering={FadeInUp.springify().delay(160)} style={styles.heatmapCard}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="body-outline" size={rf(16)} color={colors.primary.DEFAULT} />
+                <Text style={styles.sectionTitle}>Muscle Heatmap</Text>
+                <Text style={styles.heatmapTotal}>{stats.totalSets} sets</Text>
+              </View>
+              <HeatmapChips data={heatmapData} />
             </Animated.View>
           )}
 
-          {/* ── Warm-up section ── */}
-          {sections.warmup.length > 0 && (
-            <CollapsibleSection
-              title="Warm-up"
-              icon="flame-outline"
-              accentColor={colors.warning.DEFAULT}
-              count={sections.warmup.length}
-              testID={`${testID ?? "workout-detail"}-warmup`}
-            >
-              {sections.warmup.map((ex, idx) => (
-                <DetailExerciseRow
-                  key={`${ex.exerciseId}_w${idx}`}
-                  exercise={ex}
-                  index={idx}
-                  onOpenEditor={onOpenEditor}
-                  dayIndex={dayIndex}
-                />
-              ))}
-            </CollapsibleSection>
-          )}
-
-          {/* ── Main workout section ── */}
-          {sections.main.length > 0 && (
-            <CollapsibleSection
-              title="Main Workout"
-              icon="barbell-outline"
-              accentColor={colors.primary.DEFAULT}
-              count={sections.main.length}
-              defaultExpanded
-              testID={`${testID ?? "workout-detail"}-main`}
-            >
-              {sections.main.map((ex, idx) => (
-                <DetailExerciseRow
-                  key={`${ex.exerciseId}_m${idx}`}
-                  exercise={ex}
-                  index={idx}
-                  onOpenEditor={onOpenEditor}
-                  dayIndex={dayIndex}
-                />
-              ))}
-            </CollapsibleSection>
-          )}
-
-          {/* ── Supersets section ── */}
-          {sections.superset.length > 0 && (
-            <CollapsibleSection
-              title="Supersets"
-              icon="git-merge-outline"
-              accentColor={colors.secondary.DEFAULT}
-              count={sections.superset.length}
-              testID={`${testID ?? "workout-detail"}-superset`}
-            >
-              <View style={styles.supersetWrap}>
-                <SupersetConnector
-                  startY={rp(8)}
-                  endY={rp(8) + sections.superset.length * rp(78)}
-                  width={rw(24)}
-                  insetX={rw(8)}
-                />
-                {sections.superset.map((ex, idx) => (
-                  <DetailExerciseRow
-                    key={`${ex.exerciseId}_s${idx}`}
-                    exercise={ex}
-                    index={idx}
-                    onOpenEditor={onOpenEditor}
-                    dayIndex={dayIndex}
-                    supersetActive
-                  />
-                ))}
-              </View>
-            </CollapsibleSection>
-          )}
-
-          {/* ── Finisher section ── */}
-          {sections.finisher.length > 0 && (
-            <CollapsibleSection
-              title="Finisher"
-              icon="flash-outline"
-              accentColor={colors.error.DEFAULT}
-              count={sections.finisher.length}
-              testID={`${testID ?? "workout-detail"}-finisher`}
-            >
-              {sections.finisher.map((ex, idx) => (
-                <DetailExerciseRow
-                  key={`${ex.exerciseId}_f${idx}`}
-                  exercise={ex}
-                  index={idx}
-                  onOpenEditor={onOpenEditor}
-                  dayIndex={dayIndex}
-                />
-              ))}
-            </CollapsibleSection>
-          )}
-
-          {/* ── Cooldown section ── */}
-          {sections.cooldown.length > 0 && (
-            <CollapsibleSection
-              title="Cooldown"
-              icon="walk-outline"
-              accentColor={colors.secondary.light}
-              count={sections.cooldown.length}
-              testID={`${testID ?? "workout-detail"}-cooldown`}
-            >
-              {sections.cooldown.map((cd, idx) => (
-                <CooldownRow key={`cd_${idx}`} name={cd.name} duration={cd.duration} instructions={cd.instructions} />
-              ))}
-            </CollapsibleSection>
+          {/* ── Exercise carousel (horizontal dialer) ── */}
+          {(planned.length > 0 || sections.cooldown.length > 0) && (
+            <Animated.View entering={FadeInUp.springify().delay(240)} style={styles.carouselBlock}>
+              <SectionPills
+                tabs={sectionTabs}
+                active={effectiveSection}
+                onSelect={handleSelectSection}
+              />
+              <ExerciseCarousel
+                key={effectiveSection}
+                section={effectiveSection}
+                exercises={activeExercises}
+                cooldown={sections.cooldown}
+                onOpenEditor={onOpenEditor}
+                dayIndex={dayIndex}
+                onIndexChange={setCarouselIndex}
+              />
+              <CarouselDots count={activeCount} index={carouselIndex} />
+            </Animated.View>
           )}
 
           {/* ── Empty state ── */}
           {planned.length === 0 && sections.cooldown.length === 0 && (
             <View style={styles.emptyState}>
-              <Ionicons
-                name="barbell-outline"
-                size={rf(48)}
-                color={colors.text.tertiary}
-              />
+              <Ionicons name="barbell-outline" size={rf(48)} color={colors.text.tertiary} />
               <Text style={styles.emptyTitle}>No exercises yet</Text>
               <Text style={styles.emptyHint}>
                 This workout has no planned exercises. Add some via the builder.
@@ -643,9 +615,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
           {/* ── Training analytics (Phase 11) ── */}
           {/* Historical trends (volume, heatmap, PRs, streak). Collapsible, with
               its own empty state when the user has no training history. */}
-          <BuilderAnalyticsPanel
-            testID={`${testID ?? "workout-detail"}-analytics`}
-          />
+          <BuilderAnalyticsPanel testID={`${testID ?? 'workout-detail'}-analytics`} />
 
           <View style={styles.footerSpacer} />
         </ScrollView>
@@ -658,7 +628,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
             calories={stats.calories}
             onStart={handleStartWorkout}
             bottomInset={insets.bottom}
-            testID={`${testID ?? "workout-detail"}-bottom-start`}
+            testID={`${testID ?? 'workout-detail'}-bottom-start`}
           />
         )}
       </SafeAreaView>
@@ -667,134 +637,141 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
 };
 
 // ----------------------------------------------------------------------------
-// COLLAPSIBLE SECTION
+// SECTION PILLS (carousel filter tabs)
 // ----------------------------------------------------------------------------
 
-interface CollapsibleSectionProps {
-  title: string;
+interface SectionTab {
+  key: SectionKey;
+  label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  accentColor: string;
   count: number;
-  defaultExpanded?: boolean;
-  testID?: string;
-  children: React.ReactNode;
+  accent: string;
 }
 
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
-  title,
-  icon,
-  accentColor,
-  count,
-  defaultExpanded = false,
-  testID,
-  children,
-}) => {
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  const chevronRotation = useSharedValue(defaultExpanded ? 1 : 0);
-  chevronRotation.value = withTiming(expanded ? 1 : 0, {
-    duration: animations.duration.quick,
-  });
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${interpolate(chevronRotation.value, [0, 1], [0, 180])}deg` },
-    ],
-  }));
-
-  const handleToggle = useCallback(() => {
-    haptics.selection();
-    setExpanded((e) => !e);
-  }, []);
-
-  return (
-    <Animated.View
-      entering={FadeInUp.springify().delay(60)}
-      layout={Layout.springify()}
-      style={styles.sectionWrap}
-    >
-      <GlassCard
-        blurIntensity="default"
-        elevation={2}
-        padding="none"
-        borderRadius="lg"
-        showBorder
-        contentStyle={styles.sectionContent}
-      >
+const SectionPills: React.FC<{
+  tabs: SectionTab[];
+  active: SectionKey;
+  onSelect: (k: SectionKey) => void;
+}> = ({ tabs, active, onSelect }) => (
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.pillsContent}
+    style={styles.pillsScroll}
+  >
+    {tabs.map((t) => {
+      const isActive = t.key === active;
+      return (
         <AnimatedPressable
-          onPress={handleToggle}
+          key={t.key}
+          onPress={() => onSelect(t.key)}
           accessibilityRole="button"
-          accessibilityLabel={`${title}. ${count} items. ${
-            expanded ? "Collapse" : "Expand"
-          }.`}
-          accessibilityState={{ expanded }}
-          style={styles.sectionHeader}
-          testID={testID}
-          scaleValue={0.99}
+          accessibilityLabel={`${t.label}. ${t.count} exercises. ${isActive ? 'Selected' : 'Select'}.`}
+          style={[styles.pill, isActive && { backgroundColor: t.accent, borderColor: t.accent }]}
+          scaleValue={0.95}
           springConfig="snappy"
           hapticType="selection"
         >
-          <View style={[styles.sectionIcon, { backgroundColor: accentColor }]}>
-            <Ionicons name={icon} size={rf(14)} color={colors.text.primary} />
+          <Ionicons name={t.icon} size={rf(13)} color={isActive ? colors.text.primary : t.accent} />
+          <Text style={[styles.pillText, { color: isActive ? colors.text.primary : colors.text.secondary }]} numberOfLines={1}>
+            {t.label}
+          </Text>
+          <View style={[styles.pillCount, isActive && styles.pillCountActive]}>
+            <Text style={[styles.pillCountText, { color: isActive ? colors.text.primary : colors.text.tertiary }]}>
+              {t.count}
+            </Text>
           </View>
-          <Text style={styles.sectionTitle}>{title}</Text>
-          <View style={styles.sectionCount}>
-            <Text style={styles.sectionCountText}>{count}</Text>
-          </View>
-          <Animated.View style={chevronStyle}>
-            <Ionicons
-              name="chevron-down"
-              size={rf(18)}
-              color={colors.text.secondary}
-            />
-          </Animated.View>
         </AnimatedPressable>
+      );
+    })}
+  </ScrollView>
+);
 
-        {expanded && (
-          <Animated.View
-            entering={SlideInRight.springify()}
-            layout={Layout.springify()}
-            style={styles.sectionBody}
-          >
-            {children}
-          </Animated.View>
-        )}
-      </GlassCard>
-    </Animated.View>
+// ----------------------------------------------------------------------------
+// EXERCISE CAROUSEL (horizontal paging dialer)
+// ----------------------------------------------------------------------------
+
+interface ExerciseCarouselProps {
+  section: SectionKey;
+  exercises: PlannedExercise[];
+  cooldown: CooldownItem[];
+  onOpenEditor?: (dayIndex: number, exerciseIndex: number) => void;
+  dayIndex: number;
+  onIndexChange: (i: number) => void;
+}
+
+const ExerciseCarousel: React.FC<ExerciseCarouselProps> = ({
+  section,
+  exercises,
+  cooldown,
+  onOpenEditor,
+  dayIndex,
+  onIndexChange,
+}) => {
+  const { width } = useWindowDimensions();
+  const cardWidth = width;
+  const isCooldown = section === 'cooldown';
+  const data: (PlannedExercise | CooldownItem)[] = isCooldown ? cooldown : exercises;
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const idx = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
+      onIndexChange(Math.max(0, Math.min(idx, data.length - 1)));
+    },
+    [cardWidth, data.length, onIndexChange],
+  );
+
+  return (
+    <View style={styles.carouselWrap}>
+      <FlatList
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        data={data}
+        keyExtractor={(item, i) =>
+          isCooldown ? `cd_${i}` : `${(item as PlannedExercise).exerciseId}_${i}`
+        }
+        renderItem={({ item, index }) =>
+          isCooldown ? (
+            <CooldownCard item={item as CooldownItem} cardWidth={cardWidth} />
+          ) : (
+            <ExerciseCard
+              exercise={item as PlannedExercise}
+              index={index}
+              cardWidth={cardWidth}
+              onOpenEditor={onOpenEditor}
+              dayIndex={dayIndex}
+            />
+          )
+        }
+        onMomentumScrollEnd={handleScroll}
+        decelerationRate="fast"
+        style={styles.carousel}
+      />
+    </View>
   );
 };
 
 // ----------------------------------------------------------------------------
-// DETAIL EXERCISE ROW (read-only card with tap-to-expand or tap-to-edit)
+// EXERCISE CARD (one full-width dialer page)
 // ----------------------------------------------------------------------------
 
-interface DetailExerciseRowProps {
+const ExerciseCard: React.FC<{
   exercise: PlannedExercise;
   index: number;
+  cardWidth: number;
   onOpenEditor?: (dayIndex: number, exerciseIndex: number) => void;
   dayIndex: number;
-  supersetActive?: boolean;
-}
-
-const DetailExerciseRow: React.FC<DetailExerciseRowProps> = ({
-  exercise,
-  index,
-  onOpenEditor,
-  dayIndex,
-  supersetActive = false,
-}) => {
-  const [expanded, setExpanded] = useState(false);
-  const curated = CURATED_EXERCISES.find((c) => c.id === exercise.exerciseId);
-  const muscleGroups = curated?.muscleGroups ?? [];
-  const equipment = curated?.equipment ?? [];
-  const difficulty = curated?.difficulty ?? "intermediate";
+}> = ({ exercise, index, cardWidth, onOpenEditor, dayIndex }) => {
+  const meta = resolveExerciseMeta(exercise.exerciseId);
+  const muscleGroups = meta.muscleGroups;
+  const equipment = meta.equipment;
+  const difficulty = meta.difficulty;
 
   const setCount = exercise.sets.length;
   const firstReps = exercise.sets[0]?.reps;
   const repsLabel =
-    typeof firstReps === "string"
-      ? firstReps
-      : firstReps != null
-        ? String(firstReps)
-        : "—";
+    typeof firstReps === 'string' ? firstReps : firstReps != null ? String(firstReps) : '—';
 
   const intensityColor =
     exercise.targetRpe != null
@@ -807,11 +784,7 @@ const DetailExerciseRow: React.FC<DetailExerciseRowProps> = ({
 
   const handleTap = useCallback(() => {
     haptics.cardTap();
-    if (onOpenEditor) {
-      onOpenEditor(dayIndex, index);
-    } else {
-      setExpanded((e) => !e);
-    }
+    if (onOpenEditor) onOpenEditor(dayIndex, index);
   }, [onOpenEditor, dayIndex, index]);
 
   return (
@@ -819,153 +792,179 @@ const DetailExerciseRow: React.FC<DetailExerciseRowProps> = ({
       onPress={handleTap}
       accessibilityRole="button"
       accessibilityLabel={`${exercise.name}. ${setCount} sets of ${repsLabel}. ${
-        exercise.targetRpe != null ? `RPE ${exercise.targetRpe}.` : ""
-      } ${expanded ? "Tap to collapse." : "Tap for details."}`}
-      style={styles.detailRow}
+        exercise.targetRpe != null ? `RPE ${exercise.targetRpe}.` : ''
+      } Tap ${onOpenEditor ? 'to edit' : 'for details'}.`}
+      style={[styles.exCard, { width: cardWidth }]}
       scaleValue={0.99}
       springConfig="snappy"
       hapticType="light"
     >
-      {supersetActive && <View style={styles.supersetRail} />}
-      <View style={styles.detailRowInner}>
-        {/* Thumbnail disc */}
+      {/* Header: thumb + name + meta line */}
+      <View style={styles.exHeader}>
         <LinearGradient
           colors={[colors.primary.DEFAULT, colors.primary.dark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.detailThumb}
+          style={styles.exThumb}
         >
-          <Ionicons
-            name="barbell-outline"
-            size={rf(18)}
-            color={colors.text.primary}
-          />
+          <Ionicons name="barbell-outline" size={rf(22)} color={colors.text.primary} />
         </LinearGradient>
-
-        {/* Name + meta */}
-        <View style={styles.detailInfo}>
-          <View style={styles.detailNameRow}>
-            {supersetActive && (
-              <View style={styles.supersetChip}>
-                <Text style={styles.supersetChipText}>SS</Text>
-              </View>
-            )}
-            <Text style={styles.detailName} numberOfLines={1}>
-              {exercise.name}
-            </Text>
-          </View>
-          <View style={styles.detailChipRow}>
-            {muscleGroups.slice(0, 2).map((m) => (
-              <View key={m} style={styles.muscleChip}>
-                <Text style={styles.muscleChipText}>{m}</Text>
-              </View>
-            ))}
-            {equipment.length > 0 && (
-              <Text style={styles.detailMetaText} numberOfLines={1}>
-                {equipment[0]} · {difficulty}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Sets × reps */}
-        <View style={styles.detailSetsCell}>
-          <Text style={styles.detailSetsValue}>{setCount}</Text>
-          <Text style={styles.detailSetsLabel}>× {repsLabel}</Text>
-        </View>
-
-        {/* RPE target */}
-        {exercise.targetRpe != null && (
-          <View style={styles.rpeCell}>
-            <View
-              style={[styles.intensityDot, { backgroundColor: intensityColor }]}
-            />
-            <Text style={styles.rpeText}>RPE {exercise.targetRpe}</Text>
-          </View>
-        )}
-
-        {/* Rest */}
-        <View style={styles.restCell}>
-          <Ionicons
-            name="timer-outline"
-            size={rf(12)}
-            color={colors.text.tertiary}
-          />
-          <Text style={styles.restText}>{exercise.restSeconds}s</Text>
+        <View style={styles.exHeaderInfo}>
+          <Text style={styles.exName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+            {exercise.name}
+          </Text>
+          <Text style={styles.exSub} numberOfLines={1}>
+            {[...muscleGroups.slice(0, 3).map((m) => m.charAt(0).toUpperCase() + m.slice(1)), equipment[0], difficulty]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
         </View>
       </View>
 
-      {/* Expanded inline details (only when no editor wired) */}
-      {expanded && !onOpenEditor && (
-        <Animated.View
-          entering={SlideInRight.springify()}
-          layout={Layout.springify()}
-          style={styles.detailExpanded}
-        >
-          {exercise.notes && (
-            <Text style={styles.detailNotes}>{exercise.notes}</Text>
-          )}
-          {exercise.tempo && (
-            <View style={styles.detailMetaRow}>
-              <Text style={styles.detailMetaLabel}>Tempo:</Text>
-              <Text style={styles.detailMetaValue}>{exercise.tempo}</Text>
-            </View>
-          )}
-          <View style={styles.detailMetaRow}>
-            <Text style={styles.detailMetaLabel}>Sets:</Text>
-            <Text style={styles.detailMetaValue}>
-              {exercise.sets
-                .map(
-                  (s, i) =>
-                    `Set ${i + 1}: ${s.reps}${
-                      s.weightKg ? ` @ ${s.weightKg}kg` : ""
-                    }`,
-                )
-                .join("  ·  ")}
-            </Text>
+      {/* Big sets×reps + RPE + rest */}
+      <View style={styles.exStatRow}>
+        <View style={styles.exSetsBlock}>
+          <Text style={styles.exSetsValue}>
+            {setCount}
+            <Text style={styles.exSetsX}> × </Text>
+            {repsLabel}
+          </Text>
+          <Text style={styles.exSetsLabel}>sets × reps</Text>
+        </View>
+        {exercise.targetRpe != null && (
+          <View style={styles.exPill}>
+            <View style={[styles.exDot, { backgroundColor: intensityColor }]} />
+            <Text style={styles.exPillText}>RPE {exercise.targetRpe}</Text>
           </View>
-          {muscleGroups.length > 2 && (
-            <View style={styles.detailMetaRow}>
-              <Text style={styles.detailMetaLabel}>Muscles:</Text>
-              <Text style={styles.detailMetaValue}>
-                {muscleGroups.join(", ")}
+        )}
+        <View style={styles.exPill}>
+          <Ionicons name="timer-outline" size={rf(13)} color={colors.text.tertiary} />
+          <Text style={styles.exPillText}>{exercise.restSeconds ?? 60}s rest</Text>
+        </View>
+      </View>
+
+      {/* Per-set breakdown chips */}
+      {setCount > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.exSetsChips}
+          style={styles.exSetsChipsScroll}
+        >
+          {exercise.sets.map((s, i) => (
+            <View key={i} style={styles.exSetChip}>
+              <Text style={styles.exSetChipNum}>{i + 1}</Text>
+              <Text style={styles.exSetChipText}>
+                {s.reps}
+                {s.weightKg ? ` @ ${s.weightKg}kg` : ''}
               </Text>
             </View>
-          )}
-        </Animated.View>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Notes + tempo */}
+      {!!exercise.notes && (
+        <View style={styles.exNotes}>
+          <Ionicons name="document-text-outline" size={rf(12)} color={colors.text.tertiary} />
+          <Text style={styles.exNotesText} numberOfLines={3}>
+            {exercise.notes}
+          </Text>
+        </View>
+      )}
+      {exercise.tempo && (
+        <View style={styles.exNotes}>
+          <Ionicons name="speedometer-outline" size={rf(12)} color={colors.text.tertiary} />
+          <Text style={styles.exNotesText}>Tempo: {exercise.tempo}</Text>
+        </View>
       )}
     </AnimatedPressable>
   );
 };
 
 // ----------------------------------------------------------------------------
-// COOLDOWN ROW (stretching/mobility — ExerciseInstruction shape)
+// COOLDOWN CARD (one dialer page)
 // ----------------------------------------------------------------------------
 
-interface CooldownRowProps {
-  name: string;
-  duration?: number;
-  instructions: string;
-}
-
-const CooldownRow: React.FC<CooldownRowProps> = ({ name, duration, instructions }) => (
-  <View style={styles.cooldownRow}>
-    <View style={styles.cooldownThumb}>
-      <Ionicons name="walk-outline" size={rf(16)} color={colors.secondary.light} />
+const CooldownCard: React.FC<{ item: CooldownItem; cardWidth: number }> = ({ item, cardWidth }) => (
+  <View style={[styles.exCard, { width: cardWidth }]}>
+    <View style={styles.exHeader}>
+      <View style={styles.exCooldownThumb}>
+        <Ionicons name="walk-outline" size={rf(22)} color={colors.secondary.light} />
+      </View>
+      <View style={styles.exHeaderInfo}>
+        <Text style={styles.exName} numberOfLines={2}>
+          {item.name}
+        </Text>
+        <Text style={styles.exSub}>{item.duration ? `${item.duration}s` : 'Mobility'}</Text>
+      </View>
     </View>
-    <View style={styles.cooldownInfo}>
-      <Text style={styles.cooldownName} numberOfLines={1}>
-        {name}
-      </Text>
-      <Text style={styles.cooldownInstr} numberOfLines={2}>
-        {instructions}
-      </Text>
+    <View style={styles.exNotes}>
+      <Ionicons name="document-text-outline" size={rf(12)} color={colors.text.tertiary} />
+      <Text style={styles.exNotesText}>{item.instructions}</Text>
     </View>
-    {duration != null && duration > 0 && (
-      <Text style={styles.cooldownDuration}>{duration}s</Text>
-    )}
   </View>
 );
+
+// ----------------------------------------------------------------------------
+// HEATMAP CHIPS (compact horizontal dialer of muscle groups)
+// ----------------------------------------------------------------------------
+
+const HeatmapChips: React.FC<{ data: BarData[] }> = ({ data }) => {
+  const max = Math.max(1, ...data.map((d) => d.value));
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.heatScroll}
+      style={styles.heatScrollWrap}
+    >
+      {data.map((d) => {
+        const pct = d.value / max;
+        const color =
+          d.value === 0
+            ? hexToRgba(colors.text.primary, 0.15)
+            : pct < 0.4
+              ? colors.warning.DEFAULT
+              : colors.primary.DEFAULT;
+        return (
+          <View key={d.label} style={styles.heatChip}>
+            <Text style={styles.heatLabel} numberOfLines={1}>
+              {d.label}
+            </Text>
+            <View style={styles.heatBar}>
+              <LinearGradient
+                colors={[color, hexToRgba(color, 0.3)]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.heatBarFill, { width: `${Math.max(pct * 100, d.value > 0 ? 10 : 0)}%` }]}
+              />
+            </View>
+            <Text style={styles.heatCount}>
+              {d.value}
+              <Text style={styles.heatUnit}> sets</Text>
+            </Text>
+          </View>
+        );
+      })}
+    </ScrollView>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// CAROUSEL DOTS (position indicator within active section)
+// ----------------------------------------------------------------------------
+
+const CarouselDots: React.FC<{ count: number; index: number }> = ({ count, index }) => {
+  if (count <= 1) return null;
+  return (
+    <View style={styles.dotsRow}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
+      ))}
+    </View>
+  );
+};
 
 // ----------------------------------------------------------------------------
 // BOTTOM START BAR (sticky CTA)
@@ -989,41 +988,43 @@ const BottomStartBar: React.FC<BottomStartBarProps> = ({
   bottomInset = 0,
   testID,
 }) => (
-  <View
-    style={[styles.bottomBar, { paddingBottom: bottomInset }]}
-    pointerEvents="box-none"
-  >
-    <GlassCard
-      blurIntensity="heavy"
-      elevation={5}
-      padding="md"
-      borderRadius="xl"
-      showBorder
-      style={styles.bottomBarCard}
+  <View style={[styles.bottomBar, { paddingBottom: bottomInset }]} pointerEvents="box-none">
+    <View style={styles.bottomStatsRow}>
+      <Text style={styles.bottomStatLabel}>Duration</Text>
+      <Text style={styles.bottomStatValue}>
+        {duration > 0 ? `${Math.round(duration)}m` : '—'}
+      </Text>
+      <View style={styles.bottomDivider} />
+      <Text style={styles.bottomStatLabel}>Calories</Text>
+      <Text style={styles.bottomStatValue}>{calories > 0 ? String(calories) : '—'}</Text>
+    </View>
+    <AnimatedPressable
+      onPress={onStart}
+      disabled={starting}
+      accessibilityRole="button"
+      accessibilityLabel={starting ? 'Starting workout' : 'Start workout'}
+      testID={`${testID}-btn`}
+      style={[styles.bottomCta, starting && styles.bottomCtaDisabled]}
+      scaleValue={0.97}
+      springConfig="snappy"
+      hapticType="heavy"
     >
-      <View style={styles.bottomStatsRow}>
-        <Text style={styles.bottomStatLabel}>Duration</Text>
-        <Text style={styles.bottomStatValue}>
-          {duration > 0 ? `${Math.round(duration)}m` : "—"}
+      <LinearGradient
+        colors={
+          starting
+            ? [colors.primary.dark, colors.primary.dark]
+            : [colors.primary.DEFAULT, colors.primary.dark]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.bottomCtaGradient}
+      >
+        <Ionicons name="play-circle-outline" size={rf(20)} color={colors.text.primary} />
+        <Text style={styles.bottomCtaText} numberOfLines={1}>
+          {starting ? 'Starting…' : 'Start Workout'}
         </Text>
-        <View style={styles.bottomDivider} />
-        <Text style={styles.bottomStatLabel}>Calories</Text>
-        <Text style={styles.bottomStatValue}>
-          {calories > 0 ? String(calories) : "—"}
-        </Text>
-      </View>
-      <GlassButton
-        label={starting ? "Starting…" : "Start Workout"}
-        icon="play-circle-outline"
-        onPress={onStart}
-        variant="primary"
-        loading={starting}
-        disabled={starting}
-        hapticType="heavy"
-        fullWidth
-        testID={`${testID}-btn`}
-      />
-    </GlassCard>
+      </LinearGradient>
+    </AnimatedPressable>
   </View>
 );
 
@@ -1061,24 +1062,67 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: rp(spacing.md),
+    paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.sm),
   },
+  // Flat header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
+    minHeight: rf(52),
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: hexToRgba(colors.text.primary, 0.08),
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.h3),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: fw(typography.fontWeight.bold),
+    marginHorizontal: rp(spacing.xs),
+  },
   headerStartBtn: {
+    borderRadius: rbr(16),
+    overflow: 'hidden',
     minHeight: 44,
+  },
+  headerStartGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rp(spacing.xxs),
     paddingVertical: rp(spacing.xs),
+    paddingHorizontal: rp(spacing.md),
+    minHeight: 44,
   },
   headerStartText: {
+    color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: fw(typography.fontWeight.bold),
+  },
+  headerStartDisabled: {
+    opacity: 0.6,
   },
   // Hero card
   heroCard: {
     marginBottom: rp(spacing.sm),
   },
   heroRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
   },
   heroInfo: {
     flex: 1,
@@ -1086,6 +1130,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.h3),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: fw(typography.fontWeight.bold),
   },
   heroDesc: {
@@ -1095,8 +1140,8 @@ const styles = StyleSheet.create({
     lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
   },
   heroMeta: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(spacing.xs),
     marginTop: rp(spacing.xs),
   },
@@ -1119,14 +1164,15 @@ const styles = StyleSheet.create({
     marginBottom: rp(spacing.sm),
   },
   statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: rp(spacing.xxs),
+    paddingVertical: rp(spacing.sm),
   },
   statCell: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: rp(2),
   },
   statValue: {
@@ -1142,245 +1188,287 @@ const styles = StyleSheet.create({
     // Fixed 1px (was rw(1) — scales border with screen width).
     width: StyleSheet.hairlineWidth,
     height: rp(28),
-    backgroundColor: colors.glass.border,
+    backgroundColor: hexToRgba(colors.text.primary, 0.06),
   },
   // Heatmap
   heatmapCard: {
-    marginBottom: rp(spacing.sm),
+    marginBottom: rp(spacing.lg),
+  },
+  heatmapTotal: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: fw(typography.fontWeight.semibold),
+  },
+  heatScrollWrap: {
+    marginHorizontal: rp(-spacing.lg),
+  },
+  heatScroll: {
+    paddingHorizontal: rp(spacing.lg),
+    paddingVertical: rp(spacing.xs),
+    gap: rp(spacing.sm),
+  },
+  heatChip: {
+    width: rw(96),
+    backgroundColor: hexToRgba(colors.text.primary, 0.04),
+    borderRadius: rbr(14),
+    padding: rp(spacing.sm),
+    gap: rp(spacing.xs),
+  },
+  heatLabel: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: fw(typography.fontWeight.semibold),
+    textTransform: 'capitalize',
+  },
+  heatBar: {
+    height: rp(6),
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.text.primary, 0.08),
+    overflow: 'hidden',
+  },
+  heatBarFill: {
+    height: '100%',
+    borderRadius: borderRadius.full,
+  },
+  heatCount: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.caption),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: fw(typography.fontWeight.bold),
+  },
+  heatUnit: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.regular,
+    fontWeight: fw(typography.fontWeight.regular),
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(spacing.xs),
     marginBottom: rp(spacing.xs),
   },
   sectionTitle: {
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: fw(typography.fontWeight.semibold),
+    color: colors.text.tertiary,
+    fontSize: rf(12),
+    fontWeight: fw(typography.fontWeight.bold),
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
     flex: 1,
   },
-  // Collapsible sections
-  sectionWrap: {
+  // Carousel block
+  carouselBlock: {
+    marginBottom: rp(spacing.lg),
+  },
+  // Section pills
+  pillsScroll: {
+    marginHorizontal: rp(-spacing.lg),
     marginBottom: rp(spacing.sm),
   },
-  sectionContent: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+  pillsContent: {
+    paddingHorizontal: rp(spacing.lg),
+    gap: rp(spacing.xs),
   },
-  sectionIcon: {
-    width: rw(22),
-    height: rw(22),
-    borderRadius: borderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionCount: {
-    backgroundColor: colors.glass.backgroundLight,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: rp(spacing.xs),
-    paddingVertical: rp(1),
-    minWidth: rw(20),
-    alignItems: "center",
-  },
-  sectionCountText: {
-    color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.micro),
-    fontWeight: fw(typography.fontWeight.bold),
-  },
-  sectionBody: {
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xs),
+    paddingVertical: rp(spacing.xs),
     paddingHorizontal: rp(spacing.md),
-    paddingBottom: rp(spacing.md),
-    paddingTop: rp(spacing.xs),
+    borderRadius: rbr(14),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hexToRgba(colors.text.primary, 0.1),
+    backgroundColor: hexToRgba(colors.text.primary, 0.04),
+    minHeight: 40,
   },
-  // Superset
-  supersetWrap: {
-    position: "relative",
-    paddingLeft: rw(28),
-  },
-  // Detail exercise row
-  detailRow: {
-    marginBottom: rp(spacing.xs),
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-  },
-  detailRowInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-    borderRadius: borderRadius.lg,
-    paddingVertical: rp(spacing.sm),
-    paddingHorizontal: rp(spacing.sm),
-    gap: rp(spacing.xs),
-    minHeight: rp(72),
-  },
-  supersetRail: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: rw(3),
-    backgroundColor: colors.secondary.DEFAULT,
-  },
-  detailThumb: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  detailInfo: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  detailNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.xs),
-  },
-  detailName: {
-    color: colors.text.primary,
+  pillText: {
     fontSize: rf(typography.fontSize.caption),
+    fontFamily: FONT_FAMILY.semibold,
     fontWeight: fw(typography.fontWeight.semibold),
-    flexShrink: 1,
   },
-  supersetChip: {
-    backgroundColor: colors.secondary.DEFAULT,
-    borderRadius: borderRadius.sm,
+  pillCount: {
+    minWidth: rw(20),
+    alignItems: 'center',
     paddingHorizontal: rp(spacing.xxs),
     paddingVertical: rp(1),
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.text.primary, 0.08),
   },
-  supersetChipText: {
-    color: colors.text.primary,
-    fontSize: rf(9),
+  pillCountActive: {
+    backgroundColor: hexToRgba(colors.text.primary, 0.22),
+  },
+  pillCountText: {
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.bold,
     fontWeight: fw(typography.fontWeight.bold),
   },
-  detailChipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.xs),
-    marginTop: rp(spacing.xxs),
+  // Carousel
+  carouselWrap: {
+    marginHorizontal: rp(-spacing.lg),
   },
-  muscleChip: {
-    backgroundColor: colors.glass.backgroundLight,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: rp(spacing.xs),
-    paddingVertical: rp(1),
+  carousel: {
+    minHeight: rp(260),
   },
-  muscleChipText: {
-    color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.micro),
+  // Exercise card
+  exCard: {
+    paddingHorizontal: rp(spacing.lg),
+    paddingVertical: rp(spacing.md),
+    gap: rp(spacing.md),
   },
-  detailMetaText: {
-    color: colors.text.tertiary,
-    fontSize: rf(typography.fontSize.micro),
-    flexShrink: 1,
+  exHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.md),
   },
-  detailSetsCell: {
-    alignItems: "center",
-    minWidth: rw(40),
+  exThumb: {
+    width: rw(48),
+    height: rw(48),
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  detailSetsValue: {
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: fw(typography.fontWeight.bold),
+  exCooldownThumb: {
+    width: rw(48),
+    height: rw(48),
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.12),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  detailSetsLabel: {
-    color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.micro),
-    marginTop: rp(1),
-  },
-  rpeCell: {
-    flexDirection: "row",
-    alignItems: "center",
+  exHeaderInfo: {
+    flex: 1,
     gap: rp(spacing.xxs),
   },
-  intensityDot: {
+  exName: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.body),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: fw(typography.fontWeight.bold),
+    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.tight,
+  },
+  exSub: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.micro),
+    textTransform: 'capitalize',
+  },
+  exStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.sm),
+    flexWrap: 'wrap',
+  },
+  exSetsBlock: {
+    flexDirection: 'column',
+    gap: rp(2),
+    marginRight: 'auto',
+  },
+  exSetsValue: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.h3),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: fw(typography.fontWeight.bold),
+  },
+  exSetsX: {
+    color: colors.primary.DEFAULT,
+    fontSize: rf(typography.fontSize.body),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: fw(typography.fontWeight.bold),
+  },
+  exSetsLabel: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  exPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xxs),
+    paddingVertical: rp(spacing.xs),
+    paddingHorizontal: rp(spacing.sm),
+    borderRadius: rbr(12),
+    backgroundColor: hexToRgba(colors.text.primary, 0.06),
+    minHeight: 32,
+  },
+  exDot: {
     width: rw(8),
     height: rw(8),
     borderRadius: borderRadius.full,
   },
-  rpeText: {
+  exPillText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: fw(typography.fontWeight.semibold),
   },
-  restCell: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.xxs),
+  // Per-set chips
+  exSetsChipsScroll: {
+    marginHorizontal: rp(-spacing.lg),
   },
-  restText: {
-    color: colors.text.tertiary,
-    fontSize: rf(typography.fontSize.micro),
-  },
-  detailExpanded: {
-    backgroundColor: colors.glass.backgroundDark,
-    borderRadius: borderRadius.md,
-    padding: rp(spacing.sm),
-    marginTop: rp(spacing.xs),
+  exSetsChips: {
+    paddingHorizontal: rp(spacing.lg),
     gap: rp(spacing.xs),
   },
-  detailNotes: {
+  exSetChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xs),
+    paddingVertical: rp(spacing.xs),
+    paddingHorizontal: rp(spacing.md),
+    borderRadius: rbr(10),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.08),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.16),
+  },
+  exSetChipNum: {
+    color: colors.primary.DEFAULT,
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: fw(typography.fontWeight.bold),
+  },
+  exSetChipText: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: fw(typography.fontWeight.semibold),
+  },
+  // Notes + tempo rows
+  exNotes: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: rp(spacing.xs),
+    paddingVertical: rp(spacing.xs),
+  },
+  exNotesText: {
+    flex: 1,
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
     lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
   },
-  detailMetaRow: {
-    flexDirection: "row",
+  // Carousel dots
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(spacing.xs),
+    marginTop: rp(spacing.sm),
   },
-  detailMetaLabel: {
-    color: colors.text.tertiary,
-    fontSize: rf(typography.fontSize.micro),
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
-  detailMetaValue: {
-    color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.micro),
-    flexShrink: 1,
-  },
-  // Cooldown row
-  cooldownRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.sm),
-    paddingVertical: rp(spacing.sm),
-    // Fixed 1px (was rw(1) — scales border with screen width).
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.glass.border,
-  },
-  cooldownThumb: {
-    width: rw(32),
-    height: rw(32),
+  dot: {
+    width: rw(6),
+    height: rw(6),
     borderRadius: borderRadius.full,
-    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.12),
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: hexToRgba(colors.text.primary, 0.16),
   },
-  cooldownInfo: {
-    flex: 1,
-  },
-  cooldownName: {
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
-  cooldownInstr: {
-    color: colors.text.tertiary,
-    fontSize: rf(typography.fontSize.micro),
-    marginTop: rp(2),
-  },
-  cooldownDuration: {
-    color: colors.secondary.light,
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: fw(typography.fontWeight.semibold),
+  dotActive: {
+    backgroundColor: colors.primary.DEFAULT,
+    width: rw(18),
   },
   // Empty state
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: rp(spacing.xxl),
     gap: rp(spacing.sm),
   },
@@ -1392,7 +1480,7 @@ const styles = StyleSheet.create({
   emptyHint: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.caption),
-    textAlign: "center",
+    textAlign: 'center',
     paddingHorizontal: rp(spacing.xl),
   },
   footerSpacer: {
@@ -1400,23 +1488,45 @@ const styles = StyleSheet.create({
   },
   // Bottom start bar
   bottomBar: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: rp(spacing.md),
+    paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.sm),
+    backgroundColor: colors.background.DEFAULT,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: hexToRgba(colors.text.primary, 0.06),
     // Sticky footer z-index + elevation so it renders above scroll content.
     zIndex: 1100,
     elevation: 11,
   },
-  bottomBarCard: {
-    backgroundColor: colors.glass.backgroundDark,
+  bottomCta: {
+    width: '100%',
+    borderRadius: rbr(16),
+    overflow: 'hidden',
+    minHeight: 52,
+  },
+  bottomCtaGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rp(spacing.xs),
+    paddingVertical: rp(spacing.md),
+    minHeight: 52,
+  },
+  bottomCtaText: {
+    color: colors.text.primary,
+    fontSize: rf(15),
+    fontWeight: fw(typography.fontWeight.bold),
+  },
+  bottomCtaDisabled: {
+    opacity: 0.7,
   },
   bottomStatsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(spacing.sm),
     marginBottom: rp(spacing.sm),
   },
@@ -1433,7 +1543,7 @@ const styles = StyleSheet.create({
     // Fixed 1px (was rw(1) — scales border with screen width).
     width: StyleSheet.hairlineWidth,
     height: rp(16),
-    backgroundColor: colors.glass.border,
+    backgroundColor: hexToRgba(colors.text.primary, 0.06),
   },
 });
 

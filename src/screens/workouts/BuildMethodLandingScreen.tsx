@@ -1,49 +1,45 @@
 /**
  * BuildMethodLandingScreen
  *
- * Phase 2 entry point for the custom workout builder flow. Replaces the old
- * direct route FitnessScreen → ScheduleBuilder with a 4-option landing:
+ * Step 1 of the custom workout builder step-flow. Presents the 4 build
+ * methods as flat full-width rows (2026 step-flow aesthetic — no boxed
+ * cards, hairline separators, right check circles):
  *  a) Use Templates       — purple accent, "Recommended"
  *  b) Build From Scratch  — orange accent, drag & drop / supersets
  *  c) Duplicate Existing  — copy a previous schedule
  *  d) Import Community    — premium badge, trending templates
  *
  * Renders as a full-screen overlay session in MainNavigation (see
- * buildMethodLandingSession). Each card is a GlassCard wrapped in
- * AnimatedPressable (spring lift + haptic buttonPress) and routes to the next
- * builder step. AuroraBackground theme="space" sits behind everything and a
- * GlassHeader with a back chevron sits on top.
+ * buildMethodLandingSession). Tapping a row selects it (check circle fills);
+ * the sticky gradient "Continue" CTA routes to the next builder step.
+ * AuroraBackground theme="space" sits behind everything.
  *
- * Routing (v1 — Phase 3 will reroute Scratch to WeeklyBuilderScreen, Phase 7
- * adds the Community tab):
+ * Routing:
  *  - Templates    → navigate("TemplateLibrary")
- *  - Scratch      → navigate("ScheduleBuilder")
+ *  - Scratch      → navigate("WeeklyBuilder")
  *  - Duplicate    → navigate("TemplateLibrary")
  *  - Community    → navigate("TemplateLibrary")  (premium lock badge shown
- *                   when subscriptionStore.isPremium() is false; tapping still
- *                   routes to the library for v1)
+ *                   when subscriptionStore.isPremium() is false; tapping
+ *                   surfaces the paywall instead of selecting)
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  type TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import {
   flatColors as colors,
   spacing,
   borderRadius,
-  typography,
 } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
@@ -59,10 +55,6 @@ interface BuildMethodLandingScreenProps {
   };
 }
 
-/** Narrow a typography.fontWeight token to RN's literal fontWeight union. */
-const fw = (w: string): TextStyle["fontWeight"] =>
-  w as TextStyle["fontWeight"];
-
 type BuildMethodId = "templates" | "scratch" | "duplicate" | "community";
 
 interface BuildMethod {
@@ -71,15 +63,13 @@ interface BuildMethod {
   description: string;
   /** Ionicons icon for the leading disc. */
   icon: keyof typeof Ionicons.glyphMap;
-  /** Accent color for the disc gradient + chip. */
+  /** Accent color for the icon disc tint. */
   accent: string;
-  /** Darker accent for the gradient end. */
-  accentDark: string;
   /** Optional badge label ("Recommended" / "Premium"). */
   badge?: string;
   /** Tint for the badge background/text. */
   badgeTint?: string;
-  /** Next builder step to route to on tap. */
+  /** Next builder step to route to on continue. */
   nextScreen: string;
 }
 
@@ -91,7 +81,6 @@ const METHODS: BuildMethod[] = [
       "Beginner / Upper Lower / PPL / Bro Split / Hybrid. Start from a proven schedule and customize.",
     icon: "library-outline",
     accent: colors.purple,
-    accentDark: "#7E22CE",
     badge: "Recommended",
     badgeTint: colors.purple,
     nextScreen: "TemplateLibrary",
@@ -103,7 +92,6 @@ const METHODS: BuildMethod[] = [
       "3 min estimated build. Drag & drop, supersets, custom rest timers — full control over every day.",
     icon: "construct-outline",
     accent: colors.primary,
-    accentDark: colors.primaryDark,
     nextScreen: "WeeklyBuilder",
   },
   {
@@ -112,7 +100,6 @@ const METHODS: BuildMethod[] = [
     description: "Copy your previous schedule and tweak the days you want to change.",
     icon: "copy-outline",
     accent: colors.secondary,
-    accentDark: colors.secondaryDark,
     nextScreen: "TemplateLibrary",
   },
   {
@@ -121,7 +108,6 @@ const METHODS: BuildMethod[] = [
     description: "Trending templates from the community — fork and make them yours.",
     icon: "people-outline",
     accent: colors.warningAlt,
-    accentDark: "#D97706",
     badge: "Premium",
     badgeTint: colors.warningAlt,
     nextScreen: "TemplateLibrary",
@@ -131,18 +117,19 @@ const METHODS: BuildMethod[] = [
 export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> = ({
   navigation,
 }) => {
-  // Defense-in-depth premium gate. The Community card is locked for free-tier
+  // Defense-in-depth premium gate. The Community row is locked for free-tier
   // users — tapping it surfaces the paywall via usePaywall().triggerPaywall()
-  // instead of routing to TemplateLibrary. Unlocked cards route normally.
+  // instead of selecting. Unlocked rows select normally.
   const isPremiumFn = useSubscriptionStore((s) => s.isPremium);
   const isPremium = isPremiumFn();
   const { triggerPaywall } = usePaywall();
+  const [selectedId, setSelectedId] = useState<BuildMethodId | null>(null);
 
   const handleSelect = (method: BuildMethod) => {
     haptics.buttonPress();
     if (method.id === "community" && !isPremium) {
-      // Free-tier user tapped the locked Community card — surface the paywall
-      // instead of routing. The chevron stays for visual continuity.
+      // Free-tier user tapped the locked Community row — surface the paywall
+      // instead of selecting.
       triggerPaywall("community_templates");
       crossPlatformAlert(
         "Premium feature",
@@ -154,17 +141,33 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
       );
       return;
     }
+    setSelectedId(method.id);
+  };
+
+  const handleContinue = () => {
+    const method = METHODS.find((m) => m.id === selectedId);
+    if (!method) return;
+    haptics.buttonPress();
     navigation.navigate(method.nextScreen);
   };
 
   return (
     <AuroraBackground theme="space" animated intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <GlassHeader
-          title="Build Schedule"
-          onBack={() => navigation.goBack()}
-          backAccessibilityLabel="Back to workout tab"
-        />
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        {/* Compact top row — plain back + step eyebrow */}
+        <View style={styles.topRow}>
+          <AnimatedPressable
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Back to workout tab"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+          </AnimatedPressable>
+          <Text style={styles.stepEyebrow}>STEP 1 OF 3</Text>
+          <View style={styles.topRowSpacer} />
+        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -172,187 +175,213 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeInUp.delay(80).duration(450)}>
-            <Text style={styles.headline}>
-              How would you like to build your program?
-            </Text>
-            <Text style={styles.subhead}>
+            <Text style={styles.title}>Build your program</Text>
+            <Text style={styles.subtitle}>
               Pick a starting point — you can always switch later.
             </Text>
           </Animated.View>
 
-          {METHODS.map((method, index) => (
-            <MethodCard
-              key={method.id}
-              method={method}
-              delay={160 + index * 80}
-              locked={method.id === "community" && !isPremium}
-              onSelect={() => handleSelect(method)}
-            />
-          ))}
-          {/* Helper line below Community card explaining the lock */}
+          <View style={styles.methodList}>
+            {METHODS.map((method, index) => {
+              const locked = method.id === "community" && !isPremium;
+              const selected = selectedId === method.id;
+              return (
+                <Animated.View
+                  key={method.id}
+                  entering={FadeInUp.delay(160 + index * 80).duration(450)}
+                >
+                  <AnimatedPressable
+                    onPress={() => handleSelect(method)}
+                    scaleValue={0.98}
+                    springConfig="smooth"
+                    hapticType="light"
+                    accessibilityRole="button"
+                    accessibilityLabel={`${method.title}${method.badge ? `, ${method.badge}` : ""}${locked ? ", locked" : ""}`}
+                    accessibilityHint={locked ? "Premium feature — tap to view upgrade options" : "Tap to select"}
+                    accessibilityState={{ disabled: false, selected }}
+                    style={[
+                      styles.methodRow,
+                      index < METHODS.length - 1 && styles.methodRowSeparator,
+                      locked && styles.methodRowLocked,
+                    ]}
+                  >
+                    {/* Accent icon disc */}
+                    <View
+                      style={[
+                        styles.iconDisc,
+                        { backgroundColor: hexToRgba(method.accent, 0.12) },
+                      ]}
+                    >
+                      <Ionicons
+                        name={method.icon}
+                        size={rf(20)}
+                        color={method.accent}
+                      />
+                    </View>
+
+                    <View style={styles.methodText}>
+                      <View style={styles.titleRow}>
+                        <Text style={styles.methodTitle} numberOfLines={1}>
+                          {method.title}
+                        </Text>
+                        {method.badge ? (
+                          <View
+                            style={[
+                              styles.badge,
+                              {
+                                backgroundColor: hexToRgba(method.badgeTint ?? method.accent, 0.12),
+                              },
+                            ]}
+                          >
+                            {locked ? (
+                              <Ionicons
+                                name="lock-closed"
+                                size={rf(10)}
+                                color={method.badgeTint}
+                                style={styles.badgeLock}
+                              />
+                            ) : null}
+                            <Text
+                              style={[styles.badgeText, { color: method.badgeTint }]}
+                              numberOfLines={1}
+                            >
+                              {method.badge}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={styles.methodDescription} numberOfLines={3}>
+                        {method.description}
+                      </Text>
+                    </View>
+
+                    {/* Right check circle */}
+                    <View
+                      style={[
+                        styles.checkCircle,
+                        selected
+                          ? styles.checkCircleSelected
+                          : styles.checkCircleUnselected,
+                      ]}
+                    >
+                      {selected ? (
+                        <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
+                      ) : null}
+                    </View>
+                  </AnimatedPressable>
+                </Animated.View>
+              );
+            })}
+          </View>
+
+          {/* Helper line below Community row explaining the lock */}
           {!isPremium ? (
             <Text style={styles.lockedHint}>
               Community templates require Premium. Tap to upgrade.
             </Text>
           ) : null}
-
-          <View style={styles.bottomSpacer} />
         </ScrollView>
+
+        {/* Sticky bottom CTA */}
+        <View style={styles.footer}>
+          <AnimatedPressable
+            onPress={handleContinue}
+            disabled={!selectedId}
+            scaleValue={0.97}
+            hapticType="medium"
+            accessibilityRole="button"
+            accessibilityLabel="Continue"
+            accessibilityState={{ disabled: !selectedId }}
+            style={[styles.cta, !selectedId && styles.ctaDisabled]}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaGradient}
+            >
+              <Text style={styles.ctaText}>Continue</Text>
+              <Ionicons name="arrow-forward" size={rf(18)} color={colors.white} />
+            </LinearGradient>
+          </AnimatedPressable>
+        </View>
       </SafeAreaView>
     </AuroraBackground>
   );
 };
 
-interface MethodCardProps {
-  method: BuildMethod;
-  delay: number;
-  locked: boolean;
-  onSelect: () => void;
-}
-
-const MethodCard: React.FC<MethodCardProps> = ({
-  method,
-  delay,
-  locked,
-  onSelect,
-}) => (
-  <Animated.View entering={FadeInUp.delay(delay).duration(450)}>
-    <AnimatedPressable
-      onPress={onSelect}
-      scaleValue={0.98}
-      springConfig="smooth"
-      hapticType="light"
-      accessibilityRole="button"
-      accessibilityLabel={`${method.title}${method.badge ? `, ${method.badge}` : ""}${locked ? ", locked" : ""}`}
-      accessibilityHint={locked ? "Premium feature — tap to view upgrade options" : "Tap to continue"}
-      accessibilityState={{ disabled: false }}
-      style={styles.methodCardOuter}
-    >
-      <GlassCard
-        elevation={3}
-        blurIntensity="default"
-        padding="lg"
-        borderRadius="xl"
-        contentStyle={locked ? styles.methodCardLockedContent : undefined}
-      >
-        <View style={styles.methodRow}>
-          {/* Accent gradient icon disc */}
-          <View
-            style={[
-              styles.iconDisc,
-              {
-                backgroundColor: hexToRgba(method.accent, 0.12),
-                borderColor: hexToRgba(method.accent, 0.35),
-              },
-            ]}
-          >
-            <Ionicons
-              name={method.icon}
-              size={rf(22)}
-              color={method.accent}
-            />
-          </View>
-
-          <View style={styles.methodText}>
-            <View style={styles.titleRow}>
-              <Text
-                style={styles.title}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-              >
-                {method.title}
-              </Text>
-              {method.badge ? (
-                <View
-                  style={[
-                    styles.badge,
-                    {
-                      backgroundColor: hexToRgba(method.badgeTint ?? method.accent, 0.12),
-                      borderColor: hexToRgba(method.badgeTint ?? method.accent, 0.35),
-                    },
-                  ]}
-                >
-                  {locked ? (
-                    <Ionicons
-                      name="lock-closed"
-                      size={rf(10)}
-                      color={method.badgeTint}
-                      style={styles.badgeLock}
-                    />
-                  ) : null}
-                  <Text
-                    style={[styles.badgeText, { color: method.badgeTint }]}
-                    numberOfLines={1}
-                  >
-                    {method.badge}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-            <Text
-              style={styles.description}
-              numberOfLines={3}
-            >
-              {method.description}
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={rf(18)}
-            color={colors.textSecondary}
-            style={styles.chevron}
-          />
-        </View>
-      </GlassCard>
-    </AnimatedPressable>
-  </Animated.View>
-);
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+  },
+  backBtn: {
+    width: rw(44),
+    height: rw(44),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  topRowSpacer: {
+    width: rw(44),
+  },
+  stepEyebrow: {
+    fontSize: rf(11),
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: rp(spacing.lg),
-    paddingBottom: rp(spacing.xxl),
+    paddingBottom: rp(spacing.xl),
   },
-  headline: {
+  title: {
+    fontSize: rf(28),
+    fontWeight: "800",
     color: colors.text,
-    fontSize: rf(typography.fontSize.h2),
-    fontWeight: fw(typography.fontWeight.bold),
-    lineHeight: typography.fontSize.h2 * typography.lineHeight.tight,
-    marginBottom: rp(spacing.xs),
+    lineHeight: rf(34),
+    letterSpacing: -0.3,
+    marginBottom: rp(spacing.sm),
   },
-  subhead: {
+  subtitle: {
+    fontSize: rf(14),
     color: colors.textSecondary,
-    fontSize: rf(typography.fontSize.body),
-    lineHeight: typography.fontSize.body * typography.lineHeight.normal,
+    lineHeight: rf(20),
     marginBottom: rp(spacing.lg),
   },
-  methodCardOuter: {
-    marginBottom: rp(spacing.md),
-    minHeight: Math.max(rp(spacing.xxl), 64),
-  },
-  methodCardLockedContent: {
-    opacity: 0.6,
+  methodList: {
+    borderTopWidth: 1,
+    borderTopColor: hexToRgba(colors.white, 0.06),
   },
   methodRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
+    minHeight: 44,
+  },
+  methodRowSeparator: {
+    borderBottomWidth: 1,
+    borderBottomColor: hexToRgba(colors.white, 0.06),
+  },
+  methodRowLocked: {
+    opacity: 0.6,
   },
   iconDisc: {
-    width: rw(48),
-    height: rw(48),
+    width: rw(44),
+    height: rw(44),
     borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
   },
   methodText: {
     flex: 1,
@@ -363,18 +392,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(spacing.sm),
     marginBottom: rp(2),
-    flexWrap: "wrap",
   },
-  title: {
+  methodTitle: {
     color: colors.text,
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: fw(typography.fontWeight.semibold),
+    fontSize: rf(15),
+    fontWeight: "600",
     flexShrink: 1,
   },
-  description: {
+  methodDescription: {
     color: colors.textSecondary,
-    fontSize: rf(typography.fontSize.caption),
-    lineHeight: typography.fontSize.caption * typography.lineHeight.normal,
+    fontSize: rf(12),
+    lineHeight: rf(18),
   },
   badge: {
     flexDirection: "row",
@@ -383,28 +411,64 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.sm),
     minHeight: 22,
     borderRadius: borderRadius.sm,
-    borderWidth: 1,
     flexShrink: 0,
   },
   badgeLock: {
     marginRight: rp(2),
   },
   badgeText: {
-    fontSize: rf(typography.fontSize.micro),
-    fontWeight: fw(typography.fontWeight.semibold),
+    fontSize: rf(11),
+    fontWeight: "600",
     letterSpacing: 0.4,
+    textTransform: "uppercase",
   },
-  chevron: {
+  checkCircle: {
+    width: rw(26),
+    height: rw(26),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: rp(spacing.xs),
+  },
+  checkCircleSelected: {
+    backgroundColor: colors.primary,
+  },
+  checkCircleUnselected: {
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.white, 0.25),
   },
   lockedHint: {
     color: colors.textSecondary,
-    fontSize: rf(typography.fontSize.caption),
+    fontSize: rf(12),
     textAlign: "center",
-    marginBottom: rp(spacing.md),
+    marginTop: rp(spacing.md),
   },
-  bottomSpacer: {
-    height: rp(spacing.xl),
+  footer: {
+    paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.sm),
+  },
+  cta: {
+    borderRadius: borderRadius.xl,
+    overflow: "hidden",
+    minHeight: 52,
+  },
+  ctaDisabled: {
+    opacity: 0.4,
+  },
+  ctaGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.md),
+    paddingHorizontal: rp(spacing.xl),
+    minHeight: 52,
+  },
+  ctaText: {
+    fontSize: rf(15),
+    fontWeight: "700",
+    color: colors.white,
   },
 });
 

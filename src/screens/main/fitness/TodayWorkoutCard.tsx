@@ -1,19 +1,20 @@
 /**
  * TodayWorkoutCard Component
- * Primary action card showing today's scheduled workout with quick start
+ * Immersive hero card for today's scheduled workout.
+ * Full-bleed image, bottom-anchored content, single gradient CTA.
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
-import { DayWorkout } from "../../../ai";
+import React from 'react';
+import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { FONT_FAMILY } from '../../../theme/fonts';
+import { rf, rw, rh, rbr } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
+import { DayWorkout } from '../../../ai';
 
 interface TodayWorkoutCardProps {
   workout: DayWorkout | null;
@@ -25,6 +26,10 @@ interface TodayWorkoutCardProps {
   displayCalories?: number;
   /** GAP-15: ISO string of when this workout was last completed (any week). */
   lastPerformedAt?: string;
+  /** ISO timestamp of when this workout was completed THIS WEEK. Used to
+   *  distinguish "Completed Today" from "Completed" (earlier in the week)
+   *  so the readiness pill reflects whether the user has already trained today. */
+  completedAt?: string;
   onStartWorkout: () => void;
   onViewDetails: () => void;
   onRecoveryTips?: () => void;
@@ -51,18 +56,18 @@ const DAY_NUMBER_BY_KEY: Record<string, number> = {
 
 // Map a JS getDay() index (0=Sun … 6=Sat) to a day key.
 const DAY_KEY_BY_JS_INDEX: Record<number, string> = {
-  0: "sunday",
-  1: "monday",
-  2: "tuesday",
-  3: "wednesday",
-  4: "thursday",
-  5: "friday",
-  6: "saturday",
+  0: 'sunday',
+  1: 'monday',
+  2: 'tuesday',
+  3: 'wednesday',
+  4: 'thursday',
+  5: 'friday',
+  6: 'saturday',
 };
 
 // Bullet separator used between meta items (kept as a constant so it's easy to
 // tweak and stays visually consistent across the card).
-const META_BULLET = "  •  ";
+const META_BULLET = '   •   ';
 
 export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   workout,
@@ -71,6 +76,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   progress,
   displayCalories,
   lastPerformedAt,
+  completedAt,
   onStartWorkout,
   onViewDetails,
   onRecoveryTips,
@@ -79,38 +85,52 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
 }) => {
   const getStatusConfig = () => {
     if (isCompleted) {
+      // Distinguish "Completed Today" from "Completed" (earlier in the week)
+      // so the status reflects whether the user has already trained today.
+      const isCompletedToday =
+        completedAt && new Date(completedAt).toDateString() === new Date().toDateString();
       return {
-        icon: "checkmark-circle" as const,
         color: colors.successAlt,
-        gradient: [colors.successAlt, "#059669"] as [string, string],
-        label: "Completed",
-        buttonText: "View Summary",
+        gradient: [colors.successAlt, '#059669'] as [string, string],
+        label: isCompletedToday ? 'Completed Today' : 'Completed',
+        buttonText: 'View Summary',
       };
     }
     if (isRestDay) {
       return {
-        icon: "moon" as const,
         color: colors.primary,
         gradient: [colors.primary, colors.primaryDark] as [string, string],
-        label: "Rest Day",
-        buttonText: "Recovery Tips",
+        label: 'Rest Day',
+        buttonText: 'Recovery Tips',
+      };
+    }
+    // Unscheduled day (no workout AND not a designated rest day). Previously
+    // this fell through to "Ready to Go / Start Workout", then the handler
+    // showed a "No Workout Today" alert — the card lied. Show the honest
+    // empty state; the CTA offers recovery guidance instead of a dead start.
+    // Use a visible neutral gradient (tertiary surface) — glassSurface is 5%
+    // white and renders an invisible button container on the dark hero.
+    if (!workout) {
+      return {
+        color: colors.textSecondary,
+        gradient: [colors.backgroundTertiary, colors.backgroundSecondary] as [string, string],
+        label: 'No Workout Scheduled',
+        buttonText: 'Recovery Tips',
       };
     }
     if (progress > 0) {
       return {
-        icon: "play-circle" as const,
-        color: colors.errorLight,
-        gradient: [colors.errorLight, "#FF8E53"] as [string, string],
+        color: colors.primary,
+        gradient: [colors.primary, colors.primaryLight] as [string, string],
         label: `${progress}% Complete`,
-        buttonText: "Continue Workout",
+        buttonText: 'Continue Workout',
       };
     }
     return {
-      icon: "fitness" as const,
-      color: colors.errorLight,
-      gradient: [colors.errorLight, "#FF8E53"] as [string, string],
-      label: "Ready to Go",
-      buttonText: "Start Workout",
+      color: colors.primary,
+      gradient: [colors.primary, colors.primaryLight] as [string, string],
+      label: 'Ready to Go',
+      buttonText: 'Start Workout',
     };
   };
 
@@ -122,336 +142,252 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   // fall back to today's real weekday when viewing "today".
   const computeDayNumber = (): number | null => {
     const dayKey =
-      workout?.dayOfWeek || selectedDay || (isToday ? DAY_KEY_BY_JS_INDEX[new Date().getDay()] : null);
+      workout?.dayOfWeek ||
+      selectedDay ||
+      (isToday ? DAY_KEY_BY_JS_INDEX[new Date().getDay()] : null);
     if (!dayKey) return null;
     return DAY_NUMBER_BY_KEY[dayKey.toLowerCase()] ?? null;
   };
 
   const dayNumber = computeDayNumber();
-  const todayLabel = dayNumber ? `TODAY • DAY ${dayNumber}` : "TODAY";
+  const todayLabel = dayNumber ? `TODAY • DAY ${dayNumber}` : 'TODAY';
 
   return (
     <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-      <GlassCard
-        elevation={3}
-        blurIntensity="light"
-        padding="none"
-        borderRadius="xl"
-      >
-        <Animated.View>
-          <View style={styles.container}>
-            <AnimatedPressable
-              onPress={onViewDetails}
-              accessibilityRole="button"
-              accessibilityLabel={`View workout details for ${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}`}
-              accessibilityHint="Double tap to view workout details"
-              scaleValue={0.99}
-              springConfig="smooth"
-              hapticType="light"
-            >
-            {/* Top Section - Status + Info */}
-            <View style={styles.topSection}>
-              {/* Left: Icon */}
-              <LinearGradient
-                colors={config.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.iconContainer}
-              >
-                <Ionicons name={config.icon} size={rf(28)} color={colors.white} />
-              </LinearGradient>
+      <View style={styles.card}>
+        {/* Full-bleed hero image */}
+        <ImageBackground
+          source={require('../../../assets/images/hero-workout.png')}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        />
+        {/* Bottom-to-top scrim so text stays readable over the image */}
+        <LinearGradient
+          colors={['rgba(10,15,28,0)', 'rgba(10,15,28,0.55)', 'rgba(10,15,28,0.95)']}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
 
-              {/* Middle: Workout Info */}
-              <View style={styles.infoContainer}>
-                {/* Uppercase "TODAY • DAY [N]" label row */}
-                <Text
-                  style={styles.todayLabel}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.7}
-                >
-                  {isToday ? todayLabel : (selectedDay ? formatDayName(selectedDay).toUpperCase() : "TODAY")}
-                </Text>
+        {/* Bottom-anchored content */}
+        <View style={styles.body}>
+          <AnimatedPressable
+            onPress={onViewDetails}
+            accessibilityRole="button"
+            accessibilityLabel={`View workout details for ${isRestDay ? 'Rest & Recover' : workout?.title || "Today's Workout"}`}
+            accessibilityHint="Double tap to view workout details"
+            scaleValue={0.99}
+            springConfig="smooth"
+            hapticType="light"
+          >
+            {/* Eyebrow — uppercase TODAY • DAY N */}
+            <Text style={styles.eyebrow} numberOfLines={1}>
+              {isToday
+                ? todayLabel
+                : selectedDay
+                  ? formatDayName(selectedDay).toUpperCase()
+                  : 'TODAY'}
+            </Text>
 
-                {/* Day indicator when not viewing today (legacy chip, kept for non-today context) */}
-                {!isToday && selectedDay && (
-                  <View style={styles.dayIndicator}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={rf(12)}
-                      color={colors.primary}
-                    />
-                    <Text
-                      style={styles.dayIndicatorText}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit={true}
-                      minimumFontScale={0.7}
-                    >
-                      {formatDayName(selectedDay)}
-                    </Text>
-                  </View>
-                )}
-                <View style={styles.titleRow}>
-                  <Text
-                    style={styles.title}
-                    numberOfLines={2}
-                    adjustsFontSizeToFit={true}
-                    minimumFontScale={0.75}
-                  >
-                    {isRestDay
-                      ? "Rest & Recover"
-                      : workout?.title ||
-                        (isToday ? "Today's Workout" : "No Workout")}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: hexToRgba(config.color, 0.125) },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.statusDot,
-                      { backgroundColor: config.color },
-                    ]}
-                  />
-                  <Text
-                    style={[styles.statusText, { color: config.color }]}
-                    numberOfLines={1}
-                  >
-                    {config.label}
-                  </Text>
-                </View>
+            {/* Hero title */}
+            <Text style={styles.title} numberOfLines={2}>
+              {isRestDay
+                ? 'Rest & Recover'
+                : workout?.title || (isToday ? 'No Workout Today' : 'No Workout Scheduled')}
+            </Text>
 
-                {!isRestDay && workout && (
-                  <Text
-                    style={styles.metaRow}
-                    numberOfLines={2}
-                    adjustsFontSizeToFit={true}
-                    minimumFontScale={0.8}
-                  >
-                    {`${workout.duration} min${META_BULLET}${exerciseCount} exercises${META_BULLET}${
-                      displayCalories !== undefined
-                        ? displayCalories
-                        : workout.estimatedCalories || 0
-                    } kcal`}
-                  </Text>
-                )}
-
-                {/* GAP-15: Last performed context */}
-                {!isRestDay && !isCompleted && lastPerformedAt && (
-                  <Text style={styles.lastPerformedText}>
-                    Last done: {new Date(lastPerformedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </Text>
-                )}
-
-                {isRestDay && (
-                  <Text style={styles.restDaySubtitle}>
-                    Recovery is essential for muscle growth and preventing
-                    injury
-                  </Text>
-                )}
-              </View>
+            {/* Status — colored dot + text only */}
+            <View style={styles.statusRow}>
+              <View style={[styles.statusDot, { backgroundColor: config.color }]} />
+              <Text style={[styles.statusText, { color: config.color }]} numberOfLines={1}>
+                {config.label}
+              </Text>
             </View>
+
+            {/* Meta — plain text row, no chips */}
+            {!isRestDay && workout && (
+              <Text style={styles.metaRow} numberOfLines={1}>
+                {`${workout.duration} min${META_BULLET}${exerciseCount} exercises${META_BULLET}${
+                  displayCalories !== undefined ? displayCalories : workout.estimatedCalories || 0
+                } kcal`}
+              </Text>
+            )}
+
+            {/* GAP-15: Last performed context */}
+            {!isRestDay && !isCompleted && lastPerformedAt && (
+              <Text style={styles.lastPerformedText}>
+                Last done:{' '}
+                {new Date(lastPerformedAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </Text>
+            )}
+
+            {isRestDay && (
+              <Text style={styles.restDaySubtitle}>
+                Recovery is essential for muscle growth and preventing injury
+              </Text>
+            )}
 
             {/* Progress Bar (if in progress) */}
             {progress > 0 && progress < 100 && !isRestDay && (
-              <View style={styles.progressSection}>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${progress}%`, backgroundColor: config.color },
-                    ]}
-                  />
-                </View>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${progress}%`, backgroundColor: config.color },
+                  ]}
+                />
               </View>
             )}
-            </AnimatedPressable>
+          </AnimatedPressable>
 
-            {/* Bottom Section - Action Button */}
-            <View style={styles.bottomSection}>
-              <AnimatedPressable
-                onPress={
-                  isRestDay && onRecoveryTips
-                    ? onRecoveryTips
+          {/* Single full-width gradient CTA */}
+          <AnimatedPressable
+            onPress={
+              (isRestDay || !workout) && onRecoveryTips
+                ? onRecoveryTips
+                : isCompleted
+                  ? onViewDetails
+                  : onStartWorkout
+            }
+            scaleValue={0.97}
+            hapticFeedback={true}
+            hapticType="medium"
+            style={styles.actionButton}
+            accessibilityLabel={
+              isRestDay || !workout
+                ? 'Recovery tips'
+                : isCompleted
+                  ? 'View workout summary'
+                  : 'Start workout'
+            }
+          >
+            <LinearGradient
+              colors={config.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.actionButtonGradient}
+            >
+              <Text style={styles.actionButtonText}>{config.buttonText}</Text>
+              <Ionicons
+                name={
+                  isRestDay || !workout
+                    ? 'leaf-outline'
                     : isCompleted
-                      ? onViewDetails
-                      : onStartWorkout
+                      ? 'eye-outline'
+                      : 'arrow-forward'
                 }
-                scaleValue={0.96}
-                hapticFeedback={true}
-                hapticType="medium"
-                style={styles.actionButton}
-                accessibilityLabel={
-                  isRestDay
-                    ? "Recovery tips"
-                    : isCompleted
-                      ? "View workout summary"
-                      : "Start workout"
-                }
-              >
-                <LinearGradient
-                  colors={config.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.actionButtonGradient}
-                >
-                  <Text style={styles.actionButtonText}>
-                    {config.buttonText}
-                  </Text>
-                  <Ionicons
-                    name={
-                      isRestDay
-                        ? "leaf-outline"
-                        : isCompleted
-                          ? "eye-outline"
-                          : "arrow-forward"
-                    }
-                    size={rf(18)}
-                    color={colors.white}
-                  />
-                </LinearGradient>
-              </AnimatedPressable>
-            </View>
-          </View>
-        </Animated.View>
-      </GlassCard>
+                size={rf(18)}
+                color={colors.white}
+              />
+            </LinearGradient>
+          </AnimatedPressable>
+        </View>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
+    minHeight: rh(320),
+    borderRadius: rbr(24),
+    overflow: 'hidden',
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.white, 0.08),
+  },
+  body: {
+    flex: 1,
+    justifyContent: 'flex-end',
     padding: spacing.lg,
   },
-  topSection: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
-  },
-  iconContainer: {
-    width: rw(56),
-    height: rw(56),
-    borderRadius: rw(16),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  infoContainer: {
-    flex: 1,
-    minWidth: 0,
-  },
-  todayLabel: {
+  eyebrow: {
     fontSize: rf(11),
-    fontWeight: "700",
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: spacing.xs,
-  },
-  dayIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(4),
-    marginBottom: spacing.xs,
-  },
-  dayIndicatorText: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    flexWrap: "nowrap",
-    marginBottom: rp(2),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: spacing.sm,
   },
   title: {
-    fontSize: rf(17),
-    fontWeight: "700",
+    fontSize: rf(28),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: '800',
     color: colors.text,
-    flex: 1,
-    minWidth: 0,
-    flexShrink: 1,
+    lineHeight: rf(34),
+    letterSpacing: -0.3,
   },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: rp(5),
-    paddingHorizontal: spacing.sm,
-    paddingVertical: rp(4),
-    borderRadius: borderRadius.full,
-    marginBottom: spacing.sm,
-    minHeight: 24,
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rw(6),
+    marginTop: spacing.sm,
   },
   statusDot: {
-    width: rw(6),
-    height: rw(6),
-    borderRadius: rw(3),
+    width: rw(7),
+    height: rw(7),
+    borderRadius: rw(4),
   },
   statusText: {
-    fontSize: rf(11),
-    fontWeight: "600",
+    fontSize: rf(12),
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   metaRow: {
-    fontSize: rf(12),
+    fontSize: rf(13),
     color: colors.textSecondary,
     marginTop: spacing.sm,
+    letterSpacing: 0.2,
+    fontWeight: '500',
   },
   restDaySubtitle: {
     fontSize: rf(12),
     color: colors.textSecondary,
-    marginTop: spacing.xs,
-    lineHeight: rf(18),
-  },
-  progressSection: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+    lineHeight: rf(17),
   },
   progressBar: {
-    height: rh(6),
-    backgroundColor: hexToRgba(colors.white, 0.08),
-    borderRadius: rh(3),
-    overflow: "hidden",
+    height: rh(4),
+    backgroundColor: hexToRgba(colors.white, 0.12),
+    borderRadius: rh(2),
+    overflow: 'hidden',
+    marginTop: spacing.md,
   },
   progressFill: {
-    height: "100%",
-    borderRadius: rh(3),
-  },
-  bottomSection: {
-    marginTop: spacing.lg,
-    marginBottom: rh(4),
+    height: '100%',
+    borderRadius: rh(2),
   },
   // GAP-15: last performed label
   lastPerformedText: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
+    fontSize: rf(11),
+    color: colors.textMuted,
     marginTop: spacing.xs,
     fontStyle: 'italic',
   },
   actionButton: {
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
+    borderRadius: rbr(16),
+    overflow: 'hidden',
+    marginTop: spacing.lg,
   },
   actionButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.md + 2,
-    paddingHorizontal: spacing.lg,
-    minHeight: 44,
+    paddingHorizontal: spacing.xl,
+    minHeight: 54,
   },
   actionButtonText: {
-    fontSize: rf(15),
-    fontWeight: "700",
+    fontSize: rf(16),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: '600',
     color: colors.white,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
 });
 

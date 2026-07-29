@@ -1,49 +1,46 @@
 /**
  * MyWorkoutsCard Component
  *
- * Glass summary card surfacing the user's all-time workout library stats:
- * total completed sessions, saved templates, total duration, total calories.
- *
- * Replaces the previous simple "My Workouts →" pressable button on the
- * Fitness tab. Tapping the card (or the "View All" link) navigates to
- * TemplateLibrary — preserving the legacy `template-library-button` testID.
+ * Flat grouped-list section (Apple Fitness+ style — no cards-in-cards):
+ *  - Uppercase muted section label + count
+ *  - One navigation row into TemplateLibrary (preserves the legacy
+ *    `template-library-button` testID on the element that opens the library)
+ *  - Read-only all-time stat rows (sessions / duration / calories) with
+ *    hairline separators — same data sources as the previous 2x2 stat grid.
  *
  * Data sources (read-only — this is a pure presentation component):
- *  - Workouts / Total Duration / Total Calories → derived locally via useMemo
+ *  - Sessions / Total Duration / Total Calories → derived locally via useMemo
  *    from the store's `completedSessions` array (all sessions, every week,
  *    planned + extra). We subscribe to the stable array reference rather than
  *    calling the `getAllTimeWorkoutStats()` selector, because Zustand v5 uses
  *    Object.is snapshot equality — a selector returning a fresh object literal
  *    on every call triggers an infinite re-render loop.
  *  - Templates count → workoutTemplateService.getTemplates(userId), loaded
- *    once on mount via useEffect and stored in local state.
+ *    on mount AND on navigation focus (so the count is fresh after creating
+ *    a template in TemplateLibrary and returning).
  */
 
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import {
-  flatColors as colors,
-  spacing,
-  borderRadius,
-} from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rp } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
-import { useFitnessStore } from "../../../stores/fitnessStore";
-import { workoutTemplateService } from "../../../services/workoutTemplateService";
-import { getCurrentUserId } from "../../../services/authUtils";
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { FONT_FAMILY } from '../../../theme/fonts';
+import { rf, rw, rp, rbr } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
+import { useFitnessStore } from '../../../stores/fitnessStore';
+import { workoutTemplateService } from '../../../services/workoutTemplateService';
+import { getCurrentUserId } from '../../../services/authUtils';
 
 interface MyWorkoutsCardProps {
   navigation: {
     navigate: (screen: string, params?: Record<string, unknown>) => void;
-    addListener?: (
-      event: "focus",
-      cb: () => void,
-    ) => () => void;
+    addListener?: (event: 'focus', cb: () => void) => () => void;
   };
+  /** Fired when the empty-state "Start a workout" CTA is tapped. Wired from
+   *  FitnessScreen to the same handler as today's workout start button. */
+  onStartWorkout?: () => void;
 }
 
 /**
@@ -58,7 +55,7 @@ interface MyWorkoutsCardProps {
  * utils/mealSchedule.formatMinutesToTime returns a clock time like "7:30 AM").
  */
 const formatDuration = (minutes: number): string => {
-  if (!minutes || minutes <= 0) return "0m";
+  if (!minutes || minutes <= 0) return '0m';
   const hours = Math.floor(minutes / 60);
   const mins = Math.round(minutes % 60);
   if (hours <= 0) return `${mins}m`;
@@ -70,11 +67,11 @@ const formatDuration = (minutes: number): string => {
  * Uses `toLocaleString` so the grouping follows the device locale.
  */
 const formatThousands = (value: number): string => {
-  if (!value || value <= 0) return "0";
-  return Math.round(value).toLocaleString("en-US");
+  if (!value || value <= 0) return '0';
+  return Math.round(value).toLocaleString('en-US');
 };
 
-export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation }) => {
+export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation, onStartWorkout }) => {
   // Subscribe to the stable `completedSessions` array reference (only changes
   // when a session is added/removed) and derive all-time totals with useMemo.
   // NEVER pass a selector returning a fresh object literal to useFitnessStore —
@@ -85,14 +82,8 @@ export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation }) =>
   const stats = useMemo(() => {
     return {
       count: completedSessions.length,
-      totalCalories: completedSessions.reduce(
-        (sum, s) => sum + s.caloriesBurned,
-        0,
-      ),
-      totalDuration: completedSessions.reduce(
-        (sum, s) => sum + s.durationMinutes,
-        0,
-      ),
+      totalCalories: completedSessions.reduce((sum, s) => sum + s.caloriesBurned, 0),
+      totalDuration: completedSessions.reduce((sum, s) => sum + s.durationMinutes, 0),
     };
   }, [completedSessions]);
 
@@ -121,187 +112,244 @@ export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation }) =>
   useEffect(() => {
     loadTemplates();
     // Refresh on screen focus — covers "created template elsewhere, returned".
-    const unsubscribe = navigation.addListener?.("focus", loadTemplates);
+    const unsubscribe = navigation.addListener?.('focus', loadTemplates);
     return () => {
       unsubscribe?.();
     };
   }, [loadTemplates, navigation]);
 
-  const handleViewAll = () => navigation.navigate("TemplateLibrary");
+  const handleViewAll = () => navigation.navigate('TemplateLibrary');
+  const isEmpty = stats.count === 0;
+
+  // Empty state: simple muted centered text + text CTAs — no box. The two CTAs
+  // remain sibling pressables (never nested) so the web <button>-in-<button>
+  // hydration error cannot occur. `template-library-button` sits on the
+  // "Browse Library" CTA — the element that opens TemplateLibrary here.
+  if (isEmpty) {
+    return (
+      <Animated.View entering={FadeInDown.delay(250).duration(400)}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>MY WORKOUTS</Text>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle} numberOfLines={1}>
+            No Workouts Yet
+          </Text>
+          <Text style={styles.emptySubtitle} numberOfLines={3}>
+            Complete your first workout to see it here.
+          </Text>
+          {onStartWorkout && (
+            <AnimatedPressable
+              onPress={onStartWorkout}
+              scaleValue={0.96}
+              hapticFeedback={true}
+              hapticType="light"
+              style={styles.emptyCtaButton}
+              accessibilityRole="button"
+              accessibilityLabel="Start a workout"
+            >
+              <Text style={styles.emptyCta}>Start a workout</Text>
+            </AnimatedPressable>
+          )}
+          <AnimatedPressable
+            onPress={handleViewAll}
+            scaleValue={0.96}
+            hapticFeedback={true}
+            hapticType="light"
+            style={styles.emptyCtaButton}
+            accessibilityRole="button"
+            accessibilityLabel="Browse workout library"
+            testID="template-library-button"
+          >
+            <Text style={styles.emptyLibraryLink}>Browse Library</Text>
+          </AnimatedPressable>
+        </View>
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View entering={FadeInDown.delay(250).duration(400)}>
-      <AnimatedPressable
-        onPress={handleViewAll}
-        scaleValue={0.98}
-        hapticFeedback={true}
-        hapticType="light"
-        accessibilityRole="button"
-        accessibilityLabel="My workouts library"
-        accessibilityHint="Double tap to view your workout templates"
-        testID="template-library-button"
-      >
-        <GlassCard
-          elevation={2}
-          blurIntensity="light"
-          padding="none"
-          borderRadius="xl"
-        >
-          <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <Ionicons
-                  name="barbell-outline"
-                  size={rf(16)}
-                  color={colors.primary}
-                />
-                <Text style={styles.title} numberOfLines={1}>My Workouts</Text>
-              </View>
-              <View style={styles.viewAll} pointerEvents="none">
-                <Text style={styles.viewAllText}>View All</Text>
-                <Ionicons
-                  name="arrow-forward"
-                  size={rf(13)}
-                  color={colors.primary}
-                />
-              </View>
-            </View>
+      {/* Section header — uppercase letterspaced muted label + count */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>MY WORKOUTS</Text>
+        <Text style={styles.sectionCount} numberOfLines={1}>
+          {stats.count} workouts
+        </Text>
+      </View>
 
-            {/* 2x2 stat grid — two rows of two tiles, each row splits 50/50 */}
-            <View style={styles.grid}>
-              <View style={styles.gridRow}>
-                <StatTile
-                  icon="checkmark-done-outline"
-                  value={String(stats.count)}
-                  label="Workouts"
-                  tint={colors.primary}
-                />
-                <StatTile
-                  icon="library-outline"
-                  value={templateCount === null ? "-" : String(templateCount)}
-                  label="Templates"
-                  tint={colors.secondary}
-                />
-              </View>
-              <View style={styles.gridRow}>
-                <StatTile
-                  icon="time-outline"
-                  value={formatDuration(stats.totalDuration)}
-                  label="Total Duration"
-                  tint={colors.successAlt}
-                />
-                <StatTile
-                  icon="flame-outline"
-                  value={formatThousands(stats.totalCalories)}
-                  label="kcal"
-                  tint={colors.warningAlt}
-                />
-              </View>
+      {/* Flat grouped list — hairline separators, no boxes around rows */}
+      <View>
+        <AnimatedPressable
+          onPress={handleViewAll}
+          scaleValue={0.98}
+          hapticFeedback={true}
+          hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="My workouts library"
+          accessibilityHint="Double tap to view your workout templates"
+          testID="template-library-button"
+        >
+          <View style={styles.row}>
+            <View style={[styles.iconSquare, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
+              <Ionicons name="barbell-outline" size={rf(18)} color={colors.primary} />
             </View>
+            <View style={styles.rowText}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                Workout Library
+              </Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>
+                {templateCount === null ? '-' : templateCount} templates
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={rf(16)} color={colors.textTertiary} />
           </View>
-        </GlassCard>
-      </AnimatedPressable>
+        </AnimatedPressable>
+
+        <View style={styles.separator} />
+        <StatRow
+          icon="checkmark-done-outline"
+          tint={colors.primary}
+          title="Sessions Completed"
+          value={String(stats.count)}
+        />
+        <View style={styles.separator} />
+        <StatRow
+          icon="time-outline"
+          tint={colors.successAlt}
+          title="Total Duration"
+          value={formatDuration(stats.totalDuration)}
+        />
+        <View style={styles.separator} />
+        <StatRow
+          icon="flame-outline"
+          tint={colors.warningAlt}
+          title="Calories Burned"
+          value={`${formatThousands(stats.totalCalories)} kcal`}
+        />
+      </View>
     </Animated.View>
   );
 };
 
-interface StatTileProps {
+/** Read-only iOS-style stat row: tinted icon square, label left, value right. */
+interface StatRowProps {
   icon: keyof typeof Ionicons.glyphMap;
-  value: string;
-  label: string;
   tint: string;
+  title: string;
+  value: string;
 }
 
-const StatTile: React.FC<StatTileProps> = ({ icon, value, label, tint }) => (
-  <View style={styles.statTile}>
-    <View style={[styles.statIcon, { backgroundColor: hexToRgba(tint, 0.12) }]}>
-      <Ionicons name={icon} size={rf(15)} color={tint} />
+const StatRow: React.FC<StatRowProps> = ({ icon, tint, title, value }) => (
+  <View style={styles.row}>
+    <View style={[styles.iconSquare, { backgroundColor: hexToRgba(tint, 0.12) }]}>
+      <Ionicons name={icon} size={rf(18)} color={tint} />
     </View>
-    <Text
-      style={styles.statValue}
-      numberOfLines={1}
-      adjustsFontSizeToFit={true}
-      minimumFontScale={0.7}
-    >
+    <View style={styles.rowText}>
+      <Text style={styles.rowTitle} numberOfLines={1}>
+        {title}
+      </Text>
+    </View>
+    <Text style={styles.rowValue} numberOfLines={1}>
       {value}
-    </Text>
-    <Text style={styles.statLabel} numberOfLines={1}>
-      {label}
     </Text>
   </View>
 );
 
 const styles = StyleSheet.create({
-  container: {
-    padding: spacing.lg,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.text,
-  },
-  viewAll: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(2),
-    minHeight: 44,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  viewAllText: {
-    fontSize: rf(12),
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  grid: {
-    gap: spacing.sm,
-  },
-  gridRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  statTile: {
-    flex: 1,
-    backgroundColor: colors.glassSurface,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-  },
-  statIcon: {
-    width: rw(30),
-    height: rw(30),
-    borderRadius: rw(15),
-    justifyContent: "center",
-    alignItems: "center",
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.xs,
   },
-  // Fixed rf(14) so values like "10,000" don't shrink visually while "0"
-  // renders at full size. numberOfLines=1 + minimumFontScale guards against
-  // overflow on narrow tiles without the visual jump of full fit-to-width.
-  statValue: {
-    fontSize: rf(14),
-    fontWeight: "700",
+  sectionTitle: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: '700',
+    color: colors.textTertiary,
+    letterSpacing: 1.2,
+  },
+  sectionCount: {
+    fontSize: rf(11),
+    fontWeight: '500',
+    color: colors.textTertiary,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: rp(spacing.sm),
+  },
+  iconSquare: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rbr(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rowText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rowTitle: {
+    fontSize: rf(15),
+    fontWeight: '600',
     color: colors.text,
   },
-  statLabel: {
-    fontSize: rf(11),
+  rowMeta: {
+    fontSize: rf(12),
     color: colors.textSecondary,
     marginTop: rp(2),
+  },
+  rowValue: {
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: colors.text,
+    flexShrink: 0,
+  },
+  // 1px hairline, leading-inset so it aligns with the row text (iOS style).
+  // rw(40) scales the icon square width; rp(spacing.md) scales the icon→text
+  // gap to match — both must scale together or the hairline drifts on wider
+  // screens.
+  separator: {
+    height: 1,
+    backgroundColor: hexToRgba(colors.text, 0.06),
+    marginLeft: rw(40) + rp(spacing.md),
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+  },
+  emptyTitle: {
+    fontSize: rf(16),
+    fontWeight: '700',
+    color: colors.text,
+  },
+  emptySubtitle: {
+    fontSize: rf(13),
+    fontWeight: '400',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: rw(280),
+    marginTop: spacing.xs,
+  },
+  emptyCtaButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  emptyCta: {
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  emptyLibraryLink: {
+    fontSize: rf(13),
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
 });
 

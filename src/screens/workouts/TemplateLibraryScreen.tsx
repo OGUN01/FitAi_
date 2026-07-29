@@ -32,8 +32,6 @@ import { getCurrentUserId } from "../../services/authUtils";
 import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
 import {
   AuroraBackground,
-  GlassCard,
-  GlassHeader,
   AuroraSpinner,
   EmptyState,
   AnimatedPressable,
@@ -53,14 +51,13 @@ const TemplateDetailSheet = lazy(() =>
   ),
 );
 import {
-  colors,
+  flatColors as colors,
   spacing,
-  borderRadius,
   typography,
 } from "../../theme/aurora-tokens";
 import { animations } from "../../theme/animations";
 import { haptics } from "../../utils/haptics";
-import { rf, rp, rw } from "../../utils/responsive";
+import { rf, rp, rw, rh, rbr } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 
 // ============================================================================
@@ -120,9 +117,9 @@ const DIFFICULTY_TINT: Record<
   NonNullable<WorkoutTemplate["difficulty"]>,
   string
 > = {
-  beginner: colors.success.DEFAULT,
-  intermediate: colors.secondary.DEFAULT,
-  advanced: colors.error.DEFAULT,
+  beginner: colors.success,
+  intermediate: colors.warning,
+  advanced: colors.error,
 };
 
 const DIFFICULTY_LABEL: Record<
@@ -133,6 +130,43 @@ const DIFFICULTY_LABEL: Record<
   intermediate: "Intermediate",
   advanced: "Advanced",
 };
+
+// ============================================================================
+// FLAT HEADER
+// ============================================================================
+
+const LibraryHeader: React.FC<{
+  onBack: () => void;
+  rightAction?: React.ReactNode;
+}> = ({ onBack, rightAction }) => (
+  <View style={styles.header}>
+    <AnimatedPressable
+      onPress={onBack}
+      scaleValue={0.9}
+      springConfig="snappy"
+      hapticType="light"
+      style={styles.backButton}
+      accessibilityRole="button"
+      accessibilityLabel="Go back"
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
+    </AnimatedPressable>
+    <View style={styles.headerText}>
+      <Text style={styles.eyebrow} numberOfLines={1}>
+        Workouts
+      </Text>
+      <Text style={styles.title} numberOfLines={1}>
+        Template Library
+      </Text>
+    </View>
+    {/* Right side: action slot (fixed minWidth so the title stays put when
+        there are no actions, e.g. loading/error states). */}
+    <View style={styles.headerSide}>
+      {rightAction}
+    </View>
+  </View>
+);
 
 // ============================================================================
 // COMPONENT
@@ -584,16 +618,40 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
     }
   }, [selectedIds, templates, handleExitMultiSelect]);
 
+  // ── Header right actions (Schedule + Add) ───────────────────────────────────
+  const headerActions = (
+    <View style={styles.headerActions}>
+      <AnimatedPressable
+        onPress={() => navigation.navigate("ScheduleBuilder")}
+        style={styles.scheduleBtn}
+        testID="schedule-builder-button"
+        accessibilityRole="button"
+        accessibilityLabel="Build schedule"
+        accessibilityHint="Open the schedule builder"
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={styles.scheduleBtnText} numberOfLines={1}>Schedule</Text>
+      </AnimatedPressable>
+      <AnimatedPressable
+        onPress={() => navigation.navigate("CreateWorkout")}
+        testID="add-template-button"
+        accessibilityRole="button"
+        accessibilityLabel="Add template"
+        accessibilityHint="Create a new workout template"
+        style={styles.addButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons name="add" size={rf(26)} color={colors.primary} />
+      </AnimatedPressable>
+    </View>
+  );
+
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
-          <GlassHeader
-            title="Template Library"
-            onBack={() => navigation.goBack()}
-            backAccessibilityLabel="Go back"
-          />
+          <LibraryHeader onBack={() => navigation.goBack()} />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -607,15 +665,11 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
-          <GlassHeader
-            title="Template Library"
-            onBack={() => navigation.goBack()}
-            backAccessibilityLabel="Go back"
-          />
+          <LibraryHeader onBack={() => navigation.goBack()} />
           <View style={styles.emptyWrap} testID="template-load-error">
             <EmptyState
               icon="cloud-offline-outline"
-              iconColor={colors.error.DEFAULT}
+              iconColor={colors.error}
               title="Couldn't load templates"
               subtitle="Check your connection and try again."
               ctaText="Try Again"
@@ -633,52 +687,22 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={["top"]}>
-        <GlassHeader
-          title="Template Library"
-          onBack={() => navigation.goBack()}
-          backAccessibilityLabel="Go back"
-          rightAction={
-            <View style={styles.headerActions}>
-              <AnimatedPressable
-                onPress={() => navigation.navigate("ScheduleBuilder")}
-                style={styles.scheduleBtn}
-                testID="schedule-builder-button"
-                accessibilityRole="button"
-                accessibilityLabel="Build schedule"
-                accessibilityHint="Open the schedule builder"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={styles.scheduleBtnText} numberOfLines={1}>Schedule</Text>
-              </AnimatedPressable>
-              <AnimatedPressable
-                onPress={() => navigation.navigate("CreateWorkout")}
-                testID="add-template-button"
-                accessibilityRole="button"
-                accessibilityLabel="Add template"
-                accessibilityHint="Create a new workout template"
-                style={styles.addButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="add" size={rf(26)} color={colors.primary.DEFAULT} />
-              </AnimatedPressable>
-            </View>
-          }
-        />
+        <LibraryHeader onBack={() => navigation.goBack()} rightAction={headerActions} />
 
-        {/* Search bar + view toggle */}
+        {/* Search bar + view toggle — slim tinted field, no border box */}
         <View style={styles.searchRow}>
           <View style={styles.searchWrap}>
             <Ionicons
               name="search-outline"
               size={rf(18)}
-              color={colors.text.tertiary}
+              color={colors.textTertiary}
               style={styles.searchIcon}
             />
             <TextInput
               value={search}
               onChangeText={setSearch}
               placeholder="Search templates"
-              placeholderTextColor={colors.text.tertiary}
+              placeholderTextColor={colors.textTertiary}
               style={styles.searchInput}
               accessibilityLabel="Search templates"
               testID="template-search-input"
@@ -700,7 +724,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 <Ionicons
                   name="close-circle"
                   size={rf(18)}
-                  color={colors.text.tertiary}
+                  color={colors.textTertiary}
                 />
               </AnimatedPressable>
             ) : null}
@@ -718,18 +742,19 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
             <Ionicons
               name={viewMode === "grid" ? "list-outline" : "grid-outline"}
               size={rf(20)}
-              color={colors.text.secondary}
+              color={colors.textSecondary}
             />
           </AnimatedPressable>
         </View>
 
-        {/* Folder tabs */}
+        {/* Folder tabs — plain pill text toggles (selected = primary 12% tint) */}
         <View style={styles.tabsRow}>
           <FlatList
             horizontal
             data={TABS}
             keyExtractor={(t) => t.key}
             showsHorizontalScrollIndicator={false}
+            style={styles.tabsList}
             contentContainerStyle={styles.tabsContent}
             renderItem={({ item: tab }) => {
               const active = activeTab === tab.key;
@@ -741,7 +766,6 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                   style={[
                     styles.tabChip,
                     active && styles.tabChipActive,
-                    locked && styles.tabChipLocked,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={tab.label}
@@ -753,10 +777,10 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                     size={rf(typography.fontSize.caption)}
                     color={
                       locked
-                        ? colors.text.tertiary
+                        ? colors.textTertiary
                         : active
-                          ? colors.text.primary
-                          : colors.text.secondary
+                          ? colors.primary
+                          : colors.textSecondary
                     }
                     style={styles.tabChipIcon}
                   />
@@ -773,7 +797,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                     <Ionicons
                       name="sparkles"
                       size={rf(9)}
-                      color={colors.primary.DEFAULT}
+                      color={colors.primary}
                       style={styles.tabLockIcon}
                     />
                   ) : null}
@@ -783,7 +807,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
           />
         </View>
 
-        {/* Collections sub-filter chips */}
+        {/* Collections sub-filter chips — same plain pill language */}
         {activeTab === "collections" ? (
           <View style={styles.collectionsRow}>
             <FlatList
@@ -791,6 +815,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               data={COLLECTION_CHIPS}
               keyExtractor={(c) => c.id}
               showsHorizontalScrollIndicator={false}
+              style={styles.tabsList}
               contentContainerStyle={styles.tabsContent}
               renderItem={({ item: chip }) => {
                 const active = activeCollection === chip.category;
@@ -821,7 +846,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
-        {/* Multi-select action bar */}
+        {/* Multi-select action bar — flat */}
         {multiSelect ? (
           <Animated.View entering={FadeIn.duration(200)} style={styles.multiBar}>
             <AnimatedPressable
@@ -830,7 +855,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Exit multi-select"
             >
-              <Ionicons name="close" size={rf(18)} color={colors.text.primary} />
+              <Ionicons name="close" size={rf(18)} color={colors.text} />
             </AnimatedPressable>
             <Text style={styles.multiBarText}>
               {selectedIds.size} selected
@@ -843,7 +868,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 accessibilityLabel="Share selected"
                 testID="bulk-share-button"
               >
-                <Ionicons name="share-outline" size={rf(18)} color={colors.text.primary} />
+                <Ionicons name="share-outline" size={rf(18)} color={colors.text} />
               </AnimatedPressable>
               <AnimatedPressable
                 onPress={handleBulkDelete}
@@ -852,7 +877,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 accessibilityLabel="Delete selected"
                 testID="bulk-delete-button"
               >
-                <Ionicons name="trash-outline" size={rf(18)} color={colors.error.DEFAULT} />
+                <Ionicons name="trash-outline" size={rf(18)} color={colors.error} />
               </AnimatedPressable>
             </View>
           </Animated.View>
@@ -872,7 +897,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 icon="lock-closed-outline"
                 title="Community is a Premium feature"
                 subtitle="Upgrade to browse, fork, and rate community workout templates."
-                iconColor={colors.primary.DEFAULT}
+                iconColor={colors.primary}
                 ctaText="Upgrade"
                 onCta={() => {
                   haptics.light();
@@ -888,7 +913,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               icon="sparkles-outline"
               title="AI plans live on the Workout tab"
               subtitle="Generate a personalized week from the Workout tab, then save it as a template to see it here."
-              iconColor={colors.primary.DEFAULT}
+              iconColor={colors.primary}
               ctaText="Go to Workout"
               onCta={() => {
                 haptics.light();
@@ -902,7 +927,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               icon="albums-outline"
               title="Pick a collection"
               subtitle="Choose a category above to browse templates in that collection."
-              iconColor={colors.secondary.DEFAULT}
+              iconColor={colors.secondary}
             />
           </View>
         ) : !hasContent ? (
@@ -911,7 +936,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               icon={emptyIconFor(activeTab)}
               title={emptyTitleFor(activeTab)}
               subtitle={emptySubtitleFor(activeTab)}
-              iconColor={colors.primary.DEFAULT}
+              iconColor={colors.primary}
               ctaText="Create Workout"
               onCta={() => navigation.navigate("CreateWorkout")}
             />
@@ -971,7 +996,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               viewMode === "grid"
                 ? {
                     gap: rp(spacing.sm),
-                    paddingHorizontal: rp(spacing.md),
+                    paddingHorizontal: rp(spacing.lg),
                   }
                 : undefined
             }
@@ -1067,7 +1092,52 @@ function emptySubtitleFor(tab: TabKey): string {
 }
 
 // ============================================================================
-// GRID CARD
+// FLAT START CTA — gradient button (radius 16, minHeight 52)
+// ============================================================================
+
+interface StartCtaProps {
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+  testID: string;
+  accessibilityLabel: string;
+  accessibilityHint?: string;
+}
+
+const StartCta: React.FC<StartCtaProps> = ({
+  label,
+  disabled,
+  onPress,
+  testID,
+  accessibilityLabel,
+  accessibilityHint,
+}) => (
+  <AnimatedPressable
+    onPress={onPress}
+    disabled={disabled}
+    testID={testID}
+    accessibilityRole="button"
+    accessibilityLabel={accessibilityLabel}
+    accessibilityHint={accessibilityHint}
+    style={[styles.startCta, disabled && styles.startCtaDisabled]}
+    scaleValue={0.97}
+    springConfig="snappy"
+    hapticType="light"
+  >
+    <LinearGradient
+      colors={[colors.primary, colors.primaryDark]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={StyleSheet.absoluteFill}
+    />
+    <Text style={styles.startCtaText} numberOfLines={1}>
+      {label}
+    </Text>
+  </AnimatedPressable>
+);
+
+// ============================================================================
+// GRID CARD (flat tile)
 // ============================================================================
 
 interface GridCardProps {
@@ -1098,7 +1168,6 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
   const duration = template.estimatedDurationMinutes ?? 0;
   const exerciseCount = template.exercises.length;
   const difficulty = template.difficulty;
-  const tint = difficulty ? DIFFICULTY_TINT[difficulty] : colors.primary.DEFAULT;
 
   const handleCardPress = useCallback(() => {
     if (multiSelect) {
@@ -1126,20 +1195,15 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
         accessibilityRole="button"
         accessibilityLabel={`${template.name}, ${exerciseCount} exercises`}
       >
-        <GlassCard
-          elevation={2}
-          padding="none"
-          borderRadius="xl"
-          contentStyle={styles.gridCardContent}
-        >
+        <View style={[styles.gridTile, selected && styles.gridTileSelected]}>
           {/* Gradient thumbnail */}
           <LinearGradient
-            colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
+            colors={[colors.primary, colors.secondary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gridThumb}
           >
-            <Ionicons name="barbell" size={rf(26)} color={colors.text.primary} />
+            <Ionicons name="barbell" size={rf(26)} color={colors.text} />
             {multiSelect ? (
               <View
                 style={[
@@ -1151,7 +1215,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                   <Ionicons
                     name="checkmark"
                     size={rf(14)}
-                    color={colors.text.primary}
+                    color={colors.text}
                   />
                 ) : null}
               </View>
@@ -1178,7 +1242,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
                 <Ionicons
                   name={bookmarked ? "bookmark" : "bookmark-outline"}
                   size={rf(18)}
-                  color={colors.text.primary}
+                  color={colors.text}
                 />
               </AnimatedPressable>
             ) : null}
@@ -1189,69 +1253,40 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
             <Text style={styles.gridName} numberOfLines={1}>
               {template.name}
             </Text>
-            <View style={styles.gridMetaRow}>
-              <Ionicons
-                name="barbell-outline"
-                size={rf(11)}
-                color={colors.text.secondary}
-              />
-              <Text style={styles.gridMetaText}>{exerciseCount}</Text>
-              {duration > 0 ? (
-                <>
-                  <Ionicons
-                    name="time-outline"
-                    size={rf(11)}
-                    color={colors.text.secondary}
-                    style={styles.gridMetaIcon}
-                  />
-                  <Text style={styles.gridMetaText}>{duration}m</Text>
-                </>
-              ) : null}
-            </View>
-            <View
-              style={[
-                styles.gridDifficulty,
-                { backgroundColor: hexToRgba(tint, 0.12) },
-              ]}
-            >
-              <Text style={[styles.gridDifficultyText, { color: tint }]}>
-                {difficulty ? DIFFICULTY_LABEL[difficulty] : "Any level"}
-              </Text>
-            </View>
+            <Text style={styles.gridMeta} numberOfLines={1}>
+              {exerciseCount} exercise{exerciseCount === 1 ? "" : "s"}
+              {duration > 0 ? ` • ${duration}m` : ""}
+            </Text>
+            <Text style={[styles.gridLevel, difficulty ? { color: DIFFICULTY_TINT[difficulty] } : { color: colors.textTertiary }]} numberOfLines={1}>
+              {difficulty ? DIFFICULTY_LABEL[difficulty] : "Any level"}
+            </Text>
           </View>
 
-          {/* Start button (non-multiselect only) */}
+          {/* Start CTA (non-multiselect only) */}
           {!multiSelect ? (
-            <AnimatedPressable
-              onPress={() => onStart(template)}
-              disabled={template.exercises.length === 0}
-              testID={`start-button-${template.id}`}
-              style={[
-                styles.gridStartBtn,
-                template.exercises.length === 0 && styles.gridStartBtnDisabled,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Start ${template.name}`}
-              accessibilityHint={
-                template.exercises.length === 0
-                  ? "Template has no exercises yet"
-                  : "Begin a workout session from this template"
-              }
-              scaleValue={0.95}
-              springConfig="snappy"
-              hapticType="light"
-            >
-              <Text style={styles.gridStartBtnText}>Start</Text>
-            </AnimatedPressable>
+            <View style={styles.gridCtaWrap}>
+              <StartCta
+                label="Start"
+                disabled={template.exercises.length === 0}
+                onPress={() => onStart(template)}
+                testID={`start-button-${template.id}`}
+                accessibilityLabel={`Start ${template.name}`}
+                accessibilityHint={
+                  template.exercises.length === 0
+                    ? "Template has no exercises yet"
+                    : "Begin a workout session from this template"
+                }
+              />
+            </View>
           ) : null}
-        </GlassCard>
+        </View>
       </AnimatedPressable>
     </Animated.View>
   );
 };
 
 // ============================================================================
-// LIST ROW
+// LIST ROW (flat)
 // ============================================================================
 
 interface ListRowProps {
@@ -1294,7 +1329,8 @@ const TemplateListRow: React.FC<ListRowProps> = ({
   const duration = template.estimatedDurationMinutes ?? 0;
   const exerciseCount = template.exercises.length;
   const difficulty = template.difficulty;
-  const tint = difficulty ? DIFFICULTY_TINT[difficulty] : colors.primary.DEFAULT;
+  const levelLabel = difficulty ? DIFFICULTY_LABEL[difficulty] : "Any level";
+  const levelColor = difficulty ? DIFFICULTY_TINT[difficulty] : colors.textTertiary;
 
   const handleRowPress = useCallback(() => {
     if (multiSelect) {
@@ -1303,6 +1339,12 @@ const TemplateListRow: React.FC<ListRowProps> = ({
       onPress(template);
     }
   }, [multiSelect, onToggleSelect, onPress, template]);
+
+  const metaParts = [
+    `${exerciseCount} exercise${exerciseCount === 1 ? "" : "s"}`,
+    duration > 0 ? `${duration}m` : null,
+    levelLabel,
+  ].filter(Boolean) as string[];
 
   return (
     <Animated.View
@@ -1320,144 +1362,114 @@ const TemplateListRow: React.FC<ListRowProps> = ({
         testID={`template-card-${template.id}`}
         accessibilityRole="button"
         accessibilityLabel={`${template.name}, ${exerciseCount} exercises`}
+        style={selected ? styles.listRowSelected : undefined}
       >
-        <GlassCard
-          elevation={3}
-          padding="md"
-          borderRadius="lg"
-          contentStyle={
-            selected
-              ? styles.listCardContentSelected
-              : styles.listCardContent
-          }
-        >
-          <View style={styles.listRow}>
-            {/* Thumbnail */}
-            <LinearGradient
-              colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.listThumb}
-            >
-              <Ionicons name="barbell" size={rf(20)} color={colors.text.primary} />
-            </LinearGradient>
+        <View style={styles.listRow}>
+          {/* Icon square — gradient tinted */}
+          <LinearGradient
+            colors={[colors.primary, colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.listIconSquare}
+          >
+            <Ionicons name="barbell" size={rf(18)} color={colors.text} />
+          </LinearGradient>
 
-            {/* Body */}
-            <View style={styles.listBody}>
-              <View style={styles.listHeaderRow}>
-                <Text style={styles.listName} numberOfLines={1}>
-                  {template.name}
-                </Text>
-                {!multiSelect ? (
-                  <AnimatedPressable
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      onToggleBookmark(template.id);
-                    }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={styles.listBookmarkBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      bookmarked ? "Remove bookmark" : "Bookmark template"
-                    }
-                    testID={`bookmark-${template.id}`}
-                    scaleValue={0.9}
-                    springConfig="snappy"
-                    hapticType="light"
-                  >
-                    <Ionicons
-                      name={bookmarked ? "bookmark" : "bookmark-outline"}
-                      size={rf(18)}
-                      color={
-                        bookmarked ? colors.primary.DEFAULT : colors.text.secondary
-                      }
-                    />
-                  </AnimatedPressable>
-                ) : null}
-                {multiSelect ? (
-                  <View
-                    style={[
-                      styles.listCheckbox,
-                      selected && styles.listCheckboxSelected,
-                    ]}
-                  >
-                    {selected ? (
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(12)}
-                        color={colors.text.primary}
-                      />
-                    ) : null}
-                  </View>
-                ) : (
-                  <AnimatedPressable
-                    onPress={() => onToggleMenu(template.id)}
-                    testID={`menu-button-${template.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open template menu"
-                    style={styles.menuBtn}
-                  >
-                    <Ionicons
-                      name="ellipsis-horizontal"
-                      size={rf(20)}
-                      color={colors.text.secondary}
-                    />
-                  </AnimatedPressable>
-                )}
-              </View>
-
-              {/* Muscle badges */}
-              <View style={styles.badgeRow}>
-                {template.targetMuscleGroups.slice(0, 4).map((mg) => (
-                  <View key={mg} style={styles.badge}>
-                    <Text style={styles.badgeText}>{mg}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Meta row: exercise count + duration + difficulty */}
-              <View style={styles.listMetaRow}>
-                <View style={styles.listMetaItem}>
+          {/* Body */}
+          <View style={styles.listBody}>
+            <View style={styles.listHeaderRow}>
+              <Text style={styles.listName} numberOfLines={1}>
+                {template.name}
+              </Text>
+              {!multiSelect ? (
+                <AnimatedPressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onToggleBookmark(template.id);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={styles.listBookmarkBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    bookmarked ? "Remove bookmark" : "Bookmark template"
+                  }
+                  testID={`bookmark-${template.id}`}
+                  scaleValue={0.9}
+                  springConfig="snappy"
+                  hapticType="light"
+                >
                   <Ionicons
-                    name="barbell-outline"
-                    size={rf(12)}
-                    color={colors.primary.DEFAULT}
+                    name={bookmarked ? "bookmark" : "bookmark-outline"}
+                    size={rf(18)}
+                    color={
+                      bookmarked ? colors.primary : colors.textSecondary
+                    }
                   />
-                  <Text style={styles.listMetaText}>{exerciseCount} ex</Text>
-                </View>
-                {duration > 0 ? (
-                  <View style={styles.listMetaItem}>
-                    <Ionicons
-                      name="time-outline"
-                      size={rf(12)}
-                      color={colors.primary.DEFAULT}
-                    />
-                    <Text style={styles.listMetaText}>{duration}m</Text>
-                  </View>
-                ) : null}
+                </AnimatedPressable>
+              ) : null}
+              {multiSelect ? (
                 <View
                   style={[
-                    styles.listDifficulty,
-                    { backgroundColor: hexToRgba(tint, 0.12) },
+                    styles.listCheckbox,
+                    selected && styles.listCheckboxSelected,
                   ]}
                 >
-                  <Text style={[styles.listDifficultyText, { color: tint }]}>
-                    {difficulty ? DIFFICULTY_LABEL[difficulty] : "Any level"}
-                  </Text>
+                  {selected ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={rf(12)}
+                      color={colors.text}
+                    />
+                  ) : null}
                 </View>
-              </View>
+              ) : (
+                <AnimatedPressable
+                  onPress={() => onToggleMenu(template.id)}
+                  testID={`menu-button-${template.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open template menu"
+                  style={styles.menuBtn}
+                >
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={rf(20)}
+                    color={colors.textSecondary}
+                  />
+                </AnimatedPressable>
+              )}
+            </View>
 
-              {/* Exercise quick list (preserves GAP-14 history tap) */}
-              <View style={styles.exerciseListContainer}>
-                {template.exercises.slice(0, 3).map((ex, idx) => (
+            {/* Meta line: exercises • duration • level (muted, level tinted) */}
+            <Text style={styles.listMeta} numberOfLines={1}>
+              {metaParts.map((part, i) => (
+                <Text
+                  key={i}
+                  style={part === levelLabel ? { color: levelColor, fontWeight: "600" } : undefined}
+                >
+                  {i > 0 ? "  •  " : ""}
+                  {part}
+                </Text>
+              ))}
+            </Text>
+
+            {/* Muscle groups — muted text, not boxed badges */}
+            {template.targetMuscleGroups.length > 0 ? (
+              <Text style={styles.listMuscles} numberOfLines={1}>
+                {template.targetMuscleGroups.join("  ·  ")}
+              </Text>
+            ) : null}
+
+            {/* Exercise quick list (preserves GAP-14 history tap) — flat rows with hairlines */}
+            <View style={styles.exerciseListContainer}>
+              {template.exercises.slice(0, 3).map((ex, idx) => (
+                <View key={`${ex.exerciseId}-${idx}`} style={styles.exerciseRowWrap}>
                   <AnimatedPressable
-                    key={`${ex.exerciseId}-${idx}`}
                     style={styles.exerciseRow}
                     onPress={() => onExerciseHistory(ex.exerciseId, ex.name)}
                     testID={`exercise-history-${template.id}-${idx}`}
                     accessibilityRole="button"
                     accessibilityLabel={`View ${ex.name} history`}
-                    scaleValue={0.95}
+                    scaleValue={0.97}
                     springConfig="snappy"
                     hapticType="light"
                   >
@@ -1471,76 +1483,78 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                         : `${ex.repRange[0]}-${ex.repRange[1]}`}
                     </Text>
                   </AnimatedPressable>
-                ))}
-                {template.exercises.length > 3 ? (
-                  <Text style={styles.moreExercises}>
-                    +{template.exercises.length - 3} more
-                  </Text>
-                ) : null}
-              </View>
-
-              {/* Inline menu (preserved from original) */}
-              {menuOpen ? (
-                <Animated.View entering={FadeIn.duration(150)} style={styles.menu} testID={`menu-${template.id}`}>
-                  <AnimatedPressable
-                    style={styles.menuItem}
-                    onPress={() => onEdit(template)}
-                    testID={`edit-button-${template.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel="Edit template"
-                  >
-                    <Ionicons name="create-outline" size={rf(16)} color={colors.text.primary} />
-                    <Text style={styles.menuItemText}>Edit</Text>
-                  </AnimatedPressable>
-                  <AnimatedPressable
-                    style={styles.menuItem}
-                    onPress={() => onDuplicate(template)}
-                    testID={`duplicate-button-${template.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel="Duplicate template"
-                  >
-                    <Ionicons name="copy-outline" size={rf(16)} color={colors.text.primary} />
-                    <Text style={styles.menuItemText}>Duplicate</Text>
-                  </AnimatedPressable>
-                  <AnimatedPressable
-                    style={styles.menuItem}
-                    onPress={() => onDelete(template)}
-                    testID={`delete-button-${template.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel="Delete template"
-                  >
-                    <Ionicons name="trash-outline" size={rf(16)} color={colors.error.DEFAULT} />
-                    <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
-                  </AnimatedPressable>
-                </Animated.View>
+                  {idx < Math.min(template.exercises.length, 3) - 1 ? (
+                    <View style={styles.exerciseSeparator} />
+                  ) : null}
+                </View>
+              ))}
+              {template.exercises.length > 3 ? (
+                <Text style={styles.moreExercises}>
+                  +{template.exercises.length - 3} more
+                </Text>
               ) : null}
+            </View>
 
-              {/* Start button */}
-              {!multiSelect ? (
+            {/* Inline menu (preserved from original) — flat */}
+            {menuOpen ? (
+              <Animated.View entering={FadeIn.duration(150)} style={styles.menu} testID={`menu-${template.id}`}>
                 <AnimatedPressable
-                  style={[
-                    styles.startButton,
-                    template.exercises.length === 0 && styles.startButtonDisabled,
-                  ]}
-                  onPress={() => onStart(template)}
-                  disabled={template.exercises.length === 0}
-                  testID={`start-button-${template.id}`}
+                  style={styles.menuItem}
+                  onPress={() => onEdit(template)}
+                  testID={`edit-button-${template.id}`}
                   accessibilityRole="button"
+                  accessibilityLabel="Edit template"
+                >
+                  <Ionicons name="create-outline" size={rf(16)} color={colors.text} />
+                  <Text style={styles.menuItemText}>Edit</Text>
+                </AnimatedPressable>
+                <View style={styles.menuSeparator} />
+                <AnimatedPressable
+                  style={styles.menuItem}
+                  onPress={() => onDuplicate(template)}
+                  testID={`duplicate-button-${template.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Duplicate template"
+                >
+                  <Ionicons name="copy-outline" size={rf(16)} color={colors.text} />
+                  <Text style={styles.menuItemText}>Duplicate</Text>
+                </AnimatedPressable>
+                <View style={styles.menuSeparator} />
+                <AnimatedPressable
+                  style={styles.menuItem}
+                  onPress={() => onDelete(template)}
+                  testID={`delete-button-${template.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel="Delete template"
+                >
+                  <Ionicons name="trash-outline" size={rf(16)} color={colors.error} />
+                  <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
+                </AnimatedPressable>
+              </Animated.View>
+            ) : null}
+
+            {/* Start CTA */}
+            {!multiSelect ? (
+              <View style={styles.listCtaWrap}>
+                <StartCta
+                  label="Start"
+                  disabled={template.exercises.length === 0}
+                  onPress={() => onStart(template)}
+                  testID={`start-button-${template.id}`}
                   accessibilityLabel={`Start ${template.name}`}
                   accessibilityHint={
                     template.exercises.length === 0
                       ? "Template has no exercises yet"
                       : "Begin a workout session from this template"
                   }
-                  hapticType="medium"
-                >
-                  <Text style={styles.startButtonText}>Start</Text>
-                </AnimatedPressable>
-              ) : null}
-            </View>
+                />
+              </View>
+            ) : null}
           </View>
-        </GlassCard>
+        </View>
       </AnimatedPressable>
+      {/* Hairline separator between rows */}
+      <View style={styles.listSeparator} />
     </Animated.View>
   );
 };
@@ -1560,82 +1574,116 @@ const styles = StyleSheet.create({
     zIndex: 1300,
     elevation: 1300,
   },
-  // Header
+  // ── Flat header ─────────────────────────────────────────────────────────────
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.xs),
+  },
+  backButton: {
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
+    borderRadius: rbr(22),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerText: {
+    flex: 1,
+    alignItems: "center",
+  },
+  eyebrow: {
+    fontSize: rf(11),
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
+  title: {
+    fontSize: rf(22),
+    fontWeight: "700",
+    color: colors.text,
+    marginTop: rp(2),
+  },
+  headerSide: {
+    minWidth: Math.max(rw(40), 44),
+    alignItems: "center",
+    justifyContent: "center",
+  },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xs),
   },
   scheduleBtn: {
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
+    backgroundColor: hexToRgba(colors.primary, 0.12),
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
     minHeight: Math.max(rw(36), 44),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: borderRadius.md,
+    borderRadius: rbr(12),
   },
   scheduleBtnText: {
     fontSize: rf(typography.fontSize.caption),
-    color: colors.primary.DEFAULT,
+    color: colors.primary,
     fontWeight: fw(typography.fontWeight.semibold),
   },
   addButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: 999,
-    backgroundColor: colors.glass.background,
+    backgroundColor: hexToRgba(colors.primary, 0.12),
     alignItems: "center",
     justifyContent: "center",
   },
-  // Search
+  // ── Search ───────────────────────────────────────────────────────────────────
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.sm),
-    paddingHorizontal: rp(spacing.md),
+    paddingHorizontal: rp(spacing.lg),
     paddingBottom: rp(spacing.sm),
   },
   searchWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-    borderRadius: borderRadius.xl,
+    backgroundColor: hexToRgba(colors.text, 0.06),
+    borderRadius: rbr(12),
     paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
     gap: rp(spacing.xs),
+    minHeight: 44,
   },
   searchIcon: {},
   searchInput: {
     flex: 1,
-    color: colors.text.primary,
+    color: colors.text,
     fontSize: rf(typography.fontSize.body),
     padding: 0,
-    minHeight: rf(22),
   },
   viewToggle: {
     width: Math.max(rw(44), 44),
     height: Math.max(rw(44), 44),
-    borderRadius: 999,
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderRadius: rbr(12),
+    backgroundColor: hexToRgba(colors.text, 0.06),
     alignItems: "center",
     justifyContent: "center",
   },
-  // Tabs
+  // ── Tabs (plain pill text toggles) ───────────────────────────────────────────
   tabsRow: {
+    width: '100%',
     paddingBottom: rp(spacing.xs),
   },
+  tabsList: {
+    width: '100%',
+  },
   tabsContent: {
-    paddingHorizontal: rp(spacing.md),
-    paddingRight: rp(spacing.md),
-    gap: rp(spacing.xs),
+    paddingHorizontal: rp(spacing.lg),
+    paddingRight: rp(spacing.lg),
+    gap: rp(spacing.sm),
   },
   tabChip: {
     flexDirection: "row",
@@ -1643,37 +1691,31 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xxs),
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.glass.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderRadius: 999,
     minHeight: Math.max(rp(spacing.xl), 44),
   },
   tabChipActive: {
-    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.15),
-    borderColor: colors.primary.DEFAULT,
-  },
-  tabChipLocked: {
-    opacity: 0.7,
+    backgroundColor: hexToRgba(colors.primary, 0.12),
   },
   tabChipIcon: {},
   tabChipText: {
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.medium),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
   },
   tabChipTextActive: {
-    color: colors.text.primary,
+    color: colors.primary,
     fontWeight: fw(typography.fontWeight.semibold),
   },
   tabChipTextLocked: {
-    color: colors.text.secondary,
+    color: colors.textSecondary,
   },
   tabLockIcon: {
     marginLeft: rp(spacing.xxs),
   },
-  // Collections sub-filter
+  // ── Collections sub-filter (same plain pill language) ───────────────────────
   collectionsRow: {
+    width: '100%',
     paddingBottom: rp(spacing.sm),
   },
   collectionChip: {
@@ -1682,43 +1724,37 @@ const styles = StyleSheet.create({
     minHeight: Math.max(rp(spacing.xl), 44),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.glass.backgroundDark,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderRadius: 999,
   },
   collectionChipActive: {
-    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.15),
-    borderColor: colors.secondary.DEFAULT,
+    backgroundColor: hexToRgba(colors.secondary, 0.12),
   },
   collectionChipText: {
     fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
     fontWeight: fw(typography.fontWeight.medium),
   },
   collectionChipTextActive: {
-    color: colors.text.primary,
+    color: colors.text,
     fontWeight: fw(typography.fontWeight.semibold),
   },
-  // Multi-select bar
+  // ── Multi-select bar (flat) ──────────────────────────────────────────────────
   multiBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginHorizontal: rp(spacing.md),
+    marginHorizontal: rp(spacing.lg),
     marginBottom: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
-    borderRadius: borderRadius.lg,
+    backgroundColor: hexToRgba(colors.primary, 0.1),
+    borderRadius: rbr(16),
     zIndex: 50,
     elevation: 50,
   },
   multiBarText: {
     flex: 1,
-    color: colors.text.primary,
+    color: colors.text,
     fontSize: rf(typography.fontSize.body),
     fontWeight: fw(typography.fontWeight.semibold),
     marginLeft: rp(spacing.sm),
@@ -1733,17 +1769,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: hexToRgba(colors.text, 0.06),
   },
-  // Body
+  // ── Body ─────────────────────────────────────────────────────────────────────
   tabBody: {
     flex: 1,
   },
   emptyWrap: { flex: 1, justifyContent: "center" },
   list: {
-    padding: rp(spacing.md),
+    padding: rp(spacing.lg),
   },
-  // Grid card
+  // ── Grid card (flat tile) ─────────────────────────────────────────────────────
   gridItem: {
     flexBasis: "48%",
     margin: 0,
@@ -1752,8 +1788,15 @@ const styles = StyleSheet.create({
   gridCardWrap: {
     flex: 1,
   },
-  gridCardContent: {
+  gridTile: {
     flex: 1,
+    backgroundColor: hexToRgba(colors.text, 0.04),
+    borderRadius: rbr(16),
+    overflow: "hidden",
+  },
+  gridTileSelected: {
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   gridThumb: {
     height: rw(90),
@@ -1769,16 +1812,15 @@ const styles = StyleSheet.create({
     height: rw(22),
     borderRadius: 999,
     borderWidth: 2,
-    borderColor: colors.text.primary,
+    borderColor: colors.text,
     backgroundColor: "rgba(0,0,0,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },
   gridCheckboxSelected: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.DEFAULT,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  // Bookmark icon on grid card (Phase 10) — top-right of the thumbnail.
   gridBookmarkBtn: {
     position: "absolute",
     top: rp(spacing.xs),
@@ -1790,87 +1832,63 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // Bookmark icon on list row (Phase 10) — inline in the header row.
-  listBookmarkBtn: {
-    paddingLeft: rp(spacing.sm),
-    minWidth: Math.max(rw(36), 44),
-    minHeight: Math.max(rw(36), 44),
-    alignItems: "center",
-    justifyContent: "center",
-  },
   gridBody: {
     padding: rp(spacing.sm),
-    paddingBottom: rp(spacing.md),
-    gap: rp(spacing.sm),
+    gap: rp(spacing.xs),
   },
   gridName: {
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.semibold),
-    color: colors.text.primary,
+    color: colors.text,
   },
-  gridMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.xxs),
-  },
-  gridMetaIcon: {
-    marginLeft: rp(spacing.xs),
-  },
-  gridMetaText: {
+  gridMeta: {
     fontSize: rf(typography.fontSize.micro),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
   },
-  gridDifficulty: {
-    alignSelf: "flex-start",
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
-    borderRadius: borderRadius.full,
-  },
-  gridDifficultyText: {
+  gridLevel: {
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.semibold),
   },
-  gridStartBtn: {
-    marginHorizontal: rp(spacing.sm),
-    marginBottom: rp(spacing.sm),
-    paddingVertical: rp(spacing.sm),
-    minHeight: Math.max(rp(spacing.xl), 44),
+  gridCtaWrap: {
+    paddingHorizontal: rp(spacing.sm),
+    paddingBottom: rp(spacing.sm),
+  },
+  // ── Start CTA (gradient) ──────────────────────────────────────────────────────
+  startCta: {
+    minHeight: Math.max(rh(52), 52),
     justifyContent: "center",
-    backgroundColor: colors.primary.DEFAULT,
-    borderRadius: borderRadius.md,
     alignItems: "center",
+    borderRadius: rbr(16),
+    overflow: "hidden",
+    paddingHorizontal: rp(spacing.md),
+  } as ViewStyle,
+  startCtaDisabled: {
+    opacity: 0.4,
   },
-  gridStartBtnPressed: {
-    opacity: 0.85,
-  },
-  gridStartBtnDisabled: {
-    opacity: 0.5,
-  },
-  gridStartBtnText: {
-    color: colors.text.primary,
+  startCtaText: {
+    color: colors.text,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: fw(typography.fontWeight.bold),
   },
-  // List row
+  // ── List row (flat) ───────────────────────────────────────────────────────────
   listItem: {
-    marginBottom: rp(spacing.md),
+    marginBottom: 0,
   },
-  listCardContent: {
-    borderWidth: 0,
-  } as ViewStyle,
-  listCardContentSelected: {
-    borderWidth: 2,
-    borderColor: colors.primary.DEFAULT,
-  } as ViewStyle,
+  listRowSelected: {
+    backgroundColor: hexToRgba(colors.primary, 0.08),
+    borderRadius: rbr(16),
+  },
   listRow: {
     flexDirection: "row",
     gap: rp(spacing.sm),
     alignItems: "flex-start",
+    paddingVertical: rp(spacing.md),
+    paddingHorizontal: rp(spacing.xs),
   },
-  listThumb: {
-    width: rw(48),
-    height: rw(48),
-    borderRadius: borderRadius.lg,
+  listIconSquare: {
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rbr(12),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1884,8 +1902,8 @@ const styles = StyleSheet.create({
   },
   listName: {
     fontSize: rf(typography.fontSize.body),
-    fontWeight: fw(typography.fontWeight.bold),
-    color: colors.text.primary,
+    fontWeight: fw(typography.fontWeight.semibold),
+    color: colors.text,
     flex: 1,
   },
   listCheckbox: {
@@ -1893,37 +1911,31 @@ const styles = StyleSheet.create({
     height: rw(22),
     borderRadius: 999,
     borderWidth: 2,
-    borderColor: colors.text.secondary,
+    borderColor: colors.textSecondary,
     alignItems: "center",
     justifyContent: "center",
   },
   listCheckboxSelected: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.DEFAULT,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  listMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.sm),
+  listMeta: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.textSecondary,
     marginTop: rp(spacing.xs),
   },
-  listMetaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.xxs),
-  },
-  listMetaText: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-  },
-  listDifficulty: {
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
-    borderRadius: borderRadius.full,
-  },
-  listDifficultyText: {
+  listMuscles: {
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: fw(typography.fontWeight.semibold),
+    color: colors.textTertiary,
+    marginTop: rp(spacing.xxs),
+    textTransform: "capitalize",
+  },
+  listBookmarkBtn: {
+    paddingLeft: rp(spacing.sm),
+    minWidth: Math.max(rw(36), 44),
+    minHeight: Math.max(rw(36), 44),
+    alignItems: "center",
+    justifyContent: "center",
   },
   menuBtn: {
     paddingLeft: rp(spacing.sm),
@@ -1933,55 +1945,46 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: rp(spacing.xs),
+  // ── Exercise quick list (flat rows + hairlines) ───────────────────────────────
+  exerciseListContainer: {
     marginTop: rp(spacing.sm),
   },
-  badge: {
-    backgroundColor: colors.background.DEFAULT,
-    borderRadius: borderRadius.xl,
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
+  exerciseRowWrap: {
+    // Wrapper for row + hairline.
   },
-  badgeText: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.primary.DEFAULT,
-  },
-  // Exercise list (GAP-14)
-  exerciseListContainer: { marginTop: rp(spacing.sm) },
   exerciseRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: rp(spacing.sm),
     minHeight: Math.max(rp(spacing.xl), 44),
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.backgroundDark,
   },
   exerciseRowName: {
     fontSize: rf(typography.fontSize.caption),
-    color: colors.text.primary,
+    color: colors.text,
     flex: 1,
   },
   exerciseRowMeta: {
     fontSize: rf(typography.fontSize.micro),
-    color: colors.primary.DEFAULT,
+    color: colors.primary,
     marginLeft: rp(spacing.xs),
+  },
+  exerciseSeparator: {
+    height: 1,
+    backgroundColor: hexToRgba(colors.text, 0.06),
   },
   moreExercises: {
     fontSize: rf(typography.fontSize.micro),
-    color: colors.text.secondary,
+    color: colors.textSecondary,
     marginTop: rp(spacing.xxs),
     paddingLeft: rp(spacing.xs),
     textAlign: "right",
   },
-  // Menu
+  // ── Menu (flat) ───────────────────────────────────────────────────────────────
   menu: {
     marginTop: rp(spacing.sm),
-    backgroundColor: colors.background.DEFAULT,
-    borderRadius: borderRadius.md,
+    backgroundColor: hexToRgba(colors.text, 0.06),
+    borderRadius: rbr(12),
     overflow: "hidden",
     zIndex: 50,
     elevation: 50,
@@ -1994,29 +1997,25 @@ const styles = StyleSheet.create({
     minHeight: Math.max(rp(spacing.xl), 44),
     paddingHorizontal: rp(spacing.md),
   },
+  menuSeparator: {
+    height: 1,
+    backgroundColor: hexToRgba(colors.text, 0.06),
+  },
   menuItemText: {
     fontSize: rf(typography.fontSize.body),
-    color: colors.text.primary,
+    color: colors.text,
   },
-  deleteText: { color: colors.error.DEFAULT },
-  // Start button
-  startButton: {
+  deleteText: { color: colors.error },
+  // ── List CTA wrapper ──────────────────────────────────────────────────────────
+  listCtaWrap: {
     marginTop: rp(spacing.md),
-    backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: rp(spacing.md),
-    minHeight: Math.max(rp(spacing.xl), 44),
-    justifyContent: "center",
     maxWidth: rw(320),
     alignSelf: "stretch",
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
   },
-  startButtonDisabled: {
-    opacity: 0.5,
-  },
-  startButtonText: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: fw(typography.fontWeight.bold),
-    color: colors.text.primary,
+  // ── Row separator ─────────────────────────────────────────────────────────────
+  listSeparator: {
+    height: 1,
+    backgroundColor: hexToRgba(colors.text, 0.06),
+    marginHorizontal: rp(spacing.xs),
   },
 });

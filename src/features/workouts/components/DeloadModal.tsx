@@ -47,6 +47,8 @@ export function DeloadModal({
               testID="deload-dismiss-btn"
               style={styles.dismissBtn}
               onPress={onDismiss}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss deload suggestion"
             >
               <Text style={styles.dismissText}>Dismiss</Text>
             </TouchableOpacity>
@@ -54,6 +56,8 @@ export function DeloadModal({
               testID="deload-accept-btn"
               style={styles.acceptBtn}
               onPress={onAccept}
+              accessibilityRole="button"
+              accessibilityLabel="Accept deload suggestion"
             >
               <Text style={styles.acceptText}>Accept</Text>
             </TouchableOpacity>

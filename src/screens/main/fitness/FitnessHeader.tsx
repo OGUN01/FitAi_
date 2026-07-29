@@ -1,79 +1,57 @@
 /**
  * FitnessHeader Component
- * Personalized greeting with week indicator and calendar quick access
+ * Editorial header: oversized extrabold greeting + muted date subline.
+ * Right side: circular calendar quick access (subtle tinted bg, no border box).
+ *
+ * Greeting logic (morning/afternoon/evening by hour) is unchanged from the
+ * previous compact header — only the typography is now editorial.
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rw, rp, rbr } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { FONT_FAMILY } from '../../../theme/fonts';
+import { rf, rw, rp, rbr } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 
 interface FitnessHeaderProps {
   userName: string;
-  weekNumber: number;
-  totalWorkouts: number;
-  completedWorkouts: number;
   onCalendarPress?: () => void;
 }
 
-export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
-  userName,
-  weekNumber,
-  totalWorkouts,
-  completedWorkouts,
-  onCalendarPress,
-}) => {
+export const FitnessHeader: React.FC<FitnessHeaderProps> = ({ userName, onCalendarPress }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   };
 
-  const progressPercent =
-    totalWorkouts > 0
-      ? Math.round((completedWorkouts / totalWorkouts) * 100)
-      : 0;
+  // Single editorial line: "Good morning, Alex" (no trailing comma when the
+  // name is unavailable — e.g. profile still loading).
+  const greeting = userName ? `${getGreeting()}, ${userName}` : getGreeting();
+  const dateLine = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  });
 
   return (
-    <Animated.View
-      entering={FadeInDown.delay(100).duration(400)}
-      style={styles.container}
-    >
-      {/* Left: Greeting */}
+    <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.container}>
+      {/* Left: editorial greeting + muted date subline */}
       <View style={styles.textContainer}>
-        <Text
-          style={styles.greeting}
-          numberOfLines={1}
-          adjustsFontSizeToFit={true}
-          minimumFontScale={0.7}
-          ellipsizeMode="tail"
-        >
-          {getGreeting()}, {userName}
+        <Text style={styles.greeting} numberOfLines={2} ellipsizeMode="tail">
+          {greeting}
         </Text>
-        <View style={styles.subtitleRow}>
-          <View style={styles.weekBadge}>
-            <Ionicons
-              name="calendar-outline"
-              size={rf(12)}
-              color={colors.primary}
-            />
-            <Text style={styles.weekText} numberOfLines={1}>Week {weekNumber}</Text>
-          </View>
-          {totalWorkouts > 0 && (
-            <Text style={styles.progressText} numberOfLines={1}>
-              {completedWorkouts}/{totalWorkouts} workouts
-            </Text>
-          )}
-        </View>
+        <Text style={styles.dateLine} numberOfLines={1}>
+          {dateLine}
+        </Text>
       </View>
 
-      {/* Right: Calendar quick access. Icon, label, and handler all unified
-          on calendar semantics. */}
+      {/* Right: circular calendar quick access */}
       <AnimatedPressable
         onPress={onCalendarPress}
         scaleValue={0.92}
@@ -84,31 +62,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         accessibilityLabel="Calendar"
       >
         <View style={styles.calendarIconContainer}>
-          <Ionicons
-            name="calendar-outline"
-            size={rf(20)}
-            color={colors.text}
-          />
-          {progressPercent > 0 && (
-            <View
-              style={[
-                styles.progressIndicator,
-                progressPercent === 100 && styles.progressIndicatorDone,
-              ]}
-            >
-              {progressPercent === 100 ? (
-                <Ionicons
-                  name="checkmark"
-                  size={rf(10)}
-                  color={colors.white}
-                />
-              ) : (
-                <Text style={styles.progressIndicatorText} numberOfLines={1}>
-                  {progressPercent}%
-                </Text>
-              )}
-            </View>
-          )}
+          <Ionicons name="calendar-outline" size={rf(20)} color={colors.text} />
         </View>
       </AnimatedPressable>
     </Animated.View>
@@ -117,47 +71,31 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.md),
+    paddingBottom: rp(spacing.lg),
   },
   textContainer: {
     flex: 1,
     minWidth: 0,
   },
   greeting: {
-    fontSize: rf(22),
-    fontWeight: "700",
+    fontSize: rf(32),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.5,
-    flexShrink: 1,
+    letterSpacing: -0.3,
+    lineHeight: rf(38),
   },
-  subtitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  weekBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(4),
-    backgroundColor: hexToRgba(colors.primary, 0.08),
-    paddingHorizontal: spacing.sm,
-    paddingVertical: rp(4),
-    borderRadius: borderRadius.full,
-  },
-  weekText: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  progressText: {
-    fontSize: rf(12),
+  dateLine: {
+    fontSize: rf(13),
+    fontWeight: '500',
     color: colors.textSecondary,
+    letterSpacing: 0.1,
+    marginTop: rp(spacing.xs),
   },
   calendarButton: {
     marginLeft: spacing.md,
@@ -166,39 +104,9 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rbr(22),
-    backgroundColor: colors.primaryTint,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: hexToRgba(colors.primary, 0.38),
-    // Allow the progress badge (bottom:-4/right:-4) to render outside the
-    // container bounds without being clipped.
-    overflow: "visible",
-  },
-  progressIndicator: {
-    position: "absolute",
-    bottom: -4,
-    right: -4,
-    backgroundColor: colors.primary,
-    paddingHorizontal: rp(5),
-    paddingVertical: rp(2),
-    borderRadius: rbr(8),
-    minWidth: rw(28),
-    minHeight: rw(18),
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.background,
-  },
-  progressIndicatorDone: {
-    backgroundColor: colors.successAlt,
-    minWidth: rw(18),
-    paddingHorizontal: rp(4),
-  },
-  progressIndicatorText: {
-    fontSize: rf(11),
-    fontWeight: "700",
-    color: colors.white,
+    backgroundColor: hexToRgba(colors.text, 0.08),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

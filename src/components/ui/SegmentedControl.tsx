@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,11 @@ import {
   StyleSheet,
   LayoutChangeEvent,
   ViewStyle,
-} from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import { rp } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+} from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { rp, rf } from '../../utils/responsive';
+import { flatColors as colors, spacing, flatShadows as shadows } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
 
 export interface SegmentOption {
   id: string;
@@ -26,6 +22,8 @@ interface SegmentedControlProps {
   options: SegmentOption[];
   selectedId: string;
   onSelect: (id: string) => void;
+  /** Kept for backward compatibility — no longer used. The indicator is now a
+   *  white surface with a subtle shadow (spec §6.5). */
   gradient?: string[];
   style?: ViewStyle;
 }
@@ -34,11 +32,11 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   options,
   selectedId,
   onSelect,
-  gradient = [colors.success, colors.success],
+  gradient: _gradient,
   style,
 }) => {
   const [segmentWidths, setSegmentWidths] = useState<number[]>([]);
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [, setContainerWidth] = useState(0);
   const translateX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
 
@@ -47,9 +45,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   useEffect(() => {
     if (segmentWidths.length === options.length && selectedIndex >= 0) {
       // Calculate position for the sliding indicator
-      const position = segmentWidths
-        .slice(0, selectedIndex)
-        .reduce((sum, width) => sum + width, 0);
+      const position = segmentWidths.slice(0, selectedIndex).reduce((sum, width) => sum + width, 0);
       const width = segmentWidths[selectedIndex] || 0;
 
       translateX.value = withSpring(position, {
@@ -84,15 +80,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
 
   return (
     <View style={[styles.container, style]} onLayout={handleContainerLayout}>
-      {/* Sliding Indicator */}
-      <Animated.View style={[styles.indicator, animatedIndicatorStyle]}>
-        <LinearGradient
-          colors={gradient as unknown as readonly [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.indicatorGradient}
-        />
-      </Animated.View>
+      {/* Sliding Indicator — white surface + subtle shadow (spec §6.5) */}
+      <Animated.View style={[styles.indicator, animatedIndicatorStyle]} />
 
       {/* Segments */}
       <View style={styles.segmentsContainer}>
@@ -108,10 +97,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
             accessibilityState={{ selected: selectedId === option.id }}
           >
             <Text
-              style={[
-                styles.segmentText,
-                selectedId === option.id && styles.segmentTextSelected,
-              ]}
+              style={[styles.segmentText, selectedId === option.id && styles.segmentTextSelected]}
               numberOfLines={2}
               ellipsizeMode="tail"
               adjustsFontSizeToFit
@@ -128,60 +114,58 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: "relative",
-    flexDirection: "row",
+    position: 'relative',
+    flexDirection: 'row',
     backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.full,
+    borderRadius: rp(14),
     padding: rp(4),
-    overflow: "hidden",
+    height: rp(44),
+    overflow: 'hidden',
   },
 
   indicator: {
-    position: "absolute",
+    position: 'absolute',
     top: rp(4),
     bottom: rp(4),
     left: rp(4),
-    borderRadius: borderRadius.full,
-    overflow: "hidden",
+    borderRadius: rp(10),
+    backgroundColor: hexToRgba(colors.white, 0.08),
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.white, 0.12),
+    ...shadows.sm,
     zIndex: 1,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
-  },
-
-  indicatorGradient: {
-    flex: 1,
   },
 
   segmentsContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     flex: 1,
     zIndex: 2,
   },
 
   segment: {
     flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     minWidth: 0,
-    minHeight: rp(48),
+    minHeight: rp(36),
+    // Android includes extra font padding that throws off vertical centering.
+    includeFontPadding: false,
   },
 
   segmentText: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: rf(13),
+    fontWeight: '500',
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
+    textAlignVertical: 'center',
     flexShrink: 1,
+    includeFontPadding: false,
   },
 
   segmentTextSelected: {
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    fontWeight: '600',
   },
 });

@@ -1,10 +1,12 @@
 /**
  * EmptyPlanState Component
- * Beautiful CTA when no weekly workout plan exists
+ * Flat, centered empty-state hero shown when no weekly workout plan exists.
+ * 2026 redesign: no boxed card — large tinted icon disc, bold title, muted
+ * subtitle, flat profile-preview rows, and one full-width gradient CTA.
  */
 
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -13,24 +15,23 @@ import Animated, {
   withTiming,
   Easing,
   cancelAnimation,
-} from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rw, rh } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
+import { rf, rw, rp } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 
 interface EmptyPlanStateProps {
-  experienceLevel?: "beginner" | "intermediate" | "advanced";
+  experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
   primaryGoals?: string[];
   isGenerating: boolean;
   onGeneratePlan: () => void;
 }
 
 export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
-  experienceLevel = "beginner",
+  experienceLevel = 'beginner',
   primaryGoals = [],
   isGenerating,
   onGeneratePlan,
@@ -43,7 +44,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
       rotation.value = withRepeat(
         withTiming(360, { duration: 1000, easing: Easing.linear }),
         -1,
-        false,
+        false
       );
     } else {
       cancelAnimation(rotation);
@@ -56,297 +57,259 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
 
   const getPlanDetails = () => {
     switch (experienceLevel) {
-      case "beginner":
-        return { workouts: 3, duration: "1 week" };
-      case "intermediate":
-        return { workouts: 5, duration: "1.5 weeks" };
-      case "advanced":
-        return { workouts: 6, duration: "2 weeks" };
+      case 'beginner':
+        return { workouts: 3, duration: '1 week' };
+      case 'intermediate':
+        return { workouts: 5, duration: '1.5 weeks' };
+      case 'advanced':
+        return { workouts: 6, duration: '2 weeks' };
       default:
-        return { workouts: 3, duration: "1 week" };
+        return { workouts: 3, duration: '1 week' };
     }
   };
 
   const planDetails = getPlanDetails();
 
   return (
-    <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-      <GlassCard
-        elevation={3}
-        blurIntensity="light"
-        padding="xl"
-        borderRadius="xl"
-      >
-        <View style={styles.container}>
-          {/* Icon */}
-          <View style={styles.iconWrapper}>
-            <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconContainer}
+    <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.container}>
+      {/* Icon — large tinted disc */}
+      <View style={styles.iconDisc}>
+        <Ionicons name="sparkles" size={rf(48)} color={colors.primary} />
+      </View>
+
+      {/* Title + subtitle */}
+      <Text style={styles.title}>Create Your AI Workout Plan</Text>
+      <Text style={styles.subtitle} numberOfLines={2}>
+        Generate a personalized weekly workout plan tailored to your fitness goals
+      </Text>
+
+      {/* Plan Preview — flat rows, no box */}
+      <View style={styles.previewContainer}>
+        <Text style={styles.previewTitle}>Based on your profile</Text>
+
+        <View style={styles.previewRow}>
+          <View style={styles.previewItem}>
+            <Ionicons name="calendar-outline" size={rf(16)} color={colors.primary} />
+            <Text
+              style={styles.previewText}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
             >
-              <Ionicons name="sparkles" size={rf(40)} color={colors.white} />
-            </LinearGradient>
-            <View style={styles.iconAccent}>
-              <Ionicons name="heart" size={rf(16)} color={colors.primary} />
-            </View>
+              {planDetails.workouts} workouts
+            </Text>
           </View>
-
-          {/* Title */}
-          <Text style={styles.title}>Create Your AI Workout Plan</Text>
-          <Text style={styles.subtitle}>
-            Generate a personalized weekly workout plan tailored to your fitness
-            goals
-          </Text>
-
-          {/* Plan Preview */}
-          <View style={styles.previewContainer}>
-            <Text style={styles.previewTitle}>Based on your profile:</Text>
-
-            <View style={styles.previewRow}>
-              <View style={styles.previewItem}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={rf(16)}
-                  color={colors.primary}
-                />
-                <Text
-                  style={styles.previewText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.7}
-                >
-                  {planDetails.workouts} workouts
-                </Text>
-              </View>
-              <View style={styles.previewItem}>
-                <Ionicons name="time-outline" size={rf(16)} color={colors.primary} />
-                <Text
-                  style={styles.previewText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.7}
-                >
-                  {planDetails.duration}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.previewRow}>
-              <View style={styles.previewItem}>
-                <Ionicons name="trophy-outline" size={rf(16)} color={colors.primary} />
-                <Text
-                  style={styles.previewText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit={true}
-                  minimumFontScale={0.7}
-                >
-                  {experienceLevel.charAt(0).toUpperCase() +
-                    experienceLevel.slice(1)}{" "}
-                  level
-                </Text>
-              </View>
-              {primaryGoals.length > 0 && (
-                <View style={styles.previewItem}>
-                  <Ionicons name="flag-outline" size={rf(16)} color={colors.primary} />
-                  <Text
-                    style={styles.previewText}
-                    numberOfLines={2}
-                    adjustsFontSizeToFit={true}
-                    minimumFontScale={0.7}
-                  >
-                    {primaryGoals[0].replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Features List */}
-          <View style={styles.featuresContainer}>
-            {[
-              {
-                icon: "checkmark-circle",
-                text: "100% GIF video demonstrations",
-              },
-              {
-                icon: "checkmark-circle",
-                text: "Exercise validation & safety checks",
-              },
-              {
-                icon: "checkmark-circle",
-                text: "AI-optimized for your equipment",
-              },
-            ].map((feature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <Ionicons
-                  name={feature.icon as keyof typeof Ionicons.glyphMap}
-                  size={rf(16)}
-                  color={colors.primary}
-                />
-                <Text style={styles.featureText}>{feature.text}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Generate Button */}
-          <View style={styles.generateButtonWrapper}>
-            <AnimatedPressable
-              onPress={onGeneratePlan}
-              scaleValue={0.96}
-              hapticFeedback={true}
-              hapticType="medium"
-              disabled={isGenerating}
-              style={styles.generateButton}
+          <View style={styles.previewItem}>
+            <Ionicons name="time-outline" size={rf(16)} color={colors.primary} />
+            <Text
+              style={styles.previewText}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
             >
-              <LinearGradient
-                colors={
-                  isGenerating ? [colors.muted, colors.neutral] : [colors.primary, colors.primaryDark]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.generateButtonGradient}
-              >
-                {isGenerating ? (
-                  <>
-                    <Animated.View style={spinStyle}>
-                      <Ionicons name="sync" size={rf(20)} color={colors.white} />
-                    </Animated.View>
-                    <Text style={styles.generateButtonText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
-                      Finding best exercises for you...
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Ionicons name="sparkles" size={rf(20)} color={colors.white} />
-                    <Text style={styles.generateButtonText} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
-                      Generate AI Workout
-                    </Text>
-                  </>
-                )}
-              </LinearGradient>
-            </AnimatedPressable>
+              {planDetails.duration}
+            </Text>
           </View>
         </View>
-      </GlassCard>
+
+        <View style={styles.previewRow}>
+          <View style={styles.previewItem}>
+            <Ionicons name="trophy-outline" size={rf(16)} color={colors.primary} />
+            <Text
+              style={styles.previewText}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.7}
+            >
+              {experienceLevel.charAt(0).toUpperCase() + experienceLevel.slice(1)} level
+            </Text>
+          </View>
+          {primaryGoals.length > 0 && (
+            <View style={styles.previewItem}>
+              <Ionicons name="flag-outline" size={rf(16)} color={colors.primary} />
+              <Text
+                style={styles.previewText}
+                numberOfLines={2}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+              >
+                {primaryGoals[0]
+                  .replace(/_/g, ' ')
+                  .replace(/\b\w/g, (c: string) => c.toUpperCase())}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Features List — flat */}
+      <View style={styles.featuresContainer}>
+        {[
+          {
+            icon: 'checkmark-circle',
+            text: '100% GIF video demonstrations',
+          },
+          {
+            icon: 'checkmark-circle',
+            text: 'Exercise validation & safety checks',
+          },
+          {
+            icon: 'checkmark-circle',
+            text: 'AI-optimized for your equipment',
+          },
+        ].map((feature, index) => (
+          <View key={index} style={styles.featureItem}>
+            <Ionicons
+              name={feature.icon as keyof typeof Ionicons.glyphMap}
+              size={rf(16)}
+              color={colors.primary}
+            />
+            <Text style={styles.featureText}>{feature.text}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Generate Button — full-width gradient CTA */}
+      <AnimatedPressable
+        onPress={onGeneratePlan}
+        scaleValue={0.96}
+        hapticFeedback={true}
+        hapticType="medium"
+        disabled={isGenerating}
+        style={styles.generateButton}
+      >
+        <LinearGradient
+          colors={
+            isGenerating ? [colors.muted, colors.neutral] : [colors.primary, colors.primaryDark]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.generateButtonGradient}
+        >
+          {isGenerating ? (
+            <>
+              <Animated.View style={spinStyle}>
+                <Ionicons name="sync" size={rf(20)} color={colors.white} />
+              </Animated.View>
+              <Text
+                style={styles.generateButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+              >
+                Finding best exercises for you...
+              </Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="sparkles" size={rf(20)} color={colors.white} />
+              <Text
+                style={styles.generateButtonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.7}
+              >
+                Generate AI Workout
+              </Text>
+            </>
+          )}
+        </LinearGradient>
+      </AnimatedPressable>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "flex-start",
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: rp(spacing.xl),
   },
-  iconWrapper: {
-    position: "relative",
-    marginBottom: spacing.xl,
-    overflow: "visible",
-  },
-  iconContainer: {
-    width: rw(80),
-    height: rw(80),
-    borderRadius: rw(24),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconAccent: {
-    position: "absolute",
-    right: -8,
-    bottom: -8,
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
-    backgroundColor: colors.errorTint,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: colors.background,
+  iconDisc: {
+    width: rw(96),
+    height: rw(96),
+    borderRadius: rw(48),
+    backgroundColor: hexToRgba(colors.primary, 0.12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: rf(20),
-    fontWeight: "700",
+    fontSize: rf(22),
+    fontWeight: '700',
     color: colors.text,
-    textAlign: "left",
+    textAlign: 'center',
     marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-    textAlign: "left",
+    fontSize: rf(14),
+    color: colors.textTertiary,
+    textAlign: 'center',
     lineHeight: rf(20),
-    paddingHorizontal: 0,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   previewContainer: {
-    width: "100%",
-    backgroundColor: hexToRgba(colors.primary, 0.08),
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
+    width: '100%',
+    alignItems: 'center',
     marginBottom: spacing.lg,
   },
   previewTitle: {
     fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.text,
+    fontWeight: '700',
+    color: colors.textSecondary,
     marginBottom: spacing.sm,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
   previewRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
+    justifyContent: 'center',
     gap: spacing.lg,
     marginBottom: spacing.xs,
   },
   previewItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
-    flex: 1,
   },
   previewText: {
     fontSize: rf(12),
     color: colors.text,
-    flex: 1,
+    flexShrink: 1,
     minWidth: 0,
   },
   featuresContainer: {
-    width: "100%",
-    gap: spacing.sm,
+    alignItems: 'center',
+    gap: spacing.xs,
     marginBottom: spacing.xl,
   },
   featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   featureText: {
-    fontSize: rf(13),
-    color: colors.text,
-  },
-  generateButtonWrapper: {
-    width: "100%",
-    marginBottom: rh(20),
+    fontSize: rf(12),
+    color: colors.textTertiary,
   },
   generateButton: {
-    width: "100%",
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    minHeight: 48,
+    width: '100%',
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    minHeight: 52,
   },
   generateButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.md + 2,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    minHeight: 48,
+    minHeight: 52,
   },
   generateButtonText: {
     fontSize: rf(15),
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.white,
   },
 });

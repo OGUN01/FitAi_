@@ -163,9 +163,7 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
 }) => {
   return (
     <Animated.View
-      entering={FadeInDown.delay(100 + index * 80)
-        .duration(400)
-        .springify()}
+      entering={FadeInDown.delay(100 + index * 80).springify()}
       style={styles.tipCard}
     >
       <View style={styles.tipContent}>
@@ -226,7 +224,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
             <Animated.View
-              entering={FadeInUp.duration(400).springify()}
+              entering={FadeInUp.springify()}
               style={styles.modalContent}
             >
               {/* Header */}
@@ -351,7 +349,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: hexToRgba(colors.white, 0.1),
-    flex: 1,
+    width: "100%",
+    maxWidth: rw(400),
+    maxHeight: "85%",
   },
   header: {
     flexDirection: "row",

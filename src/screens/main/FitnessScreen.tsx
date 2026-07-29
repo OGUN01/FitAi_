@@ -5,40 +5,26 @@
  * Refactored to use useFitnessLogic hook for better maintainability.
  */
 
-import React, { useMemo, useCallback } from "react";
-import {
-  View,
-  StyleSheet,
-  RefreshControl,
-  Text,
-  Platform,
-} from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import Animated, { FadeIn } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
-import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import {
-  WorkoutStartDialog,
-} from "../../components/ui/CustomDialog";
-import { SegmentedControl } from "../../components/ui/SegmentedControl";
-import { colors, spacing, shadows } from "../../theme/aurora-tokens";
-import { hexToRgba } from "../../utils/colors";
-import { rh, rf, rp, rbr } from "../../utils/responsive";
-import { useFitnessStore } from "../../stores/fitnessStore";
-import { DayWorkout } from "../../types/ai";
-import { findCompletedSessionForWorkout } from "../../utils/workoutIdentity";
-import {
-  getCurrentWeekStart,
-  getWeekStartForDate,
-} from "../../utils/weekUtils";
+import React, { useMemo, useCallback } from 'react';
+import { View, StyleSheet, RefreshControl, Text, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { WorkoutStartDialog } from '../../components/ui/CustomDialog';
+import { SegmentedControl } from '../../components/ui/SegmentedControl';
+import { colors, spacing, shadows } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
+import { rh, rf, rp, rbr } from '../../utils/responsive';
+import { useFitnessStore } from '../../stores/fitnessStore';
+import { DayWorkout, WeeklyWorkoutPlan } from '../../types/ai';
+import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
+import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
 
 // Hook
-import { useFitnessLogic } from "../../hooks/useFitnessLogic";
-import { useQuickWorkouts } from "../../hooks/useQuickWorkouts";
+import { useFitnessLogic, FitnessNavigation } from '../../hooks/useFitnessLogic';
+import { useQuickWorkouts } from '../../hooks/useQuickWorkouts';
 
 // Modular Components
 import {
@@ -48,16 +34,15 @@ import {
   SuggestedWorkouts,
   RecoveryTipsModal,
   MyWorkoutsCard,
-} from "./fitness";
-import { PlanSection } from "../../components/fitness/PlanSection";
-import { CustomPlanEmptyState } from "../../components/fitness/CustomPlanEmptyState";
-import { GuestSignUpScreen } from "./GuestSignUpScreen";
-import { DeloadModal } from "../../features/workouts/components/DeloadModal";
+} from './fitness';
+import { WeekProgressCard } from './fitness/WeekProgressCard';
+import { PlanSection } from '../../components/fitness/PlanSection';
+import { CustomPlanEmptyState } from '../../components/fitness/CustomPlanEmptyState';
+import { GuestSignUpScreen } from './GuestSignUpScreen';
+import { DeloadModal } from '../../features/workouts/components/DeloadModal';
 
-import { FitnessNavigation } from "../../hooks/useFitnessLogic";
-import type { DayName } from "../../stores/appStateStore";
-import type { CompletedSession } from "../../stores/fitness/types";
-import type { WeeklyWorkoutPlan } from "../../types/ai";
+import type { DayName } from '../../stores/appStateStore';
+import type { CompletedSession } from '../../stores/fitness/types';
 
 /** Memoized sub-component for each workout card inside the .map() loop */
 interface WorkoutCardItemProps {
@@ -81,7 +66,7 @@ interface WorkoutCardItemProps {
 const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
   ({
     workout,
-    index,
+    index: _index,
     isLast,
     completedSessions,
     weeklyWorkoutPlan,
@@ -110,27 +95,17 @@ const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
       : hasStaleCompletedProgress
         ? 0
         : Math.min(progressEntry?.progress || 0, 99);
-    const partialCalories =
-      progressEntry?.caloriesBurned ?? completedSession?.caloriesBurned;
+    const partialCalories = progressEntry?.caloriesBurned ?? completedSession?.caloriesBurned;
 
     // GAP-15: Derive last-performed date across all weeks for this workout title
     const lastPerformedAt = completedSessions
-      .filter(
-        (s) =>
-          s.workoutSnapshot?.title === workout.title &&
-          s.weekStart !== currentWeekStart,
-      )
-      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
-      [0]?.completedAt;
+      .filter((s) => s.workoutSnapshot?.title === workout.title && s.weekStart !== currentWeekStart)
+      .sort(
+        (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+      )[0]?.completedAt;
 
-    const handleStart = useCallback(
-      () => onStartWorkout(workout),
-      [onStartWorkout, workout],
-    );
-    const handleViewDetails = useCallback(
-      () => onViewDetails(workout),
-      [onViewDetails, workout],
-    );
+    const handleStart = useCallback(() => onStartWorkout(workout), [onStartWorkout, workout]);
+    const handleViewDetails = useCallback(() => onViewDetails(workout), [onViewDetails, workout]);
 
     return (
       <View style={{ marginBottom: isLast ? 0 : rp(spacing.md) }}>
@@ -141,6 +116,7 @@ const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
           progress={progress}
           displayCalories={progress > 0 ? partialCalories : undefined}
           lastPerformedAt={lastPerformedAt}
+          completedAt={completedSession?.completedAt}
           onStartWorkout={handleStart}
           onViewDetails={handleViewDetails}
           onRecoveryTips={onRecoveryTips}
@@ -149,7 +125,7 @@ const WorkoutCardItem = React.memo<WorkoutCardItemProps>(
         />
       </View>
     );
-  },
+  }
 );
 
 interface FitnessScreenProps {
@@ -157,9 +133,10 @@ interface FitnessScreenProps {
 }
 
 const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
+  const setPlanError = useFitnessStore((s) => s.setPlanError);
+  const hasHydrated = useFitnessStore((s) => s._hasHydrated);
   const quickWorkouts = useQuickWorkouts(navigation);
   const currentWeekStart = getCurrentWeekStart();
 
@@ -174,35 +151,63 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   const PLAN_TOGGLE_OPTIONS = useMemo(
     () => [
-      { id: "ai", label: "AI Plan", value: "ai" },
-      { id: "custom", label: "My Plan", value: "custom" },
+      { id: 'ai', label: 'AI Plan', value: 'ai' },
+      { id: 'custom', label: 'My Plan', value: 'custom' },
     ],
-    [],
+    []
   );
 
+  // Weekly progress for WeekProgressCard — mirrors the stats computation
+  // previously inside WeeklyPlanOverview's stats row, now hoisted here so the
+  // ring card can render it above the plan toggle. Uses the active plan
+  // (AI or custom) so the numbers reflect whichever plan the user is viewing.
+  const weekProgress = useMemo(() => {
+    const plan = activePlan;
+    const totalWorkouts = plan?.workouts?.length || 0;
+    const currentPlanIds = new Set((plan?.workouts || []).map((w) => w.id));
+    const completedPlannedSessions = state.completedSessions.filter(
+      (session) =>
+        session.type === 'planned' &&
+        session.weekStart === currentWeekStart &&
+        currentPlanIds.has(session.workoutId)
+    );
+    const completedWorkoutIds = new Set(
+      completedPlannedSessions.map((session) => session.workoutId)
+    );
+    const completedWorkouts = completedWorkoutIds.size;
+    const completedCalories = completedPlannedSessions.reduce(
+      (sum, session) => sum + (session.caloriesBurned ?? 0),
+      0
+    );
+    // Burned-only (audit #9): mixing in estimated calories for remaining
+    // workouts presented a pure estimate as fact on Monday morning. Calories
+    // SSOT = actual burned values from completed sessions.
+    const weeklyCalories = completedCalories;
+    const progressPercent =
+      totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0;
+    return {
+      weekNumber: plan?.weekNumber || 1,
+      totalWorkouts,
+      completedWorkouts,
+      weeklyCalories,
+      progressPercent,
+    };
+  }, [activePlan, state.completedSessions, currentWeekStart]);
+
   // useCallback for non-map inline callbacks
-  const handleRestDayStart = useCallback(
-    () => actions.handleStartSelectedDayWorkout(),
-    [actions],
-  );
-  const handleRestDayViewDetails = useCallback(
-    () => actions.handleViewWorkoutDetails(),
-    [actions],
-  );
-  const handleGuestBack = useCallback(
-    () => setShowGuestSignUp(false),
-    [setShowGuestSignUp],
-  );
+  const handleRestDayStart = useCallback(() => actions.handleStartSelectedDayWorkout(), [actions]);
+  const handleRestDayViewDetails = useCallback(() => actions.handleViewWorkoutDetails(), [actions]);
+  const handleGuestBack = useCallback(() => setShowGuestSignUp(false), [setShowGuestSignUp]);
   const handleGuestSignUpSuccess = useCallback(
     () => setShowGuestSignUp(false),
-    [setShowGuestSignUp],
+    [setShowGuestSignUp]
   );
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <Animated.View
-          entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
+          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}
         >
           <Animated.ScrollView
@@ -220,46 +225,55 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
           >
             {/* 1. Header */}
             <FitnessHeader
-              userName={state.userName || ""}
-              weekNumber={activePlan?.weekNumber || 1}
-              totalWorkouts={state.weekStats.totalWorkouts}
-              completedWorkouts={state.weekStats.completedCount}
+              userName={state.userName || ''}
               onCalendarPress={actions.handleCalendarPress}
             />
 
-            {/* 1.5 Plan Source Toggle */}
+            {/* 1.5 Week Progress Ring Card — single source of truth for weekly stats.
+                Hidden until hydration completes and a plan exists: a 0/0 dead ring
+                above the generate CTA is worse than nothing (audit #1, #13). */}
+            {hasHydrated && activePlan && (
+              <View style={styles.section}>
+                <WeekProgressCard
+                  weekNumber={weekProgress.weekNumber}
+                  completedWorkouts={weekProgress.completedWorkouts}
+                  totalWorkouts={weekProgress.totalWorkouts}
+                  weeklyCalories={weekProgress.weeklyCalories}
+                  progressPercent={weekProgress.progressPercent}
+                />
+              </View>
+            )}
+
+            {/* 1.6 Plan Source Toggle — no subtitle per spec §6.4 */}
             <View style={styles.planToggleContainer}>
               <SegmentedControl
                 options={PLAN_TOGGLE_OPTIONS}
                 selectedId={activePlanSource}
-                onSelect={(id) => setActivePlanSource(id as "ai" | "custom")}
+                onSelect={(id) => setActivePlanSource(id as 'ai' | 'custom')}
               />
             </View>
 
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
             {activePlan && (
               <View style={styles.section}>
-                {state.selectedDayWorkouts &&
-                state.selectedDayWorkouts.length > 0 ? (
-                  state.selectedDayWorkouts.map(
-                    (workout: DayWorkout, index: number) => (
-                      <WorkoutCardItem
-                        key={workout.id || index}
-                        workout={workout}
-                        index={index}
-                        isLast={index === state.selectedDayWorkouts.length - 1}
-                        completedSessions={state.completedSessions}
-                        weeklyWorkoutPlan={activePlan}
-                        currentWeekStart={currentWeekStart}
-                        workoutProgress={state.workoutProgress}
-                        onStartWorkout={actions.handleStartSelectedDayWorkout}
-                        onViewDetails={actions.handleViewWorkoutDetails}
-                        onRecoveryTips={actions.handleRecoveryTips}
-                        selectedDay={state.selectedDay}
-                        isToday={state.isSelectedDayToday}
-                      />
-                    ),
-                  )
+                {state.selectedDayWorkouts && state.selectedDayWorkouts.length > 0 ? (
+                  state.selectedDayWorkouts.map((workout: DayWorkout, index: number) => (
+                    <WorkoutCardItem
+                      key={workout.id || index}
+                      workout={workout}
+                      index={index}
+                      isLast={index === state.selectedDayWorkouts.length - 1}
+                      completedSessions={state.completedSessions}
+                      weeklyWorkoutPlan={activePlan}
+                      currentWeekStart={currentWeekStart}
+                      workoutProgress={state.workoutProgress}
+                      onStartWorkout={actions.handleStartSelectedDayWorkout}
+                      onViewDetails={actions.handleViewWorkoutDetails}
+                      onRecoveryTips={actions.handleRecoveryTips}
+                      selectedDay={state.selectedDay}
+                      isToday={state.isSelectedDayToday}
+                    />
+                  ))
                 ) : (
                   <TodayWorkoutCard
                     workout={null}
@@ -276,85 +290,54 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </View>
             )}
 
-            {/* Custom Plan Empty State */}
-            {activePlanSource === "custom" && !customWeeklyPlan && (
-              <View style={styles.section}>
-                <CustomPlanEmptyState
-                  onBuildSchedule={() =>
-                    navigation.navigate("BuildMethodLanding")
+            {/* 3. Weekly Plan Overview OR Empty State.
+                AI source: plan strip or generate empty state. Custom source WITH a
+                plan: same week strip (audit #4 — custom users previously had no day
+                selector at all), regenerate omitted (AI-only action).
+                Gated on hydration so returning users never see the "Generate AI Workout"
+                empty state flash before the persisted plan loads (audit #13). */}
+            {hasHydrated &&
+              (activePlanSource === 'ai' ||
+                (activePlanSource === 'custom' && customWeeklyPlan)) && (
+                <PlanSection
+                  weeklyWorkoutPlan={activePlan}
+                  workoutProgress={state.workoutProgress}
+                  selectedDay={state.selectedDay}
+                  onDayPress={actions.setSelectedDay}
+                  onViewFullPlan={actions.handleViewFullPlan}
+                  onRegeneratePlan={
+                    activePlanSource === 'ai' ? actions.handleRegeneratePlan : undefined
                   }
-                  onBrowseTemplates={() =>
-                    navigation.navigate("TemplateLibrary")
-                  }
+                  isGeneratingPlan={state.isGeneratingPlan}
+                  profile={state.profile}
+                  onGeneratePlan={actions.generateWeeklyWorkoutPlan}
                 />
-              </View>
-            )}
+              )}
 
-            {/* 3. Error State — shown whenever a plan error exists so
-                regeneration failures surface even when a plan is present. */}
-            {planError && (
-              <View style={styles.errorCard}>
-                <View style={styles.errorHeader}>
-                  <Ionicons
-                    name="alert-circle"
-                    size={rf(20)}
-                    color={colors.error.DEFAULT}
-                  />
-                  <Text style={styles.errorTitle}>Plan Generation Failed</Text>
-                </View>
-                <Text style={styles.errorMessage}>{planError}</Text>
+            {/* 3.4 Custom plan edit affordance (audit #12) — with a custom plan
+                active there was no path back to the builder once the empty state
+                unmounted. Slim text CTA under the week strip. */}
+            {activePlanSource === 'custom' && customWeeklyPlan && (
+              <View style={styles.section}>
                 <AnimatedPressable
-                  onPress={actions.handleRegeneratePlan}
-                  scaleValue={0.96}
+                  onPress={() => navigation.navigate('WeeklyBuilder')}
+                  scaleValue={0.97}
                   hapticFeedback={true}
-                  hapticType="medium"
-                  style={styles.errorRetryButton}
+                  hapticType="light"
+                  style={styles.editScheduleButton}
                   accessibilityRole="button"
-                  accessibilityLabel="Retry plan generation"
+                  accessibilityLabel="Edit schedule"
                 >
-                  <Ionicons
-                    name="refresh"
-                    size={rf(14)}
-                    color={colors.text.primary}
-                  />
-                  <Text style={styles.errorRetryText}>Retry</Text>
+                  <Ionicons name="create-outline" size={rf(16)} color={colors.primary.DEFAULT} />
+                  <Text style={styles.editScheduleText}>Edit Schedule</Text>
+                  <Ionicons name="chevron-forward" size={rf(16)} color={colors.text.secondary} />
                 </AnimatedPressable>
               </View>
             )}
 
-            {/* 3. Weekly Plan Overview OR Empty State (AI plan only — custom plan has its own CTA above) */}
-            {activePlanSource === "ai" && (
-              <PlanSection
-                weeklyWorkoutPlan={activePlan}
-                workoutProgress={state.workoutProgress}
-                selectedDay={state.selectedDay}
-                onDayPress={actions.setSelectedDay}
-                onViewFullPlan={actions.handleViewFullPlan}
-                onRegeneratePlan={actions.handleRegeneratePlan}
-                isGeneratingPlan={state.isGeneratingPlan}
-                profile={state.profile}
-                onGeneratePlan={actions.generateWeeklyWorkoutPlan}
-              />
-            )}
-
-            {/* My Workouts library summary — replaces the old simple button.
-                testID `template-library-button` is preserved on the card's
-                tappable area (see MyWorkoutsCard). */}
-            <View style={styles.section}>
-              <MyWorkoutsCard navigation={navigation} />
-            </View>
-
-            {/* 4. Workout History (from real data) */}
-            <View style={styles.section}>
-              <WorkoutHistoryList
-                workouts={state.completedWorkouts}
-                onRepeatWorkout={actions.handleRepeatWorkout}
-                onDeleteWorkout={actions.handleDeleteWorkout}
-                onViewWorkout={actions.handleViewHistoryWorkout}
-              />
-            </View>
-
-            {/* 5. Quick Workouts (shown only when today's planned workout is done) */}
+            {/* 3.5 Quick Workouts — shown only when today's planned workout is done.
+                Hoisted from the page bottom: post-completion is the highest-intent
+                moment, suggestions belong directly under the today card (audit #10). */}
             {quickWorkouts.isVisible && (
               <View style={styles.sectionNoHorizontalPadding}>
                 <SuggestedWorkouts
@@ -368,14 +351,94 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </View>
             )}
 
-            {/* Bottom Spacing */}
-            <View style={{ height: insets.bottom + rh(120) }} />
+            {/* 3.6 Plan error — anchored under the plan section it belongs to,
+                AI-source only (retry regenerates the AI plan), with dismiss (audit #7). */}
+            {planError && activePlanSource === 'ai' && (
+              <View style={styles.errorCard}>
+                <View style={styles.errorHeader}>
+                  <Ionicons name="alert-circle" size={rf(20)} color={colors.error.DEFAULT} />
+                  <Text style={styles.errorTitle}>Plan Generation Failed</Text>
+                  <AnimatedPressable
+                    onPress={() => setPlanError(null)}
+                    scaleValue={0.92}
+                    hapticFeedback={true}
+                    hapticType="light"
+                    accessibilityRole="button"
+                    accessibilityLabel="Dismiss plan error"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="close" size={rf(18)} color={colors.text.secondary} />
+                  </AnimatedPressable>
+                </View>
+                <Text style={styles.errorMessage}>{planError}</Text>
+                <AnimatedPressable
+                  onPress={actions.handleRegeneratePlan}
+                  scaleValue={0.96}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                  style={styles.errorRetryButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry plan generation"
+                >
+                  <Ionicons name="refresh" size={rf(14)} color={colors.text.primary} />
+                  <Text style={styles.errorRetryText}>Retry</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {/* 4. My Workouts library summary — replaces the old simple button.
+                testID `template-library-button` is preserved on the card's
+                tappable area (see MyWorkoutsCard).
+                Hidden on the custom-plan empty path: with no custom plan AND no
+                completed sessions, MyWorkoutsCard's "No Workouts Yet" empty
+                state stacks under CustomPlanEmptyState's "No Custom Schedule" —
+                two near-identical empty cards competing for the same intent.
+                CustomPlanEmptyState is the stronger CTA (Build Schedule), so it
+                carries the screen; MyWorkoutsCard returns once sessions exist. */}
+            {!(activePlanSource === 'custom' && !customWeeklyPlan) && (
+              <View style={styles.section}>
+                <MyWorkoutsCard
+                  navigation={navigation}
+                  onStartWorkout={actions.handleStartSelectedDayWorkout}
+                />
+              </View>
+            )}
+
+            {/* Custom Plan Empty State */}
+            {activePlanSource === 'custom' && !customWeeklyPlan && (
+              <View style={styles.section}>
+                <CustomPlanEmptyState
+                  onBuildSchedule={() => navigation.navigate('BuildMethodLanding')}
+                  onBrowseTemplates={() => navigation.navigate('TemplateLibrary')}
+                />
+              </View>
+            )}
+
+            {/* 5. Workout History (from real data). Hidden when empty — with zero
+                completed workouts the MyWorkoutsCard empty state already carries the
+                "start your first workout" CTA; two identical empty cards back to back
+                is worse than one (audit #5). */}
+            {state.completedWorkouts.length > 0 && (
+              <View style={styles.section}>
+                <WorkoutHistoryList
+                  workouts={state.completedWorkouts}
+                  onRepeatWorkout={actions.handleRepeatWorkout}
+                  onDeleteWorkout={actions.handleDeleteWorkout}
+                  onViewWorkout={actions.handleViewHistoryWorkout}
+                  onSeeAll={() => navigation.navigate('WorkoutHistory')}
+                />
+              </View>
+            )}
+
+            {/* Bottom Spacing — SafeAreaView already applies the bottom inset via
+                edges=['top','bottom']; only the tab-bar offset is needed (audit #14). */}
+            <View style={{ height: rh(120) }} />
           </Animated.ScrollView>
         </Animated.View>
 
         <WorkoutStartDialog
           visible={state.showWorkoutStartDialog}
-          workoutTitle={state.selectedWorkout?.title || ""}
+          workoutTitle={state.selectedWorkout?.title || ''}
           isResuming={
             state.selectedWorkout?.isResuming ??
             (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
@@ -456,14 +519,14 @@ const styles = StyleSheet.create({
     ...shadows.level2,
   },
   errorHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(spacing.xs),
     marginBottom: rp(4),
   },
   errorTitle: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.error.DEFAULT,
     flex: 1,
   },
@@ -473,9 +536,9 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
   },
   errorRetryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(spacing.xs),
     marginTop: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
@@ -483,15 +546,15 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
     backgroundColor: colors.error.DEFAULT,
     minHeight: 44,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
   },
   errorRetryText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text.primary,
   },
   guestSignUpOverlay: {
-    position: "absolute" as const,
+    position: 'absolute' as const,
     top: 0,
     left: 0,
     right: 0,
@@ -502,7 +565,22 @@ const styles = StyleSheet.create({
   planToggleContainer: {
     paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.xs),
-    marginBottom: rp(12),
+    marginBottom: rp(spacing.lg),
+  },
+  editScheduleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.md),
+    minHeight: 48,
+    borderRadius: rbr(12),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.1),
+  },
+  editScheduleText: {
+    fontSize: rf(14),
+    fontWeight: '600',
+    color: colors.primary.DEFAULT,
   },
 });
 
