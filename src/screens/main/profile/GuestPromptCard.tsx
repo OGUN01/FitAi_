@@ -1,22 +1,24 @@
 /**
- * GuestPromptCard - Sign Up Prompt for Guest Users
- *
- * Features:
- * - Compact, elegant design
- * - Lock icon with pulse animation
- * - Properly aligned CTA button
+ * GuestPromptCard - Aurora 2026: sign-up prompt for guest users.
+ * Single surface.1 tinted panel, gradient CTA, pulse icon. No shadows.
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { View, Text, StyleSheet, Animated as RNAnimated } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rp, rw } from "../../../utils/responsive";
+import {
+  colors,
+  surface,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+
+const { variants } = typography;
 
 interface GuestPromptCardProps {
   onSignUpPress: () => void;
@@ -27,7 +29,6 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
   onSignUpPress,
   animationDelay = 0,
 }) => {
-  // Pulse animation for the icon
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
 
   useEffect(() => {
@@ -49,85 +50,90 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
     return () => pulse.stop();
   }, [pulseAnim]);
 
+  const handlePress = useCallback(() => {
+    haptics.medium();
+    onSignUpPress();
+  }, [onSignUpPress]);
+
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(400)}
+      entering={FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
-      <GlassCard
-        elevation={2}
-        padding="md"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.card}
-      >
-        <View style={styles.content}>
-          {/* Icon with pulse */}
-          <RNAnimated.View
-            style={[
-              styles.iconContainer,
-              { transform: [{ scale: pulseAnim }] },
-            ]}
+      <View style={styles.content}>
+        {/* Icon with pulse */}
+        <RNAnimated.View
+          style={[
+            styles.iconContainer,
+            { transform: [{ scale: pulseAnim }] },
+          ]}
+        >
+          <LinearGradient
+            colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.iconGradient}
           >
-            <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.iconGradient}
-            >
-              <Ionicons name="lock-open-outline" size={rf(22)} color={colors.white} />
-            </LinearGradient>
-          </RNAnimated.View>
+            <Ionicons
+              name="lock-open-outline"
+              size={rf(22)}
+              color={colors.text.primary}
+            />
+          </LinearGradient>
+        </RNAnimated.View>
 
-          {/* Text */}
-          <View style={styles.textContainer}>
-            <Text style={styles.title} numberOfLines={2}>Unlock Your Full Potential</Text>
-            <Text style={styles.subtitle} numberOfLines={3}>
-              Create a free account to save progress and sync across devices.
-            </Text>
-          </View>
-
-          {/* Button */}
-          <AnimatedPressable
-            onPress={() => {
-              haptics.medium();
-              onSignUpPress();
-            }}
-            scaleValue={0.97}
-            hapticFeedback={false}
-            style={styles.buttonWrapper}
-          >
-            <LinearGradient
-              colors={[colors.errorLight, "#FF8E53"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.button}
-            >
-              <Ionicons name="person-add-outline" size={rf(16)} color={colors.white} />
-              <Text style={styles.buttonText}>Sign Up Free</Text>
-            </LinearGradient>
-          </AnimatedPressable>
+        {/* Text */}
+        <View style={styles.textContainer}>
+          <Text style={styles.title} numberOfLines={2}>
+            Unlock Your Full Potential
+          </Text>
+          <Text style={styles.subtitle} numberOfLines={3}>
+            Create a free account to save progress and sync across devices.
+          </Text>
         </View>
-      </GlassCard>
+
+        {/* CTA */}
+        <AnimatedPressable
+          onPress={handlePress}
+          scaleValue={0.97}
+          hapticFeedback={false}
+          style={styles.buttonWrapper}
+          accessibilityRole="button"
+          accessibilityLabel="Sign up free"
+        >
+          <LinearGradient
+            colors={[colors.primary.DEFAULT, colors.primary.light]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.button}
+          >
+            <Ionicons
+              name="person-add-outline"
+              size={rf(16)}
+              color={colors.text.primary}
+            />
+            <Text style={styles.buttonText}>Sign Up Free</Text>
+          </LinearGradient>
+        </AnimatedPressable>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  card: {
-    backgroundColor: "rgba(255, 107, 53, 0.08)",
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: `${colors.primary.DEFAULT}0F`,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 107, 53, 0.2)",
+    borderColor: `${colors.primary.DEFAULT}2E`,
     overflow: "hidden",
   },
   content: {
     alignItems: "center",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
   },
   iconContainer: {
     marginBottom: spacing.sm,
@@ -138,35 +144,26 @@ const styles = StyleSheet.create({
     borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
-    elevation: 6,
-    shadowColor: "#FF6B35",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   textContainer: {
     alignItems: "center",
     marginBottom: spacing.md,
-    paddingHorizontal: spacing.sm,
   },
   title: {
-    fontSize: rf(16),
-    fontWeight: "700",
-    color: colors.white,
+    ...variants.cardHeadline,
+    color: colors.text.primary,
     textAlign: "center",
-    marginBottom: rp(4),
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: rf(12),
-    color: colors.text,
-    textAlign: 'center',
-    lineHeight: rf(18),
-    opacity: 0.75,
+    ...variants.caption,
+    color: colors.text.secondary,
+    textAlign: "center",
   },
   buttonWrapper: {
     width: "100%",
+    borderRadius: 12,
     overflow: "hidden",
-    borderRadius: borderRadius.md,
   },
   button: {
     flexDirection: "row",
@@ -176,13 +173,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     minHeight: 44,
-    borderRadius: borderRadius.md,
-    overflow: "hidden",
+    borderRadius: 12,
   },
   buttonText: {
+    ...variants.cardHeadline,
     fontSize: rf(14),
-    fontWeight: "600",
-    color: colors.white,
+    color: colors.text.primary,
   },
 });
 

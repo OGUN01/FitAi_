@@ -3,8 +3,14 @@ import { View, Text, StyleSheet, Modal, FlatList, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 
@@ -45,7 +51,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
             <Ionicons
               name="close"
               size={rf(20)}
-              color={colors.textSecondary}
+              color={colors.text.secondary}
             />
           </AnimatedPressable>
         </View>
@@ -65,13 +71,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
             }
 
             return (
-              <GlassCard
-                style={styles.modalActivityCard}
-                elevation={1}
-                blurIntensity="light"
-                padding="md"
-                borderRadius="lg"
-              >
+              <View style={styles.modalActivityCard}>
                 <View style={styles.activityContent}>
                   <View style={styles.activityIcon}>
                     <Ionicons
@@ -81,7 +81,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
                           : "restaurant-outline"
                       }
                       size={rf(20)}
-                      color={colors.primary}
+                      color={colors.primary.DEFAULT}
                     />
                   </View>
                   <View style={styles.activityInfo}>
@@ -101,11 +101,11 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
                     <Ionicons
                       name="checkmark"
                       size={rf(14)}
-                      color={colors.white}
+                      color={colors.text.primary}
                     />
                   </View>
                 </View>
-              </GlassCard>
+              </View>
             );
           }}
           onEndReached={onLoadMore}
@@ -141,7 +141,7 @@ export const ActivitiesModal: React.FC<ActivitiesModalProps> = ({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   modalHeader: {
     flexDirection: "row",
@@ -150,18 +150,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: borderTokens.subtle,
   },
   modalTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    fontFamily: "Manrope_700Bold",
+    color: colors.text.primary,
   },
   modalCloseButton: {
     width: Math.max(rw(32), 44),
     height: Math.max(rh(32), 44),
     borderRadius: Math.max(rs(16), 22),
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -170,6 +170,11 @@ const styles = StyleSheet.create({
   },
   modalActivityCard: {
     marginBottom: spacing.md,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
+    padding: spacing.md,
   },
   activityContent: {
     flexDirection: "row",
@@ -179,7 +184,7 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rh(40),
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -188,25 +193,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityName: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   activityDetails: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     marginBottom: rp(2),
   },
   activityDate: {
-    fontSize: fontSize.xs,
-    color: colors.textTertiary,
+    ...typography.variants.caption,
+    color: colors.text.tertiary,
   },
   activityBadge: {
     width: rw(24),
     height: rh(24),
     borderRadius: rs(12),
-    backgroundColor: colors.success,
+    backgroundColor: colors.success.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -218,16 +222,16 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginLeft: spacing.sm,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
   endFooter: {
     paddingVertical: spacing.lg,
     alignItems: "center",
   },
   endText: {
-    fontSize: fontSize.sm,
-    color: colors.textTertiary,
+    ...typography.variants.caption2,
+    color: colors.text.tertiary,
     fontStyle: "italic",
   },
   emptyModalContainer: {
@@ -237,14 +241,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxl,
   },
   emptyModalText: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
+    ...typography.variants.cardHeadline,
+    fontFamily: "Manrope_500Medium",
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
   emptyModalSubtext: {
-    fontSize: fontSize.sm,
-    color: colors.textTertiary,
+    ...typography.variants.caption2,
+    color: colors.text.tertiary,
     textAlign: "center",
   },
 });

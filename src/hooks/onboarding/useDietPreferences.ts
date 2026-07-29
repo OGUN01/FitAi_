@@ -65,6 +65,8 @@ export const useDietPreferences = ({
     lunch_enabled: data?.lunch_enabled ?? true,
     dinner_enabled: data?.dinner_enabled ?? true,
     snacks_enabled: data?.snacks_enabled ?? true,
+    // §4 smart default: snacks_count defaults to 1 (coherent with snacks_enabled=true).
+    snacks_count: data?.snacks_count ?? 1,
 
     // Cooking preferences
     cooking_skill_level: data?.cooking_skill_level || "beginner",
@@ -107,6 +109,7 @@ export const useDietPreferences = ({
         lunch_enabled: data.lunch_enabled ?? true,
         dinner_enabled: data.dinner_enabled ?? true,
         snacks_enabled: data.snacks_enabled ?? true,
+        snacks_count: data.snacks_count ?? 1,
         cooking_skill_level: data.cooking_skill_level || "beginner",
         max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
         budget_level: data.budget_level || "medium",

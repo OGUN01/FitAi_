@@ -10,7 +10,11 @@
  */
 
 // ── Management API helper ─────────────────────────────────────────────
-const PAT = "sbp_9f369f3cbb52d4df76f87850fe7526d5dad91c06";
+const PAT = process.env.SUPABASE_ACCESS_TOKEN;
+if (!PAT) {
+  console.error("ERROR: SUPABASE_ACCESS_TOKEN environment variable is required.");
+  process.exit(1);
+}
 const PROJECT_REF = "mqfrwtmkokivoxgukgsz";
 const MGMT_URL = `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`;
 

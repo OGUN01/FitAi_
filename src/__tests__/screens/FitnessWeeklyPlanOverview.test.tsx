@@ -124,8 +124,9 @@ describe("Fitness WeeklyPlanOverview", () => {
       />,
     );
 
+    // Stats row moved to WeekProgressCard — only the day-cell completion
+    // indicator is asserted here.
     expect(screen.queryByText("icon:checkmark")).toBeNull();
-    expect(screen.getByText("0/1")).toBeTruthy();
   });
 
   it("marks a day completed when the completed session belongs to the current week", () => {
@@ -166,6 +167,5 @@ describe("Fitness WeeklyPlanOverview", () => {
     );
 
     expect(screen.getByText("icon:checkmark")).toBeTruthy();
-    expect(screen.getByText("1/1")).toBeTruthy();
   });
 });

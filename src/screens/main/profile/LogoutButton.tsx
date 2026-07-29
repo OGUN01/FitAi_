@@ -1,21 +1,22 @@
 /**
- * LogoutButton - Sign Out Button Component
- *
- * Features:
- * - Destructive styling
- * - Icon + text
- * - Proper haptic feedback
+ * LogoutButton - Aurora 2026: destructive sign-out row.
+ * Soft error tint on surface, no card nesting, no shadows.
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import React, { useCallback } from "react";
+import { Text, StyleSheet } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import {
+  colors,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+
+const { variants } = typography;
 
 interface LogoutButtonProps {
   onPress: () => void;
@@ -26,40 +27,32 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
   onPress,
   animationDelay = 0,
 }) => {
+  const handlePress = useCallback(() => {
+    haptics.medium();
+    onPress();
+  }, [onPress]);
+
   return (
     <Animated.View
-      entering={FadeIn.delay(animationDelay).duration(400)}
+      entering={FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
       <AnimatedPressable
-        onPress={() => {
-          haptics.medium();
-          onPress();
-        }}
+        onPress={handlePress}
         scaleValue={0.97}
         hapticFeedback={false}
         accessibilityRole="button"
         accessibilityLabel="Sign out"
         accessibilityHint="Logs you out of your FitAI account"
+        style={styles.button}
       >
-        <GlassCard
-          elevation={1}
-          padding="md"
-          blurIntensity="light"
-          borderRadius="lg"
-          style={styles.card}
-        >
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Ionicons
-                name="log-out-outline"
-                size={rf(20)}
-                color={colors.error}
-              />
-            </View>
-            <Text style={styles.text}>Sign Out</Text>
-          </View>
-        </GlassCard>
+        <Ionicons
+          name="log-out-outline"
+          size={rf(18)}
+          color={colors.error.DEFAULT}
+          style={styles.icon}
+        />
+        <Text style={styles.text}>Sign Out</Text>
       </AnimatedPressable>
     </Animated.View>
   );
@@ -67,28 +60,26 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.lg,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
-  card: {
-    backgroundColor: "rgba(244, 67, 54, 0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(244, 67, 54, 0.15)",
-  },
-  content: {
+  button: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing.md,
     minHeight: 44,
+    borderRadius: 12,
+    backgroundColor: `${colors.error.DEFAULT}14`,
+    borderWidth: 1,
+    borderColor: `${colors.error.DEFAULT}2E`,
   },
-  iconContainer: {
+  icon: {
     marginRight: spacing.sm,
   },
   text: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.error,
+    ...variants.cardHeadline,
+    color: colors.error.DEFAULT,
   },
 });
 

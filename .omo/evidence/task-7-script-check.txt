@@ -1,0 +1,10 @@
+node --check: SYNTAX OK
+
+Symbol checks:
+food-databases: true
+fitai-foods-latest: true
+fitai-foods-: true
+getPublicUrl: true
+upsert: true: true
+application/octet-stream: true
+50 *: true

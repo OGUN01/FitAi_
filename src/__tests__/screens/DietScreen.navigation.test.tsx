@@ -31,6 +31,7 @@ jest.mock("react-native", () => {
       absoluteFillObject: {},
     },
     Platform: { OS: "android" },
+    Dimensions: { get: () => ({ width: 375, height: 812, scale: 1, fontScale: 1 }) },
     UIManager: {
       setLayoutAnimationEnabledExperimental: jest.fn(),
     },
@@ -92,18 +93,20 @@ jest.mock("../../components/ui", () => ({
   },
 }));
 
-// Real DietScreenHeader, CompactDietCard, MealsListView, MealDetailView, and
-// CalorieArc are used; the remaining heavy/visual children are stubbed so the
-// navigation contract is the only thing under test. CompactDietCard's real
-// "View Today" button must render so the onViewToday callback can fire.
-jest.mock("../../components/diet/DietQuickActions", () => {
-  const React = require("react");
-  return { DietQuickActions: () => React.createElement("Text", null, "Quick Actions") };
-});
-jest.mock("../../components/DatabaseDownloadBanner", () => () => null);
-jest.mock("../../components/diet/MealSuggestions", () => ({
-  MealSuggestions: () => null,
+// Diet tab redesigned (Hero Ring layout): the dashboard now renders a big
+// calorie ring (DietHeroRing), macro rings (MacroRingsRow), an integrated
+// meals timeline (MealsTimeline) and a water row (WaterQuickRow) directly on
+// the AuroraBackground, plus a floating action dock (DietActionDock). The
+// MealsListView full-screen overlay was removed; tapping a timeline row opens
+// the MealDetailView overlay directly. These new components render real under
+// the global svg/reanimated mocks; only the heavy/visual siblings are stubbed.
+jest.mock("../../components/diet/StreakPill", () => ({
+  StreakPill: () => null,
 }));
+jest.mock("../../components/diet/WeekCalendarStrip", () => ({
+  WeekCalendarStrip: () => null,
+}));
+jest.mock("../../components/DatabaseDownloadBanner", () => () => null);
 jest.mock("../../components/diet/DietModals", () => ({
   DietModals: () => null,
 }));
@@ -126,9 +129,6 @@ jest.mock("../../components/diet/ScanResultModal", () => ({
   ScanResultModal: () => null,
 }));
 
-jest.mock("../../components/diet/ContributionPromptModal", () => ({
-  ContributionPromptModal: () => null,
-}));
 jest.mock("../../components/subscription/PaywallModal", () => () => null);
 jest.mock("../../screens/main/GuestSignUpScreen", () => ({
   GuestSignUpScreen: () => null,
@@ -143,10 +143,9 @@ jest.mock("../../utils/responsive", () => ({
   rbr: (v: number) => v,
 }));
 
-// Keep the real getMealTime (used by MealsListView/MealDetailView to render
+// Keep the real getMealTime (used by MealsTimeline/MealDetailView to render
 // each meal's scheduled time slot) while stubbing calculateMealSchedule so the
 // navigation contract doesn't depend on wake/sleep-derived schedule calc.
-// Spreading requireActual preserves getMealTime, getMealTypeIcon, etc.
 jest.mock("../../utils/mealSchedule", () => {
   const actual = jest.requireActual("../../utils/mealSchedule");
   return {
@@ -341,43 +340,38 @@ jest.mock("../../hooks/useAIMealGeneration", () => ({
 
 import { DietScreen } from "../../screens/main/DietScreen";
 
-describe("DietScreen dashboard → meals list → meal detail navigation", () => {
-  it("opens the meals list and meal detail overlays and returns in order", () => {
+describe("DietScreen dashboard → timeline → meal detail navigation", () => {
+  it("renders the meals timeline on the dashboard and opens meal detail on row tap", () => {
     const view = render(
       <DietScreen navigation={{ navigate: jest.fn(), setParams: jest.fn() }} route={{}} />,
     );
 
-    // 1. Dashboard is mounted; the meals-list and meal-detail overlays are not.
-    expect(view.getByText("Nutrition Plan")).toBeTruthy();
+    // 1. Dashboard is mounted; the meals-list overlay is gone (removed in the
+    //    Hero Ring redesign) and the meal-detail overlay is not yet open.
+    expect(view.getByText("Diet")).toBeTruthy();
     expect(view.queryByTestId("diet-meals-list-view")).toBeNull();
     expect(view.queryByTestId("diet-meal-detail-view")).toBeNull();
 
-    // 2. Open the meals list via CompactDietCard's "View Today" button.
-    // CompactDietCard renders an AnimatedPressable with
-    // accessibilityLabel="View today's meals" (verified in
-    // src/components/diet/CompactDietCard.tsx) which calls onViewToday.
-    fireEvent.press(view.getByLabelText("View today's meals"));
-    expect(view.getByTestId("diet-meals-list-view")).toBeTruthy();
+    // 2. The meals timeline renders directly on the dashboard with the
+    //    "Today's Meals" header and a row per meal.
     expect(view.getByText("Today's Meals")).toBeTruthy();
+    const mealRow = view.getByTestId(`meal-timeline-card-${meal.id}`);
+    expect(mealRow).toBeTruthy();
 
-    // 3. Open meal detail via the meal row (testID "meals-list-row-<meal.id>").
-    fireEvent.press(view.getByTestId(`meals-list-row-${meal.id}`));
+    // 3. Tapping a timeline row opens the meal-detail overlay.
+    fireEvent.press(mealRow);
     const mealDetailView = view.getByTestId("diet-meal-detail-view");
     expect(mealDetailView).toBeTruthy();
-    // MealDetailView header title is meal.name || mealLabel. The meal name
-    // also appears in the MealsListView row behind the overlay (the overlay is
-    // absolute-fill, not unmounted), so assert at least one match rather than
-    // a unique one — the testID above is the authoritative presence check.
+    // MealDetailView header title is meal.name; the name also appears in the
+    // timeline row behind the overlay (the overlay is absolute-fill, not
+    // unmounted), so assert at least one match rather than a unique one.
     expect(view.getAllByText(meal.name).length).toBeGreaterThan(0);
 
-    // 4. Detail → Meals list: press the detail back button.
+    // 4. Detail → Dashboard: press the detail back button.
     fireEvent.press(view.getByTestId("meal-detail-back"));
     expect(view.queryByTestId("diet-meal-detail-view")).toBeNull();
-    expect(view.getByTestId("diet-meals-list-view")).toBeTruthy();
-
-    // 5. Meals list → Dashboard: press the list back button.
-    fireEvent.press(view.getByTestId("meals-list-back"));
-    expect(view.queryByTestId("diet-meals-list-view")).toBeNull();
-    expect(view.getByText("Nutrition Plan")).toBeTruthy();
+    // Dashboard is still mounted with its timeline.
+    expect(view.getByText("Diet")).toBeTruthy();
+    expect(view.getByTestId(`meal-timeline-card-${meal.id}`)).toBeTruthy();
   });
 });

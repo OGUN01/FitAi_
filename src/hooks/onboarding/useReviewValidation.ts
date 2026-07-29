@@ -91,50 +91,6 @@ export const useReviewValidation = ({
       bodyAnalysis.height_cm >= 100 &&
       bodyAnalysis.height_cm <= 250;
 
-    // 🔍 ONBOARDING DEBUG — RAW INPUTS entering the calculation engine
-    if (__DEV__) {
-      console.warn(
-        '\n========== ⚙️  REVIEW CALC — RAW INPUTS TO ENGINE ==========',
-        '\nhasBodyData             :', hasBodyData,
-        '\nbypassDeficitLimit      :', opts?.bypassDeficitLimit,
-        '\n--- Personal Info (going in) ---',
-        '\nage                     :', personalInfo.age,
-        '\ngender                  :', personalInfo.gender,
-        '\ncountry                 :', personalInfo.country,
-        '\nstate                   :', personalInfo.state,
-        '\nwake_time               :', personalInfo.wake_time,
-        '\nsleep_time              :', personalInfo.sleep_time,
-        '\n--- Body Analysis (going in) ---',
-        '\nheight_cm               :', bodyAnalysis?.height_cm,
-        '\ncurrent_weight_kg       :', bodyAnalysis?.current_weight_kg,
-        '\ntarget_weight_kg        :', bodyAnalysis?.target_weight_kg,
-        '\ntarget_timeline_weeks   :', bodyAnalysis?.target_timeline_weeks,
-        '\nbody_fat_percentage     :', bodyAnalysis?.body_fat_percentage,
-        '\nstress_level            :', bodyAnalysis?.stress_level,
-        '\npregnancy_status        :', bodyAnalysis?.pregnancy_status,
-        '\nbreastfeeding_status    :', bodyAnalysis?.breastfeeding_status,
-        '\nmedical_conditions      :', bodyAnalysis?.medical_conditions,
-        '\nphysical_limitations    :', bodyAnalysis?.physical_limitations,
-        '\n--- Workout Preferences (going in) ---',
-        '\nactivity_level          :', workoutPreferences.activity_level,
-        '\nintensity               :', workoutPreferences.intensity,
-        '\nprimary_goals           :', workoutPreferences.primary_goals,
-        '\nworkout_frequency/week  :', workoutPreferences.workout_frequency_per_week,
-        '\ntime_preference (min)   :', workoutPreferences.time_preference,
-        '\nweekly_weight_loss_goal :', workoutPreferences.weekly_weight_loss_goal,
-        '\nboost_extra_cardio_min  :', workoutPreferences.boost_extra_cardio_minutes ?? 0,
-        '\n--- Diet Preferences (going in) ---',
-        '\ndiet_type               :', dietPreferences.diet_type,
-        '\nketo_ready              :', dietPreferences.keto_ready,
-        '\nhigh_protein_ready      :', dietPreferences.high_protein_ready,
-        '\nmediterranean_ready     :', dietPreferences.mediterranean_ready,
-        '\ndrinks_enough_water     :', dietPreferences.drinks_enough_water,
-        '\ncooking_skill_level     :', dietPreferences.cooking_skill_level,
-        '\nbudget_level            :', dietPreferences.budget_level,
-        '\n=============================================================\n'
-      );
-    }
-
     setIsCalculating(true);
     setCalculationError(null);
 

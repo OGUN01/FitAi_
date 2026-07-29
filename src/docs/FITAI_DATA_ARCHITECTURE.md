@@ -890,6 +890,22 @@ useCalculatedMetrics = derived view of profileStore data
 | Advanced review | `profileStore.advancedReview` | Recommendations, HR zones (wired in Wave 2E) |
 | Workout generation | `aiService.generateWeeklyWorkoutPlan()` | All data passed including advancedReview |
 
+#### E.4a Workout Session Screen — Live Metrics Data Flow
+
+**Hook:** `useWorkoutSession` (`src/hooks/useWorkoutSession.ts`)
+
+| Metric | Source | Derivation | Reactivity |
+|--------|--------|------------|------------|
+| Timer (TIME) | `workoutStats.totalDuration` | `currentTime - workoutStartTime` (per-second interval) | `setCurrentTime` interval (1s) |
+| Calories (CAL) | `workoutStats.caloriesBurned` | MET calc via `calculateWorkoutCalories(completedInputs, resolvedWeight)` — reads ACTUAL logged reps from store SSOT | Recomputes when `exerciseProgress` / `storeExercises` change |
+| Volume (VOL) | `sessionVolume` (WorkoutSessionScreen) | `Σ(weight × reps)` across `currentWorkoutSession.exercises[].sets[]` where `weight != null && reps != null` | **Must subscribe reactively** via `useFitnessStore((s) => s.currentWorkoutSession?.exercises)` — `getState()` in a `useMemo` dep is NOT reactive (bug fixed 2026-07-28) |
+| Progress bar | `overallProgress` (0..1) | **Set-based**: `completedSets / totalSets` across ALL exercises (not exercise-based) | Recomputes when `exerciseProgress` changes |
+
+**SSOT for set data:** `fitnessStore.currentWorkoutSession.exercises[].sets[]` — `SetLogModal.handleSave` writes weight/reps/rpe/completed here via `updateSetData`. The hook's `exerciseProgress` is a READ-ONLY projection derived from the store.
+
+**ExerciseHistory overlay:** When the user taps the exercise name during a workout session, `ExerciseHistoryScreen` renders as a SECOND overlay on top of `WorkoutSessionScreen` (not a mutually-exclusive branch in `renderOverlayScreen`). The `goBack` handler checks if both `exerciseHistorySession.isActive && workoutSession.isActive` and only closes the history overlay, preserving the workout session.
+
+
 ### E.5 Profile Screen
 
 | Flow | Description |
@@ -1000,6 +1016,22 @@ All in `fitai-workers/src/prompts/diet/types.ts`:
 
 **Prompt routing:** `diet_type` routes to specialized templates: `nonVeg.ts`, `vegetarian.ts`, `vegan.ts`, `pescatarian.ts`, `keto.ts`
 
+### F.1.3 Meal Image Pipeline (`meal.imageUrl`)
+
+After AI generation + portion adjustment, the worker attaches a real food photo to each meal via `resolveMealImages()` (`fitai-workers/src/utils/mealImageResolver.ts`). This runs **server-side only**; the app reads `meal.imageUrl` from Supabase — zero third-party calls from the device. A missing/failed resolution leaves `imageUrl = undefined` and the client renders the gradient placeholder (`MealImage.tsx`). A wrong photo is never preferable to no photo.
+
+**Canonicalization** (`canonicalizeDishName`): the raw dish string is reduced to a canonical dish noun used for both lookup and the KV cache key (`mealimg:canon:<canonical>`). It strips trailing accompaniments (`with X` / `and X` / `& X` / `in X` / `on X`) and a leading dietary-modifier compound (`low-fat`, `high-protein`, `sugar-free`, …). It deliberately does NOT drop the last word (that produced "Low Fat" → an airplane photo) and does NOT strip culinary words (`masala`, `curry`, `dal`). Variants collapse: "Low-Fat Curd with Roasted Cumin" / "Curd with Roasted Cumin" / "Curd" → `curd`.
+
+**4-tier cascade** (first hit wins; `undefined` → gradient fallback):
+1. **Curated registry** (`dishImageRegistry.ts`) — O(1), zero-network, hand-verified Wikimedia thumb URLs for the most common Indian dishes (biryani, curd, dal, idli, kadhi, kheer, khichdi, lassi, naan, paneer, paratha, rajma, raita, roti, upma, chana masala, sambar, vada). The correctness guarantee.
+2. **English Wikipedia `pageimages`** (`en.wikipedia.org`) — the article's curated lead image. High precision. ~56% of canonical Indian dish nouns.
+3. **Wikipedia `prop=images` → Commons `imageinfo`** — for articles that exist but have no designated pageimage (Dosa, Poha, …). Takes the first real photo on the article.
+4. **Wikimedia Commons `generator=search`** — last resort for compound/regional names with no Wikipedia article. A relevance gate requires a real food token in the query AND in each result's title, so generic/unrelated matches (the airplane, "Bhalla Papri Chaat" for a curd query) are rejected.
+
+**Caching**: results (including negative misses as `""`) are cached in the `MEAL_CACHE` KV namespace for 60 days at the canonical key, so each unique dish resolves exactly once across all users. **Telemetry**: dishes that fall through to the gradient are logged (`No image (gradient fallback): raw=… canonical=…`) so the curated registry grows from real misses.
+
+**Persistence**: resolved `imageUrl` values are stored in `weekly_meal_plans.plan_data` (JSONB `meals[].imageUrl`). To re-resolve, regenerate the plan (the app's Refresh button) — never patch stored URLs by hand except to null a known-wrong value.
+
 ### F.2 Workout Generation — 5 Paths
 
 #### Path A: AI Weekly Plan (Primary)
@@ -1098,6 +1130,9 @@ workoutEngine.generateSmartWorkout() → aiService.generateWorkout()
 3. RPE modulates: RPE 1 (Easy) = double jump, RPE 2 = standard, RPE 3 (Hard) = hold
 4. Two consecutive failed sessions → deload to 90%
 5. Upper body increment: 2.5 kg, Lower body: 5.0 kg
+6. Increments exposed via `progressionService.getIncrementForExercise(exerciseId)` and
+   `PROGRESSION_INCREMENTS` export — UI explainers (SetLogModal progressive overload
+   card) pull the real step + rep range from the service/plan, never hardcoded.
 
 #### Deload System
 - **Proactive:** Mesocycle week 5+ → 40% volume reduction suggestion

@@ -1,0 +1,3 @@
+PASS: Zero TypeScript errors in src/services/sqliteFood.ts
+--- Full tsc output (filtered for sqliteFood) ---
+(no errors found)

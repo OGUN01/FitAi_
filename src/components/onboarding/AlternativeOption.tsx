@@ -1,9 +1,26 @@
-import { flatColors as colors } from "../../theme/aurora-tokens";
+/**
+ * AlternativeOption — one pace option ("Editorial Dark", no cards)
+ *
+ * An OptionRow-style selectable row: 2px accent left bar + accent check when
+ * selected, hairline below, transparent background always. The row shows the
+ * label, kg/week + cal + exercise detail, weeks-to-goal, and every safety
+ * annotation (below-BMR warning, BMR minimum, workout-inclusive, motivational
+ * note) as quiet caption lines. The recommended option gets a quiet orange
+ * "Smart pick" caption. Blocked options render as a dimmed locked row.
+ *
+ * Props and selection logic — UNCHANGED from the previous card version.
+ */
+
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, Pressable } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../utils/responsive";
-import { SmartAlternative, RiskLevel } from "../../services/validationEngine";
+import { SmartAlternative } from "../../services/validationEngine";
+import { tokens, font } from "./fresh";
 
 // ============================================================================
 // TYPES
@@ -15,85 +32,11 @@ interface AlternativeOptionProps {
   onSelect: (alternative: SmartAlternative) => void;
 }
 
-// ============================================================================
-// RISK LEVEL STYLES
-// ============================================================================
+const PRESS_DURATION = 120;
+const PRESS_OPACITY = 0.6;
 
-const getRiskStyles = (riskLevel: RiskLevel) => {
-  switch (riskLevel) {
-    case "blocked":
-      return {
-        background: "#F3F4F6",
-        border: "#9CA3AF",
-        badgeBg: "#E5E7EB",
-        badgeText: "#6B7280",
-        text: "#9CA3AF",
-      };
-    case "dangerous":
-      return {
-        background: "#FEE2E2",
-        border: "#EF4444",
-        badgeBg: "#FEE2E2",
-        badgeText: "#DC2626",
-        text: "#DC2626",
-      };
-    case "caution":
-      return {
-        background: "#FEF3C7",
-        border: "#F59E0B",
-        badgeBg: "#FEF3C7",
-        badgeText: "#D97706",
-        text: "#D97706",
-      };
-    case "moderate":
-      return {
-        background: "#FEF9C3",
-        border: "#EAB308",
-        badgeBg: "#FEF9C3",
-        badgeText: "#CA8A04",
-        text: "#CA8A04",
-      };
-    case "safe":
-      return {
-        background: "#DCFCE7",
-        border: "#22C55E",
-        badgeBg: "#DCFCE7",
-        badgeText: "#16A34A",
-        text: "#16A34A",
-      };
-    case "easy":
-      return {
-        background: "#DBEAFE",
-        border: "#3B82F6",
-        badgeBg: "#DBEAFE",
-        badgeText: "#2563EB",
-        text: "#2563EB",
-      };
-    default:
-      return {
-        background: "#F3F4F6",
-        border: "#9CA3AF",
-        badgeBg: "#E5E7EB",
-        badgeText: "#6B7280",
-        text: "#6B7280",
-      };
-  }
-};
-
-const getIconName = (iconName: string): keyof typeof Ionicons.glyphMap => {
-  const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
-    flame: "flame",
-    flash: "flash",
-    fitness: "fitness",
-    "shield-checkmark": "shield-checkmark",
-    leaf: "leaf",
-    walk: "walk",
-    bicycle: "bicycle",
-    barbell: "barbell",
-    scale: "scale",
-  };
-  return iconMap[iconName] || "ellipse";
-};
+const formatCalories = (cal: number | null | undefined): string =>
+  cal != null && !isNaN(cal) ? Number(cal).toLocaleString("en-US") : "—";
 
 // ============================================================================
 // COMPONENT
@@ -104,180 +47,149 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
   isSelected,
   onSelect,
 }) => {
-  const riskStyles = getRiskStyles(alternative.riskLevel);
-  const isBlocked = alternative.isBlocked;
+  const opacity = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
-  if (isBlocked) {
+  const onPressIn = () => {
+    opacity.value = withTiming(PRESS_OPACITY, { duration: PRESS_DURATION });
+  };
+  const onPressOut = () => {
+    opacity.value = withTiming(1, { duration: PRESS_DURATION });
+  };
+
+  // ── Blocked: dimmed locked row, not tappable ──
+  if (alternative.isBlocked) {
     return (
-      <TouchableOpacity
-        style={[styles.container, styles.blockedContainer]}
-        disabled
-        activeOpacity={1}
-      >
-        {/* Left: Locked icon */}
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: "rgba(255,255,255,0.05)" },
-          ]}
-        >
+      <View accessibilityState={{ disabled: true }}>
+        <View style={styles.row}>
+          <View style={styles.bar} />
           <Ionicons
             name="lock-closed"
-            size={rf(18)}
-            color="rgba(255,255,255,0.25)"
+            size={15}
+            color={tokens.ink3}
+            style={styles.lockIcon}
           />
+          <View style={styles.content}>
+            <Text
+              style={[styles.label, styles.labelBlocked]}
+              numberOfLines={1}
+            >
+              {alternative.label}
+            </Text>
+            <Text style={styles.blockedReason} numberOfLines={2}>
+              {alternative.blockReason}
+            </Text>
+          </View>
+          <Text style={[styles.badge, styles.badgeBlocked]}>LOCKED</Text>
         </View>
-
-        {/* Middle: Content */}
-        <View style={styles.content}>
-          <Text
-            style={[
-              styles.label,
-              { color: "rgba(255,255,255,0.25)", fontSize: rf(12) },
-            ]}
-            numberOfLines={1}
-          >
-            {alternative.label}
-          </Text>
-          <Text style={styles.blockedText}>{alternative.blockReason}</Text>
-        </View>
-
-        {/* Right: LOCKED badge */}
-        <View
-          style={[styles.badge, { backgroundColor: "rgba(255,255,255,0.05)" }]}
-        >
-          <Text style={[styles.badgeText, { color: "rgba(255,255,255,0.2)" }]}>
-            LOCKED
-          </Text>
-        </View>
-      </TouchableOpacity>
+        <View style={styles.hairline} />
+      </View>
     );
   }
 
+  const badgeColor =
+    alternative.riskLevel === "dangerous" ? tokens.danger : tokens.ink3;
+
   return (
-    <TouchableOpacity
-      style={[
-        styles.container,
-        {
-          backgroundColor: isSelected
-            ? `${riskStyles.border}15`
-            : "transparent",
-          borderColor: isSelected ? riskStyles.border : "transparent",
-          borderWidth: isSelected ? 2 : 1,
-        },
-      ]}
+    <Pressable
       onPress={() => onSelect(alternative)}
-      activeOpacity={0.7}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={alternative.label}
     >
-      {/* Left: Icon */}
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: `${riskStyles.border}20` },
-        ]}
-      >
-        <Ionicons
-          name={getIconName(alternative.icon)}
-          size={rf(18)}
-          color={riskStyles.border}
-        />
-      </View>
+      <Animated.View style={animatedStyle}>
+        <View style={styles.row}>
+          {/* 2px left-edge slot: accent bar when selected, transparent spacer
+              otherwise so rows never shift on toggle. */}
+          <View style={[styles.bar, isSelected && styles.barSelected]} />
 
-      {/* Middle: Content */}
-      <View style={styles.content}>
-        <View style={styles.labelRow}>
-          <Text
-            style={[
-              styles.label,
-              alternative.isUserOriginal && styles.labelBold,
-            ]}
-            numberOfLines={1}
-          >
-            {alternative.label}
-          </Text>
-          {alternative.isRecommended && (
-            <View style={styles.recommendedBadge}>
-              <Ionicons name="star" size={rf(10)} color="#16A34A" />
+          <View style={styles.content}>
+            {/* Label + optional "Smart pick" caption */}
+            <View style={styles.labelRow}>
+              <Text
+                style={[styles.label, !isSelected && styles.labelUnselected]}
+                numberOfLines={1}
+              >
+                {alternative.label}
+              </Text>
+              {alternative.isRecommended && (
+                <Text style={styles.smartPick}>Smart pick</Text>
+              )}
             </View>
-          )}
-        </View>
 
-        <View style={styles.detailsRow}>
-          <Text style={styles.rate}>{alternative.weeklyRate} kg/week</Text>
-          <Text style={styles.separator}>•</Text>
-          {/* Calories: red + warning icon when this route goes below the user's BMR */}
-          <View style={styles.caloriesRow}>
+            {/* Rate · calories · exercise */}
+            <View style={styles.detailsRow}>
+              {alternative.isBelowBMR && (
+                <Ionicons
+                  name="warning"
+                  size={11}
+                  color={tokens.danger}
+                  style={styles.detailsWarningIcon}
+                />
+              )}
+              <Text style={styles.details} numberOfLines={1}>
+                {alternative.weeklyRate} kg/week
+                {"  ·  "}
+                <Text style={alternative.isBelowBMR && styles.detailsDanger}>
+                  {formatCalories(alternative.dailyCalories)} cal
+                </Text>
+                {alternative.requiresExercise &&
+                alternative.exerciseDescription
+                  ? `  ·  ${alternative.exerciseDescription}`
+                  : ""}
+              </Text>
+            </View>
+
+            {/* Safety / context annotations (preserved from card version) */}
             {alternative.isBelowBMR && (
-              <Ionicons
-                name="warning"
-                size={rf(10)}
-                color="#EF4444"
-                style={{ marginRight: 2 }}
-              />
+              <Text style={styles.warnLine}>
+                Requires eating below your BMR — not sustainable long-term
+              </Text>
             )}
-            <Text
-              style={[
-                styles.calories,
-                alternative.isBelowBMR && { color: "#EF4444", fontWeight: "700" },
-              ]}
-            >
-              {alternative.dailyCalories} cal
+            {alternative.requiresExercise &&
+              !alternative.isFrequencyUpgrade && (
+                <Text style={styles.noteLine}>
+                  Eating at your safe minimum (BMR)
+                </Text>
+              )}
+            {alternative.workoutPlanInclusive &&
+              !alternative.requiresExercise && (
+                <Text style={styles.noteLine}>
+                  Includes your workout plan
+                </Text>
+              )}
+            {alternative.motivationalNote && (
+              <Text style={styles.noteLine}>{alternative.motivationalNote}</Text>
+            )}
+
+            {/* Weeks to goal */}
+            <Text style={styles.timeline}>
+              {alternative.timelineWeeks > 0
+                ? `${alternative.timelineWeeks} weeks to goal`
+                : "Ongoing"}
             </Text>
           </View>
-          {alternative.requiresExercise && (
-            <>
-              <Text style={styles.separator}>•</Text>
-              <Text style={styles.exercise}>
-                {alternative.exerciseDescription}
-              </Text>
-            </>
+
+          {/* Right: quiet risk label + selection check */}
+          <Text style={[styles.badge, { color: badgeColor }]}>
+            {alternative.badge}
+          </Text>
+          {isSelected && (
+            <Ionicons
+              name="checkmark"
+              size={18}
+              color={tokens.accent}
+              style={styles.check}
+            />
           )}
         </View>
-
-        {/* Below-BMR warning sub-label */}
-        {alternative.isBelowBMR && (
-          <Text style={styles.belowBMRWarning}>
-            ⚠ Requires eating below your BMR — not sustainable long-term
-          </Text>
-        )}
-
-        {/* Annotation A: exercise cards eat at safe minimum (BMR) */}
-        {alternative.requiresExercise && !alternative.isFrequencyUpgrade && (
-          <Text style={styles.bmrAnnotation}>Eating at your safe minimum (BMR)</Text>
-        )}
-
-        {/* Annotation B: diet cards already include the user's workout plan in TDEE */}
-        {alternative.workoutPlanInclusive && !alternative.requiresExercise && (
-          <Text style={styles.workoutInclusiveNote}>✓ Includes your workout plan</Text>
-        )}
-
-        {/* Annotation C: gainer frequency upgrade motivational note */}
-        {alternative.motivationalNote && (
-          <Text style={styles.motivationalNote}>{alternative.motivationalNote}</Text>
-        )}
-
-        {/* Timeline */}
-        <Text style={styles.timeline}>
-          {alternative.timelineWeeks > 0 ? `${alternative.timelineWeeks} weeks to goal` : "Ongoing"}
-        </Text>
-      </View>
-
-      {/* Right: Badge */}
-      <View style={[styles.badge, { backgroundColor: riskStyles.badgeBg }]}>
-        <Text style={[styles.badgeText, { color: riskStyles.badgeText }]}>
-          {alternative.badge}
-        </Text>
-      </View>
-
-      {/* Selected checkmark */}
-      {isSelected && (
-        <View
-          style={[styles.checkmark, { backgroundColor: riskStyles.border }]}
-        >
-          <Ionicons name="checkmark" size={rf(12)} color="#FFFFFF" />
-        </View>
-      )}
-    </TouchableOpacity>
+        <View style={styles.hairline} />
+      </Animated.View>
+    </Pressable>
   );
 };
 
@@ -286,139 +198,115 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  container: {
+  row: {
+    minHeight: 56,
+    paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
-    padding: rp(12),
-    borderRadius: rp(12),
-    marginBottom: rp(8),
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "transparent",
   },
-  blockedContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+  bar: {
+    width: 2,
+    alignSelf: "stretch",
+    backgroundColor: "transparent",
+    marginRight: 14,
   },
-  iconContainer: {
-    width: rf(36),
-    height: rf(36),
-    borderRadius: rf(10),
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: rp(12),
+  barSelected: {
+    backgroundColor: tokens.accent,
+  },
+  lockIcon: {
+    marginRight: 12,
   },
   content: {
     flex: 1,
-    marginRight: rp(8),
+    justifyContent: "center",
+    marginRight: 12,
   },
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(6),
-    marginBottom: rp(2),
+    gap: 10,
   },
   label: {
-    fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.text,
+    fontFamily: font.medium,
+    fontSize: 17,
+    color: tokens.ink,
+    flexShrink: 1,
+  },
+  labelUnselected: {
+    color: tokens.ink2,
+  },
+  labelBlocked: {
+    color: tokens.ink3,
+  },
+  smartPick: {
+    fontFamily: font.semibold,
+    fontSize: 11,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  labelBold: {
-    fontWeight: "700",
-  },
-  recommendedBadge: {
-    backgroundColor: "rgba(22, 163, 74, 0.15)",
-    padding: rp(2),
-    borderRadius: rp(4),
+    color: tokens.accent,
   },
   detailsRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
-    gap: rp(4),
-    marginBottom: rp(2),
+    marginTop: 3,
   },
-  rate: {
-    fontSize: rf(12),
-    fontWeight: "600",
-    color: colors.text,
+  detailsWarningIcon: {
+    marginRight: 4,
   },
-  separator: {
-    fontSize: rf(10),
-    color: colors.textMuted,
+  details: {
+    fontFamily: font.regular,
+    fontSize: 13,
+    color: tokens.ink2,
+    flexShrink: 1,
   },
-  calories: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
+  detailsDanger: {
+    color: tokens.danger,
+    fontFamily: font.semibold,
   },
-  caloriesRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  warnLine: {
+    marginTop: 4,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.danger,
   },
-  belowBMRWarning: {
-    fontSize: rf(9),
-    color: "#EF4444",
-    fontStyle: "italic",
-    marginBottom: rp(1),
-    lineHeight: rf(12),
-  },
-  bmrAnnotation: {
-    fontSize: rf(9),
-    color: "#22C55E",
-    fontStyle: "italic",
-    marginBottom: rp(1),
-    lineHeight: rf(12),
-  },
-  workoutInclusiveNote: {
-    fontSize: rf(9),
-    color: "#6EE7B7",
-    marginBottom: rp(1),
-    lineHeight: rf(12),
-  },
-  motivationalNote: {
-    fontSize: rf(9),
-    color: "#60A5FA",
-    fontWeight: "600",
-    marginBottom: rp(1),
-    lineHeight: rf(12),
-  },
-  exercise: {
-    fontSize: rf(11),
-    color: colors.primary,
-    fontWeight: "500",
+  noteLine: {
+    marginTop: 4,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
   timeline: {
-    fontSize: rf(10),
-    color: colors.textMuted,
+    marginTop: 4,
+    fontFamily: font.regular,
+    fontSize: 12,
+    color: tokens.ink3,
   },
-
+  blockedReason: {
+    marginTop: 3,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
+  },
   badge: {
-    paddingHorizontal: rp(8),
-    paddingVertical: rp(4),
-    borderRadius: rp(6),
-    marginLeft: rp(4),
-  },
-  badgeText: {
-    fontSize: rf(10),
-    fontWeight: "600",
+    fontFamily: font.semibold,
+    fontSize: 10,
+    letterSpacing: 1,
     textTransform: "uppercase",
-    letterSpacing: 0.3,
   },
-  checkmark: {
-    position: "absolute",
-    top: rp(8),
-    right: rp(8),
-    width: rf(18),
-    height: rf(18),
-    borderRadius: rf(9),
-    justifyContent: "center",
-    alignItems: "center",
+  badgeBlocked: {
+    color: tokens.ink3,
   },
-  blockedText: {
-    fontSize: rf(11),
-    color: "rgba(255, 255, 255, 0.6)",
-    fontWeight: "500",
+  check: {
+    marginLeft: 10,
+  },
+  hairline: {
+    height: 1,
+    backgroundColor: tokens.hairline,
+    alignSelf: "stretch",
   },
 });
 

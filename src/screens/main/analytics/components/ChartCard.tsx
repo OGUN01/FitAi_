@@ -1,10 +1,15 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
+import {
+  surface,
+  border,
+  colors,
+  typography,
+  spacing,
+} from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
 import { hexToRgba } from "../../../../utils/colors";
 
@@ -28,7 +33,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
   children,
 }) => {
   return (
-    <Animated.View entering={FadeInUp.delay(delay).duration(400)}>
+    <Animated.View entering={FadeInDown.delay(delay).duration(350)}>
       <AnimatedPressable
         onPress={onPress}
         scaleValue={0.98}
@@ -36,18 +41,13 @@ export const ChartCard: React.FC<ChartCardProps> = ({
         hapticType="light"
         disabled={!onPress}
       >
-        <GlassCard
-          elevation={2}
-          blurIntensity="light"
-          padding="lg"
-          borderRadius="lg"
-        >
+        <View style={styles.card}>
           <View style={styles.chartHeader}>
             <View style={styles.chartTitleRow}>
               <View
                 style={[
                   styles.chartIconContainer,
-                  { backgroundColor: hexToRgba(iconColor, 0.2) },
+                  { backgroundColor: hexToRgba(iconColor, 0.14) },
                 ]}
               >
                 <Ionicons name={icon} size={rf(16)} color={iconColor} />
@@ -73,13 +73,20 @@ export const ChartCard: React.FC<ChartCardProps> = ({
           </View>
 
           {children}
-        </GlassCard>
+        </View>
       </AnimatedPressable>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
+  },
   chartHeader: {
     marginBottom: spacing.md,
   },
@@ -92,14 +99,14 @@ const styles = StyleSheet.create({
   chartIconContainer: {
     width: rw(28),
     height: rw(28),
-    borderRadius: rw(8),
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
   },
   chartTitle: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     letterSpacing: 0.2,
   },
   legendContainer: {
@@ -115,11 +122,11 @@ const styles = StyleSheet.create({
   legendDot: {
     width: rw(8),
     height: rw(8),
-    borderRadius: rw(4),
+    borderRadius: 4,
   },
   legendText: {
+    fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(11),
-    fontWeight: "500",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
 });

@@ -1,6 +1,49 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Platform, I18nManager } from "react-native";
 import { PersonalInfoData, TabValidationResult } from "../types/onboarding";
 import { COUNTRIES_WITH_STATES } from "../components/onboarding/PersonalInfoConstants";
+
+// ---------------------------------------------------------------------------
+// Locale defaults (blueprint §4). expo-localization is not installed in this
+// project, so we read the device region from React Native's built-ins:
+//   - iOS: I18nManager.getConstants().localeIdentifier ("en_US")
+//   - Android: Platform.constants.Locale ("en-US")
+// Fallback is "" (metric units, no country prefill) — never a hardcoded value.
+// ---------------------------------------------------------------------------
+
+const IMPERIAL_REGIONS = new Set(["US", "LR", "MM"]);
+
+/** Map ISO-3166 region codes that appear in COUNTRIES_WITH_STATES to names. */
+const REGION_TO_COUNTRY: Record<string, string> = {
+  US: "United States",
+  IN: "India",
+  CA: "Canada",
+  GB: "United Kingdom",
+  AU: "Australia",
+  DE: "Germany",
+};
+
+function detectDeviceRegion(): string {
+  try {
+    const c = I18nManager.getConstants() as { localeIdentifier?: string };
+    if (c?.localeIdentifier) {
+      const parts = c.localeIdentifier.split(/[-_]/);
+      if (parts[1]) return parts[1].toUpperCase();
+    }
+  } catch {
+    // fall through
+  }
+  try {
+    const constants = Platform.constants as { Locale?: string };
+    if (constants?.Locale) {
+      const parts = constants.Locale.split(/[-_]/);
+      if (parts[1]) return parts[1].toUpperCase();
+    }
+  } catch {
+    // fall through
+  }
+  return "";
+}
 
 interface UsePersonalInfoFormProps {
   data: PersonalInfoData | null;
@@ -13,6 +56,20 @@ export const usePersonalInfoForm = ({
   onUpdate,
   validationResult,
 }: UsePersonalInfoFormProps) => {
+  // Locale defaults (blueprint §4) — computed once. Used only as the fallback
+  // when the corresponding `data` field is empty, so a returning user with
+  // saved values is never overwritten by the device locale.
+  const localeDefaults = useMemo(() => {
+    const regionCode = detectDeviceRegion();
+    const units: "metric" | "imperial" = IMPERIAL_REGIONS.has(regionCode)
+      ? "imperial"
+      : "metric";
+    const country = REGION_TO_COUNTRY[regionCode] ?? "";
+    return { units, country, state: "" };
+  }, []);
+
+  const detectedNonMetric = localeDefaults.units === "imperial";
+
   // occupation_type intentionally omitted from form state: the field is deprecated
   // (activity_level in WorkoutPreferences is the SSOT), there is no UI to collect it,
   // and the TDEE/validation engine reads activity_level, not occupation_type. By
@@ -23,12 +80,12 @@ export const usePersonalInfoForm = ({
     last_name: data?.last_name ?? "",
     age: data?.age ?? 0,
     gender: data?.gender ?? "prefer_not_to_say",
-    country: data?.country ?? "",
-    state: data?.state ?? "",
+    country: data?.country ?? localeDefaults.country,
+    state: data?.state ?? localeDefaults.state,
     region: data?.region ?? "",
     wake_time: data?.wake_time ?? "07:00",
     sleep_time: data?.sleep_time ?? "23:00",
-    units: data?.units ?? "metric",
+    units: data?.units ?? localeDefaults.units,
   });
 
   const [availableStates, setAvailableStates] = useState<string[]>([]);
@@ -48,12 +105,12 @@ export const usePersonalInfoForm = ({
         last_name: data.last_name ?? "",
         age: data.age ?? 0,
         gender: data.gender,
-        country: data.country ?? "",
-        state: data.state ?? "",
+        country: data.country ?? localeDefaults.country,
+        state: data.state ?? localeDefaults.state,
         region: data.region ?? "",
         wake_time: data.wake_time ?? "07:00",
         sleep_time: data.sleep_time ?? "23:00",
-        units: data.units ?? "metric",
+        units: data.units ?? localeDefaults.units,
       };
 
       const hasChanged =
@@ -196,6 +253,7 @@ export const usePersonalInfoForm = ({
       customCountry,
       showWakeTimePicker,
       showSleepTimePicker,
+      detectedNonMetric,
     },
     actions: {
       updateField,

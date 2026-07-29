@@ -1,24 +1,59 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import React, { type ComponentProps } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../../utils/responsive";
-import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
-import { Slider } from "../../../components/ui";
-import { COOKING_SKILL_LEVELS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
-import { DietPreferencesData } from "../../../types/onboarding";
+/**
+ * S3 "Fuel" — CookingPreferencesSection (blueprint §3 S3, §5 S3, §6 input map)
+ *
+ * Fresh "Editorial Dark" — PEAK pass. The wall of near-identical OptionRows
+ * is gone; the section now reads as three compact beats:
+ *
+ *  1. Cooking skill: a single-select Pill rail (identity icon → accent
+ *     checkmark) with a LIVE selection caption underneath — the chosen
+ *     level's description + time window animates in on change (segmented
+ *     chip + dynamic description, the 2026 pattern). Saves ~170px vs rows.
+ *  2. Max cooking time: accent key number + the existing aurora RangeSlider;
+ *     replaced by a note when cooking_skill_level === "not_applicable"
+ *     (logic unchanged).
+ *  3. Food budget: same rail + live caption treatment.
+ *  4. Cooking methods (10, multi): icon Pill grid inside a CollapsibleSection
+ *     (default collapsed); the collapsed subtitle names the selection, not
+ *     just the count. Hidden entirely when not_applicable (unchanged).
+ *
+ * Blocks are still separated by hairline Rules — hierarchy from type and
+ * space. Presentation-only redesign — props contract (formData, updateField)
+ * unchanged; the skill → max_prep_time side-effects are byte-identical.
+ */
 
-const COOKING_METHODS = [
-  { value: "grilling", label: "Grilling", icon: "flame-outline" },
-  { value: "steaming", label: "Steaming", icon: "water-outline" },
-  { value: "air_frying", label: "Air Frying", icon: "flash-outline" },
-  { value: "sauteing", label: "Sauteing", icon: "restaurant-outline" },
-  { value: "baking", label: "Baking", icon: "cube-outline" },
-  { value: "boiling", label: "Boiling", icon: "beaker-outline" },
-  { value: "stir_frying", label: "Stir Frying", icon: "bonfire-outline" },
-  { value: "slow_cooking", label: "Slow Cooking", icon: "time-outline" },
-  { value: "pressure_cooking", label: "Pressure Cook", icon: "speedometer-outline" },
-  { value: "raw_no_cook", label: "Raw / No Cook", icon: "leaf-outline" },
+import React, { useState } from "react";
+import { StyleSheet, View, Text } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { DietPreferencesData } from "../../../types/onboarding";
+import {
+  COOKING_SKILL_LEVELS,
+  BUDGET_LEVELS,
+} from "../../../screens/onboarding/tabs/DietPreferencesConstants";
+import { RangeSlider } from "../aurora/RangeSlider";
+import {
+  SectionLabel,
+  Rule,
+  Pill,
+  CollapsibleSection,
+  tokens,
+  type as typeScale,
+} from "../fresh";
+import { countWithPreview } from "./selectionPreview";
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+const COOKING_METHODS: { id: string; label: string; icon: IoniconName }[] = [
+  { id: "grilling", label: "Grilling", icon: "flame-outline" },
+  { id: "steaming", label: "Steaming", icon: "water-outline" },
+  { id: "air_frying", label: "Air Frying", icon: "flash-outline" },
+  { id: "sauteing", label: "Sauteing", icon: "restaurant-outline" },
+  { id: "baking", label: "Baking", icon: "cube-outline" },
+  { id: "boiling", label: "Boiling", icon: "beaker-outline" },
+  { id: "stir_frying", label: "Stir Frying", icon: "bonfire-outline" },
+  { id: "slow_cooking", label: "Slow Cooking", icon: "time-outline" },
+  { id: "pressure_cooking", label: "Pressure Cook", icon: "speedometer-outline" },
+  { id: "raw_no_cook", label: "Raw / No Cook", icon: "leaf-outline" },
 ];
 
 interface CookingPreferencesSectionProps {
@@ -32,410 +67,221 @@ interface CookingPreferencesSectionProps {
 export const CookingPreferencesSection: React.FC<
   CookingPreferencesSectionProps
 > = ({ formData, updateField }) => {
-  return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Cooking Preferences
-        </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          Help us suggest recipes that match your cooking style
-        </Text>
-      </View>
+  const [methodsOpen, setMethodsOpen] = useState(false);
+  const isNotApplicable = formData.cooking_skill_level === "not_applicable";
+  const methodsCount = (formData.cooking_methods || []).length;
 
-      {/* Cooking Skill Level */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel} numberOfLines={1}>
-          Cooking Skill Level
-        </Text>
-      </View>
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(105) + rw(10)}
-          snapToAlignment="start"
-          pagingEnabled={false}
-        >
-          {COOKING_SKILL_LEVELS.map((skill) => {
-            const isSelected = formData.cooking_skill_level === skill.level;
+  const selectedSkill = COOKING_SKILL_LEVELS.find(
+    (s) => s.level === formData.cooking_skill_level,
+  );
+  const selectedBudget = BUDGET_LEVELS.find(
+    (b) => b.level === formData.budget_level,
+  );
+  const selectedMethodNames = COOKING_METHODS.filter((m) =>
+    (formData.cooking_methods || []).includes(m.id),
+  ).map((m) => m.label);
+
+  return (
+    <View>
+      {/* Beat 1 — Cooking skill: compact rail + live caption. */}
+      <View>
+        <SectionLabel style={styles.blockLabel}>Cooking Skill Level</SectionLabel>
+        <View style={styles.pillRow}>
+          {COOKING_SKILL_LEVELS.map((s) => {
+            const selected = formData.cooking_skill_level === s.level;
             return (
-              <AnimatedPressable
-                key={skill.level}
+              <Pill
+                key={s.level}
+                label={s.title}
+                icon={selected ? "checkmark" : (s.iconName as IoniconName)}
+                selected={selected}
                 onPress={() => {
                   updateField(
                     "cooking_skill_level",
-                    skill.level as DietPreferencesData["cooking_skill_level"],
+                    s.level as DietPreferencesData["cooking_skill_level"],
                   );
-                  if (skill.level === "not_applicable") {
+                  if (s.level === "not_applicable") {
                     updateField("max_prep_time_minutes", null);
                   } else if (formData.max_prep_time_minutes === null) {
                     updateField("max_prep_time_minutes", 30);
                   }
                 }}
-                style={styles.consistentCardItem}
-                scaleValue={0.97}
-              >
-                <View
-                  style={[
-                    styles.consistentCard,
-                    isSelected && styles.consistentCardSelected,
-                  ]}
-                >
-                  {/* Icon */}
-                  <View style={styles.consistentCardIconCenter}>
-                    <Ionicons
-                      name={skill.iconName as ComponentProps<typeof Ionicons>['name']}
-                      size={rf(22)}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                  </View>
-                  {/* Title */}
-                  <Text
-                    style={[
-                      styles.consistentCardTitle,
-                      isSelected && styles.consistentCardTitleSelected,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {skill.title}
-                  </Text>
-                  {/* Description */}
-                  <Text
-                    style={styles.consistentCardDesc}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    {skill.description}
-                  </Text>
-                  {/* Selection indicator */}
-                  <View
-                    style={[
-                      styles.consistentCardIndicator,
-                      isSelected && styles.consistentCardIndicatorSelected,
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(12)}
-                        color={colors.white}
-                      />
-                    )}
-                  </View>
-                </View>
-              </AnimatedPressable>
+                testID={`cooking-skill-${s.level}`}
+              />
             );
           })}
-        </ScrollView>
+        </View>
+        {selectedSkill && (
+          <Animated.Text
+            key={selectedSkill.level}
+            entering={FadeInDown.duration(180)}
+            style={styles.selectionCaption}
+            numberOfLines={1}
+          >
+            {selectedSkill.description}
+            {selectedSkill.timeRange !== "N/A"
+              ? ` · ${selectedSkill.timeRange}`
+              : ""}
+          </Animated.Text>
+        )}
       </View>
 
-      {/* Max Prep Time */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel}>
-          {formData.cooking_skill_level === "not_applicable"
-            ? "Maximum Cooking Time: Not Applicable"
-            : `Maximum Cooking Time: ${formData.max_prep_time_minutes ?? 30} minutes`}
-        </Text>
-        {formData.cooking_skill_level === "not_applicable" ? (
-          <GlassCard
-            elevation={1}
-            blurIntensity="light"
-            padding="md"
-            borderRadius="md"
-            style={styles.disabledCardInline}
-          >
-            <View style={styles.disabledContent}>
-              <Ionicons
-                name="information-circle-outline"
-                size={rf(16)}
-                color={colors.textSecondary}
-              />
-              <Text
-                style={styles.disabledText}
-                numberOfLines={3}
-                ellipsizeMode="tail"
-              >
-                This field is not applicable since your meals are prepared by
-                others. We'll suggest meals based on your dietary preferences
-                without cooking time constraints.
+      <Rule spacing={24} />
+
+      {/* Beat 2 — Max cooking time: slider (or N/A note). */}
+      <View>
+        <View style={styles.sliderHeader}>
+          <SectionLabel>Maximum Cooking Time</SectionLabel>
+          {!isNotApplicable && (
+            <Text style={styles.sliderValueWrap}>
+              <Text style={styles.sliderValue}>
+                {formData.max_prep_time_minutes ?? 30}
               </Text>
-            </View>
-          </GlassCard>
+              <Text style={styles.sliderUnit}> min</Text>
+            </Text>
+          )}
+        </View>
+        {isNotApplicable ? (
+          <Text style={styles.note} numberOfLines={3}>
+            Meals are prepared by others — we'll suggest meals based on your
+            dietary preferences without cooking time constraints.
+          </Text>
         ) : (
-          <Slider
+          <RangeSlider
             value={formData.max_prep_time_minutes ?? 30}
-            onValueChange={(value) =>
-              updateField("max_prep_time_minutes", value)
-            }
-            minimumValue={15}
-            maximumValue={120}
+            min={15}
+            max={120}
             step={15}
-            showTooltip={true}
-            formatValue={(val) => `${val} min`}
+            unit="min"
+            accentColor={tokens.accent}
+            onChange={(value) => updateField("max_prep_time_minutes", value)}
           />
         )}
       </View>
 
-      {/* Budget Level */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Slider
-          value={
-            formData.budget_level === "low"
-              ? 1
-              : formData.budget_level === "medium"
-                ? 2
-                : 3
-          }
-          onValueChange={(value) => {
-            const budgetLevel =
-              value === 1 ? "low" : value === 2 ? "medium" : "high";
-            updateField(
-              "budget_level",
-              budgetLevel as DietPreferencesData["budget_level"],
+      <Rule spacing={24} />
+
+      {/* Beat 3 — Food budget: compact rail + live caption. */}
+      <View>
+        <SectionLabel style={styles.blockLabel}>Food Budget</SectionLabel>
+        <View style={styles.pillRow}>
+          {BUDGET_LEVELS.map((b) => {
+            const selected = formData.budget_level === b.level;
+            return (
+              <Pill
+                key={b.level}
+                label={b.title}
+                icon={selected ? "checkmark" : (b.iconName as IoniconName)}
+                selected={selected}
+                onPress={() =>
+                  updateField(
+                    "budget_level",
+                    b.level as DietPreferencesData["budget_level"],
+                  )
+                }
+                testID={`budget-${b.level}`}
+              />
             );
-          }}
-          minimumValue={1}
-          maximumValue={3}
-          step={1}
-          label="Food Budget"
-          showTooltip={true}
-          formatValue={(val) => {
-            if (val === 1) return "Budget ($50-100/wk)";
-            if (val === 2) return "Moderate ($100-200/wk)";
-            return "Premium ($200+/wk)";
-          }}
-        />
+          })}
+        </View>
+        {selectedBudget && (
+          <Animated.Text
+            key={selectedBudget.level}
+            entering={FadeInDown.duration(180)}
+            style={styles.selectionCaption}
+            numberOfLines={1}
+          >
+            {selectedBudget.description} · {selectedBudget.range}
+          </Animated.Text>
+        )}
       </View>
 
-      {/* Preferred Cooking Methods */}
-      {formData.cooking_skill_level !== "not_applicable" && (
-        <View style={styles.edgeToEdgeContentPadded}>
-          <Text style={styles.fieldLabel} numberOfLines={1}>
-            Preferred Cooking Methods
-          </Text>
-          <Text
-            style={styles.methodsHint}
-            numberOfLines={2}
-            ellipsizeMode="tail"
+      {/* Beat 4 — Cooking methods: collapsible Pill grid (§5, default
+          collapsed); collapsed subtitle names the picks. Hidden when
+          not_applicable. */}
+      {!isNotApplicable && (
+        <>
+          <Rule spacing={24} />
+          <CollapsibleSection
+            title="Cooking Methods"
+            subtitle={countWithPreview(
+              methodsCount,
+              "Select all methods you enjoy (optional)",
+              selectedMethodNames,
+            )}
+            expanded={methodsOpen}
+            onToggle={() => setMethodsOpen((v) => !v)}
+            testID="cooking-methods-section"
           >
-            Select all methods you enjoy (leave empty for any)
-          </Text>
-          <View style={styles.methodsGrid}>
-            {COOKING_METHODS.map((method) => {
-              const isSelected = (formData.cooking_methods || []).includes(
-                method.value,
-              );
-              return (
-                <AnimatedPressable
-                  key={method.value}
-                  onPress={() => {
-                    const current = formData.cooking_methods || [];
-                    const updated = isSelected
-                      ? current.filter((m) => m !== method.value)
-                      : [...current, method.value];
-                    updateField("cooking_methods", updated);
-                  }}
-                  scaleValue={0.97}
-                >
-                  <View
-                    style={[
-                      styles.methodChip,
-                      isSelected && styles.methodChipSelected,
-                    ]}
-                  >
-                    <Ionicons
-                      name={method.icon as ComponentProps<typeof Ionicons>['name']}
-                      size={rf(14)}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.methodChipText,
-                        isSelected && styles.methodChipTextSelected,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {method.label}
-                    </Text>
-                  </View>
-                </AnimatedPressable>
-              );
-            })}
-          </View>
-        </View>
+            <View style={styles.pillRow}>
+              {COOKING_METHODS.map((m) => {
+                const selected = (formData.cooking_methods || []).includes(
+                  m.id,
+                );
+                return (
+                  <Pill
+                    key={m.id}
+                    label={m.label}
+                    icon={selected ? "checkmark" : m.icon}
+                    selected={selected}
+                    onPress={() => {
+                      const current = formData.cooking_methods || [];
+                      const updated = selected
+                        ? current.filter((x) => x !== m.id)
+                        : [...current, m.id];
+                      updateField("cooking_methods", updated);
+                    }}
+                    testID={`cooking-method-${m.id}`}
+                  />
+                );
+              })}
+            </View>
+          </CollapsibleSection>
+        </>
       )}
-
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xl,
-    marginHorizontal: -spacing.lg,
+  blockLabel: {
+    marginBottom: 12,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    flexShrink: 1,
-  },
-  scrollContainerInset: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    overflow: "hidden",
-    borderRadius: borderRadius.md,
-  },
-  scrollContentInset: {
-    paddingVertical: spacing.sm,
-    gap: rw(10),
-  },
-  consistentCardItem: {
-    width: rw(105),
-  },
-  consistentCard: {
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.sm,
-    minHeight: rh(12),
-    alignItems: "center",
-  },
-  consistentCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  consistentCardIconCenter: {
-    alignItems: "center",
-    marginBottom: spacing.xs,
-  },
-  consistentCardTitle: {
-    fontSize: rf(11),
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.xs,
-  },
-  consistentCardTitleSelected: {
-    color: colors.primary,
-  },
-  consistentCardDesc: {
-    fontSize: rf(9),
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: rf(12),
-  },
-  consistentCardIndicator: {
-    width: rf(18),
-    height: rf(18),
-    borderRadius: rf(9),
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  consistentCardIndicatorSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  disabledCardInline: {
-    backgroundColor: `${colors.textSecondary}10`,
-    marginBottom: spacing.lg,
-  },
-  disabledContent: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  disabledText: {
-    flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: rf(16),
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
-  },
-  methodsHint: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-  },
-  methodsGrid: {
+  pillRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: rw(8),
-    marginBottom: spacing.lg,
+    gap: 8,
   },
-  methodChip: {
+  selectionCaption: {
+    ...typeScale.caption,
+    color: tokens.ink2,
+    marginTop: 10,
+  },
+  sliderHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rw(4),
-    paddingHorizontal: rw(12),
-    paddingVertical: rh(8),
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: "transparent",
+    justifyContent: "space-between",
+    marginBottom: 12,
   },
-  methodChipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
+  sliderValueWrap: {
+    // container for the key number + quiet unit
   },
-  methodChipText: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
+  sliderValue: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 22,
+    color: tokens.accent, // key number — the one allowed accent use
   },
-  methodChipTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
+  sliderUnit: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    color: tokens.ink3,
+  },
+  note: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.ink2,
   },
 });
+
+export default CookingPreferencesSection;

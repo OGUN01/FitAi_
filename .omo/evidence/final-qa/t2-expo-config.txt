@@ -1,0 +1,32 @@
+T2: Expo Config - expo-camera Plugin Verification
+===================================================
+Date: 2026-02-20
+Command: npx expo config --type introspect
+
+RESULT: PASS
+
+Evidence from plugins array:
+  plugins: [
+    'expo-font',
+    'react-native-health-connect',
+    ['expo-notifications', { icon, color, defaultChannel }],
+    ['expo-health-kit', { healthSharePermission, healthUpdatePermission }],
+    ['expo-build-properties', { android: { minSdkVersion: 26, compileSdkVersion: 35, targetSdkVersion: 34 } }],
+    ['expo-camera', {
+      cameraPermission: 'Allow FitAI to use your camera for barcode scanning and food recognition',
+      recordAudioAndroid: false
+    }]
+  ]
+
+expo-camera is listed as the LAST plugin with:
+- Custom camera permission string mentioning "barcode scanning"
+- Audio recording disabled (recordAudioAndroid: false) - appropriate for barcode scanner
+
+Additional verification:
+- expo-camera appears in pluginHistory with version 16.1.11
+- expo-camera appears in autolinkedModules
+- android.permission.CAMERA is in the Android permissions list
+- NSCameraUsageDescription is set in iOS Info.plist:
+  "Allow FitAI to use your camera for barcode scanning and food recognition"
+
+VERDICT: PASS

@@ -8,7 +8,8 @@
 const open = jest.fn(() =>
   Promise.resolve({
     razorpay_payment_id: "mock_payment_id",
-    status: "success",
+    razorpay_subscription_id: "mock_subscription_id",
+    razorpay_signature: "mock_signature",
   }),
 );
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,13 +8,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import barcodeService, {
-  ProductLookupResult,
-} from "@/services/barcodeService";
-import { getCountryFromBarcode } from "@/utils/countryMapping";
-import { flatColors as colors, spacing, borderRadius } from "@/theme/aurora-tokens";
-import { rbr, rf, rp } from "@/utils/responsive";
+} from 'react-native';
+import barcodeService, { ProductLookupResult } from '@/services/barcodeService';
+import { getCountryFromBarcode } from '@/utils/countryMapping';
+import { flatColors as colors, spacing, borderRadius } from '@/theme/aurora-tokens';
+import { rbr, rf, rp } from '@/utils/responsive';
 
 interface ManualBarcodeEntryProps {
   onLookupResolved: (result: ProductLookupResult) => void;
@@ -31,36 +29,33 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
   onContributeProduct,
   onClose,
 }) => {
-  const [barcode, setBarcode] = useState("");
+  const [barcode, setBarcode] = useState('');
   const [isLooking, setIsLooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastOutcome, setLastOutcome] = useState<
-    ProductLookupResult["outcome"] | null
-  >(null);
+  const [lastOutcome, setLastOutcome] = useState<ProductLookupResult['outcome'] | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   const cleanBarcode = barcode.trim();
-  const countryName =
-    cleanBarcode.length >= 3 ? getCountryFromBarcode(cleanBarcode) : "Unknown";
+  const countryName = cleanBarcode.length >= 3 ? getCountryFromBarcode(cleanBarcode) : 'Unknown';
   const canLookUp =
     SUPPORTED_LENGTHS.has(cleanBarcode.length) && !isLooking && cleanBarcode.length > 0;
 
   const helperCopy = useMemo(() => {
     if (cleanBarcode.length === 0) {
-      return "Supported lengths: 6, 8, 12, or 13 digits.";
+      return 'Supported lengths: 6, 8, 12, or 13 digits.';
     }
     return `${cleanBarcode.length} digits entered`;
   }, [cleanBarcode.length]);
 
   const handleChangeText = (value: string) => {
-    const numeric = value.replace(/[^0-9]/g, "");
+    const numeric = value.replace(/[^0-9]/g, '');
     setBarcode(numeric);
     setError(null);
     setLastOutcome(null);
   };
 
   const handleClear = () => {
-    setBarcode("");
+    setBarcode('');
     setError(null);
     setLastOutcome(null);
     inputRef.current?.focus();
@@ -77,8 +72,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
       const result = await barcodeService.lookupProduct(cleanBarcode);
 
       if (
-        (result.outcome === "authoritative_hit" ||
-          result.outcome === "weak_data") &&
+        (result.outcome === 'authoritative_hit' || result.outcome === 'weak_data') &&
         result.product
       ) {
         onLookupResolved(result);
@@ -87,39 +81,36 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
 
       setLastOutcome(result.outcome);
       switch (result.outcome) {
-        case "invalid_scan":
+        case 'invalid_scan':
+          setError(result.error || 'That code is not a supported packaged-food barcode.');
+          break;
+        case 'transient_failure':
           setError(
             result.error ||
-              "That code is not a supported packaged-food barcode.",
+              'Lookup failed before trusted sources completed. Retry or use a fallback.'
           );
           break;
-        case "transient_failure":
-          setError(
-            result.error ||
-              "Lookup failed before trusted sources completed. Retry or use a fallback.",
-          );
-          break;
-        case "not_found":
-          setError("Product not found in trusted packaged-food sources.");
+        case 'not_found':
+          setError('Product not found in trusted packaged-food sources.');
           break;
         default:
-          setError("Unable to resolve that barcode.");
+          setError('Unable to resolve that barcode.');
           break;
       }
     } catch (err) {
-      setLastOutcome("transient_failure");
-      setError("Barcode lookup failed unexpectedly. Please try again.");
+      console.error('ManualBarcodeEntry: barcode lookup failed', err);
+      setLastOutcome('transient_failure');
+      setError('Barcode lookup failed unexpectedly. Please try again.');
     } finally {
       setIsLooking(false);
     }
   };
 
-  const showFallbackActions =
-    lastOutcome === "not_found" || lastOutcome === "transient_failure";
+  const showFallbackActions = lastOutcome === 'not_found' || lastOutcome === 'transient_failure';
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.keyboardAvoid}
     >
       <View style={styles.container}>
@@ -135,9 +126,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.subtitle}>
-          Type the barcode number printed on the package.
-        </Text>
+        <Text style={styles.subtitle}>Type the barcode number printed on the package.</Text>
 
         <View style={styles.inputRow}>
           <TextInput
@@ -170,7 +159,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
 
         <View style={styles.metaRow}>
           <Text style={styles.helperText}>{helperCopy}</Text>
-          {countryName !== "Unknown" ? (
+          {countryName !== 'Unknown' ? (
             <Text style={styles.countryText}>Origin: {countryName}</Text>
           ) : null}
         </View>
@@ -204,10 +193,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         ) : null}
 
         <TouchableOpacity
-          style={[
-            styles.lookUpButton,
-            !canLookUp && styles.lookUpButtonDisabled,
-          ]}
+          style={[styles.lookUpButton, !canLookUp && styles.lookUpButtonDisabled]}
           onPress={handleLookUp}
           disabled={!canLookUp}
           accessibilityLabel="Look up product"
@@ -215,19 +201,11 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         >
           {isLooking ? (
             <View style={styles.loadingRow}>
-              <ActivityIndicator
-                size="small"
-                color={colors.white}
-              />
+              <ActivityIndicator size="small" color={colors.white} />
               <Text style={styles.lookUpButtonText}>Looking up...</Text>
             </View>
           ) : (
-            <Text
-              style={[
-                styles.lookUpButtonText,
-                !canLookUp && styles.lookUpButtonTextDisabled,
-              ]}
-            >
+            <Text style={[styles.lookUpButtonText, !canLookUp && styles.lookUpButtonTextDisabled]}>
               Look Up
             </Text>
           )}
@@ -258,14 +236,14 @@ const styles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
   title: {
     fontSize: rf(18),
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     letterSpacing: 0.3,
   },
@@ -274,8 +252,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: rbr(16),
     backgroundColor: colors.backgroundTertiary,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: rf(14),
@@ -289,8 +267,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.backgroundTertiary,
     borderRadius: borderRadius.md,
     borderWidth: 1,
@@ -304,7 +282,7 @@ const styles = StyleSheet.create({
     fontSize: rf(17),
     color: colors.text,
     letterSpacing: 1.5,
-    fontVariant: ["tabular-nums"],
+    fontVariant: ['tabular-nums'],
   },
   inputError: {
     borderColor: colors.error,
@@ -314,8 +292,8 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: rbr(14),
     backgroundColor: colors.surfaceLight,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: spacing.xs,
   },
   clearButtonText: {
@@ -324,8 +302,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
@@ -337,7 +315,7 @@ const styles = StyleSheet.create({
   countryText: {
     fontSize: rf(12),
     color: colors.secondary,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   errorCard: {
     backgroundColor: colors.errorTint,
@@ -356,11 +334,11 @@ const styles = StyleSheet.create({
   },
   retryLink: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.primary,
   },
   fallbackActions: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
@@ -371,19 +349,19 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     paddingVertical: spacing.sm,
-    alignItems: "center",
+    alignItems: 'center',
   },
   secondaryActionText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text,
   },
   lookUpButton: {
     backgroundColor: colors.primary,
     borderRadius: borderRadius.md,
     height: 50,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   lookUpButtonDisabled: {
@@ -393,7 +371,7 @@ const styles = StyleSheet.create({
   },
   lookUpButtonText: {
     fontSize: rf(16),
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.white,
     letterSpacing: 0.5,
   },
@@ -401,12 +379,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(8),
   },
   cancelButton: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: spacing.sm,
   },
   cancelText: {

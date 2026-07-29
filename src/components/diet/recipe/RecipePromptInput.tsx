@@ -1,14 +1,14 @@
-import React from "react";
+import React from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rf, rh } from "../../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
+import { rf, rh } from '../../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW } from '../../../utils/colors';
 
 interface RecipePrompt {
   id: string;
@@ -59,8 +59,8 @@ export const RecipePromptInput: React.FC<RecipePromptInputProps> = ({
         onChangeText={onChangeText}
         onFocus={onFocus}
         onBlur={onBlur}
-        multiline={prompt.id === "description"}
-        numberOfLines={prompt.id === "description" ? 3 : 1}
+        multiline={prompt.id === 'description'}
+        numberOfLines={prompt.id === 'description' ? 3 : 1}
         textAlignVertical="top"
       />
 
@@ -69,18 +69,10 @@ export const RecipePromptInput: React.FC<RecipePromptInputProps> = ({
         {prompt.examples.map((example, exampleIndex) => (
           <TouchableOpacity
             key={exampleIndex}
-            style={[
-              styles.exampleChip,
-              value === example && styles.exampleChipSelected,
-            ]}
+            style={[styles.exampleChip, value === example && styles.exampleChipSelected]}
             onPress={() => onExamplePress(example)}
           >
-            <Text
-              style={[
-                styles.exampleText,
-                value === example && styles.exampleTextSelected,
-              ]}
-            >
+            <Text style={[styles.exampleText, value === example && styles.exampleTextSelected]}>
               {example}
             </Text>
           </TouchableOpacity>
@@ -98,8 +90,8 @@ const styles = StyleSheet.create({
   },
 
   promptHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
 
@@ -149,8 +141,8 @@ const styles = StyleSheet.create({
   },
 
   examplesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
 

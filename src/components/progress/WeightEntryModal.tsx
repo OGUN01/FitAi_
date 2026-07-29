@@ -28,7 +28,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { haptics } from "../../utils/haptics";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
 import { progressDataService } from "../../services/progressData";
 import { BodyAnalysisService } from "../../services/onboardingService";
@@ -256,7 +263,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                     <Ionicons
                       name="close"
                       size={rf(24)}
-                      color={colors.white}
+                      color={colors.text.primary}
                     />
                   </TouchableOpacity>
                 </View>
@@ -276,7 +283,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="scale-outline"
                         size={rs(20)}
-                        color={colors.primary}
+                        color={colors.primary.DEFAULT}
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -284,7 +291,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={weight}
                         onChangeText={setWeight}
                         placeholder={placeholder}
-                        placeholderTextColor={colors.textMuted}
+                        placeholderTextColor={colors.text.muted}
                         keyboardType="decimal-pad"
                         returnKeyType="next"
                         onSubmitEditing={() => bodyFatRef.current?.focus()}
@@ -301,7 +308,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="fitness-outline"
                         size={rs(20)}
-                        color={colors.errorLight}
+                        color={colors.error.light}
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -310,7 +317,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={bodyFat}
                         onChangeText={setBodyFat}
                         placeholder="e.g., 18.5"
-                        placeholderTextColor={colors.textMuted}
+                        placeholderTextColor={colors.text.muted}
                         keyboardType="decimal-pad"
                         returnKeyType="done"
                         editable={!isSubmitting}
@@ -330,7 +337,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         value={notes}
                         onChangeText={setNotes}
                         placeholder="How are you feeling?"
-                        placeholderTextColor={colors.textMuted}
+                        placeholderTextColor={colors.text.muted}
                         multiline
                         numberOfLines={3}
                         textAlignVertical="top"
@@ -345,7 +352,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="alert-circle"
                         size={rf(16)}
-                        color={colors.errorLight}
+                        color={colors.error.light}
                       />
                       <Text style={styles.errorText}>{error}</Text>
                     </View>
@@ -366,7 +373,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                 >
                   {isSubmitting ? (
                     <ActivityIndicator
-                      color={colors.white}
+                      color={colors.text.primary}
                       size="small"
                     />
                   ) : (
@@ -374,7 +381,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="checkmark-circle"
                         size={rs(20)}
-                        color={colors.white}
+                        color={colors.text.primary}
                       />
                       <Text style={styles.submitButtonText}>Save Entry</Text>
                     </>
@@ -397,31 +404,33 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   keyboardView: {
     width: "100%",
   },
   blurContainer: {
-    borderTopLeftRadius: rbr(24),
-    borderTopRightRadius: rbr(24),
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
     overflow: "hidden",
   },
   modalContent: {
-    padding: rp(20),
-    backgroundColor: "rgba(20, 20, 35, 0.95)",
+    padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderTopWidth: 1,
+    borderColor: borderTokens.subtle,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: rp(20),
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: rf(22),
-    fontWeight: "700",
-    color: colors.white,
+    ...typography.variants.pageTitle,
+    fontSize: 22,
+    color: colors.text.primary,
   },
   closeButton: {
     minWidth: 44,
@@ -433,45 +442,45 @@ const styles = StyleSheet.create({
     maxHeight: rh(350),
   },
   inputGroup: {
-    marginBottom: rp(16),
+    marginBottom: spacing.md,
   },
   label: {
-    fontSize: rf(14),
-    fontWeight: "600",
-    color: colors.textSecondary,
-    marginBottom: rp(8),
+    ...typography.variants.caption2,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
   },
   required: {
-    color: colors.errorLight,
+    color: colors.error.light,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glassSurface,
-    borderRadius: rbr(12),
+    backgroundColor: surface[2],
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
-    paddingHorizontal: rp(12),
+    borderColor: borderTokens.subtle,
+    paddingHorizontal: spacing.md,
     height: rh(50),
   },
   inputIcon: {
-    marginRight: rp(10),
+    marginRight: spacing.sm,
   },
   input: {
     flex: 1,
-    fontSize: rf(16),
-    color: colors.white,
+    ...typography.variants.body,
+    color: colors.text.primary,
     height: "100%",
   },
   unitLabel: {
-    fontSize: rf(14),
-    color: colors.textMuted,
-    marginLeft: rp(8),
+    ...typography.variants.caption2,
+    color: colors.text.muted,
+    marginLeft: spacing.sm,
   },
   notesContainer: {
     height: rh(80),
     alignItems: "flex-start",
-    paddingVertical: rp(12),
+    paddingVertical: spacing.md,
   },
   notesInput: {
     height: "100%",
@@ -479,41 +488,41 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.errorTint,
-    padding: rp(12),
-    borderRadius: rbr(8),
-    marginBottom: rp(16),
+    backgroundColor: "rgba(244, 67, 54, 0.15)",
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.errorLight,
-    fontSize: rf(14),
-    marginLeft: rp(8),
+    ...typography.variants.caption2,
+    color: colors.error.light,
+    marginLeft: spacing.sm,
     flex: 1,
   },
   submitButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
-    borderRadius: rbr(12),
-    paddingVertical: rp(14),
+    backgroundColor: colors.primary.DEFAULT,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
     minHeight: 44,
-    marginTop: rp(8),
-    gap: rp(8),
+    marginTop: spacing.sm,
+    gap: spacing.sm,
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
-    color: colors.white,
-    fontSize: rf(16),
-    fontWeight: "600",
+    ...typography.variants.cardHeadline,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.primary,
   },
   infoText: {
+    ...typography.variants.caption,
     textAlign: "center",
-    color: colors.textMuted,
-    fontSize: rf(12),
-    marginTop: rp(12),
+    color: colors.text.muted,
+    marginTop: spacing.md,
   },
 });
 

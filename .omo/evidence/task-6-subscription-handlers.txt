@@ -1,0 +1,47 @@
+Task 6: Subscription Handler Endpoints - QA Evidence
+=====================================================
+Date: 2026-02-20
+Status: PASS
+
+## Files Created
+- fitai-workers/src/handlers/subscription.ts (~700 lines)
+
+## Files Modified
+- fitai-workers/src/index.ts (import + 4 route registrations)
+
+## Endpoints Implemented
+1. POST /api/subscription/create   - authMiddleware + rateLimitMiddleware
+2. POST /api/subscription/verify   - authMiddleware + rateLimitMiddleware
+3. POST /api/webhook/razorpay      - NO auth, NO rate limit (signature verification only)
+4. GET  /api/subscription/status   - authMiddleware + rateLimitMiddleware
+
+## Handler Functions
+- handleCreateSubscription: Validates body, looks up plan from subscription_plans table,
+  creates Razorpay subscription via razorpayFetch(), saves to Supabase, returns subscription_id + key_id
+- handleVerifyPayment: Validates razorpay_payment_id + razorpay_subscription_id + razorpay_signature,
+  verifies signature using verifyPaymentSignature(), updates subscription status to 'authenticated'
+- handleWebhook: Reads raw body via c.req.text(), verifies webhook signature, idempotency check
+  via webhook_events table, processes 7 event types, ALWAYS returns HTTP 200
+- handleGetSubscriptionStatus: Queries subscriptions JOIN subscription_plans, returns free tier default
+
+## Verification Results
+
+### LSP Diagnostics
+- subscription.ts: CLEAN (0 errors)
+- index.ts: Only pre-existing errors (ALLOWED_ORIGINS, 204 status) - NOT from our changes
+
+### TypeScript Compilation (npx tsc --noEmit)
+- PASS: Zero errors from subscription.ts or index.ts route additions
+- All errors are pre-existing in: workoutGeneration.ts, chatHandler.ts, foodRecognition.ts,
+  healthSync.test.ts, barcodeScanning.test.ts, errorReporting.ts, errors.ts,
+  exerciseFilter.ts, workoutSplits.ts
+
+## Key Design Decisions
+- Webhook uses c.req.text() for raw body (NOT re-serialized JSON) to preserve signature integrity
+- Webhook always returns 200 even on internal errors (prevents Razorpay retry storms / endpoint disable)
+- `satisfies SubscriptionStatus` used for type-safe string literals without widening
+- Grace period: 'pending' status treated as active access via isAccessGrantingStatus()
+- Razorpay plan IDs looked up from subscription_plans table (not hardcoded)
+- webhook_events table used for idempotency (graceful try/catch if table missing)
+- No `as any` or `@ts-ignore` used
+- No console.log in production paths

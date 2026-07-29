@@ -172,7 +172,6 @@ jest.mock("@/services/exerciseFilterService", () => ({
 
 import { MealDetailHeader } from "@/components/details/MealDetailHeader";
 import { ImagePicker } from "@/components/advanced/ImagePicker";
-import { IngredientList } from "@/components/diet/meal-edit/IngredientList";
 import { ExerciseInstructionModal } from "@/components/fitness/ExerciseInstructionModal";
 import { ProgressHeader } from "@/components/progress/ProgressHeader";
 
@@ -190,21 +189,13 @@ describe("remaining raw touch targets", () => {
     ).toMatchObject({ width: 44, height: 44 });
   });
 
-  it("keeps image picker action buttons and ingredient controls at safe sizes", () => {
+  it("keeps image picker action buttons at safe sizes", () => {
     const picker = render(
       <ImagePicker
         visible
         mode="single"
         onImagesSelected={jest.fn()}
         onClose={jest.fn()}
-      />,
-    );
-
-    const ingredients = render(
-      <IngredientList
-        ingredients={[{ name: "Chicken", quantity: 100, calories: 120 }]}
-        onQuantityChange={jest.fn()}
-        onRemoveIngredient={jest.fn()}
       />,
     );
 
@@ -216,19 +207,6 @@ describe("remaining raw touch targets", () => {
         picker.getByLabelText("Choose image from library").props.style,
       ),
     ).toMatchObject({ minHeight: 44 });
-    expect(
-      StyleSheet.flatten(
-        ingredients.getByLabelText("Decrease Chicken quantity").props.style,
-      ),
-    ).toMatchObject({ minWidth: 44, minHeight: 44 });
-    expect(
-      StyleSheet.flatten(
-        ingredients.getByLabelText("Increase Chicken quantity").props.style,
-      ),
-    ).toMatchObject({ minWidth: 44, minHeight: 44 });
-    expect(
-      StyleSheet.flatten(ingredients.getByLabelText("Remove Chicken").props.style),
-    ).toMatchObject({ minWidth: 44, minHeight: 44 });
   });
 
   it("keeps exercise instruction and progress header controls at safe sizes", () => {

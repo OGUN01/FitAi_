@@ -21,7 +21,7 @@
         "--project-ref=mqfrwtmkokivoxgukgsz"
       ],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef"
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
       }
     },
     "code-review-graph": {

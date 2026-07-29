@@ -1,0 +1,25 @@
+=== getPeriodStart Tests ===
+Daily:   2026-02-20 === 2026-02-20 → PASS
+Monthly: 2026-02-01 === 2026-02-01 → PASS
+
+=== resolveLimit Tests ===
+Free AI monthly limit: 1 === 1 → PASS
+Free AI daily limit (no field): null === null → PASS
+Pro AI monthly (unlimited flag): null === null → PASS
+Pro AI daily (unlimited flag): null === null → PASS
+Basic AI daily limit: 10 === 10 → PASS
+Basic scan daily (unlimited flag): null === null → PASS
+Zero AI monthly limit: 0 === 0 → PASS
+Chat daily (no mapping): null === null → PASS
+
+=== Scenario 1: Free User (1 AI/month) ===
+Call 1: allowed=true, current=0, limit=1, remaining=1 → PASS
+Call 2: allowed=false, current=1, limit=1, remaining=0 → PASS
+
+=== Scenario 2: Pro User (unlimited AI) ===
+Resolved limit: null (null = unlimited) → PASS
+100 calls all allowed: true → PASS
+
+=== SUMMARY ===
+All tests passed: true
+Results: Test1:PASS, Test2:PASS, Test3:PASS, Test4:PASS

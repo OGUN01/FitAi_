@@ -1,0 +1,15 @@
+lookupBarcode: true
+searchByName: true
+getStats: true
+isDatabaseReady: true
+createDownloadResumable: true
+SQLiteFoodResult: true
+not_downloaded: true
+downloading: true
+ready: true
+error: true
+
+--- Banned patterns check ---
+as any: false (should be false)
+@ts-ignore: false (should be false)
+@ts-expect-error: false (should be false)

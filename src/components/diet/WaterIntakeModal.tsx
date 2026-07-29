@@ -10,7 +10,7 @@
  * - Consistent with app design system
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,15 +20,23 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { haptics } from "../../utils/haptics";
-import { flatColors as colors, borderRadius, typography } from "../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
-import { rf, rp } from "../../utils/responsive";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
+import { haptics } from '../../utils/haptics';
+import { flatColors as colors, borderRadius, typography } from '../../theme/aurora-tokens';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
+import { rf, rp, rh, rw } from '../../utils/responsive';
+import { ProgressRing } from '../ui/aurora/ProgressRing';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 
 interface WaterIntakeModalProps {
   visible: boolean;
@@ -46,68 +54,86 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   goalML,
 }) => {
   const insets = useSafeAreaInsets();
-  const [customAmount, setCustomAmount] = useState<string>("");
+  const [customAmount, setCustomAmount] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   // Calculate progress
   const currentLiters = currentIntakeML / 1000;
   const goalLiters = goalML / 1000;
-  const progress =
-    goalML > 0 ? Math.min((currentIntakeML / goalML) * 100, 100) : 0;
-  const isGoalReached = currentIntakeML >= goalML;
+  const progress = goalML > 0 ? Math.min((currentIntakeML / goalML) * 100, 100) : 0;
+  // Guard goalML=0 (no water goal set): 0 >= 0 would falsely show "goal reached".
+  const isGoalReached = goalML > 0 && currentIntakeML >= goalML;
+
+  // Celebration: fire haptics.celebration ONCE when goal transitions to reached.
+  // Ref-guard prevents re-firing on re-renders while goal stays reached.
+  const celebratedRef = useRef(false);
+  const ringGlow = useSharedValue(0);
+
+  useEffect(() => {
+    if (isGoalReached && !celebratedRef.current) {
+      celebratedRef.current = true;
+      haptics.celebration();
+      ringGlow.value = withTiming(1, { duration: 600 });
+    } else if (!isGoalReached && celebratedRef.current) {
+      celebratedRef.current = false;
+      ringGlow.value = withTiming(0, { duration: 400 });
+    }
+  }, [isGoalReached, ringGlow]);
+
+  // Success glow animated style — soft green bloom around the ring when goal reached.
+  const glowStyle = useAnimatedStyle(() => ({
+    shadowColor: colors.successAlt,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35 * ringGlow.value,
+    shadowRadius: 25,
+    elevation: 10 * ringGlow.value,
+  }));
 
   // Reset state when closing
   const handleClose = useCallback(() => {
-    setCustomAmount("");
+    setCustomAmount('');
     setError(null);
     onClose();
   }, [onClose]);
 
-  // Handle quick add
+  // Handle quick add — haptics handled by AnimatedPressable on press-in
   const handleQuickAdd = useCallback(
     (amountML: number) => {
-      haptics.light();
       onAddWater(amountML);
       handleClose();
     },
-    [onAddWater, handleClose],
+    [onAddWater, handleClose]
   );
 
-  // Handle custom amount submit
+  // Handle custom amount submit — input is in milliliters
   const handleCustomSubmit = useCallback(() => {
-    const amountLiters = parseFloat(customAmount);
+    const amountML = parseFloat(customAmount);
 
-    if (!customAmount || isNaN(amountLiters)) {
-      setError("Please enter a valid amount");
+    if (!customAmount || isNaN(amountML)) {
+      setError('Please enter a valid amount');
       haptics.error();
       return;
     }
 
-    if (amountLiters < 0.05 || amountLiters > 5) {
-      setError("Amount must be between 50ml and 5L");
+    if (amountML < 50 || amountML > 5000) {
+      setError('Amount must be between 50ml and 5L');
       haptics.error();
       return;
     }
 
-    const amountML = amountLiters * 1000;
     haptics.success();
     onAddWater(amountML);
     handleClose();
   }, [customAmount, onAddWater, handleClose]);
 
   const quickOptions = [
-    { label: "250ml", amount: 250, icon: "water-outline" as const },
-    { label: "500ml", amount: 500, icon: "water" as const },
-    { label: "1L", amount: 1000, icon: "beaker-outline" as const },
+    { label: '250ml', amount: 250, icon: 'water-outline' as const },
+    { label: '500ml', amount: 500, icon: 'water' as const },
+    { label: '1L', amount: 1000, icon: 'beaker-outline' as const },
   ];
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View style={styles.backdrop}>
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
@@ -118,24 +144,17 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
           accessibilityHint="Closes the dialog without saving"
         />
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
           <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
-            <View
-              style={[
-                styles.modalContent,
-                { paddingBottom: insets.bottom + 20 },
-              ]}
-            >
+            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
               {/* Header */}
-              <View style={styles.header}>
+              <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
                 <View style={styles.headerLeft}>
-                  <Ionicons
-                    name="water"
-                    size={rf(24)}
-                    color={colors.primary}
-                  />
+                  <View style={styles.headerIconDisc}>
+                    <Ionicons name="water" size={rf(18)} color={colors.secondary} />
+                  </View>
                   <Text style={styles.title}>Log Water Intake</Text>
                 </View>
                 <TouchableOpacity
@@ -146,136 +165,124 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                   accessibilityLabel="Close"
                   accessibilityHint="Closes the water intake dialog"
                 >
-                  <Ionicons name="close" size={24} color={colors.white} />
+                  <Ionicons name="chevron-down" size={rf(20)} color={colors.white} />
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
 
-              {/* Current Progress */}
-              <View style={styles.progressSection}>
-                <View style={styles.progressInfo}>
-                  <Text style={styles.progressLabel}>Today's Progress</Text>
-                  <Text style={styles.progressValue}>
-                    {currentLiters.toFixed(1)}L / {goalLiters.toFixed(1)}L
-                  </Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <LinearGradient
-                    colors={
-                      isGoalReached
-                        ? [colors.successAlt, colors.successAltDark]
-                        : [colors.primary, colors.primaryLight]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.progressFill, { width: `${progress}%` }]}
-                  />
-                </View>
+              {/* Current Progress — hero ring */}
+              <Animated.View
+                entering={FadeInDown.delay(60).duration(400)}
+                style={styles.progressSection}
+              >
+                <Text style={styles.progressLabel}>Today's Progress</Text>
+                <Animated.View style={[styles.ringWrap, glowStyle]}>
+                  <ProgressRing
+                    progress={progress}
+                    size={rw(150)}
+                    strokeWidth={rw(12)}
+                    gradient={!isGoalReached}
+                    gradientColors={[colors.secondary, colors.primary]}
+                    color={colors.successAlt}
+                  >
+                    <View style={styles.ringCenter}>
+                      <View style={styles.ringInnerHighlight} />
+                      <Text style={styles.ringValue}>{currentLiters.toFixed(1)}</Text>
+                      <Text style={styles.ringUnit}>of {goalLiters.toFixed(1)}L</Text>
+                      {progress > 0 && (
+                        <Text style={styles.ringPercent}>{Math.round(progress)}%</Text>
+                      )}
+                    </View>
+                  </ProgressRing>
+                </Animated.View>
                 {isGoalReached && (
                   <View style={styles.goalReachedBadge}>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={16}
-                      color={colors.successAlt}
-                    />
-                    <Text style={styles.goalReachedText}>
-                      Daily goal achieved!
-                    </Text>
+                    <Ionicons name="checkmark-circle" size={16} color={colors.successAlt} />
+                    <Text style={styles.goalReachedText}>Daily goal achieved!</Text>
                   </View>
                 )}
-              </View>
+              </Animated.View>
 
               {/* Quick Add Options */}
-              <Text style={styles.sectionTitle}>Quick Add</Text>
-              <View style={styles.quickOptionsContainer}>
-                {quickOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option.label}
-                    style={styles.quickOption}
-                    onPress={() => handleQuickAdd(option.amount)}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Add ${option.label} of water`}
-                    accessibilityHint="Quickly adds this amount to today's water intake"
-                  >
-                    <LinearGradient
-                      colors={[
-                        hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
-                        hexToRgba(colors.primaryLight, TINT_ALPHA_MEDIUM),
-                      ]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.quickOptionGradient}
+              <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+                <Text style={styles.sectionTitle}>Quick Add</Text>
+                <View style={styles.quickOptionsContainer}>
+                  {quickOptions.map((option) => (
+                    <AnimatedPressable
+                      key={option.label}
+                      onPress={() => handleQuickAdd(option.amount)}
+                      scaleValue={0.94}
+                      hapticType="light"
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add ${option.label} of water`}
+                      accessibilityHint="Quickly adds this amount to today's water intake"
+                      style={styles.quickOption}
                     >
-                      <Ionicons
-                        name={option.icon}
-                        size={rf(28)}
-                        color={colors.primary}
-                      />
-                      <Text style={styles.quickOptionLabel}>
-                        {option.label}
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                      <View style={styles.quickOptionPill}>
+                        <View style={styles.quickOptionIconDisc}>
+                          <Ionicons name={option.icon} size={rf(20)} color={colors.secondary} />
+                        </View>
+                        <Text style={styles.quickOptionLabel}>{option.label}</Text>
+                      </View>
+                    </AnimatedPressable>
+                  ))}
+                </View>
+              </Animated.View>
 
               {/* Custom Amount Input - always visible for accessibility */}
-              <Text style={styles.sectionTitle}>
-                Custom Amount (Liters)
-              </Text>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="water-outline"
-                  size={20}
-                  color={colors.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  value={customAmount}
-                  onChangeText={(text) => {
-                    setCustomAmount(text);
-                    setError(null);
-                  }}
-                  placeholder="e.g., 0.5"
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
-                  onSubmitEditing={handleCustomSubmit}
-                />
-                <Text style={styles.unitLabel}>L</Text>
-              </View>
-
-              {/* Error Message */}
-              {error && (
-                <View style={styles.errorContainer}>
+              <Animated.View entering={FadeInDown.delay(180).duration(400)}>
+                <Text style={styles.sectionTitle}>Custom Amount (Milliliters)</Text>
+                <View style={styles.inputContainer}>
                   <Ionicons
-                    name="alert-circle"
-                    size={16}
-                    color={colors.errorLight}
+                    name="water-outline"
+                    size={20}
+                    color={colors.secondary}
+                    style={styles.inputIcon}
                   />
-                  <Text style={styles.errorText}>{error}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={customAmount}
+                    onChangeText={(text) => {
+                      setCustomAmount(text);
+                      setError(null);
+                    }}
+                    placeholder="e.g., 250"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
+                    onSubmitEditing={handleCustomSubmit}
+                  />
+                  <Text style={styles.unitLabel}>ml</Text>
                 </View>
-              )}
+
+                {/* Error Message */}
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle" size={16} color={colors.errorLight} />
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                )}
+              </Animated.View>
 
               {/* Add Water Button */}
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleCustomSubmit}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Add water"
-              >
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryLight]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.submitButtonGradient}
+              <Animated.View entering={FadeInDown.delay(240).duration(400)}>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleCustomSubmit}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add water"
                 >
-                  <Ionicons name="add" size={20} color={colors.white} />
-                  <Text style={styles.submitButtonText}>Add Water</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                    colors={[colors.secondary, colors.secondaryLight]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.submitButtonGradient}
+                  >
+                    <Ionicons name="add" size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>Add Water</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </BlurView>
         </KeyboardAvoidingView>
@@ -288,31 +295,41 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlayDark,
-    justifyContent: "flex-end",
+    justifyContent: 'flex-end',
   },
   keyboardView: {
-    justifyContent: "flex-end",
+    justifyContent: 'flex-end',
   },
   blurContainer: {
     borderTopLeftRadius: borderRadius.xxl,
     borderTopRightRadius: borderRadius.xxl,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   modalContent: {
-    backgroundColor: "rgba(20, 20, 35, 0.95)",
+    backgroundColor: colors.backgroundSecondary,
     paddingHorizontal: rp(24),
     paddingTop: rp(20),
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: rp(20),
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(10),
+  },
+  headerIconDisc: {
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rw(18),
+    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_LOW),
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: rf(20),
@@ -320,41 +337,70 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   closeButton: {
-    padding: rp(4),
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rw(18),
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   progressSection: {
     marginBottom: rp(24),
   },
-  progressInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: rp(8),
-  },
   progressLabel: {
-    fontSize: rf(14),
-    color: "rgba(255,255,255,0.7)",
-  },
-  progressValue: {
-    fontSize: rf(16),
+    fontSize: rf(11),
     fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: rp(12),
+  },
+  ringWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Subtle drop shadow under the ring for depth
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: rh(4) },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  ringCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringInnerHighlight: {
+    position: 'absolute',
+    width: rw(150) - rw(24),
+    height: rw(150) - rw(24),
+    borderRadius: (rw(150) - rw(24)) / 2,
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.white, 0.06),
+  },
+  ringValue: {
+    fontSize: rf(34),
+    fontWeight: String(typography.fontWeight.extrabold) as any,
     color: colors.white,
   },
-  progressBar: {
-    height: rp(8),
-    backgroundColor: colors.glassHighlight,
-    borderRadius: rp(4),
-    overflow: "hidden",
+  ringUnit: {
+    fontSize: rf(12),
+    color: colors.textTertiary,
+    marginTop: rh(2),
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: rp(4),
+  ringPercent: {
+    fontSize: rf(12),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.secondary,
+    marginTop: rh(4),
   },
   goalReachedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(6),
-    marginTop: rp(8),
+    marginTop: rp(12),
   },
   goalReachedText: {
     fontSize: rf(13),
@@ -362,26 +408,38 @@ const styles = StyleSheet.create({
     fontWeight: String(typography.fontWeight.medium) as any,
   },
   sectionTitle: {
-    fontSize: rf(14),
+    fontSize: rf(11),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    color: "rgba(255,255,255,0.7)",
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginBottom: rp(12),
   },
   quickOptionsContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: rp(12),
     marginBottom: rp(20),
   },
   quickOption: {
     flex: 1,
   },
-  quickOptionGradient: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: rp(20),
+  quickOptionPill: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingVertical: rp(16),
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    borderColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
+    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_LOW),
+  },
+  quickOptionIconDisc: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(20),
+    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   quickOptionLabel: {
     fontSize: rf(14),
@@ -390,14 +448,14 @@ const styles = StyleSheet.create({
     marginTop: rp(8),
   },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.glassBorder,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    borderColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
   },
   inputIcon: {
     marginRight: rp(12),
@@ -412,29 +470,35 @@ const styles = StyleSheet.create({
   unitLabel: {
     fontSize: rf(16),
     fontWeight: String(typography.fontWeight.medium) as any,
-    color: "rgba(255,255,255,0.5)",
+    color: colors.textMuted,
     marginLeft: rp(8),
   },
   errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(8),
     marginBottom: rp(16),
-    paddingHorizontal: rp(4),
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(10),
+    borderRadius: borderRadius.md,
+    backgroundColor: hexToRgba(colors.error, TINT_ALPHA_LOW),
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.error, TINT_ALPHA_MEDIUM),
   },
   errorText: {
+    flex: 1,
     fontSize: rf(13),
     color: colors.errorLight,
   },
   submitButton: {
-    overflow: "hidden",
+    overflow: 'hidden',
     borderRadius: borderRadius.lg,
     marginTop: rp(8),
   },
   submitButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(8),
     paddingVertical: rp(14),
   },

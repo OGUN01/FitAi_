@@ -2,18 +2,22 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rbr } from "../../../utils/responsive";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
 import { getWeightGoalProgress } from "../../../components/progress/goalProgressUtils";
-// SSOT: use onboarding types (the actual data format used by profileStore)
 import type { PersonalInfoData, BodyAnalysisData } from "../../../types/onboarding";
 
 interface GoalProgressCardProps {
   calculatedMetrics: CalculatedMetrics | null;
-  /** SSOT: from profileStore.personalInfo (onboarding_data table) */
   profilePersonalInfo?: PersonalInfoData | null;
-  /** SSOT: from profileStore.bodyAnalysis (body_analysis table) */
   bodyAnalysis?: BodyAnalysisData | null;
 }
 
@@ -43,143 +47,162 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
     bodyAnalysis?.current_weight_kg,
   ]);
 
+  const hasWeightGoal =
+    calculatedMetrics?.targetWeightKg != null &&
+    calculatedMetrics?.currentWeightKg != null;
+  const hasCalorieTarget =
+    calculatedMetrics?.dailyCalories != null && calculatedMetrics.dailyCalories > 0;
+  const isEmpty = !hasWeightGoal && !hasCalorieTarget;
+
   return (
     <Animated.View
       entering={FadeInDown.delay(400).duration(400)}
-      style={styles.trendCard}
+      style={styles.panel}
     >
-      <View style={styles.trendHeader}>
-        <View
-          style={[styles.trendIconContainer, { backgroundColor: colors.primaryTint }]}
-        >
-          <Ionicons name="flag-outline" size={rf(20)} color={colors.primary} />
+      <View style={styles.headerRow}>
+        <View style={[styles.iconWrap, { backgroundColor: `${chart[1]}18` }]}>
+          <Ionicons name="flag-outline" size={rf(18)} color={chart[1]} />
         </View>
-        <Text style={styles.trendTitle} numberOfLines={1}>Goal Progress</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          Goal Progress
+        </Text>
       </View>
 
-      <View style={styles.goalContainer}>
-        {calculatedMetrics?.targetWeightKg != null &&
-          calculatedMetrics?.currentWeightKg != null && (
-            <View style={styles.goalItem}>
-              <Text style={styles.goalLabel} numberOfLines={1}>Weight Goal</Text>
-              <View style={styles.goalProgressBar}>
-                <View
-                  style={[
-                    styles.goalProgressFill,
-                    {
-                      width: `${Math.min(100, weightProgressPercent)}%`,
-                      backgroundColor: colors.primary,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.goalText} numberOfLines={1} adjustsFontSizeToFit>
-                {calculatedMetrics.currentWeightKg > 0
-                  ? `${calculatedMetrics.currentWeightKg.toFixed(1)} kg -> ${calculatedMetrics.targetWeightKg.toFixed(1)} kg`
-                  : "-- kg -> -- kg"}
-              </Text>
-            </View>
-          )}
-
-        {calculatedMetrics?.dailyCalories != null && calculatedMetrics.dailyCalories > 0 && (
-          <View style={styles.goalItem}>
-            <Text style={styles.goalLabel} numberOfLines={1}>Daily Calorie Target</Text>
-            <Text style={styles.goalValue} numberOfLines={1} adjustsFontSizeToFit>
-              {calculatedMetrics.dailyCalories.toLocaleString()} kcal/day
+      {hasWeightGoal && (
+        <View style={styles.goalItem}>
+          <View style={styles.goalLabelRow}>
+            <Text style={styles.goalLabel} numberOfLines={1}>
+              Weight Goal
+            </Text>
+            <Text style={styles.goalPercent} numberOfLines={1}>
+              {Math.min(100, weightProgressPercent)}%
             </Text>
           </View>
-        )}
-
-        {(calculatedMetrics?.targetWeightKg == null ||
-          calculatedMetrics?.targetWeightKg === 0) &&
-          (calculatedMetrics?.dailyCalories == null ||
-            calculatedMetrics?.dailyCalories === 0) && (
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="compass-outline"
-              size={rf(28)}
-              color={colors.textSecondary}
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.min(100, weightProgressPercent)}%`,
+                  backgroundColor: chart[1],
+                },
+              ]}
             />
-            <Text style={styles.emptyStateValue} numberOfLines={1}>--</Text>
-            <Text style={styles.emptyStateText} numberOfLines={2}>
-              Set goals in Profile to track progress
-            </Text>
           </View>
-        )}
-      </View>
+          <Text style={styles.goalText} numberOfLines={1} adjustsFontSizeToFit>
+            {calculatedMetrics!.currentWeightKg! > 0
+              ? `${calculatedMetrics!.currentWeightKg!.toFixed(1)} kg → ${calculatedMetrics!.targetWeightKg!.toFixed(1)} kg`
+              : "-- kg → -- kg"}
+          </Text>
+        </View>
+      )}
+
+      {hasCalorieTarget && (
+        <View style={styles.goalItem}>
+          <Text style={styles.goalLabel} numberOfLines={1}>
+            Daily Calorie Target
+          </Text>
+          <Text style={[styles.goalValue, { color: chart[5] }]} numberOfLines={1} adjustsFontSizeToFit>
+            {calculatedMetrics!.dailyCalories!.toLocaleString()} kcal/day
+          </Text>
+        </View>
+      )}
+
+      {isEmpty && (
+        <View style={styles.emptyState}>
+          <Ionicons
+            name="compass-outline"
+            size={rf(28)}
+            color={colors.text.muted}
+          />
+          <Text style={styles.emptyStateValue} numberOfLines={1}>
+            --
+          </Text>
+          <Text style={styles.emptyStateText} numberOfLines={2}>
+            Set goals in Profile to track progress
+          </Text>
+        </View>
+      )}
     </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
-  trendCard: {
-    backgroundColor: colors.surface,
-    borderRadius: rbr(16),
-    padding: rw(16),
+  panel: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
   },
-  trendHeader: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rh(12),
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
-  trendIconContainer: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rbr(10),
+  iconWrap: {
+    width: rf(36),
+    height: rf(36),
+    borderRadius: rf(10),
     alignItems: "center",
     justifyContent: "center",
-    marginRight: rw(12),
   },
-  trendTitle: {
-    fontSize: rf(16),
-    fontWeight: "600",
-    color: colors.text,
-  },
-  goalContainer: {
-    gap: rh(12),
+  title: {
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
   },
   goalItem: {
-    gap: rh(6),
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  goalLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   goalLabel: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
-  goalProgressBar: {
-    height: rh(8),
-    backgroundColor: colors.background,
-    borderRadius: rbr(4),
+  goalPercent: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(14),
+    color: chart[1],
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: surface[2],
+    borderRadius: 4,
     overflow: "hidden",
   },
-  goalProgressFill: {
+  progressFill: {
     height: "100%",
-    borderRadius: rbr(4),
+    borderRadius: 4,
   },
   goalText: {
-    fontSize: rf(14),
-    fontWeight: "500",
-    color: colors.text,
+    ...typography.variants.body,
+    color: colors.text.primary,
   },
   goalValue: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(18),
-    fontWeight: "600",
-    color: colors.primary,
+    letterSpacing: -0.3,
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: rh(16),
-    gap: rh(8),
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   emptyStateValue: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(28),
-    fontWeight: "700",
-    color: colors.textSecondary,
+    color: colors.text.muted,
   },
   emptyStateText: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     textAlign: "center",
   },
 });
-

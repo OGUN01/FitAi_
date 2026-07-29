@@ -1,0 +1,11 @@
+Lines: 130
+off-parquet-global: true
+--all: true
+energy_kcal_100g IS NOT NULL: true
+--with-nutrition: true
+off-global-nutrition.csv: true
+off-global.csv: true
+replace-backslash: true
+process.argv: true
+DuckDBInstance: true
+runAndReadAll: true

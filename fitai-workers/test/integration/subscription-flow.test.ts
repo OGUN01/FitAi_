@@ -354,6 +354,7 @@ describe('Flow 2 — Full subscription lifecycle', () => {
 				chain.single.mockResolvedValue({
 					data: {
 						id: 'sub-db-integ',
+						user_id: TEST_USER_ID,
 						tier: 'basic',
 						status: 'authenticated',
 						razorpay_subscription_id: 'sub_rzp_integ',

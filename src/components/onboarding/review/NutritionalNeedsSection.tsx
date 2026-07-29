@@ -1,190 +1,333 @@
-import { flatColors as colors, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * NutritionalNeedsSection — S5 review group ("Editorial Dark", no cards)
+ *
+ * The daily calorie target is THE hero number of the whole review: one huge
+ * light Manrope figure — scale (not color) carries the hierarchy; the "kcal"
+ * unit is the single accent kiss. Under it, protein / carbs / fat read as ONE
+ * system: a proportional composition bar (segment widths = share of macro
+ * energy) with a labeled triad beneath, each showing its % split. Water
+ * closes the group as a quiet metric row.
+ *
+ * Tap targets navigate to the diet source screen. Values + the 4/4/9 kcal-per-gram
+ * mapping come from calculatedData — no calorie math here, shares are display-only.
+ */
+
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rbr } from "../../../utils/responsive";
-import { GlassCard } from "../../ui/aurora/GlassCard";
-import { GradientBarChart } from "../../ui";
+import { StyleSheet, View, Text, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { SectionLabel, tokens, type as freshType } from "../../../components/onboarding/fresh";
 import { AdvancedReviewData } from "../../../types/onboarding";
+import { isValidMetric } from "../../../utils/validationUtils";
 
 interface NutritionalNeedsSectionProps {
   calculatedData: AdvancedReviewData | null;
+  onNavigateToTab?: (tabNumber: number) => void;
+  /** Global reveal sequencing: ms offset added to every internal stagger. */
+  enterDelay?: number;
+}
+
+/** Display-only energy share mapping (protein 4, carbs 4, fat 9 kcal/g). */
+const KCAL_PER_G = { protein: 4, carbs: 4, fat: 9 } as const;
+
+/** Thousands separator without Intl (Hermes-safe). */
+const groupThousands = (n: number) =>
+  n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+interface MacroShare {
+  key: "protein" | "carbs" | "fat";
+  label: string;
+  grams: number | null;
+  testID: string;
 }
 
 export const NutritionalNeedsSection: React.FC<
   NutritionalNeedsSectionProps
-> = ({ calculatedData }) => {
+> = ({ calculatedData, onNavigateToTab, enterDelay = 0 }) => {
   if (!calculatedData) return null;
 
+  // Nutritional needs derive from S3 (diet type/preferences) + the metabolic
+  // profile. Tap navigates to S3 (Fuel) — the diet source screen.
+  const goToDiet = () => onNavigateToTab?.(3);
+
+  const caloriesValid = isValidMetric(calculatedData.daily_calories);
+  const calories = caloriesValid ? Math.round(calculatedData.daily_calories!) : null;
+
+  const macros: MacroShare[] = [
+    {
+      key: "protein",
+      label: "Protein",
+      grams: isValidMetric(calculatedData.daily_protein_g)
+        ? Math.round(calculatedData.daily_protein_g!)
+        : null,
+      testID: "tile-protein",
+    },
+    {
+      key: "carbs",
+      label: "Carbs",
+      grams: isValidMetric(calculatedData.daily_carbs_g)
+        ? Math.round(calculatedData.daily_carbs_g!)
+        : null,
+      testID: "tile-carbs",
+    },
+    {
+      key: "fat",
+      label: "Fats",
+      grams: isValidMetric(calculatedData.daily_fat_g)
+        ? Math.round(calculatedData.daily_fat_g!)
+        : null,
+      testID: "tile-fats",
+    },
+  ];
+
+  // Energy share per macro — drives both the bar widths and the % captions.
+  const macroKcal = macros.map((m) =>
+    m.grams != null ? m.grams * KCAL_PER_G[m.key] : 0,
+  );
+  const macroKcalTotal = macroKcal.reduce((a, b) => a + b, 0);
+  const shares = macroKcal.map((kcal, i) =>
+    macros[i].grams != null && macroKcalTotal > 0 ? kcal / macroKcalTotal : null,
+  );
+  // Minimum visible sliver so a very small share still reads on the bar.
+  const barFlex = shares.map((s) => (s != null ? Math.max(s, 0.04) : 0));
+  const barFlexTotal = barFlex.reduce((a, b) => a + b, 0);
+
+  const segmentColors = [tokens.ink, tokens.ink2, tokens.ink3];
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <View style={styles.sectionTitleContainer}>
-          <Ionicons
-            name="nutrition-outline"
-            size={rf(18)}
-            color={colors.primary}
-            style={styles.sectionTitleIcon}
-          />
-          <Text style={styles.sectionTitle} numberOfLines={1}>
-            Daily Nutritional Needs
-          </Text>
-          <View style={styles.nutrientBadges}>
-            <View style={styles.nutrientBadge}>
-              <Ionicons
-                name="water"
-                size={rf(10)}
-                color={colors.primary}
-              />
-              <Text style={styles.nutrientBadgeText}>
-                {calculatedData.daily_water_ml
-                  ? (calculatedData.daily_water_ml / 1000).toFixed(1)
-                  : "--"}
-                L
-              </Text>
-            </View>
-            <View style={styles.nutrientBadge}>
-              <Ionicons
-                name="leaf"
-                size={rf(10)}
-                color={colors.success}
-              />
-              <Text style={styles.nutrientBadgeText}>
-                {calculatedData.daily_fiber_g}g
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
+    <View style={styles.section}>
+      <SectionLabel>Daily nutritional needs</SectionLabel>
+      <Text style={styles.caption}>
+        Your fuel target — calories from your TDEE and goal, macros split by
+        your diet type.
+      </Text>
 
-      <View style={styles.edgeToEdgeContentPadded}>
-        <GlassCard
-          elevation={1}
-          blurIntensity="light"
-          padding="md"
-          borderRadius="md"
-          style={styles.nutritionCardCompact}
+      {/* ── Calorie hero — the biggest number on the screen ── */}
+      <Animated.View
+        entering={FadeInDown.duration(300).delay(enterDelay)}
+      >
+        <Pressable
+          onPress={goToDiet}
+          style={({ pressed }) => [styles.hero, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Daily Calories: ${calories ?? "—"} kcal`}
+          accessibilityHint="Tap to edit"
+          testID="tile-calories"
         >
-          <View style={styles.nutritionCompactHeader}>
-            <Text style={styles.nutritionCompactTitle}>Daily Target</Text>
-            <Text style={styles.calorieTargetCompact}>
-              {calculatedData.daily_calories} cal
-            </Text>
-          </View>
+          <Text style={styles.heroNumber}>
+            {calories != null ? groupThousands(calories) : "—"}
+          </Text>
+          <Text style={styles.heroUnitLine}>
+            <Text style={styles.heroUnitAccent}>kcal</Text>
+            <Text style={styles.heroUnitRest}> per day</Text>
+          </Text>
+        </Pressable>
+      </Animated.View>
 
-          <GradientBarChart
-            data={[
-              {
-                label: "Protein",
-                value: calculatedData.daily_protein_g || 0,
-                maxValue: 300,
-                gradient: [colors.primary, colors.accent],
-                unit: "g",
-              },
-              {
-                label: "Carbs",
-                value: calculatedData.daily_carbs_g || 0,
-                maxValue: 400,
-                gradient: [colors.success, colors.successAltDark],
-                unit: "g",
-              },
-              {
-                label: "Fats",
-                value: calculatedData.daily_fat_g || 0,
-                maxValue: 150,
-                gradient: [colors.info, colors.info],
-                unit: "g",
-              },
-            ]}
-            height={120}
-            animated={true}
-            showValues={true}
-            style={styles.macroChartCompact}
-          />
-        </GlassCard>
+      {/* ── Macro composition — one system: bar + labeled triad ── */}
+      <Animated.View entering={FadeInDown.duration(300).delay(enterDelay + 120)}>
+        <View
+          style={styles.macroBar}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {macros.map((m, i) =>
+            shares[i] != null ? (
+              <View
+                key={m.key}
+                style={[
+                  styles.macroSegment,
+                  {
+                    flexGrow: barFlex[i] / barFlexTotal,
+                    backgroundColor: segmentColors[i],
+                  },
+                ]}
+              />
+            ) : null,
+          )}
+        </View>
+      </Animated.View>
+
+      <View style={styles.macroTriad}>
+        {macros.map((m, i) => (
+          <Animated.View
+            key={m.key}
+            style={styles.macroCell}
+            entering={FadeInDown.duration(250).delay(enterDelay + 160 + i * 50)}
+          >
+            <Pressable
+              onPress={goToDiet}
+              style={({ pressed }) => [styles.macroPressable, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`${m.label}: ${m.grams ?? "—"} g`}
+              accessibilityHint="Tap to edit"
+              testID={m.testID}
+            >
+              <Text style={styles.macroLabel} numberOfLines={1}>
+                {m.label}
+              </Text>
+              <Text style={styles.macroValue} numberOfLines={1}>
+                {m.grams ?? "—"}
+                <Text style={styles.macroUnit}>{"  g"}</Text>
+              </Text>
+              <Text style={styles.macroShare}>
+                {shares[i] != null ? `${Math.round(shares[i]! * 100)}% of energy` : "—"}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        ))}
       </View>
-      <View style={styles.sectionBottomPadSmall} />
-    </GlassCard>
+
+      {/* ── Water — quiet row closing the group ── */}
+      <Animated.View entering={FadeInDown.duration(250).delay(enterDelay + 340)}>
+        <Pressable
+          onPress={goToDiet}
+          style={({ pressed }) => [styles.waterRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel={`Water: ${
+            isValidMetric(calculatedData.daily_water_ml)
+              ? (calculatedData.daily_water_ml! / 1000).toFixed(1)
+              : "—"
+          } L`}
+          accessibilityHint="Tap to edit"
+          testID="tile-water"
+        >
+          <Text style={styles.waterLabel} numberOfLines={1}>
+            Water
+          </Text>
+          <Text style={styles.waterValue} numberOfLines={1}>
+            {isValidMetric(calculatedData.daily_water_ml)
+              ? (calculatedData.daily_water_ml! / 1000).toFixed(1)
+              : "—"}
+            <Text style={styles.waterUnit}>{"  L"}</Text>
+          </Text>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginBottom: rp(16),
-    marginHorizontal: 0,
-    borderLeftWidth: 0,
-    borderRightWidth: 0,
-    borderRadius: rbr(0),
+  section: {
+    marginTop: 36,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: rp(20),
-    paddingTop: rp(16),
-    paddingBottom: rp(12),
+  caption: {
+    marginTop: 8,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.ink2,
   },
-  sectionTitleContainer: {
+  pressed: {
+    opacity: 0.6,
+  },
+
+  // ── Calorie hero ──
+  hero: {
+    marginTop: 12,
+    paddingTop: 12,
+    paddingBottom: 20,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  heroNumber: {
+    ...freshType.hero,
+    lineHeight: 68,
+    fontVariant: ["tabular-nums"],
+  },
+  heroUnitLine: {
+    marginTop: 2,
+  },
+  heroUnitAccent: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 13,
+    letterSpacing: 0.4,
+    color: tokens.accent,
+  },
+  heroUnitRest: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    letterSpacing: 0.4,
+    color: tokens.ink3,
+  },
+
+  // ── Macro system ──
+  macroBar: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    gap: 2,
+    height: 4,
   },
-  sectionTitleIcon: {
-    marginRight: rp(8),
+  macroSegment: {
+    flexBasis: 0,
+    height: 4,
+    borderRadius: 2,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+  macroTriad: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.hairline,
+  },
+  macroCell: {
     flex: 1,
   },
-  nutrientBadges: {
-    flexDirection: "row",
-    gap: rp(8),
+  macroPressable: {
+    minHeight: 44,
+    paddingVertical: 16,
+    paddingRight: 12,
+    justifyContent: "center",
   },
-  nutrientBadge: {
+  macroLabel: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: tokens.ink3,
+  },
+  macroValue: {
+    marginTop: 6,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 22,
+    color: tokens.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  macroUnit: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    color: tokens.ink3,
+  },
+  macroShare: {
+    marginTop: 3,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
+  },
+
+  // ── Water row ──
+  waterRow: {
+    minHeight: 60,
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(4),
-    backgroundColor: `${colors.surface}80`,
-    paddingHorizontal: rp(8),
-    paddingVertical: rp(4),
-    borderRadius: borderRadius.sm,
-  },
-  nutrientBadgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: rp(20),
-  },
-  nutritionCardCompact: {
-    marginBottom: rp(4),
-  },
-  nutritionCompactHeader: {
-    flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: rp(12),
+    gap: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.hairline,
   },
-  nutritionCompactTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+  waterLabel: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: tokens.ink3,
   },
-  calorieTargetCompact: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+  waterValue: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 22,
+    color: tokens.ink,
+    fontVariant: ["tabular-nums"],
   },
-  macroChartCompact: {
-    marginTop: rp(4),
-  },
-  sectionBottomPadSmall: {
-    height: rp(12),
+  waterUnit: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    color: tokens.ink3,
   },
 });

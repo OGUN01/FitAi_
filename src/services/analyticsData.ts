@@ -49,6 +49,9 @@ export interface DailyMetrics {
   // P2-12: persisted workout streaks (nullable until first compute).
   currentStreak?: number | null;
   longestStreak?: number | null;
+  // Diet redesign: persisted nutrition streaks (consecutive days with >=1 logged meal).
+  nutritionStreak?: number | null;
+  longestNutritionStreak?: number | null;
 }
 
 export interface MetricsSyncResult {
@@ -539,6 +542,89 @@ class AnalyticsDataService {
     } catch (error) {
       console.error("[analyticsData] loadStreaks threw:", error);
       return { currentStreak: 0, longestStreak: 0 };
+    }
+  }
+
+  /**
+   * Diet redesign: Load persisted nutrition streaks for a user.
+   * SSOT writer is achievementStore.updateNutritionStreak.
+   */
+  async loadNutritionStreaks(
+    userId: string,
+  ): Promise<{ nutritionStreak: number; longestNutritionStreak: number }> {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
+      return { nutritionStreak: 0, longestNutritionStreak: 0 };
+    }
+    try {
+      const { data, error } = await supabase
+        .from("analytics_metrics")
+        .select("nutrition_streak, longest_nutrition_streak")
+        .eq("user_id", userId)
+        .not("nutrition_streak", "is", null)
+        .order("metric_date", { ascending: false })
+        .limit(1);
+      if (error) {
+        console.error("[analyticsData] loadNutritionStreaks error:", error);
+        return { nutritionStreak: 0, longestNutritionStreak: 0 };
+      }
+      if (!data || data.length === 0) {
+        return { nutritionStreak: 0, longestNutritionStreak: 0 };
+      }
+      const row = data[0];
+      const { data: maxRow, error: maxError } = await supabase
+        .from("analytics_metrics")
+        .select("longest_nutrition_streak")
+        .eq("user_id", userId)
+        .not("longest_nutrition_streak", "is", null)
+        .order("longest_nutrition_streak", { ascending: false })
+        .limit(1);
+      const longest =
+        !maxError && maxRow && maxRow.length > 0
+          ? Number(maxRow[0].longest_nutrition_streak) || 0
+          : Number(row.longest_nutrition_streak) || 0;
+      return {
+        nutritionStreak: Number(row.nutrition_streak) || 0,
+        longestNutritionStreak: longest,
+      };
+    } catch (error) {
+      console.error("[analyticsData] loadNutritionStreaks threw:", error);
+      return { nutritionStreak: 0, longestNutritionStreak: 0 };
+    }
+  }
+
+  /**
+   * Diet redesign: Persist nutrition streak to today's analytics_metrics row.
+   * Single writer is achievementStore.updateNutritionStreak.
+   */
+  async persistNutritionStreaks(
+    userId: string,
+    nutritionStreak: number,
+    longestNutritionStreak: number,
+  ): Promise<boolean> {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
+      return true;
+    }
+    try {
+      const today = getLocalDateString();
+      const rowId = `${userId}_${today}`;
+      const { error } = await supabase.from("analytics_metrics").upsert(
+        {
+          id: rowId,
+          user_id: userId,
+          metric_date: today,
+          nutrition_streak: nutritionStreak,
+          longest_nutrition_streak: longestNutritionStreak,
+        },
+        { onConflict: "user_id,metric_date" },
+      );
+      if (error) {
+        console.error("[analyticsData] persistNutritionStreaks error:", error);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("[analyticsData] persistNutritionStreaks threw:", error);
+      return false;
     }
   }
 

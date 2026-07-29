@@ -1,9 +1,31 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import React, { type ComponentProps } from "react";
+/**
+ * MeasurementsSection — Body tab, default-visible group (Editorial Dark).
+ *
+ * height_cm + current_weight_kg RangeSliders with premium numeric readouts:
+ * a big, confident Manrope 300 number beside the label, the unit as a small
+ * trailing word, and a live secondary conversion (cm → ft/in, kg → lb) as
+ * calm caption microcopy. A BMI ring (StrokeRing, read-only) updates as the
+ * sliders move, with the BMI category as the hero text and a thin position
+ * spectrum beneath showing where the value sits against the healthy band.
+ *
+ * Presentation only — props/validation/data wiring unchanged (sliders call the
+ * same updateField that the legacy Inputs did). No new form fields.
+ */
+
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
-import { Input } from "../../../components/ui";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import {
+  RowGroup,
+  StrokeRing,
+} from "../../onboarding/fresh";
+import {
+  tokens,
+  type as freshType,
+  font,
+  spacing as freshSpacing,
+} from "../../onboarding/fresh/tokens";
+import { RangeSlider } from "../../onboarding/aurora/RangeSlider";
 import { BodyAnalysisData } from "../../../types/onboarding";
 
 interface MeasurementsSectionProps {
@@ -12,363 +34,358 @@ interface MeasurementsSectionProps {
     field: K,
     value: BodyAnalysisData[K],
   ) => void;
-  handleNumberInput: (field: keyof BodyAnalysisData, text: string) => void;
-  getFieldError: (field: string) => string | undefined;
-  hasFieldError: (field: string) => boolean;
   getBMICategory: (bmi: number) => {
     category: string;
     color: string;
     iconName: string;
   };
+  getFieldError: (field: string) => string | undefined;
+  hasFieldError: (field: string) => boolean;
+  /** @deprecated Editorial Dark always uses tokens.accent; kept optional so
+   * legacy callers (unreferenced BodyTab experiment) still typecheck. */
+  accentColor?: string;
 }
+
+const HEIGHT_MIN = 100;
+const HEIGHT_MAX = 250;
+const WEIGHT_MIN = 30;
+const WEIGHT_MAX = 300;
+
+const BMI_RING_SIZE = 132;
+const BMI_RING_STROKE = 10;
+
+/** BMI 10–40 maps onto the spectrum; the healthy band sits at 18.5–25. */
+const BMI_SPECTRUM_MIN = 10;
+const BMI_SPECTRUM_MAX = 40;
+const BMI_HEALTHY_LOW = 18.5;
+const BMI_HEALTHY_HIGH = 25;
+
+// Pure presentation conversions — no validation, no storage.
+const cmToFtIn = (cm: number): string => {
+  if (!cm || cm <= 0) return "";
+  const totalIn = cm / 2.54;
+  const ft = Math.floor(totalIn / 12);
+  const inch = Math.round(totalIn - ft * 12);
+  // Round up to a full foot edge case (e.g. 182.88 cm → 5'12" → 6'0").
+  if (inch === 12) return `${ft + 1}'0"`;
+  return `${ft}'${inch}"`;
+};
+
+const kgToLb = (kg: number): string => {
+  if (!kg || kg <= 0) return "";
+  return `${Math.round(kg * 2.20462)} lb`;
+};
+
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
   formData,
   updateField,
-  handleNumberInput,
+  getBMICategory,
   getFieldError,
   hasFieldError,
-  getBMICategory,
 }) => {
+  const bmi = formData.bmi ?? 0;
+  const bmiCategory = bmi > 0 ? getBMICategory(bmi) : null;
+  // Map BMI 10–40 to a 0–1 fraction for the read-only ring.
+  const bmiFraction =
+    bmi > 0 ? clamp01((bmi - 10) / (40 - 10)) : 0;
+
+  // Position of the current BMI on the 10–40 spectrum (0–1).
+  const bmiSpectrumPos = bmi > 0 ? clamp01((bmi - BMI_SPECTRUM_MIN) / (BMI_SPECTRUM_MAX - BMI_SPECTRUM_MIN)) : 0;
+  // Healthy band edges on the same spectrum (0–1).
+  const healthyBandStart = (BMI_HEALTHY_LOW - BMI_SPECTRUM_MIN) / (BMI_SPECTRUM_MAX - BMI_SPECTRUM_MIN);
+  const healthyBandWidth = (BMI_HEALTHY_HIGH - BMI_HEALTHY_LOW) / (BMI_SPECTRUM_MAX - BMI_SPECTRUM_MIN);
+
+  const heightVal = formData.height_cm ?? 0;
+  const weightVal = formData.current_weight_kg ?? 0;
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Basic Measurements
-        </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          Provide at least height and current weight to continue. Other fields
-          are optional.
-        </Text>
-      </View>
-
-      <View style={styles.edgeToEdgeContentPadded}>
-        <View style={styles.measurementsGrid}>
-          <View style={styles.measurementItem}>
-            <Input
-              label="Height (cm) *"
-              placeholder="e.g. 170"
-              value={formData.height_cm ? formData.height_cm.toString() : ""}
-              onChangeText={(text) => handleNumberInput("height_cm", text)}
-              keyboardType="numeric"
-              error={
-                hasFieldError("height") ? getFieldError("height") : undefined
-              }
-            />
-          </View>
-
-          <View style={styles.measurementItem}>
-            <Input
-              label="Current Weight (kg) *"
-              placeholder="e.g. 70"
-              value={
-                formData.current_weight_kg
-                  ? formData.current_weight_kg.toString()
-                  : ""
-              }
-              onChangeText={(text) =>
-                handleNumberInput("current_weight_kg", text)
-              }
-              keyboardType="numeric"
-              error={
-                hasFieldError("current weight")
-                  ? getFieldError("current weight")
-                  : undefined
-              }
-            />
-          </View>
-
-          <View style={styles.measurementItem}>
-            <Input
-              label="Target Weight (kg) - Optional"
-              placeholder="e.g. 65"
-              value={
-                formData.target_weight_kg
-                  ? formData.target_weight_kg.toString()
-                  : ""
-              }
-              onChangeText={(text) =>
-                handleNumberInput("target_weight_kg", text)
-              }
-              keyboardType="numeric"
-              error={
-                hasFieldError("target weight")
-                  ? getFieldError("target weight")
-                  : undefined
-              }
-            />
-          </View>
-
-          <View style={styles.measurementItem}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              Target Timeline (Optional): {formData.target_timeline_weeks} weeks
-            </Text>
-            <View style={styles.timelineSlider}>
-              {[4, 8, 12, 16, 20, 24, 32, 52].map((weeks) => (
-                <AnimatedPressable
-                  key={`timeline-${weeks}`}
-                  style={[
-                    styles.timelineOption,
-                    ...(formData.target_timeline_weeks === weeks
-                      ? [styles.timelineOptionSelected]
-                      : []),
-                  ]}
-                  onPress={() => updateField("target_timeline_weeks", weeks)}
-                  scaleValue={0.95}
-                >
-                  <Text
-                    style={[
-                      styles.timelineText,
-                      ...(formData.target_timeline_weeks === weeks
-                        ? [styles.timelineTextSelected]
-                        : []),
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {weeks}w
-                  </Text>
-                </AnimatedPressable>
-              ))}
+    <RowGroup label="Measurements">
+      <View style={styles.stack}>
+        {/* HEIGHT — big confident number, secondary ft/in conversion */}
+        <View style={styles.field}>
+          <View style={styles.readoutRow}>
+            <View style={styles.readoutLabelWrap}>
+              <Text style={styles.fieldLabel} numberOfLines={1}>
+                Height
+              </Text>
+              {heightVal > 0 ? (
+                <Text style={styles.conversion} numberOfLines={1}>
+                  {cmToFtIn(heightVal)}
+                </Text>
+              ) : null}
+              {hasFieldError("height") ? (
+                <Text style={styles.fieldError} numberOfLines={1}>
+                  {getFieldError("height")}
+                </Text>
+              ) : null}
             </View>
-            {hasFieldError("timeline") && (
-              <Text style={styles.errorText}>{getFieldError("timeline")}</Text>
-            )}
+            <Text style={styles.bigValue} numberOfLines={1}>
+              <Text style={styles.bigNumber}>
+                {heightVal > 0 ? Math.round(heightVal) : "—"}
+              </Text>
+              <Text style={styles.bigUnit}> cm</Text>
+            </Text>
           </View>
+          <RangeSlider
+            value={formData.height_cm || HEIGHT_MIN}
+            min={HEIGHT_MIN}
+            max={HEIGHT_MAX}
+            step={1}
+            unit="cm"
+            accentColor={tokens.accent}
+            onChange={(v) => updateField("height_cm", v)}
+            showValue={false}
+            testID="height-slider"
+          />
         </View>
 
-        {/* BMI Display */}
-        {formData.bmi !== undefined &&
-        formData.bmi !== null &&
-        formData.bmi > 0 ? (
-          <GlassCard
-            elevation={3}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={styles.bmiCard}
-          >
-            <View style={styles.bmiContent}>
-              <Text style={styles.bmiTitle} numberOfLines={1}>
-                Current BMI: {formData.bmi}
+        {/* CURRENT WEIGHT — big confident number, secondary lb conversion */}
+        <View style={styles.field}>
+          <View style={styles.readoutRow}>
+            <View style={styles.readoutLabelWrap}>
+              <Text style={styles.fieldLabel} numberOfLines={1}>
+                Current weight
               </Text>
-              <View style={styles.bmiCategory}>
-                <Ionicons
-                  name={getBMICategory(formData.bmi).iconName as ComponentProps<typeof Ionicons>['name']}
-                  size={rf(24)}
-                  color={getBMICategory(formData.bmi).color}
-                />
-                <Text
-                  style={[
-                    styles.bmiCategoryText,
-                    { color: getBMICategory(formData.bmi).color },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {getBMICategory(formData.bmi).category}
-                </Text>
-              </View>
-
-              {formData.ideal_weight_min != null &&
-              formData.ideal_weight_max != null &&
-              formData.ideal_weight_min > 0 &&
-              formData.ideal_weight_max > 0 ? (
-                <Text
-                  style={styles.idealWeightText}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  Ideal weight range: {formData.ideal_weight_min}kg -{" "}
-                  {formData.ideal_weight_max}kg
+              {weightVal > 0 ? (
+                <Text style={styles.conversion} numberOfLines={1}>
+                  {kgToLb(weightVal)}
                 </Text>
               ) : null}
-
-              {/* Weight Loss Rate Warning */}
-              {formData.current_weight_kg != null &&
-              formData.current_weight_kg > 0 &&
-              formData.target_weight_kg != null &&
-              formData.target_weight_kg > 0 &&
-              formData.target_timeline_weeks != null &&
-              formData.target_timeline_weeks > 0 ? (
-                <View style={styles.weightLossInfo}>
-                  {(() => {
-                    const weeklyRate =
-                      Math.abs(
-                        formData.current_weight_kg - formData.target_weight_kg,
-                      ) / formData.target_timeline_weeks;
-                    const isHealthyRate = weeklyRate <= 1;
-
-                    return (
-                      <View style={styles.weightLossRateRow}>
-                        <Ionicons
-                          name={
-                            isHealthyRate ? "checkmark-circle" : "alert-circle"
-                          }
-                          size={rf(16)}
-                          color={
-                            isHealthyRate
-                              ? colors.success
-                              : colors.warning
-                          }
-                        />
-                        <Text
-                          style={[
-                            styles.weightLossRate,
-                            {
-                              color: isHealthyRate
-                                ? colors.success
-                                : colors.warning,
-                            },
-                          ]}
-                          numberOfLines={2}
-                          ellipsizeMode="tail"
-                        >
-                          Your target pace: {weeklyRate.toFixed(2)} kg/week
-                          {!isHealthyRate
-                            ? " — aggressive, your safe rate will be confirmed on the Review tab"
-                            : " (based on your timeline)"}
-                        </Text>
-                      </View>
-                    );
-                  })()}
-                </View>
+              {hasFieldError("current weight") ? (
+                <Text style={styles.fieldError} numberOfLines={1}>
+                  {getFieldError("current weight")}
+                </Text>
               ) : null}
             </View>
-          </GlassCard>
-        ) : null}
+            <Text style={styles.bigValue} numberOfLines={1}>
+              <Text style={styles.bigNumber}>
+                {weightVal > 0 ? weightVal.toFixed(1).replace(/\.0$/, "") : "—"}
+              </Text>
+              <Text style={styles.bigUnit}> kg</Text>
+            </Text>
+          </View>
+          <RangeSlider
+            value={formData.current_weight_kg || WEIGHT_MIN}
+            min={WEIGHT_MIN}
+            max={WEIGHT_MAX}
+            step={0.5}
+            unit="kg"
+            accentColor={tokens.accent}
+            onChange={(v) => updateField("current_weight_kg", v)}
+            showValue={false}
+            testID="current-weight-slider"
+          />
+        </View>
+
+        {/* Live BMI ring — crisp react-native-svg StrokeRing (accent progress
+            over a hairline track), big number + label centered. FadeInDown on
+            mount (micro-motion per the design doc). The right-hand meta shows
+            the category as the hero line (accent when healthy, danger when
+            not) and a thin BMI spectrum with a position dot so the user sees
+            where they sit against the healthy band at a glance. */}
+        <Animated.View
+          entering={FadeInDown.duration(400)}
+          style={styles.bmiBlock}
+        >
+          <StrokeRing
+            size={BMI_RING_SIZE}
+            strokeWidth={BMI_RING_STROKE}
+            progress={bmiFraction}
+            color={tokens.accent}
+            trackColor={tokens.hairline}
+          >
+            {bmi > 0 ? (
+              <>
+                <Text style={styles.bmiValue} numberOfLines={1}>
+                  {Math.round(bmi)}
+                </Text>
+                <Text style={styles.bmiUnit} numberOfLines={1}>
+                  BMI
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.bmiPlaceholder} numberOfLines={1}>
+                BMI
+              </Text>
+            )}
+          </StrokeRing>
+
+          <View style={styles.bmiMeta}>
+            {bmi > 0 && bmiCategory ? (
+              <Text
+                style={[styles.bmiCategory, { color: bmiCategory.color }]}
+                numberOfLines={1}
+              >
+                {bmiCategory.category}
+              </Text>
+            ) : null}
+
+            {/* Position spectrum — hairline track, accent healthy band, dot at
+                the user's BMI. Pure visual; no interaction. */}
+            {bmi > 0 ? (
+              <View
+                style={styles.spectrumTrack}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              >
+                {/* healthy band */}
+                <View
+                  style={[
+                    styles.spectrumBand,
+                    {
+                      left: `${healthyBandStart * 100}%`,
+                      width: `${healthyBandWidth * 100}%`,
+                    },
+                  ]}
+                />
+                {/* current position dot */}
+                <View
+                  style={[
+                    styles.spectrumDot,
+                    { left: `${bmiSpectrumPos * 100}%` },
+                  ]}
+                />
+              </View>
+            ) : null}
+
+            <Text style={styles.idealCaption} numberOfLines={1}>
+              Healthy zone 18.5 – 25
+            </Text>
+
+            {formData.ideal_weight_min != null &&
+            formData.ideal_weight_max != null &&
+            formData.ideal_weight_min > 0 &&
+            formData.ideal_weight_max > 0 ? (
+              <Text style={styles.idealText} numberOfLines={2}>
+                Healthy range{"\n"}
+                {Math.round(formData.ideal_weight_min)}–
+                {Math.round(formData.ideal_weight_max)} kg
+              </Text>
+            ) : (
+              <Text style={styles.idealText} numberOfLines={2}>
+                Set height &amp; weight{"\n"}to see your BMI
+              </Text>
+            )}
+          </View>
+        </Animated.View>
       </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+    </RowGroup>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
+  stack: {
+    gap: freshSpacing.xl,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+  field: {
+    gap: freshSpacing.xs,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  measurementsGrid: {
-    gap: spacing.md,
-  },
-  measurementItem: {
-    marginBottom: spacing.sm,
-  },
-  inputLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  timelineSlider: {
+  readoutRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: freshSpacing.s,
+    marginBottom: freshSpacing.xs,
   },
-  timelineOption: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: "transparent",
+  readoutLabelWrap: {
+    flex: 1,
+    gap: 2,
   },
-  timelineOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}25`,
+  fieldLabel: {
+    ...freshType.sectionLabel,
   },
-  timelineText: {
-    fontSize: fontSize.xs,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
+  conversion: {
+    ...freshType.caption,
+    color: tokens.ink2,
   },
-  timelineTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
+  fieldError: {
+    ...freshType.caption,
+    color: tokens.danger,
   },
-  errorText: {
-    fontSize: fontSize.xs,
-    color: colors.error,
-    marginTop: spacing.xs,
+  bigValue: {
+    flexShrink: 0,
   },
-  bmiCard: {
-    marginTop: spacing.lg,
-    backgroundColor: `${colors.primary}05`,
-    borderColor: `${colors.primary}20`,
-    borderWidth: 1,
+  bigNumber: {
+    fontFamily: font.light,
+    fontSize: 34,
+    lineHeight: 36,
+    letterSpacing: -0.8,
+    color: tokens.ink,
   },
-  bmiContent: {
+  bigUnit: {
+    ...freshType.body,
+    color: tokens.ink2,
+  },
+  bmiBlock: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: freshSpacing.screenPad,
+    marginTop: freshSpacing.s,
+    paddingVertical: freshSpacing.s,
   },
-  bmiTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  bmiValue: {
+    fontFamily: font.light,
+    fontSize: 40,
+    lineHeight: 44,
+    letterSpacing: -1,
+    color: tokens.ink,
+  },
+  bmiUnit: {
+    ...freshType.caption,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    marginTop: freshSpacing.xs,
+  },
+  bmiPlaceholder: {
+    ...freshType.caption,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+  },
+  bmiMeta: {
+    flex: 1,
+    gap: freshSpacing.xs,
   },
   bmiCategory: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
+    ...freshType.valueLg,
   },
-  bmiCategoryText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
+  spectrumTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: tokens.hairline,
+    overflow: "visible",
+    justifyContent: "center",
+    marginVertical: freshSpacing.xs,
+    position: "relative",
   },
-  idealWeightText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
+  spectrumBand: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    backgroundColor: tokens.healthyDim,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: tokens.healthy,
   },
-  weightLossInfo: {
-    width: "100%",
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    alignItems: "center",
+  spectrumDot: {
+    position: "absolute",
+    top: -3,
+    width: 10,
+    height: 10,
+    marginLeft: -5,
+    borderRadius: 9999,
+    backgroundColor: tokens.ink,
+    borderWidth: 2,
+    borderColor: tokens.accent,
   },
-  weightLossRateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
+  idealCaption: {
+    ...freshType.caption,
+    letterSpacing: 0.6,
   },
-  weightLossRate: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
+  idealText: {
+    ...freshType.caption,
+    color: tokens.ink2,
+    marginTop: freshSpacing.xs,
   },
 });

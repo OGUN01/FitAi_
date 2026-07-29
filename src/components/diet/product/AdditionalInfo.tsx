@@ -1,15 +1,18 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import type { ScannedProduct } from "../../../services/barcodeService";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
+import type { ScannedProduct } from '../../../services/barcodeService';
 
 interface AdditionalInfoProps {
-  additionalInfo?: ScannedProduct["additionalInfo"];
+  additionalInfo?: ScannedProduct['additionalInfo'];
 }
 
-export const AdditionalInfo: React.FC<AdditionalInfoProps> = ({
-  additionalInfo,
-}) => {
+export const AdditionalInfo: React.FC<AdditionalInfoProps> = ({ additionalInfo }) => {
   if (
     !additionalInfo ||
     (!additionalInfo.ingredients?.length &&
@@ -26,27 +29,21 @@ export const AdditionalInfo: React.FC<AdditionalInfoProps> = ({
       {additionalInfo.ingredients && additionalInfo.ingredients.length > 0 && (
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>Ingredients:</Text>
-          <Text style={styles.infoText}>
-            {additionalInfo.ingredients.join(", ")}
-          </Text>
+          <Text style={styles.infoText}>{additionalInfo.ingredients.join(', ')}</Text>
         </View>
       )}
 
       {additionalInfo.allergens && additionalInfo.allergens.length > 0 && (
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>Allergens:</Text>
-          <Text style={styles.alertText}>
-            {additionalInfo.allergens.join(", ")}
-          </Text>
+          <Text style={styles.alertText}>{additionalInfo.allergens.join(', ')}</Text>
         </View>
       )}
 
       {additionalInfo.labels && additionalInfo.labels.length > 0 && (
         <View style={styles.infoSection}>
           <Text style={styles.infoTitle}>Labels:</Text>
-          <Text style={styles.infoText}>
-            {additionalInfo.labels.join(", ")}
-          </Text>
+          <Text style={styles.infoText}>{additionalInfo.labels.join(', ')}</Text>
         </View>
       )}
     </View>
@@ -61,7 +58,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -70,7 +67,7 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text,
     marginBottom: spacing.xs,
   },

@@ -1,9 +1,15 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw, rp } from "../../../utils/responsive";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
+import { rf, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { SectionHeader } from "../home/SectionHeader";
 import { useAchievementStore } from "../../../stores/achievementStore";
@@ -18,19 +24,18 @@ const ITEM_HEIGHT = 68;
 const VISIBLE_COUNT = 3;
 
 const rarityColor: Record<string, string> = {
-  bronze: "#9CA3AF",
-  silver: "#3B82F6",
-  gold: "#FFD700",
-  platinum: "#9333EA",
-  diamond: "#F97316",
-  legendary: "#FFD700",
+  bronze: colors.text.muted,
+  silver: chart[2],
+  gold: chart[5],
+  platinum: chart[3],
+  diamond: chart[1],
+  legendary: chart[5],
 };
 
 export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
   isLoading = false,
   isInitialized = false,
 }) => {
-  // SSOT: achievementStore is the single source of truth for all achievements.
   const achievements = useAchievementStore((s) => s.achievements);
   const userAchievements = useAchievementStore((s) => s.userAchievements);
 
@@ -39,7 +44,6 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
     [achievements, userAchievements],
   );
 
-  // Show completed first, then nearly-complete (sorted by percentComplete desc — from buildAchievementViewModels)
   const displayAchievements = achievementItems.slice(0, 6);
   const completedCount = achievementItems.filter((item) => item.completed).length;
   const containerHeight =
@@ -53,7 +57,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
         <SectionHeader
           title="Achievements"
           icon="trophy"
-          iconColor={colors.gold}
+          iconColor={chart[5]}
         />
         {!showLoadingState && !showEmptyState && (
           <Text style={styles.countBadge} numberOfLines={1}>
@@ -62,20 +66,17 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
         )}
       </View>
 
-      <GlassCard
-        elevation={1}
-        blurIntensity="light"
-        padding="sm"
-        borderRadius="lg"
-      >
+      <View style={styles.panel}>
         {showLoadingState ? (
           <View style={styles.stateContainer}>
             <Ionicons
               name="hourglass-outline"
               size={rf(24)}
-              color={colors.textMuted}
+              color={colors.text.muted}
             />
-            <Text style={styles.stateTitle} numberOfLines={1}>Loading achievements...</Text>
+            <Text style={styles.stateTitle} numberOfLines={1}>
+              Loading achievements...
+            </Text>
             <Text style={styles.stateSubtitle} numberOfLines={2}>
               Checking your latest progress and unlocks.
             </Text>
@@ -85,9 +86,11 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             <Ionicons
               name="trophy-outline"
               size={rf(24)}
-              color={colors.textMuted}
+              color={colors.text.muted}
             />
-            <Text style={styles.stateTitle} numberOfLines={1}>No achievements yet</Text>
+            <Text style={styles.stateTitle} numberOfLines={1}>
+              No achievements yet
+            </Text>
             <Text style={styles.stateSubtitle} numberOfLines={2}>
               Complete workouts and log meals to start unlocking milestones.
             </Text>
@@ -101,8 +104,8 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
           >
             {displayAchievements.map((item, index) => {
               const accentColor = item.completed
-                ? colors.success
-                : (rarityColor[item.tier] ?? "#9CA3AF");
+                ? chart[4]
+                : (rarityColor[item.tier] ?? colors.text.muted);
               const hasProgress =
                 !item.completed && item.progress > 0 && item.target > 0;
               const pct = hasProgress
@@ -177,13 +180,13 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                       <Ionicons
                         name="checkmark-circle"
                         size={rf(16)}
-                        color={colors.success}
+                        color={chart[4]}
                       />
                     ) : (
                       <Ionicons
                         name="lock-closed-outline"
                         size={rf(16)}
-                        color={colors.textMuted}
+                        color={colors.text.muted}
                       />
                     )}
                   </View>
@@ -192,7 +195,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             })}
           </ScrollView>
         )}
-      </GlassCard>
+      </View>
     </View>
   );
 };
@@ -210,13 +213,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   countBadge: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
     backgroundColor: hexToRgba("#FFFFFF", 0.07),
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
     borderRadius: rp(10),
+  },
+  panel: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    overflow: "hidden",
   },
   stateContainer: {
     minHeight: ITEM_HEIGHT * 2,
@@ -227,14 +236,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   stateTitle: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(14),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     textAlign: "center",
   },
   stateSubtitle: {
-    fontSize: rf(11),
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.secondary,
     textAlign: "center",
   },
   listContent: { paddingVertical: rp(4) },
@@ -243,17 +252,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: rp(10),
     paddingHorizontal: rp(8),
-    gap: rw(10),
+    gap: spacing.sm,
     minHeight: ITEM_HEIGHT,
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: hexToRgba("#FFFFFF", 0.06),
+    borderBottomColor: border.subtle,
   },
   iconWrap: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -262,14 +271,14 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rw(6),
+    gap: spacing.xs,
     minWidth: 0,
     flexShrink: 1,
   },
   title: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     flexShrink: 1,
   },
   categoryTag: {
@@ -278,37 +287,47 @@ const styles = StyleSheet.create({
     borderRadius: rp(4),
     flexShrink: 0,
   },
-  categoryText: { fontSize: rf(11), fontWeight: "700", letterSpacing: 0.4 },
-  description: { fontSize: rf(12), color: colors.textMuted },
+  categoryText: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(11),
+    letterSpacing: 0.4,
+  },
+  description: {
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+  },
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rw(6),
+    gap: spacing.xs,
     marginTop: rp(2),
   },
   progressTrack: {
     flex: 1,
-    height: rp(3),
-    backgroundColor: hexToRgba("#FFFFFF", 0.1),
-    borderRadius: rp(2),
+    height: 3,
+    backgroundColor: border.subtle,
+    borderRadius: 2,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
-    borderRadius: rp(2),
+    borderRadius: 2,
   },
   progressLabel: {
-    fontSize: rf(11),
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
     flexShrink: 0,
   },
   rightBlock: {
     alignItems: "center",
     gap: rp(3),
     flexShrink: 0,
-    minWidth: rw(30),
+    minWidth: 30,
   },
-  pts: { fontSize: rf(12), fontWeight: "700" },
+  pts: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(12),
+  },
 });
 
 export default AchievementShowcase;

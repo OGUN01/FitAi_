@@ -1,0 +1,41 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mD:/FitAi/FitAI/fitai-workers[39m
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProcessing wrangler.jsonc configuration:[0m
+
+    - Unexpected fields found in top-level field: "#queues_comment","#queues"
+
+
+Using vars defined in .env
+[vpw:info] Starting isolated runtimes for vitest.config.mts...
+[mf:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-09-06",
+but you've requested "2025-11-13". Falling back to "2025-09-06"...
+[mf:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-09-06",
+but you've requested "2025-11-13". Falling back to "2025-09-06"...
+[mf:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-09-06",
+but you've requested "2025-11-13". Falling back to "2025-09-06"...
+[mf:warn] The latest compatibility date supported by the installed Cloudflare Workers Runtime is "2025-09-06",
+but you've requested "2025-11-13". Falling back to "2025-09-06"...
+ [32m✓[39m test/razorpay.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 349[2mms[22m[39m
+ [32m✓[39m test/subscriptionGate.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 158[2mms[22m[39m
+ [32m✓[39m test/usageTracker.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 384[2mms[22m[39m
+ [32m✓[39m test/subscription.test.ts [2m([22m[2m18 tests[22m[2m)[22m[33m 335[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m46 passed[39m[22m[90m (46)[39m
+[2m   Start at [22m 13:13:42
+[2m   Duration [22m 4.34s[2m (transform 492ms, setup 0ms, collect 1.10s, tests 1.23s, environment 2ms, prepare 2.43s)[22m
+
+[vpw:debug] Shutting down runtimes...
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-1fc5492b3c2b1152a3c09f21deb4cc39\cache\miniflare-CacheObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-f5673e58aba2ad788049ca48dae1b127\cache\miniflare-CacheObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-afc0639231c09b64cf98a7543adc3e2c\cache\miniflare-CacheObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-dcdd2cc9f42d595d5a0ac3ae4f2553f5\cache\miniflare-CacheObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-1fc5492b3c2b1152a3c09f21deb4cc39\kv\miniflare-KVNamespaceObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-afc0639231c09b64cf98a7543adc3e2c\kv\miniflare-KVNamespaceObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-dcdd2cc9f42d595d5a0ac3ae4f2553f5\kv\miniflare-KVNamespaceObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-f5673e58aba2ad788049ca48dae1b127\kv\miniflare-KVNamespaceObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-1fc5492b3c2b1152a3c09f21deb4cc39\r2\miniflare-R2BucketObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-afc0639231c09b64cf98a7543adc3e2c\r2\miniflare-R2BucketObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-dcdd2cc9f42d595d5a0ac3ae4f2553f5\r2\miniflare-R2BucketObject'
+vitest-pool-worker: Unable to remove temporary directory: Error: EBUSY: resource busy or locked, rmdir 'C:\Users\Harsh\AppData\Local\Temp\miniflare-f5673e58aba2ad788049ca48dae1b127\r2\miniflare-R2BucketObject'

@@ -53,13 +53,42 @@ describe('verifyWebhookSignature', () => {
 		const body = '{"event":"subscription.activated"}';
 		const secret = 'whsec_test';
 		const sig = await hmacSha256Hex(secret, body);
+		const ts = Math.floor(Date.now() / 1000).toString();
 
-		const result = await verifyWebhookSignature(body, sig, secret);
+		const result = await verifyWebhookSignature(body, sig, secret, ts);
 		expect(result).toBe(true);
 	});
 
 	it('returns false for an invalid webhook signature', async () => {
-		const result = await verifyWebhookSignature('{"event":"x"}', 'badsig', 'whsec_test');
+		const ts = Math.floor(Date.now() / 1000).toString();
+		const result = await verifyWebhookSignature('{"event":"x"}', 'badsig', 'whsec_test', ts);
+		expect(result).toBe(false);
+	});
+
+	it('returns false when timestamp header is missing', async () => {
+		const body = '{"event":"subscription.activated"}';
+		const secret = 'whsec_test';
+		const sig = await hmacSha256Hex(secret, body);
+
+		const result = await verifyWebhookSignature(body, sig, secret);
+		expect(result).toBe(false);
+	});
+
+	it('returns false for a stale timestamp', async () => {
+		const body = '{"event":"subscription.activated"}';
+		const secret = 'whsec_test';
+		const sig = await hmacSha256Hex(secret, body);
+		const staleTs = (Math.floor(Date.now() / 1000) - 600).toString();
+
+		const result = await verifyWebhookSignature(body, sig, secret, staleTs);
+		expect(result).toBe(false);
+	});
+
+	it('returns false when webhook secret is empty', async () => {
+		const body = '{"event":"subscription.activated"}';
+		const ts = Math.floor(Date.now() / 1000).toString();
+
+		const result = await verifyWebhookSignature(body, 'anysig', '', ts);
 		expect(result).toBe(false);
 	});
 });

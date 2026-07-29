@@ -19,7 +19,7 @@ import { useAuth } from "../../../../hooks/useAuth";
 import { userProfileService } from "../../../../services/userProfile";
 import { supabase } from "../../../../services/supabase";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
-import { flatColors as colors } from "../../../../theme/aurora-tokens";
+import { colors } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
@@ -351,7 +351,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       title="Personal Information"
       subtitle="Update your basic profile details"
       icon="person-outline"
-      iconColor={colors.errorLight}
+      iconColor={colors.error.light}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -361,7 +361,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Full Name"
         icon="person-outline"
-        iconColor={colors.errorLight}
+        iconColor={colors.error.light}
         value={name}
         onChangeText={handleNameChange}
         placeholder="Enter your name"
@@ -374,7 +374,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Age"
         icon="calendar-outline"
-        iconColor={colors.success}
+        iconColor={colors.success.DEFAULT}
         value={age}
         onChangeText={handleAgeChange}
         placeholder="Enter your age"

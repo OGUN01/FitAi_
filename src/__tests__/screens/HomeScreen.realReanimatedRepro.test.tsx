@@ -56,6 +56,10 @@ jest.mock("react-native-reanimated", () => {
       ReactRef.useRef();
       return { value: updater() };
     },
+    // DailyProgressRings breathing animation calls useReducedMotion to gate the
+    // pulse for a11y. Not a hook in the React-counting sense here (returns a
+    // plain bool) — but must exist on the mock so the component renders.
+    useReducedMotion: () => false,
   withTiming: (v: any) => v,
   withSpring: (v: any) => v,
   withRepeat: (v: any) => v,

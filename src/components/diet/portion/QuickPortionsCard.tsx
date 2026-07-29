@@ -1,7 +1,12 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "../../ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Card } from '../../ui';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+} from '../../../theme/aurora-tokens';
 
 interface QuickPortionsCardProps {
   commonPortions: { label: string; grams: number }[];
@@ -32,8 +37,7 @@ export const QuickPortionsCard: React.FC<QuickPortionsCardProps> = ({
             <Text
               style={[
                 styles.quickPortionLabel,
-                currentGrams === portion.grams &&
-                  styles.quickPortionLabelActive,
+                currentGrams === portion.grams && styles.quickPortionLabelActive,
               ]}
             >
               {portion.label}
@@ -41,8 +45,7 @@ export const QuickPortionsCard: React.FC<QuickPortionsCardProps> = ({
             <Text
               style={[
                 styles.quickPortionGrams,
-                currentGrams === portion.grams &&
-                  styles.quickPortionGramsActive,
+                currentGrams === portion.grams && styles.quickPortionGramsActive,
               ]}
             >
               {portion.grams}g
@@ -61,24 +64,24 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
   quickPortionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   quickPortionButton: {
     flex: 1,
-    minWidth: "45%",
+    minWidth: '45%',
     padding: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
   },
   quickPortionButtonActive: {
     backgroundColor: colors.primary,
@@ -87,7 +90,7 @@ const styles = StyleSheet.create({
   quickPortionLabel: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: spacing.xs,
   },
   quickPortionLabelActive: {

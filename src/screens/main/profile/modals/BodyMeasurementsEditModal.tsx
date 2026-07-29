@@ -15,21 +15,26 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, StyleSheet, LayoutChangeEvent } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
-import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { useProfileStore } from "../../../../stores/profileStore";
 import { useAuth } from "../../../../hooks/useAuth";
 import { BodyAnalysisService } from "../../../../services/onboardingService";
 import type { BodyAnalysisData } from "../../../../types/onboarding";
 import { resolveCurrentWeightForUser } from "../../../../services/currentWeight";
-import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../../../utils/responsive";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../../utils/colors";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import { convertWeight, toDisplayWeight, parseLocalFloat } from "../../../../utils/units";
+
+const { variants } = typography;
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -96,10 +101,10 @@ export const BodyMeasurementsEditModal: React.FC<
   const bmiCategory = useMemo(() => {
     if (!bmi) return null;
     const bmiValue = parseFloat(bmi);
-    if (bmiValue < 18.5) return { label: "Underweight", color: colors.info };
-    if (bmiValue < 25) return { label: "Normal", color: colors.success };
-    if (bmiValue < 30) return { label: "Overweight", color: colors.warning };
-    return { label: "Obese", color: colors.error };
+    if (bmiValue < 18.5) return { label: "Underweight", color: colors.info.DEFAULT };
+    if (bmiValue < 25) return { label: "Normal", color: colors.success.DEFAULT };
+    if (bmiValue < 30) return { label: "Overweight", color: colors.warning.DEFAULT };
+    return { label: "Obese", color: colors.error.DEFAULT };
   }, [bmi]);
 
   // Validation
@@ -296,119 +301,96 @@ export const BodyMeasurementsEditModal: React.FC<
       title="Body Measurements"
       subtitle="Track your body composition"
       icon="body-outline"
-      iconColor={colors.primary}
+      iconColor={colors.primary.DEFAULT}
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
       saveDisabled={!hasChanges()}
     >
-      {/* BMI Card */}
+      {/* BMI Panel — flat surface.1, no card nesting */}
       {bmi && bmiCategory && (
-        <Animated.View entering={FadeIn.duration(400)}>
-          <GlassCard
-            elevation={2}
-            padding="md"
-            blurIntensity="light"
-            borderRadius="lg"
-            style={styles.bmiCard}
-          >
-            <LinearGradient
-              colors={[hexToRgba(bmiCategory.color, 0.08), "transparent"]}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.bmiContent}>
-              <View style={styles.bmiLeft}>
+        <Animated.View entering={FadeIn.duration(400)} style={styles.bmiPanel}>
+          <View style={styles.bmiContent}>
+            <View style={styles.bmiLeft}>
+              <View
+                style={[
+                  styles.bmiIcon,
+                  { backgroundColor: `${bmiCategory.color}1F` },
+                ]}
+              >
+                <Ionicons
+                  name="analytics-outline"
+                  size={rf(20)}
+                  color={bmiCategory.color}
+                />
+              </View>
+              <View>
+                <Text style={styles.bmiLabel}>Your BMI</Text>
+                <Text style={styles.bmiCategory}>{bmiCategory.label}</Text>
+              </View>
+            </View>
+            <View style={styles.bmiRight}>
+              <Text style={[styles.bmiValue, { color: bmiCategory.color }]}>
+                {bmi}
+              </Text>
+              <Text style={styles.bmiUnit}>kg/m²</Text>
+            </View>
+          </View>
+
+          {/* BMI Scale — segments sized proportionally to the BMI ranges
+              they represent (15-18.5, 18.5-25, 25-30, 30-40). */}
+          <View style={styles.bmiScale}>
+            <View
+              style={styles.bmiScaleBarContainer}
+              onLayout={(e: LayoutChangeEvent) => setScaleBarWidth(e.nativeEvent.layout.width)}
+            >
+              <View style={styles.bmiScaleBar}>
                 <View
                   style={[
-                    styles.bmiIcon,
-                    { backgroundColor: hexToRgba(bmiCategory.color, TINT_ALPHA_LOW) },
+                    styles.bmiScaleSegment,
+                    { backgroundColor: colors.info.DEFAULT, flex: 3.5 },
                   ]}
-                >
-                  <Ionicons
-                    name="analytics-outline"
-                    size={rf(20)}
-                    color={bmiCategory.color}
+                />
+                <View
+                  style={[
+                    styles.bmiScaleSegment,
+                    { backgroundColor: colors.success.DEFAULT, flex: 6.5 },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.bmiScaleSegment,
+                    { backgroundColor: colors.warning.DEFAULT, flex: 5 },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.bmiScaleSegment,
+                    { backgroundColor: colors.error.DEFAULT, flex: 10 },
+                  ]}
+                />
+              </View>
+              {bmi && (() => {
+                const bmiVal = parseFloat(bmi);
+                const pct = Math.min(100, Math.max(0, ((bmiVal - 15) / (40 - 15)) * 100));
+                return (
+                  <View
+                    style={[
+                      styles.bmiIndicator,
+                      { left: `${pct}%` },
+                    ]}
                   />
-                </View>
-                <View>
-                  <Text style={styles.bmiLabel}>Your BMI</Text>
-                  <Text style={styles.bmiCategory}>{bmiCategory.label}</Text>
-                </View>
-              </View>
-              <View style={styles.bmiRight}>
-                <Text style={[styles.bmiValue, { color: bmiCategory.color }]}>
-                  {bmi}
-                </Text>
-                <Text style={styles.bmiUnit}>kg/m²</Text>
-              </View>
+                );
+              })()}
             </View>
-
-            {/* BMI Scale — segments sized proportionally to the BMI ranges
-                they represent (15-18.5, 18.5-25, 25-30, 30-40). The previous
-                flex values 18.5/6.5/5/10 didn't match the actual BMI range
-                widths, so the indicator didn't align with segment boundaries. */}
-            <View style={styles.bmiScale}>
-              <View
-                style={styles.bmiScaleBarContainer}
-                onLayout={(e: LayoutChangeEvent) => setScaleBarWidth(e.nativeEvent.layout.width)}
-              >
-                <View style={styles.bmiScaleBar}>
-                  {/* 15-18.5 = 3.5 units */}
-                  <View
-                    style={[
-                      styles.bmiScaleSegment,
-                      { backgroundColor: colors.info, flex: 3.5 },
-                    ]}
-                  />
-                  {/* 18.5-25 = 6.5 units */}
-                  <View
-                    style={[
-                      styles.bmiScaleSegment,
-                      { backgroundColor: colors.success, flex: 6.5 },
-                    ]}
-                  />
-                  {/* 25-30 = 5 units */}
-                  <View
-                    style={[
-                      styles.bmiScaleSegment,
-                      { backgroundColor: colors.warning, flex: 5 },
-                    ]}
-                  />
-                  {/* 30-40 = 10 units */}
-                  <View
-                    style={[
-                      styles.bmiScaleSegment,
-                      { backgroundColor: colors.error, flex: 10 },
-                    ]}
-                  />
-                </View>
-                {/* BMI Position Indicator. Render even when scaleBarWidth is 0
-                    (first paint) using a percentage-based left so the indicator
-                    is visible immediately instead of waiting for onLayout. */}
-                {bmi && (() => {
-                  const bmiVal = parseFloat(bmi);
-                  const pct = Math.min(100, Math.max(0, ((bmiVal - 15) / (40 - 15)) * 100));
-                  return (
-                    <View
-                      style={[
-                        styles.bmiIndicator,
-                        { left: `${pct}%` },
-                      ]}
-                    />
-                  );
-                })()}
-              </View>
-              {/* Scale labels — include endpoints (15, 40) so all 4 segment
-                  boundaries are marked. */}
-              <View style={styles.bmiScaleLabels}>
-                <Text style={styles.bmiScaleLabel}>15</Text>
-                <Text style={styles.bmiScaleLabel}>18.5</Text>
-                <Text style={styles.bmiScaleLabel}>25</Text>
-                <Text style={styles.bmiScaleLabel}>30</Text>
-                <Text style={styles.bmiScaleLabel}>40</Text>
-              </View>
+            <View style={styles.bmiScaleLabels}>
+              <Text style={styles.bmiScaleLabel}>15</Text>
+              <Text style={styles.bmiScaleLabel}>18.5</Text>
+              <Text style={styles.bmiScaleLabel}>25</Text>
+              <Text style={styles.bmiScaleLabel}>30</Text>
+              <Text style={styles.bmiScaleLabel}>40</Text>
             </View>
-          </GlassCard>
+          </View>
         </Animated.View>
       )}
 
@@ -416,7 +398,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Height"
         icon="resize-outline"
-        iconColor={colors.info}
+        iconColor={colors.info.DEFAULT}
         value={height}
         onChangeText={setHeight}
         placeholder="Enter your height"
@@ -431,7 +413,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Current Weight"
         icon="scale-outline"
-        iconColor={colors.primary}
+        iconColor={colors.primary.DEFAULT}
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"
@@ -446,7 +428,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Target Weight"
         icon="flag-outline"
-        iconColor={colors.success}
+        iconColor={colors.success.DEFAULT}
         value={targetWeight}
         onChangeText={setTargetWeight}
         placeholder="Enter your goal weight"
@@ -461,7 +443,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Body Fat %"
         icon="body-outline"
-        iconColor={colors.warning}
+        iconColor={colors.warning.DEFAULT}
         value={bodyFat}
         onChangeText={setBodyFat}
         placeholder="Enter body fat percentage"
@@ -476,7 +458,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Chest"
         icon="ellipse-outline"
-        iconColor={colors.purple}
+        iconColor={colors.secondary.DEFAULT}
         value={chest}
         onChangeText={setChest}
         placeholder="Enter chest measurement"
@@ -491,7 +473,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Waist"
         icon="radio-button-off-outline"
-        iconColor={colors.cyan}
+        iconColor={colors.secondary.DEFAULT}
         value={waist}
         onChangeText={setWaist}
         placeholder="Enter waist measurement"
@@ -506,7 +488,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Hips"
         icon="ellipse-outline"
-        iconColor={colors.pink}
+        iconColor={colors.primary.DEFAULT}
         value={hips}
         onChangeText={setHips}
         placeholder="Enter hips measurement"
@@ -517,32 +499,29 @@ export const BodyMeasurementsEditModal: React.FC<
         hint="Optional - hips circumference"
       />
 
-      {/* Info Card */}
-      <GlassCard
-        elevation={1}
-        padding="md"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.infoCard}
-      >
-        <View style={styles.infoRow}>
-          <Ionicons
-            name="information-circle-outline"
-            size={rf(18)}
-            color={colors.textSecondary}
-          />
-          <Text style={styles.infoText}>
-            Keep your measurements updated for accurate calorie calculations and
-            personalized workout recommendations.
-          </Text>
-        </View>
-      </GlassCard>
+      {/* Info footer — flat, no card */}
+      <View style={styles.infoRow}>
+        <Ionicons
+          name="information-circle-outline"
+          size={rf(16)}
+          color={colors.text.tertiary}
+        />
+        <Text style={styles.infoText}>
+          Keep your measurements updated for accurate calorie calculations and
+          personalized workout recommendations.
+        </Text>
+      </View>
     </SettingsModalWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  bmiCard: {
+  bmiPanel: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.md,
     marginBottom: spacing.lg,
     overflow: "hidden",
   },
@@ -565,52 +544,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bmiLabel: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
+    ...variants.caption,
+    color: colors.text.secondary,
   },
   bmiCategory: {
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(14),
-    fontWeight: "600",
-    color: colors.white,
+    color: colors.text.primary,
   },
   bmiRight: {
     alignItems: "flex-end",
   },
   bmiValue: {
+    fontFamily: "Manrope_800ExtraBold",
     fontSize: rf(28),
-    fontWeight: "800",
   },
   bmiUnit: {
+    ...variants.caption,
     fontSize: rf(11),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   bmiScale: {
     marginTop: spacing.sm,
   },
   bmiScaleBarContainer: {
     position: "relative",
-    marginBottom: rp(8),
+    marginBottom: spacing.sm,
   },
   bmiScaleBar: {
     flexDirection: "row",
-    height: rp(6),
-    borderRadius: rbr(3),
+    height: 6,
+    borderRadius: 3,
     overflow: "hidden",
   },
   bmiIndicator: {
     position: "absolute",
-    top: rp(-4),
-    width: rp(10),
-    height: rp(10),
-    borderRadius: rbr(5),
-    backgroundColor: colors.white,
+    top: -4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.text.primary,
     borderWidth: 2,
-    borderColor: colors.primary,
-    marginLeft: rp(-5),
-    // boxShadow only — avoids the duplicate native-shadow props that warn
-    // on web and conflict with elevation on Android.
-    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)',
-    elevation: 3,
+    borderColor: colors.primary.DEFAULT,
+    marginLeft: -5,
   },
   bmiScaleSegment: {
     height: "100%",
@@ -618,29 +594,24 @@ const styles = StyleSheet.create({
   bmiScaleLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: rp(4),
-    paddingHorizontal: rp(2),
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xxs,
   },
   bmiScaleLabel: {
-    // rf(10) keeps the scale labels legible above the WCAG AA floor for
-    // non-body text (was rf(9), which clipped on dense layouts).
+    fontFamily: "Manrope_500Medium",
     fontSize: Math.max(rf(10), 10),
-    color: colors.textSecondary,
-  },
-  infoCard: {
-    marginTop: spacing.md,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    color: colors.text.secondary,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.sm,
+    marginTop: spacing.md,
   },
   infoText: {
+    ...variants.caption,
     flex: 1,
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    lineHeight: rf(18),
+    color: colors.text.tertiary,
   },
 });
 

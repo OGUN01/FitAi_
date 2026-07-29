@@ -1,53 +1,46 @@
-import React, { startTransition, useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, BackHandler, Platform, Linking } from "react-native";
-import { rf, rh, rw } from "../../utils/responsive";
-import { TabBar } from "./TabBar";
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
-import {
-  HomeIcon,
-  FitnessIcon,
-  DietIcon,
-  ProfileIcon,
-  AnalyticsIcon,
-} from "../icons/TabIcons";
-import { HomeScreen } from "../../screens/main/HomeScreen";
-import { FitnessScreen } from "../../screens/main/FitnessScreen";
-import { DietScreen } from "../../screens/main/DietScreen";
-import { ProgressScreen } from "../../screens/main/ProgressScreen";
-import { ProgressTrendsScreen } from "../../screens/main/ProgressTrendsScreen";
-import { AchievementsScreen } from "../../screens/main/AchievementsScreen";
-import { ProfileScreen } from "../../screens/main/ProfileScreen";
-import AnalyticsScreen from "../../screens/main/AnalyticsScreen";
-import { WorkoutSessionScreen } from "../../screens/workout/WorkoutSessionScreen";
-import { MealSession } from "../../screens/session/MealSession";
-import CookingSessionScreen from "../../screens/cooking/CookingSessionScreen";
-import { OnboardingContainer } from "../../screens/onboarding/OnboardingContainer";
-import { ContributeFood } from "../../screens/ContributeFood";
-import TemplateLibraryScreen from "../../screens/workouts/TemplateLibraryScreen";
-import CreateWorkoutScreen from "../../screens/workouts/CreateWorkoutScreen";
-import ExerciseHistoryScreen from "../../screens/workouts/ExerciseHistoryScreen";
-import ScheduleBuilderScreen from "../../screens/workouts/ScheduleBuilderScreen";
-import WeeklyBuilderScreen from "../../screens/workouts/WeeklyBuilderScreen";
-import { BuildMethodLandingScreen } from "../../screens/workouts/BuildMethodLandingScreen";
-import { WorkoutDetailScreen } from "../../screens/workouts/WorkoutDetailScreen";
-import { flatColors as colors } from "../../theme/aurora-tokens";
-import { DayWorkout, DayMeal } from "../../types/ai";
-import { useAppConfig } from "../../hooks/useAppConfig";
-import { ScreenErrorBoundary } from "../errors/ScreenErrorBoundary";
-import {
-  isTemplateLink,
-  parseTemplateLink,
-} from "../../services/templateShareService";
+import React, { startTransition, useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, BackHandler, Platform, Linking } from 'react-native';
+import { rf, rh, rw } from '../../utils/responsive';
+import { TabBar } from './TabBar';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
+import { HomeIcon, FitnessIcon, DietIcon, ProfileIcon, AnalyticsIcon } from '../icons/TabIcons';
+import { HomeScreen } from '../../screens/main/HomeScreen';
+import { FitnessScreen } from '../../screens/main/FitnessScreen';
+import { DietScreen } from '../../screens/main/DietScreen';
+import { ProgressScreen } from '../../screens/main/ProgressScreen';
+import { ProgressTrendsScreen } from '../../screens/main/ProgressTrendsScreen';
+import { AchievementsScreen } from '../../screens/main/AchievementsScreen';
+import { ProfileScreen } from '../../screens/main/ProfileScreen';
+import AnalyticsScreen from '../../screens/main/AnalyticsScreen';
+import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
+import { MealSession } from '../../screens/session/MealSession';
+import CookingSessionScreen from '../../screens/cooking/CookingSessionScreen';
+import { OnboardingContainer } from '../../screens/onboarding/OnboardingContainer';
+import { ContributeFood } from '../../screens/ContributeFood';
+import TemplateLibraryScreen from '../../screens/workouts/TemplateLibraryScreen';
+import CreateWorkoutScreen from '../../screens/workouts/CreateWorkoutScreen';
+import ExerciseHistoryScreen from '../../screens/workouts/ExerciseHistoryScreen';
+import ScheduleBuilderScreen from '../../screens/workouts/ScheduleBuilderScreen';
+import WeeklyBuilderScreen from '../../screens/workouts/WeeklyBuilderScreen';
+import { BuildMethodLandingScreen } from '../../screens/workouts/BuildMethodLandingScreen';
+import { WorkoutDetailScreen } from '../../screens/workouts/WorkoutDetailScreen';
+import { FullPlanScreen } from '../../screens/workouts/FullPlanScreen';
+import { WorkoutHistoryScreen } from '../../screens/workouts/WorkoutHistoryScreen';
+import { flatColors as colors } from '../../theme/aurora-tokens';
+import { DayWorkout, DayMeal } from '../../types/ai';
+import { useAppConfig } from '../../hooks/useAppConfig';
+import { ScreenErrorBoundary } from '../errors/ScreenErrorBoundary';
+import { isTemplateLink, parseTemplateLink } from '../../services/templateShareService';
 
-type MainTabKey = "home" | "fitness" | "diet" | "profile" | "analytics";
+type MainTabKey = 'home' | 'fitness' | 'diet' | 'profile' | 'analytics';
 
-const DEFAULT_TAB: MainTabKey = "home";
+const DEFAULT_TAB: MainTabKey = 'home';
 const isMainTabKey = (value: string): value is MainTabKey =>
-  value === "home" ||
-  value === "fitness" ||
-  value === "diet" ||
-  value === "profile" ||
-  value === "analytics";
+  value === 'home' ||
+  value === 'fitness' ||
+  value === 'diet' ||
+  value === 'profile' ||
+  value === 'analytics';
 
 interface MainNavigationProps {
   initialTab?: string;
@@ -61,27 +54,25 @@ interface MainNavigationProps {
 }
 
 export const MainNavigation: React.FC<MainNavigationProps> = ({
-  initialTab = "home",
+  initialTab = 'home',
   initialTabParams,
 }) => {
   const { config: appConfig } = useAppConfig();
-  const initialResolvedTab = isMainTabKey(initialTab)
-    ? initialTab
-    : DEFAULT_TAB;
+  const initialResolvedTab = isMainTabKey(initialTab) ? initialTab : DEFAULT_TAB;
   const [activeTab, setActiveTab] = useState<MainTabKey>(initialResolvedTab);
 
   const [mountedTabs, setMountedTabs] = useState<Record<MainTabKey, boolean>>({
-    home: initialResolvedTab === "home",
-    fitness: initialResolvedTab === "fitness",
-    diet: initialResolvedTab === "diet",
-    profile: initialResolvedTab === "profile",
-    analytics: initialResolvedTab === "analytics",
+    home: initialResolvedTab === 'home',
+    fitness: initialResolvedTab === 'fitness',
+    diet: initialResolvedTab === 'diet',
+    profile: initialResolvedTab === 'profile',
+    analytics: initialResolvedTab === 'analytics',
   });
   // Seed the initial tab's params so notification-tap deep links (e.g.
   // openWaterModal) reach the target screen on first render. Other tabs start
   // with no params and receive them via navigation.navigate().
   const [tabParams, setTabParams] = useState<Partial<Record<MainTabKey, any>>>(
-    initialTabParams ? { [initialResolvedTab]: initialTabParams } : {},
+    initialTabParams ? { [initialResolvedTab]: initialTabParams } : {}
   );
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
@@ -182,6 +173,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     isActive: boolean;
     templateId?: string;
   }>({ isActive: false });
+
+  // Full Plan + Workout History overlay screens (audit #2/#3 — previously the
+  // "View All" and "See all N workouts" CTAs opened a plain Alert). Pure
+  // presentational; both read from the fitness store directly.
+  const [fullPlanSession, setFullPlanSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+  const [workoutHistorySession, setWorkoutHistorySession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
   const ensureTabMounted = (tab: MainTabKey) => {
     setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
   };
@@ -202,20 +203,22 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setBuildMethodLandingSession({ isActive: false });
     setWorkoutDetailSession({ isActive: false });
     setTemplateShareSession({ isActive: false });
+    setFullPlanSession({ isActive: false });
+    setWorkoutHistorySession({ isActive: false });
   };
   const resolveTabKey = (screen: string): MainTabKey | null => {
     switch (screen) {
-      case "Home":
-        return "home";
-      case "Workout":
-      case "Fitness":
-        return "fitness";
-      case "Diet":
-        return "diet";
-      case "Profile":
-        return "profile";
-      case "Analytics":
-        return "analytics";
+      case 'Home':
+        return 'home';
+      case 'Workout':
+      case 'Fitness':
+        return 'fitness';
+      case 'Diet':
+        return 'diet';
+      case 'Profile':
+        return 'profile';
+      case 'Analytics':
+        return 'analytics';
       default:
         return null;
     }
@@ -224,11 +227,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     if (!screen) return undefined;
     return screen.trim().toLowerCase();
   };
-  const transitionToTab = (
-    tab: MainTabKey,
-    params?: any,
-    resetWhenParamsMissing = false,
-  ) => {
+  const transitionToTab = (tab: MainTabKey, params?: any, resetWhenParamsMissing = false) => {
     startTransition(() => {
       ensureTabMounted(tab);
       setActiveTab(tab);
@@ -250,7 +249,6 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     transitionToTab(initialTab, initialTabParams, true);
     // We intentionally depend on initialTabParams identity (App.tsx creates a
     // fresh object per tap) so repeated taps re-fire the transition.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTab, initialTabParams]);
   // Navigation object to pass to screens
   const navigation = {
@@ -261,7 +259,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         transitionToTab(tabKey, params, true);
         return;
       }
-      if (screen === "WorkoutSession") {
+      if (screen === 'WorkoutSession') {
         setWorkoutSession({
           isActive: true,
           workout: params.workout,
@@ -269,11 +267,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           resumeExerciseIndex: params.resumeExerciseIndex,
           isExtra: params.isExtra,
         });
-      } else if (screen === "MealSession") {
+      } else if (screen === 'MealSession') {
         setMealSession({ isActive: true, meal: params?.meal });
-      } else if (screen === "CookingSession") {
+      } else if (screen === 'CookingSession') {
         setCookingSession({ isActive: true, meal: params?.meal });
-      } else if (screen === "OnboardingContainer") {
+      } else if (screen === 'OnboardingContainer') {
         setOnboardingEditSession({
           isActive: true,
           editMode: params?.editMode,
@@ -281,17 +279,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           onEditComplete: params?.onEditComplete,
           onEditCancel: params?.onEditCancel,
         });
-      } else if (screen === "Progress") {
+      } else if (screen === 'Progress') {
         setProgressSession({ isActive: true });
-      } else if (screen === "ProgressTrends") {
+      } else if (screen === 'ProgressTrends') {
         setProgressTrendsSession({ isActive: true });
-      } else if (screen === "Achievements") {
+      } else if (screen === 'Achievements') {
         setAchievementsSession({ isActive: true });
-      } else if (screen === "Settings") {
+      } else if (screen === 'Settings') {
         clearTransientScreens();
         startTransition(() => {
-          ensureTabMounted("profile");
-          setActiveTab("profile");
+          ensureTabMounted('profile');
+          setActiveTab('profile');
           setTabParams((prev) => ({
             ...prev,
             profile: {
@@ -300,24 +298,22 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             },
           }));
         });
-      } else if (screen === "ContributeFood") {
+      } else if (screen === 'ContributeFood') {
         if (!appConfig.featureFoodContributions) {
-          crossPlatformAlert(
-            "Feature Unavailable",
-            "Food contributions are currently disabled.",
-            [{ text: "OK" }],
-          );
+          crossPlatformAlert('Feature Unavailable', 'Food contributions are currently disabled.', [
+            { text: 'OK' },
+          ]);
           return;
         }
         setContributeFoodSession({ isActive: true, barcode: params?.barcode });
-      } else if (screen === "TemplateLibrary") {
+      } else if (screen === 'TemplateLibrary') {
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
         setTemplateLibrarySession({ isActive: true });
-      } else if (screen === "CreateWorkout") {
+      } else if (screen === 'CreateWorkout') {
         setTemplateLibrarySession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
@@ -327,7 +323,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           isActive: true,
           templateId: params?.templateId,
         });
-      } else if (screen === "ExerciseHistory") {
+      } else if (screen === 'ExerciseHistory') {
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
@@ -338,28 +334,28 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           exerciseId: params?.exerciseId,
           exerciseName: params?.exerciseName,
         });
-      } else if (screen === "ScheduleBuilder") {
+      } else if (screen === 'ScheduleBuilder') {
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
         setScheduleBuilderSession({ isActive: true });
-      } else if (screen === "WeeklyBuilder") {
+      } else if (screen === 'WeeklyBuilder') {
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: true });
-      } else if (screen === "BuildMethodLanding") {
+      } else if (screen === 'BuildMethodLanding') {
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: true });
-      } else if (screen === "WorkoutDetail") {
+      } else if (screen === 'WorkoutDetail') {
         // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
         // Additive overlay: other builder/overlay sessions are cleared so the
         // detail screen owns the surface, mirroring the scheduleBuilder pattern.
@@ -374,9 +370,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           workout: params?.workout as DayWorkout | undefined,
           dayIndex: params?.dayIndex as number | undefined,
         });
+      } else if (screen === 'FullPlan') {
+        setFullPlanSession({ isActive: true });
+      } else if (screen === 'WorkoutHistory') {
+        setWorkoutHistorySession({ isActive: true });
       }
     },
     goBack: () => {
+      // If ExerciseHistory is open on top of a workout session, only close
+      // the history overlay — keep the workout session alive so the user
+      // returns to their in-progress workout.
+      if (exerciseHistorySession.isActive && workoutSession.isActive) {
+        setExerciseHistorySession({ isActive: false });
+        return;
+      }
       clearTransientScreens();
     },
     setParams: (params: any) => {
@@ -393,42 +400,41 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
   // Handle Android back button
   useEffect(() => {
-    if (Platform.OS !== "android") return;
+    if (Platform.OS !== 'android') return;
 
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      () => {
-        // If any session is active, go back
-        if (
-          workoutSession.isActive ||
-          mealSession.isActive ||
-          cookingSession.isActive ||
-          onboardingEditSession.isActive ||
-          progressSession.isActive ||
-          progressTrendsSession.isActive ||
-          achievementsSession.isActive ||
-          contributeFoodSession.isActive ||
-          templateLibrarySession.isActive ||
-          createWorkoutSession.isActive ||
-          exerciseHistorySession.isActive ||
-          scheduleBuilderSession.isActive ||
-          weeklyBuilderSession.isActive ||
-          buildMethodLandingSession.isActive ||
-          workoutDetailSession.isActive ||
-          templateShareSession.isActive
-        ) {
-          navigation.goBack();
-          return true; // Prevent default behavior
-        }
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // If any session is active, go back
+      if (
+        workoutSession.isActive ||
+        mealSession.isActive ||
+        cookingSession.isActive ||
+        onboardingEditSession.isActive ||
+        progressSession.isActive ||
+        progressTrendsSession.isActive ||
+        achievementsSession.isActive ||
+        contributeFoodSession.isActive ||
+        templateLibrarySession.isActive ||
+        createWorkoutSession.isActive ||
+        exerciseHistorySession.isActive ||
+        scheduleBuilderSession.isActive ||
+        weeklyBuilderSession.isActive ||
+        buildMethodLandingSession.isActive ||
+        workoutDetailSession.isActive ||
+        templateShareSession.isActive ||
+        fullPlanSession.isActive ||
+        workoutHistorySession.isActive
+      ) {
+        navigation.goBack();
+        return true; // Prevent default behavior
+      }
 
-        // On root screen, show exit confirmation
-        crossPlatformAlert("Exit App", "Are you sure you want to exit?", [
-          { text: "Cancel", style: "cancel" },
-          { text: "Exit", onPress: () => BackHandler.exitApp() },
-        ]);
-        return true;
-      },
-    );
+      // On root screen, show exit confirmation
+      crossPlatformAlert('Exit App', 'Are you sure you want to exit?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Exit', onPress: () => BackHandler.exitApp() },
+      ]);
+      return true;
+    });
 
     return () => backHandler.remove();
   }, [
@@ -448,6 +454,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     buildMethodLandingSession.isActive,
     workoutDetailSession.isActive,
     templateShareSession.isActive,
+    fullPlanSession.isActive,
+    workoutHistorySession.isActive,
   ]);
 
   // Analytics tab is always enabled — no redirect needed
@@ -458,9 +466,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     }
 
     crossPlatformAlert(
-      "Feature Unavailable",
-      "Food contributions were disabled while this screen was open. Returning to the previous screen.",
-      [{ text: "OK" }],
+      'Feature Unavailable',
+      'Food contributions were disabled while this screen was open. Returning to the previous screen.',
+      [{ text: 'OK' }]
     );
     setContributeFoodSession({ isActive: false });
   }, [appConfig.featureFoodContributions, contributeFoodSession.isActive]);
@@ -491,11 +499,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       })
       .catch((error) => {
         // Swallow — a transient getInitialURL failure must not crash on launch.
-        console.error("[MainNavigation] getInitialURL failed:", error);
+        console.error('[MainNavigation] getInitialURL failed:', error);
       });
 
     // Runtime: links tapped while the app is open.
-    const subscription = Linking.addEventListener("url", ({ url }) => {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
       handleTemplateDeepLink(url);
     });
 
@@ -504,25 +512,21 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     };
   }, [handleTemplateDeepLink]);
 
-  const handleHomeNavigation = (
-    tab: string,
-    params?: Record<string, unknown>,
-  ) => {
-    if (tab === "achievements") {
+  const handleHomeNavigation = (tab: string, params?: Record<string, unknown>) => {
+    if (tab === 'achievements') {
       setAchievementsSession({ isActive: true });
       return;
     }
 
-    if (tab === "progress") {
+    if (tab === 'progress') {
       setProgressSession({ isActive: true });
       return;
     }
 
-    if (tab === "progressTrends") {
+    if (tab === 'progressTrends') {
       setProgressTrendsSession({ isActive: true });
       return;
     }
-
 
     transitionToTab(tab as MainTabKey, params, params === undefined);
   };
@@ -543,36 +547,38 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     weeklyBuilderSession.isActive ||
     buildMethodLandingSession.isActive ||
     workoutDetailSession.isActive ||
-    templateShareSession.isActive;
+    templateShareSession.isActive ||
+    fullPlanSession.isActive ||
+    workoutHistorySession.isActive;
 
   const tabs = [
     {
-      key: "home",
-      title: "Home",
+      key: 'home',
+      title: 'Home',
       icon: <HomeIcon />,
       activeIcon: <HomeIcon active />,
     },
     {
-      key: "fitness",
-      title: "Workout",
+      key: 'fitness',
+      title: 'Workout',
       icon: <FitnessIcon />,
       activeIcon: <FitnessIcon active />,
     },
     {
-      key: "diet",
-      title: "Diet",
+      key: 'diet',
+      title: 'Diet',
       icon: <DietIcon />,
       activeIcon: <DietIcon active />,
     },
     {
-      key: "profile",
-      title: "Profile",
+      key: 'profile',
+      title: 'Profile',
       icon: <ProfileIcon />,
       activeIcon: <ProfileIcon active />,
     },
     {
-      key: "analytics",
-      title: "Analytics",
+      key: 'analytics',
+      title: 'Analytics',
       icon: <AnalyticsIcon />,
       activeIcon: <AnalyticsIcon active />,
     },
@@ -587,7 +593,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       <View
         key={tab}
         style={isVisible ? styles.tabScreenActive : styles.tabScreenHidden}
-        pointerEvents={isVisible ? "auto" : "none"}
+        pointerEvents={isVisible ? 'auto' : 'none'}
       >
         {child}
       </View>
@@ -597,41 +603,38 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const renderRootScreens = () => (
     <>
       {renderTabScreen(
-        "home",
+        'home',
         <ScreenErrorBoundary screenName="HomeScreen">
           <HomeScreen onNavigateToTab={handleHomeNavigation} />
-        </ScreenErrorBoundary>,
+        </ScreenErrorBoundary>
       )}
       {renderTabScreen(
-        "fitness",
+        'fitness',
         <ScreenErrorBoundary screenName="FitnessScreen">
           <FitnessScreen navigation={navigation} />
-        </ScreenErrorBoundary>,
+        </ScreenErrorBoundary>
       )}
       {renderTabScreen(
-        "diet",
+        'diet',
         <ScreenErrorBoundary screenName="DietScreen">
           <DietScreen
             navigation={navigation}
             route={{ params: tabParams.diet }}
-            isActive={activeTab === "diet" && !hasActiveOverlay}
+            isActive={activeTab === 'diet' && !hasActiveOverlay}
           />
-        </ScreenErrorBoundary>,
+        </ScreenErrorBoundary>
       )}
       {renderTabScreen(
-        "profile",
+        'profile',
         <ScreenErrorBoundary screenName="ProfileScreen">
-          <ProfileScreen
-            navigation={navigation}
-            route={{ params: tabParams.profile }}
-          />
-        </ScreenErrorBoundary>,
+          <ProfileScreen navigation={navigation} route={{ params: tabParams.profile }} />
+        </ScreenErrorBoundary>
       )}
       {renderTabScreen(
-        "analytics",
+        'analytics',
         <ScreenErrorBoundary screenName="AnalyticsScreen">
           <AnalyticsScreen navigation={navigation} />
-        </ScreenErrorBoundary>,
+        </ScreenErrorBoundary>
       )}
     </>
   );
@@ -690,10 +693,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     } else if (mealSession.isActive && mealSession.meal) {
       return (
         <ScreenErrorBoundary screenName="MealSession">
-          <MealSession
-            route={{ params: { meal: mealSession.meal } }}
-            navigation={navigation}
-          />
+          <MealSession route={{ params: { meal: mealSession.meal } }} navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (progressSession.isActive) {
@@ -728,7 +728,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       return (
         <ScreenErrorBoundary screenName="ContributeFood">
           <ContributeFood
-            route={{ params: { barcode: contributeFoodSession.barcode ?? "" } }}
+            route={{ params: { barcode: contributeFoodSession.barcode ?? '' } }}
             navigation={navigation}
           />
         </ScreenErrorBoundary>
@@ -768,6 +768,21 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           />
         </ScreenErrorBoundary>
       );
+    } else if (fullPlanSession.isActive) {
+      // Full week plan view (audit #2 — "View All" previously opened an Alert).
+      return (
+        <ScreenErrorBoundary screenName="FullPlanScreen">
+          <FullPlanScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (workoutHistorySession.isActive) {
+      // Full workout history (audit #3 — "See all N workouts" previously opened
+      // an Alert showing a single arbitrary workout).
+      return (
+        <ScreenErrorBoundary screenName="WorkoutHistoryScreen">
+          <WorkoutHistoryScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
     } else if (createWorkoutSession.isActive) {
       return (
         <ScreenErrorBoundary screenName="CreateWorkoutScreen">
@@ -795,23 +810,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           />
         </ScreenErrorBoundary>
       );
-    } else if (exerciseHistorySession.isActive && exerciseHistorySession.exerciseId) {
-      return (
-        <ScreenErrorBoundary screenName="ExerciseHistoryScreen">
-          <ExerciseHistoryScreen
-            route={{
-              params: {
-                exerciseId: exerciseHistorySession.exerciseId,
-                exerciseName:
-                  exerciseHistorySession.exerciseName ||
-                  exerciseHistorySession.exerciseId,
-              },
-            }}
-            navigation={navigation}
-          />
-        </ScreenErrorBoundary>
-      );
     }
+    // NOTE: ExerciseHistory is NOT in this else-if chain. It renders as a
+    // separate top-level overlay (see the return block below) so it can
+    // appear on top of an active WorkoutSessionScreen without displacing it.
 
     return null;
   };
@@ -823,12 +825,32 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         testID="guest-option"
         accessibilityLabel="Continue as guest"
         accessible={false}
-        style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}
+        style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
       />
       <View style={styles.screenContainer}>
         {renderRootScreens()}
         {hasActiveOverlay ? (
           <View style={styles.overlayScreen}>{renderOverlayScreen()}</View>
+        ) : null}
+        {/* ExerciseHistory renders as a SECOND overlay on top of the workout
+            session so the user can view history mid-workout without losing
+            their session state. The renderOverlayScreen else-if chain would
+            otherwise hide WorkoutSessionScreen when ExerciseHistory activates. */}
+        {exerciseHistorySession.isActive && exerciseHistorySession.exerciseId ? (
+          <View style={styles.overlayScreen}>
+            <ScreenErrorBoundary screenName="ExerciseHistoryScreen">
+              <ExerciseHistoryScreen
+                route={{
+                  params: {
+                    exerciseId: exerciseHistorySession.exerciseId,
+                    exerciseName:
+                      exerciseHistorySession.exerciseName || exerciseHistorySession.exerciseId,
+                  },
+                }}
+                navigation={navigation}
+              />
+            </ScreenErrorBoundary>
+          </View>
         ) : null}
       </View>
 
@@ -857,36 +879,36 @@ const styles = StyleSheet.create({
 
   screenContainer: {
     flex: 1,
-    position: "relative",
+    position: 'relative',
   },
   tabScreenActive: {
     ...StyleSheet.absoluteFillObject,
   },
   tabScreenHidden: {
     ...StyleSheet.absoluteFillObject,
-    display: "none",
+    display: 'none',
   },
   overlayScreen: {
     ...StyleSheet.absoluteFillObject,
   },
   unavailableContainer: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: rw(24),
     backgroundColor: colors.background,
   },
   unavailableTitle: {
     fontSize: rf(22),
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     marginBottom: rh(8),
-    textAlign: "center",
+    textAlign: 'center',
   },
   unavailableMessage: {
     fontSize: rf(14),
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: rf(20),
   },
 });

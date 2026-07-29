@@ -56,7 +56,7 @@ interface ProductDetailsModalProps {
     concerns: string[];
     alternatives?: string[];
   };
-  // eslint-disable-next-line no-unused-vars
+
   onAddToMeal?(product: ScannedProduct, grams: number): Promise<void> | void;
 }
 
@@ -211,19 +211,19 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   resizeMode="contain"
                 />
               ) : null}
-                <View style={styles.headerText}>
-                  <Text style={styles.productName}>{product.name}</Text>
-                  {product.brand ? <Text style={styles.productBrand}>{product.brand}</Text> : null}
-                  {product.category ? (
-                    <Text style={styles.productMeta}>{product.category}</Text>
-                  ) : null}
-                  <Text style={styles.productMeta}>
-                    {isVisionLabelProduct(product)
-                      ? 'Source: Label scan'
-                      : `Barcode: ${product.barcode}`}
-                  </Text>
-                </View>
+              <View style={styles.headerText}>
+                <Text style={styles.productName}>{product.name}</Text>
+                {product.brand ? <Text style={styles.productBrand}>{product.brand}</Text> : null}
+                {product.category ? (
+                  <Text style={styles.productMeta}>{product.category}</Text>
+                ) : null}
+                <Text style={styles.productMeta}>
+                  {isVisionLabelProduct(product)
+                    ? 'Source: Label scan'
+                    : `Barcode: ${product.barcode}`}
+                </Text>
               </View>
+            </View>
             <TouchableOpacity
               onPress={handleClose}
               style={styles.closeButton}
@@ -253,8 +253,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     styles.scoreBadge,
                     {
                       backgroundColor:
-                        NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ??
-                        colors.neutral,
+                        NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ?? colors.neutral,
                     },
                   ]}
                 >
@@ -560,13 +559,13 @@ const styles = StyleSheet.create({
   scoreBadgeLabel: {
     fontSize: rf(12),
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     opacity: 0.9,
   },
   scoreBadgeValue: {
     fontSize: rf(24),
     fontWeight: '800',
-    color: '#fff',
+    color: colors.text,
     marginTop: spacing.xs,
   },
   infoBadge: {
@@ -665,7 +664,7 @@ const styles = StyleSheet.create({
   breakdownScoreText: {
     fontSize: rf(12),
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
   },
   breakdownMessage: {
     fontSize: rf(13),

@@ -128,7 +128,11 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   if (variant === "banner") {
     if (!isActive && tier === "free") {
       return (
-        <Pressable onPress={onPress}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel="Upgrade to premium"
+        >
           <LinearGradient
             colors={TIER_GRADIENTS.free}
             start={{ x: 0, y: 0 }}
@@ -191,7 +195,12 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   if (variant === "inline") {
     if (!isActive && tier === "free") {
       return (
-        <Pressable onPress={onPress} style={styles.inlineContainer}>
+        <Pressable
+          onPress={onPress}
+          style={styles.inlineContainer}
+          accessibilityRole="button"
+          accessibilityLabel="Upgrade to premium"
+        >
           <Text style={styles.inlineIconYellow}>⭐</Text>
           <Text style={styles.inlineTextYellow}>Upgrade to Premium</Text>
         </Pressable>

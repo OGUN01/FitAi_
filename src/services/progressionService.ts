@@ -41,31 +41,79 @@ export interface FailureEvaluation {
 // ============================================================================
 
 const BODYWEIGHT_EXERCISES = new Set([
-  'push_up', 'pull_up', 'bodyweight_squat', 'plank', 'mountain_climbers',
-  'jumping_jacks', 'burpee', 'dip', 'chin_up', 'pike_push_up', 'glute_bridge',
-  'leg_raise', 'crunch', 'sit_up', 'hollow_body', 'superman', 'wall_sit',
+  'push_up',
+  'pull_up',
+  'bodyweight_squat',
+  'plank',
+  'mountain_climbers',
+  'jumping_jacks',
+  'burpee',
+  'dip',
+  'chin_up',
+  'pike_push_up',
+  'glute_bridge',
+  'leg_raise',
+  'crunch',
+  'sit_up',
+  'hollow_body',
+  'superman',
+  'wall_sit',
 ]);
 
 const TIME_BASED_EXERCISES = new Set([
-  'plank', 'wall_sit', 'dead_hang', 'hollow_body', 'l_sit', 'superman',
+  'plank',
+  'wall_sit',
+  'dead_hang',
+  'hollow_body',
+  'l_sit',
+  'superman',
 ]);
 
 const LOWER_BODY_EXERCISES = new Set([
-  'squat', 'deadlift', 'leg_press', 'lunge', 'leg_curl', 'leg_extension',
-  'calf_raise', 'hip_thrust', 'romanian_deadlift', 'sumo_deadlift',
-  'goblet_squat', 'step_up', 'bodyweight_squat', 'glute_bridge',
-  'reverse_lunge', 'split_squat', 'bulgarian_split_squat', 'step_up_weighted',
+  'squat',
+  'deadlift',
+  'leg_press',
+  'lunge',
+  'leg_curl',
+  'leg_extension',
+  'calf_raise',
+  'hip_thrust',
+  'romanian_deadlift',
+  'sumo_deadlift',
+  'goblet_squat',
+  'step_up',
+  'bodyweight_squat',
+  'glute_bridge',
+  'reverse_lunge',
+  'split_squat',
+  'bulgarian_split_squat',
+  'step_up_weighted',
   'box_jump',
 ]);
 
 const CORE_EXERCISES = new Set([
-  'plank', 'crunch', 'sit_up', 'ab_rollout', 'cable_crunch', 'russian_twist',
-  'leg_raise', 'hollow_body', 'bicycle_crunch', 'mountain_climbers',
+  'plank',
+  'crunch',
+  'sit_up',
+  'ab_rollout',
+  'cable_crunch',
+  'russian_twist',
+  'leg_raise',
+  'hollow_body',
+  'bicycle_crunch',
+  'mountain_climbers',
 ]);
 
-// Weight increments per muscle group (standard barbell plate sizes)
+// Weight increments per muscle group (standard barbell plate sizes).
+// Exposed as public static values so UI explainers can display the REAL
+// progression step the engine uses — never hardcode these in components.
 const UPPER_BODY_INCREMENT = 2.5;
 const LOWER_BODY_INCREMENT = 5.0;
+
+export const PROGRESSION_INCREMENTS = {
+  upper: UPPER_BODY_INCREMENT,
+  lower: LOWER_BODY_INCREMENT,
+} as const;
 
 class ProgressionService {
   /**
@@ -86,7 +134,7 @@ class ProgressionService {
     repRange: [number, number],
     isBodyweight?: boolean,
     isMuscleGroupLower?: boolean,
-    lastRPE?: 1 | 2 | 3 | null,
+    lastRPE?: 1 | 2 | 3 | null
   ): ProgressionResult {
     if (lastSets.length === 0) {
       return {
@@ -107,7 +155,11 @@ class ProgressionService {
 
     if (this.isTimeBased(exerciseId)) {
       if (!lastSets || lastSets.length === 0) {
-        return { suggestedWeightKg: 0, action: 'hold', reason: 'Time-based exercise — no previous data' };
+        return {
+          suggestedWeightKg: 0,
+          action: 'hold',
+          reason: 'Time-based exercise — no previous data',
+        };
       }
       return {
         suggestedWeightKg: lastSets[0].weight,
@@ -195,7 +247,7 @@ class ProgressionService {
   evaluateFailure(
     _exerciseId: string,
     recentSessions: Array<{ sets: LastSet[]; repRange: [number, number] }>,
-    failureThreshold: number = 2,
+    failureThreshold: number = 2
   ): FailureEvaluation {
     if (recentSessions.length === 0) {
       return { action: 'none', consecutiveFailures: 0, reason: 'No session data' };
@@ -219,7 +271,11 @@ class ProgressionService {
 
     if (consecutiveFailures >= failureThreshold) {
       if (!recentSessions[0]?.sets?.length) {
-        return { action: 'hold', consecutiveFailures, reason: 'Consecutive failures detected but no set data available' };
+        return {
+          action: 'hold',
+          consecutiveFailures,
+          reason: 'Consecutive failures detected but no set data available',
+        };
       }
       const lastWeight = recentSessions[0].sets[0]?.weight ?? 0;
       return {
@@ -234,9 +290,10 @@ class ProgressionService {
       return {
         action: 'hold',
         consecutiveFailures,
-        reason: consecutiveFailures === 1
-          ? 'One failure — maintain current weight'
-          : `${consecutiveFailures} failures — maintain current weight`,
+        reason:
+          consecutiveFailures === 1
+            ? 'One failure — maintain current weight'
+            : `${consecutiveFailures} failures — maintain current weight`,
       };
     }
 
@@ -255,6 +312,16 @@ class ProgressionService {
     if (CORE_EXERCISES.has(exerciseId)) return 'core';
     if (LOWER_BODY_EXERCISES.has(exerciseId)) return 'lower';
     return 'upper';
+  }
+
+  /**
+   * Returns the real weight increment (kg) the progression engine will apply
+   * for this exercise. UI explainers call this to show the actual step — never
+   * hardcode increment values in components.
+   */
+  getIncrementForExercise(exerciseId: string): number {
+    const group = this.getMuscleGroup(exerciseId);
+    return group === 'lower' ? LOWER_BODY_INCREMENT : UPPER_BODY_INCREMENT;
   }
 }
 

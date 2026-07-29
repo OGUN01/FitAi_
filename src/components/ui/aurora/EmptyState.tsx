@@ -10,14 +10,15 @@
  * icon, one title, an optional subtitle, and an optional CTA button.
  */
 
-import React from "react";
-import { StyleSheet, Text, View, ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { colors, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
-import { rp, rf, rh } from "../../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
-import { AnimatedPressable } from "./AnimatedPressable";
+import React from 'react';
+import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { colors, spacing, typography, borderRadius } from '../../../theme/aurora-tokens';
+import { rp, rf, rh, rbr } from '../../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW } from '../../../utils/colors';
+import { AnimatedPressable } from './AnimatedPressable';
 
 export interface EmptyStateProps {
   /** Ionicons icon name. */
@@ -54,7 +55,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   delay = 100,
   accessibilityLabel,
 }) => {
-  const size = iconSize ?? rf(56);
+  const size = iconSize ?? rf(48);
   return (
     <Animated.View
       entering={FadeInDown.delay(delay).duration(400)}
@@ -63,17 +64,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityHint={subtitle}
     >
-      <View style={[styles.iconDisc, { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW + 0.03) }]}>
+      <View style={[styles.iconDisc, { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW) }]}>
         <Ionicons name={icon} size={size} color={iconColor} />
       </View>
 
       <Animated.View entering={FadeInDown.delay(delay + 80).duration(400)}>
-        <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{title}</Text>
+        <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+          {title}
+        </Text>
       </Animated.View>
 
       {subtitle ? (
         <Animated.View entering={FadeInDown.delay(delay + 160).duration(400)}>
-          <Text style={styles.subtitle} numberOfLines={4}>{subtitle}</Text>
+          <Text style={styles.subtitle} numberOfLines={4}>
+            {subtitle}
+          </Text>
         </Animated.View>
       ) : null}
 
@@ -88,7 +93,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             accessibilityRole="button"
             accessibilityLabel={ctaText}
           >
-            <Animated.Text style={styles.ctaText} numberOfLines={1}>{ctaText}</Animated.Text>
+            <LinearGradient
+              colors={[colors.primary.DEFAULT, colors.primary.dark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <Animated.Text style={styles.ctaText} numberOfLines={1}>
+              {ctaText}
+            </Animated.Text>
           </AnimatedPressable>
         </Animated.View>
       ) : null}
@@ -98,8 +111,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: rp(spacing.xxl),
     paddingHorizontal: rp(spacing.xl),
   },
@@ -107,37 +120,38 @@ const styles = StyleSheet.create({
     width: rp(96),
     height: rp(96),
     borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: rp(spacing.lg),
   },
   title: {
     color: colors.text.primary,
-    fontSize: rf(typography.fontSize.h3),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    textAlign: "center",
-    lineHeight: typography.fontSize.h3 * typography.lineHeight.tight,
+    fontSize: rf(22),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    textAlign: 'center',
+    lineHeight: rf(22) * typography.lineHeight.tight,
   },
   subtitle: {
     color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.body),
-    textAlign: "center",
+    fontSize: rf(14),
+    textAlign: 'center',
     marginTop: rp(spacing.sm),
-    lineHeight: typography.fontSize.body * typography.lineHeight.normal,
+    lineHeight: rf(20),
   },
   cta: {
     marginTop: rp(spacing.lg),
-    minHeight: Math.max(rh(44), 44),
-    justifyContent: "center",
-    backgroundColor: colors.primary.DEFAULT,
+    minHeight: Math.max(rh(52), 52),
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: rp(spacing.xl),
     paddingVertical: rp(spacing.md),
-    borderRadius: borderRadius.xl,
+    borderRadius: rbr(16),
+    overflow: 'hidden',
   },
   ctaText: {
     color: colors.text.primary,
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontSize: rf(15),
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
 });
 

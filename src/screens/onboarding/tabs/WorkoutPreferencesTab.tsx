@@ -1,23 +1,13 @@
-import React, { useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useRef, useState } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, shadows } from "../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import {
-  AnimatedPressable,
-  AnimatedSection,
-  HeroSection,
-} from "../../../components/ui/aurora";
-import { gradients } from "../../../theme/gradients";
+  tokens,
+  Pill,
+  CollapsibleSection,
+  ScreenScaffold,
+} from "../../../components/onboarding/fresh";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
@@ -26,7 +16,7 @@ import {
 } from "../../../types/onboarding";
 import { useWorkoutPreferences } from "../../../hooks/onboarding/useWorkoutPreferences";
 
-// Components
+// Section components
 import { InfoTooltipModal } from "../../../components/onboarding/shared/InfoTooltipModal";
 import { GoalsSection } from "../../../components/onboarding/workout/GoalsSection";
 import { FitnessLevelSection } from "../../../components/onboarding/workout/FitnessLevelSection";
@@ -34,6 +24,10 @@ import { PreferencesSection } from "../../../components/onboarding/workout/Prefe
 import { StyleSection } from "../../../components/onboarding/workout/StyleSection";
 import { WeightGoalsSection } from "../../../components/onboarding/workout/WeightGoalsSection";
 import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
+import {
+  EQUIPMENT_OPTIONS,
+  WORKOUT_TYPE_OPTIONS,
+} from "./WorkoutPreferencesConstants";
 
 interface WorkoutPreferencesTabProps {
   data: WorkoutPreferencesData | null;
@@ -48,7 +42,22 @@ interface WorkoutPreferencesTabProps {
   isAutoSaving?: boolean;
   isEditingFromReview?: boolean;
   onReturnToReview?: () => void;
+  /** Optional S2 body-type for body-type-aware goal suggestions (Phase 2c wire). */
+  aiBodyType?: string;
 }
+
+/** Staggered mount wrapper — one quiet FadeInDown per section. */
+const Mount: React.FC<{ index: number; children: React.ReactNode }> = ({
+  index,
+  children,
+}) => (
+  <Animated.View
+    entering={FadeInDown.duration(280).delay(60 + index * 50)}
+    style={index > 0 ? styles.sectionGap : undefined}
+  >
+    {children}
+  </Animated.View>
+);
 
 const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   data,
@@ -63,6 +72,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   onReturnToReview,
 }) => {
   const isSubmittingRef = useRef(false);
+
+  // Progressive-disclosure collapse state (local UI only; fields still save).
+  const [assessCollapsed, setAssessCollapsed] = useState(true);
+  const [equipmentCollapsed, setEquipmentCollapsed] = useState(true);
+  const [typesCollapsed, setTypesCollapsed] = useState(true);
+  const [enjoyCollapsed, setEnjoyCollapsed] = useState(true);
 
   const {
     formData,
@@ -84,8 +99,69 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     onUpdate,
   });
 
+  const toggleArrayField = (
+    field: "equipment" | "workout_types",
+    id: string,
+  ) => {
+    const current = formData[field];
+    const next = current.includes(id)
+      ? current.filter((x: string) => x !== id)
+      : [...current, id];
+    updateField(field, next as WorkoutPreferencesData["equipment"]);
+  };
+
+  const handleNext = () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      onUpdate(formData);
+      if (isEditingFromReview && onReturnToReview) {
+        onReturnToReview();
+      } else {
+        setTimeout(() => {
+          onNext(formData);
+        }, 100);
+      }
+    } finally {
+      isSubmittingRef.current = false;
+    }
+  };
+
+  const isDisabled = !!(validationResult && !validationResult.is_valid);
+
+  const recommendedTypeIds = calculateRecommendedWorkoutTypes();
+  const recommendedTypeLabels = WORKOUT_TYPE_OPTIONS.filter((t) =>
+    recommendedTypeIds.includes(t.value),
+  ).map((t) => t.label);
+
+  // Live collapsed summaries — headers reflect what's already chosen, so the
+  // eye always lands on state, not static helper copy.
+  const equipmentLabels = EQUIPMENT_OPTIONS.filter((o) =>
+    formData.equipment.includes(o.value),
+  ).map((o) => o.label);
+  const equipmentSubtitle =
+    equipmentLabels.length > 0
+      ? `${equipmentLabels.length} selected — ${equipmentLabels
+          .slice(0, 3)
+          .join(", ")}${
+          equipmentLabels.length > 3 ? ` +${equipmentLabels.length - 3}` : ""
+        }`
+      : "Gear you have access to";
+
+  const typeLabels = WORKOUT_TYPE_OPTIONS.filter((t) =>
+    formData.workout_types.includes(t.value),
+  ).map((t) => t.label);
+  const typesSubtitle =
+    typeLabels.length > 0
+      ? `${typeLabels.length} selected — ${typeLabels.slice(0, 3).join(", ")}${
+          typeLabels.length > 3 ? ` +${typeLabels.length - 3}` : ""
+        }`
+      : recommendedTypeLabels.length > 0
+        ? `Recommended: ${recommendedTypeLabels.slice(0, 2).join(", ")}`
+        : "Styles you enjoy or want to try";
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <>
       {/* Info Tooltip Modal */}
       <InfoTooltipModal
         visible={tooltipModal.visible}
@@ -95,262 +171,223 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         onClose={hideInfoTooltip}
       />
 
-      {/* KeyboardAvoidingView for proper keyboard handling */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      <ScreenScaffold
+        question="How do you want to train?"
+        subtext="Your goals, intensity, and rhythm — your plan starts here."
+        onBack={onBack}
+        onNext={handleNext}
+        nextLabel={isEditingFromReview ? "Review" : "Next"}
+        nextDisabled={isDisabled}
+        footerNote={
+          isAutoSaving ? (
+            <Text style={styles.autoSaveText} testID="auto-save-indicator">
+              Saving…
+            </Text>
+          ) : undefined
+        }
       >
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: rp(100) }}
-        >
-          {/* Hero Section */}
-          <HeroSection
-            image={{
-              uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
-            }}
-            overlayGradient={gradients.overlay.dark}
-            contentPosition="center"
-            height={180}
-          >
-            <Text style={styles.title} numberOfLines={2}>
-              Let's create your fitness profile
-            </Text>
-            <Text style={styles.subtitle} numberOfLines={3}>
-              Tell us about your goals, current fitness level, and workout
-              preferences
-            </Text>
+        {/* Visible — primary goals (the focal input) */}
+        <Mount index={0}>
+          <GoalsSection
+            formData={formData}
+            bodyAnalysisData={bodyAnalysisData}
+            toggleGoal={toggleGoal}
+            updateField={updateField}
+            getFieldError={getFieldError}
+            hasFieldError={hasFieldError}
+            showInfoTooltip={showInfoTooltip}
+          />
+        </Mount>
 
-            {/* Auto-save Indicator */}
-            {isAutoSaving && (
-              <View style={styles.autoSaveIndicator}>
+        {/* Visible — training setup (location / intensity / duration / frequency / times) */}
+        <Mount index={1}>
+          <PreferencesSection
+            formData={formData}
+            updateField={updateField}
+            toggleWorkoutTime={toggleWorkoutTime}
+            showInfoTooltip={showInfoTooltip}
+            intensityRecommendation={intensityRecommendation}
+          />
+        </Mount>
+
+        {/* Collapsed — "Assess me" */}
+        <Mount index={2}>
+          <FitnessLevelSection
+            formData={formData}
+            updateField={updateField}
+            collapsed={assessCollapsed}
+            onToggleCollapse={() => setAssessCollapsed((v) => !v)}
+          />
+        </Mount>
+
+        {/* Collapsed — "Equipment" */}
+        <Mount index={3}>
+          <CollapsibleSection
+            title="Equipment"
+            subtitle={equipmentSubtitle}
+            expanded={!equipmentCollapsed}
+            onToggle={() => setEquipmentCollapsed((v) => !v)}
+            testID="equipment-section"
+          >
+            <View style={styles.helpRow}>
+              <Text style={styles.caption}>
+                Tap to toggle what you have access to
+              </Text>
+              <Pressable
+                onPress={() =>
+                  showInfoTooltip(
+                    "Equipment",
+                    "The gear you can use. Gym selection auto-fills standard equipment.",
+                  )
+                }
+                hitSlop={8}
+                accessibilityLabel="About equipment"
+              >
                 <Ionicons
-                  name="save-outline"
-                  size={rf(16)}
-                  color={colors.success}
-                  style={{ marginRight: 4 }}
+                  name="information-circle-outline"
+                  size={16}
+                  color={tokens.ink3}
                 />
-                <Text style={styles.autoSaveText}>Saving...</Text>
-              </View>
-            )}
-          </HeroSection>
+              </Pressable>
+            </View>
+            <View style={styles.pillGrid} testID="equipment-chip-picker">
+              {EQUIPMENT_OPTIONS.map((option) => (
+                <Pill
+                  key={option.value}
+                  label={option.label}
+                  icon={option.iconName as keyof typeof Ionicons.glyphMap}
+                  selected={formData.equipment.includes(option.value)}
+                  onPress={() => toggleArrayField("equipment", option.value)}
+                  testID={`equipment-pill-${option.value}`}
+                />
+              ))}
+            </View>
+          </CollapsibleSection>
+        </Mount>
 
-          {/* Form Sections */}
-          <View style={styles.content}>
-            <AnimatedSection delay={0}>
-              <GoalsSection
-                formData={formData}
-                bodyAnalysisData={bodyAnalysisData}
-                toggleGoal={toggleGoal}
-                updateField={updateField}
-                getFieldError={getFieldError}
-                hasFieldError={hasFieldError}
-                showInfoTooltip={showInfoTooltip}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={100}>
-              <FitnessLevelSection
-                formData={formData}
-                updateField={updateField}
-                intensityRecommendation={intensityRecommendation}
-                calculateRecommendedWorkoutTypes={
-                  calculateRecommendedWorkoutTypes
-                }
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={200}>
-              <PreferencesSection
-                formData={formData}
-                updateField={updateField}
-                toggleWorkoutTime={toggleWorkoutTime}
-                showInfoTooltip={showInfoTooltip}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={300}>
-              <StyleSection
-                formData={formData}
-                updateField={updateField}
-                showInfoTooltip={showInfoTooltip}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={400}>
-              <WeightGoalsSection
-                bodyAnalysisData={bodyAnalysisData}
-                formData={formData}
-              />
-            </AnimatedSection>
-          </View>
-
-          {/* Validation Summary */}
-          <ValidationSection validationResult={validationResult} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Footer Navigation */}
-      <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          <AnimatedPressable
-            style={styles.backButtonCompact}
-            onPress={onBack}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to previous step"
+        {/* Collapsed — "Workout types" */}
+        <Mount index={4}>
+          <CollapsibleSection
+            title="Workout types"
+            subtitle={typesSubtitle}
+            expanded={!typesCollapsed}
+            onToggle={() => setTypesCollapsed((v) => !v)}
+            testID="workout-types-section"
           >
-            <Ionicons
-              name="chevron-back"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.backButtonText}>Back</Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={[
-              styles.nextButtonCompact,
-              validationResult && !validationResult.is_valid && styles.nextButtonDisabled,
-            ]}
-            disabled={!!(validationResult && !validationResult.is_valid)}
-            onPress={() => {
-              if (isSubmittingRef.current) return;
-              isSubmittingRef.current = true;
-              try {
-                onUpdate(formData);
-                if (isEditingFromReview && onReturnToReview) {
-                  onReturnToReview();
-                } else {
-                  setTimeout(() => {
-                    onNext(formData);
-                  }, 100);
+            <View style={styles.helpRow}>
+              {recommendedTypeLabels.length > 0 ? (
+                <Text
+                  style={styles.recoText}
+                  testID="workout-types-suggestions"
+                >
+                  Recommended for you —{" "}
+                  <Text style={styles.recoEmphasis}>
+                    {recommendedTypeLabels.join(", ")}
+                  </Text>
+                </Text>
+              ) : (
+                <Text style={styles.caption}>
+                  Tap to toggle the styles you like
+                </Text>
+              )}
+              <Pressable
+                onPress={() =>
+                  showInfoTooltip(
+                    "Workout types",
+                    "Training styles. Recommended types are listed above the grid.",
+                  )
                 }
-              } finally {
-                isSubmittingRef.current = false;
-              }
-            }}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
-            accessibilityState={{ disabled: !!(validationResult && !validationResult.is_valid) }}
-          >
-            <Text style={styles.nextButtonText}>
-              {isEditingFromReview ? "Review" : "Next"}
-            </Text>
-            <Ionicons
-              name={
-                isEditingFromReview
-                  ? "checkmark-circle-outline"
-                  : "chevron-forward"
-              }
-              size={rf(18)}
-              color="#FFFFFF"
-            />
-          </AnimatedPressable>
-        </View>
-      </View>
-    </SafeAreaView>
+                hitSlop={8}
+                accessibilityLabel="About workout types"
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={16}
+                  color={tokens.ink3}
+                />
+              </Pressable>
+            </View>
+            <View style={styles.pillGrid} testID="workout-types-chip-picker">
+              {WORKOUT_TYPE_OPTIONS.map((option) => (
+                <Pill
+                  key={option.value}
+                  label={option.label}
+                  icon={option.iconName as keyof typeof Ionicons.glyphMap}
+                  selected={formData.workout_types.includes(option.value)}
+                  onPress={() => toggleArrayField("workout_types", option.value)}
+                  testID={`workout-type-pill-${option.value}`}
+                />
+              ))}
+            </View>
+          </CollapsibleSection>
+        </Mount>
+
+        {/* Collapsed — "What you enjoy" */}
+        <Mount index={5}>
+          <StyleSection
+            formData={formData}
+            updateField={updateField}
+            showInfoTooltip={showInfoTooltip}
+            collapsed={enjoyCollapsed}
+            onToggleCollapse={() => setEnjoyCollapsed((v) => !v)}
+          />
+        </Mount>
+
+        {/* Read-only weight goal summary (from Body tab) */}
+        <Mount index={6}>
+          <WeightGoalsSection
+            bodyAnalysisData={bodyAnalysisData}
+            formData={formData}
+          />
+        </Mount>
+
+        {/* Validation summary (existing shared component) */}
+        <ValidationSection validationResult={validationResult} />
+      </ScreenScaffold>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.5,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: fontSize.md,
-    color: hexToRgba(colors.white, 0.85),
-    lineHeight: fontSize.md * 1.5,
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-  autoSaveIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
   autoSaveText: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
-  content: {
-    paddingHorizontal: spacing.lg,
+  sectionGap: {
+    marginTop: 36,
   },
-  footer: {
-    padding: spacing.lg,
-    paddingBottom:
-      Platform.OS === "ios"
-        ? spacing.lg
-        : spacing.xl,
-    backgroundColor: "transparent",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  backButtonCompact: {
+  helpRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: 100,
-    minHeight: 52,
+    justifyContent: "space-between",
   },
-  backButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
-    marginLeft: spacing.xs,
-  },
-  nextButtonCompact: {
+  caption: {
     flex: 1,
+    marginRight: 12,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
+  },
+  recoText: {
+    flex: 1,
+    marginRight: 12,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
+  },
+  recoEmphasis: {
+    fontFamily: "Manrope_500Medium",
+    color: tokens.ink2,
+  },
+  pillGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary,
-    minHeight: 52,
-    ...shadows.level3,
-  },
-  nextButtonDisabled: {
-    opacity: 0.5,
-  },
-  nextButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
-    marginRight: spacing.xs,
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
   },
 });
 

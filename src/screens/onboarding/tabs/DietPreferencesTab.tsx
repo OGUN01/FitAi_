@@ -1,30 +1,51 @@
+/**
+ * S3 "Fuel" — DietPreferencesTab (blueprint §3 S3, §5 S3 disclosure)
+ *
+ * The one question: "How do you eat?"
+ *
+ * Fresh "Editorial Dark" reskin — NO cards, NO boxed sections. Frame is the
+ * shared ScreenScaffold (question + scroll + Back/Next footer). Sections are
+ * labels + rows + hairlines via the fresh primitive kit.
+ *
+ * PEAK layer (presentation-only):
+ *  - Sections stagger in (FadeInDown, 60ms steps) so the dense form arrives
+ *    as a sequence, not a wall.
+ *  - A quiet "receipt" line between the always-visible zone and the
+ *    collapsible zone reflects the choices made so far (diet · meals ·
+ *    time · budget · exclusions) — the form talks back without adding fields.
+ *
+ * Presentation/layout ONLY. Data wiring, hooks, validation, props — unchanged.
+ * Smart defaults (§4) live in useDietPreferences initial state. Progressive
+ * disclosure (§5) is pure local UI state inside each section.
+ */
+
 import React, { useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
-import {
-  AnimatedPressable,
-  AnimatedSection,
-  HeroSection,
-} from "../../../components/ui/aurora";
-import { gradients } from "../../../theme/gradients";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   DietPreferencesData,
   TabValidationResult,
 } from "../../../types/onboarding";
 import { useDietPreferences } from "../../../hooks/onboarding/useDietPreferences";
+import {
+  ScreenScaffold,
+  Rule,
+  spacing,
+  tokens,
+  type as typeScale,
+} from "../../../components/onboarding/fresh";
+import {
+  DIET_TYPE_OPTIONS,
+  BUDGET_LEVELS,
+} from "./DietPreferencesConstants";
 
-// Components
+// Sections (presentation-only redesign; props contracts unchanged)
 import { CurrentDietSection } from "../../../components/onboarding/diet/CurrentDietSection";
 import { DietReadinessSection } from "../../../components/onboarding/diet/DietReadinessSection";
 import { MealPreferencesSection } from "../../../components/onboarding/diet/MealPreferencesSection";
@@ -33,6 +54,64 @@ import { HealthHabitsSection } from "../../../components/onboarding/diet/HealthH
 import { AllergiesAndRestrictionsSection } from "../../../components/onboarding/diet/AllergiesAndRestrictionsSection";
 import { InfoTooltipModal } from "../../../components/onboarding/shared/InfoTooltipModal";
 import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
+
+/** Section entrance stagger (ms) — dense form arrives as a sequence. */
+const STAGGER_MS = 60;
+const ENTER_DURATION = 420;
+
+/** One segment of the live "receipt" line. */
+interface ReceiptSegment {
+  key: string;
+  label: string;
+}
+
+/**
+ * buildReceipt — reflects choices made so far, one quiet line. Not a field,
+ * not validation — the form talking back ("collapse ≠ hide selections" at
+ * the whole-screen level).
+ */
+const buildReceipt = (
+  formData: DietPreferencesData,
+  mealsCount: number,
+): ReceiptSegment[] => {
+  const segments: ReceiptSegment[] = [];
+
+  const dietTitle =
+    formData.diet_type === "balanced"
+      ? "Balanced"
+      : DIET_TYPE_OPTIONS.find((o) => o.id === formData.diet_type)?.title;
+  if (dietTitle) segments.push({ key: "diet", label: dietTitle });
+
+  segments.push({
+    key: "meals",
+    label: `${mealsCount} meal${mealsCount === 1 ? "" : "s"} planned`,
+  });
+
+  if (formData.cooking_skill_level === "not_applicable") {
+    segments.push({ key: "time", label: "No cooking" });
+  } else if (formData.cooking_skill_level) {
+    segments.push({
+      key: "time",
+      label: `≤ ${formData.max_prep_time_minutes ?? 30} min`,
+    });
+  }
+
+  const budgetTitle = BUDGET_LEVELS.find(
+    (b) => b.level === formData.budget_level,
+  )?.title;
+  if (budgetTitle) segments.push({ key: "budget", label: budgetTitle });
+
+  const exclusions =
+    formData.allergies.length + formData.restrictions.length;
+  if (exclusions > 0) {
+    segments.push({
+      key: "exclusions",
+      label: `${exclusions} excluded`,
+    });
+  }
+
+  return segments;
+};
 
 interface DietPreferencesTabProps {
   data: DietPreferencesData | null;
@@ -75,9 +154,30 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     onUpdate,
   });
 
+  const handleNext = () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      onUpdate(formData);
+      if (isEditingFromReview && onReturnToReview) {
+        onReturnToReview();
+      } else {
+        setTimeout(() => {
+          onNext(formData);
+        }, 100);
+      }
+    } finally {
+      isSubmittingRef.current = false;
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Info Tooltip Modal */}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.keyboardAvoidingView}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      {/* Info Tooltip Modal — logic unchanged */}
       <InfoTooltipModal
         visible={tooltipModal.visible}
         title={tooltipModal.title}
@@ -86,256 +186,148 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         onClose={hideInfoTooltip}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      <ScreenScaffold
+        question="How do you eat?"
+        subtext="Your taste, your rhythm. We'll shape meal plans around how you cook and eat."
+        onBack={onBack}
+        onNext={handleNext}
+        nextLabel={isEditingFromReview ? "Review" : "Next"}
+        footerNote={
+          isAutoSaving ? (
+            <Text style={styles.autoSaveText}>Saving…</Text>
+          ) : undefined
+        }
       >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={{ paddingBottom: rp(100) }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Hero Section */}
-          <HeroSection
-            image={{
-              uri: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80",
-            }}
-            overlayGradient={gradients.overlay.dark}
-            contentPosition="center"
-            minHeight={160}
-            maxHeight={240}
+        <View style={styles.sections}>
+          {/* Default visible — diet_type (the focal question) */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(0)}
           >
-            <Text style={styles.title} numberOfLines={2}>
-              What are your diet preferences?
-            </Text>
+            <CurrentDietSection
+              formData={formData}
+              updateField={updateField}
+              showInfoTooltip={showInfoTooltip}
+            />
+          </Animated.View>
+
+          {/* Default visible — meal-enable toggles */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS)}
+          >
+            <MealPreferencesSection
+              formData={formData}
+              getEnabledMealsCount={getEnabledMealsCount}
+              toggleMealPreference={toggleMealPreference}
+            />
+          </Animated.View>
+
+          {/* Default visible — cooking_skill_level, max_prep_time, budget_level.
+              Collapsed inside — cooking_methods (§5). */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 2)}
+          >
+            <CookingPreferencesSection
+              formData={formData}
+              updateField={updateField}
+            />
+          </Animated.View>
+
+          {/* Live receipt — the visible zone reflected back, one hairline
+              and one quiet line, before the collapsed zone begins. */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 3)}
+          >
+            <Rule />
             <Text
-              style={styles.subtitle}
+              style={styles.receipt}
               numberOfLines={2}
-              ellipsizeMode="tail"
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={buildReceipt(
+                formData,
+                getEnabledMealsCount(),
+              )
+                .map((s) => s.label)
+                .join(", ")}
+              testID="diet-setup-receipt"
             >
-              Help us personalize your meal recommendations and nutrition plan
+              {buildReceipt(formData, getEnabledMealsCount()).map(
+                (segment, index) => (
+                  <React.Fragment key={segment.key}>
+                    {index > 0 && (
+                      <Text style={styles.receiptSep}>{"  ·  "}</Text>
+                    )}
+                    {segment.label}
+                  </React.Fragment>
+                ),
+              )}
             </Text>
+          </Animated.View>
 
-            {/* Auto-save Indicator */}
-            {isAutoSaving && (
-              <View style={styles.autoSaveIndicator}>
-                <Ionicons
-                  name="cloud-upload-outline"
-                  size={rf(16)}
-                  color={colors.success}
-                  style={{ marginRight: 4 }}
-                />
-                <Text style={styles.autoSaveText} numberOfLines={1}>
-                  Saving...
-                </Text>
-              </View>
-            )}
-          </HeroSection>
-
-          {/* Form Sections */}
-          <View style={styles.content}>
-            <AnimatedSection delay={0}>
-              <CurrentDietSection
-                formData={formData}
-                updateField={updateField}
-                showInfoTooltip={showInfoTooltip}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={100}>
-              <DietReadinessSection
-                formData={formData}
-                toggleDietReadiness={toggleDietReadiness}
-                showInfoTooltip={showInfoTooltip}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={200}>
-              <MealPreferencesSection
-                formData={formData}
-                getEnabledMealsCount={getEnabledMealsCount}
-                toggleMealPreference={toggleMealPreference}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={300}>
-              <CookingPreferencesSection
-                formData={formData}
-                updateField={updateField}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={400}>
-              <HealthHabitsSection
-                formData={formData}
-                toggleHealthHabit={toggleHealthHabit}
-                showInfoTooltip={showInfoTooltip}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={500}>
-              <AllergiesAndRestrictionsSection
-                formData={formData}
-                updateField={updateField}
-              />
-            </AnimatedSection>
-          </View>
-
-          {/* Validation Summary */}
-          <ValidationSection validationResult={validationResult} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-      {/* Footer Navigation */}
-      <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          <AnimatedPressable
-            style={styles.backButtonCompact}
-            onPress={onBack}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to previous step"
+          {/* Collapsed — Diet readiness (§5) */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 4)}
           >
-            <Ionicons
-              name="chevron-back"
-              size={rf(18)}
-              color={colors.primary}
+            <DietReadinessSection
+              formData={formData}
+              toggleDietReadiness={toggleDietReadiness}
+              showInfoTooltip={showInfoTooltip}
             />
-            <Text style={styles.backButtonText}>Back</Text>
-          </AnimatedPressable>
+          </Animated.View>
 
-          <AnimatedPressable
-            style={styles.nextButtonCompact}
-            onPress={() => {
-              if (isSubmittingRef.current) return;
-              isSubmittingRef.current = true;
-              try {
-                onUpdate(formData);
-                if (isEditingFromReview && onReturnToReview) {
-                  onReturnToReview();
-                } else {
-                  setTimeout(() => {
-                    onNext(formData);
-                  }, 100);
-                }
-              } finally {
-                isSubmittingRef.current = false;
-              }
-            }}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
+          {/* Collapsed — Allergies & restrictions, with custom entry (§5) */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 5)}
           >
-            <Text style={styles.nextButtonText}>
-              {isEditingFromReview ? "Review" : "Next"}
-            </Text>
-            <Ionicons
-              name={
-                isEditingFromReview
-                  ? "checkmark-circle-outline"
-                  : "chevron-forward"
-              }
-              size={rf(18)}
-              color="#FFFFFF"
+            <AllergiesAndRestrictionsSection
+              formData={formData}
+              updateField={updateField}
             />
-          </AnimatedPressable>
+          </Animated.View>
+
+          {/* Collapsed — Lifestyle habits (§5) */}
+          <Animated.View
+            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 6)}
+          >
+            <HealthHabitsSection
+              formData={formData}
+              toggleHealthHabit={toggleHealthHabit}
+              showInfoTooltip={showInfoTooltip}
+            />
+          </Animated.View>
         </View>
-      </View>
-    </SafeAreaView>
+
+        {/* Validation Summary — unchanged logic; sits one sectionGap below
+            the last section instead of butting against it. */}
+        {validationResult && (
+          <View style={styles.validationWrap}>
+            <ValidationSection validationResult={validationResult} />
+          </View>
+        )}
+      </ScreenScaffold>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
   keyboardAvoidingView: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  sections: {
+    gap: spacing.sectionGap, // hierarchy from space, not containers
   },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.5,
-    textAlign: "center",
+  validationWrap: {
+    marginTop: spacing.sectionGap,
   },
-  subtitle: {
-    fontSize: fontSize.md,
-    color: hexToRgba(colors.white, 0.85),
-    lineHeight: fontSize.md * 1.5,
-    marginBottom: spacing.md,
-    textAlign: "center",
+  receipt: {
+    ...typeScale.body,
+    color: tokens.ink,
+    marginTop: spacing.m,
   },
-  autoSaveIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
+  receiptSep: {
+    color: tokens.ink3,
   },
   autoSaveText: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-  },
-  footer: {
-    padding: spacing.lg,
-    paddingBottom:
-      Platform.OS === "ios"
-        ? spacing.lg
-        : spacing.xl,
-    backgroundColor: "transparent",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  backButtonCompact: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: 100,
-    minHeight: 52,
-  },
-  backButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
-    marginLeft: spacing.xs,
-  },
-  nextButtonCompact: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary,
-    minHeight: 52,
-  },
-  nextButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
-    marginRight: spacing.xs,
+    ...typeScale.caption,
   },
 });
 

@@ -1,15 +1,25 @@
-﻿import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rp } from "../../utils/responsive";
-import type { ProgressStats } from "../../services/progressData";
-
 /**
- * ProgressInsights Component
+ * ProgressInsights - Aurora 2026
  *
- * Displays motivational insights, tips, and achievements
- * Provides actionable feedback based on user progress
+ * Flat surface.1 insight rows with a small tinted icon squircle + text.
+ * Single left accent treatment (plan pattern), no nested card-in-card,
+ * no emojis, Manrope type.
  */
+
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  chart,
+  spacing,
+  typography,
+} from "../../theme/aurora-tokens";
+import type { ProgressStats } from "../../services/progressData";
+import { haptics } from "../../utils/haptics";
 
 interface InsightItem {
   id: string;
@@ -29,46 +39,37 @@ interface ProgressInsightsProps {
   nutritionAdherence?: number;
 }
 
-const InsightCard: React.FC<{
+const TYPE_META: Record<
+  InsightItem["type"],
+  { icon: keyof typeof Ionicons.glyphMap; color: string }
+> = {
+  achievement: { icon: "trophy-outline", color: chart[4] },
+  tip: { icon: "bulb-outline", color: chart[2] },
+  motivation: { icon: "sparkles-outline", color: chart[5] },
+  goal: { icon: "flag-outline", color: chart[1] },
+};
+
+const InsightRow: React.FC<{
   insight: InsightItem;
+  index: number;
   onAction?: (insight: InsightItem) => void;
-}> = ({ insight, onAction }) => {
-  const getCardStyle = (type: string, priority: string) => {
-    let backgroundColor = colors.surface;
-    let borderColor = colors.border;
-
-    switch (type) {
-      case "achievement":
-        backgroundColor = colors.surface;
-        borderColor = colors.success;
-        break;
-      case "tip":
-        backgroundColor = colors.surface;
-        borderColor = colors.primary;
-        break;
-      case "motivation":
-        backgroundColor = colors.surface;
-        borderColor = colors.secondary;
-        break;
-      case "goal":
-        backgroundColor = colors.surface;
-        borderColor = colors.warning;
-        break;
-    }
-
-    return {
-      backgroundColor,
-      borderColor,
-      borderWidth: priority === "high" ? 2 : 1,
-    };
-  };
+}> = React.memo(({ insight, index, onAction }) => {
+  const meta = TYPE_META[insight.type] ?? TYPE_META.tip;
 
   return (
-    <View
-      style={[styles.insightCard, getCardStyle(insight.type, insight.priority)]}
+    <Animated.View
+      entering={FadeInDown.delay(index * 60).duration(280)}
+      style={styles.insightCard}
     >
       <View style={styles.insightHeader}>
-        <Text style={styles.insightIcon}>{insight.icon}</Text>
+        <View
+          style={[
+            styles.insightIconWrap,
+            { backgroundColor: `${meta.color}1A` },
+          ]}
+        >
+          <Ionicons name={meta.icon} size={18} color={meta.color} />
+        </View>
         <View style={styles.insightContent}>
           <Text style={styles.insightTitle}>{insight.title}</Text>
           <Text style={styles.insightMessage}>{insight.message}</Text>
@@ -78,17 +79,20 @@ const InsightCard: React.FC<{
       {insight.actionText && (
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => onAction?.(insight)}
-          activeOpacity={0.7}
+          onPress={() => {
+            haptics.light();
+            onAction?.(insight);
+          }}
+          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel={insight.actionText}
         >
           <Text style={styles.actionText}>{insight.actionText}</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </Animated.View>
   );
-};
+});
 
 const generateDefaultInsights = (
   progressStats?: ProgressStats | null,
@@ -97,7 +101,6 @@ const generateDefaultInsights = (
 ): InsightItem[] => {
   const insights: InsightItem[] = [];
 
-  // If no data is available, return empty array
   if (
     !progressStats &&
     workoutStreak === undefined &&
@@ -106,7 +109,6 @@ const generateDefaultInsights = (
     return [];
   }
 
-  // 1. WEIGHT TREND ANALYSIS
   if (progressStats?.weightChange) {
     const { change, changePercentage } = progressStats.weightChange;
 
@@ -121,14 +123,13 @@ const generateDefaultInsights = (
             ? "Keep up the excellent work!"
             : "Review your nutrition plan and ensure it aligns with your goals."
         }`,
-        icon: isLoss ? "🎯" : "⚠️",
+        icon: isLoss ? "target" : "warning",
         priority: "high",
         actionText: isLoss ? "View Details" : "Adjust Plan",
       });
     }
   }
 
-  // 2. BODY FAT ANALYSIS
   if (
     progressStats?.bodyFatChange &&
     progressStats.bodyFatChange.change !== 0
@@ -146,13 +147,12 @@ const generateDefaultInsights = (
             ? "You're building a leaner physique!"
             : "Consider increasing cardio and monitoring your diet."
         }`,
-        icon: isDecrease ? "💪" : "📊",
+        icon: isDecrease ? "flame" : "analytics",
         priority: "high",
       });
     }
   }
 
-  // 3. WORKOUT CONSISTENCY
   if (workoutStreak !== undefined) {
     if (workoutStreak >= 7) {
       insights.push({
@@ -160,7 +160,7 @@ const generateDefaultInsights = (
         type: "achievement",
         title: `${workoutStreak} Day Streak!`,
         message: `You've been consistent for ${workoutStreak} days! Consistency is the key to long-term success.`,
-        icon: "🔥",
+        icon: "flame",
         priority: "high",
         actionText: "Keep Going",
       });
@@ -170,7 +170,7 @@ const generateDefaultInsights = (
         type: "motivation",
         title: "Building Momentum",
         message: `${workoutStreak} days and counting! Keep pushing forward to build a lasting habit.`,
-        icon: "💪",
+        icon: "trending-up",
         priority: "medium",
       });
     } else if (workoutStreak === 0) {
@@ -180,14 +180,13 @@ const generateDefaultInsights = (
         title: "Time to Get Moving",
         message:
           "Every journey starts with a single step. Schedule your next workout today!",
-        icon: "🎯",
+        icon: "walk",
         priority: "high",
         actionText: "Start Workout",
       });
     }
   }
 
-  // 4. NUTRITION ADHERENCE
   if (nutritionAdherence !== undefined) {
     if (nutritionAdherence >= 80) {
       insights.push({
@@ -195,7 +194,7 @@ const generateDefaultInsights = (
         type: "achievement",
         title: "Nutrition on Point!",
         message: `${nutritionAdherence.toFixed(0)}% adherence to your nutrition goals. Your diet is fueling your progress!`,
-        icon: "🥗",
+        icon: "leaf",
         priority: "medium",
       });
     } else if (nutritionAdherence >= 50) {
@@ -204,7 +203,7 @@ const generateDefaultInsights = (
         type: "tip",
         title: "Room for Improvement",
         message: `You're at ${nutritionAdherence.toFixed(0)}% nutrition adherence. Try meal prepping to stay on track!`,
-        icon: "📋",
+        icon: "restaurant",
         priority: "medium",
         actionText: "Meal Plan",
       });
@@ -215,26 +214,24 @@ const generateDefaultInsights = (
         title: "Nutrition Needs Attention",
         message:
           "Your nutrition tracking could use more consistency. Small changes lead to big results!",
-        icon: "🎯",
+        icon: "alert-circle",
         priority: "high",
         actionText: "Set Goals",
       });
     }
   }
 
-  // 5. MUSCLE GAIN ANALYSIS
   if (progressStats?.muscleChange && progressStats.muscleChange.change > 0) {
     insights.push({
       id: "muscle_gain",
       type: "achievement",
       title: "Muscle Growth Detected!",
       message: `You've gained ${progressStats.muscleChange.change.toFixed(1)}kg of muscle mass. Your training is paying off!`,
-      icon: "💪",
+      icon: "barbell",
       priority: "high",
     });
   }
 
-  // 6. GENERAL MOTIVATION
   if (insights.length < 2) {
     insights.push({
       id: "keep_going",
@@ -242,7 +239,7 @@ const generateDefaultInsights = (
       title: "You're Making Progress",
       message:
         "Every workout, every healthy meal brings you closer to your goals. Stay committed!",
-      icon: "🌟",
+      icon: "sparkles",
       priority: "low",
     });
   }
@@ -261,7 +258,6 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = React.memo(({
     insights ||
     generateDefaultInsights(progressStats, workoutStreak, nutritionAdherence);
 
-  // Sort by priority (high first) - create copy to avoid mutating original
   const sortedInsights = [...displayInsights].sort((a, b) => {
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     return priorityOrder[b.priority] - priorityOrder[a.priority];
@@ -276,34 +272,31 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = React.memo(({
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Insights & Tips</Text>
 
-      {/* High Priority Insights */}
-      {highPriorityInsights.length > 0 && (
-        <View style={styles.prioritySection}>
-          {highPriorityInsights.map((insight, index) => (
-            <InsightCard
-              key={insight.id + '-' + index}
-              insight={insight}
-              onAction={onInsightAction}
-            />
-          ))}
-        </View>
-      )}
+      {highPriorityInsights.map((insight, index) => (
+        <InsightRow
+          key={insight.id + "-" + index}
+          insight={insight}
+          index={index}
+          onAction={onInsightAction}
+        />
+      ))}
 
-      {/* Other Insights */}
-      {otherInsights.length > 0 && (
-        <View style={styles.regularSection}>
-          {otherInsights.slice(0, 3).map((insight, index) => (
-            <InsightCard
-              key={insight.id + '-' + index}
-              insight={insight}
-              onAction={onInsightAction}
-            />
-          ))}
-        </View>
-      )}
+      {otherInsights.slice(0, 3).map((insight, index) => (
+        <InsightRow
+          key={insight.id + "-" + index}
+          insight={insight}
+          index={highPriorityInsights.length + index}
+          onAction={onInsightAction}
+        />
+      ))}
 
-      {/* Motivational Footer */}
       <View style={styles.motivationalFooter}>
+        <Ionicons
+          name="chatbubble-outline"
+          size={18}
+          color={colors.text.muted}
+          style={styles.footerIcon}
+        />
         <Text style={styles.footerText}>
           "Success is the sum of small efforts repeated day in and day out."
         </Text>
@@ -316,22 +309,18 @@ export const ProgressInsights: React.FC<ProgressInsightsProps> = React.memo(({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl, // Extra bottom padding for tab bar
+    paddingBottom: spacing.xxl,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
     marginBottom: spacing.md,
-  },
-  prioritySection: {
-    marginBottom: spacing.md,
-  },
-  regularSection: {
-    marginBottom: spacing.lg,
   },
   insightCard: {
-    borderRadius: borderRadius.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -339,25 +328,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
   },
-  insightIcon: {
-    fontSize: rf(24),
-    marginRight: spacing.sm,
-    marginTop: rp(2),
+  insightIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
+    marginTop: 2,
   },
   insightContent: {
     flex: 1,
   },
   insightTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
+    marginBottom: spacing.xxs,
   },
   insightMessage: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.regular,
-    color: colors.textSecondary,
-    lineHeight: rf(18),
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
   actionButton: {
     alignSelf: "flex-start",
@@ -365,34 +355,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     minHeight: 44,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary.DEFAULT,
+    borderRadius: 12,
     justifyContent: "center",
   },
   actionText: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.white,
+    ...typography.variants.caption2,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.primary,
   },
   motivationalFooter: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    alignItems: "center" as const,
+    backgroundColor: surface[1],
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: borderTokens.subtle,
+    padding: spacing.lg,
+    alignItems: "center",
+    marginTop: spacing.md,
+  },
+  footerIcon: {
+    marginBottom: spacing.xs,
   },
   footerText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     textAlign: "center",
     fontStyle: "italic",
     marginBottom: spacing.xs,
   },
   footerAuthor: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.regular,
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
   },
 });
+
+export default ProgressInsights;

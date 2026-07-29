@@ -1,20 +1,22 @@
 /**
- * AppInfoCard - App Information Footer Component
- *
- * Shows:
- * - App logo with gradient
- * - App name and version
- * - Tagline (using Ionicons, NOT emojis per methodology)
+ * AppInfoCard - Aurora 2026: minimal centered app footer.
+ * Sits directly on the screen background — no card surface.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rp, rw } from "../../../utils/responsive";
+import {
+  colors,
+  surface,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rf, rw } from "../../../utils/responsive";
+
+const { variants } = typography;
 
 interface AppInfoCardProps {
   version?: string;
@@ -27,134 +29,96 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
 }) => {
   return (
     <Animated.View
-      entering={FadeIn.delay(animationDelay).duration(400)}
+      entering={FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
-      <GlassCard
-        elevation={1}
-        padding="lg"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.card}
+      <LinearGradient
+        colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.logo}
       >
-        <View style={styles.content}>
-          <LinearGradient
-            colors={["#FF6B6B", "#FF8E53"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.logo}
-          >
-            <Text style={styles.logoText}>F</Text>
-          </LinearGradient>
+        <Text style={styles.logoText}>F</Text>
+      </LinearGradient>
 
-          <View style={styles.info}>
-            <View style={styles.nameRow}>
-              <Text style={styles.appName} numberOfLines={1}>FitAI</Text>
-              <View style={styles.versionBadge}>
-                <Text style={styles.versionText} numberOfLines={1}>v{version}</Text>
-              </View>
-            </View>
-            <Text style={styles.tagline} numberOfLines={2}>
-              Your AI-powered fitness companion
-            </Text>
-          </View>
+      <View style={styles.nameRow}>
+        <Text style={styles.appName} numberOfLines={1}>
+          FitAI
+        </Text>
+        <View style={styles.versionBadge}>
+          <Text style={styles.versionText} numberOfLines={1}>
+            v{version}
+          </Text>
         </View>
+      </View>
 
-        <View style={styles.footer}>
-          <View style={styles.footerContent}>
-            <Text style={styles.footerText}>Made with</Text>
-            <Ionicons
-              name="heart"
-              size={rf(14)}
-              color={colors.errorLight}
-            />
-            <Text style={styles.footerText}>for fitness enthusiasts</Text>
-          </View>
-        </View>
-      </GlassCard>
+      <Text style={styles.tagline} numberOfLines={1}>
+        Your AI-powered fitness companion
+      </Text>
+
+      <View style={styles.footerContent}>
+        <Text style={styles.footerText}>Made with</Text>
+        <Ionicons name="heart" size={rf(12)} color={colors.error.DEFAULT} />
+        <Text style={styles.footerText}>for fitness enthusiasts</Text>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    alignItems: "center",
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
-  card: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   logo: {
-    width: rw(48),
-    height: rw(48),
+    width: rw(44),
+    height: rw(44),
     borderRadius: rw(12),
     justifyContent: "center",
     alignItems: "center",
-    marginRight: spacing.md,
-    shadowColor: colors.errorLight,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    marginBottom: spacing.sm,
   },
   logoText: {
-    fontSize: rf(24),
-    fontWeight: "800",
-    color: colors.white,
-  },
-  info: {
-    flex: 1,
-    minWidth: 0,
+    fontFamily: "Manrope_800ExtraBold",
+    fontSize: rf(22),
+    color: colors.text.primary,
+    includeFontPadding: false,
   },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rp(4),
+    marginBottom: spacing.xxs,
   },
   appName: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.white,
+    ...variants.cardHeadline,
+    color: colors.text.primary,
   },
   versionBadge: {
     marginLeft: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: rp(2),
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: rf(4),
+    paddingHorizontal: spacing.xs + 2,
+    paddingVertical: spacing.xxs,
+    backgroundColor: surface[2],
+    borderRadius: 8,
   },
   versionText: {
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   tagline: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-  },
-  footer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
-    alignItems: "center",
+    ...variants.caption,
+    color: colors.text.tertiary,
+    marginBottom: spacing.sm,
   },
   footerContent: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    // Use gap so the heart icon stays inline with the text instead of
-    // wrapping to its own line (orphaned icon) on narrow screens.
-    gap: rf(4),
+    gap: spacing.xs,
   },
   footerText: {
-    fontSize: rf(12),
-    color: colors.textMuted,
+    ...variants.caption,
+    color: colors.text.tertiary,
   },
 });
 

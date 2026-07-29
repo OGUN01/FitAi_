@@ -133,6 +133,16 @@ module.exports = {
         'bold': '700',
         'extrabold': '800'
       },
+      // Font family — single brand typeface (Manrope). React Native renders
+      // each weight as its own family; `sans` is the default body face.
+      fontFamily: {
+        'sans': ['Manrope_400Regular'],
+        'light': ['Manrope_300Light'],
+        'medium': ['Manrope_500Medium'],
+        'semibold': ['Manrope_600SemiBold'],
+        'bold': ['Manrope_700Bold'],
+        'extrabold': ['Manrope_800ExtraBold']
+      },
       // Shadow system (8 levels)
       boxShadow: {
         'level-1': '0 1px 2px rgba(0, 0, 0, 0.1)',

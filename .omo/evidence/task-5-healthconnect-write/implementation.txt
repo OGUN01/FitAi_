@@ -1,0 +1,101 @@
+  async writeWorkoutSession(workout: {
+    exerciseType: number;
+    startTime: Date;
+    endTime: Date;
+    title?: string;
+    calories?: number;
+    notes?: string;
+  }): Promise<{ success: boolean; recordId?: string; error?: string }> {
+    try {
+      console.log("📝 Writing workout session to Health Connect...");
+
+      if (Platform.OS !== "android") {
+        return {
+          success: false,
+          error: "Health Connect only available on Android",
+        };
+      }
+
+      if (!this.isInitialized) {
+        const initialized = await this.initializeHealthConnect();
+        if (!initialized) {
+          return {
+            success: false,
+            error: "Failed to initialize Health Connect",
+          };
+        }
+      }
+
+      const hasPerms = await this.hasPermissions();
+      if (!hasPerms) {
+        return {
+          success: false,
+          error: "Health Connect write permissions not granted",
+        };
+      }
+
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        return {
+          success: false,
+          error: "Health Connect native module not available",
+        };
+      }
+
+      const { insertRecords } = hcModule;
+      if (!insertRecords) {
+        return {
+          success: false,
+          error: "insertRecords function not available",
+        };
+      }
+
+      const exerciseRecord: any = {
+        recordType: "ExerciseSession",
+        exerciseType: workout.exerciseType,
+        startTime: workout.startTime.toISOString(),
+        endTime: workout.endTime.toISOString(),
+      };
+
+      if (workout.title) {
+        exerciseRecord.title = workout.title;
+      }
+
+      if (workout.notes) {
+        exerciseRecord.notes = workout.notes;
+      }
+
+      const recordIds = await insertRecords([exerciseRecord]);
+
+      if (workout.calories && workout.calories > 0) {
+        try {
+          await insertRecords([
+            {
+              recordType: "ActiveCaloriesBurned",
+              energy: { unit: "kilocalories", value: workout.calories },
+              startTime: workout.startTime.toISOString(),
+              endTime: workout.endTime.toISOString(),
+            },
+          ]);
+        } catch (calorieError) {
+          console.warn("⚠️ Failed to write calories:", calorieError);
+        }
+      }
+
+      console.log(
+        "✅ Workout session written to Health Connect:",
+        recordIds[0],
+      );
+      return { success: true, recordId: recordIds[0] };
+    } catch (error) {
+      console.error("❌ Failed to write workout session:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error writing workout",
+      };
+    }
+  }
+}

@@ -23,6 +23,7 @@ jest.mock("react-native", () => {
     Dimensions: {
       get: () => ({ width: 393, height: 852 }),
     },
+    useWindowDimensions: () => ({ width: 393, height: 852, scale: 1, fontScale: 1 }),
     Platform: {
       OS: "ios",
     },

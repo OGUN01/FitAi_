@@ -131,18 +131,45 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 -- Folder convention: food-label-images/<user_id>/<contribution_id>.jpg
 -- foldername(name)[1] extracts the first path segment (the user_id).
-CREATE POLICY "users_upload_own_label_images"
-  ON storage.objects FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    bucket_id = 'food-label-images'
-    AND (storage.foldername(name))[1] = (select auth.uid())::text
-  );
+-- Idempotent: guards prevent "already exists" errors on re-run.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename  = 'objects'
+      AND policyname = 'users_upload_own_label_images'
+  ) THEN
+    EXECUTE $policy$
+      CREATE POLICY "users_upload_own_label_images"
+        ON storage.objects FOR INSERT
+        TO authenticated
+        WITH CHECK (
+          bucket_id = 'food-label-images'
+          AND (storage.foldername(name))[1] = (select auth.uid())::text
+        );
+    $policy$;
+  END IF;
+END
+$$;
 
-CREATE POLICY "public_read_label_images"
-  ON storage.objects FOR SELECT
-  TO anon, authenticated
-  USING (bucket_id = 'food-label-images');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename  = 'objects'
+      AND policyname = 'public_read_label_images'
+  ) THEN
+    EXECUTE $policy$
+      CREATE POLICY "public_read_label_images"
+        ON storage.objects FOR SELECT
+        TO anon, authenticated
+        USING (bucket_id = 'food-label-images');
+    $policy$;
+  END IF;
+END
+$$;
 
 -- ============================================================================
 -- A7. DELETE POLICY TIGHTENING

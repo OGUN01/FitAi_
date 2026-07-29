@@ -12,103 +12,135 @@ import { Platform } from 'react-native';
 export const colors = {
   // Primary palette - Vibrant Orange/Coral
   primary: {
-    DEFAULT: "#FF6B35",
-    light: "#FF8A5C",
-    dark: "#E55A2B",
-    50: "#FFF5F2",
-    100: "#FFEAE3",
-    200: "#FFD4C7",
-    300: "#FFBFAB",
-    400: "#FFA58F",
-    500: "#FF8A5C",
-    600: "#FF6B35",
-    700: "#E55A2B",
-    800: "#CC4A21",
-    900: "#B33A17",
+    DEFAULT: '#FF6B35',
+    light: '#FF8A5C',
+    dark: '#E55A2B',
+    50: '#FFF5F2',
+    100: '#FFEAE3',
+    200: '#FFD4C7',
+    300: '#FFBFAB',
+    400: '#FFA58F',
+    500: '#FF8A5C',
+    600: '#FF6B35',
+    700: '#E55A2B',
+    800: '#CC4A21',
+    900: '#B33A17',
   },
 
   // Secondary palette - Electric Cyan
   secondary: {
-    DEFAULT: "#00D4FF",
-    light: "#00FFFF",
-    dark: "#00B8E6",
-    50: "#E6FBFF",
-    100: "#CCF7FF",
-    200: "#99EFFF",
-    300: "#66E7FF",
-    400: "#33DFFF",
-    500: "#00D4FF",
-    600: "#00B8E6",
-    700: "#009DCC",
-    800: "#0081B3",
-    900: "#006699",
+    DEFAULT: '#00D4FF',
+    light: '#00FFFF',
+    dark: '#00B8E6',
+    50: '#E6FBFF',
+    100: '#CCF7FF',
+    200: '#99EFFF',
+    300: '#66E7FF',
+    400: '#33DFFF',
+    500: '#00D4FF',
+    600: '#00B8E6',
+    700: '#009DCC',
+    800: '#0081B3',
+    900: '#006699',
   },
 
   // Aurora background themes
   aurora: {
     space: {
-      base: "#0A0F1C",
-      mid: "#1A1F2E",
-      high: "#252A3A",
+      // OLED pure black base — saves battery on OLED panels (Apple Fitness /
+      // Whoop pattern). Mid/high are NEUTRAL cool greys (not blue) so elevation
+      // reads as a natural step up from black, not a cold separate layer.
+      base: '#000000',
+      mid: '#15161B',
+      high: '#232430',
     },
     purple: {
-      base: "#1C0A1F",
-      mid: "#2E1A2F",
-      high: "#3A252F",
+      base: '#1C0A1F',
+      mid: '#2E1A2F',
+      high: '#3A252F',
     },
     ocean: {
-      base: "#0A1F1C",
-      mid: "#1A2F2E",
-      high: "#253A3A",
+      base: '#0A1F1C',
+      mid: '#1A2F2E',
+      high: '#253A3A',
     },
   },
 
-  // Background system
+  // Background system — DEFAULT is OLED pure black. secondary/tertiary are
+  // neutral cool greys with even perceptual steps from #000 so cards, tab bars,
+  // and raised surfaces read as cohesive elevation rather than colored panels.
   background: {
-    DEFAULT: "#0A0F1C",
-    secondary: "#1A1F2E",
-    tertiary: "#252A3A",
+    DEFAULT: '#000000',
+    secondary: '#15161B',
+    tertiary: '#232430',
   },
 
   // Text color system
   text: {
-    primary: "#FFFFFF",
-    secondary: "#B0B0B0",
-    tertiary: "#8A8A8A",
-    muted: "#8A8A8A",
-    disabled: "#5A5A5A",
+    primary: '#FFFFFF',
+    secondary: '#B0B0B0',
+    tertiary: '#8A8A8A',
+    muted: '#8A8A8A',
+    disabled: '#5A5A5A',
   },
 
   // Status colors
   success: {
-    DEFAULT: "#4CAF50",
-    light: "#81C784",
-    dark: "#388E3C",
+    DEFAULT: '#4CAF50',
+    light: '#81C784',
+    dark: '#388E3C',
   },
   warning: {
-    DEFAULT: "#FF9800",
-    light: "#FFB74D",
-    dark: "#F57C00",
+    DEFAULT: '#FF9800',
+    light: '#FFB74D',
+    dark: '#F57C00',
   },
   error: {
-    DEFAULT: "#F44336",
-    light: "#E57373",
-    dark: "#D32F2F",
+    DEFAULT: '#F44336',
+    light: '#E57373',
+    dark: '#D32F2F',
   },
   info: {
-    DEFAULT: "#2196F3",
-    light: "#64B5F6",
-    dark: "#1976D2",
+    DEFAULT: '#2196F3',
+    light: '#64B5F6',
+    dark: '#1976D2',
   },
 
   // Glass surface colors
   glass: {
-    background: "rgba(255, 255, 255, 0.1)",
-    backgroundLight: "rgba(255, 255, 255, 0.15)",
-    backgroundDark: "rgba(255, 255, 255, 0.05)",
-    border: "rgba(255, 255, 255, 0.18)",
-    surface: "rgba(255, 255, 255, 0.1)", // Default glass surface
+    background: 'rgba(255, 255, 255, 0.1)',
+    backgroundLight: 'rgba(255, 255, 255, 0.15)',
+    backgroundDark: 'rgba(255, 255, 255, 0.05)',
+    border: 'rgba(255, 255, 255, 0.18)',
+    surface: 'rgba(255, 255, 255, 0.1)', // Default glass surface
   },
+} as const;
+
+// Surface scale — max 3 elevation levels per screen (Aurora 2026 elevation
+// model: bg → card → raised). Sourced from the aurora.space tiers.
+// surface.0 = screen background, surface.1 = card, surface.2 = raised/popover.
+export const surface = {
+  0: colors.aurora.space.base,
+  1: colors.aurora.space.mid,
+  2: colors.aurora.space.high,
+} as const;
+
+// Border scale — subtle hairlines for dark theme (no drop shadows).
+export const border = {
+  subtle: 'rgba(255, 255, 255, 0.08)',
+  DEFAULT: 'rgba(255, 255, 255, 0.12)',
+  strong: 'rgba(255, 255, 255, 0.18)',
+} as const;
+
+// Chart palette — 6 harmonious data-viz colors tuned for the dark Aurora
+// background. Order = series priority.
+export const chart = {
+  1: '#FF6B35', // primary orange
+  2: '#00D4FF', // electric cyan
+  3: '#9333EA', // purple
+  4: '#4ADE80', // green
+  5: '#FBBF24', // amber
+  6: '#EC4899', // pink
 } as const;
 
 // Typography System
@@ -120,22 +152,43 @@ export const typography = {
     h3: 20,
     body: 16,
     caption: 14,
+    xs: 13,
     micro: 12,
   },
 
   fontWeight: {
-    light: "300" as const,
-    regular: "400" as const,
-    medium: "500" as const,
-    semibold: "600" as const,
-    bold: "700" as const,
-    extrabold: "800" as const,
+    light: '300' as const,
+    regular: '400' as const,
+    medium: '500' as const,
+    semibold: '600' as const,
+    bold: '700' as const,
+    extrabold: '800' as const,
   },
 
   lineHeight: {
     tight: 1.2,
     normal: 1.5,
     relaxed: 1.75,
+  },
+
+  /**
+   * Semantic text variants — one consistent Manrope family + weight pairing
+   * per use, per the Aurora 2026 type scale. `fontFamily` strings match the
+   * loaded native families in `src/theme/fonts.ts` (FONT_FAMILY).
+   * Line-height expressed as a multiplier (RN multiplies by fontSize).
+   */
+  variants: {
+    pageTitle: { fontFamily: 'Manrope_700Bold', fontSize: 28, lineHeight: 1.3 },
+    sectionTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 18, lineHeight: 1.4 },
+    cardHeadline: { fontFamily: 'Manrope_600SemiBold', fontSize: 16, lineHeight: 1.4 },
+    body: { fontFamily: 'Manrope_400Regular', fontSize: 15, lineHeight: 1.5 },
+    caption: { fontFamily: 'Manrope_500Medium', fontSize: 12, lineHeight: 1.4 },
+    // heroStat — the big ring/tile numbers (Apple Fitness hero caliber). 40
+    // aligns to the 8pt grid (5×8); tabular feel via the ExtraBold Manrope face.
+    heroStat: { fontFamily: 'Manrope_800ExtraBold', fontSize: 40, lineHeight: 1.1 },
+    // caption2 — the secondary 13px tier (between micro 12 and caption 14),
+    // used by meal-type/time labels and hero sublines. First-class, not rogue.
+    caption2: { fontFamily: 'Manrope_500Medium', fontSize: 13, lineHeight: 1.4 },
   },
 } as const;
 
@@ -175,7 +228,7 @@ const makeShadow = (
   radius: number,
   opacity: number,
   elevation: number,
-  boxShadow: string,
+  boxShadow: string
 ) => {
   if (isWeb) {
     return { boxShadow };
@@ -210,8 +263,8 @@ export const glassSurface = {
     light: 15,
     heavy: 40,
   },
-  background: "rgba(255, 255, 255, 0.08)",
-  border: "rgba(255, 255, 255, 0.25)",
+  background: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.25)',
   borderWidth: 1,
 } as const;
 
@@ -275,6 +328,9 @@ export const zIndex = {
 // Export all tokens as a single object
 export const auroraTokens = {
   colors,
+  surface,
+  border,
+  chart,
   typography,
   spacing,
   borderRadius,
@@ -390,12 +446,12 @@ export const flatColors = {
 
 /**
  * Flat font-size scale mirroring the legacy 8-step names. `xs` (13) is
- * legacy-only (nested typography has no `xs`); `sm`/`md`/`lg`/`xl`/`xxl`/
- * `display` map to typography.fontSize.{caption,body,h3,h2,h1,display}.
+ * `xs`/`sm`/`md`/`lg`/`xl`/`xxl`/`display` map to
+ * typography.fontSize.{xs,caption,body,h3,h2,h1,display}.
  */
 export const flatFontSize = {
   micro: typography.fontSize.micro,
-  xs: 13,
+  xs: typography.fontSize.xs,
   sm: typography.fontSize.caption,
   md: typography.fontSize.body,
   lg: typography.fontSize.h3,
@@ -416,7 +472,11 @@ export const flatShadows = {
 // Type exports for TypeScript
 export type AuroraTokens = typeof auroraTokens;
 export type Colors = typeof colors;
+export type Surface = typeof surface;
+export type Border = typeof border;
+export type Chart = typeof chart;
 export type Typography = typeof typography;
+export type TypographyVariant = keyof typeof typography.variants;
 export type Spacing = typeof spacing;
 export type BorderRadius = typeof borderRadius;
 export type Shadows = typeof shadows;

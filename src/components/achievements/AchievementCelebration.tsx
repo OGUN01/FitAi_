@@ -1,6 +1,3 @@
-// Achievement Celebration Modal
-// Animated celebration when user unlocks achievements
-
 import React, { useEffect, useRef } from "react";
 import {
   View,
@@ -12,9 +9,15 @@ import {
   StyleSheet,
 } from "react-native";
 import { Achievement } from "../../services/achievementEngine";
-import { flatColors as colors } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rh } from "../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_MEDIUM } from "../../utils/colors";
+import {
+  surface,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../theme/aurora-tokens";
+import { rf, rp } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import useAchievementStore from "../../stores/achievementStore";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
@@ -24,6 +27,24 @@ interface AchievementCelebrationProps {
   onClose: () => void;
 }
 
+const tierColorMap: Record<string, string> = {
+  bronze: chart[1],
+  silver: chart[2],
+  gold: chart[5],
+  platinum: chart[3],
+  diamond: chart[6],
+  legendary: chart[4],
+};
+
+const tierGradientMap: Record<string, [string, string]> = {
+  bronze: [chart[1], chart[1]],
+  silver: [chart[2], chart[2]],
+  gold: [chart[5], chart[5]],
+  platinum: [chart[3], chart[3]],
+  diamond: [chart[6], chart[6]],
+  legendary: [chart[4], chart[4]],
+};
+
 const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   visible,
   achievement,
@@ -32,23 +53,20 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { markCelebrationShown } = useAchievementStore();
 
-  // Animation values — initialised to a sensible default; reset to live
-  // screenHeight/screenWidth on each open via the effect below.
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Confetti animation references for cleanup
   const confettiAnimations = useRef<Animated.CompositeAnimation[]>([]);
 
-  // Confetti animations
   const confetti = useRef(
-    Array.from({ length: 20 }, () => ({
+    Array.from({ length: 24 }, (_, i) => ({
       x: new Animated.Value(Math.random() * screenWidth),
       y: new Animated.Value(-50),
       rotation: new Animated.Value(0),
-      scale: new Animated.Value(0.5 + Math.random() * 0.5),
+      scale: new Animated.Value(0.4 + Math.random() * 0.6),
+      color: [chart[1], chart[2], chart[3], chart[4], chart[5], chart[6]][i % 6],
     })),
   ).current;
 
@@ -56,9 +74,6 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Only claim the gesture on a clear downward swipe. Returning false
-        // for taps and small moves lets the Close button receive its own
-        // press — previously the PanResponder swallowed all touches.
         return gestureState.dy > 20 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onPanResponderMove: (evt, gestureState) => {
@@ -81,12 +96,10 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 
   useEffect(() => {
     if (visible && achievement) {
-      // Reset animations
       slideAnim.setValue(screenHeight);
       scaleAnim.setValue(0);
       rotateAnim.setValue(0);
 
-      // Start entrance animations
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -107,27 +120,24 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
         }),
       ]).start();
 
-      // Pulse animation
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 500,
+            toValue: 1.08,
+            duration: 600,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 500,
+            duration: 600,
             useNativeDriver: true,
           }),
         ]),
       );
       pulseAnimation.start();
 
-      // Start confetti animation
       startConfettiAnimation();
 
-      // Auto close after 8 seconds (was 5s — too short for long descriptions).
       const timer = setTimeout(() => {
         handleClose();
       }, 8000);
@@ -135,7 +145,6 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       return () => {
         clearTimeout(timer);
         pulseAnimation.stop();
-        // Stop all confetti animations to prevent memory leaks
         confettiAnimations.current.forEach((anim) => anim.stop());
         confettiAnimations.current = [];
       };
@@ -143,27 +152,24 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   }, [visible, achievement]);
 
   const startConfettiAnimation = () => {
-    // Clear previous animation references
     confettiAnimations.current.forEach((anim) => anim.stop());
     confettiAnimations.current = [];
 
-    confetti.forEach((item, index) => {
-      // Reset positions
+    confetti.forEach((item) => {
       item.x.setValue(Math.random() * screenWidth);
       item.y.setValue(-50);
       item.rotation.setValue(0);
 
-      // Animate falling
       const animation = Animated.parallel([
         Animated.timing(item.y, {
           toValue: screenHeight + 100,
-          duration: 3000 + Math.random() * 2000,
+          duration: 2500 + Math.random() * 2000,
           useNativeDriver: true,
         }),
         Animated.loop(
           Animated.timing(item.rotation, {
             toValue: 1,
-            duration: 1000,
+            duration: 1200,
             useNativeDriver: true,
           }),
         ),
@@ -194,36 +200,12 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
     });
   };
 
-  const getTierColor = (tier: string) => {
-    const tierColors = {
-      bronze: "#CD7F32",
-      silver: "#C0C0C0",
-      gold: colors.gold,
-      platinum: "#E5E4E2",
-      diamond: "#B9F2FF",
-      legendary: colors.errorLight,
-    };
-    return tierColors[tier as keyof typeof tierColors] || "#CD7F32";
-  };
-
-  const getTierGradient = (tier: string): [string, string] => {
-    const gradients: Record<string, [string, string]> = {
-      bronze: ["#CD8032", "#A0522D"],
-      silver: ["#C0C0C0", "#808080"],
-      gold: ["#FFD700", "#DAA520"],
-      platinum: ["#E5E4E2", "#A9A9A9"],
-      diamond: ["#B9F2FF", "#00BCD4"],
-      legendary: ["#FF6B6B", "#CC3333"],
-    };
-    return gradients[tier as keyof typeof gradients] || ["#CD8032", "#A0522D"];
-  };
-
   if (!visible || !achievement) {
     return null;
   }
 
-  const tierColor = getTierColor(achievement.tier);
-  const tierGradient = getTierGradient(achievement.tier);
+  const tierColor = tierColorMap[achievement.tier] ?? chart[1];
+  const tierGradient = tierGradientMap[achievement.tier] ?? [chart[1], chart[1]];
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
@@ -236,9 +218,8 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       animationType="none"
       onRequestClose={handleClose}
     >
-      {/* Overlay */}
       <View style={styles.overlay}>
-        {/* Confetti */}
+        {/* Confetti particle burst */}
         {confetti.map((item, index) => (
           <Animated.View
             key={index}
@@ -248,12 +229,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
             style={[
               styles.confetti,
               {
-                backgroundColor:
-                  index % 3 === 0
-                    ? colors.gold
-                    : index % 3 === 1
-                      ? colors.errorLight
-                      : colors.info,
+                backgroundColor: item.color,
                 transform: [
                   { translateX: item.x },
                   { translateY: item.y },
@@ -284,13 +260,13 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
             style={[
               styles.achievementCard,
               {
-                backgroundColor: tierColor,
+                backgroundColor: surface[2],
                 transform: [{ scale: scaleAnim }, { scale: pulseAnim }],
               },
             ]}
           >
-            {/* Achievement Icon */}
-            <View style={styles.iconContainer}>
+            {/* Tier gradient hero ring */}
+            <View style={[styles.heroRing, { borderColor: tierColor }]}>
               <Animated.Text
                 style={[
                   styles.achievementIcon,
@@ -301,18 +277,18 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
               >
                 {achievement.icon}
               </Animated.Text>
+            </View>
 
-              {/* Tier Badge */}
-              <View
-                style={[
-                  styles.tierBadge,
-                  { backgroundColor: hexToRgba(tierColor, TINT_ALPHA_MEDIUM + 0.1) },
-                ]}
-              >
-                <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
-                  {achievement.tier} Achievement
-                </Text>
-              </View>
+            {/* Tier Badge */}
+            <View
+              style={[
+                styles.tierBadge,
+                { backgroundColor: hexToRgba(tierColor, 0.18) },
+              ]}
+            >
+              <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
+                {achievement.tier} Achievement
+              </Text>
             </View>
 
             {/* Achievement Details */}
@@ -321,7 +297,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
                 Achievement Unlocked!
               </Text>
 
-              <Text style={styles.titleText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{achievement.title}</Text>
+              <Text style={styles.titleText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+                {achievement.title}
+              </Text>
 
               <Text style={styles.descriptionText} numberOfLines={4}>
                 {achievement.description}
@@ -339,7 +317,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
             <AnimatedPressable
               onPress={handleClose}
               scaleValue={0.95}
-              style={styles.closeButton}
+              style={[styles.closeButton, { backgroundColor: tierColor }]}
               accessibilityRole="button"
               accessibilityLabel="Dismiss celebration"
               accessibilityHint="Closes the achievement celebration"
@@ -362,114 +340,115 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: colors.overlayDark,
+    backgroundColor: "rgba(0,0,0,0.75)",
   },
   confetti: {
     position: "absolute",
-    width: rp(12),
-    height: rp(12),
-    borderRadius: rbr(6),
+    width: rp(10),
+    height: rp(10),
+    borderRadius: rp(5),
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: rp(32),
+    paddingHorizontal: spacing.xl,
   },
   achievementCard: {
-    borderRadius: rbr(24),
-    padding: rp(32),
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    boxShadow: '0px 10px 20px rgba(0, 0, 0, 0.3)',
-    elevation: 10,
+    borderRadius: 24,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
     maxWidth: rp(320),
     width: "100%",
   },
-  iconContainer: {
+  heroRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 3,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: rp(24),
+    alignSelf: "center",
+    marginBottom: spacing.md,
   },
   achievementIcon: {
-    fontSize: rf(96),
-    marginBottom: rp(8),
+    fontSize: rf(48),
   },
   tierBadge: {
-    paddingHorizontal: rp(16),
-    paddingVertical: rp(8),
-    borderRadius: rbr(20),
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: spacing.md,
   },
   tierText: {
-    fontSize: rf(14),
-    fontWeight: "bold",
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(12),
     textTransform: "capitalize",
   },
   detailsContainer: {
     alignItems: "center",
-    marginBottom: rp(24),
+    marginBottom: spacing.md,
   },
   celebrationText: {
+    fontFamily: "Manrope_800ExtraBold",
     fontSize: rf(24),
-    fontWeight: "bold",
-    color: colors.white,
+    color: colors.text.primary,
     textAlign: "center",
-    marginBottom: rp(8),
+    marginBottom: spacing.xs,
   },
   titleText: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(20),
-    fontWeight: "bold",
-    color: colors.white,
+    color: colors.text.primary,
     textAlign: "center",
-    marginBottom: rp(8),
+    marginBottom: spacing.xs,
   },
   descriptionText: {
-    fontSize: rf(16),
-    color: "rgba(255, 255, 255, 0.9)",
+    ...typography.variants.body,
+    color: colors.text.secondary,
     textAlign: "center",
-    marginBottom: rp(16),
+    marginBottom: spacing.md,
   },
   rewardContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: rbr(12),
-    padding: rp(16),
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 12,
+    padding: spacing.md,
     width: "100%",
   },
   rewardText: {
-    color: colors.white,
-    fontWeight: "600",
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.primary,
     textAlign: "center",
   },
   closeButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: rbr(12),
-    minHeight: Math.max(rh(44), 44),
+    borderRadius: 12,
+    minHeight: 44,
     justifyContent: "center",
-    paddingVertical: rp(12),
-    paddingHorizontal: rp(24),
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     alignSelf: "center",
   },
   closeButtonText: {
-    color: colors.white,
-    fontWeight: "bold",
-    fontSize: rf(18),
+    fontFamily: "Manrope_700Bold",
+    color: colors.text.primary,
+    fontSize: rf(16),
   },
   swipeIndicatorContainer: {
     alignItems: "center",
-    marginTop: rp(16),
+    marginTop: spacing.md,
   },
   swipeIndicator: {
-    width: rp(32),
-    height: rp(4),
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    borderRadius: rbr(2),
+    width: 32,
+    height: 4,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 2,
   },
   swipeText: {
-    color: "rgba(255, 255, 255, 0.6)",
-    fontSize: rf(12),
-    marginTop: rp(8),
+    ...typography.variants.caption,
+    color: "rgba(255,255,255,0.5)",
+    marginTop: spacing.xs,
   },
 });
 

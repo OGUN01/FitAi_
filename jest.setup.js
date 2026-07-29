@@ -122,7 +122,9 @@ jest.mock("react-native-reanimated", () => {
     useSharedValue: (value) => ({ value }),
     useAnimatedStyle: (updater) => updater(),
     useAnimatedProps: (updater) => updater(),
+    useAnimatedReaction: (_dependant, _react) => {},
     useAnimatedGestureHandler: (handler) => handler,
+    useAnimatedScrollHandler: (handler) => (event) => handler?.onScroll?.(event),
     withSpring: (value) => value,
     withTiming: (value) => value,
     withDelay: (_delay, value) => value,
@@ -142,6 +144,9 @@ jest.mock("react-native-reanimated", () => {
     FadeInDown: createAnimation(),
     FadeInRight: createAnimation(),
     FadeInUp: createAnimation(),
+    ZoomIn: createAnimation(),
+    ZoomInDown: createAnimation(),
+    ZoomInRotate: createAnimation(),
   };
 });
 

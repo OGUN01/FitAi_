@@ -1,15 +1,37 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+/**
+ * S5 "Plan" — AdvancedReviewTab
+ *
+ * The payoff screen, re-skinned to the "Editorial Dark" language (no cards):
+ * metric rows (micro-label left, big Manrope value right) separated by
+ * hairlines under SectionLabels; the pace picker renders as OptionRow-style
+ * selectable rows with hairline-separated warning callouts; Complete Setup
+ * is the single solid-accent CTA (via ScreenScaffold).
+ *
+ * On "Complete Setup": a volt-glow reveal washes over the screen + a larger
+ * SkiaBloom (24 particles) fires, then the flow bridges into Home.
+ *
+ * Data wiring, hooks, validation, props — UNCHANGED. Presentation only.
+ */
 
-import { View, StyleSheet, ScrollView, Text, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
+
+import { View, StyleSheet, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rh } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, shadows } from "../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../utils/colors";
+import { LinearGradient } from "expo-linear-gradient";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { HeroSection, AnimatedPressable } from "../../../components/ui/aurora";
-import { gradients } from "../../../theme/gradients";
+import {
+  ScreenScaffold,
+  Rule,
+  tokens,
+} from "../../../components/onboarding/fresh";
+import { SkiaBloom } from "../../../components/onboarding/aurora/SkiaBloom";
 import {
   PersonalInfoData,
   DietPreferencesData,
@@ -60,8 +82,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   isComplete,
   isLoading = false,
 }) => {
-  const insets = useSafeAreaInsets();
-
   const {
     calculatedData,
     validationResults,
@@ -86,9 +106,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   });
 
   // Session-scoped card ID: set on every explicit user tap, cleared on unmount.
-  // This is the primary SSOT for highlighted card — no fuzzy rate matching needed
-  // within a session. Survives re-renders but not tab switches (by design: if the
-  // user goes back to Tab 3 and changes data, old card IDs are stale anyway).
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   const handleSelectAlternative = useCallback((alt: SmartAlternative) => {
@@ -96,18 +113,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     handleRateSelection(alt);
   }, [handleRateSelection]);
 
-  // selectedAlternativeId:
-  //   1. Use session-scoped selectedCardId if the user has tapped a card this session
-  //      → 100% unambiguous (no rate collision possible)
-  //   2. Fall back to min-distance rate match for restored state (tab switch / reload)
-  //      → min-distance is correct for all current cards; only identical-rate ties
-  //        remain ambiguous, but those cards are functionally equivalent anyway
   const selectedAlternativeId = useMemo(() => {
-    // Primary: exact card ID from this session's tap
     if (selectedCardId && smartAlternatives?.alternatives?.some(a => a.id === selectedCardId)) {
       return selectedCardId;
     }
-    // Fallback: minimum-distance rate match
     const goal = workoutPreferences?.weekly_weight_loss_goal;
     if (!goal || !smartAlternatives?.alternatives?.length) return null;
     let bestMatch: SmartAlternative | null = null;
@@ -123,18 +132,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   }, [selectedCardId, workoutPreferences?.weekly_weight_loss_goal, smartAlternatives]);
 
   // Auto-surface the AdjustmentWizard whenever validation produces blocking errors.
-  // Without this, the "Complete Setup" button stays disabled (errors.length > 0) but
-  // the wizard never appears (showErrorWizard is initialized false and only toggled
-  // by other paths), leaving the user stuck with no way to resolve the error.
   useEffect(() => {
     if (validationResults && validationResults.errors.length > 0) {
       setShowErrorWizard(true);
     }
   }, [validationResults, setShowErrorWizard]);
 
-  // Single source of truth for the Complete Setup button's disabled state.
-  // Previously this expression was duplicated across the style + disabled props,
-  // risking drift if one was updated but not the other.
   const hasBlockingWarnings =
     (validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged;
   const hasBlockingErrors = (validationResults?.errors?.length ?? 0) > 0;
@@ -145,33 +148,64 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     hasBlockingWarnings ||
     hasBlockingErrors;
 
+  // ── Payoff reveal state ──
+  // On "Complete Setup": wash a volt glow over the screen, fire a larger
+  // SkiaBloom (24 particles), then bridge into Home via onComplete.
+  const [revealTrigger, setRevealTrigger] = useState(false);
+  const [bloomTrigger, setBloomTrigger] = useState(false);
+  const revealOpacity = useSharedValue(0);
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bloomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    revealOpacity.value = revealTrigger
+      ? withTiming(1, { duration: 800, easing: Easing.bezier(0.4, 0, 0.2, 1) })
+      : withTiming(0, { duration: 300 });
+  }, [revealTrigger, revealOpacity]);
+
+  const revealGradientStyle = useAnimatedStyle(() => ({
+    opacity: revealOpacity.value,
+  }));
+
+  const handleComplete = useCallback(() => {
+    if (isCompleteDisabled) return;
+    // Fire the glow reveal + larger bloom.
+    setRevealTrigger(true);
+    setBloomTrigger(false);
+    requestAnimationFrame(() => setBloomTrigger(true));
+    if (bloomTimer.current) clearTimeout(bloomTimer.current);
+    bloomTimer.current = setTimeout(() => setBloomTrigger(false), 900);
+    // Bridge into Home after the reveal plays.
+    if (revealTimer.current) clearTimeout(revealTimer.current);
+    revealTimer.current = setTimeout(() => {
+      onComplete();
+    }, 700);
+  }, [isCompleteDisabled, onComplete]);
+
+  useEffect(() => {
+    return () => {
+      if (revealTimer.current) clearTimeout(revealTimer.current);
+      if (bloomTimer.current) clearTimeout(bloomTimer.current);
+    };
+  }, []);
+
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: rp(80) + insets.bottom }]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <ScreenScaffold
+        question="Your Plan"
+        subtext="Everything you told us, turned into a plan. Tap any number to adjust its source."
+        onBack={onBack}
+        onNext={handleComplete}
+        nextLabel={isLoading || isCalculating ? "Processing..." : "Complete Setup"}
+        nextDisabled={isCompleteDisabled}
       >
-        <HeroSection
-          image={{
-            uri: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1200&q=80",
-          }}
-          overlayGradient={gradients.overlay.dark}
-        >
-          <Text style={styles.heroTitle} numberOfLines={2}>Review Your Plan</Text>
-          <Text style={styles.heroSubtitle} numberOfLines={2}>
-            We've analyzed your data to create a personalized plan.
-          </Text>
-        </HeroSection>
-
         {calculationError && (
-          <GlassCard style={styles.errorCard}>
-            <Ionicons
-              name="alert-circle"
-              size={24}
-              color={colors.error}
-            />
-            <Text style={styles.errorText}>{calculationError}</Text>
+          <View style={styles.callout}>
+            <Rule />
+            <View style={styles.calloutRow}>
+              <Ionicons name="alert-circle" size={18} color={tokens.danger} />
+              <Text style={styles.calloutTextDanger}>{calculationError}</Text>
+            </View>
             <Pressable
               onPress={() => performCalculations()}
               style={styles.retryButton}
@@ -181,20 +215,24 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             >
               <Text style={styles.retryText}>Retry</Text>
             </Pressable>
-          </GlassCard>
+            <Rule />
+          </View>
         )}
 
         {successMessage && (
-          <GlassCard style={styles.successCard} padding="md" borderRadius="lg">
-            <Ionicons
-              name="checkmark-circle"
-              size={24}
-              color={colors.success}
-            />
-            <Text style={styles.successText}>{successMessage}</Text>
-          </GlassCard>
+          <View style={styles.callout}>
+            <Rule />
+            <View style={styles.calloutRow}>
+              <Ionicons name="checkmark-circle" size={18} color={tokens.accent} />
+              <Text style={styles.calloutText}>{successMessage}</Text>
+            </View>
+            <Rule />
+          </View>
         )}
 
+        {/* Reveal narrative (destination → plan → proof), staggered as one
+            cascade: inputs → the goal → your daily fuel → the math underneath.
+            Each section offsets its internal row stagger by enterDelay. */}
         <DataSummarySection
           personalInfo={personalInfo}
           dietPreferences={dietPreferences}
@@ -202,23 +240,40 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           workoutPreferences={workoutPreferences}
           calculatedData={calculatedData}
           onNavigateToTab={onNavigateToTab}
+          enterDelay={0}
         />
 
-        <MetabolicProfileSection calculatedData={calculatedData} />
-
-        <NutritionalNeedsSection calculatedData={calculatedData} />
-
+        {/* Destination — locked goal hero + anticipation line */}
         <WeightManagementSection
           calculatedData={calculatedData}
           bodyAnalysis={bodyAnalysis}
           onNavigateToTab={onNavigateToTab}
+          enterDelay={140}
+        />
+
+        {/* The plan — calorie hero + macro system */}
+        <NutritionalNeedsSection
+          calculatedData={calculatedData}
+          onNavigateToTab={onNavigateToTab}
+          enterDelay={300}
+        />
+
+        {/* The proof — BMR/TDEE/metabolic age, quiet trust layer */}
+        <MetabolicProfileSection
+          calculatedData={calculatedData}
+          onNavigateToTab={onNavigateToTab}
+          personalInfoAge={personalInfo?.age ?? null}
+          enterDelay={460}
         />
 
         {!isCalculating && (
           (validationResults && validationResults.warnings.length > 0) ||
           smartAlternatives?.showRateComparison
         ) && (
-          <View style={{ paddingHorizontal: rp(20), marginTop: rp(16) }}>
+          <Animated.View
+            style={styles.warningWrap}
+            entering={FadeInDown.duration(300).delay(600)}
+          >
             <WarningCard
               warnings={validationResults?.warnings ?? []}
               onAcknowledgmentChange={(acknowledged) => {
@@ -228,47 +283,36 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               selectedAlternativeId={selectedAlternativeId}
               onSelectAlternative={handleSelectAlternative}
             />
-          </View>
+          </Animated.View>
         )}
+      </ScreenScaffold>
 
-        <View style={{ height: rh(80) }} />
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <AnimatedPressable
-          style={styles.backButtonCompact}
-          onPress={onBack}
-          scaleValue={0.96}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back to previous step"
-        >
-          <Ionicons name="chevron-back" size={rf(18)} color={colors.text} />
-          <Text style={styles.backButtonText}>Back</Text>
-        </AnimatedPressable>
-        <AnimatedPressable
-          style={[
-            styles.completeButtonCompact,
-            {
-              backgroundColor: isCompleteDisabled ? colors.textMuted : colors.primary,
-              opacity: isCompleteDisabled ? 0.5 : 1,
-            },
+      {/* Volt payoff reveal — a screen-wide accent glow that washes in on
+          "Complete Setup" before bridging into Home. Sits above all content
+          and never intercepts touches. */}
+      <Animated.View
+        style={[styles.revealLayer, revealGradientStyle]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={[
+            "rgba(255,107,53,0.22)",
+            "rgba(255,107,53,0.06)",
+            "rgba(255,107,53,0)",
           ]}
-          onPress={onComplete}
-          disabled={isCompleteDisabled}
-          scaleValue={0.96}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          accessibilityRole="button"
-          accessibilityLabel="Complete setup"
-          accessibilityHint="Complete all required sections to enable"
-          accessibilityState={{ disabled: isCompleteDisabled }}
-        >
-          <Text style={styles.completeButtonText}>
-            {isLoading || isCalculating ? 'Processing...' : 'Complete Setup'}
-          </Text>
-          <Ionicons name="checkmark-circle" size={rf(18)} color={colors.white} />
-        </AnimatedPressable>
-      </View>
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+
+      {/* Larger SkiaBloom (24 particles) for the payoff reveal — centered. */}
+      <SkiaBloom
+        trigger={bloomTrigger}
+        color={tokens.accent}
+        count={24}
+        style={styles.payoffBloom}
+      />
 
       {showErrorWizard &&
         validationResults &&
@@ -297,8 +341,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               if (smartAlt) {
                 handleSelectAlternative(smartAlt);
               } else {
-                // BUG-45: Wire ALL wizard Alternative fields into the SmartAlternative
-                // so handleRateSelection can properly sync exercise params downstream.
                 const hasExercise = !!alt.newWorkoutFrequency;
                 handleSelectAlternative({
                   id: "custom-" + alt.name,
@@ -326,7 +368,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             }}
           />
         )}
-
     </View>
   );
 };
@@ -334,117 +375,54 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: tokens.bg,
   },
-  scrollContent: {
+  callout: {
+    marginBottom: 24,
   },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: hexToRgba(colors.white, 0.06),
-    ...shadows.level3,
-  },
-  backButtonCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 52,
-  },
-  backButtonText: {
-    color: colors.text,
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    lineHeight: rf(18),
-  },
-  completeButtonCompact: {
-    flex: 1,
-    marginLeft: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
-    minHeight: 52,
-  },
-  completeButtonText: {
-    color: colors.white,
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-  },
-  successCard: {
-    margin: rp(20),
+  calloutRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(12),
-    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.success, TINT_ALPHA_MEDIUM),
+    gap: 10,
+    paddingVertical: 14,
   },
-  successText: {
+  calloutText: {
     flex: 1,
-    fontSize: fontSize.sm,
-    color: colors.text,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.ink,
   },
-  heroTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.white,
-    marginBottom: rp(8),
-    textAlign: "center",
-    letterSpacing: -0.5,
-  },
-  heroSubtitle: {
-    fontSize: fontSize.md,
-    color: hexToRgba(colors.white, 0.85),
-    textAlign: "center",
-    marginBottom: rp(20),
-    lineHeight: fontSize.md * 1.5,
-  },
-  errorCard: {
-    margin: rp(20),
-    backgroundColor: hexToRgba(colors.error, 0.1),
-    borderColor: hexToRgba(colors.error, 0.3),
-    borderWidth: 1,
-    padding: rp(16),
-    alignItems: "center",
-    gap: rp(12),
-  },
-  errorText: {
+  calloutTextDanger: {
     flex: 1,
-    color: colors.error,
-    fontSize: fontSize.sm,
-    textAlign: "center",
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.danger,
   },
   retryButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.error,
+    alignSelf: "flex-start",
+    paddingVertical: 10,
+    paddingRight: 12,
+    marginBottom: 6,
     minHeight: 44,
     justifyContent: "center",
   },
   retryText: {
-    color: colors.error,
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 14,
+    color: tokens.accent,
+  },
+  warningWrap: {
+    marginTop: 36,
+  },
+  revealLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 40,
+  },
+  payoffBloom: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 50,
   },
 });
 

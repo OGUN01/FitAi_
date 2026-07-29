@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { DashboardSkeleton } from '../../components/ui/aurora/DashboardSkeleton';
 import { colors } from '../../theme/aurora-tokens';
@@ -43,8 +43,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
     statsError,
     isAuthenticated,
     hasCalculatedMetrics,
-    fadeAnim,
-    slideAnim,
     trackBStatus,
     progressEntries,
     progressStats,
@@ -59,12 +57,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
   const { onRefresh, setShowWeightModal, handleShareProgress } = actions;
 
   const combinedError = progressError || analysisError || statsError;
-
-  // Reanimated entrance animation — shared values from useProgressScreen.
-  const entranceStyle = useAnimatedStyle(() => ({
-    opacity: fadeAnim.value,
-    transform: [{ translateY: slideAnim.value }],
-  }));
 
   if (isLoading) {
     return (
@@ -86,7 +78,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
     <>
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <View style={[styles.container, { paddingTop: insets.top }]}>
-          <Animated.View style={[{ flex: 1 }, entranceStyle]}>
+          <Animated.View entering={FadeInDown.duration(400).delay(80)} style={{ flex: 1 }}>
             <ScrollView
               style={styles.scrollView}
               contentContainerStyle={{ paddingBottom: rh(120) }}

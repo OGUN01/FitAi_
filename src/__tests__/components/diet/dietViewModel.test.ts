@@ -20,7 +20,49 @@ describe("dietViewModel", () => {
     [100, "completed"],
     [120, "completed"],
   ])("maps %s progress to %s", (progress, status) => {
+    // No scheduled time / no selected date → pure progress mapping (progress 0
+    // stays "upcoming" so the legacy signature stays backward-compatible).
     expect(getMealPlanStatus(progress)).toBe(status);
+  });
+
+  it("marks an unlogged meal in_progress once its scheduled time has passed", () => {
+    // 10:00 AM scheduled; "now" is 9:59 AM → upcoming, 10:00 AM → in_progress.
+    const before = new Date("2026-07-28T09:59:00");
+    const after = new Date("2026-07-28T10:01:00");
+    expect(getMealPlanStatus(0, "10:00 AM", "2026-07-28", before)).toBe(
+      "upcoming"
+    );
+    expect(getMealPlanStatus(0, "10:00 AM", "2026-07-28", after)).toBe(
+      "in_progress"
+    );
+  });
+
+  it("treats all unlogged meals on a past day as in_progress (overdue)", () => {
+    const anyTime = new Date("2026-07-29T08:00:00"); // "now" = next day
+    expect(getMealPlanStatus(0, "8:00 PM", "2026-07-28", anyTime)).toBe(
+      "in_progress"
+    );
+  });
+
+  it("treats all meals on a future day as upcoming even after their time", () => {
+    // Tomorrow's 8 AM breakfast, "now" today at 10 AM (past the slot) — still
+    // upcoming because the day hasn't arrived.
+    const now = new Date("2026-07-28T10:00:00");
+    expect(getMealPlanStatus(0, "8:00 AM", "2026-07-29", now)).toBe("upcoming");
+  });
+
+  it("falls back to upcoming when the scheduled time is unparseable", () => {
+    // Pass `now` on the same day so the day-comparison reads "today" and the
+    // unparseable time falls through to the upcoming default (not auto-overdue).
+    const now = new Date("2026-07-28T08:00:00");
+    expect(getMealPlanStatus(0, "whenever", "2026-07-28", now)).toBe("upcoming");
+  });
+
+  it("parses 24-hour scheduled times too", () => {
+    const after = new Date("2026-07-28T15:00:00");
+    expect(getMealPlanStatus(0, "14:30", "2026-07-28", after)).toBe(
+      "in_progress"
+    );
   });
 
   it("uses the matching meal time and the afternoon snack fallback", () => {

@@ -1,16 +1,26 @@
 /**
  * Meal Image Resolver — unit tests
  *
- * Tests the Wikimedia Commons lookup + KV cache logic.
- * Uses a mock KV namespace and real Wikimedia API calls (network required).
- * Failures (no network, no match) must be non-fatal → return undefined.
+ * Tests the 4-tier cascade (registry → Wikipedia pageimages → Wikipedia
+ * article images → Commons search → gradient) and the KV cache.
+ *
+ * - Canonicalization + registry tests are deterministic (no network).
+ * - Live-tier tests use real Wikimedia/Wikipedia calls (network required);
+ *   they assert the *shape* of the result (or undefined) so they pass
+ *   gracefully when the network is unavailable.
+ * - Mocked-fetch tests pin the tier behavior without network.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { resolveMealImage, resolveMealImages } from './mealImageResolver';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import {
+	resolveMealImage,
+	resolveMealImages,
+	canonicalizeDishName,
+} from './mealImageResolver';
+import { DISH_IMAGE_REGISTRY } from './dishImageRegistry';
 import type { Env } from './types';
 
-/** Minimal mock KV namespace that behaves like Cloudflare KV */
+/** Minimal mock KV namespace that behaves like Cloudflare KV. */
 function mockKV(): KVNamespace {
 	const store = new Map<string, string>();
 	return {
@@ -28,56 +38,190 @@ function mockEnv(): Env {
 	return { MEAL_CACHE: mockKV() } as unknown as Env;
 }
 
-describe('resolveMealImage', () => {
-	it('resolves a well-known dish to an image URL', async () => {
+describe('canonicalizeDishName', () => {
+	it('strips trailing accompaniments and leading dietary modifiers', () => {
+		expect(canonicalizeDishName('Low-Fat Curd with Roasted Cumin')).toBe('curd');
+		expect(canonicalizeDishName('Curd with Roasted Cumin')).toBe('curd');
+		expect(canonicalizeDishName('Moong Dal Khichdi with Curd')).toBe('moong dal khichdi');
+		expect(canonicalizeDishName('Soy Chunk Masala with Roti')).toBe('soy chunk masala');
+		expect(canonicalizeDishName('High-Protein Dal and Roti')).toBe('dal');
+		expect(canonicalizeDishName('Sugar-Free Kheer with Almonds')).toBe('kheer');
+	});
+
+	it('keeps culinary-prep words that are part of the dish name', () => {
+		expect(canonicalizeDishName('Masala Dosa')).toBe('masala dosa');
+		expect(canonicalizeDishName('Rajma Curry')).toBe('rajma curry');
+		expect(canonicalizeDishName('Chana Masala')).toBe('chana masala');
+	});
+
+	it('does NOT drop the last word (the airplane bug)', () => {
+		// Previously "Low Fat Curd" → "Low Fat" → matched an airplane photo.
+		expect(canonicalizeDishName('Low Fat Curd')).toBe('curd');
+		// Never produces a modifiers-only result.
+		expect(canonicalizeDishName('Low Fat')).toBe('low fat');
+	});
+
+	it('handles empty / whitespace / hyphenated input', () => {
+		expect(canonicalizeDishName('')).toBe('');
+		expect(canonicalizeDishName('   ')).toBe('');
+		expect(canonicalizeDishName('  mixed-veg  pulao  ')).toBe('mixed veg pulao');
+	});
+});
+
+describe('resolveMealImage — Tier 1 (registry, no network)', () => {
+	it('returns the registry URL for a known dish without touching the network', async () => {
 		const env = mockEnv();
-		const url = await resolveMealImage('Paneer Tikka', env);
+		const dish = 'Low-Fat Curd with Roasted Cumin'; // canonical → "curd"
+		const expected = DISH_IMAGE_REGISTRY['curd'];
+		expect(expected).toBeTruthy();
 
-		// Should return a real Wikimedia URL (or undefined if network is down)
-		if (url) {
-			expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//);
-		}
-	}, 15000);
+		// Track fetch — it must NOT be called for a registry hit.
+		const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
-	it('caches the result in KV on first lookup', async () => {
+		const url = await resolveMealImage(dish, env);
+
+		expect(url).toBe(expected);
+		expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//);
+		expect(fetchSpy).not.toHaveBeenCalled();
+		// Cached at the canonical key.
+		expect(env.MEAL_CACHE.put).toHaveBeenCalledWith(
+			'mealimg:canon:curd',
+			expected,
+			expect.any(Object),
+		);
+		fetchSpy.mockRestore();
+	});
+
+	it('collapses variants of the same dish to one canonical cache key', async () => {
 		const env = mockEnv();
-		await resolveMealImage('Masala Dosa', env);
+		await resolveMealImage('Low-Fat Curd with Roasted Cumin', env);
+		await resolveMealImage('Curd with Roasted Cumin', env);
+		await resolveMealImage('Curd', env);
 
-		// KV.put should have been called (cache write)
-		expect(env.MEAL_CACHE.put).toHaveBeenCalled();
-		const putCall = (env.MEAL_CACHE.put as any).mock.calls[0];
-		expect(putCall[0]).toBe('mealimg:masala dosa');
-	}, 15000);
+		const putCalls = (env.MEAL_CACHE.put as any).mock.calls.map((c: any[]) => c[0]);
+		// Every variant wrote the SAME canonical key.
+		expect(putCalls.every((k: string) => k === 'mealimg:canon:curd')).toBe(true);
+	});
+});
 
-	it('returns cached value on second lookup without hitting the network', async () => {
+describe('resolveMealImage — airplane case (must NOT return a wrong photo)', () => {
+	// "Low Fat" alone (modifiers-only) has no content tokens, so Tier 4 is
+	// skipped and no upstream returns a wrong bitmap. The result is the
+	// registry/Wikipedia answer for "curd" (via canonicalization) or
+	// undefined — never an airplane URL.
+	it('never returns the airplane URL for a curd dish', async () => {
 		const env = mockEnv();
-		// First lookup — populates cache
-		const firstUrl = await resolveMealImage('Bibimbap', env);
-		// Second lookup — should read from cache
-		const secondUrl = await resolveMealImage('Bibimbap', env);
+		const url = await resolveMealImage('Low-Fat Curd with Roasted Cumin', env);
+		expect(url).not.toContain('Fat_Albert');
+		expect(url).not.toMatch(/low_level_pass/);
+	});
+});
 
-		// Both should be the same (either both the URL or both undefined)
-		expect(secondUrl).toBe(firstUrl);
-		// KV.get called twice (first: miss, second: hit)
-		expect(env.MEAL_CACHE.get).toHaveBeenCalledTimes(2);
-	}, 15000);
-
-	it('returns undefined for an empty/null dish name', async () => {
+describe('resolveMealImage — empty / null', () => {
+	it('returns undefined and skips KV for empty/whitespace names', async () => {
 		const env = mockEnv();
 		expect(await resolveMealImage('', env)).toBeUndefined();
 		expect(await resolveMealImage('   ', env)).toBeUndefined();
-		// Should not have touched KV at all
 		expect(env.MEAL_CACHE.get).not.toHaveBeenCalled();
 	});
+});
 
-	it('returns undefined (graceful) for a nonsensical dish name', async () => {
+describe('resolveMealImage — live tiers (network; graceful without network)', () => {
+	it('resolves a well-known dish to a Wikimedia URL (or undefined offline)', async () => {
 		const env = mockEnv();
-		const url = await resolveMealImage('Xyzzy Zzz Nonexistent Fake Dish 999', env);
-		expect(url).toBeUndefined();
-		// Should negative-cache the miss (empty string stored)
+		const url = await resolveMealImage('Paneer Tikka', env);
+		if (url) {
+			expect(url).toMatch(/^https:\/\/upload\.wikimedia\.org\//);
+		}
+	}, 20000);
+
+	it('returns cached value on second lookup without a fresh network round-trip', async () => {
+		const env = mockEnv();
+		const first = await resolveMealImage('Bibimbap', env);
+		const second = await resolveMealImage('Bibimbap', env);
+		expect(second).toBe(first);
+		expect(env.MEAL_CACHE.get).toHaveBeenCalledTimes(2);
+	}, 20000);
+
+	it('negative-caches a miss as an empty string', async () => {
+		const env = mockEnv();
+		await resolveMealImage('Xyzzy Zzz Nonexistent Fake Dish 999', env);
 		const putCall = (env.MEAL_CACHE.put as any).mock.calls[0];
 		expect(putCall[1]).toBe('');
-	}, 15000);
+	}, 20000);
+});
+
+describe('resolveMealImage — mocked fetch (pins tier behavior)', () => {
+	let fetchSpy: ReturnType<typeof vi.spyOn<any, any>>;
+
+	afterEach(() => {
+		fetchSpy?.mockRestore();
+	});
+
+	it('Tier 2: uses the Wikipedia pageimage when the dish is not in the registry', async () => {
+		const env = mockEnv();
+		// "Khichdi" IS in the registry, so use a dish that canonicalizes to
+		// something NOT in the registry but with a Wikipedia article. "Dal Makhani"
+		// → "dal makhani" (not a registry key). Mock enwiki to return a thumb.
+		fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+			const url = String(input);
+			if (url.startsWith('https://en.wikipedia.org/') && url.includes('pageimages')) {
+				return new Response(
+					JSON.stringify({
+						query: {
+							pages: [
+								{
+									title: 'Dal makhani',
+									thumbnail: { source: 'https://upload.wikimedia.org/thumb/dal-makhani.jpg' },
+								},
+							],
+						},
+					}),
+					{ status: 200 },
+				);
+			}
+			return new Response(JSON.stringify({ query: { pages: [] } }), { status: 200 });
+		});
+
+		const url = await resolveMealImage('Dal Makhani with Butter', env);
+		expect(url).toBe('https://upload.wikimedia.org/thumb/dal-makhani.jpg');
+	}, 20000);
+
+	it('Tier 4: rejects a Commons result whose title has no shared food token', async () => {
+		const env = mockEnv();
+		// A dish not in the registry and with no Wikipedia pageimage/article
+		// so the cascade reaches Tier 4. "Spiced Pumpkin Curry" → "spiced pumpkin curry".
+		fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input: any) => {
+			const url = String(input);
+			if (url.startsWith('https://en.wikipedia.org/')) {
+				// No page / no images on the article.
+				return new Response(JSON.stringify({ query: { pages: [{ missing: true }] } }), {
+					status: 200,
+				});
+			}
+			if (url.startsWith('https://commons.wikimedia.org/') && url.includes('generator=search')) {
+				// First result is an UNRELATED bitmap (no "pumpkin"/"curry" token).
+				return new Response(
+					JSON.stringify({
+						query: {
+							pages: [
+								{
+									title: 'File:Some Airplane.jpg',
+									imageinfo: [{ thumburl: 'https://upload.wikimedia.org/airplane.jpg' }],
+								},
+							],
+						},
+					}),
+					{ status: 200 },
+				);
+			}
+			return new Response(JSON.stringify({ query: { pages: [] } }), { status: 200 });
+		});
+
+		const url = await resolveMealImage('Spiced Pumpkin Curry', env);
+		// Unrelated result rejected → undefined (gradient fallback).
+		expect(url).toBeUndefined();
+	}, 20000);
 });
 
 describe('resolveMealImages', () => {
@@ -91,13 +235,12 @@ describe('resolveMealImages', () => {
 
 		await resolveMealImages(meals, env);
 
-		// Real dishes should have a URL (if network available); fake one should not
 		if (meals[0].imageUrl) {
 			expect(meals[0].imageUrl).toMatch(/^https:\/\//);
 		}
-		// The fake dish must not have an imageUrl (graceful degradation)
+		// The fake dish must not have an imageUrl (graceful degradation).
 		expect(meals[2].imageUrl).toBeUndefined();
-	}, 20000);
+	}, 25000);
 
 	it('deduplicates by dish name (does not resolve the same name twice)', async () => {
 		const env = mockEnv();
@@ -109,11 +252,10 @@ describe('resolveMealImages', () => {
 
 		await resolveMealImages(meals, env);
 
-		// All three should have the same imageUrl (or all undefined)
 		const urls = meals.map((m: any) => m.imageUrl);
 		expect(urls[0]).toBe(urls[1]);
 		expect(urls[1]).toBe(urls[2]);
-	}, 15000);
+	}, 20000);
 
 	it('handles empty array gracefully', async () => {
 		const env = mockEnv();

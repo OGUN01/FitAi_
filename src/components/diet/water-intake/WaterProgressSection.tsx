@@ -1,10 +1,10 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { flatColors as colors } from '../../../theme/aurora-tokens';
+import { rf, rp, rbr } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 
 interface WaterProgressSectionProps {
   currentLiters: number;
@@ -24,7 +24,8 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
       <View style={styles.progressInfo}>
         <Text style={styles.progressLabel}>Today's Progress</Text>
         <Text style={styles.progressValue}>
-          {currentLiters.toFixed(1)}L / {goalLiters.toFixed(1)}L
+          {currentLiters.toFixed(1)}
+          <Text style={styles.progressGoal}> / {goalLiters.toFixed(1)}L</Text>
         </Text>
       </View>
       <View style={styles.progressBar}>
@@ -32,7 +33,7 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
           colors={
             isGoalReached
               ? [colors.successAlt, colors.successAltDark]
-              : [colors.primary, colors.primaryLight]
+              : [colors.secondary, colors.primary]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -54,39 +55,47 @@ const styles = StyleSheet.create({
     marginBottom: rp(24),
   },
   progressInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: rp(8),
   },
   progressLabel: {
-    fontSize: rf(14),
+    fontSize: rf(11),
+    fontWeight: '600',
     color: hexToRgba(colors.white, 0.7),
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   progressValue: {
-    fontSize: rf(16),
-    fontWeight: "600",
+    fontSize: rf(22),
+    fontWeight: '700',
     color: colors.white,
   },
+  progressGoal: {
+    fontSize: rf(13),
+    fontWeight: '500',
+    color: hexToRgba(colors.white, 0.6),
+  },
   progressBar: {
-    height: rp(8),
+    height: rp(12),
     backgroundColor: colors.glassHighlight,
-    borderRadius: rbr(4),
-    overflow: "hidden",
+    borderRadius: rbr(6),
+    overflow: 'hidden',
   },
   progressFill: {
-    height: "100%",
-    borderRadius: rbr(4),
+    height: '100%',
+    borderRadius: rbr(6),
   },
   goalReachedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(6),
     marginTop: rp(8),
   },
   goalReachedText: {
     fontSize: rf(13),
     color: colors.successAlt,
-    fontWeight: "500",
+    fontWeight: '500',
   },
 });

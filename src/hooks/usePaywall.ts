@@ -62,15 +62,15 @@ const FALLBACK_PLANS: PlanConfig[] = [
     id: "fallback-pro-monthly",
     tier: "pro",
     name: "Pro Plan (Monthly)",
-    price_monthly: 599,
+    price_monthly: 499,
     billing_cycle: "monthly",
   },
   {
     id: "fallback-pro-yearly",
     tier: "pro",
     name: "Pro Plan (Yearly)",
-    // ₹4799/year ÷ 12 ≈ ₹400/mo effective (~33% savings vs ₹599/mo)
-    price_monthly: 400,
+    // ₹3999/year ÷ 12 ≈ ₹333/mo effective (~33% savings vs ₹499/mo)
+    price_monthly: 333,
     billing_cycle: "yearly",
   },
 ];
@@ -260,7 +260,7 @@ export const usePaywall = () => {
           "We couldn't load the subscription plans from the server. Please check your connection and try again.",
           [{ text: "OK" }],
         );
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
         return false;
       }
 
@@ -330,7 +330,6 @@ export const usePaywall = () => {
         "Your subscription is now active. Enjoy all premium features!",
         [{ text: "Get Started" }],
       );
-      if (isMountedRef.current) setIsLoading(false);
       return true;
     } catch (error) {
       if (isMountedRef.current) setIsLoading(false);

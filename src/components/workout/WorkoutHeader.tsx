@@ -1,24 +1,20 @@
 /**
- * FitAI — Workout Header (Aurora)
+ * FitAI — Workout Header (Aurora, 2026 session redesign)
  *
- * Thin glass header strip shown at the top of the active workout session.
- * Previously a flat surface with a text "X" exit button.
+ * Compact flat top strip for the immersive mid-workout screen. No boxed
+ * GlassCard chrome — a plain text row: [close] [exercise index "3 / 12"]
+ * [elapsed time], with a second plain muted line carrying the workout title,
+ * mesocycle week, calories and live session volume.
  *
- * Aurora modernization:
- *  - Flat surface → thin GlassCard strip.
- *  - Text "X" exit button → AnimatedPressable with Ionicons "close".
- *  - Hardcoded colors → aurora tokens.
- *  - Added live session volume + mesocycle-week pill (data passed in from the
- *    session screen, which reads fitnessStore.getMesocycleWeek() + derives
- *    volume from currentWorkoutSession).
+ * All props, handlers, haptics and accessibility labels are unchanged.
  */
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { GlassCard, AnimatedPressable } from "../ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rh, rw } from "../../utils/responsive";
-import { hexToRgba } from "../../utils/colors";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPressable } from '../ui/aurora';
+import { colors, spacing, typography } from '../../theme/aurora-tokens';
+import { rf, rp, rw, rbr } from '../../utils/responsive';
+import { hexToRgba } from '../../utils/colors';
 
 interface WorkoutHeaderProps {
   workoutTitle: string;
@@ -39,19 +35,21 @@ const formatSeconds = (totalSeconds: number): string => {
   const s = Math.max(0, Math.floor(totalSeconds));
   const m = Math.floor(s / 60);
   const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2, "0")}`;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 };
 
-const safeString = (value: any, fallback: string = ""): string => {
+const safeString = (value: any, fallback: string = ''): string => {
   if (value === null || value === undefined) return fallback;
-  if (typeof value === "number" && Number.isNaN(value)) return fallback;
-  if (typeof value === "string") return value;
+  if (typeof value === 'number' && Number.isNaN(value)) return fallback;
+  if (typeof value === 'string') return value;
   try {
     return String(value);
   } catch {
     return fallback;
   }
 };
+
+const BULLET = '  •  ';
 
 export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
   workoutTitle,
@@ -65,161 +63,106 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
   mesocycleWeek,
 }) => {
   return (
-    <GlassCard
-      elevation={2}
-      padding="none"
-      borderRadius="none"
-      style={{ ...styles.header, paddingTop }}
-      contentStyle={styles.headerContent}
-    >
-      <AnimatedPressable
-        onPress={onExit}
-        scaleValue={0.9}
-        springConfig="snappy"
-        hapticType="medium"
-        style={styles.exitButton}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
-        accessibilityLabel="Exit workout"
-      >
-        <Ionicons name="close" size={rf(20)} color={colors.error.light} />
-      </AnimatedPressable>
-
-      <View style={styles.headerInfo}>
-        <Text
-          style={styles.workoutTitle}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
+    <View style={[styles.header, { paddingTop }]}>
+      {/* Primary row: close · index · elapsed time */}
+      <View style={styles.primaryRow}>
+        <AnimatedPressable
+          onPress={onExit}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="medium"
+          style={styles.exitButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Exit workout"
         >
-          {safeString(workoutTitle, "Workout")}
+          <Ionicons name="close" size={rf(20)} color={colors.text.secondary} />
+        </AnimatedPressable>
+
+        <Text
+          style={styles.indexText}
+          numberOfLines={1}
+          accessibilityLabel={`Exercise ${safeString(currentExercise)} of ${safeString(totalExercises)}`}
+        >
+          {safeString(currentExercise)}
+          <Text style={styles.indexDivider}> / </Text>
+          {safeString(totalExercises)}
         </Text>
-        <Text style={styles.progressText}>
-          Exercise {safeString(currentExercise)} of {safeString(totalExercises)}
-        </Text>
-        {/* Mesocycle-week pill (only when available) */}
-        {mesocycleWeek != null && mesocycleWeek > 0 ? (
-          <View style={styles.mesoPill}>
-            <Text style={styles.mesoPillText}>Wk {mesocycleWeek}</Text>
-          </View>
-        ) : null}
+
+        <View style={styles.timeWrap}>
+          <Text style={styles.timeText} numberOfLines={1}>
+            {formatSeconds(duration)}
+          </Text>
+        </View>
       </View>
 
-      <View style={styles.headerRight}>
-        <View style={styles.statBlock}>
-          <Text style={styles.statLabel} numberOfLines={1}>TIME</Text>
-          <Text style={styles.timerText} numberOfLines={1}>{formatSeconds(duration)}</Text>
-        </View>
-        <View style={styles.statBlock}>
-          <Text style={styles.statLabel} numberOfLines={1}>CAL</Text>
-          <Text style={styles.caloriesText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{safeString(calories)}</Text>
-        </View>
-        {sessionVolume != null ? (
-          <View style={styles.statBlock}>
-            <Text style={styles.statLabel} numberOfLines={1}>VOL</Text>
-            <Text style={styles.volumeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {Math.round(sessionVolume).toLocaleString()}
-            </Text>
-          </View>
-        ) : null}
+      {/* Secondary row: plain muted meta line (title · week · cal · volume) */}
+      <View style={styles.metaRow}>
+        <Text style={styles.metaText} numberOfLines={1}>
+          {safeString(workoutTitle, 'Workout')}
+          {mesocycleWeek != null && mesocycleWeek > 0 ? `${BULLET}WK ${mesocycleWeek}` : ''}
+          {`${BULLET}${safeString(calories)} KCAL`}
+          {sessionVolume != null ? `${BULLET}${Math.round(sessionVolume).toLocaleString()} KG` : ''}
+        </Text>
       </View>
-    </GlassCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: rp(spacing.lg),
-    paddingVertical: rp(spacing.md),
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.border,
+    paddingBottom: rp(spacing.sm),
   },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
+  primaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: Math.max(rp(44), 44),
   },
   exitButton: {
-    // Clamp to 44px minimum touch target (rw(40) drops below on small screens).
+    // Clamp to 44px minimum touch target.
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
-    borderRadius: rbr(20),
-    backgroundColor: hexToRgba(colors.error.DEFAULT, 0.125),
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.error.DEFAULT, 0.25),
+    borderRadius: rbr(22),
+    backgroundColor: hexToRgba(colors.text.primary, 0.06),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerInfo: {
+  indexText: {
     flex: 1,
-    alignItems: "center",
-    marginHorizontal: rp(spacing.md),
-  },
-  workoutTitle: {
-    fontSize: rf(typography.fontSize.h3),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    textAlign: 'center',
+    fontSize: rf(17),
+    fontWeight: String(typography.fontWeight.extrabold) as any,
     color: colors.text.primary,
-    textAlign: "center",
+    letterSpacing: 0.5,
+    fontVariant: ['tabular-nums'],
   },
-  progressText: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-    marginTop: rp(spacing.xxs),
+  indexDivider: {
+    color: colors.text.tertiary,
+    fontWeight: String(typography.fontWeight.medium) as any,
   },
-  mesoPill: {
-    marginTop: rp(spacing.xxs),
-    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.1),
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.secondary.DEFAULT, 0.25),
-    borderRadius: borderRadius.full,
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xxs),
+  timeWrap: {
+    // Balance the 44pt close button on the left so the index stays centered.
+    width: Math.max(rw(40), 44),
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
-  mesoPillText: {
-    fontSize: rf(typography.fontSize.micro),
-    color: colors.secondary.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: rp(spacing.sm),
-  },
-  statBlock: {
-    alignItems: "flex-end",
-  },
-  timerText: {
-    fontSize: rf(typography.fontSize.body),
+  timeText: {
+    fontSize: rf(15),
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text.secondary,
-    fontVariant: ["tabular-nums"],
+    fontVariant: ['tabular-nums'],
   },
-  statLabel: {
-    // Use responsive font size (was hardcoded 9px). Bump color from tertiary
-    // to secondary and drop the opacity:0.7 — combined with the tiny size it
-    // failed WCAG AA on the dark glass header.
-    fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.secondary,
+  metaRow: {
+    marginTop: rp(spacing.xxs),
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: rf(11),
+    fontWeight: String(typography.fontWeight.medium) as any,
+    color: colors.text.tertiary,
     letterSpacing: 0.8,
-    marginTop: rp(spacing.xxs),
-  },
-  caloriesText: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-    fontVariant: ["tabular-nums"],
-  },
-  volumeText: {
-    fontSize: rf(typography.fontSize.caption),
-    // Use secondary.DEFAULT (#00D4FF) instead of secondary.light (#00FFFF).
-    // Pure cyan (#00FFFF) on a dark glass header failed WCAG AA for caption-
-    // sized text; DEFAULT cyan clears it.
-    color: colors.secondary.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    fontVariant: ["tabular-nums"],
+    textTransform: 'uppercase',
   },
 });

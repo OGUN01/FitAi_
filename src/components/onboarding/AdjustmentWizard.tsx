@@ -1,24 +1,29 @@
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+/**
+ * AdjustmentWizard — validation-error bottom sheet ("Editorial Dark", no glass)
+ *
+ * Rebuilt on the fresh pattern: plain dim backdrop (no BlurView), transparent
+ * sheet chrome on tokens.bg, hairline separators only, ink type scale. The ONE
+ * solid accent element is the "Apply Changes" primary CTA (the allowed CTA
+ * fill). No gradients, no glass surfaces, no elevation, no fontWeight hacks.
+ *
+ * Selection / save / close logic — UNCHANGED.
+ */
+
 import React from "react";
 import {
   View,
   Text,
   Modal,
-  TouchableOpacity,
   Pressable,
   ScrollView,
   StyleSheet,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
 import { ValidationResult } from "../../services/validationEngine";
-import {
-  useAdjustmentWizard,
-  } from "../../hooks/adjustment-wizard";
+import { useAdjustmentWizard } from "../../hooks/adjustment-wizard";
 import type { Alternative } from "../../hooks/adjustment-wizard/types";
 import { AlternativeCard } from "./wizard/AlternativeCard";
+import { SectionLabel, tokens, font, type as typeScale } from "./fresh";
 
 interface AdjustmentWizardProps {
   visible: boolean;
@@ -51,6 +56,7 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
   } = useAdjustmentWizard(props);
 
   const { visible, error, onClose } = props;
+  const applyEnabled = selectedIndex !== null;
 
   return (
     <Modal
@@ -60,335 +66,232 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      {/* Backdrop — fills screen, tap to dismiss */}
+      {/* Dim backdrop — fills screen, tap to dismiss (plain dim, no blur) */}
       <Pressable
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, styles.backdrop]}
         onPress={onClose}
         accessibilityRole="button"
         accessibilityLabel="Dismiss goal adjustment"
         accessibilityHint="Closes the adjustment wizard without saving"
       >
-        <BlurView intensity={40} tint="dark" style={styles.blurOverlay}>
-          {/* Inner — stops propagation so taps inside don't dismiss */}
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.modalContainer}>
-              {/* ── Header ── */}
-              <LinearGradient
-                colors={[
-                  colors.background,
-                  colors.backgroundSecondary,
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.header}
+        {/* Inner — stops propagation so taps inside don't dismiss */}
+        <Pressable onPress={(e) => e.stopPropagation()}>
+          <View style={styles.modalContainer}>
+            {/* ── Header ── */}
+            <View style={styles.header}>
+              <Pressable
+                style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+                onPress={onClose}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close goal adjustment"
               >
-                {/* Close Button */}
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={onClose}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close goal adjustment"
-                >
-                  <Ionicons
-                    name="close"
-                    size={rf(20)}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
+                <Ionicons name="close" size={20} color={tokens.ink2} />
+              </Pressable>
 
-                {/* Header Icon */}
-                <View style={styles.headerIconContainer}>
-                  <LinearGradient
-                    colors={[
-                      colors.primary,
-                      colors.secondary,
-                    ]}
-                    style={styles.headerIconGradient}
-                  >
-                    <Ionicons
-                      name="analytics"
-                      size={rf(24)}
-                      color={colors.white}
-                    />
-                  </LinearGradient>
-                </View>
+              <SectionLabel>Goal adjustment</SectionLabel>
+              <Text style={styles.subtitle}>
+                Your current plan needs optimization for safe, sustainable
+                results
+              </Text>
 
-                <Text style={styles.title}>Goal Adjustment</Text>
-                <Text style={styles.subtitle}>
-                  Your current plan needs optimization for safe, sustainable
-                  results
+              {/* Error — hairline callout, not a tinted alert box */}
+              <View style={styles.errorCallout}>
+                <Ionicons name="warning" size={16} color={tokens.danger} />
+                <Text style={styles.errorMessage} numberOfLines={2}>
+                  {error.message}
                 </Text>
-
-                {/* Error Alert */}
-                <View style={styles.errorAlert}>
-                  <View style={styles.errorIconContainer}>
-                    <Ionicons
-                      name="warning"
-                      size={rf(16)}
-                      color={colors.errorAlt}
-                    />
-                  </View>
-                  <Text style={styles.errorMessage} numberOfLines={2}>
-                    {error.message}
-                  </Text>
-                </View>
-              </LinearGradient>
-
-              {/* ── Alternatives List ── */}
-              <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <Text style={styles.sectionLabel}>
-                  Choose a safe alternative
-                </Text>
-
-                {alternatives.map((alt, index) => (
-                  <AlternativeCard
-                    key={index}
-                    alternative={alt}
-                    index={index}
-                    isSelected={selectedIndex === index}
-                    isRecommended={index === 0}
-                    onSelect={() => setSelectedIndex(index)}
-                  />
-                ))}
-
-                <View style={styles.scrollPadding} />
-              </ScrollView>
-
-              {/* ── Footer ── */}
-              <View style={styles.footer}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={onClose}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel goal adjustment"
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.applyButton,
-                    selectedIndex === null && styles.applyButtonDisabled,
-                  ]}
-                  onPress={handleSelectAlternative}
-                  disabled={selectedIndex === null}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Apply goal adjustment"
-                >
-                  <LinearGradient
-                    colors={
-                      selectedIndex !== null
-                        ? [
-                            colors.primary,
-                            colors.secondary,
-                          ]
-                        : [
-                            colors.surfaceLight,
-                            colors.surfaceLight,
-                          ]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.applyButtonGradient}
-                  >
-                    <Text style={styles.applyButtonText}>
-                      {isSaving ? "Saving..." : "Apply Changes"}
-                    </Text>
-                    {!isSaving && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={rf(18)}
-                        color={colors.white}
-                      />
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
               </View>
             </View>
-          </Pressable>
-        </BlurView>
+
+            {/* ── Alternatives List ── */}
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <SectionLabel style={styles.sectionLabel}>
+                Choose a safe alternative
+              </SectionLabel>
+
+              {alternatives.map((alt, index) => (
+                <AlternativeCard
+                  key={index}
+                  alternative={alt}
+                  index={index}
+                  isSelected={selectedIndex === index}
+                  isRecommended={index === 0}
+                  onSelect={() => setSelectedIndex(index)}
+                />
+              ))}
+
+              <View style={styles.scrollPadding} />
+            </ScrollView>
+
+            {/* ── Footer ── */}
+            <View style={styles.footer}>
+              <Pressable
+                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel goal adjustment"
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.applyButton,
+                  applyEnabled
+                    ? styles.applyButtonEnabled
+                    : styles.applyButtonDisabled,
+                  pressed && applyEnabled && styles.pressed,
+                ]}
+                onPress={handleSelectAlternative}
+                disabled={!applyEnabled}
+                accessibilityRole="button"
+                accessibilityLabel="Apply goal adjustment"
+              >
+                <Text
+                  style={[
+                    styles.applyButtonText,
+                    !applyEnabled && styles.applyButtonTextDisabled,
+                  ]}
+                >
+                  {isSaving ? "Saving..." : "Apply Changes"}
+                </Text>
+                {!isSaving && applyEnabled && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={tokens.bg}
+                  />
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
       </Pressable>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  blurOverlay: {
+  backdrop: {
     flex: 1,
     justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  pressed: {
+    opacity: 0.6,
   },
 
   modalContainer: {
-    maxHeight: rh(784),
-    backgroundColor: colors.background,
-    borderTopLeftRadius: rbr(24),
-    borderTopRightRadius: rbr(24),
-    overflow: "hidden",
+    maxHeight: "85%",
+    backgroundColor: tokens.bg,
+    borderTopWidth: 1,
+    borderTopColor: tokens.hairline,
   },
 
   // Header
   header: {
-    paddingTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    alignItems: "center",
+    paddingTop: 24,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.hairline,
   },
-
   closeButton: {
     position: "absolute",
-    top: spacing.md,
-    right: spacing.md,
-    width: Math.max(rw(32), 44),
-    height: Math.max(rw(32), 44),
-    borderRadius: Math.max(rw(16), 22),
-    backgroundColor: colors.glassSurface,
+    top: 12,
+    right: 12,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 1,
   },
-
-  headerIconContainer: {
-    marginBottom: spacing.md,
-  },
-
-  headerIconGradient: {
-    width: rw(56),
-    height: rw(56),
-    borderRadius: rw(28),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  title: {
-    fontSize: rf(22),
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: spacing.xs,
-    letterSpacing: -0.5,
-  },
-
   subtitle: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(18),
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginTop: 8,
+    ...typeScale.body,
+    lineHeight: 20,
+    paddingRight: 32,
   },
-
-  errorAlert: {
+  errorCallout: {
+    marginTop: 16,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.errorTint,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: `${colors.errorAlt}4D`,
-    width: "100%",
+    gap: 10,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: tokens.hairline,
   },
-
-  errorIconContainer: {
-    width: rw(28),
-    height: rw(28),
-    borderRadius: rw(14),
-    backgroundColor: `${colors.errorAlt}33`,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.sm,
-  },
-
   errorMessage: {
     flex: 1,
-    fontSize: rf(12),
-    color: colors.errorLight,
-    fontWeight: "500",
-    lineHeight: rf(16),
+    fontFamily: font.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.danger,
   },
 
   // ScrollView
   scrollView: {
-    flex: 1,
+    flexGrow: 0,
   },
-
   scrollContent: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
-
   scrollPadding: {
-    height: spacing.lg,
+    height: 24,
   },
-
   sectionLabel: {
-    fontSize: rf(12),
-    fontWeight: "600",
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
+    marginBottom: 8,
   },
 
-  // Footer
+  // Footer — hairline separator, ghost cancel + one solid accent CTA
   footer: {
-    padding: spacing.lg,
-    paddingTop: spacing.md,
-    backgroundColor: `${colors.backgroundSecondary}F2`,
-    borderTopWidth: 1,
-    borderTopColor: colors.glassSurface,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-    paddingBottom: spacing.xl,
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: tokens.hairline,
   },
-
   cancelButton: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: borderRadius.md,
+    minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.glassSurface,
-    borderWidth: 1,
-    borderColor: colors.glassHighlight,
   },
-
   cancelButtonText: {
-    color: colors.textSecondary,
-    fontSize: rf(14),
-    fontWeight: "600",
+    fontFamily: font.semibold,
+    fontSize: 15,
+    color: tokens.ink2,
   },
-
   applyButton: {
     flex: 2,
-    minHeight: 44,
-    borderRadius: borderRadius.md,
-    overflow: "hidden",
-    elevation: 4,
-  },
-
-  applyButtonDisabled: {
-    opacity: 0.5,
-  },
-
-  applyButtonGradient: {
-    flex: 1,
+    minHeight: 52,
+    borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: rp(8),
+    gap: 8,
   },
-
+  applyButtonEnabled: {
+    backgroundColor: tokens.accent,
+  },
+  applyButtonDisabled: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
   applyButtonText: {
-    color: colors.white,
-    fontSize: rf(14),
-    fontWeight: "700",
+    fontFamily: font.semibold,
+    fontSize: 16,
+    color: tokens.bg,
+  },
+  applyButtonTextDisabled: {
+    color: tokens.ink3,
   },
 });

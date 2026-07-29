@@ -1,14 +1,8 @@
 /**
- * GlassFormInput - Glassmorphic Text Input Component
- *
- * Features:
- * - Glassmorphic styling
- * - Icon support
- * - Error state
- * - Animated focus state
+ * GlassFormInput - Unified FormField pattern: label above, 14px radius, focused accent border
  */
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -22,9 +16,16 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../../utils/colors";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw } from "../../../../utils/responsive";
+
+const { variants } = typography;
 
 interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
   label: string;
@@ -35,47 +36,54 @@ interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
   suffix?: string;
 }
 
-export const GlassFormInput: React.FC<GlassFormInputProps> = ({
+export const GlassFormInput: React.FC<GlassFormInputProps> = React.memo(({
   label,
   icon,
-  iconColor = colors.primary,
+  iconColor = colors.primary.DEFAULT,
   error,
   hint,
   suffix,
   value,
   onChangeText,
+  onFocus,
+  onBlur,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const borderOpacity = useSharedValue(0);
 
-  const handleFocus = () => {
-    setIsFocused(true);
-    borderOpacity.value = withTiming(1, { duration: 200 });
-  };
+  const handleFocus = useCallback(
+    (e: Parameters<NonNullable<TextInputProps["onFocus"]>>[0]) => {
+      setIsFocused(true);
+      borderOpacity.value = withTiming(1, { duration: 200 });
+      onFocus?.(e);
+    },
+    [onFocus, borderOpacity],
+  );
 
-  const handleBlur = () => {
-    setIsFocused(false);
-    borderOpacity.value = withTiming(0, { duration: 200 });
-  };
+  const handleBlur = useCallback(
+    (e: Parameters<NonNullable<TextInputProps["onBlur"]>>[0]) => {
+      setIsFocused(false);
+      borderOpacity.value = withTiming(0, { duration: 200 });
+      onBlur?.(e);
+    },
+    [onBlur, borderOpacity],
+  );
 
-  // Border colour takes precedence from the error state when present; once
-  // the error clears the border returns to the focus/default colour
-  // immediately instead of staying on the error colour until the next focus.
   const animatedBorderStyle = useAnimatedStyle(() => ({
     borderColor: error
-      ? colors.error
+      ? colors.error.DEFAULT
       : isFocused
-        ? colors.primary
-        : `rgba(255, 107, 53, ${0.2 + borderOpacity.value * 0.3})`,
+        ? colors.primary.DEFAULT
+        : border.DEFAULT,
   }));
 
   return (
     <View style={styles.container}>
-      {/* Label */}
-      <Text style={styles.label} numberOfLines={1}>{label}</Text>
+      <Text style={styles.label} numberOfLines={1}>
+        {label}
+      </Text>
 
-      {/* Input Container */}
       <Animated.View
         style={[
           styles.inputContainer,
@@ -87,7 +95,7 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW + 0.03) },
+              { backgroundColor: `${iconColor}14` },
             ]}
           >
             <Ionicons name={icon} size={rf(16)} color={iconColor} />
@@ -100,79 +108,85 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholderTextColor={colors.textMuted}
-          selectionColor={colors.primary}
+          placeholderTextColor={colors.text.tertiary}
+          selectionColor={colors.primary.DEFAULT}
           accessibilityLabel={label}
           {...props}
         />
 
-        {suffix && <Text style={styles.suffix} numberOfLines={1}>{suffix}</Text>}
+        {suffix && (
+          <Text style={styles.suffix} numberOfLines={1}>
+            {suffix}
+          </Text>
+        )}
       </Animated.View>
 
-      {/* Error or Hint */}
       {error ? (
         <View style={styles.errorContainer}>
           <Ionicons
             name="alert-circle"
             size={rf(12)}
-            color={colors.error}
+            color={colors.error.DEFAULT}
           />
-          <Text style={styles.errorText} numberOfLines={3}>{error}</Text>
+          <Text style={styles.errorText} numberOfLines={3}>
+            {error}
+          </Text>
         </View>
       ) : hint ? (
-        <Text style={styles.hintText} numberOfLines={3}>{hint}</Text>
+        <Text style={styles.hintText} numberOfLines={3}>
+          {hint}
+        </Text>
       ) : null}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.md,
   },
   label: {
+    ...variants.caption,
     fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
     marginLeft: spacing.xs,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: borderRadius.lg,
+    backgroundColor: surface[1],
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: border.DEFAULT,
     overflow: "hidden",
     minHeight: Math.max(rw(48), 44),
   },
   inputError: {
-    borderColor: colors.error,
+    borderColor: colors.error.DEFAULT,
   },
   iconContainer: {
-    width: rw(40),
-    height: Math.max(rw(48), 44),
+    width: rw(32),
+    height: rw(32),
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: spacing.xs,
-    borderRadius: borderRadius.md,
+    marginLeft: spacing.sm,
+    borderRadius: rw(8),
   },
   input: {
     flex: 1,
     minHeight: Math.max(rw(48), 44),
-    fontSize: rf(15),
-    color: colors.white,
+    ...variants.body,
+    color: colors.text.primary,
     paddingHorizontal: spacing.md,
-    // Allow the input to grow vertically for multiline content (the previous
-    // fixed height clipped multi-line text).
   },
   inputNoIcon: {
     paddingLeft: spacing.md,
   },
   suffix: {
+    ...variants.body,
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     paddingRight: spacing.md,
     flexShrink: 0,
   },
@@ -184,12 +198,14 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   errorText: {
+    ...variants.caption,
     fontSize: rf(11),
-    color: colors.error,
+    color: colors.error.DEFAULT,
   },
   hintText: {
+    ...variants.caption,
     fontSize: rf(11),
-    color: colors.textMuted,
+    color: colors.text.tertiary,
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },

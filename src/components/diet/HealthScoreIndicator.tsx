@@ -1,64 +1,64 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, typography } from "../../theme/aurora-tokens";
-import { rf, rw, rh, rbr } from "../../utils/responsive";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { flatColors as colors, spacing, typography } from '../../theme/aurora-tokens';
+import { rf, rw, rh, rbr } from '../../utils/responsive';
 
 interface HealthScoreIndicatorProps {
   score: number;
-  category: "excellent" | "good" | "moderate" | "poor" | "unhealthy";
-  size?: "small" | "medium" | "large";
+  category: 'excellent' | 'good' | 'moderate' | 'poor' | 'unhealthy';
+  size?: 'small' | 'medium' | 'large';
   showLabel?: boolean;
 }
 
 export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
   score,
   category,
-  size = "medium",
+  size = 'medium',
   showLabel = true,
 }) => {
   const getColorForCategory = (category: string) => {
     switch (category) {
-      case "excellent":
-        return "#22c55e"; // Green
-      case "good":
-        return "#84cc16"; // Light green
-      case "moderate":
-        return "#eab308"; // Yellow
-      case "poor":
-        return "#f97316"; // Orange
-      case "unhealthy":
-        return "#ef4444"; // Red
+      case 'excellent':
+        return '#22c55e'; // Green
+      case 'good':
+        return '#84cc16'; // Light green
+      case 'moderate':
+        return '#eab308'; // Yellow
+      case 'poor':
+        return '#f97316'; // Orange
+      case 'unhealthy':
+        return '#ef4444'; // Red
       default:
-        return "#6b7280"; // Gray
+        return '#6b7280'; // Gray
     }
   };
 
   const getIconForCategory = (category: string) => {
     switch (category) {
-      case "excellent":
-        return "🟢";
-      case "good":
-        return "🟡";
-      case "moderate":
-        return "🟠";
-      case "poor":
-        return "🔴";
-      case "unhealthy":
-        return "🔴";
+      case 'excellent':
+        return '🟢';
+      case 'good':
+        return '🟡';
+      case 'moderate':
+        return '🟠';
+      case 'poor':
+        return '🔴';
+      case 'unhealthy':
+        return '🔴';
       default:
-        return "⚪";
+        return '⚪';
     }
   };
 
   const getSizeStyles = (size: string) => {
     switch (size) {
-      case "small":
+      case 'small':
         return {
           container: { width: rw(60), height: rh(60) },
           scoreText: { fontSize: rf(14) },
           labelText: { fontSize: rf(10) },
         };
-      case "large":
+      case 'large':
         return {
           container: { width: rw(100), height: rh(100) },
           scoreText: { fontSize: rf(24) },
@@ -79,16 +79,8 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.scoreCircle,
-          sizeStyles.container,
-          { borderColor: color },
-        ]}
-      >
-        <Text style={[styles.scoreText, sizeStyles.scoreText, { color }]}>
-          {score}
-        </Text>
+      <View style={[styles.scoreCircle, sizeStyles.container, { borderColor: color }]}>
+        <Text style={[styles.scoreText, sizeStyles.scoreText, { color }]}>{score}</Text>
         <Text style={styles.scoreUnit}>%</Text>
       </View>
 
@@ -106,20 +98,20 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   scoreCircle: {
     borderRadius: rbr(50),
     borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.backgroundSecondary,
   },
 
   scoreText: {
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     lineHeight: rf(20),
   },
 
@@ -130,8 +122,8 @@ const styles = StyleSheet.create({
   },
 
   labelContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: spacing.xs,
   },
 
@@ -141,8 +133,8 @@ const styles = StyleSheet.create({
   },
 
   labelText: {
-    fontWeight: typography.fontWeight.semibold as "600",
-    textAlign: "center",
+    fontWeight: typography.fontWeight.semibold as '600',
+    textAlign: 'center',
   },
 });
 

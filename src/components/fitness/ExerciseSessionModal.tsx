@@ -17,13 +17,9 @@
  * Timer logic (parseTimedExercise, per-side phase state machine, switch
  * countdown) is UNCHANGED — only presentation + animation primitives changed.
  */
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -33,21 +29,16 @@ import Animated, {
   cancelAnimation,
   FadeIn,
   FadeOut,
-} from "react-native-reanimated";
-import {
-  GlassCard,
-  AnimatedPressable,
-  ProgressRing,
-} from "../ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rh, rw, rs } from "../../utils/responsive";
-import { hexToRgba } from "../../utils/colors";
-import { haptics } from "../../utils/haptics";
-import { useReducedMotion } from "../../utils/accessibility/hooks";
-import { animations } from "../../theme/animations";
-import { ExerciseGifPlayer } from "./ExerciseGifPlayer";
-import { parseTimedExercise, formatDuration } from "../../utils/exerciseDuration";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from 'react-native-reanimated';
+import { GlassCard, AnimatedPressable, ProgressRing } from '../ui/aurora';
+import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { rf, rp, rbr, rh, rs } from '../../utils/responsive';
+import { hexToRgba } from '../../utils/colors';
+import { haptics } from '../../utils/haptics';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
+import { ExerciseGifPlayer } from './ExerciseGifPlayer';
+import { parseTimedExercise, formatDuration } from '../../utils/exerciseDuration';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -65,7 +56,7 @@ interface ExerciseSessionModalProps {
 }
 
 /** "Set 1 of 2" phase: which side of a per-side exercise are we on */
-type TimerPhase = "side1" | "side2" | "done";
+type TimerPhase = 'side1' | 'side2' | 'done';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -76,8 +67,8 @@ function formatRepsDisplay(reps: string): string {
   const s = reps.trim().toLowerCase();
   if (
     /\d+\s*(s|sec|secs|second|seconds|min|mins|minute|minutes)/.test(s) ||
-    s.includes("per ") ||
-    s.includes("each ") ||
+    s.includes('per ') ||
+    s.includes('each ') ||
     /^\d+:\d{1,2}$/.test(s)
   ) {
     return reps.trim();
@@ -129,19 +120,19 @@ const arcStyles = StyleSheet.create({
   wrapper: {
     width: ARC_SIZE,
     height: ARC_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inner: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   countdown: {
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text.primary,
     letterSpacing: -0.5,
-    fontVariant: ["tabular-nums"],
+    fontVariant: ['tabular-nums'],
   },
   pausedLabel: {
     fontSize: rf(typography.fontSize.micro),
@@ -152,7 +143,7 @@ const arcStyles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
     color: colors.primary.DEFAULT,
     marginTop: 1,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });
 
@@ -182,22 +173,22 @@ function SwitchBanner({ side2Label, secondsLeft }: SwitchBannerProps) {
 
 const bannerStyles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(10,15,28,0.95)",
+    backgroundColor: 'rgba(10,15,28,0.95)',
     borderRadius: rbr(16),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 20,
   },
   title: {
     fontSize: rf(typography.fontSize.h3),
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text.primary,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: rp(spacing.xs),
     marginBottom: rp(spacing.xxs),
   },
@@ -239,7 +230,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 
   // ── Exercise timer state (only relevant when isTimeBased) ──────────────────
   const [timerRemaining, setTimerRemaining] = useState(totalSeconds);
-  const [timerPhase, setTimerPhase] = useState<TimerPhase>("side1");
+  const [timerPhase, setTimerPhase] = useState<TimerPhase>('side1');
   const [isPaused, setIsPaused] = useState(false);
   const [switchCountdown, setSwitchCountdown] = useState(0); // 3,2,1 between phases
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -250,7 +241,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
   useEffect(() => {
     if (!isVisible) return;
     setTimerRemaining(totalSeconds);
-    setTimerPhase("side1");
+    setTimerPhase('side1');
     setIsPaused(false);
     setSwitchCountdown(0);
   }, [isVisible, totalSeconds]);
@@ -275,7 +266,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
         clearInterval(switchRef.current!);
         switchRef.current = null;
         setSwitchCountdown(0);
-        setTimerPhase("side2");
+        setTimerPhase('side2');
         setTimerRemaining(totalSeconds);
       }
     }, 1000);
@@ -287,7 +278,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
       timerRef.current = null;
       return;
     }
-    if (timerPhase === "done") return;
+    if (timerPhase === 'done') return;
 
     timerRef.current = setInterval(() => {
       setTimerRemaining((prev) => {
@@ -297,12 +288,12 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
           // haptics replaces direct Vibration.vibrate([0,200,100,200])
           haptics.celebration();
 
-          if (isPerSide && timerPhase === "side1") {
+          if (isPerSide && timerPhase === 'side1') {
             // First side done → start switch countdown
             startSwitchCountdown();
           } else {
             // Both sides done (or single phase done) → mark phase done
-            setTimerPhase("done");
+            setTimerPhase('done');
           }
           return 0;
         }
@@ -314,7 +305,15 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
     };
-  }, [isVisible, isTimeBased, isPaused, switchCountdown, timerPhase, isPerSide, startSwitchCountdown]);
+  }, [
+    isVisible,
+    isTimeBased,
+    isPaused,
+    switchCountdown,
+    timerPhase,
+    isPerSide,
+    startSwitchCountdown,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => () => clearTimers(), [clearTimers]);
@@ -339,20 +338,14 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
       return;
     }
     breathingScale.value = withRepeat(
-      withSequence(
-        withTiming(1.2, { duration: 2000 }),
-        withTiming(1, { duration: 2000 }),
-      ),
+      withSequence(withTiming(1.2, { duration: 2000 }), withTiming(1, { duration: 2000 })),
       -1,
-      false,
+      false
     );
     pulseOpacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1500 }),
-        withTiming(0, { duration: 1500 }),
-      ),
+      withSequence(withTiming(1, { duration: 1500 }), withTiming(0, { duration: 1500 })),
       -1,
-      false,
+      false
     );
     return () => {
       cancelAnimation(breathingScale);
@@ -372,164 +365,181 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 
   // ── Derived values for display ─────────────────────────────────────────────
   const currentSideLabel = isPerSide
-    ? timerPhase === "side1" ? side1Label : side2Label
+    ? timerPhase === 'side1'
+      ? side1Label
+      : side2Label
     : undefined;
 
-  const motivationText = currentSet === 1
-    ? "Focus on form — nail technique on set 1"
-    : currentSet === totalSets
-    ? "Last set — give it everything!"
-    : "Stay strong — maintain your form";
+  // Contextual per-set tips — each set gets a distinct, actionable cue rather
+  // than the same generic phrase repeated for every middle set. The first and
+  // last sets keep their dedicated messages; intermediate sets rotate through
+  // form/breathing/tempo cues so the user gets useful coaching per set.
+  const motivationText = (() => {
+    if (currentSet === 1) return 'Focus on form — nail technique on set 1';
+    if (currentSet === totalSets) return 'Last set — give it everything!';
+    const midSetTips = [
+      'Control the negative — 2s down, 1s up',
+      'Breathe out on the exertion, brace your core',
+      'Drive through your heels — keep tension tight',
+      'Squeeze at the top — full range of motion',
+      'Tempo over speed — own every rep',
+    ];
+    // Rotate tips deterministically by set number so the same set always
+    // shows the same tip (stable across re-renders / pause-resume).
+    return midSetTips[(currentSet - 2) % midSetTips.length];
+  })();
 
   const timedMotivation = isPerSide
-    ? (timerPhase === "side1"
-        ? `Hold for ${totalSeconds}s on ${side1Label}`
-        : `Hold for ${totalSeconds}s on ${side2Label}`)
+    ? timerPhase === 'side1'
+      ? `Hold for ${totalSeconds}s on ${side1Label}`
+      : `Hold for ${totalSeconds}s on ${side2Label}`
     : `Hold for ${totalSeconds}s`;
 
   return (
     <View style={styles.overlay}>
-      <SafeAreaView edges={["top"]} style={styles.safeArea}>
-      <View style={styles.cardWrapper}>
-        <GlassCard
-          elevation={6}
-          padding="xl"
-          borderRadius="xxl"
-          style={styles.sessionCard}
-          contentStyle={styles.sessionContent}
-        >
-          {/* Header row: spacer | "Set X of Y" | timer (or spacer) */}
-          <View style={styles.headerRow}>
-            <View style={styles.headerSpacer} />
-            <View style={styles.headerCenter}>
-              <Text style={styles.setIndicator}>Set {currentSet} of {totalSets}</Text>
-              <Text style={styles.repsText}>{formatRepsDisplay(reps)}</Text>
-            </View>
-            <View style={styles.headerTimerSlot}>
-              {isTimeBased && (
-                <AnimatedPressable
-                  onPress={handlePauseResume}
-                  scaleValue={0.95}
-                  springConfig="snappy"
-                  hapticType="light"
-                  accessibilityRole="button"
-                  accessibilityLabel={isPaused ? "Resume exercise timer" : "Pause exercise timer"}
-                >
-                  <MiniArcTimer
-                    remaining={timerRemaining}
-                    total={totalSeconds}
-                    isPaused={isPaused}
-                    sideLabel={currentSideLabel}
-                  />
-                </AnimatedPressable>
-              )}
-            </View>
-          </View>
-
-          {/* Breathing circle + GIF */}
-          <View style={styles.animationContainer}>
-            {/* Outer breathing circles (Reanimated) */}
-            <Animated.View
-              style={[styles.breathingCircleOuter, breathingOuterStyle]}
-            />
-            <Animated.View
-              style={[styles.breathingCircleMiddle, breathingMiddleStyle]}
-            />
-
-            {/* Exercise GIF */}
-            <View style={styles.exerciseGifContainer}>
-              <ExerciseGifPlayer
-                exerciseId={exerciseId}
-                exerciseName={exerciseName}
-                height={rs(180)}
-                width={rs(180)}
-                showTitle={false}
-                showInstructions={false}
-                showControls={false}
-              />
-            </View>
-          </View>
-
-          {/* Phase switch overlay (shown between per-side phases) */}
-          {switchCountdown > 0 && (
-            <SwitchBanner side2Label={side2Label} secondsLeft={switchCountdown} />
-          )}
-
-          {/* Exercise name */}
-          <Text
-            style={styles.exerciseName}
-            numberOfLines={2}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.cardWrapper}>
+          <GlassCard
+            elevation={6}
+            padding="xl"
+            borderRadius="xxl"
+            style={styles.sessionCard}
+            contentStyle={styles.sessionContent}
           >
-            {exerciseName}
-          </Text>
-
-          {/* Motivational / instructional text */}
-          <Text style={styles.motivationText}>
-            {isTimeBased ? timedMotivation : motivationText}
-          </Text>
-
-          {/* Controls */}
-          <View style={styles.controls}>
-            <AnimatedPressable
-              onPress={onCancel}
-              scaleValue={0.96}
-              springConfig="snappy"
-              hapticType="light"
-              style={[styles.controlButton, styles.cancelButton]}
-              containerStyle={styles.controlButtonOuter}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <View style={styles.controlContent}>
-                <Ionicons name="arrow-back" size={rf(16)} color={colors.text.primary} />
-                <Text style={[styles.controlText, styles.cancelText]}>Back</Text>
+            {/* Header row: spacer | "Set X of Y" | timer (or spacer) */}
+            <View style={styles.headerRow}>
+              <View style={styles.headerSpacer} />
+              <View style={styles.headerCenter}>
+                <Text style={styles.setIndicator}>
+                  Set {currentSet} of {totalSets}
+                </Text>
+                <Text style={styles.repsText}>{formatRepsDisplay(reps)}</Text>
               </View>
-            </AnimatedPressable>
-            <AnimatedPressable
-              onPress={onComplete}
-              scaleValue={0.96}
-              springConfig="snappy"
-              hapticType="success"
-              style={[styles.controlButton, styles.completeButton]}
-              containerStyle={styles.controlButtonOuter}
-              accessibilityRole="button"
-              accessibilityLabel="Complete set"
-            >
-              <View style={styles.controlContent}>
-                <Ionicons name="checkmark-circle" size={rf(16)} color={colors.text.primary} />
-                <Text style={[styles.controlText, styles.completeText]}>Complete Set</Text>
+              <View style={styles.headerTimerSlot}>
+                {isTimeBased && (
+                  <AnimatedPressable
+                    onPress={handlePauseResume}
+                    scaleValue={0.95}
+                    springConfig="snappy"
+                    hapticType="light"
+                    accessibilityRole="button"
+                    accessibilityLabel={isPaused ? 'Resume exercise timer' : 'Pause exercise timer'}
+                  >
+                    <MiniArcTimer
+                      remaining={timerRemaining}
+                      total={totalSeconds}
+                      isPaused={isPaused}
+                      sideLabel={currentSideLabel}
+                    />
+                  </AnimatedPressable>
+                )}
               </View>
-            </AnimatedPressable>
-          </View>
-
-          {/* Progress dots — 3 states: completed / active / pending.
-              For >7 sets the dot row wraps and misaligns, so switch to a
-              compact "Set X of Y" text indicator instead. */}
-          {totalSets > 7 ? (
-            <Text style={styles.setsIndicatorText}>
-              Set {currentSet} of {totalSets}
-            </Text>
-          ) : (
-            <View style={styles.progressDots}>
-              {Array.from({ length: totalSets }, (_, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.progressDot,
-                    i < currentSet - 1
-                      ? styles.progressDotCompleted
-                      : i === currentSet - 1
-                      ? styles.progressDotActive
-                      : {},
-                  ]}
-                />
-              ))}
             </View>
-          )}
-        </GlassCard>
-      </View>
+
+            {/* Breathing circle + GIF */}
+            <View style={styles.animationContainer}>
+              {/* Outer breathing circles (Reanimated) */}
+              <Animated.View style={[styles.breathingCircleOuter, breathingOuterStyle]} />
+              <Animated.View style={[styles.breathingCircleMiddle, breathingMiddleStyle]} />
+
+              {/* Exercise GIF */}
+              <View style={styles.exerciseGifContainer}>
+                <ExerciseGifPlayer
+                  exerciseId={exerciseId}
+                  exerciseName={exerciseName}
+                  height={rs(180)}
+                  width={rs(180)}
+                  showTitle={false}
+                  showInstructions={false}
+                  showControls={false}
+                />
+              </View>
+            </View>
+
+            {/* Phase switch overlay (shown between per-side phases) */}
+            {switchCountdown > 0 && (
+              <SwitchBanner side2Label={side2Label} secondsLeft={switchCountdown} />
+            )}
+
+            {/* Exercise name */}
+            <Text
+              style={styles.exerciseName}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {exerciseName}
+            </Text>
+
+            {/* Motivational / instructional text */}
+            <Text style={styles.motivationText}>
+              {isTimeBased ? timedMotivation : motivationText}
+            </Text>
+
+            {/* Controls */}
+            <View style={styles.controls}>
+              <AnimatedPressable
+                onPress={onCancel}
+                scaleValue={0.96}
+                springConfig="snappy"
+                hapticType="light"
+                style={[styles.controlButton, styles.cancelButton]}
+                containerStyle={styles.controlButtonOuter}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <View style={styles.controlContent}>
+                  <Ionicons name="arrow-back" size={rf(16)} color={colors.text.primary} />
+                  <Text style={[styles.controlText, styles.cancelText]}>Back</Text>
+                </View>
+              </AnimatedPressable>
+              <AnimatedPressable
+                onPress={onComplete}
+                scaleValue={0.96}
+                springConfig="snappy"
+                hapticType="success"
+                style={[styles.controlButton, styles.completeButton]}
+                containerStyle={styles.controlButtonOuter}
+                accessibilityRole="button"
+                accessibilityLabel="Complete set"
+              >
+                <View style={styles.controlContent}>
+                  <Ionicons name="checkmark-circle" size={rf(16)} color={colors.text.primary} />
+                  <Text style={[styles.controlText, styles.completeText]}>Complete Set</Text>
+                </View>
+              </AnimatedPressable>
+            </View>
+
+            {/* Progress dots — 3 states: completed / active / pending.
+              Dots represent SETS within this exercise. For >7 sets the dot
+              row wraps and misaligns, so switch to a compact "Set X of Y"
+              text indicator instead. */}
+            {totalSets > 7 ? (
+              <Text style={styles.setsIndicatorText}>
+                Set {currentSet} of {totalSets}
+              </Text>
+            ) : (
+              <View style={styles.progressDotsWrapper}>
+                <Text style={styles.progressDotsLabel}>Sets</Text>
+                <View style={styles.progressDots}>
+                  {Array.from({ length: totalSets }, (_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.progressDot,
+                        i < currentSet - 1
+                          ? styles.progressDotCompleted
+                          : i === currentSet - 1
+                            ? styles.progressDotActive
+                            : {},
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+          </GlassCard>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -542,34 +552,34 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-    justifyContent: "flex-start",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   safeArea: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
   /** Outer wrapper — plain View so position:absolute on overlays works correctly. */
   cardWrapper: {
-    width: "90%",
+    width: '90%',
     maxWidth: 400,
-    position: "relative",
+    position: 'relative',
   },
   sessionCard: {
-    width: "100%",
-    alignItems: "center" as const,
+    width: '100%',
+    alignItems: 'center' as const,
   },
   sessionContent: {
-    alignItems: "center",
-    width: "100%",
+    alignItems: 'center',
+    width: '100%',
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
     marginBottom: rp(spacing.lg),
   },
   headerSpacer: {
@@ -577,12 +587,12 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   headerTimerSlot: {
     width: ARC_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   setIndicator: {
     fontSize: rf(typography.fontSize.h3),
@@ -597,13 +607,13 @@ const styles = StyleSheet.create({
   animationContainer: {
     width: rs(200),
     height: rs(200),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: rp(spacing.md),
-    position: "relative",
+    position: 'relative',
   },
   breathingCircleOuter: {
-    position: "absolute",
+    position: 'absolute',
     width: rs(200),
     height: rs(200),
     borderRadius: rbr(100),
@@ -612,7 +622,7 @@ const styles = StyleSheet.create({
     borderColor: hexToRgba(colors.primary.DEFAULT, 0.25),
   },
   breathingCircleMiddle: {
-    position: "absolute",
+    position: 'absolute',
     width: rs(180),
     height: rs(180),
     borderRadius: rbr(90),
@@ -621,10 +631,10 @@ const styles = StyleSheet.create({
     borderColor: hexToRgba(colors.primary.DEFAULT, 0.19),
   },
   exerciseGifContainer: {
-    position: "relative",
+    position: 'relative',
     zIndex: 10,
     borderRadius: rbr(90),
-    overflow: "hidden",
+    overflow: 'hidden',
     width: rs(180),
     height: rs(180),
     flexShrink: 0,
@@ -633,20 +643,20 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.h3),
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text.primary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: rp(spacing.md),
   },
   motivationText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    textAlign: "center",
-    fontStyle: "italic",
+    textAlign: 'center',
+    fontStyle: 'italic',
     marginBottom: rp(spacing.xl),
   },
   controls: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
     marginBottom: rp(spacing.lg),
     gap: rp(spacing.md),
     flexShrink: 0,
@@ -656,8 +666,8 @@ const styles = StyleSheet.create({
     height: rh(50),
     flexShrink: 0,
     borderRadius: borderRadius.lg,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 2,
   },
   controlButtonOuter: {
@@ -666,13 +676,13 @@ const styles = StyleSheet.create({
     height: rh(50),
   },
   controlContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(spacing.xs),
   },
   cancelButton: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
     borderColor: colors.glass.border,
   },
   completeButton: {
@@ -689,17 +699,27 @@ const styles = StyleSheet.create({
   completeText: {
     color: colors.text.primary,
   },
+  progressDotsWrapper: {
+    alignItems: 'center',
+  },
+  progressDotsLabel: {
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.text.tertiary,
+    fontWeight: String(typography.fontWeight.medium) as any,
+    letterSpacing: 0.8,
+    marginBottom: rp(spacing.xxs),
+  },
   progressDots: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: rp(spacing.sm),
   },
   setsIndicatorText: {
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   progressDot: {
     width: rs(10),

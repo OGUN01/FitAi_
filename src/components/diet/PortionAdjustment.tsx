@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,25 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-
   ActivityIndicator,
   TextInput,
   Keyboard,
   StyleProp,
   ViewStyle,
   SafeAreaView,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { Button, Card } from "../ui";
-import { RecognizedFood } from "../../services/foodRecognitionService";
-import { rf, rh, rw, rbr } from "../../utils/responsive";
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../theme/aurora-tokens';
+import { Button, Card } from '../ui';
+import { RecognizedFood } from '../../services/foodRecognitionService';
+import { rf, rh, rw, rbr } from '../../utils/responsive';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 
 // Custom Slider Component
 interface CustomSliderProps {
@@ -44,10 +49,7 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
     const { locationX } = event.nativeEvent;
     const percentage = locationX / trackWidth;
     const newValue = minimumValue + (maximumValue - minimumValue) * percentage;
-    const clampedValue = Math.max(
-      minimumValue,
-      Math.min(maximumValue, newValue),
-    );
+    const clampedValue = Math.max(minimumValue, Math.min(maximumValue, newValue));
     onValueChange(clampedValue);
   };
 
@@ -116,15 +118,14 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
           originalGrams: food.userGrams ?? food.estimatedGrams,
           adjustedGrams: food.userGrams ?? food.estimatedGrams,
           adjustmentRatio: 1.0,
-        })),
+        }))
       );
       setCurrentFoodIndex(0);
     }
   }, [recognizedFoods]);
 
   const updateAdjustment = (index: number, adjustedGrams: number) => {
-    const originalGrams =
-      recognizedFoods[index].userGrams ?? recognizedFoods[index].estimatedGrams;
+    const originalGrams = recognizedFoods[index].userGrams ?? recognizedFoods[index].estimatedGrams;
     const adjustmentRatio = adjustedGrams / originalGrams;
 
     setAdjustments((prev) =>
@@ -135,8 +136,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               adjustedGrams: Math.round(adjustedGrams),
               adjustmentRatio: Math.round(adjustmentRatio * 100) / 100,
             }
-          : item,
-      ),
+          : item
+      )
     );
   };
 
@@ -144,136 +145,101 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
     setIsProcessing(true);
 
     try {
-      const adjustedFoods: RecognizedFood[] = recognizedFoods.map(
-        (food, index) => {
-          const adjustment = adjustments[index];
-          if (!adjustment || adjustment.adjustmentRatio === 1.0) {
-            return food; // No adjustment needed
-          }
+      const adjustedFoods: RecognizedFood[] = recognizedFoods.map((food, index) => {
+        const adjustment = adjustments[index];
+        if (!adjustment || adjustment.adjustmentRatio === 1.0) {
+          return food; // No adjustment needed
+        }
 
-          // Scale nutrition values based on portion adjustment
-          const scaledNutrition = {
-            calories: Math.round(
-              food.nutrition.calories * adjustment.adjustmentRatio,
-            ),
-            protein:
-              Math.round(
-                food.nutrition.protein * adjustment.adjustmentRatio * 10,
-              ) / 10,
-            carbs:
-              Math.round(
-                food.nutrition.carbs * adjustment.adjustmentRatio * 10,
-              ) / 10,
-            fat:
-              Math.round(food.nutrition.fat * adjustment.adjustmentRatio * 10) /
-              10,
-            fiber: food.nutrition.fiber
-              ? Math.round(
-                  food.nutrition.fiber * adjustment.adjustmentRatio * 10,
-                ) / 10
-              : undefined,
-            sugar: food.nutrition.sugar
-              ? Math.round(
-                  food.nutrition.sugar * adjustment.adjustmentRatio * 10,
-                ) / 10
-              : undefined,
-            sodium: food.nutrition.sodium
-              ? Math.round(food.nutrition.sodium * adjustment.adjustmentRatio)
-              : undefined,
-          };
+        // Scale nutrition values based on portion adjustment
+        const scaledNutrition = {
+          calories: Math.round(food.nutrition.calories * adjustment.adjustmentRatio),
+          protein: Math.round(food.nutrition.protein * adjustment.adjustmentRatio * 10) / 10,
+          carbs: Math.round(food.nutrition.carbs * adjustment.adjustmentRatio * 10) / 10,
+          fat: Math.round(food.nutrition.fat * adjustment.adjustmentRatio * 10) / 10,
+          fiber: food.nutrition.fiber
+            ? Math.round(food.nutrition.fiber * adjustment.adjustmentRatio * 10) / 10
+            : undefined,
+          sugar: food.nutrition.sugar
+            ? Math.round(food.nutrition.sugar * adjustment.adjustmentRatio * 10) / 10
+            : undefined,
+          sodium: food.nutrition.sodium
+            ? Math.round(food.nutrition.sodium * adjustment.adjustmentRatio)
+            : undefined,
+        };
 
-          return {
-            ...food,
-            userGrams: adjustment.adjustedGrams,
-            nutrition: scaledNutrition,
-          } as RecognizedFood;
-        },
-      );
+        return {
+          ...food,
+          userGrams: adjustment.adjustedGrams,
+          nutrition: scaledNutrition,
+        } as RecognizedFood;
+      });
 
       onAdjustmentComplete(adjustedFoods);
 
       // Show summary of adjustments
-      const changedFoods = adjustments.filter(
-        (adj) => adj.adjustmentRatio !== 1.0,
-      );
+      const changedFoods = adjustments.filter((adj) => adj.adjustmentRatio !== 1.0);
       if (changedFoods.length > 0) {
         crossPlatformAlert(
-          "Portions Adjusted!",
-          `Updated portion sizes for ${changedFoods.length} food item${changedFoods.length !== 1 ? "s" : ""}.\n\nNutrition values have been recalculated automatically.`,
-          [{ text: "Perfect!" }],
+          'Portions Adjusted!',
+          `Updated portion sizes for ${changedFoods.length} food item${changedFoods.length !== 1 ? 's' : ''}.\n\nNutrition values have been recalculated automatically.`,
+          [{ text: 'Perfect!' }]
         );
       }
     } catch (error) {
-      console.error("Error applying portion adjustments:", error);
-      crossPlatformAlert(
-        "Error",
-        "Failed to apply portion adjustments. Please try again.",
-      );
+      console.error('Error applying portion adjustments:', error);
+      crossPlatformAlert('Error', 'Failed to apply portion adjustments. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const getServingSizeLabel = (grams: number): string => {
-    if (grams < 50) return "Very Small";
-    if (grams < 100) return "Small";
-    if (grams < 150) return "Medium";
-    if (grams < 250) return "Large";
-    if (grams < 350) return "Very Large";
-    return "Extra Large";
+    if (grams < 50) return 'Very Small';
+    if (grams < 100) return 'Small';
+    if (grams < 150) return 'Medium';
+    if (grams < 250) return 'Large';
+    if (grams < 350) return 'Very Large';
+    return 'Extra Large';
   };
 
-  const getCommonPortionSizes = (
-    foodName: string,
-  ): { label: string; grams: number }[] => {
+  const getCommonPortionSizes = (foodName: string): { label: string; grams: number }[] => {
     const name = foodName.toLowerCase();
 
     // Common portion sizes for different food types
-    if (
-      name.includes("rice") ||
-      name.includes("biryani") ||
-      name.includes("pulao")
-    ) {
+    if (name.includes('rice') || name.includes('biryani') || name.includes('pulao')) {
       return [
-        { label: "Small bowl", grams: 100 },
-        { label: "Medium bowl", grams: 150 },
-        { label: "Large bowl", grams: 200 },
-        { label: "Full plate", grams: 300 },
+        { label: 'Small bowl', grams: 100 },
+        { label: 'Medium bowl', grams: 150 },
+        { label: 'Large bowl', grams: 200 },
+        { label: 'Full plate', grams: 300 },
       ];
     }
 
-    if (
-      name.includes("roti") ||
-      name.includes("naan") ||
-      name.includes("chapati")
-    ) {
+    if (name.includes('roti') || name.includes('naan') || name.includes('chapati')) {
       return [
-        { label: "1 piece", grams: 40 },
-        { label: "2 pieces", grams: 80 },
-        { label: "3 pieces", grams: 120 },
-        { label: "4 pieces", grams: 160 },
+        { label: '1 piece', grams: 40 },
+        { label: '2 pieces', grams: 80 },
+        { label: '3 pieces', grams: 120 },
+        { label: '4 pieces', grams: 160 },
       ];
     }
 
-    if (
-      name.includes("dal") ||
-      name.includes("curry") ||
-      name.includes("sabji")
-    ) {
+    if (name.includes('dal') || name.includes('curry') || name.includes('sabji')) {
       return [
-        { label: "Small serving", grams: 80 },
-        { label: "Medium serving", grams: 120 },
-        { label: "Large serving", grams: 180 },
-        { label: "Extra serving", grams: 240 },
+        { label: 'Small serving', grams: 80 },
+        { label: 'Medium serving', grams: 120 },
+        { label: 'Large serving', grams: 180 },
+        { label: 'Extra serving', grams: 240 },
       ];
     }
 
     // Generic portions
     return [
-      { label: "Small portion", grams: 75 },
-      { label: "Medium portion", grams: 150 },
-      { label: "Large portion", grams: 225 },
-      { label: "Extra large", grams: 300 },
+      { label: 'Small portion', grams: 75 },
+      { label: 'Medium portion', grams: 150 },
+      { label: 'Large portion', grams: 225 },
+      { label: 'Extra large', grams: 300 },
     ];
   };
 
@@ -291,21 +257,11 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
   // Calculate updated nutrition for preview
   const previewNutrition = {
-    calories: Math.round(
-      currentFood.nutrition.calories * currentAdjustment.adjustmentRatio,
-    ),
+    calories: Math.round(currentFood.nutrition.calories * currentAdjustment.adjustmentRatio),
     protein:
-      Math.round(
-        currentFood.nutrition.protein * currentAdjustment.adjustmentRatio * 10,
-      ) / 10,
-    carbs:
-      Math.round(
-        currentFood.nutrition.carbs * currentAdjustment.adjustmentRatio * 10,
-      ) / 10,
-    fat:
-      Math.round(
-        currentFood.nutrition.fat * currentAdjustment.adjustmentRatio * 10,
-      ) / 10,
+      Math.round(currentFood.nutrition.protein * currentAdjustment.adjustmentRatio * 10) / 10,
+    carbs: Math.round(currentFood.nutrition.carbs * currentAdjustment.adjustmentRatio * 10) / 10,
+    fat: Math.round(currentFood.nutrition.fat * currentAdjustment.adjustmentRatio * 10) / 10,
   };
 
   return (
@@ -318,7 +274,12 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Adjust Portion Sizes</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close portion adjustment">
+          <TouchableOpacity
+            onPress={onClose}
+            style={styles.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel="Close portion adjustment"
+          >
             <Ionicons name="close" size={rf(20)} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -345,9 +306,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.originalBadge}>
-                <Text style={styles.originalText}>
-                  AI Estimate: {currentFood.estimatedGrams}g
-                </Text>
+                <Text style={styles.originalText}>AI Estimate: {currentFood.estimatedGrams}g</Text>
               </View>
             </View>
 
@@ -357,27 +316,19 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               <View style={styles.nutritionGrid}>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Calories</Text>
-                  <Text style={styles.nutritionValue}>
-                    {previewNutrition.calories}
-                  </Text>
+                  <Text style={styles.nutritionValue}>{previewNutrition.calories}</Text>
                 </View>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Protein</Text>
-                  <Text style={styles.nutritionValue}>
-                    {previewNutrition.protein}g
-                  </Text>
+                  <Text style={styles.nutritionValue}>{previewNutrition.protein}g</Text>
                 </View>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Carbs</Text>
-                  <Text style={styles.nutritionValue}>
-                    {previewNutrition.carbs}g
-                  </Text>
+                  <Text style={styles.nutritionValue}>{previewNutrition.carbs}g</Text>
                 </View>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionLabel}>Fat</Text>
-                  <Text style={styles.nutritionValue}>
-                    {previewNutrition.fat}g
-                  </Text>
+                  <Text style={styles.nutritionValue}>{previewNutrition.fat}g</Text>
                 </View>
               </View>
             </View>
@@ -388,15 +339,13 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             <Text style={styles.sectionTitle}>Adjust Portion Size</Text>
 
             <View style={styles.currentPortionDisplay}>
-              <Text style={styles.currentPortionGrams}>
-                {currentAdjustment.adjustedGrams}g
-              </Text>
+              <Text style={styles.currentPortionGrams}>{currentAdjustment.adjustedGrams}g</Text>
               <Text style={styles.currentPortionLabel}>
                 {getServingSizeLabel(currentAdjustment.adjustedGrams)}
               </Text>
               {currentAdjustment.adjustmentRatio !== 1.0 && (
                 <Text style={styles.adjustmentRatio}>
-                  ({currentAdjustment.adjustmentRatio > 1 ? "+" : ""}
+                  ({currentAdjustment.adjustmentRatio > 1 ? '+' : ''}
                   {Math.round((currentAdjustment.adjustmentRatio - 1) * 100)}%)
                 </Text>
               )}
@@ -407,9 +356,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               minimumValue={minGrams}
               maximumValue={maxGrams}
               value={currentAdjustment.adjustedGrams}
-              onValueChange={(value) =>
-                updateAdjustment(currentFoodIndex, value)
-              }
+              onValueChange={(value) => updateAdjustment(currentFoodIndex, value)}
             />
 
             <View style={styles.sliderLabels}>
@@ -421,9 +368,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             <View style={styles.manualInputContainer}>
               <View style={styles.manualInputLabelRow}>
                 <Ionicons name="scale-outline" size={rf(14)} color={colors.textSecondary} />
-                <Text style={styles.manualInputLabel}>
-                  Have a scale? Enter exact grams:
-                </Text>
+                <Text style={styles.manualInputLabel}>Have a scale? Enter exact grams:</Text>
               </View>
               <View style={styles.manualInputRow}>
                 <TextInput
@@ -433,7 +378,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   placeholderTextColor={colors.textMuted}
                   value={String(currentAdjustment.adjustedGrams)}
                   onChangeText={(text) => {
-                    const numValue = parseInt(text.replace(/[^0-9]/g, ""), 10);
+                    const numValue = parseInt(text.replace(/[^0-9]/g, ''), 10);
                     if (!isNaN(numValue) && numValue >= 1 && numValue <= 2000) {
                       updateAdjustment(currentFoodIndex, numValue);
                     }
@@ -460,9 +405,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                     currentAdjustment.adjustedGrams === portion.grams &&
                       styles.quickPortionButtonActive,
                   ]}
-                  onPress={() =>
-                    updateAdjustment(currentFoodIndex, portion.grams)
-                  }
+                  onPress={() => updateAdjustment(currentFoodIndex, portion.grams)}
                   accessibilityRole="button"
                   accessibilityLabel={`${portion.label}, ${portion.grams} grams`}
                   accessibilityState={{
@@ -496,9 +439,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
           <Card style={styles.resetCard}>
             <TouchableOpacity
               style={styles.resetButton}
-              onPress={() =>
-                updateAdjustment(currentFoodIndex, currentFood.estimatedGrams)
-              }
+              onPress={() => updateAdjustment(currentFoodIndex, currentFood.estimatedGrams)}
               disabled={currentAdjustment.adjustmentRatio === 1.0}
               accessibilityRole="button"
               accessibilityLabel="Reset portion to estimated"
@@ -510,8 +451,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               <Text
                 style={[
                   styles.resetButtonText,
-                  currentAdjustment.adjustmentRatio === 1.0 &&
-                    styles.resetButtonTextDisabled,
+                  currentAdjustment.adjustmentRatio === 1.0 && styles.resetButtonTextDisabled,
                 ]}
               >
                 Reset to AI Estimate ({currentFood.estimatedGrams}g)
@@ -540,7 +480,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               />
             ) : (
               <Button
-                title={isProcessing ? "Applying..." : "Apply Adjustments"}
+                title={isProcessing ? 'Applying...' : 'Apply Adjustments'}
                 onPress={applyAdjustments}
                 disabled={isProcessing}
                 style={styles.navButton}
@@ -550,13 +490,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
           {isProcessing && (
             <View style={styles.processingIndicator}>
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-              />
-              <Text style={styles.processingText}>
-                Recalculating nutrition...
-              </Text>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.processingText}>Recalculating nutrition...</Text>
             </View>
           )}
         </View>
@@ -572,9 +507,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
@@ -592,8 +527,8 @@ const styles = StyleSheet.create({
     height: Math.max(rh(32), 44),
     borderRadius: rbr(16),
     backgroundColor: colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   progressIndicator: {
@@ -605,7 +540,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   progressBar: {
@@ -615,7 +550,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: rbr(2),
   },
@@ -631,9 +566,9 @@ const styles = StyleSheet.create({
   },
 
   foodHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
 
@@ -669,15 +604,15 @@ const styles = StyleSheet.create({
   },
 
   nutritionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
 
   nutritionItem: {
     flex: 1,
-    minWidth: "22%",
-    alignItems: "center",
+    minWidth: '22%',
+    alignItems: 'center',
   },
 
   nutritionLabel: {
@@ -705,7 +640,7 @@ const styles = StyleSheet.create({
   },
 
   currentPortionDisplay: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: spacing.lg,
   },
 
@@ -724,19 +659,19 @@ const styles = StyleSheet.create({
   adjustmentRatio: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
-    fontStyle: "italic",
+    fontStyle: 'italic',
     marginTop: spacing.xs,
   },
 
   slider: {
-    width: "100%",
+    width: '100%',
     height: rh(40),
     marginVertical: spacing.md,
   },
 
   sliderLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 
   sliderLabel: {
@@ -758,17 +693,17 @@ const styles = StyleSheet.create({
   },
 
   manualInputLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     marginBottom: spacing.sm,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
 
   manualInputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
   },
 
@@ -782,7 +717,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
     backgroundColor: colors.background,
   },
 
@@ -798,20 +733,20 @@ const styles = StyleSheet.create({
   },
 
   quickPortionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
 
   quickPortionButton: {
     flex: 1,
-    minWidth: "45%",
+    minWidth: '45%',
     padding: spacing.md,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.background,
-    alignItems: "center",
+    alignItems: 'center',
   },
 
   quickPortionButtonActive: {
@@ -845,9 +780,9 @@ const styles = StyleSheet.create({
   },
 
   resetButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
     minHeight: 44,
     paddingVertical: spacing.md,
@@ -874,7 +809,7 @@ const styles = StyleSheet.create({
   },
 
   navigationButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.md,
   },
 
@@ -883,9 +818,9 @@ const styles = StyleSheet.create({
   },
 
   processingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.md,
   },
 
@@ -897,9 +832,9 @@ const styles = StyleSheet.create({
 
   // Custom Slider Styles
   customSliderContainer: {
-    width: "100%",
+    width: '100%',
     height: rh(40),
-    justifyContent: "center",
+    justifyContent: 'center',
     marginVertical: spacing.md,
   },
 
@@ -907,20 +842,20 @@ const styles = StyleSheet.create({
     height: rh(4),
     backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
-    position: "relative",
+    position: 'relative',
   },
 
   customSliderFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: rbr(2),
-    position: "absolute",
+    position: 'absolute',
     left: 0,
     top: 0,
   },
 
   customSliderThumb: {
-    position: "absolute",
+    position: 'absolute',
     top: rh(-10),
     width: rw(24),
     height: rh(24),

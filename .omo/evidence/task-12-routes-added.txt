@@ -1,0 +1,10 @@
+Task 12: Route Registration - Evidence
+
+Routes registered in index.ts: 3
+$ grep "/api/subscription/cancel\|/api/subscription/pause\|/api/subscription/resume" fitai-workers/src/index.ts
+
+app.post('/api/subscription/cancel', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleCancelSubscription);
+app.post('/api/subscription/pause', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handlePauseSubscription);
+app.post('/api/subscription/resume', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleResumeSubscription);
+
+LSP diagnostics on index.ts: No diagnostics found (only pre-existing ALLOWED_ORIGINS and 204 status errors)

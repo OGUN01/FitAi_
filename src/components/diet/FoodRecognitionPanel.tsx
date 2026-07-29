@@ -1,30 +1,30 @@
-import React from "react";
-import { StyleSheet } from "react-native";
-import { Camera } from "../advanced/Camera";
-import PortionAdjustment from "./PortionAdjustment";
-import FoodRecognitionFeedback from "./FoodRecognitionFeedback";
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import { Camera } from '../advanced/Camera';
+import PortionAdjustment from './PortionAdjustment';
+import FoodRecognitionFeedback from './FoodRecognitionFeedback';
 
 interface FoodRecognitionPanelProps {
   showCamera: boolean;
-  cameraMode: "food" | "barcode" | "progress" | "label" | string;
+  cameraMode: 'food' | 'barcode' | 'progress' | 'label' | string;
   onHandleCameraCapture: (uri: string) => Promise<void>;
   onHandleLabelCapture: (uri: string) => Promise<void>;
   handleBarcodeScanned: (
     barcode: string,
     rawSymbology?: string,
-    rawBarcode?: string,
+    rawBarcode?: string
   ) => Promise<void>;
   handleLabelLibraryPick: () => Promise<void>;
   handleBarcodeCameraClose: () => void;
   setShowCamera: (show: boolean) => void;
   setCameraMode: (mode: any) => void;
-  barcodeCameraState?: "idle" | "decoding" | "lookup_in_progress" | "transient_retry" | "resolved";
+  barcodeCameraState?: 'idle' | 'decoding' | 'lookup_in_progress' | 'transient_retry' | 'resolved';
   barcodeStatusMessage?: string | null;
   barcodeInlineActions?: Array<{
     id: string;
     label: string;
     onPress: () => void;
-    variant?: "primary" | "secondary" | "ghost";
+    variant?: 'primary' | 'secondary' | 'ghost';
   }>;
   portionData: any;
   showPortionAdjustment: boolean;
@@ -71,31 +71,25 @@ export const FoodRecognitionPanel: React.FC<FoodRecognitionPanelProps> = ({
     <>
       {showCamera && (
         <Camera
-          mode={cameraMode as "food" | "progress" | "barcode" | "label"}
-          onCapture={
-            cameraMode === "label" ? onHandleLabelCapture : onHandleCameraCapture
-          }
-          onBarcodeScanned={
-            cameraMode === "barcode" ? handleBarcodeScanned : undefined
-          }
-          onLabelLibraryPick={
-            cameraMode === "label" ? handleLabelLibraryPick : undefined
-          }
+          mode={cameraMode as 'food' | 'progress' | 'barcode' | 'label'}
+          onCapture={cameraMode === 'label' ? onHandleLabelCapture : onHandleCameraCapture}
+          onBarcodeScanned={cameraMode === 'barcode' ? handleBarcodeScanned : undefined}
+          onLabelLibraryPick={cameraMode === 'label' ? handleLabelLibraryPick : undefined}
           onClose={() => {
-            if (cameraMode === "barcode") {
+            if (cameraMode === 'barcode') {
               handleBarcodeCameraClose();
             } else {
               setShowCamera(false);
             }
-            setCameraMode("food");
+            setCameraMode('food');
             if (setPortionGrams) setPortionGrams(null);
           }}
           style={styles.cameraModal}
           barcodeSessionState={barcodeCameraState}
           barcodeStatusMessage={barcodeStatusMessage}
           barcodeActions={barcodeInlineActions}
-          portionGrams={cameraMode === "food" ? portionGrams : undefined}
-          onPortionGramsChange={cameraMode === "food" ? setPortionGrams : undefined}
+          portionGrams={cameraMode === 'food' ? portionGrams : undefined}
+          onPortionGramsChange={cameraMode === 'food' ? setPortionGrams : undefined}
         />
       )}
 
@@ -129,7 +123,7 @@ export const FoodRecognitionPanel: React.FC<FoodRecognitionPanelProps> = ({
 
 const styles = StyleSheet.create({
   cameraModal: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,

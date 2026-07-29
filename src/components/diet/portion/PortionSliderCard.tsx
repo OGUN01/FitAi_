@@ -1,11 +1,16 @@
-import React from "react";
-import { View, Text, StyleSheet, TextInput, Keyboard } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../../ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rh, rw, rf } from "../../../utils/responsive";
-import { CustomSlider } from "./CustomSlider";
-import { PortionAdjustment } from "../../../hooks/usePortionAdjustment";
+import React from 'react';
+import { View, Text, StyleSheet, TextInput, Keyboard } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Card } from '../../ui';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+} from '../../../theme/aurora-tokens';
+import { rh, rw, rf } from '../../../utils/responsive';
+import { CustomSlider } from './CustomSlider';
+import { PortionAdjustment } from '../../../hooks/usePortionAdjustment';
 
 interface PortionSliderCardProps {
   currentAdjustment: PortionAdjustment;
@@ -29,15 +34,13 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
       <Text style={styles.sectionTitle}>Adjust Portion Size</Text>
 
       <View style={styles.currentPortionDisplay}>
-        <Text style={styles.currentPortionGrams}>
-          {currentAdjustment.adjustedGrams}g
-        </Text>
+        <Text style={styles.currentPortionGrams}>{currentAdjustment.adjustedGrams}g</Text>
         <Text style={styles.currentPortionLabel}>
           {getServingSizeLabel(currentAdjustment.adjustedGrams)}
         </Text>
         {currentAdjustment.adjustmentRatio !== 1.0 && (
           <Text style={styles.adjustmentRatio}>
-            ({currentAdjustment.adjustmentRatio > 1 ? "+" : ""}
+            ({currentAdjustment.adjustmentRatio > 1 ? '+' : ''}
             {Math.round((currentAdjustment.adjustmentRatio - 1) * 100)}%)
           </Text>
         )}
@@ -59,9 +62,7 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
       <View style={styles.manualInputContainer}>
         <View style={styles.manualInputLabelRow}>
           <Ionicons name="scale-outline" size={rf(14)} color={colors.textSecondary} />
-          <Text style={styles.manualInputLabel}>
-            Have a scale? Enter exact grams:
-          </Text>
+          <Text style={styles.manualInputLabel}>Have a scale? Enter exact grams:</Text>
         </View>
         <View style={styles.manualInputRow}>
           <TextInput
@@ -71,7 +72,7 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
             placeholderTextColor={colors.textMuted}
             value={String(currentAdjustment.adjustedGrams)}
             onChangeText={(text) => {
-              const numValue = parseInt(text.replace(/[^0-9]/g, ""), 10);
+              const numValue = parseInt(text.replace(/[^0-9]/g, ''), 10);
               if (!isNaN(numValue) && numValue >= 1 && numValue <= 2000) {
                 updateAdjustment(currentFoodIndex, numValue);
               }
@@ -95,17 +96,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
   currentPortionDisplay: {
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
     marginBottom: spacing.lg,
   },
   currentPortionGrams: {
     fontSize: fontSize.xxl,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.primary,
   },
   currentPortionLabel: {
@@ -116,17 +117,17 @@ const styles = StyleSheet.create({
   adjustmentRatio: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
-    fontStyle: "italic",
+    fontStyle: 'italic',
     marginTop: spacing.xs,
   },
   slider: {
-    width: "100%",
+    width: '100%',
     height: rh(40),
     marginVertical: spacing.md,
   },
   sliderLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   sliderLabel: {
     fontSize: fontSize.xs,
@@ -144,16 +145,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   manualInputLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     marginBottom: spacing.sm,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   manualInputRow: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    flexDirection: 'row',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     gap: spacing.sm,
   },
   manualInput: {
@@ -164,14 +165,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
     backgroundColor: colors.background,
   },
   manualInputUnit: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

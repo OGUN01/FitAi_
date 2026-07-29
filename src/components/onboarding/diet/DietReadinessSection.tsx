@@ -1,10 +1,29 @@
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { GlassCard } from "../../../components/ui/aurora";
-import { DIET_READINESS_OPTIONS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
-import { CompactTogglePill } from "../../onboarding/shared/CompactTogglePill";
+/**
+ * S3 "Fuel" — DietReadinessSection (blueprint §3 S3, §5 S3, §6 input map)
+ *
+ * Fresh "Editorial Dark" — PEAK pass. The 6 ready-flags (keto / IF / paleo /
+ * mediterranean / low_carb / high_protein) are an icon Pill grid inside a
+ * CollapsibleSection that defaults to collapsed and removes its content from
+ * layout when closed.
+ *
+ * Selected-state system (uniform across the diet tab): a pill shows its
+ * identity icon (ink2) when off and an accent checkmark + accentDim fill
+ * when on. The collapsed subtitle NAMES the picks — "2 · Keto, Paleo +1" —
+ * so closing the section never hides the selection (2026 chip-rail rule).
+ *
+ * Presentation-only redesign — props contract (formData, toggleDietReadiness,
+ * showInfoTooltip) unchanged; fields still save via toggleDietReadiness.
+ */
+
+import React, { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { DietPreferencesData } from "../../../types/onboarding";
+import { DIET_READINESS_OPTIONS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
+import { CollapsibleSection, Pill } from "../fresh";
+import { countWithPreview } from "./selectionPreview";
+
+type IoniconName = keyof typeof Ionicons.glyphMap;
 
 interface DietReadinessSectionProps {
   formData: DietPreferencesData;
@@ -19,90 +38,51 @@ interface DietReadinessSectionProps {
 export const DietReadinessSection: React.FC<DietReadinessSectionProps> = ({
   formData,
   toggleDietReadiness,
-  showInfoTooltip,
 }) => {
+  const [open, setOpen] = useState(false);
+  const selected = DIET_READINESS_OPTIONS.filter(
+    (o) => formData[o.key as keyof DietPreferencesData] as boolean,
+  );
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
+    <CollapsibleSection
+      title="Diet Readiness"
+      subtitle={countWithPreview(
+        selected.length,
+        "Open to trying any of these specialized diets? (optional)",
+        selected.map((o) => o.title),
+      )}
+      expanded={open}
+      onToggle={() => setOpen((v) => !v)}
+      testID="diet-readiness-section"
     >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Diet Readiness
-        </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          Are you ready to try any of these specialized diets? (Optional)
-        </Text>
-      </View>
-
-      <View style={styles.edgeToEdgeContentPadded}>
-        {DIET_READINESS_OPTIONS.map((option) => {
-          const isReady = formData[
-            option.key as keyof DietPreferencesData
-          ] as boolean;
-
+      <View style={styles.pillGrid}>
+        {DIET_READINESS_OPTIONS.map((o) => {
+          const isReady = formData[o.key as keyof DietPreferencesData] as boolean;
           return (
-            <CompactTogglePill
-              key={option.key}
-              isActive={isReady}
-              iconName={option.iconName}
-              title={option.title}
-              description={option.description}
-              onToggle={() =>
-                toggleDietReadiness(option.key as keyof DietPreferencesData)
+            <Pill
+              key={o.key}
+              label={o.title}
+              icon={isReady ? "checkmark" : (o.iconName as IoniconName)}
+              selected={isReady}
+              onPress={() =>
+                toggleDietReadiness(o.key as keyof DietPreferencesData)
               }
-              onInfoPress={() =>
-                showInfoTooltip(
-                  option.title,
-                  option.description,
-                  option.benefits,
-                )
-              }
+              testID={`readiness-${o.key}`}
             />
           );
         })}
       </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+    </CollapsibleSection>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.xl,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
+  pillGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
 });
+
+export default DietReadinessSection;

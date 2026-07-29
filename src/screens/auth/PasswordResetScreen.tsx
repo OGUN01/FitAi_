@@ -32,7 +32,7 @@ import { supabase } from "../../services/supabase";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
-import { Button, Input, PasswordInput } from "../../components/ui";
+import { Button, PasswordInput } from "../../components/ui";
 import { rf, rh, rw } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
@@ -66,7 +66,7 @@ const validateNewPassword = (
     errors.password = "Password is required";
   } else if (password.length < PASSWORD_MIN_LENGTH) {
     errors.password = `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`;
-  } else if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) {
+  } else if (!/[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(password)) {
     errors.password = "Password must include at least one number or symbol";
   }
 
@@ -80,7 +80,7 @@ const validateNewPassword = (
 };
 
 export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
-  token,
+  token: _token,
   onBackToLogin,
   onRequestNewReset,
 }) => {
@@ -165,7 +165,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: password,
+        password,
       });
 
       if (error) {

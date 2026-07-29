@@ -7,7 +7,12 @@
 import React, { useCallback, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
+import {
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
 import { SectionHeader } from "../home/SectionHeader";
 import { Period } from "./PeriodSelector";
@@ -37,11 +42,11 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
   const safeWorkoutData = workoutData ?? [];
 
   const weightLegend = useMemo(
-    () => (hasWeightData ? [{ color: colors.primary, label: "Weight" }] : undefined),
+    () => (hasWeightData ? [{ color: chart[1], label: "Weight" }] : undefined),
     [hasWeightData],
   );
   const calorieLegend = useMemo(
-    () => (hasCalorieData ? [{ color: colors.success, label: "Consumed" }] : undefined),
+    () => (hasCalorieData ? [{ color: chart[4], label: "Consumed" }] : undefined),
     [hasCalorieData],
   );
   const handleWeightPress = useCallback(() => onChartPress?.("weight"), [onChartPress]);
@@ -54,7 +59,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
         <SectionHeader
           title="Detailed Analytics"
           icon="bar-chart"
-          iconColor={colors.primary}
+          iconColor={chart[1]}
         />
       </View>
 
@@ -62,18 +67,18 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
         <ChartCard
           title="Weight Progress"
           icon="trending-down"
-          iconColor={colors.primary}
+          iconColor={chart[1]}
           legend={weightLegend}
           delay={0}
           onPress={hasWeightData ? handleWeightPress : undefined}
         >
-          <LineChart data={weightData || []} color={colors.primary} unit="kg" />
+          <LineChart data={weightData || []} color={chart[1]} unit="kg" />
         </ChartCard>
 
         <ChartCard
           title="Calorie Analysis"
           icon="flame"
-          iconColor={colors.warning}
+          iconColor={chart[5]}
           legend={calorieLegend}
           delay={100}
           onPress={hasCalorieData ? handleCaloriePress : undefined}
@@ -81,15 +86,15 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
           {hasCalorieData ? (
             <BarChart
               data={safeCalorieData}
-              color={colors.success}
-              gradientColors={[colors.success, colors.successLight]}
+              color={chart[4]}
+              gradientColors={[chart[4], chart[4]]}
             />
           ) : (
             <View style={styles.emptyChart}>
               <Ionicons
                 name="flame-outline"
                 size={rf(32)}
-                color={colors.textMuted}
+                color={colors.text.muted}
               />
               <Text style={styles.emptyChartText} numberOfLines={2}>
                 No calorie data recorded
@@ -104,15 +109,15 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
         <ChartCard
           title="Workout Consistency"
           icon="barbell"
-          iconColor={colors.info}
+          iconColor={chart[2]}
           delay={200}
           onPress={hasWorkoutData ? handleWorkoutPress : undefined}
         >
           {hasWorkoutData ? (
             <BarChart
               data={safeWorkoutData}
-              color={colors.info}
-              gradientColors={[colors.info, colors.info]}
+              color={chart[2]}
+              gradientColors={[chart[2], chart[2]]}
               maxValue={Math.max(...safeWorkoutData.map((d) => d.value), 4)}
             />
           ) : (
@@ -120,7 +125,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
               <Ionicons
                 name="barbell-outline"
                 size={rf(32)}
-                color={colors.textMuted}
+                color={colors.text.muted}
               />
               <Text style={styles.emptyChartText} numberOfLines={2}>
                 No workout data this {period}
@@ -159,15 +164,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   emptyChartText: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     textAlign: "center",
   },
   emptyChartSubtext: {
-    fontSize: rf(12),
-    fontWeight: "500",
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.secondary,
     textAlign: "center",
   },
 });

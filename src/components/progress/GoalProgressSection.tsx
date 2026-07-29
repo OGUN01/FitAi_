@@ -1,5 +1,8 @@
 /**
- * GoalProgressSection - "Am I getting closer to my goals?"
+ * GoalProgressSection - "Am I getting closer to my goals?" (Aurora 2026)
+ *
+ * Minimal: one horizontal gradient progress bar + % text per goal.
+ * No boxed card — sits directly on the screen background.
  *
  * DATA SOURCES (single sources of truth):
  *  - Weight goal: latest progress stats + earliest known weight history + target weight
@@ -7,15 +10,27 @@
  *  - Calorie adherence: weeklyProgress.caloriesConsumed + calculatedMetrics.dailyCalories (7 days)
  */
 
-import React, { type ComponentProps } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { GlassCard } from '../ui/aurora/GlassCard';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import type { ProgressStats } from '../../services/progressData';
 import type { CalculatedMetrics } from '../../hooks/useCalculatedMetrics';
-import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
-import { rf, rp, rh, rbr, rs } from '../../utils/responsive';
+import {
+  chart,
+  colors,
+  surface,
+  typography,
+  spacing,
+  borderRadius,
+} from '../../theme/aurora-tokens';
 import { type WeightUnit, toDisplayWeight } from '../../utils/units';
 import { getWeightGoalProgress } from './goalProgressUtils';
 
@@ -34,83 +49,65 @@ interface GoalProgressSectionProps {
   unit?: WeightUnit;
 }
 
-interface GoalBarProps {
+interface GoalRowProps {
   label: string;
-  icon: string;
-  iconColor: string;
-  current: number | null;
-  target: number | null;
-  unit: string;
-  higherIsBetter?: boolean;
-  displayCurrent?: string;
-  displayTarget?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  accent: string;
+  progress: number | null;
+  leftText: string;
+  rightText: string;
+  delay?: number;
 }
 
-const GoalBar: React.FC<GoalBarProps> = ({
+const GoalRow: React.FC<GoalRowProps> = ({
   label,
   icon,
-  iconColor,
-  current,
-  target,
-  unit,
-  higherIsBetter = false,
-  displayCurrent,
-  displayTarget,
+  accent,
+  progress,
+  leftText,
+  rightText,
+  delay = 0,
 }) => {
-  if (current == null || target == null || target === 0) {
-    return (
-      <View style={styles.goalBarContainer}>
-        <View style={styles.goalBarHeader}>
-          <Ionicons name={icon as ComponentProps<typeof Ionicons>['name']} size={rf(14)} color={iconColor} />
-          <Text style={styles.goalBarLabel}>{label}</Text>
-        </View>
-        <Text style={styles.noDataText}>No goal set</Text>
-      </View>
-    );
-  }
+  const width = useSharedValue(0);
+  const pct = progress == null ? null : Math.round(Math.min(1, Math.max(0, progress)) * 100);
 
-  const progress = higherIsBetter
-    ? Math.min(1, current / target)
-    : Math.min(1, Math.max(0, current / target));
-  const pct = Math.round(progress * 100);
-  const isComplete = pct >= 100;
+  useEffect(() => {
+    if (pct != null) {
+      width.value = withTiming(pct, { duration: 700, easing: Easing.out(Easing.cubic) });
+    }
+  }, [pct, width]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${width.value}%`,
+  }));
 
   return (
-    <View style={styles.goalBarContainer}>
-      <View style={styles.goalBarHeader}>
-        <Ionicons name={icon as ComponentProps<typeof Ionicons>['name']} size={rf(14)} color={iconColor} />
-        <Text style={styles.goalBarLabel}>{label}</Text>
-        <Text
-          style={[
-            styles.goalBarPct,
-            { color: isComplete ? colors.success : iconColor },
-          ]}
-        >
-          {pct}%
+    <Animated.View
+      entering={FadeInDown.delay(delay).duration(280)}
+      style={styles.goalRow}
+    >
+      <View style={styles.goalHeader}>
+        <Ionicons name={icon} size={14} color={accent} />
+        <Text style={styles.goalLabel}>{label}</Text>
+        <Text style={[styles.goalPct, { color: accent }]}>
+          {pct == null ? '—' : `${pct}%`}
         </Text>
       </View>
       <View style={styles.barTrack}>
-        <View
-          style={[
-            styles.barFill,
-            {
-              width: `${Math.min(100, pct)}%` as const,
-              backgroundColor: isComplete ? colors.success : iconColor,
-            },
-          ]}
-        />
+        <Animated.View style={[styles.barFillWrap, fillStyle]}>
+          <LinearGradient
+            colors={[accent, chart[2]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.barFill}
+          />
+        </Animated.View>
       </View>
-      <View style={styles.goalBarFooter}>
-        <Text style={styles.goalBarSub}>
-          {displayCurrent ?? `${current}`}
-          {unit}
-        </Text>
-        <Text style={styles.goalBarSub}>
-          Goal: {displayTarget ?? `${target}`}
-          {unit}
-        </Text>
+      <View style={styles.goalFooter}>
+        <Text style={styles.goalSub}>{leftText}</Text>
+        <Text style={styles.goalSub}>{rightText}</Text>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -130,7 +127,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
   const dailyCalorieTarget = calculatedMetrics?.dailyCalories ?? null;
   const weeklyCalorieTarget = dailyCalorieTarget != null ? dailyCalorieTarget * 7 : null;
 
-  const { weightProgress, weeklyRateKg, weeksLeft } = getWeightGoalProgress({
+  const { weightProgress } = getWeightGoalProgress({
     currentWeightKg,
     targetWeightKg,
     weightHistory,
@@ -141,188 +138,134 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
 
   const displayCurrentWeight = toDisplayWeight(currentWeightKg, unit);
   const displayTargetWeight = toDisplayWeight(targetWeightKg, unit);
-  const displayWeeklyRate = toDisplayWeight(weeklyRateKg, unit);
+
+  const workoutProgress =
+    workoutsCompleted != null && workoutTarget != null && workoutTarget > 0
+      ? workoutsCompleted / workoutTarget
+      : null;
+  const calorieProgress =
+    weeklyCalories != null && weeklyCalorieTarget != null && weeklyCalorieTarget > 0
+      ? weeklyCalories / weeklyCalorieTarget
+      : null;
+
+  const hasAnyGoal =
+    weightProgress != null || workoutProgress != null || calorieProgress != null;
 
   return (
-    <GlassCard style={styles.card}>
-      <View style={styles.header}>
-        <LinearGradient
-          colors={['rgba(255,107,53,0.25)', 'rgba(255,107,53,0.05)']}
-          style={styles.iconBg}
-        >
-          <Ionicons name="flag" size={rf(16)} color={colors.primary} />
-        </LinearGradient>
-        <Text style={styles.sectionTitle}>Goal Progress</Text>
-      </View>
+    <Animated.View
+      entering={FadeInDown.delay(90).duration(320)}
+      style={styles.section}
+    >
+      <Text style={styles.sectionTitle}>Goal Progress</Text>
 
       {weightProgress != null && (
-        <View style={styles.goalBarContainer}>
-          <View style={styles.goalBarHeader}>
-            <Ionicons name="scale-outline" size={rf(14)} color={colors.primary} />
-            <Text style={styles.goalBarLabel}>Weight Goal</Text>
-            <Text
-              style={[
-                styles.goalBarPct,
-                {
-                  color:
-                    weightProgress >= 1
-                      ? colors.success
-                      : colors.primary,
-                },
-              ]}
-            >
-              {Math.round(weightProgress * 100)}%
-            </Text>
-          </View>
-          <View style={styles.barTrack}>
-            <View
-              style={[
-                styles.barFill,
-                {
-                  width: `${Math.min(100, Math.round(weightProgress * 100))}%` as const,
-                  backgroundColor:
-                    weightProgress >= 1
-                      ? colors.success
-                      : colors.primary,
-                },
-              ]}
-            />
-          </View>
-          <View style={styles.goalBarFooter}>
-            <Text style={styles.goalBarSub}>
-              {displayCurrentWeight?.toFixed(1) ?? '--'} {unit} now
-            </Text>
-            <Text style={styles.goalBarSub}>
-              Goal: {displayTargetWeight?.toFixed(1) ?? '--'} {unit}
-            </Text>
-          </View>
-          {weeksLeft != null && displayWeeklyRate != null && weightProgress < 1 && (
-            <Text style={styles.timelineHint}>
-              At {displayWeeklyRate.toFixed(2)} {unit}/week - est. {weeksLeft} weeks left
-            </Text>
-          )}
-        </View>
-      )}
-
-      <GoalBar
-        label="Workouts This Week"
-        icon="barbell-outline"
-        iconColor={colors.blue}
-        current={workoutsCompleted}
-        target={workoutTarget}
-        unit=" sessions"
-        higherIsBetter
-        displayCurrent={workoutsCompleted != null ? `${workoutsCompleted}` : undefined}
-        displayTarget={workoutTarget != null ? `${workoutTarget}` : undefined}
-      />
-
-      {weeklyCalories != null && weeklyCalorieTarget != null && (
-        <GoalBar
-          label="Calorie Adherence (Week)"
-          icon="flame-outline"
-          iconColor={colors.orange}
-          current={weeklyCalories}
-          target={weeklyCalorieTarget}
-          unit=" kcal"
-          higherIsBetter
-          displayCurrent={weeklyCalories != null ? `${Math.round(weeklyCalories)}` : undefined}
-          displayTarget={
-            weeklyCalorieTarget != null ? `${Math.round(weeklyCalorieTarget)}` : undefined
-          }
+        <GoalRow
+          label="Weight Goal"
+          icon="scale-outline"
+          accent={chart[1]}
+          progress={weightProgress}
+          leftText={`${displayCurrentWeight?.toFixed(1) ?? '--'} ${unit} now`}
+          rightText={`Goal ${displayTargetWeight?.toFixed(1) ?? '--'} ${unit}`}
+          delay={120}
         />
       )}
 
-      {weightProgress == null && workoutsCompleted == null && (
+      {workoutProgress != null && (
+        <GoalRow
+          label="Workouts This Week"
+          icon="barbell-outline"
+          accent={chart[2]}
+          progress={workoutProgress}
+          leftText={`${workoutsCompleted} sessions`}
+          rightText={`Goal ${workoutTarget}`}
+          delay={160}
+        />
+      )}
+
+      {calorieProgress != null && (
+        <GoalRow
+          label="Calorie Adherence"
+          icon="flame-outline"
+          accent={chart[5]}
+          progress={calorieProgress}
+          leftText={`${Math.round(weeklyCalories ?? 0)} kcal`}
+          rightText={`Goal ${Math.round(weeklyCalorieTarget ?? 0)}`}
+          delay={200}
+        />
+      )}
+
+      {!hasAnyGoal && (
         <View style={styles.emptyState}>
-          <Ionicons name="flag-outline" size={rf(28)} color={colors.textMuted} />
+          <Ionicons name="flag-outline" size={24} color={colors.text.muted} />
           <Text style={styles.emptyText}>Complete onboarding to see your goal progress</Text>
         </View>
       )}
-    </GlassCard>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    padding: rp(16),
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rp(8),
-    marginBottom: rp(14),
-  },
-  iconBg: {
-    width: rs(28),
-    height: rs(28),
-    borderRadius: rbr(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+  section: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: rf(16),
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
-  goalBarContainer: {
-    marginBottom: rp(14),
+  goalRow: {
+    marginBottom: spacing.md,
   },
-  goalBarHeader: {
+  goalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rp(6),
-    marginBottom: rp(6),
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
-  goalBarLabel: {
+  goalLabel: {
     flex: 1,
-    fontSize: rf(13),
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.text.secondary,
   },
-  goalBarPct: {
-    fontSize: rf(13),
-    fontWeight: '700',
+  goalPct: {
+    ...typography.variants.caption2,
+    fontFamily: 'Manrope_700Bold',
   },
   barTrack: {
-    height: rh(7),
-    backgroundColor: colors.glassSurface,
-    borderRadius: rbr(4),
+    height: 8,
+    backgroundColor: surface[1],
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  barFillWrap: {
+    height: '100%',
+    borderRadius: borderRadius.md,
     overflow: 'hidden',
   },
   barFill: {
-    height: '100%',
-    borderRadius: rbr(4),
+    flex: 1,
   },
-  goalBarFooter: {
+  goalFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: rp(4),
+    marginTop: spacing.xs,
   },
-  goalBarSub: {
-    fontSize: rf(11),
-    color: colors.textMuted,
-  },
-  timelineHint: {
-    fontSize: rf(11),
-    color: colors.primary,
-    marginTop: rp(3),
-    fontStyle: 'italic',
-  },
-  noDataText: {
-    fontSize: rf(12),
-    color: colors.textMuted,
-    marginTop: rp(4),
+  goalSub: {
+    ...typography.variants.caption,
+    color: colors.text.muted,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: rp(16),
-    gap: rp(8),
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
   },
   emptyText: {
-    fontSize: rf(13),
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
     textAlign: 'center',
   },
 });
+
+export default GoalProgressSection;

@@ -1,4 +1,13 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+/**
+ * TimePicker — legacy modal wheel time picker.
+ *
+ * NOTE: S1 "You" now uses the shared <RadialDial variant="time"> control
+ * directly (blueprint §6/§7.7). This modal picker is retained for back-compat
+ * with existing callers/tests and is kept aurora-token-compliant. It is NOT
+ * mounted by the redesigned PersonalInfoTab.
+ *
+ * API is unchanged: { visible, initialTime, onTimeSelect, onClose, title?, is24Hour? }.
+ */
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -7,13 +16,17 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
+  Pressable,
 } from "react-native";
+import {
+  surface,
+  border,
+  colors,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { rh, rw } from "../../utils/responsive";
-import { Button } from "../ui";
-
-// ============================================================================
-// TYPES
-// ============================================================================
 
 interface TimePickerProps {
   visible: boolean;
@@ -31,12 +44,7 @@ interface TimePickerWheelProps {
   width: number;
 }
 
-// Item height for scroll calculations
 const ITEM_HEIGHT = rh(5);
-
-// ============================================================================
-// TIME PICKER WHEEL COMPONENT
-// ============================================================================
 
 const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
   values,
@@ -48,10 +56,8 @@ const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // OB-UX-005: Scroll to selected value when component mounts or selectedValue changes
   useEffect(() => {
     if (scrollViewRef.current && selectedIndex >= 0) {
-      // Small delay to ensure layout is complete
       scrollTimeoutRef.current = setTimeout(() => {
         scrollViewRef.current?.scrollTo({
           y: selectedIndex * ITEM_HEIGHT,
@@ -107,10 +113,6 @@ const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
   );
 };
 
-// ============================================================================
-// MAIN TIME PICKER COMPONENT
-// ============================================================================
-
 export const TimePicker: React.FC<TimePickerProps> = ({
   visible,
   initialTime,
@@ -124,7 +126,6 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   const [selectedMinute, setSelectedMinute] = useState(minutes);
   const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">("AM");
 
-  // Generate time values
   const hourValues = is24Hour
     ? Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"))
     : Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"));
@@ -134,7 +135,6 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   );
   const periodValues = ["AM", "PM"];
 
-  // Initialize period for 12-hour format
   React.useEffect(() => {
     if (!is24Hour) {
       const hour24 = parseInt(hours);
@@ -183,15 +183,12 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.selectedTime}>{formatDisplayTime()}</Text>
           </View>
 
-          {/* Time Picker Wheels */}
           <View style={styles.pickersContainer}>
-            {/* Hour Picker */}
             <View style={styles.pickerSection}>
               <Text style={styles.pickerLabel}>Hour</Text>
               <TimePickerWheel
@@ -202,7 +199,6 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               />
             </View>
 
-            {/* Minute Picker */}
             <View style={styles.pickerSection}>
               <Text style={styles.pickerLabel}>Minute</Text>
               <TimePickerWheel
@@ -213,7 +209,6 @@ export const TimePicker: React.FC<TimePickerProps> = ({
               />
             </View>
 
-            {/* Period Picker (12-hour format only) */}
             {!is24Hour && (
               <View style={styles.pickerSection}>
                 <Text style={styles.pickerLabel}>Period</Text>
@@ -229,19 +224,17 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             )}
           </View>
 
-          {/* Quick Time Buttons */}
           <View style={styles.quickTimesContainer}>
             <Text style={styles.quickTimesTitle}>Quick Select</Text>
             <View style={styles.quickTimesGrid}>
               {title.toLowerCase().includes("wake")
-                ? // Wake time presets
-                  [
+                ? [
                     { label: "6:00 AM", value: "06:00" },
                     { label: "7:00 AM", value: "07:00" },
                     { label: "8:00 AM", value: "08:00" },
                     { label: "9:00 AM", value: "09:00" },
                   ].map((preset) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={preset.value}
                       style={styles.quickTimeButton}
                       onPress={() => {
@@ -256,16 +249,15 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                       accessibilityLabel={preset.label}
                     >
                       <Text style={styles.quickTimeText}>{preset.label}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))
-                : // Sleep time presets
-                  [
+                : [
                     { label: "10:00 PM", value: "22:00" },
                     { label: "11:00 PM", value: "23:00" },
                     { label: "12:00 AM", value: "00:00" },
                     { label: "1:00 AM", value: "01:00" },
                   ].map((preset) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={preset.value}
                       style={styles.quickTimeButton}
                       onPress={() => {
@@ -280,25 +272,28 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                       accessibilityLabel={preset.label}
                     >
                       <Text style={styles.quickTimeText}>{preset.label}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
             </View>
           </View>
 
-          {/* Actions */}
           <View style={styles.actionsContainer}>
-            <Button
-              title="Cancel"
+            <Pressable
+              style={[styles.actionButton, styles.cancelButton]}
               onPress={onClose}
-              variant="outline"
-              style={styles.cancelButton}
-            />
-            <Button
-              title="Confirm"
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.actionButton, styles.confirmButton]}
               onPress={handleConfirm}
-              variant="primary"
-              style={styles.confirmButton}
-            />
+              accessibilityRole="button"
+              accessibilityLabel="Confirm"
+            >
+              <Text style={styles.confirmText}>Confirm</Text>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -306,76 +301,63 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   );
 };
 
-// ============================================================================
-// STYLES
-// ============================================================================
-
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
-
   modalContainer: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    backgroundColor: surface[1],
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
     paddingBottom: spacing.xl,
     maxHeight: rh(682),
   },
-
   header: {
     padding: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: border.subtle,
     alignItems: "center",
   },
-
   title: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    fontFamily: typography.variants.sectionTitle.fontFamily,
+    fontSize: typography.variants.sectionTitle.fontSize,
+    lineHeight:
+      typography.variants.sectionTitle.fontSize *
+      typography.variants.sectionTitle.lineHeight,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
   },
-
   selectedTime: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    fontFamily: typography.variants.heroStat.fontFamily,
+    fontSize: typography.fontSize.h2,
+    color: colors.primary.DEFAULT,
   },
-
-  // Picker Container
   pickersContainer: {
     flexDirection: "row",
     justifyContent: "center",
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
   },
-
   pickerSection: {
     alignItems: "center",
     marginHorizontal: spacing.sm,
   },
-
   pickerLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
+    fontFamily: typography.variants.caption.fontFamily,
+    fontSize: typography.variants.caption.fontSize,
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
-
-  // Wheel Styles
   wheelContainer: {
     height: rh(150),
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: surface[2],
   },
-
   wheelContent: {
     paddingVertical: spacing.sm,
   },
-
   wheelItem: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -385,73 +367,81 @@ const styles = StyleSheet.create({
     marginVertical: spacing.xs,
     marginHorizontal: spacing.sm,
   },
-
   wheelItemSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
-
   wheelItemText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
+    fontFamily: typography.variants.body.fontFamily,
+    fontSize: typography.variants.body.fontSize,
+    color: colors.text.primary,
   },
-
   wheelItemTextSelected: {
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold,
+    color: colors.text.primary,
+    fontFamily: typography.variants.sectionTitle.fontFamily,
   },
-
-  // Quick Times
   quickTimesContainer: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
-
   quickTimesTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    fontFamily: typography.variants.cardHeadline.fontFamily,
+    fontSize: typography.variants.cardHeadline.fontSize,
+    color: colors.text.primary,
     marginBottom: spacing.md,
     textAlign: "center",
   },
-
   quickTimesGrid: {
     flexDirection: "row",
     justifyContent: "space-around",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-
   quickTimeButton: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     minHeight: 44,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.backgroundTertiary,
+    borderColor: border.subtle,
+    backgroundColor: surface[2],
     justifyContent: "center",
   },
-
   quickTimeText: {
-    fontSize: fontSize.sm,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.variants.caption.fontFamily,
+    fontSize: typography.variants.caption.fontSize,
+    color: colors.text.primary,
   },
-
-  // Actions
   actionsContainer: {
     flexDirection: "row",
     paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
-
+  actionButton: {
+    minHeight: 52,
+    borderRadius: borderRadius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.md,
+  },
   cancelButton: {
     flex: 1,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
-
   confirmButton: {
     flex: 2,
+    backgroundColor: colors.primary.DEFAULT,
+  },
+  cancelText: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
+    fontSize: typography.variants.cardHeadline.fontSize,
+    color: colors.primary.DEFAULT,
+  },
+  confirmText: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
+    fontSize: typography.variants.cardHeadline.fontSize,
+    color: colors.text.primary,
   },
 });
 

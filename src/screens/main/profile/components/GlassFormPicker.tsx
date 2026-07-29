@@ -1,23 +1,23 @@
 /**
- * GlassFormPicker - Glassmorphic Selection Picker Component
- *
- * Features:
- * - Single and multi-select modes
- * - Glassmorphic option buttons
- * - Icon support
- * - Animated selection state
+ * GlassFormPicker - Unified FormField pattern for selection
+ * Label above, 14px radius, focused accent border on selected.
  */
 
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../../../utils/responsive";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
+
+const { variants } = typography;
 
 interface PickerOption {
   value: string;
@@ -37,7 +37,7 @@ interface GlassFormPickerProps {
   hint?: string;
 }
 
-export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
+export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
   label,
   options,
   value,
@@ -47,29 +47,34 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
   error,
   hint,
 }) => {
-  const isSelected = (optionValue: string): boolean => {
-    if (multiSelect && Array.isArray(value)) {
-      return value.includes(optionValue);
-    }
-    return value === optionValue;
-  };
-
-  const handleSelect = (optionValue: string) => {
-    haptics.light();
-
-    if (multiSelect) {
-      const currentValues = Array.isArray(value) ? value : [];
-      if (currentValues.includes(optionValue)) {
-        onChange(currentValues.filter((v) => v !== optionValue));
-      } else {
-        onChange([...currentValues, optionValue]);
+  const isSelected = useCallback(
+    (optionValue: string): boolean => {
+      if (multiSelect && Array.isArray(value)) {
+        return value.includes(optionValue);
       }
-    } else {
-      onChange(optionValue);
-    }
-  };
+      return value === optionValue;
+    },
+    [multiSelect, value],
+  );
 
-  const getColumnWidth = () => {
+  const handleSelect = useCallback(
+    (optionValue: string) => {
+      haptics.light();
+      if (multiSelect) {
+        const currentValues = Array.isArray(value) ? value : [];
+        if (currentValues.includes(optionValue)) {
+          onChange(currentValues.filter((v) => v !== optionValue));
+        } else {
+          onChange([...currentValues, optionValue]);
+        }
+      } else {
+        onChange(optionValue);
+      }
+    },
+    [multiSelect, value, onChange],
+  );
+
+  const getColumnWidth = useCallback(() => {
     switch (columns) {
       case 1:
         return "100%";
@@ -80,14 +85,12 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
       default:
         return "48.5%";
     }
-  };
+  }, [columns]);
 
   return (
     <View style={styles.container}>
-      {/* Label */}
       <Text style={styles.label}>{label}</Text>
 
-      {/* Options Grid */}
       <View
         style={[styles.optionsGrid, columns === 1 && styles.optionsGridSingle]}
       >
@@ -97,99 +100,103 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
           return (
             <Animated.View
               key={option.value}
-              entering={FadeIn.delay(index * 50).duration(300)}
+              entering={FadeInDown.delay(index * 40).duration(250)}
               style={[styles.optionWrapper, { width: getColumnWidth() }]}
             >
-              <AnimatedPressable
+              <Pressable
                 onPress={() => handleSelect(option.value)}
-                scaleValue={0.95}
-                hapticFeedback={false}
                 accessibilityRole="button"
                 accessibilityLabel={option.label}
                 accessibilityState={selected ? { selected: true } : undefined}
+                style={({ pressed }) => [
+                  styles.optionButton,
+                  selected && styles.optionButtonSelected,
+                  pressed && styles.optionPressed,
+                ]}
               >
                 <View
                   style={[
-                    styles.optionButton,
-                    selected && styles.optionButtonSelected,
+                    styles.optionContent,
+                    columns === 3 && { paddingHorizontal: spacing.xs },
                   ]}
                 >
-                  {selected && (
-                    <LinearGradient
-                      colors={[
-                        hexToRgba(colors.primary, 0.2),
-                        hexToRgba(colors.primaryDark, 0.15),
+                  {option.icon && (
+                    <View
+                      style={[
+                        styles.optionIcon,
+                        selected && styles.optionIconSelected,
+                        columns === 3 && {
+                          width: rw(24),
+                          height: rw(24),
+                          borderRadius: rw(12),
+                          marginRight: spacing.xs,
+                        },
                       ]}
-                      style={StyleSheet.absoluteFill}
-                    />
+                    >
+                      <Ionicons
+                        name={option.icon}
+                        size={columns === 3 ? rf(14) : rf(18)}
+                        color={
+                          selected ? colors.primary.DEFAULT : colors.text.secondary
+                        }
+                      />
+                    </View>
                   )}
 
-                  <View style={[styles.optionContent, columns === 3 && { paddingHorizontal: spacing.xs }]}>
-                    {option.icon && (
-                      <View
-                        style={[
-                          styles.optionIcon,
-                          selected && styles.optionIconSelected,
-                          columns === 3 && { width: rw(24), height: rw(24), borderRadius: rw(12), marginRight: spacing.xs },
-                        ]}>
-                        <Ionicons
-                          name={option.icon}
-                          size={columns === 3 ? rf(14) : rf(18)}
-                          color={
-                            selected
-                              ? colors.primary
-                              : colors.textSecondary
-                          }
-                        />
-                      </View>
-                    )}
-
-                    <View style={styles.optionTextContainer}>
+                  <View style={styles.optionTextContainer}>
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        selected && styles.optionLabelSelected,
+                        columns === 3 && { fontSize: rf(12) },
+                      ]}
+                      numberOfLines={columns === 3 ? 1 : 2}
+                      ellipsizeMode="tail"
+                    >
+                      {option.label}
+                    </Text>
+                    {option.description && (
                       <Text
-                        style={[
-                          styles.optionLabel,
-                          selected && styles.optionLabelSelected,
-                          columns === 3 && { fontSize: rf(12) },
-                        ]}
+                        style={styles.optionDescription}
                         numberOfLines={columns === 3 ? 1 : 2}
-                        ellipsizeMode="tail">
-                        {option.label}
+                        ellipsizeMode="tail"
+                      >
+                        {option.description}
                       </Text>
-                      {option.description && (
-                        <Text
-                          style={styles.optionDescription}
-                          numberOfLines={columns === 3 ? 1 : 2}
-                          ellipsizeMode="tail"
-                        >
-                          {option.description}
-                        </Text>
-                      )}
-                    </View>
-
-                    {selected && (
-                      <View style={[styles.checkmark, columns === 3 && { width: rw(18), height: rw(18), borderRadius: rw(9) }]}>
-                        <Ionicons
-                          name="checkmark"
-                          size={columns === 3 ? rf(10) : rf(14)}
-                          color={colors.primary}
-                        />
-                      </View>
                     )}
                   </View>
+
+                  {selected && (
+                    <View
+                      style={[
+                        styles.checkmark,
+                        columns === 3 && {
+                          width: rw(18),
+                          height: rw(18),
+                          borderRadius: rw(9),
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={columns === 3 ? rf(10) : rf(14)}
+                        color={colors.primary.DEFAULT}
+                      />
+                    </View>
+                  )}
                 </View>
-              </AnimatedPressable>
+              </Pressable>
             </Animated.View>
           );
         })}
       </View>
 
-      {/* Error or Hint */}
       {error ? (
         <View style={styles.errorContainer}>
           <Ionicons
             name="alert-circle"
             size={rf(12)}
-            color={colors.error}
+            color={colors.error.DEFAULT}
           />
           <Text style={styles.errorText}>{error}</Text>
         </View>
@@ -198,16 +205,16 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
       ) : null}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },
   label: {
+    ...variants.caption,
     fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
     marginLeft: spacing.xs,
   },
@@ -224,16 +231,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   optionButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: borderRadius.lg,
+    backgroundColor: surface[1],
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: border.DEFAULT,
     overflow: "hidden",
     minHeight: Math.max(rw(52), 44),
     justifyContent: "center",
   },
   optionButtonSelected: {
-    borderColor: hexToRgba(colors.primary, 0.4),
+    borderColor: colors.primary.DEFAULT,
+  },
+  optionPressed: {
+    opacity: 0.7,
   },
   optionContent: {
     flexDirection: "row",
@@ -245,37 +255,38 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.sm,
   },
   optionIconSelected: {
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    backgroundColor: `${colors.primary.DEFAULT}14`,
   },
   optionTextContainer: {
     flex: 1,
     minWidth: 0,
   },
   optionLabel: {
+    ...variants.body,
     fontSize: rf(14),
-    fontWeight: "500",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   optionLabelSelected: {
-    color: colors.white,
-    fontWeight: "600",
+    color: colors.text.primary,
+    fontFamily: "Manrope_600SemiBold",
   },
   optionDescription: {
+    ...variants.caption,
     fontSize: rf(11),
-    color: colors.textMuted,
-    marginTop: rp(2),
+    color: colors.text.tertiary,
+    marginTop: spacing.xxs,
   },
   checkmark: {
     width: rw(22),
     height: rw(22),
     borderRadius: rw(11),
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    backgroundColor: `${colors.primary.DEFAULT}26`,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -287,12 +298,14 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   errorText: {
+    ...variants.caption,
     fontSize: rf(11),
-    color: colors.error,
+    color: colors.error.DEFAULT,
   },
   hintText: {
+    ...variants.caption,
     fontSize: rf(11),
-    color: colors.textMuted,
+    color: colors.text.tertiary,
     marginTop: spacing.sm,
     marginLeft: spacing.xs,
   },

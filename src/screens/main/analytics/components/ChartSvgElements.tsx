@@ -2,7 +2,13 @@ import React from "react";
 import { Platform } from "react-native";
 import { Path, Circle, Line, G, Rect, Text as SvgText } from "react-native-svg";
 import Animated from "react-native-reanimated";
-import { flatColors as colors } from "../../../../theme/aurora-tokens";
+import {
+  surface,
+  border,
+  colors,
+  typography,
+  borderRadius,
+} from "../../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../../utils/responsive";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -32,7 +38,7 @@ export const GridLines: React.FC<GridLinesProps> = ({
           y1={y}
           x2={paddingLeft + chartAreaWidth}
           y2={y}
-          stroke="rgba(255, 255, 255, 0.06)"
+          stroke={border.subtle}
           strokeWidth={1}
           strokeDasharray={index === yLabels.length - 1 ? "0" : "4,6"}
         />
@@ -62,10 +68,10 @@ export const YAxisLabels: React.FC<YAxisLabelsProps> = ({
           key={`y-label-${index}`}
           x={paddingLeft - 8}
           y={y + 4}
-          fill={colors.textMuted}
-          fontSize={rf(9)}
+          fill={colors.text.muted}
+          fontSize={rf(10)}
           textAnchor="end"
-          fontWeight="500"
+          fontFamily={typography.variants.caption.fontFamily}
         >
           {value % 1 === 0 ? String(value) : value.toFixed(1)}
         </SvgText>
@@ -193,10 +199,10 @@ export const XAxisLabels: React.FC<XAxisLabelsProps> = ({
           key={`x-label-${index}`}
           x={x}
           y={chartHeight - 8}
-          fill={isLast ? color : colors.textMuted}
+          fill={isLast ? color : colors.text.muted}
           fontSize={rf(10)}
           textAnchor="middle"
-          fontWeight={isLast ? "700" : "500"}
+          fontFamily={isLast ? typography.variants.cardHeadline.fontFamily : typography.variants.caption.fontFamily}
         >
           {item.label}
         </SvgText>
@@ -233,16 +239,18 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
         y={getY(point.value) - rh(35)}
         width={rw(60)}
         height={rh(26)}
-        rx={rw(8)}
-        fill="rgba(0,0,0,0.85)"
+        rx={rw(borderRadius.md)}
+        fill={surface[2]}
+        stroke={border.DEFAULT}
+        strokeWidth={1}
       />
       <SvgText
         x={getX(selectedPoint)}
         y={getY(point.value) - rh(18)}
-        fill={colors.white}
+        fill={colors.text.primary}
         fontSize={rf(11)}
         textAnchor="middle"
-        fontWeight="700"
+        fontFamily={typography.variants.cardHeadline.fontFamily}
       >
         {point.value % 1 === 0 ? String(point.value) : point.value.toFixed(1)}
         {unit}

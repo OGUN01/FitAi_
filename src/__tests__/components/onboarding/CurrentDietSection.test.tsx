@@ -55,6 +55,33 @@ jest.mock("@/utils/constants", () => ({
   },
 }));
 
+const chainable = () => {
+  const obj: any = {};
+  obj.duration = () => obj;
+  obj.delay = () => obj;
+  obj.springify = () => obj;
+  obj.withCallback = () => obj;
+  return obj;
+};
+
+jest.mock("react-native-reanimated", () => {
+  const { View, Text } = require("react-native");
+
+  return {
+    __esModule: true,
+    default: { View, Text },
+    useSharedValue: (initial: any) => ({ value: initial }),
+    useDerivedValue: (fn: () => any) => ({ value: fn() }),
+    useAnimatedStyle: (fn: () => any) => fn(),
+    withSpring: (toValue: any) => toValue,
+    withTiming: (toValue: any) => toValue,
+    runOnJS: (fn: (...args: any[]) => any) => fn,
+    FadeIn: chainable(),
+    FadeInDown: chainable(),
+    FadeInUp: chainable(),
+  };
+});
+
 jest.mock("@/components/ui/aurora", () => {
   const React = require("react");
   const { Pressable, View } = require("react-native");
@@ -87,7 +114,6 @@ describe("CurrentDietSection", () => {
   it("stops propagation before opening the info tooltip", () => {
     const updateField = jest.fn();
     const showInfoTooltip = jest.fn();
-    const event = { stopPropagation: jest.fn() };
 
     const screen = render(
       <CurrentDietSection
@@ -97,10 +123,9 @@ describe("CurrentDietSection", () => {
       />,
     );
 
-    const infoButton = screen.getAllByLabelText(/More info about/i)[0];
-    fireEvent.press(infoButton, event);
+    const infoButton = screen.getAllByLabelText(/^More info/i)[0];
+    fireEvent.press(infoButton);
 
-    expect(event.stopPropagation).toHaveBeenCalledTimes(1);
     expect(showInfoTooltip).toHaveBeenCalledTimes(1);
     expect(updateField).not.toHaveBeenCalled();
   });

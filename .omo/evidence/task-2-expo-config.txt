@@ -1,0 +1,60 @@
+env: load .env.local .env
+env: export Domain Date WORKOUT_CACHE_ID MEAL_CACHE_ID RATE_LIMIT_KV_ID R2_BUCKET_NAME R2_BINDING AI_GATEWAY_SLUG AI_GATEWAY_URL AI_GATEWAY_STATUS WORKER_URL WORKER_VERSION_ID WORKER_VERSION WORKER_STATUS SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY
+» android: userInterfaceStyle: Install expo-system-ui in your project to enable this feature.
+
+{
+  name: [32m'FitAI - AI Fitness Coach'[39m,
+  slug: [32m'FitAI'[39m,
+  version: [32m'1.0.1'[39m,
+  owner: [32m'harsh9887'[39m,
+  description: [32m'Your personal AI-powered fitness coach with workout plans, nutrition guidance, and progress tracking.'[39m,
+  orientation: [32m'portrait'[39m,
+  icon: [32m'./assets/icon.png'[39m,
+  userInterfaceStyle: [32m'light'[39m,
+  newArchEnabled: [33mfalse[39m,
+  scheme: [32m'fitai'[39m,
+  plugins: [
+    [32m'expo-font'[39m,
+    [32m'react-native-health-connect'[39m,
+    [
+      [32m'expo-notifications'[39m,
+      {
+        icon: [32m'./assets/notification-icon.png'[39m,
+        color: [32m'#ffffff'[39m,
+        defaultChannel: [32m'default'[39m
+      }
+    ],
+    [
+      [32m'expo-health-kit'[39m,
+      {
+        healthSharePermission: [32m'Allow FitAI to read health data from the Health app to provide personalized fitness recommendations.'[39m,
+        healthUpdatePermission: [32m'Allow FitAI to write workout and nutrition data to the Health app to maintain your comprehensive health record.'[39m
+      }
+    ],
+    [
+      [32m'expo-build-properties'[39m,
+      {
+        android: {
+          minSdkVersion: [33m26[39m,
+          compileSdkVersion: [33m35[39m,
+          targetSdkVersion: [33m34[39m
+        }
+      }
+    ],
+    [
+      [32m'expo-camera'[39m,
+      {
+        cameraPermission: [32m'Allow FitAI to use your camera for barcode scanning and food recognition'[39m,
+        recordAudioAndroid: [33mfalse[39m
+      }
+    ]
+  ],
+  sdkVersion: [32m'53.0.0'[39m,
+  platforms: [
+    [32m'ios'[39m,
+    [32m'android'[39m,
+    [32m'web'[39m
+  ],
+  developmentClient: {
+    silentLaunch: [33mtrue[39m
+  },

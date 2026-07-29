@@ -12,9 +12,11 @@ const path = require("path");
 // Read environment variables
 const SUPABASE_URL =
   process.env.SUPABASE_URL || "https://mqfrwtmkokivoxgukgsz.supabase.co";
-const SUPABASE_SERVICE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_SERVICE_KEY) {
+  console.error("ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable is required.");
+  process.exit(1);
+}
 
 console.log("🔄 Starting database migration...");
 console.log(`📍 Supabase URL: ${SUPABASE_URL}`);

@@ -1,8 +1,23 @@
+/**
+ * WeeklyChartSection - This Week's Activity (Aurora 2026)
+ *
+ * Grouped 3-series bar chart on surface.1 with hairline border,
+ * chart-palette accents, Manrope type.
+ */
+
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { rp, rh, rw, rs } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  chart,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
+import { rh, rw } from "../../utils/responsive";
 
 interface WeeklyChartSectionProps {
   weeklyData: any[];
@@ -10,31 +25,32 @@ interface WeeklyChartSectionProps {
 
 const MAX_BAR_HEIGHT = 70;
 
-export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
+const SERIES = [
+  { key: "workouts", label: "Workouts", color: chart[1] },
+  { key: "meals", label: "Meals", color: chart[4] },
+  { key: "calories", label: "Calories", color: chart[2] },
+] as const;
+
+export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = React.memo(({
   weeklyData,
 }) => {
-  const maxWorkouts = useMemo(
-    () => Math.max(1, ...weeklyData.map((d) => d.workouts ?? 0)),
+  const maxima = useMemo(
+    () => ({
+      workouts: Math.max(1, ...weeklyData.map((d) => d.workouts ?? 0)),
+      meals: Math.max(1, ...weeklyData.map((d) => d.meals ?? 0)),
+      calories: Math.max(1, ...weeklyData.map((d) => d.calories ?? 0)),
+    }),
     [weeklyData],
   );
-  const maxMeals = useMemo(
-    () => Math.max(1, ...weeklyData.map((d) => d.meals ?? 0)),
-    [weeklyData],
-  );
-  const maxCalories = useMemo(
-    () => Math.max(1, ...weeklyData.map((d) => d.calories ?? 0)),
-    [weeklyData],
-  );
+
   return (
-    <View style={styles.section}>
+    <Animated.View
+      entering={FadeInDown.delay(150).duration(320)}
+      style={styles.section}
+    >
       <Text style={styles.sectionTitle}>This Week's Activity</Text>
-      <GlassCard
-        style={styles.chartCard}
-        elevation={2}
-        blurIntensity="light"
-        padding="lg"
-        borderRadius="lg"
-      >
+
+      <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
           <Text style={styles.chartTitle}>Activity & Nutrition</Text>
           <Text style={styles.chartSubtitle}>Last 7 days</Text>
@@ -44,27 +60,22 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
           {weeklyData.map((day, index) => (
             <View key={index} style={styles.chartDay}>
               <View style={styles.chartBars}>
-                <View
-                  style={[
-                    styles.chartBar,
-                    styles.workoutBar,
-                    { height: Math.min((((day.workouts ?? 0) / maxWorkouts) * MAX_BAR_HEIGHT) + 4, MAX_BAR_HEIGHT) },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.chartBar,
-                    styles.mealBar,
-                    { height: Math.min((((day.meals ?? 0) / maxMeals) * MAX_BAR_HEIGHT) + 4, MAX_BAR_HEIGHT) },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.chartBar,
-                    styles.calorieBar,
-                    { height: Math.min((((day.calories ?? 0) / maxCalories) * MAX_BAR_HEIGHT) + 4, MAX_BAR_HEIGHT) },
-                  ]}
-                />
+                {SERIES.map((s) => {
+                  const raw = day[s.key] ?? 0;
+                  const height = Math.min(
+                    (raw / maxima[s.key]) * (MAX_BAR_HEIGHT - 4) + 4,
+                    MAX_BAR_HEIGHT,
+                  );
+                  return (
+                    <View
+                      key={s.key}
+                      style={[
+                        styles.chartBar,
+                        { backgroundColor: s.color, height },
+                      ]}
+                    />
+                  );
+                })}
               </View>
               <Text style={styles.chartDayLabel}>{day.day}</Text>
             </View>
@@ -72,62 +83,48 @@ export const WeeklyChartSection: React.FC<WeeklyChartSectionProps> = ({
         </View>
 
         <View style={styles.chartLegend}>
-          <View style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendDot,
-                { backgroundColor: colors.primary },
-              ]}
-            />
-            <Text style={styles.legendText}>Workouts</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-            <Text style={styles.legendText}>Meals</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View
-              style={[
-                styles.legendDot,
-                {
-                  backgroundColor: colors.secondary,
-                },
-              ]}
-            />
-            <Text style={styles.legendText}>Calories</Text>
-          </View>
+          {SERIES.map((s) => (
+            <View key={s.key} style={styles.legendItem}>
+              <View
+                style={[styles.legendDot, { backgroundColor: s.color }]}
+              />
+              <Text style={styles.legendText}>{s.label}</Text>
+            </View>
+          ))}
         </View>
-      </GlassCard>
-    </View>
+      </View>
+    </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   chartCard: {
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
   chartHeader: {
     marginBottom: spacing.lg,
   },
   chartTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
   },
   chartSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
   },
   chart: {
     flexDirection: "row",
@@ -143,26 +140,17 @@ const styles = StyleSheet.create({
   chartBars: {
     flexDirection: "row",
     alignItems: "flex-end",
-    height: rh(80),
+    height: MAX_BAR_HEIGHT,
     marginBottom: spacing.sm,
   },
   chartBar: {
-    width: rw(8),
-    borderRadius: borderRadius.sm,
-    marginHorizontal: rp(1),
-  },
-  workoutBar: {
-    backgroundColor: colors.primary,
-  },
-  mealBar: {
-    backgroundColor: colors.success,
-  },
-  calorieBar: {
-    backgroundColor: colors.secondary,
+    width: rw(6),
+    borderRadius: borderRadius.xs,
+    marginHorizontal: 1,
   },
   chartDayLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
   },
   chartLegend: {
     flexDirection: "row",
@@ -175,12 +163,14 @@ const styles = StyleSheet.create({
   },
   legendDot: {
     width: rw(8),
-    height: rh(8),
-    borderRadius: rs(4),
+    height: rw(8),
+    borderRadius: borderRadius.sm,
     marginRight: spacing.xs,
   },
   legendText: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
+    ...typography.variants.caption,
+    color: colors.text.secondary,
   },
 });
+
+export default WeeklyChartSection;

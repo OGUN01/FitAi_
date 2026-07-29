@@ -2,8 +2,14 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rbr } from "../../../utils/responsive";
+import {
+  surface,
+  border,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 
@@ -32,11 +38,13 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
           <Ionicons
             name="chevron-back"
             size={rf(20)}
-            color={colors.text}
+            color={colors.text.primary}
           />
         </AnimatedPressable>
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle} numberOfLines={1}>Progress Trends</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Progress Trends
+          </Text>
           <Text style={styles.headerSubtitle} numberOfLines={2}>
             Track your fitness journey over time
           </Text>
@@ -48,35 +56,36 @@ export const ProgressTrendsHeader: React.FC<ProgressTrendsHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: rw(20),
-    paddingTop: rh(10),
-    paddingBottom: rh(15),
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   backButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    borderRadius: rbr(20),
-    backgroundColor: colors.glassBorder,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: rw(12),
+    marginRight: spacing.sm,
   },
   headerTextContainer: {
     flex: 1,
     minWidth: 0,
   },
   headerTitle: {
-    fontSize: rf(28),
-    fontWeight: "bold",
-    color: colors.text,
+    ...typography.variants.pageTitle,
+    color: colors.text.primary,
   },
   headerSubtitle: {
-    fontSize: rf(14),
-    color: colors.textSecondary,
-    marginTop: rh(4),
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
 });

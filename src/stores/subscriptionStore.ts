@@ -9,7 +9,6 @@ import {
 import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import razorpayService from "../services/RazorpayService";
 import { getLocalDateString } from "../utils/weekUtils";
-import { API_CONFIG } from "../config/api";
 
 // P1-18: App-focus revalidation. AppState is imported lazily inside the setup
 // function (guarded by platform) so this store remains import-safe in the node
@@ -222,25 +221,6 @@ function getCurrentDayKey(): string {
   return getLocalDateString(new Date());
 }
 
-function shouldSkipRemoteSubscriptionStatusOnLocalWeb(): boolean {
-  if (typeof window === "undefined" || !window.location) {
-    return false;
-  }
-
-  const isLocalHost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(
-    window.location.hostname,
-  );
-  if (!isLocalHost) {
-    return false;
-  }
-
-  try {
-    const workerHost = new URL(API_CONFIG.WORKERS_BASE_URL).hostname;
-    return !/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(workerHost);
-  } catch {
-    return true;
-  }
-}
 
 // ============================================================================
 // Store interface
@@ -323,29 +303,14 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           const skipDowngrade = options?.skipDowngrade ?? false;
           set({ isLoading: true });
 
-          if (shouldSkipRemoteSubscriptionStatusOnLocalWeb()) {
-            console.warn(
-              "[subscriptionStore] Skipping remote subscription status fetch on localhost web because the configured worker URL is cross-origin.",
-            );
-
-            if (preserveExistingOnError) {
-              set({ isLoading: false, usageIsFresh: false });
-              return;
-            }
-
-            set({
-              isLoading: false,
-              currentPlan: null,
-              subscriptionStatus: null,
-              features: FREE_FEATURES,
-              usage: EMPTY_USAGE,
-              usageIsFresh: false,
-              currentPeriodEnd: null,
-              usageResetMonth: getCurrentMonthKey(),
-              usageResetDay: getCurrentDayKey(),
-            });
-            return;
-          }
+          // NOTE: we no longer pre-emptively skip the remote status fetch on
+          // localhost web. The worker's CORS middleware echoes back localhost
+          // origins (isLocalDevOrigin in fitai-workers/src/index.ts), so the
+          // cross-origin fetch succeeds. The old skip left web dev sessions
+          // pinned to stale persisted free-tier state, which falsely blocked
+          // genuinely-pro users (the "refresh keeps asking me to upgrade"
+          // bug). If a real network/CORS failure occurs, the try/catch below
+          // honours `preserveExistingOnError` and degrades gracefully.
 
           try {
             const data =

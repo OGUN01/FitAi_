@@ -95,46 +95,21 @@ jest.mock("../../components/ui", () => ({
   },
 }));
 
-jest.mock("../../components/diet/NutritionSummaryCard", () => ({
-  NutritionSummaryCard: () => {
-    const React = require("react");
-    return React.createElement("Text", null, "Nutrition Summary");
-  },
+jest.mock("../../components/diet/StreakPill", () => ({
+  StreakPill: () => null,
 }));
-
-jest.mock("../../components/diet/MealPlanView", () => ({
-  MealPlanView: () => null,
+jest.mock("../../components/diet/WeekCalendarStrip", () => ({
+  WeekCalendarStrip: () => null,
 }));
 
 jest.mock("../../components/diet/WaterIntakeModal", () => ({
   WaterIntakeModal: () => null,
 }));
 
-jest.mock("../../components/diet/DietScreenHeader", () => ({
-  DietScreenHeader: () => {
-    const React = require("react");
-    return React.createElement("Text", null, "Diet Header");
-  },
-}));
-
-jest.mock("../../components/diet/MealSuggestions", () => ({
-  MealSuggestions: () => {
-    const React = require("react");
-    return React.createElement("Text", null, "Meal Suggestions");
-  },
-}));
-
 jest.mock("../../components/diet/DietModals", () => ({
   DietModals: () => {
     const React = require("react");
     return React.createElement("Text", null, "Diet Modals");
-  },
-}));
-
-jest.mock("../../components/diet/DietQuickActions", () => ({
-  DietQuickActions: () => {
-    const React = require("react");
-    return React.createElement("Text", null, "Diet Quick Actions");
   },
 }));
 
@@ -148,9 +123,34 @@ jest.mock("../../components/diet/LogMealModal", () => ({
   LogMealModal: () => null,
 }));
 
-jest.mock("../../components/diet/MealDetailModal", () => ({
-  MealDetailModal: () => null,
-}));
+jest.mock("../../components/diet/ProductDetailsModal", () => {
+  const React = require("react");
+  const { Text, View } = require("react-native");
+  const { Modal } = require("@/components/ui/Modal");
+  return {
+    ProductDetailsModal: ({ product, visible }: any) =>
+      visible && product
+        ? React.createElement(
+            Modal,
+            { visible },
+            React.createElement(
+              View,
+              null,
+              React.createElement(Text, null, product.name),
+              React.createElement(Text, null, "Barcode: " + product.barcode),
+              React.createElement(
+                Text,
+                null,
+                "Nutrition for " +
+                  product.nutrition.servingSize +
+                  product.nutrition.servingUnit,
+              ),
+              React.createElement(Text, null, String(product.nutrition.calories)),
+            ),
+          )
+        : null,
+  };
+});
 
 jest.mock("../../components/diet/FoodScanLoadingOverlay", () => ({
   FoodScanLoadingOverlay: () => null,

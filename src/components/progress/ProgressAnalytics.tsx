@@ -1,35 +1,45 @@
+/**
+ * ProgressAnalytics - Aurora 2026 deep-dive analytics panel
+ *
+ * Single surface.1 container, hairline dividers, Ionicons (no emojis),
+ * chart-palette accents, Manrope type, no drop shadows.
+ */
+
 import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  } from "react-native";
-import { Card } from "../ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rp, rh, rbr } from "../../utils/responsive";
+  colors,
+  surface,
+  border as borderTokens,
+  chart,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { useProgressData } from "../../hooks/useProgressData";
+import { haptics } from "../../utils/haptics";
 
 interface ProgressAnalyticsProps {
   timeRange?: "week" | "month" | "year";
   onTimeRangeChange?: (range: "week" | "month" | "year") => void;
 }
 
-export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
+type Range = "week" | "month" | "year";
+
+export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = React.memo(({
   timeRange = "month",
   onTimeRangeChange,
 }) => {
   const {
     progressStats,
-    progressEntries,
     progressGoals,
     loadProgressStats,
     statsLoading,
   } = useProgressData();
 
-  const [selectedRange, setSelectedRange] = useState<"week" | "month" | "year">(
-    timeRange,
-  );
+  const [selectedRange, setSelectedRange] = useState<Range>(timeRange);
 
   useEffect(() => {
     const days =
@@ -37,27 +47,30 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
     loadProgressStats(days);
   }, [selectedRange, loadProgressStats]);
 
-  const handleRangeChange = (range: "week" | "month" | "year") => {
+  const handleRangeChange = (range: Range) => {
+    haptics.light();
     setSelectedRange(range);
     onTimeRangeChange?.(range);
   };
 
-  const timeRanges = [
-    { id: "week", label: "Week", icon: "📅" },
-    { id: "month", label: "Month", icon: "🗓️" },
-    { id: "year", label: "Year", icon: "📆" },
-  ] as const;
+  const timeRanges: { id: Range; label: string }[] = [
+    { id: "week", label: "Week" },
+    { id: "month", label: "Month" },
+    { id: "year", label: "Year" },
+  ];
 
   const getProgressColor = (change: number) => {
-    if (change > 0) return colors.success;
-    if (change < 0) return colors.warning;
-    return colors.textSecondary;
+    if (change > 0) return colors.success.DEFAULT;
+    if (change < 0) return colors.warning.DEFAULT;
+    return colors.text.secondary;
   };
 
-  const getProgressIcon = (change: number) => {
-    if (change > 0) return "📈";
-    if (change < 0) return "📉";
-    return "➡️";
+  const getProgressIconName = (
+    change: number,
+  ): keyof typeof Ionicons.glyphMap => {
+    if (change > 0) return "trending-up";
+    if (change < 0) return "trending-down";
+    return "remove";
   };
 
   const formatChange = (change: number, unit: string) => {
@@ -72,209 +85,214 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
 
   if (statsLoading) {
     return (
-      <Card style={styles.container} variant="elevated">
+      <View style={styles.container}>
         <Text style={styles.loadingText}>Loading progress analytics...</Text>
-      </Card>
+      </View>
     );
   }
 
   if (!progressStats) {
     return (
-      <Card style={styles.container} variant="elevated">
+      <View style={styles.container}>
         <Text style={styles.emptyText}>No progress data available</Text>
         <Text style={styles.emptySubtext}>
           Add measurements to see analytics
         </Text>
-      </Card>
+      </View>
     );
   }
 
+  const metrics: {
+    key: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    value: number;
+    unit: string;
+    change: number;
+    changeUnit: string;
+    accent: string;
+    goal?: number;
+    goalUnit?: string;
+    invertGoal?: boolean;
+  }[] = [
+    {
+      key: "weight",
+      icon: "scale-outline",
+      label: "Weight",
+      value: progressStats?.weightChange?.current ?? 0,
+      unit: "kg",
+      change: progressStats.weightChange.change,
+      changeUnit: "kg",
+      accent: chart[1],
+      goal: progressGoals?.target_weight_kg,
+      goalUnit: "kg",
+    },
+    {
+      key: "bodyFat",
+      icon: "analytics-outline",
+      label: "Body Fat",
+      value: progressStats?.bodyFatChange?.current ?? 0,
+      unit: "%",
+      change: progressStats.bodyFatChange.change,
+      changeUnit: "%",
+      accent: chart[2],
+      goal: progressGoals?.target_body_fat_percentage,
+      goalUnit: "%",
+      invertGoal: true,
+    },
+    {
+      key: "muscle",
+      icon: "barbell-outline",
+      label: "Muscle Mass",
+      value: progressStats?.muscleChange?.current ?? 0,
+      unit: "kg",
+      change: progressStats.muscleChange.change,
+      changeUnit: "kg",
+      accent: chart[4],
+      goal: progressGoals?.target_muscle_mass_kg,
+      goalUnit: "kg",
+    },
+  ];
+
   return (
-    <Card style={styles.container} variant="elevated">
+    <Animated.View
+      entering={FadeInDown.delay(60).duration(320)}
+      style={styles.container}
+    >
+      {/* Header + Time Range Selector */}
       <View style={styles.header}>
         <Text style={styles.title}>Progress Analytics</Text>
-
-        {/* Time Range Selector */}
         <View style={styles.timeRangeSelector}>
-          {timeRanges.map((range) => (
-            <TouchableOpacity
-              key={range.id}
-              style={[
-                styles.timeRangeButton,
-                selectedRange === range.id && styles.timeRangeButtonActive,
-              ]}
-              onPress={() => handleRangeChange(range.id)}
-              accessibilityRole="tab"
-              accessibilityLabel={range.label}
-              accessibilityState={{ selected: selectedRange === range.id }}
-            >
-              <Text style={styles.timeRangeIcon}>{range.icon}</Text>
-              <Text
+          {timeRanges.map((range) => {
+            const active = selectedRange === range.id;
+            return (
+              <TouchableOpacity
+                key={range.id}
                 style={[
-                  styles.timeRangeLabel,
-                  selectedRange === range.id && styles.timeRangeLabelActive,
+                  styles.timeRangeButton,
+                  active && styles.timeRangeButtonActive,
                 ]}
+                onPress={() => handleRangeChange(range.id)}
+                activeOpacity={0.8}
+                accessibilityRole="tab"
+                accessibilityLabel={range.label}
+                accessibilityState={{ selected: active }}
               >
-                {range.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.timeRangeLabel,
+                    active && styles.timeRangeLabelActive,
+                  ]}
+                >
+                  {range.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
-      <View>
-        {/* Main Progress Metrics */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Key Metrics</Text>
-          <View style={styles.metricsGrid}>
-            {/* Weight Progress */}
-            <View style={styles.metricCard}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricIcon}>⚖️</Text>
-                <Text style={styles.metricValue}>
-                  {(progressStats?.weightChange?.current ?? 0).toFixed(1)}kg
-                </Text>
-              </View>
-              <Text style={styles.metricLabel}>Weight</Text>
-              <View style={styles.changeContainer}>
-                <Text
+      {/* Key Metrics — single surface, hairline dividers, no nested cards */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Key Metrics</Text>
+        <View>
+          {metrics.map((m, idx) => {
+            const pct =
+              m.goal != null
+                ? m.invertGoal
+                  ? 100 - calculateGoalProgress(m.value, m.goal)
+                  : calculateGoalProgress(m.value, m.goal)
+                : null;
+            return (
+              <Animated.View
+                key={m.key}
+                entering={FadeInDown.delay(100 + idx * 60).duration(280)}
+                style={[
+                  styles.metricRow,
+                  idx > 0 && styles.metricRowDivider,
+                ]}
+              >
+                <View
                   style={[
-                    styles.changeText,
-                    {
-                      color: getProgressColor(
-                        progressStats.weightChange.change,
-                      ),
-                    },
+                    styles.metricIconWrap,
+                    { backgroundColor: `${m.accent}1A` },
                   ]}
                 >
-                  {getProgressIcon(progressStats.weightChange.change)}{" "}
-                  {formatChange(progressStats.weightChange.change, "kg")}
-                </Text>
-              </View>
-              {progressGoals?.target_weight_kg && (
-                <View style={styles.goalProgress}>
-                  <Text style={styles.goalText}>
-                    Goal: {progressGoals.target_weight_kg}kg
-                  </Text>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: `${calculateGoalProgress(progressStats.weightChange.current, progressGoals.target_weight_kg)}%`,
-                        },
-                      ]}
-                    />
-                  </View>
+                  <Ionicons name={m.icon} size={18} color={m.accent} />
                 </View>
-              )}
-            </View>
-
-            {/* Body Fat Progress */}
-            <View style={styles.metricCard}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricIcon}>📊</Text>
-                <Text style={styles.metricValue}>
-                  {(progressStats?.bodyFatChange?.current ?? 0).toFixed(1)}%
-                </Text>
-              </View>
-              <Text style={styles.metricLabel}>Body Fat</Text>
-              <View style={styles.changeContainer}>
-                <Text
-                  style={[
-                    styles.changeText,
-                    {
-                      color: getProgressColor(
-                        -progressStats.bodyFatChange.change,
-                      ),
-                    },
-                  ]}
-                >
-                  {getProgressIcon(-progressStats.bodyFatChange.change)}{" "}
-                  {formatChange(progressStats.bodyFatChange.change, "%")}
-                </Text>
-              </View>
-              {progressGoals?.target_body_fat_percentage && (
-                <View style={styles.goalProgress}>
-                  <Text style={styles.goalText}>
-                    Goal: {progressGoals.target_body_fat_percentage}%
-                  </Text>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: `${100 - calculateGoalProgress(progressStats.bodyFatChange.current, progressGoals.target_body_fat_percentage)}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-                </View>
-              )}
-            </View>
-
-            {/* Muscle Mass Progress */}
-            <View style={styles.metricCard}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricIcon}>💪</Text>
-                <Text style={styles.metricValue}>
-                  {(progressStats?.muscleChange?.current ?? 0).toFixed(1)}kg
-                </Text>
-              </View>
-              <Text style={styles.metricLabel}>Muscle Mass</Text>
-              <View style={styles.changeContainer}>
-                <Text
-                  style={[
-                    styles.changeText,
-                    {
-                      color: getProgressColor(
-                        progressStats.muscleChange.change,
-                      ),
-                    },
-                  ]}
-                >
-                  {getProgressIcon(progressStats.muscleChange.change)}{" "}
-                  {formatChange(progressStats.muscleChange.change, "kg")}
-                </Text>
-              </View>
-              {progressGoals?.target_muscle_mass_kg && (
-                <View style={styles.goalProgress}>
-                  <Text style={styles.goalText}>
-                    Goal: {progressGoals.target_muscle_mass_kg}kg
-                  </Text>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: `${calculateGoalProgress(progressStats.muscleChange.current, progressGoals.target_muscle_mass_kg)}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {/* Body Measurements */}
-        {Object.keys(progressStats.measurementChanges).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Body Measurements</Text>
-            <View style={styles.measurementsContainer}>
-              {Object.entries(progressStats.measurementChanges).map(
-                ([measurement, data]) => (
-                  <View key={measurement} style={styles.measurementItem}>
-                    <View style={styles.measurementHeader}>
-                      <Text style={styles.measurementName}>
-                        {measurement.charAt(0).toUpperCase() +
-                          measurement.slice(1)}
-                      </Text>
-                      <Text style={styles.measurementValue}>
-                        {data.current.toFixed(1)}cm
+                <View style={styles.metricBody}>
+                  <View style={styles.metricHeaderRow}>
+                    <Text style={styles.metricLabel}>{m.label}</Text>
+                    <View style={styles.changeChip}>
+                      <Ionicons
+                        name={getProgressIconName(m.change)}
+                        size={12}
+                        color={getProgressColor(m.change)}
+                      />
+                      <Text
+                        style={[
+                          styles.changeText,
+                          { color: getProgressColor(m.change) },
+                        ]}
+                      >
+                        {formatChange(m.change, m.changeUnit)}
                       </Text>
                     </View>
+                  </View>
+                  <Text style={styles.metricValue}>
+                    {m.value.toFixed(1)}
+                    <Text style={styles.metricUnit}> {m.unit}</Text>
+                  </Text>
+                  {pct != null && m.goal != null && (
+                    <View style={styles.goalBlock}>
+                      <View style={styles.progressBar}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            { width: `${pct}%`, backgroundColor: m.accent },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.goalText}>
+                        Goal {m.goal}
+                        {m.goalUnit}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </Animated.View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Body Measurements */}
+      {Object.keys(progressStats.measurementChanges).length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Body Measurements</Text>
+          <View>
+            {Object.entries(progressStats.measurementChanges).map(
+              ([measurement, data], idx, arr) => (
+                <View
+                  key={measurement}
+                  style={[
+                    styles.measurementRow,
+                    idx < arr.length - 1 && styles.measurementRowDivider,
+                  ]}
+                >
+                  <Text style={styles.measurementName}>
+                    {measurement.charAt(0).toUpperCase() + measurement.slice(1)}
+                  </Text>
+                  <View style={styles.measurementRight}>
+                    <Text style={styles.measurementValue}>
+                      {data.current.toFixed(1)}cm
+                    </Text>
+                    <Ionicons
+                      name={getProgressIconName(data.change)}
+                      size={12}
+                      color={getProgressColor(data.change)}
+                      style={styles.measurementIcon}
+                    />
                     <Text
                       style={[
                         styles.measurementChange,
@@ -284,280 +302,251 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                       {formatChange(data.change, "cm")}
                     </Text>
                   </View>
-                ),
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Progress Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Summary</Text>
-          <View style={styles.summaryContainer}>
-            <Text style={styles.summaryText}>
-              📈 Total Entries: {progressStats.totalEntries}
-            </Text>
-            <Text style={styles.summaryText}>
-              📅 Tracking Period: {progressStats.timeRange} days
-            </Text>
-            {progressStats.weightChange.changePercentage !== 0 && (
-              <Text style={styles.summaryText}>
-                ⚖️ Weight Change:{" "}
-                {progressStats.weightChange.changePercentage.toFixed(1)}%
-              </Text>
+                </View>
+              ),
             )}
           </View>
         </View>
+      )}
 
-        {/* Insights */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Insights</Text>
-          <View style={styles.insightsContainer}>
-            {progressStats.totalEntries === 0 ? (
-              <Text style={styles.insightText}>
-                📊 Start tracking your measurements to see progress insights!
-              </Text>
-            ) : (
-              <>
-                {progressStats.totalEntries >= 2 && (
-                  <Text style={styles.insightText}>
-                    🎯 Great consistency! You have {progressStats.totalEntries}{" "}
-                    measurements recorded.
-                  </Text>
-                )}
-
-                {progressStats.weightChange.change < 0 && (
-                  <Text style={styles.insightText}>
-                    📉 You're making progress with weight loss! Keep up the
-                    great work.
-                  </Text>
-                )}
-
-                {progressStats.muscleChange.change > 0 && (
-                  <Text style={styles.insightText}>
-                    💪 Excellent muscle gain! Your strength training is paying
-                    off.
-                  </Text>
-                )}
-
-                {progressStats.bodyFatChange.change < 0 && (
-                  <Text style={styles.insightText}>
-                    🔥 Body fat reduction detected! Your fitness routine is
-                    working.
-                  </Text>
-                )}
-              </>
-            )}
-          </View>
+      {/* Summary */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Summary</Text>
+        <View style={styles.summaryRow}>
+          <Ionicons
+            name="calendar-outline"
+            size={14}
+            color={colors.text.muted}
+          />
+          <Text style={styles.summaryText}>
+            {progressStats.totalEntries} entries · {progressStats.timeRange}{" "}
+            days
+            {progressStats.weightChange.changePercentage !== 0
+              ? ` · ${progressStats.weightChange.changePercentage.toFixed(1)}% weight`
+              : ""}
+          </Text>
         </View>
       </View>
-    </Card>
+
+      {/* Insights */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Insights</Text>
+        <View>
+          {progressStats.totalEntries === 0 ? (
+            <Text style={styles.insightText}>
+              Start tracking your measurements to see progress insights!
+            </Text>
+          ) : (
+            <>
+              {progressStats.totalEntries >= 2 && (
+                <Text style={styles.insightText}>
+                  Great consistency! You have {progressStats.totalEntries}{" "}
+                  measurements recorded.
+                </Text>
+              )}
+              {progressStats.weightChange.change < 0 && (
+                <Text style={styles.insightText}>
+                  You're making progress with weight loss! Keep up the great
+                  work.
+                </Text>
+              )}
+              {progressStats.muscleChange.change > 0 && (
+                <Text style={styles.insightText}>
+                  Excellent muscle gain! Your strength training is paying off.
+                </Text>
+              )}
+              {progressStats.bodyFatChange.change < 0 && (
+                <Text style={styles.insightText}>
+                  Body fat reduction detected! Your fitness routine is working.
+                </Text>
+              )}
+            </>
+          )}
+        </View>
+      </View>
+    </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     padding: spacing.lg,
-    margin: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
-
   header: {
     marginBottom: spacing.lg,
   },
-
   title: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
-
   timeRangeSelector: {
     flexDirection: "row",
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    padding: rp(4),
+    backgroundColor: surface[2],
+    borderRadius: borderRadius.lg,
+    padding: spacing.xs,
   },
-
   timeRangeButton: {
     flex: 1,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.md,
+    minHeight: 36,
   },
-
   timeRangeButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
-
-  timeRangeIcon: {
-    fontSize: rf(16),
-    marginRight: spacing.xs,
-  },
-
   timeRangeLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
-
   timeRangeLabelActive: {
-    color: colors.white,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.primary,
   },
-
   section: {
     marginBottom: spacing.lg,
   },
-
   sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
-
-  metricsGrid: {
-    gap: spacing.md,
-  },
-
-  metricCard: {
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-  },
-
-  metricHeader: {
+  metricRow: {
     flexDirection: "row",
+    paddingVertical: spacing.sm,
+  },
+  metricRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: borderTokens.subtle,
+  },
+  metricIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
-    marginBottom: spacing.sm,
+    justifyContent: "center",
+    marginRight: spacing.md,
   },
-
-  metricIcon: {
-    fontSize: rf(24),
-    marginRight: spacing.sm,
+  metricBody: {
+    flex: 1,
   },
-
-  metricValue: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-  },
-
-  metricLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-
-  changeContainer: {
-    marginBottom: spacing.sm,
-  },
-
-  changeText: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  goalProgress: {
-    marginTop: spacing.sm,
-  },
-
-  goalText: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
-  },
-
-  progressBar: {
-    height: rh(4),
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: rbr(2),
-  },
-
-  progressFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: rbr(2),
-  },
-
-  measurementsContainer: {
-    gap: spacing.sm,
-  },
-
-  measurementItem: {
+  metricHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    marginBottom: spacing.xxs,
   },
-
-  measurementHeader: {
-    flex: 1,
+  metricLabel: {
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
-
+  metricValue: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: 20,
+    letterSpacing: -0.5,
+    color: colors.text.primary,
+  },
+  metricUnit: {
+    ...typography.variants.caption2,
+    color: colors.text.muted,
+  },
+  changeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
+  },
+  changeText: {
+    ...typography.variants.caption,
+    fontFamily: "Manrope_600SemiBold",
+  },
+  goalBlock: {
+    marginTop: spacing.xs,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: surface[2],
+    borderRadius: borderRadius.sm,
+    overflow: "hidden",
+    marginBottom: spacing.xxs,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: borderRadius.sm,
+  },
+  goalText: {
+    ...typography.variants.caption,
+    color: colors.text.muted,
+  },
+  measurementRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+  },
+  measurementRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: borderTokens.subtle,
+  },
   measurementName: {
-    fontSize: fontSize.md,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
+    ...typography.variants.body,
+    color: colors.text.primary,
   },
-
+  measurementRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   measurementValue: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
+    marginRight: spacing.xs,
   },
-
+  measurementIcon: {
+    marginRight: spacing.xxs,
+  },
   measurementChange: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
+    ...typography.variants.caption2,
+    fontFamily: "Manrope_600SemiBold",
   },
-
-  summaryContainer: {
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
-
   summaryText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
-
-  insightsContainer: {
-    gap: spacing.sm,
-  },
-
   insightText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: rf(20),
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
   },
-
   loadingText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    ...typography.variants.body,
+    color: colors.text.secondary,
     textAlign: "center",
     paddingVertical: spacing.xl,
   },
-
   emptyText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    ...typography.variants.body,
+    color: colors.text.secondary,
     textAlign: "center",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
-
   emptySubtext: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
+    ...typography.variants.caption2,
+    color: colors.text.muted,
     textAlign: "center",
   },
 });
+
+export default ProgressAnalytics;

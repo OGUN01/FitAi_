@@ -4,7 +4,7 @@ enableScreens();
 
 import React, { useState, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View, ActivityIndicator, Text, Platform } from "react-native";
+import { StyleSheet, View, ActivityIndicator, Text, TextInput, Platform } from "react-native";
 
 // react-native-reanimated's web renderer injects `transform-origin` (kebab-case)
 // as an inline DOM style, which React warns about. React passes the property name
@@ -50,6 +50,20 @@ import type { DeepLinkResult } from "./src/utils/deepLinkHandler";
 import { OnboardingReviewData } from "./src/types/onboarding";
 import { ThemeProvider } from "./src/theme/ThemeProvider";
 import { colors, spacing, typography } from "./src/theme/aurora-tokens";
+import { FONT_FAMILY } from "./src/theme/fonts";
+import { useAppFonts } from "./src/hooks/useAppFonts";
+
+// Apply the Manrope brand typeface app-wide: every <Text> / <TextInput> in the
+// app inherits this base family (display-level text overrides per-weight via
+// fontFamilyForWeight). Must run before any render.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _textDefaults = Text as any;
+_textDefaults.defaultProps = _textDefaults.defaultProps || {};
+_textDefaults.defaultProps.style = { fontFamily: FONT_FAMILY.regular };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _textInputDefaults = TextInput as any;
+_textInputDefaults.defaultProps = _textInputDefaults.defaultProps || {};
+_textInputDefaults.defaultProps.style = { fontFamily: FONT_FAMILY.regular };
 import { initializeBackend } from "./src/utils/integration";
 import { offlineService } from "./src/services/offline/OfflineService";
 import { useAuth } from "./src/hooks/useAuth";
@@ -141,6 +155,9 @@ if (!isExpoGo) {
 }
 export default function App() {
 
+  // Load the Manrope brand typeface before any screen renders so text never
+  // flashes in the system font. Gate render below on `fontsLoaded`.
+  const { fontsLoaded } = useAppFonts();
 
   // Default to false - user must complete onboarding unless we find completed data
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
@@ -1169,6 +1186,12 @@ export default function App() {
     }
   };
 
+  // Hold render until the brand typeface is loaded so no text flashes in the
+  // system font. (SplashScreen is still visible at this point.)
+  if (!fontsLoaded) {
+    return null;
+  }
+
   // Show loading while authentication, config, or onboarding data are initializing.
   // This keeps maintenance and version gates from flashing open before config loads.
   const isSubscriptionBootstrapping =
@@ -1176,13 +1199,15 @@ export default function App() {
   const shouldResumeAuthenticatedOnboarding =
     !!user && !isGuestMode && !isOnboardingComplete;
 
-  if (isLoadingOnboarding || appConfigLoading || isSubscriptionBootstrapping) {
+  if (!fontsLoaded || isLoadingOnboarding || appConfigLoading || isSubscriptionBootstrapping) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" translucent />
         <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         <Text style={styles.loadingText}>
-          {isSubscriptionBootstrapping
+          {!fontsLoaded
+            ? "Loading..."
+            : isSubscriptionBootstrapping
             ? "Checking your subscription..."
             : "Loading your profile..."}
         </Text>

@@ -2,9 +2,15 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
+import { rf, rh } from "../../../utils/responsive";
 import { TrendData } from "../../../hooks/useProgressTrendsLogic";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
@@ -31,41 +37,57 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
   return (
     <Animated.View
       entering={FadeInDown.delay(200).duration(400)}
-      style={styles.trendCard}
+      style={styles.panel}
     >
-      <View style={styles.trendHeader}>
-        <View
-          style={[styles.trendIconContainer, { backgroundColor: hexToRgba(color, 0.2) }]}
-        >
-          <Ionicons name={icon} size={rf(20)} color={color} />
+      <View style={styles.headerRow}>
+        <View style={[styles.iconWrap, { backgroundColor: `${color}18` }]}>
+          <Ionicons name={icon} size={rf(18)} color={color} />
         </View>
-        <Text style={styles.trendTitle} numberOfLines={1}>{title}</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
       </View>
 
       {trend ? (
         <>
-          <View style={styles.trendStats}>
-            <View style={styles.trendStatItem}>
-              <Text style={styles.trendStatLabel} numberOfLines={1}>Current</Text>
-              <Text style={styles.trendStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel} numberOfLines={1}>
+                Current
+              </Text>
+              <Text
+                style={[styles.statValue, { color }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 {trend.data.length > 0
                   ? trend.data[trend.data.length - 1]?.toFixed(1)
-                  : null}{" "}
+                  : "--"}{" "}
                 {unit}
               </Text>
             </View>
-            <View style={styles.trendStatItem}>
-              <Text style={styles.trendStatLabel} numberOfLines={1}>Avg</Text>
-              <Text style={styles.trendStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel} numberOfLines={1}>
+                Avg
+              </Text>
+              <Text
+                style={styles.statValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 {trend.avg.toFixed(1)} {unit}
               </Text>
             </View>
-            <View style={styles.trendStatItem}>
-              <Text style={styles.trendStatLabel} numberOfLines={1}>Change</Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel} numberOfLines={1}>
+                Change
+              </Text>
               <Text
                 style={[
-                  styles.trendStatValue,
-                  { color: trend.change >= 0 ? colors.success : colors.error },
+                  styles.statValue,
+                  { color: trend.change >= 0 ? chart[4] : chart[6] },
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -82,7 +104,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
               const max = Math.max(...arr);
               const min = Math.min(...arr);
               const range = max - min || 1;
-              const height = ((value - min) / range) * 40 + 10;
+              const height = ((value - min) / range) * 36 + 8;
               return (
                 <View
                   key={index}
@@ -94,13 +116,15 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
         </>
       ) : (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText} numberOfLines={1}>Not enough data yet</Text>
+          <Text style={styles.noDataText} numberOfLines={1}>
+            Not enough data yet
+          </Text>
           <Text style={styles.noDataSubtext} numberOfLines={2}>
             Keep tracking to see your trends
           </Text>
           {ctaLabel && onCtaPress ? (
             <AnimatedPressable
-              style={styles.ctaButton}
+              style={[styles.ctaButton, { backgroundColor: color }]}
               onPress={() => {
                 haptics.light();
                 onCtaPress();
@@ -110,7 +134,9 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
               accessibilityRole="button"
               accessibilityLabel={ctaLabel}
             >
-              <Text style={styles.ctaButtonText} numberOfLines={1}>{ctaLabel}</Text>
+              <Text style={styles.ctaButtonText} numberOfLines={1}>
+                {ctaLabel}
+              </Text>
             </AnimatedPressable>
           ) : null}
         </View>
@@ -120,89 +146,89 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  trendCard: {
-    backgroundColor: colors.surface,
-    borderRadius: rbr(16),
-    padding: rp(16),
+  panel: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
   },
-  trendHeader: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rp(12),
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
-  trendIconContainer: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rbr(10),
+  iconWrap: {
+    width: rf(36),
+    height: rf(36),
+    borderRadius: rf(10),
     alignItems: "center",
     justifyContent: "center",
-    marginRight: rp(12),
   },
-  trendTitle: {
-    fontSize: rf(16),
-    fontWeight: "600",
-    color: colors.text,
+  title: {
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
   },
-  trendStats: {
+  statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: rp(12),
-    gap: rp(6),
+    marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
-  trendStatItem: {
+  statItem: {
     flex: 1,
     alignItems: "center",
     minWidth: 0,
   },
-  trendStatLabel: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
+  statLabel: {
+    ...typography.variants.caption,
+    color: colors.text.secondary,
   },
-  trendStatValue: {
+  statValue: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(16),
-    fontWeight: "600",
-    color: colors.text,
-    marginTop: rp(2),
+    color: colors.text.primary,
+    marginTop: spacing.xxs,
   },
   miniChart: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    height: rh(50),
-    paddingTop: rp(10),
+    height: rh(44),
+    paddingTop: spacing.sm,
   },
   chartBar: {
-    width: rw(8),
-    borderRadius: rbr(4),
-    opacity: 0.8,
+    width: 8,
+    borderRadius: 4,
+    opacity: 0.85,
   },
   noDataContainer: {
     alignItems: "flex-start",
-    paddingVertical: rp(20),
+    paddingVertical: spacing.md,
   },
   noDataText: {
-    fontSize: rf(14),
-    fontWeight: "500",
-    color: colors.text,
+    ...typography.variants.body,
+    color: colors.text.primary,
   },
   noDataSubtext: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(4),
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
   ctaButton: {
-    marginTop: rp(12),
-    backgroundColor: colors.primary,
-    borderRadius: rbr(24),
-    paddingHorizontal: rp(20),
-    paddingVertical: rp(14),
+    marginTop: spacing.md,
+    borderRadius: 12,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     alignSelf: "flex-start",
     minHeight: 44,
+    justifyContent: "center",
   },
   ctaButtonText: {
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.background,
+    color: colors.text.primary,
     letterSpacing: 0.3,
   },
 });

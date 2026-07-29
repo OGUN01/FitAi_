@@ -82,7 +82,8 @@ export const useWorkoutPreferences = ({
 
     // Current fitness assessment
     workout_experience_years: data?.workout_experience_years || 0,
-    workout_frequency_per_week: data?.workout_frequency_per_week || 0,
+    // §4 default: 3 sessions/week feels achievable (hook previously 0).
+    workout_frequency_per_week: data?.workout_frequency_per_week || 3,
     can_do_pushups: data?.can_do_pushups || 0,
     can_run_minutes: data?.can_run_minutes || 0,
     flexibility_level: data?.flexibility_level || "fair",
@@ -147,7 +148,7 @@ export const useWorkoutPreferences = ({
         primary_goals: data.primary_goals || [],
         activity_level: data.activity_level || "sedentary",
         workout_experience_years: data.workout_experience_years || 0,
-        workout_frequency_per_week: data.workout_frequency_per_week || 0,
+        workout_frequency_per_week: data.workout_frequency_per_week || 3,
         can_do_pushups: data.can_do_pushups || 0,
         can_run_minutes: data.can_run_minutes || 0,
         flexibility_level: data.flexibility_level || "fair",

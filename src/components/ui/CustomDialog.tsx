@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,26 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { Card } from "./Card";
-import { Button } from "./Button";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { rf, rs, rh, rbr } from "../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Card } from './Card';
+import { Button } from './Button';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+} from '../../theme/aurora-tokens';
+import { rf, rs, rh, rbr } from '../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_SOFT } from '../../utils/colors';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 
 interface DialogAction {
   text: string;
   onPress: () => void;
-  style?: "default" | "cancel" | "destructive";
-  variant?: "primary" | "secondary" | "outline";
+  style?: 'default' | 'cancel' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'outline';
 }
 
 interface CustomDialogProps {
@@ -32,7 +37,7 @@ interface CustomDialogProps {
   message?: string;
   actions?: DialogAction[];
   onDismiss?: () => void;
-  type?: "info" | "success" | "warning" | "error";
+  type?: 'info' | 'success' | 'warning' | 'error';
   icon?: string;
 }
 
@@ -45,29 +50,29 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   message,
   actions = [],
   onDismiss,
-  type = "info",
-  icon,
+  type = 'info',
+  icon: _icon,
 }) => {
   const getTypeIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (type) {
-      case "success":
-        return "checkmark-circle";
-      case "warning":
-        return "warning";
-      case "error":
-        return "close-circle";
+      case 'success':
+        return 'checkmark-circle';
+      case 'warning':
+        return 'warning';
+      case 'error':
+        return 'close-circle';
       default:
-        return "information-circle";
+        return 'information-circle';
     }
   };
 
   const getTypeColor = () => {
     switch (type) {
-      case "success":
+      case 'success':
         return colors.success;
-      case "warning":
+      case 'warning':
         return colors.warning;
-      case "error":
+      case 'error':
         return colors.error;
       default:
         return colors.primary;
@@ -78,12 +83,12 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
     if (action.variant) return action.variant;
 
     switch (action.style) {
-      case "destructive":
-        return "primary";
-      case "cancel":
-        return "outline";
+      case 'destructive':
+        return 'primary';
+      case 'cancel':
+        return 'outline';
       default:
-        return "primary";
+        return 'primary';
     }
   };
 
@@ -91,12 +96,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   // prop transitioning from true→false to play animationType="fade"'s
   // fade-out. Returning null before that transition skips the fade-out.
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
@@ -107,18 +107,20 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                 { backgroundColor: hexToRgba(getTypeColor(), TINT_ALPHA_SOFT) },
               ]}
             >
-              <Ionicons
-                name={getTypeIcon()}
-                size={rf(32)}
-                color={getTypeColor()}
-              />
+              <Ionicons name={getTypeIcon()} size={rf(32)} color={getTypeColor()} />
             </View>
 
             {/* Title */}
-            <Text style={styles.title} numberOfLines={2}>{title}</Text>
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
 
             {/* Message */}
-            {message && <Text style={styles.message} numberOfLines={6}>{message}</Text>}
+            {message && (
+              <Text style={styles.message} numberOfLines={6}>
+                {message}
+              </Text>
+            )}
 
             {/* Actions */}
             {actions.length > 0 && (
@@ -160,122 +162,138 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
 // Convenience functions to replace Alert.alert()
 export const showDialog = {
   info: (title: string, message?: string, _actions?: DialogAction[]) => {
-    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(title, message ?? "", buttons);
+    const buttons = _actions?.map((a) => ({
+      text: a.text,
+      onPress: a.onPress,
+      style: a.style,
+    })) ?? [{ text: 'OK' }];
+    crossPlatformAlert(title, message ?? '', buttons);
   },
 
   success: (title: string, message?: string, _actions?: DialogAction[]) => {
-    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(title, message ?? "", buttons);
+    const buttons = _actions?.map((a) => ({
+      text: a.text,
+      onPress: a.onPress,
+      style: a.style,
+    })) ?? [{ text: 'OK' }];
+    crossPlatformAlert(title, message ?? '', buttons);
   },
 
   warning: (title: string, message?: string, _actions?: DialogAction[]) => {
-    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(title, message ?? "", buttons);
+    const buttons = _actions?.map((a) => ({
+      text: a.text,
+      onPress: a.onPress,
+      style: a.style,
+    })) ?? [{ text: 'OK' }];
+    crossPlatformAlert(title, message ?? '', buttons);
   },
 
   error: (title: string, message?: string, _actions?: DialogAction[]) => {
-    const buttons = _actions?.map((a) => ({ text: a.text, onPress: a.onPress, style: a.style })) ?? [{ text: "OK" }];
-    crossPlatformAlert(title, message ?? "", buttons);
+    const buttons = _actions?.map((a) => ({
+      text: a.text,
+      onPress: a.onPress,
+      style: a.style,
+    })) ?? [{ text: 'OK' }];
+    crossPlatformAlert(title, message ?? '', buttons);
   },
 };
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
 
   safeArea: {
-    width: "85%", // Use percentage instead of screenWidth
+    width: '85%', // Use percentage instead of screenWidth
     maxWidth: 400,
   },
 
   dialogCard: {
     padding: spacing.xl,
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
   },
 
   iconContainer: {
     width: rs(60),
     height: rs(60),
     borderRadius: rbr(30),
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     marginBottom: spacing.lg,
   },
 
   title: {
     fontSize: fontSize.xl,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.md,
   },
 
   message: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: rf(22),
     marginBottom: spacing.xl,
   },
 
   actionsContainer: {
-    width: "100%",
+    width: '100%',
   },
 
   singleAction: {
-    width: "100%",
+    width: '100%',
   },
 
   multipleActions: {
-    flexDirection: "column",
+    flexDirection: 'column',
     gap: spacing.sm,
   },
 
   // Primary/last button gets full width and a slightly stronger visual
   // weight than the outline "cancel" button above it.
   actionButton: {
-    width: "100%",
+    width: '100%',
   },
 
   lastActionButton: {
-    width: "100%",
+    width: '100%',
     marginTop: spacing.xs,
   },
 
   // Workout complete styles (used by WorkoutCompleteDialog).
   statsContainer: {
-    width: "100%",
+    width: '100%',
     marginBottom: spacing.xl,
   },
 
   statsTitle: {
     fontSize: fontSize.md,
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.lg,
     lineHeight: rf(22),
   },
 
   statsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     paddingVertical: spacing.lg,
     backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.lg,
   },
 
   statItem: {
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
   },
 
   statValue: {
     fontSize: fontSize.xl,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.primary,
     marginBottom: spacing.xs,
   },
@@ -302,11 +320,11 @@ export const WorkoutStartDialog: React.FC<WorkoutStartDialogProps> = ({
   onCancel,
   onConfirm,
 }) => {
-  const title = isResuming ? "Resume Workout?" : "Ready to Start?";
+  const title = isResuming ? 'Resume Workout?' : 'Start Workout';
   const message = isResuming
-    ? `Resume "${workoutTitle}" from where you left off?`
-    : `Starting "${workoutTitle}". Ready to begin your workout session?`;
-  const confirmText = isResuming ? "Resume Workout" : "Begin Workout";
+    ? `Pick up "${workoutTitle}" where you left off?`
+    : `"${workoutTitle}" — ready when you are.`;
+  const confirmText = isResuming ? 'Resume' : 'Begin Workout';
 
   return (
     <CustomDialog
@@ -316,14 +334,14 @@ export const WorkoutStartDialog: React.FC<WorkoutStartDialogProps> = ({
       type="info"
       actions={[
         {
-          text: "Cancel",
+          text: 'Cancel',
           onPress: onCancel,
-          style: "cancel",
+          style: 'cancel',
         },
         {
           text: confirmText,
           onPress: onConfirm,
-          style: "default",
+          style: 'default',
         },
       ]}
     />
@@ -370,7 +388,9 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
             <View style={detailStyles.iconCircle}>
               <Ionicons name="barbell" size={rf(22)} color={colors.primary} />
             </View>
-            <Text style={detailStyles.title} numberOfLines={2}>{title}</Text>
+            <Text style={detailStyles.title} numberOfLines={2}>
+              {title}
+            </Text>
             <TouchableOpacity
               onPress={onClose}
               style={detailStyles.closeBtn}
@@ -400,7 +420,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
             <View style={detailStyles.divider} />
             <View style={detailStyles.statItem}>
               <Ionicons name="flame-outline" size={rf(18)} color={colors.primary} />
-              <Text style={detailStyles.statValue}>{calories ?? "N/A"}</Text>
+              <Text style={detailStyles.statValue}>{calories ?? 'N/A'}</Text>
               <Text style={detailStyles.statLabel}>Calories</Text>
             </View>
             <View style={detailStyles.divider} />
@@ -430,7 +450,7 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
 
 const detailStyles = StyleSheet.create({
   card: {
-    width: "85%",
+    width: '85%',
     maxWidth: 400,
     backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(20),
@@ -439,8 +459,8 @@ const detailStyles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.lg,
     gap: spacing.sm,
   },
@@ -449,20 +469,20 @@ const detailStyles = StyleSheet.create({
     height: rs(36),
     borderRadius: rbr(18),
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     flex: 1,
     fontSize: rf(16),
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
   },
   closeBtn: {
     minWidth: 44,
     minHeight: 44,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 4,
   },
   descScroll: {
@@ -475,7 +495,7 @@ const detailStyles = StyleSheet.create({
     lineHeight: rf(19),
   },
   statsRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     backgroundColor: colors.background,
     borderRadius: rbr(14),
     paddingVertical: spacing.lg,
@@ -483,7 +503,7 @@ const detailStyles = StyleSheet.create({
   },
   statItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: 4,
   },
   divider: {
@@ -493,7 +513,7 @@ const detailStyles = StyleSheet.create({
   },
   statValue: {
     fontSize: rf(15),
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
   },
   statLabel: {
@@ -504,11 +524,11 @@ const detailStyles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: rbr(12),
     paddingVertical: spacing.md,
-    alignItems: "center",
+    alignItems: 'center',
   },
   closeButtonText: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.white,
   },
 });
@@ -524,13 +544,13 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   onDone,
 }) => {
   const [rating, setRating] = useState(0);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState('');
 
   const handleDone = () => {
     onDone(rating > 0 ? rating : undefined, notes.trim() || undefined);
     // Reset for next use
     setRating(0);
-    setNotes("");
+    setNotes('');
   };
 
   const handleViewProgress = () => {
@@ -543,7 +563,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
     <Modal visible={visible} transparent animationType="slide">
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
@@ -554,11 +574,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 { backgroundColor: hexToRgba(colors.success, TINT_ALPHA_SOFT) },
               ]}
             >
-              <Ionicons
-                name="trophy"
-                size={rf(32)}
-                color={colors.success}
-              />
+              <Ionicons name="trophy" size={rf(32)} color={colors.success} />
             </View>
 
             {/* Title */}
@@ -597,13 +613,13 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                     key={star}
                     onPress={() => setRating(star)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                    accessibilityLabel={`Rate ${star} star${star > 1 ? 's' : ''}`}
                     accessibilityState={{ selected: star <= rating }}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     style={completeStyles.starButton}
                   >
                     <Ionicons
-                      name={star <= rating ? "star" : "star-outline"}
+                      name={star <= rating ? 'star' : 'star-outline'}
                       size={rf(28)}
                       color={star <= rating ? colors.warningAlt : colors.textSecondary}
                     />
@@ -649,20 +665,20 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 
 const completeStyles = StyleSheet.create({
   feedbackSection: {
-    width: "100%",
+    width: '100%',
     marginTop: rf(8),
     marginBottom: rf(4),
-    alignItems: "center",
+    alignItems: 'center',
   },
   feedbackLabel: {
     fontSize: rf(14),
-    fontWeight: "600" as const,
+    fontWeight: '600' as const,
     color: colors.text,
     marginBottom: rf(8),
   },
   starsRow: {
-    flexDirection: "row" as const,
-    justifyContent: "center",
+    flexDirection: 'row' as const,
+    justifyContent: 'center',
     gap: rf(8),
     marginBottom: rf(12),
   },
@@ -670,11 +686,11 @@ const completeStyles = StyleSheet.create({
   starButton: {
     minWidth: Math.max(rh(44), 44),
     minHeight: Math.max(rh(44), 44),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   notesInput: {
-    width: "100%" as const,
+    width: '100%' as const,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: rf(10),
@@ -683,6 +699,6 @@ const completeStyles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.backgroundSecondary ?? colors.background,
     minHeight: rf(60),
-    textAlignVertical: "top" as const,
+    textAlignVertical: 'top' as const,
   },
 });

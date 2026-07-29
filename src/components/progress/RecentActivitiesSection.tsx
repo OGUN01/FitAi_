@@ -2,8 +2,14 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rs, rbr } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 interface RecentActivitiesSectionProps {
@@ -36,14 +42,7 @@ export const RecentActivitiesSection: React.FC<
           }
 
           return (
-            <GlassCard
-              key={activity.id}
-              style={styles.activityCard}
-              elevation={1}
-              blurIntensity="light"
-              padding="md"
-              borderRadius="lg"
-            >
+            <View key={activity.id} style={styles.activityCard}>
               <View style={styles.activityContent}>
                 <View style={styles.activityIcon}>
                   <Ionicons
@@ -53,7 +52,7 @@ export const RecentActivitiesSection: React.FC<
                         : "restaurant-outline"
                     }
                     size={rf(20)}
-                    color={colors.primary}
+                    color={colors.primary.DEFAULT}
                   />
                 </View>
                 <View style={styles.activityInfo}>
@@ -73,26 +72,20 @@ export const RecentActivitiesSection: React.FC<
                   <Ionicons
                     name="checkmark"
                     size={rf(14)}
-                    color={colors.white}
+                    color={colors.text.primary}
                   />
                 </View>
               </View>
-            </GlassCard>
+            </View>
           );
         })
       ) : (
-        <GlassCard
-          style={styles.emptyCard}
-          elevation={1}
-          blurIntensity="light"
-          padding="md"
-          borderRadius="lg"
-        >
+        <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>No recent activities yet</Text>
           <Text style={styles.emptySubtext}>
             Complete workouts and meals to see them here
           </Text>
-        </GlassCard>
+        </View>
       )}
     </View>
   );
@@ -110,18 +103,21 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
   },
   viewAllText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
+    ...typography.variants.caption2,
+    fontFamily: "Manrope_500Medium",
+    color: colors.primary.DEFAULT,
   },
   activityCard: {
     marginBottom: spacing.sm,
     padding: spacing.md,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
   activityContent: {
     flexDirection: "row",
@@ -131,7 +127,7 @@ const styles = StyleSheet.create({
     width: rs(40),
     height: rs(40),
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -140,41 +136,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityName: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   activityDetails: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     marginBottom: rp(2),
   },
   activityDate: {
-    fontSize: fontSize.xs,
-    color: colors.textTertiary,
+    ...typography.variants.caption,
+    color: colors.text.tertiary,
   },
   activityBadge: {
     width: rs(24),
     height: rs(24),
     borderRadius: rbr(12),
-    backgroundColor: colors.success,
+    backgroundColor: colors.success.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
   emptyCard: {
     padding: spacing.xl,
     alignItems: "center",
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
   emptyText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    ...typography.variants.cardHeadline,
+    color: colors.text.secondary,
     textAlign: "center",
     marginBottom: spacing.xs,
   },
   emptySubtext: {
-    fontSize: fontSize.sm,
-    color: colors.textTertiary,
+    ...typography.variants.caption2,
+    color: colors.text.tertiary,
     textAlign: "center",
   },
 });

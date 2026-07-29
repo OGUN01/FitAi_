@@ -12,7 +12,7 @@
  * portion entry + macro calculation.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -24,22 +24,22 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { GlassCard } from '../ui/aurora/GlassCard';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import {
   flatColors as colors,
   spacing,
   borderRadius,
   flatFontSize as fontSize,
   typography,
-} from "../../theme/aurora-tokens";
-import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
-import { sqliteFood, type SQLiteFoodResult } from "../../services/sqliteFood";
-import { INDIAN_FOOD_DATABASE, type IndianFoodData } from "../../data/indianFoodDatabase";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
+} from '../../theme/aurora-tokens';
+import { rf, rh, rw, rp, rbr } from '../../utils/responsive';
+import { sqliteFood, type SQLiteFoodResult } from '../../services/sqliteFood';
+import { INDIAN_FOOD_DATABASE, type IndianFoodData } from '../../data/indianFoodDatabase';
+import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
 
 /** Normalised result handed back to the parent. */
 export interface FoodSearchHit {
@@ -60,7 +60,7 @@ export interface FoodSearchHit {
     sodium?: number;
   };
   /** "sqlite" (offline packaged DB) | "indian" (curated dish DB) */
-  source: "sqlite" | "indian";
+  source: 'sqlite' | 'indian';
   /** Barcode when source === "sqlite" (used to dedupe against scan cache) */
   barcode?: string;
   /** Nutriscore grade a-e when available */
@@ -96,7 +96,7 @@ function fromIndian(entry: IndianFoodData, key: string): FoodSearchHit {
       sugar: n.sugar,
       sodium: n.sodium,
     },
-    source: "indian",
+    source: 'indian',
   };
 }
 
@@ -104,7 +104,7 @@ function fromIndian(entry: IndianFoodData, key: string): FoodSearchHit {
 function fromSQLite(row: SQLiteFoodResult): FoodSearchHit {
   return {
     key: `sqlite:${row.code}`,
-    name: row.product_name ?? "Unknown product",
+    name: row.product_name ?? 'Unknown product',
     subtitle: row.brands ?? undefined,
     barcode: row.code,
     per100g: {
@@ -116,20 +116,16 @@ function fromSQLite(row: SQLiteFoodResult): FoodSearchHit {
       sugar: row.sugars_100g ?? undefined,
       sodium: row.sodium_100g ?? undefined,
     },
-    source: "sqlite",
+    source: 'sqlite',
     nutriScore: row.nutriscore_grade ?? undefined,
     novaGroup: row.nova_group ?? undefined,
     imageUrl: row.image_url ?? undefined,
   };
 }
 
-export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
-  visible,
-  onClose,
-  onSelect,
-}) => {
+export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClose, onSelect }) => {
   const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [hits, setHits] = useState<FoodSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [dbReady, setDbReady] = useState(sqliteFood.isDatabaseReady());
@@ -143,7 +139,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
         setDbReady(sqliteFood.isDatabaseReady());
       });
       // Reset query + focus for a fresh search session.
-      setQuery("");
+      setQuery('');
       setHits([]);
       const t = setTimeout(() => inputRef.current?.focus(), 250);
       return () => clearTimeout(t);
@@ -166,7 +162,6 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const runSearch = useCallback(async (q: string) => {
@@ -176,13 +171,9 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
     const indianMatches: FoodSearchHit[] = [];
     for (const [key, entry] of Object.entries(INDIAN_FOOD_DATABASE)) {
       const name = entry.name.toLowerCase();
-      const hindi = entry.hindiName ?? "";
-      const regional = entry.regionalName ?? "";
-      if (
-        name.includes(lower) ||
-        hindi.includes(q) ||
-        regional.toLowerCase().includes(lower)
-      ) {
+      const hindi = entry.hindiName ?? '';
+      const regional = entry.regionalName ?? '';
+      if (name.includes(lower) || hindi.includes(q) || regional.toLowerCase().includes(lower)) {
         indianMatches.push(fromIndian(entry, key));
       }
     }
@@ -195,7 +186,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
         sqliteMatches = rows.map(fromSQLite);
       } catch (err) {
         // Non-fatal — the Indian DB still returns results.
-        console.error("[FoodSearchSheet] SQLite search failed:", err);
+        console.error('[FoodSearchSheet] SQLite search failed:', err);
       }
     }
 
@@ -217,28 +208,28 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
   const handleSelect = useCallback(
     (hit: FoodSearchHit) => {
       onSelect(hit);
-      setQuery("");
+      setQuery('');
       setHits([]);
     },
-    [onSelect],
+    [onSelect]
   );
 
   const resultsFooter = useMemo(() => {
     if (query.trim().length < MIN_QUERY) {
       return dbReady
-        ? "Search packaged products + Indian dishes"
-        : "Indian dishes available · download offline DB for millions more";
+        ? 'Search packaged products + Indian dishes'
+        : 'Indian dishes available · download offline DB for millions more';
     }
     if (!loading && hits.length === 0) {
-      return "No matches — try a shorter or different name";
+      return 'No matches — try a shorter or different name';
     }
-    return "";
+    return '';
   }, [query, loading, hits.length, dbReady]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
         <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.sm }]}>
@@ -264,7 +255,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
               />
               {query.length > 0 && (
                 <TouchableOpacity
-                  onPress={() => setQuery("")}
+                  onPress={() => setQuery('')}
                   hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   style={styles.clearBtn}
                   accessibilityRole="button"
@@ -290,12 +281,14 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
           </View>
 
           {/* Status row */}
-          {(loading || resultsFooter !== "") && (
+          {(loading || resultsFooter !== '') && (
             <View style={styles.statusRow}>
               {loading ? (
                 <>
                   <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={styles.statusText} numberOfLines={1}>Searching…</Text>
+                  <Text style={styles.statusText} numberOfLines={1}>
+                    Searching…
+                  </Text>
                 </>
               ) : (
                 <Text
@@ -327,9 +320,14 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
               >
                 <GlassCard elevation={2} style={styles.card} padding="sm" borderRadius="lg">
                   <View style={styles.row}>
-                    <View style={[styles.sourceTag, item.source === "sqlite" ? styles.sqliteTag : styles.indianTag]}>
+                    <View
+                      style={[
+                        styles.sourceTag,
+                        item.source === 'sqlite' ? styles.sqliteTag : styles.indianTag,
+                      ]}
+                    >
                       <Text style={styles.sourceTagText} numberOfLines={1}>
-                        {item.source === "sqlite" ? "Packaged" : "Dish"}
+                        {item.source === 'sqlite' ? 'Packaged' : 'Dish'}
                       </Text>
                     </View>
                     <View style={styles.nameWrap}>
@@ -353,7 +351,12 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
                       ) : null}
                     </View>
                     <View style={styles.calsWrap}>
-                      <Text style={styles.cals} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                      <Text
+                        style={styles.cals}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                      >
                         {Math.round(item.per100g.calories)}
                       </Text>
                       <Text
@@ -379,8 +382,8 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   sheet: {
     backgroundColor: colors.background,
@@ -388,18 +391,18 @@ const styles = StyleSheet.create({
     borderTopRightRadius: rbr(28),
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    maxHeight: "85%",
+    maxHeight: '85%',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.sm,
   },
   searchWrap: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.backgroundTertiary,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
@@ -419,18 +422,18 @@ const styles = StyleSheet.create({
   clearBtn: {
     minWidth: Math.max(rw(44), 44),
     minHeight: Math.max(rw(44), 44),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeBtn: {
     minWidth: Math.max(rw(44), 44),
     minHeight: Math.max(rw(44), 44),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
@@ -447,8 +450,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
   },
   row: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   sourceTag: {
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: rf(fontSize.micro),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   nameWrap: {
     flex: 1,
@@ -483,7 +486,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   calsWrap: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
     flexShrink: 0,
   },
   cals: {

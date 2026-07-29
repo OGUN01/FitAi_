@@ -8,7 +8,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { EmptyState } from "../../components/ui/aurora/EmptyState";
@@ -22,8 +22,15 @@ import {
   AchievementCategory,
   Achievement,
 } from "../../services/achievements/types";
-import { colors, typography, flatColors } from "../../theme/aurora-tokens";
-import { rh, rw, rf, rbr } from "../../utils/responsive";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../theme/aurora-tokens";
+import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
 interface AchievementsScreenProps {
@@ -50,7 +57,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     initialize,
   } = useAchievementStore();
 
-  // Initialize achievement store on mount
   useEffect(() => {
     const userId = user?.id || guestId || "guest";
     initialize(userId);
@@ -63,7 +69,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Filter achievements by selected category tab
   const filteredAchievements = useMemo(() => {
     if (selectedCategory === "all") {
       return achievements;
@@ -71,7 +76,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     return achievements.filter((a) => a.category === selectedCategory);
   }, [achievements, selectedCategory]);
 
-  // Partition into unlocked + in-progress + locked, each sorted sensibly.
   const { unlocked, inProgress, locked } = useMemo(() => {
     const unlocked: Achievement[] = [];
     const inProgress: Achievement[] = [];
@@ -88,7 +92,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
       }
     }
 
-    // Unlocked: newest first
     unlocked.sort((a, b) => {
       const timeA = userAchievements.get(a.id)?.unlockedAt
         ? new Date(userAchievements.get(a.id)!.unlockedAt).getTime()
@@ -99,7 +102,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
       return timeB - timeA;
     });
 
-    // In-progress: highest progress fraction first
     inProgress.sort((a, b) => {
       const uaA = userAchievements.get(a.id);
       const uaB = userAchievements.get(b.id);
@@ -110,7 +112,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
       return fracB - fracA;
     });
 
-    // Locked: lower-tier (more attainable) first, then alphabetical
     const tierOrder: Record<string, number> = {
       bronze: 0,
       silver: 1,
@@ -129,9 +130,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     return { unlocked, inProgress, locked };
   }, [filteredAchievements, userAchievements]);
 
-  // SectionList needs sections; only render sections that have items (under
-  // the active category filter). This is what makes "no achievements found"
-  // disappear — we always show SOMETHING (at minimum the locked catalog).
   const sections: AchievementSection[] = useMemo(() => {
     const secs: AchievementSection[] = [];
     if (unlocked.length > 0) {
@@ -158,7 +156,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     return secs;
   }, [unlocked, inProgress, locked]);
 
-  // Stats banner numbers
   const stats = useMemo(() => {
     const total = achievements.length;
     const completed = unlocked.length;
@@ -212,13 +209,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
     []
   );
 
-  // Loading state: store still initializing on first mount.
   const showLoading = isLoading && !isInitialized;
-
-  // Motivational empty state: only for a brand-new user with no unlocked,
-  // no in-progress, AND the catalog hasn't loaded yet OR is genuinely empty.
-  // Since the catalog is non-empty by design, this branch only fires before
-  // initialize populates the store.
   const catalogEmpty = achievements.length === 0 && !showLoading;
 
   return (
@@ -235,7 +226,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
             >
               <Ionicons
                 name="arrow-back"
-                size={rf(24)}
+                size={rf(22)}
                 color={colors.text.primary}
               />
             </AnimatedPressable>
@@ -244,26 +235,20 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
           <View style={styles.placeholder} />
         </View>
 
-        {/* Stats banner — only once we have a catalog */}
         {!catalogEmpty && (
-          <View style={styles.statsBanner}>
+          <Animated.View
+            entering={Platform.OS !== "web" ? FadeInDown.delay(100).duration(350) : undefined}
+            style={styles.statsStrip}
+          >
             <View style={styles.statItem}>
-              <Text
-                style={styles.statValue}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
+              <Text style={styles.statValue} numberOfLines={1}>
                 {stats.completed}
               </Text>
               <Text style={styles.statLabel} numberOfLines={1}>Earned</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text
-                style={styles.statValue}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
+              <Text style={styles.statValue} numberOfLines={1}>
                 {stats.completionRate}%
               </Text>
               <Text style={styles.statLabel} numberOfLines={1}>Complete</Text>
@@ -271,18 +256,14 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <View style={styles.statValueRow}>
-                <Ionicons name="ribbon-outline" size={rf(16)} color={flatColors.gold} />
-                <Text
-                  style={styles.statValue}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
+                <Ionicons name="ribbon-outline" size={rf(14)} color={chart[5]} />
+                <Text style={styles.statValue} numberOfLines={1}>
                   {stats.totalFitCoins}
                 </Text>
               </View>
               <Text style={styles.statLabel} numberOfLines={1}>FitCoins</Text>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         <AchievementCategoryTabs
@@ -323,8 +304,6 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
                 />
               }
               ListEmptyComponent={
-                // Reached only if a category filter yields zero achievements
-                // (shouldn't happen with the current catalog, but stay safe).
                 <EmptyState
                   icon="search-outline"
                   title="Nothing here yet"
@@ -361,42 +340,45 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: rw(16),
-    paddingVertical: rh(16),
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   backButton: {
-    width: Math.max(rw(10), 44),
-    height: Math.max(rw(10), 44),
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: rbr(12),
+    borderRadius: 12,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
   headerTitle: {
+    ...typography.variants.pageTitle,
     fontSize: rf(20),
-    fontWeight: "700",
     color: colors.text.primary,
     flex: 1,
     textAlign: "center",
   },
   placeholder: {
-    width: Math.max(rw(10), 44),
+    width: 44,
   },
   listContent: {
-    paddingHorizontal: rw(16),
-    paddingBottom: rh(32),
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
-  statsBanner: {
+  statsStrip: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    marginHorizontal: rw(16),
-    marginBottom: rh(12),
-    paddingVertical: rh(12),
-    paddingHorizontal: rw(16),
-    backgroundColor: colors.glass.backgroundDark,
-    borderRadius: rbr(16),
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: surface[1],
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
   },
   statItem: {
     flex: 1,
@@ -404,53 +386,52 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   statValue: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(18),
-    fontWeight: "800",
     color: colors.text.primary,
   },
   statValueRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rf(4),
+    gap: spacing.xs,
   },
   statLabel: {
-    fontSize: rf(11),
-    color: colors.text.tertiary,
-    marginTop: rh(2),
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+    marginTop: 2,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   statDivider: {
-    width: rw(1),
-    alignSelf: "stretch",
-    backgroundColor: colors.glass.border,
+    width: 1,
+    height: "60%",
+    backgroundColor: border.subtle,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "baseline",
     justifyContent: "space-between",
-    marginTop: rh(20),
-    marginBottom: rh(8),
-    paddingHorizontal: rw(4),
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   sectionTitle: {
-    fontSize: rf(15),
-    fontWeight: "700",
+    ...typography.variants.sectionTitle,
     color: colors.text.primary,
   },
   sectionSubtitle: {
-    fontSize: rf(12),
-    color: colors.text.tertiary,
+    ...typography.variants.caption,
+    color: colors.text.secondary,
   },
   loadingContainer: {
-    minHeight: rh(400),
+    minHeight: 400,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: rh(80),
+    marginTop: 80,
   },
   loadingText: {
+    ...typography.variants.body,
     color: colors.text.secondary,
-    fontSize: rf(14),
-    marginTop: rh(16),
+    marginTop: spacing.md,
   },
 });

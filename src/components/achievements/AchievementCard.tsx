@@ -1,15 +1,19 @@
-// Achievement Card Component
-// Individual achievement display with progress and celebration
-
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   Achievement,
   UserAchievement,
 } from "../../services/achievements/types";
-import { flatColors as colors } from "../../theme/aurora-tokens";
-import { rf, rh, rw, rs, rbr, rp } from "../../utils/responsive";
-import GlassCard from "../ui/GlassCard";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../theme/aurora-tokens";
+import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
@@ -19,6 +23,15 @@ interface AchievementCardProps {
   onPress?: () => void;
   showProgress?: boolean;
 }
+
+const tierColorMap: Record<string, string> = {
+  bronze: chart[1],
+  silver: chart[2],
+  gold: chart[5],
+  platinum: chart[3],
+  diamond: chart[6],
+  legendary: chart[4],
+};
 
 const AchievementCard: React.FC<AchievementCardProps> = ({
   achievement,
@@ -31,20 +44,8 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   const maxProgress =
     userProgress?.maxProgress || achievement.requirements[0]?.target || 1;
   const progressPercent = Math.min((progress / maxProgress) * 100, 100);
-
-  const getTierColor = (tier: string) => {
-    const tierColors = {
-      bronze: "#CD7F32",
-      silver: "#C0C0C0",
-      gold: colors.gold,
-      platinum: "#E5E4E2",
-      diamond: "#B9F2FF",
-      legendary: colors.errorLight,
-    };
-    return tierColors[tier as keyof typeof tierColors] || "#CD7F32";
-  };
-
-  const tierColor = getTierColor(achievement.tier);
+  const isLocked = !isCompleted && progress === 0;
+  const tierColor = tierColorMap[achievement.tier] ?? chart[1];
 
   return (
     <AnimatedPressable
@@ -55,201 +56,137 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
       accessibilityRole="button"
       accessibilityHint={isCompleted ? "Tap to view achievement details" : "Tap to view progress and how to unlock"}
     >
-      <GlassCard
-        elevation={isCompleted ? 4 : 1}
-        blurIntensity={isCompleted ? "default" : "light"}
-        style={StyleSheet.flatten([
-          styles.container,
-          !isCompleted && progress === 0 ? styles.lockedCard : undefined,
-        ])}
+      <Animated.View
+        entering={FadeInDown.duration(300)}
+        style={[styles.tile, isLocked && styles.tileLocked]}
       >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <View
-              style={[styles.iconContainer, !isCompleted && styles.iconLocked]}
-            >
-              <Text style={styles.icon}>{achievement.icon}</Text>
-              {isCompleted && (
-                <View style={styles.checkBadge}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={rf(16)}
-                    color={colors.success}
-                  />
-                </View>
-              )}
-            </View>
-
-            <View style={styles.info}>
-              <View style={styles.titleRow}>
-                <Text
-                  style={[styles.title, !isCompleted && styles.titleLocked]}
-                  numberOfLines={2}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                >
-                  {achievement.title}
-                </Text>
-              </View>
-              <View style={styles.tierRow}>
-                <View style={[styles.tierBadge, { borderColor: tierColor }]}>
-                  <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
-                    {achievement.tier.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.description} numberOfLines={3}>
-                {achievement.description}
-              </Text>
-            </View>
+        {/* Tier ring badge */}
+        <View style={[styles.ringOuter, { borderColor: tierColor }]}>
+          <View style={[styles.ringInner, { backgroundColor: `${tierColor}18` }]}>
+            <Ionicons
+              name={isCompleted ? "checkmark" : isLocked ? "lock-closed" : "trophy"}
+              size={rf(18)}
+              color={isLocked ? colors.text.muted : tierColor}
+            />
           </View>
-
-          {showProgress && (isCompleted || progress > 0) && (
-            <View style={styles.progressSection}>
-              <View style={styles.progressBar}>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${progressPercent}%`,
-                        backgroundColor: tierColor,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.progressText} numberOfLines={1}>
-                  {Math.round(progressPercent)}%
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {isCompleted && (
-            <Text style={styles.unlockedText} numberOfLines={1}>
-              Unlocked{" "}
-              {new Date(
-                userProgress?.unlockedAt || Date.now(),
-              ).toLocaleDateString()}
-            </Text>
-          )}
         </View>
-      </GlassCard>
+
+        {/* Title */}
+        <Text
+          style={[styles.title, isLocked && styles.titleLocked]}
+          numberOfLines={2}
+        >
+          {achievement.title}
+        </Text>
+
+        {/* Tier chip */}
+        <View style={[styles.tierChip, { backgroundColor: `${tierColor}18` }]}>
+          <Text style={[styles.tierChipText, { color: tierColor }]} numberOfLines={1}>
+            {achievement.tier.toUpperCase()}
+          </Text>
+        </View>
+
+        {/* Progress bar for in-progress */}
+        {showProgress && !isCompleted && progress > 0 && (
+          <View style={styles.progressWrap}>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${progressPercent}%`, backgroundColor: tierColor },
+                ]}
+              />
+            </View>
+            <Text style={styles.progressText} numberOfLines={1}>
+              {Math.round(progressPercent)}%
+            </Text>
+          </View>
+        )}
+
+        {/* Unlocked date */}
+        {isCompleted && userProgress?.unlockedAt && (
+          <Text style={styles.unlockedText} numberOfLines={1}>
+            {new Date(userProgress.unlockedAt).toLocaleDateString()}
+          </Text>
+        )}
+      </Animated.View>
     </AnimatedPressable>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: rh(12),
+  tile: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.md,
+    alignItems: "center",
+    marginBottom: spacing.sm,
   },
-  lockedCard: {
-    opacity: 0.7,
+  tileLocked: {
+    opacity: 0.4,
   },
-  content: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: rh(8),
-  },
-  iconContainer: {
-    width: rw(48),
-    height: rw(48),
+  ringOuter: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.glassSurface,
-    borderRadius: rw(12),
-    marginRight: rw(12),
+    marginBottom: spacing.sm,
   },
-  icon: {
-    fontSize: rf(24),
-  },
-  iconLocked: {
-    opacity: 0.6,
-    backgroundColor: colors.glassHighlight,
-  },
-  checkBadge: {
-    position: "absolute",
-    bottom: -rp(6),
-    right: -rp(6),
-    backgroundColor: colors.background,
-    borderRadius: rbr(10),
-  },
-  info: {
-    flex: 1,
-    minWidth: 0,
-  },
-  titleRow: {
-    flexDirection: "row",
+  ringInner: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: rh(4),
-  },
-  tierRow: {
-    flexDirection: "row",
-    marginBottom: rh(6),
   },
   title: {
-    fontSize: rf(16),
-    fontWeight: "700",
-    color: colors.text,
-    flex: 1,
-    flexWrap: "wrap",
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
+    textAlign: "center",
+    marginBottom: spacing.xs,
   },
   titleLocked: {
-    color: colors.textMuted,
+    color: colors.text.muted,
   },
-  tierBadge: {
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    paddingHorizontal: rw(8),
-    paddingVertical: rh(2),
-    borderRadius: rbr(6),
+  tierChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: spacing.xs,
   },
-  tierText: {
+  tierChipText: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(10),
-    fontWeight: "800",
     letterSpacing: 0.5,
   },
-  description: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-    lineHeight: rf(18),
-    flexShrink: 1,
-  },
-  progressSection: {
-    marginTop: rh(8),
-  },
-  progressBar: {
-    flexDirection: "row",
-    alignItems: "center",
+  progressWrap: {
+    width: "100%",
+    marginTop: spacing.xs,
   },
   progressTrack: {
-    flex: 1,
-    height: rh(6),
-    backgroundColor: colors.glassHighlight,
-    borderRadius: rs(3),
-    marginRight: rw(8),
+    height: 4,
+    backgroundColor: border.subtle,
+    borderRadius: 2,
     overflow: "hidden",
+    marginBottom: spacing.xs,
   },
   progressFill: {
     height: "100%",
-    borderRadius: rs(3),
+    borderRadius: 2,
   },
   progressText: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.textTertiary,
-    width: rw(42),
-    textAlign: "right",
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+    textAlign: "center",
   },
   unlockedText: {
-    fontSize: rf(11),
-    color: colors.success,
-    marginTop: rh(8),
-    textAlign: "right",
+    ...typography.variants.caption,
+    color: chart[4],
+    marginTop: spacing.xs,
   },
 });
 

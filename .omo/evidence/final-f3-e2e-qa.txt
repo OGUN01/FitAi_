@@ -1,0 +1,166 @@
+================================================================================
+ E2E QA REPORT — Phase 2: Barcode Database Integration
+ Date: 2026-03-01
+ Reviewer: E2E QA Engineer (Sisyphus)
+================================================================================
+
+SCENARIO 1 — SQLite lookup wiring in barcodeService.ts            ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  ✅ import { sqliteFood } from './sqliteFood'              — Line 9
+  ✅ sqliteFood.isDatabaseReady() guard present              — Line 168
+  ✅ await sqliteFood.lookupBarcode(normalizedBarcode)       — Line 170
+  ✅ Result mapped to ScannedProduct with source: 'sqlite-local'  — Line 197
+  ✅ confidence: 92 hardcoded                                — Line 196
+  ✅ try/catch wraps SQLite block with 'sqliteErr' variable  — Line 207
+  ✅ SQLite block (line 168) appears BEFORE supabase.rpc('lookup_barcode' (line 219)
+  Script output:
+    SQLite before RPC: true
+    has sqlite-local: true
+    confidence 92: true
+    try-catch around sqlite: true
+
+SCENARIO 2 — sqliteFood.ts uses createDownloadResumable          ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  ✅ createDownloadResumable imported from expo-file-system  — Line 124
+  ✅ FileSystem.downloadAsync() NOT used (standalone)        — confirmed
+     Note: downloadResumable.downloadAsync() IS present (line 140) — this
+     is the INSTANCE method on DownloadResumable, which is correct.
+     FileSystem.downloadAsync (the problematic standalone method) does NOT appear.
+  ✅ isDatabaseReady() is synchronous (returns boolean)      — Line 82
+  ✅ lookupBarcode(barcode: string) returns Promise<SQLiteFoodResult | null>  — Line 195
+  Script output:
+    createDownloadResumable: true
+    isDatabaseReady: true
+    lookupBarcode: true
+    FileSystem.downloadAsync (standalone): NOT FOUND ✅
+
+SCENARIO 3 — ContributeFood.tsx Supabase wiring                  ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  ✅ Table name: "user_food_contributions"                   — Line 261
+  ✅ is_approved: false hardcoded                            — Line 274
+  ✅ is_approved: true does NOT appear anywhere
+  ✅ contribution_type: "new_product" present                — Line 265
+     (uses double quotes — functionally identical to single quotes)
+  ✅ isSubmitting loading state present                      — Line 234, 253, 289, 499, 501, 504
+  ✅ Success message "Thank you!" shown on no error          — Line 306
+  ✅ Error message shown via submitError state                — Line 486-495
+  Script output:
+    table name: true
+    is_approved false: true
+    is_approved NOT true: true
+    contribution_type (double quotes): true
+    isSubmitting: true
+    Thank you: true
+
+SCENARIO 4 — DatabaseDownloadBanner all 4 states handled         ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  ✅ not_downloaded state — distinct UI block                — Line 192-241
+  ✅ downloading state — distinct UI block with progress bar — Line 244-320
+  ✅ ready state — distinct UI block with Animated.View      — Line 323-345
+  ✅ error state — distinct UI block with error styling      — Line 348-396
+  ✅ Button labels: Download Now, Pause, Cancel, Skip for Now, Retry — all present
+  ✅ Animated imported and used (progress bar + ready fade-in)
+  ✅ isDatabaseReady() referenced for ready state logic
+  Script output:
+    not_downloaded: true
+    downloading: true
+    ready: true
+    error: true
+    Download Now: true
+    Pause: true
+    Cancel: true
+    Skip for Now: true
+    Retry: true
+    Animated: true
+    isDatabaseReady: true
+
+SCENARIO 5 — off_source constraint has all 5 values              ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  ✅ off-parquet-india     — present in CHECK constraint
+  ✅ off-parquet-global    — present in CHECK constraint
+  ✅ off-api-live          — present in CHECK constraint
+  ✅ off-delta             — present in CHECK constraint
+  ✅ off-delta-global      — present in CHECK constraint
+  Migration file: 20260228000002_expand_off_source_global.sql
+  Script output: all 5 values confirmed true
+
+SCENARIO 6 — SQLite schema shape (column names)                   ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  SQLiteFoodResult interface (lines 20-35) has all required columns:
+  ✅ energy_kcal_100g      ✅ proteins_100g
+  ✅ carbohydrates_100g    ✅ fat_100g
+  ✅ fiber_100g            ✅ sugars_100g
+  ✅ sodium_100g           ✅ nutriscore_grade
+  ✅ nova_group            ✅ image_url
+  Also includes: code, product_name, brands, saturated_fat_100g
+  DDL schema (lines 272-287) matches interface exactly.
+  barcodeService.ts mapping (lines 171-201) reads all these columns correctly.
+  Script output: all 10 columns confirmed true
+
+SCENARIO 7 — upsert_barcode_cache still present                  ✅ PASS
+─────────────────────────────────────────────────────────────────────
+  ✅ upsert_barcode_cache RPC call present                   — Line 326
+     Fire-and-forget pattern with .then(undefined, errorHandler)
+  ✅ lookup_barcode RPC call present                         — Line 219
+     Used as Layer 2 (Supabase DB lookup) after SQLite Layer 1
+  Script output:
+    upsert_barcode_cache present: true
+    lookup_barcode RPC present: true
+
+================================================================================
+ INTEGRATION WIRING VERIFICATION
+================================================================================
+
+Integration 1: barcodeService.ts → sqliteFood.ts                  ✅ CORRECT
+  - Import wired correctly (line 9)
+  - isDatabaseReady() guard → lookupBarcode() call chain
+  - Result mapping covers all SQLiteFoodResult fields
+  - Falls through gracefully on error (try/catch with console.warn)
+
+Integration 2: barcodeService.ts → Supabase RPC lookup_barcode    ✅ CORRECT
+  - Called as Layer 2 AFTER SQLite (line 219)
+  - LookupBarcodeRow interface matches expected DB shape
+  - Result mapping to ScannedProduct is complete
+
+Integration 3: barcodeService.ts → Supabase RPC upsert_barcode_cache  ✅ CORRECT
+  - Fire-and-forget cache write after live API fallback (line 326)
+  - All nutrition fields passed correctly
+
+Integration 4: ContributeFood.tsx → Supabase user_food_contributions  ✅ CORRECT
+  - Direct insert with correct table name
+  - user_id from supabase.auth.getUser()
+  - is_approved: false (not auto-approved)
+  - All nutrition columns mapped correctly
+
+Integration 5: DatabaseDownloadBanner → sqliteFood service         ✅ CORRECT
+  - downloadDatabase() called with progress callback
+  - cancelDownload() wired to Pause and Cancel buttons
+  - getState() polled every 500ms for state sync
+  - isDatabaseReady() checked in ready state render guard
+
+Integration 6: sqliteFood.ts → expo-file-system                   ✅ CORRECT
+  - createDownloadResumable() used (NOT standalone downloadAsync)
+  - Resume state persisted in AsyncStorage
+  - File integrity check (>100MB) after download
+  - openDatabaseAsync from expo-sqlite wired correctly
+
+================================================================================
+ EDGE CASES VERIFIED
+================================================================================
+
+1. SQLite lookup null check: sqliteRow.energy_kcal_100g !== null guard (line 171)
+2. SQLite error fallthrough: try/catch allows graceful degradation to Supabase
+3. Download cancelled returns undefined: handled with null check (line 145)
+4. Download file too small: integrity check with MIN_DB_SIZE_BYTES (line 155)
+5. Empty barcode in ContributeFood: barcode || null fallback (line 262)
+6. Form validation: calorie range 0-900, protein/carbs/fat 0-100 (lines 83-117)
+7. Contribution type hardcoded: "new_product" as const (prevents mutation)
+8. is_approved hardcoded false: cannot be set to true by client
+9. Resume download: AsyncStorage persists DownloadPauseState (lines 109-122)
+10. Corrupted resume state: try/catch with fresh start fallback (lines 114-121)
+
+================================================================================
+ SUMMARY
+================================================================================
+
+Scenarios [7/7 pass] | Integration [6/6] | Edge Cases [10 tested] | VERDICT: APPROVE

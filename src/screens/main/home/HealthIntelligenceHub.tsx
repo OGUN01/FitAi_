@@ -14,12 +14,15 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  typography,
+} from '../../../theme/aurora-tokens';
 import { rf, rw } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 import { useHealthIntelligenceLogic } from '../../../hooks/useHealthIntelligenceLogic';
-import { RecoveryRing } from '../../../components/home/RecoveryRing';
-import { MetricItem } from '../../../components/home/MetricItem';
 import { HealthIntelligencePlaceholder } from '../../../components/home/HealthIntelligencePlaceholder';
 
 interface HealthIntelligenceHubProps {
@@ -33,122 +36,146 @@ interface HealthIntelligenceHubProps {
   activeCalories?: number;
 
   onPress?: () => void;
-  // eslint-disable-next-line no-unused-vars
+
   onDetailPress?: (..._args: ['heart' | 'sleep' | 'quality']) => void;
 }
 
-export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React.memo(({
-  sleepHours,
-  sleepQuality,
-  restingHeartRate,
-  hrTrend,
-  steps,
-  stepsGoal,
-  activeCalories,
-  onPress,
-  onDetailPress,
-}) => {
-  const {
-    hasRealData,
-    recoveryScore,
-    recoveryLabel,
-    recoveryColor,
-    sleepColor,
-    formatSleepQuality,
-    insightText,
-  } = useHealthIntelligenceLogic({
+export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React.memo(
+  ({
     sleepHours,
     sleepQuality,
     restingHeartRate,
+    hrTrend: _hrTrend,
     steps,
     stepsGoal,
     activeCalories,
-  });
+    onPress,
+    onDetailPress: _onDetailPress,
+  }) => {
+    const {
+      hasRealData,
+      recoveryScore,
+      recoveryLabel,
+      recoveryColor,
+      sleepColor,
+      formatSleepQuality,
+    } = useHealthIntelligenceLogic({
+      sleepHours,
+      sleepQuality,
+      restingHeartRate,
+      steps,
+      stepsGoal,
+      activeCalories,
+    });
 
-  const ringSize = rw(100);
+    if (!hasRealData) {
+      return <HealthIntelligencePlaceholder onPress={onPress} />;
+    }
 
-  if (!hasRealData) {
-    return <HealthIntelligencePlaceholder onPress={onPress} />;
+    const displayScore = recoveryScore ?? 0;
+
+    return (
+      <AnimatedPressable
+        onPress={onPress}
+        scaleValue={0.98}
+        hapticFeedback={true}
+        hapticType="light"
+        accessibilityRole="button"
+        accessibilityLabel="Health Intelligence"
+      >
+        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Ionicons
+                name="pulse"
+                size={typography.variants.cardHeadline.fontSize}
+                color={colors.primary}
+              />
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                Health Intelligence
+              </Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: hexToRgba(recoveryColor, 0.18) }]}>
+              <View style={[styles.statusDot, { backgroundColor: recoveryColor }]} />
+              <Text style={[styles.statusText, { color: recoveryColor }]}>{recoveryLabel}</Text>
+            </View>
+          </View>
+
+          {/* Recovery hero — one big number, no ring. Complements the activity rings above. */}
+          <View style={styles.recoveryHero}>
+            <Text
+              style={[styles.recoveryScore, { color: recoveryColor }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
+              {displayScore}
+            </Text>
+            <Text style={styles.recoveryCaption} numberOfLines={1}>
+              RECOVERY
+            </Text>
+          </View>
+
+          {/* Vitals — three quiet chips in a row */}
+          <View style={styles.vitalsRow}>
+            <View style={styles.vital}>
+              <Ionicons name="heart" size={rf(14)} color={colors.errorLight} />
+              <Text
+                style={styles.vitalValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {restingHeartRate ? `${restingHeartRate}` : '--'}
+              </Text>
+              <Text style={styles.vitalLabel} numberOfLines={1}>
+                Resting HR
+              </Text>
+            </View>
+            <View style={styles.vitalDivider} />
+            <View style={styles.vital}>
+              <Ionicons name="moon" size={rf(14)} color={colors.primary} />
+              <Text
+                style={styles.vitalValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : '--'}
+              </Text>
+              <Text style={styles.vitalLabel} numberOfLines={1}>
+                Sleep hrs
+              </Text>
+            </View>
+            <View style={styles.vitalDivider} />
+            <View style={styles.vital}>
+              <Ionicons name="fitness" size={rf(14)} color={sleepColor} />
+              <Text
+                style={styles.vitalValue}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {formatSleepQuality(sleepQuality)}
+              </Text>
+              <Text style={styles.vitalLabel} numberOfLines={1}>
+                Quality
+              </Text>
+            </View>
+          </View>
+        </GlassCard>
+      </AnimatedPressable>
+    );
   }
-
-  return (
-    <AnimatedPressable
-      onPress={onPress}
-      scaleValue={0.98}
-      hapticFeedback={true}
-      hapticType="light"
-      accessibilityRole="button"
-      accessibilityLabel="Health Intelligence"
-    >
-      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="pulse" size={rf(16)} color={colors.primary} />
-            <Text style={styles.headerTitle} numberOfLines={1}>Health Intelligence</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: hexToRgba(recoveryColor, 0.2) }]}>
-            <View style={[styles.statusDot, { backgroundColor: recoveryColor }]} />
-            <Text style={[styles.statusText, { color: recoveryColor }]}>{recoveryLabel}</Text>
-          </View>
-        </View>
-
-        {/* Main Content */}
-        <View style={styles.content}>
-          {/* Recovery Ring */}
-          <RecoveryRing score={recoveryScore ?? 0} size={ringSize} />
-
-          {/* Metrics Grid */}
-          <View style={styles.metricsGrid}>
-            <MetricItem
-              icon="heart"
-              label="Resting HR"
-              value={restingHeartRate ? `${restingHeartRate}` : '--'}
-              subvalue="bpm"
-              color={colors.errorLight}
-              trend={hrTrend}
-              onPress={() => onDetailPress?.('heart')}
-              delay={100}
-              containerStyle={styles.metricCell}
-            />
-            <MetricItem
-              icon="moon"
-              label="Sleep"
-              value={sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : '--'}
-              subvalue="hrs"
-              color={colors.primary}
-              onPress={() => onDetailPress?.('sleep')}
-              delay={200}
-              containerStyle={styles.metricCell}
-            />
-            <MetricItem
-              icon="fitness"
-              label="Quality"
-              value={formatSleepQuality(sleepQuality)}
-              color={sleepColor}
-              onPress={() => onDetailPress?.('quality')}
-              delay={300}
-              containerStyle={styles.metricCellFull}
-            />
-          </View>
-        </View>
-
-        {/* Bottom Insight */}
-        <View style={styles.insightContainer}>
-          <Ionicons name="bulb-outline" size={rf(14)} color={colors.primary} />
-          <Text style={styles.insightText}>{insightText}</Text>
-        </View>
-      </GlassCard>
-    </AnimatedPressable>
-  );
-});
+);
 
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -158,8 +185,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   headerTitle: {
-    fontSize: rf(14),
-    fontWeight: '700',
+    ...typography.variants.cardHeadline,
     color: colors.text,
     letterSpacing: 0.3,
     flexShrink: 1,
@@ -178,42 +204,56 @@ const styles = StyleSheet.create({
     borderRadius: rw(3),
   },
   statusText: {
-    fontSize: rf(11),
+    ...typography.variants.caption,
     fontWeight: '600',
   },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  metricsGrid: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    minWidth: 0,
-  },
-  metricCell: {
-    width: '47%',
-  },
-  metricCellFull: {
-    width: '100%',
-  },
-  insightContainer: {
-    flexDirection: 'row',
+  recoveryHero: {
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  recoveryScore: {
+    fontFamily: 'Manrope_800ExtraBold',
+    fontSize: rf(48),
+    lineHeight: rf(52),
+  },
+  recoveryCaption: {
+    ...typography.variants.caption,
+    fontSize: rf(11),
+    letterSpacing: 2,
+    color: colors.textTertiary,
+  },
+  vitalsRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    width: '100%',
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.glassBorder,
   },
-  insightText: {
+  vital: {
     flex: 1,
-    fontSize: rf(11),
-    fontWeight: '500',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  vitalDivider: {
+    width: 1,
+    backgroundColor: colors.glassBorder,
+    marginVertical: spacing.xs,
+  },
+  vitalValue: {
+    ...typography.variants.caption2,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: rf(14),
+    color: colors.text,
+  },
+  vitalLabel: {
+    ...typography.variants.caption,
+    fontSize: rf(12),
     color: colors.textSecondary,
-    lineHeight: rf(16),
   },
 });
 

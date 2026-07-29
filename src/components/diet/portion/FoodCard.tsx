@@ -1,9 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { Card } from "../../ui";
-import { RecognizedFood } from "../../../services/foodRecognitionService";
-import { rbr } from "../../../utils/responsive";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+} from '../../../theme/aurora-tokens';
+import { Card } from '../../ui';
+import { RecognizedFood } from '../../../services/foodRecognitionService';
+import { rbr } from '../../../utils/responsive';
 
 interface FoodCardProps {
   food: RecognizedFood;
@@ -15,18 +19,15 @@ interface FoodCardProps {
   };
 }
 
-export const FoodCard: React.FC<FoodCardProps> = ({
-  food,
-  previewNutrition,
-}) => {
+export const FoodCard: React.FC<FoodCardProps> = ({ food, previewNutrition }) => {
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.foodName} numberOfLines={2}>{food.name}</Text>
+        <Text style={styles.foodName} numberOfLines={2}>
+          {food.name}
+        </Text>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>
-            AI Estimate: {food.estimatedGrams}g
-          </Text>
+          <Text style={styles.badgeText}>AI Estimate: {food.estimatedGrams}g</Text>
         </View>
       </View>
 
@@ -35,15 +36,11 @@ export const FoodCard: React.FC<FoodCardProps> = ({
         <View style={styles.nutritionGrid}>
           <View style={styles.nutritionItem}>
             <Text style={styles.nutritionLabel}>Calories</Text>
-            <Text style={styles.nutritionValue}>
-              {previewNutrition.calories}
-            </Text>
+            <Text style={styles.nutritionValue}>{previewNutrition.calories}</Text>
           </View>
           <View style={styles.nutritionItem}>
             <Text style={styles.nutritionLabel}>Protein</Text>
-            <Text style={styles.nutritionValue}>
-              {previewNutrition.protein}g
-            </Text>
+            <Text style={styles.nutritionValue}>{previewNutrition.protein}g</Text>
           </View>
           <View style={styles.nutritionItem}>
             <Text style={styles.nutritionLabel}>Carbs</Text>
@@ -65,14 +62,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
   foodName: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     flex: 1,
     minWidth: 0,
@@ -87,26 +84,26 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   nutritionPreview: {
     marginTop: spacing.md,
   },
   previewTitle: {
     fontSize: fontSize.md,
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.text,
     marginBottom: spacing.sm,
   },
   nutritionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   nutritionItem: {
     flex: 1,
-    minWidth: "22%",
-    alignItems: "center",
+    minWidth: '22%',
+    alignItems: 'center',
   },
   nutritionLabel: {
     fontSize: fontSize.xs,
@@ -116,6 +113,6 @@ const styles = StyleSheet.create({
   nutritionValue: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "700",
+    fontWeight: '700',
   },
 });

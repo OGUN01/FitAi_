@@ -26,24 +26,11 @@ class YouTubeVideoService {
   private readonly CACHE_PREFIX = 'cooking_video_';
   private readonly CACHE_EXPIRY_HOURS = 72; // Extended cache for YouTube API quota management
 
-  // YouTube Data API v3 configuration
+  // YouTube API key is no longer read from client env — the client calls
+  // the Workers AI route, which owns the key server-side. This getter now
+  // only exists for backward-compatible local dev/testing.
   private getApiKey(): string | undefined {
-    try {
-      // Multi-strategy environment variable access for production compatibility
-      const processEnvValue = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
-      if (processEnvValue) return processEnvValue;
-      
-      const expoConfigValue = (Constants.expoConfig as Record<string, unknown> | null)?.EXPO_PUBLIC_YOUTUBE_API_KEY;
-      if (expoConfigValue) return expoConfigValue as string;
-
-      const extraValue = (Constants.expoConfig as Record<string, unknown> | null)?.extra as Record<string, unknown> | undefined;
-      if (extraValue?.EXPO_PUBLIC_YOUTUBE_API_KEY) return extraValue.EXPO_PUBLIC_YOUTUBE_API_KEY as string;
-
-      return undefined;
-    } catch (error) {
-      console.error('YouTube API key access error:', error);
-      return undefined;
-    }
+    return process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
   }
   private readonly YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 

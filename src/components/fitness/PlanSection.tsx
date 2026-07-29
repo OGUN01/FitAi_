@@ -1,13 +1,20 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { spacing } from "../../theme/aurora-tokens";
-import { rp } from "../../utils/responsive";
-import { DayName } from "../../stores/appStateStore";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { spacing } from '../../theme/aurora-tokens';
+import { rp } from '../../utils/responsive';
+import { DayName } from '../../stores/appStateStore';
 
 // Importing from screens/main/fitness as they are currently located there
 // These should ideally be moved to components/fitness in a future refactor
-import { WeeklyPlanOverview } from "../../screens/main/fitness/WeeklyPlanOverview";
-import { EmptyPlanState } from "../../screens/main/fitness/EmptyPlanState";
+import { WeeklyPlanOverview } from '../../screens/main/fitness/WeeklyPlanOverview';
+import { EmptyPlanState } from '../../screens/main/fitness/EmptyPlanState';
+
+/**
+ * PlanSection — composition wrapper for the WEEK PLAN area.
+ * Children are flat (no GlassCard wrappers); the progress row
+ * (WeekProgressCard, rendered by FitnessScreen) and this week strip read as
+ * one cohesive section separated by spacing.lg gaps.
+ */
 
 interface PlanSectionProps {
   weeklyWorkoutPlan: any;
@@ -15,7 +22,8 @@ interface PlanSectionProps {
   selectedDay: any;
   onDayPress: (day: DayName) => void;
   onViewFullPlan: () => void;
-  onRegeneratePlan: () => void;
+  /** Omit for custom plans — regenerate is an AI-plan-only action. */
+  onRegeneratePlan?: () => void;
   isGeneratingPlan: boolean;
   profile: any;
   onGeneratePlan: () => void;
@@ -60,5 +68,6 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: rp(spacing.lg),
     marginBottom: rp(spacing.lg),
+    gap: rp(spacing.lg),
   },
 });

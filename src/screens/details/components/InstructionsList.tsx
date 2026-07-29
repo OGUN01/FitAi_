@@ -1,8 +1,19 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Card } from "../../../components/ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rbr } from '../../../utils/responsive';
+/**
+ * InstructionsList — flat numbered step list for the exercise detail screen.
+ *
+ * Each row: small step number in a tinted circle (full radius) + step title
+ * and description with generous line-height. Hairline separators between
+ * rows, no boxes. The currently-playing step (driven by useStepAnimation in
+ * the parent) is highlighted via the number circle + title color only.
+ *
+ * Props and data rendering logic are unchanged from the previous
+ * implementation.
+ */
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, spacing, typography } from '../../../theme/aurora-tokens';
+import { hexToRgba } from '../../../utils/colors';
+import { rf, rw, rbr, rp } from '../../../utils/responsive';
 
 interface ExerciseInstruction {
   step: number;
@@ -23,138 +34,109 @@ export const InstructionsList: React.FC<InstructionsListProps> = ({
   if (instructions.length === 0) return null;
 
   return (
-    <Card style={styles.instructionsCard}>
-      <Text style={styles.instructionsTitle}>Step-by-Step Instructions</Text>
+    <View style={styles.container}>
+      <Text style={styles.eyebrow}>STEP-BY-STEP INSTRUCTIONS</Text>
 
-      {instructions.map((instruction: ExerciseInstruction, index: number) => (
-        <View
-          key={index}
-          style={[
-            styles.instructionItem,
-            currentStep === index && styles.instructionItemActive,
-          ]}
-        >
-          <View style={styles.instructionHeader}>
-            <View
-              style={[
-                styles.stepNumber,
-                currentStep === index && styles.stepNumberActive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.stepNumberText,
-                  currentStep === index && styles.stepNumberTextActive,
-                ]}
-              >
+      {instructions.map((instruction: ExerciseInstruction, index: number) => {
+        const isActive = currentStep === index;
+        const isLast = index === instructions.length - 1;
+        return (
+          <View key={index} style={[styles.stepRow, isLast && styles.stepRowLast]}>
+            <View style={[styles.stepCircle, isActive && styles.stepCircleActive]}>
+              <Text style={[styles.stepNumberText, isActive && styles.stepNumberTextActive]}>
                 {instruction.step}
               </Text>
             </View>
-            <Text
-              style={[
-                styles.instructionTitle,
-                currentStep === index && styles.instructionTitleActive,
-              ]}
-            >
-              {instruction.title}
-            </Text>
-          </View>
 
-          <Text style={styles.instructionDescription}>
-            {instruction.description}
-          </Text>
+            <View style={styles.stepBody}>
+              <Text style={[styles.instructionTitle, isActive && styles.instructionTitleActive]}>
+                {instruction.title}
+              </Text>
+              <Text style={styles.instructionDescription}>{instruction.description}</Text>
 
-          {instruction.tips.length > 0 && (
-            <View style={styles.tipsContainer}>
-              <Text style={styles.tipsTitle}>Tips:</Text>
-              {instruction.tips.map((tip: string, tipIndex: number) => (
-                <Text key={tipIndex} style={styles.tipText}>
-                  • {tip}
-                </Text>
-              ))}
+              {instruction.tips.length > 0 && (
+                <View style={styles.tipsBlock}>
+                  {instruction.tips.map((tip: string, tipIndex: number) => (
+                    <Text key={tipIndex} style={styles.tipText}>
+                      • {tip}
+                    </Text>
+                  ))}
+                </View>
+              )}
             </View>
-          )}
-        </View>
-      ))}
-    </Card>
+          </View>
+        );
+      })}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  instructionsCard: {
-    marginBottom: spacing.md,
+  container: {
+    marginBottom: rp(spacing.lg),
   },
-  instructionsTitle: {
-    fontSize: fontSize.lg,
+  eyebrow: {
+    fontSize: rf(typography.fontSize.micro),
     fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.md,
+    color: colors.text.tertiary,
+    letterSpacing: 1.2,
+    marginBottom: rp(spacing.md),
   },
-  instructionItem: {
-    marginBottom: spacing.lg,
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: rp(spacing.md),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.glass.border,
+    gap: rp(spacing.md),
   },
-  instructionItemActive: {
-    backgroundColor: colors.primary + "10",
-    borderColor: colors.primary + "30",
+  stepRowLast: {
+    borderBottomWidth: 0,
   },
-  instructionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  stepNumber: {
+  stepCircle: {
     width: rw(28),
-    height: rh(28),
+    height: rw(28),
     borderRadius: rbr(14),
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing.sm,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: rp(2),
   },
-  stepNumberActive: {
-    backgroundColor: colors.primary,
+  stepCircleActive: {
+    backgroundColor: colors.primary.DEFAULT,
   },
   stepNumberText: {
-    fontSize: fontSize.sm,
+    fontSize: rf(typography.fontSize.caption),
     fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
+    color: colors.primary.DEFAULT,
   },
   stepNumberTextActive: {
-    color: colors.white,
+    color: colors.text.primary,
+  },
+  stepBody: {
+    flex: 1,
   },
   instructionTitle: {
-    fontSize: fontSize.md,
+    fontSize: rf(typography.fontSize.body),
     fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    color: colors.text.primary,
   },
   instructionTitleActive: {
-    color: colors.primary,
+    color: colors.primary.DEFAULT,
   },
   instructionDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: rf(20),
-    marginBottom: spacing.sm,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.relaxed,
+    marginTop: rp(spacing.xs),
   },
-  tipsContainer: {
-    backgroundColor: colors.surface,
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
-  tipsTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  tipsBlock: {
+    marginTop: rp(spacing.sm),
+    gap: rp(spacing.xxs),
   },
   tipText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: rf(18),
-    marginBottom: spacing.xs / 2,
+    fontSize: rf(typography.fontSize.micro),
+    color: colors.text.tertiary,
+    lineHeight: rf(typography.fontSize.micro) * typography.lineHeight.relaxed,
   },
 });

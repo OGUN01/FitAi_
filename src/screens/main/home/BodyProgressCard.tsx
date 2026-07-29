@@ -13,7 +13,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  typography,
+} from '../../../theme/aurora-tokens';
 import { rf, rw, rh } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 import { useBodyProgressLogic, WeightEntry } from './useBodyProgressLogic';
@@ -32,181 +37,206 @@ interface BodyProgressCardProps {
   onLogWeight?: () => void;
 }
 
-export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(({
-  currentWeight,
-  goalWeight,
-  startingWeight,
-  weightHistory = [],
-  unit = 'kg',
-  onPress,
-  onPhotoPress,
-  onLogWeight,
-}) => {
-  const { progress, remaining, trendInfo, chartData, hasData, progressColor } =
-    useBodyProgressLogic({
-      currentWeight,
-      goalWeight,
-      startingWeight,
-      weightHistory,
-    });
+export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
+  ({
+    currentWeight,
+    goalWeight,
+    startingWeight,
+    weightHistory = [],
+    unit = 'kg',
+    onPress,
+    onPhotoPress,
+    onLogWeight,
+  }) => {
+    const { progress, remaining, trendInfo, chartData, hasData, progressColor } =
+      useBodyProgressLogic({
+        currentWeight,
+        goalWeight,
+        startingWeight,
+        weightHistory,
+      });
 
-  const displayCurrentWeight = toDisplayWeight(currentWeight, unit);
-  const displayGoalWeight = toDisplayWeight(goalWeight, unit);
-  const displayRemaining = toDisplayWeight(remaining, unit);
+    const displayCurrentWeight = toDisplayWeight(currentWeight, unit);
+    const displayGoalWeight = toDisplayWeight(goalWeight, unit);
+    const displayRemaining = toDisplayWeight(remaining, unit);
 
-  return (
-    <View>
-      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
-        {/* Header */}
-        <AnimatedPressable
-          onPress={onPress}
-          scaleValue={0.98}
-          accessibilityRole="button"
-          accessibilityLabel="View Progress"
-          testID="progress-card"
-          style={styles.headerPressable}
-        >
-          <View style={styles.headerLeft}>
-            <Ionicons name="body" size={rf(16)} color={colors.primary} />
-            <Text style={styles.headerTitle} numberOfLines={1}>Body Progress</Text>
-          </View>
-          {hasData && (
-            <View style={[styles.trendBadge, { backgroundColor: hexToRgba(trendInfo.color, 0.125) }]}>
-              <Ionicons name={trendInfo.icon} size={rf(12)} color={trendInfo.color} />
-              <Text style={[styles.trendText, { color: trendInfo.color }]}>{trendInfo.label}</Text>
-            </View>
-          )}
-        </AnimatedPressable>
-
-        {hasData ? (
-          <>
-            {/* Main Stats */}
-            <View style={styles.mainStats}>
-              <View style={styles.currentWeight}>
-                <Text style={styles.weightValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                  {displayCurrentWeight != null ? displayCurrentWeight.toFixed(1) : '--'}
-                  <Text style={styles.weightUnit}> {unit}</Text>
-                </Text>
-                <Text style={styles.weightLabel} numberOfLines={1}>Current</Text>
-              </View>
-
-              {/* Mini Chart */}
-              <View style={styles.chartContainer}>
-                <TrendChart
-                  data={
-                    chartData.length >= 2
-                      ? chartData
-                      : startingWeight && currentWeight && startingWeight !== currentWeight
-                        ? [startingWeight, currentWeight]
-                        : currentWeight
-                          ? [currentWeight, currentWeight]
-                          : []
-                  }
-                  width={rw(120)}
-                  height={rh(50)}
-                  color={colors.primary}
-                />
-              </View>
-
-              <View style={styles.goalWeight}>
-                <Text style={styles.goalValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                  {displayGoalWeight != null ? displayGoalWeight.toFixed(1) : '—'}
-                  <Text style={styles.goalUnit}> {unit}</Text>
-                </Text>
-                <Text style={styles.goalLabel} numberOfLines={1}>Goal</Text>
-              </View>
-            </View>
-
-            {/* Progress Section */}
-            <View style={styles.progressSection}>
-              <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel} numberOfLines={1}>
-                  {goalWeight ? 'Goal Progress' : 'Body Progress'}
-                </Text>
-                <Text style={[styles.progressPercent, { color: progressColor }]} numberOfLines={1}>
-                  {goalWeight ? `${progress.toFixed(0)}%` : ''}
-                </Text>
-              </View>
-              <GoalProgressBar progress={progress} color={progressColor} />
-              <Text style={styles.remainingText} numberOfLines={1}>
-                {!goalWeight
-                  ? 'Set a goal weight'
-                  : remaining > 0 && displayRemaining != null
-                    ? `${displayRemaining.toFixed(1)} ${unit} to go`
-                    : 'Goal reached!'}
+    return (
+      <View>
+        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+          {/* Header */}
+          <AnimatedPressable
+            onPress={onPress}
+            scaleValue={0.98}
+            accessibilityRole="button"
+            accessibilityLabel="View Progress"
+            testID="progress-card"
+            style={styles.headerPressable}
+          >
+            <View style={styles.headerLeft}>
+              <Ionicons name="body" size={rf(16)} color={colors.primary} />
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                Body Progress
               </Text>
             </View>
+            {hasData && (
+              <View
+                style={[styles.trendBadge, { backgroundColor: hexToRgba(trendInfo.color, 0.125) }]}
+              >
+                <Ionicons name={trendInfo.icon} size={rf(12)} color={trendInfo.color} />
+                <Text style={[styles.trendText, { color: trendInfo.color }]}>
+                  {trendInfo.label}
+                </Text>
+              </View>
+            )}
+          </AnimatedPressable>
 
-            <View style={styles.actionButtons}>
+          {hasData ? (
+            <>
+              {/* Main Stats */}
+              <View style={styles.mainStats}>
+                <View style={styles.currentWeight}>
+                  <Text
+                    style={styles.weightValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {displayCurrentWeight != null ? displayCurrentWeight.toFixed(1) : '--'}
+                    <Text style={styles.weightUnit}> {unit}</Text>
+                  </Text>
+                  <Text style={styles.weightLabel} numberOfLines={1}>
+                    Current
+                  </Text>
+                </View>
+
+                {/* Mini Chart */}
+                <View style={styles.chartContainer}>
+                  <TrendChart
+                    data={
+                      chartData.length >= 2
+                        ? chartData
+                        : startingWeight && currentWeight && startingWeight !== currentWeight
+                          ? [startingWeight, currentWeight]
+                          : currentWeight
+                            ? [currentWeight, currentWeight]
+                            : []
+                    }
+                    width={rw(120)}
+                    height={rh(50)}
+                    color={colors.primary}
+                  />
+                </View>
+
+                <View style={styles.goalWeight}>
+                  <Text
+                    style={styles.goalValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {displayGoalWeight != null ? displayGoalWeight.toFixed(1) : '—'}
+                    <Text style={styles.goalUnit}> {unit}</Text>
+                  </Text>
+                  <Text style={styles.goalLabel} numberOfLines={1}>
+                    Goal
+                  </Text>
+                </View>
+              </View>
+
+              {/* Progress Section */}
+              <View style={styles.progressSection}>
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressLabel} numberOfLines={1}>
+                    {goalWeight ? 'Goal Progress' : 'Body Progress'}
+                  </Text>
+                  <Text
+                    style={[styles.progressPercent, { color: progressColor }]}
+                    numberOfLines={1}
+                  >
+                    {goalWeight ? `${progress.toFixed(0)}%` : ''}
+                  </Text>
+                </View>
+                <GoalProgressBar progress={progress} color={progressColor} />
+                <Text style={styles.remainingText} numberOfLines={1}>
+                  {!goalWeight
+                    ? 'Set a goal weight'
+                    : remaining > 0 && displayRemaining != null
+                      ? `${displayRemaining.toFixed(1)} ${unit} to go`
+                      : 'Goal reached!'}
+                </Text>
+              </View>
+
+              <View style={styles.actionButtons}>
+                <AnimatedPressable
+                  onPress={onLogWeight}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="light"
+                  style={styles.actionButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Log weight"
+                >
+                  <Ionicons name="add-circle-outline" size={rf(16)} color={colors.primary} />
+                  <Text style={styles.actionButtonText} numberOfLines={1}>
+                    Log Weight
+                  </Text>
+                </AnimatedPressable>
+
+                {onPhotoPress ? (
+                  <>
+                    <View style={styles.actionDivider} />
+
+                    <AnimatedPressable
+                      onPress={onPhotoPress}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="light"
+                      style={styles.actionButton}
+                      accessibilityRole="button"
+                      accessibilityLabel="Progress photo"
+                    >
+                      <Ionicons name="camera-outline" size={rf(16)} color={colors.primary} />
+                      <Text style={styles.actionButtonText} numberOfLines={1}>
+                        Progress Photo
+                      </Text>
+                    </AnimatedPressable>
+                  </>
+                ) : null}
+              </View>
+            </>
+          ) : (
+            /* Empty State */
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconContainer}>
+                <Ionicons name="scale-outline" size={rf(32)} color={colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle} numberOfLines={1}>
+                Track Your Progress
+              </Text>
+              <Text style={styles.emptyDescription} numberOfLines={3}>
+                Log your weight to see trends and track your fitness journey
+              </Text>
               <AnimatedPressable
                 onPress={onLogWeight}
                 scaleValue={0.95}
                 hapticFeedback={true}
-                hapticType="light"
-                style={styles.actionButton}
+                hapticType="medium"
+                style={styles.startButton}
                 accessibilityRole="button"
-                accessibilityLabel="Log weight"
+                accessibilityLabel="Log first weight"
               >
-                <Ionicons
-                  name="add-circle-outline"
-                  size={rf(16)}
-                  color={colors.primary}
-                />
-                <Text style={styles.actionButtonText} numberOfLines={1}>Log Weight</Text>
+                <Ionicons name="add" size={rf(16)} color={colors.white} />
+                <Text style={styles.startButtonText} numberOfLines={1}>
+                  Log First Weight
+                </Text>
               </AnimatedPressable>
-
-              {onPhotoPress ? (
-                <>
-                  <View style={styles.actionDivider} />
-
-                  <AnimatedPressable
-                    onPress={onPhotoPress}
-                    scaleValue={0.95}
-                    hapticFeedback={true}
-                    hapticType="light"
-                    style={styles.actionButton}
-                    accessibilityRole="button"
-                    accessibilityLabel="Progress photo"
-                  >
-                    <Ionicons
-                      name="camera-outline"
-                      size={rf(16)}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.actionButtonText} numberOfLines={1}>Progress Photo</Text>
-                  </AnimatedPressable>
-                </>
-              ) : null}
             </View>
-          </>
-        ) : (
-          /* Empty State */
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconContainer}>
-              <Ionicons name="scale-outline" size={rf(32)} color={colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle} numberOfLines={1}>Track Your Progress</Text>
-            <Text style={styles.emptyDescription} numberOfLines={3}>
-              Log your weight to see trends and track your fitness journey
-            </Text>
-            <AnimatedPressable
-              onPress={onLogWeight}
-              scaleValue={0.95}
-              hapticFeedback={true}
-              hapticType="medium"
-              style={styles.startButton}
-              accessibilityRole="button"
-              accessibilityLabel="Log first weight"
-            >
-              <Ionicons name="add" size={rf(16)} color={colors.white} />
-              <Text style={styles.startButtonText} numberOfLines={1}>Log First Weight</Text>
-            </AnimatedPressable>
-          </View>
-        )}
-      </GlassCard>
-    </View>
-  );
-});
+          )}
+        </GlassCard>
+      </View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   headerPressable: {
@@ -221,8 +251,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   headerTitle: {
-    fontSize: rf(14),
-    fontWeight: '700',
+    ...typography.variants.cardHeadline,
     color: colors.text,
     letterSpacing: 0.3,
   },
@@ -235,7 +264,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   trendText: {
-    fontSize: rf(11),
+    fontSize: rf(12),
     fontWeight: '600',
   },
   mainStats: {
@@ -249,7 +278,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   weightValue: {
-    fontSize: rf(24),
+    fontSize: rf(28),
     fontWeight: '800',
     color: colors.text,
   },
@@ -259,7 +288,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   weightLabel: {
-    fontSize: rf(10),
+    fontSize: rf(12),
     fontWeight: '500',
     color: colors.textSecondary,
   },
@@ -274,15 +303,16 @@ const styles = StyleSheet.create({
   },
   goalValue: {
     fontSize: rf(18),
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   goalUnit: {
     fontSize: rf(12),
     fontWeight: '500',
+    color: colors.textSecondary,
   },
   goalLabel: {
-    fontSize: rf(10),
+    fontSize: rf(12),
     fontWeight: '500',
     color: colors.textSecondary,
   },
@@ -296,17 +326,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   progressLabel: {
-    fontSize: rf(11),
+    fontSize: rf(12),
     fontWeight: '600',
     color: colors.textSecondary,
   },
   progressPercent: {
-    fontSize: rf(12),
+    fontSize: rf(13),
     fontWeight: '700',
   },
   remainingText: {
-    fontSize: rf(11),
-    fontWeight: '500',
+    ...typography.variants.caption2,
     color: colors.textSecondary,
     textAlign: 'center',
   },
@@ -344,7 +373,7 @@ const styles = StyleSheet.create({
     width: rw(60),
     height: rw(60),
     borderRadius: rw(30),
-    backgroundColor: hexToRgba('#9C27B0', 0.1),
+    backgroundColor: colors.primaryTint,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,

@@ -1,32 +1,22 @@
 /**
- * ProfileCompletionCard - Shows profile completion progress
- *
- * Features:
- * - Circular progress indicator
- * - Completion percentage
- * - List of incomplete sections with quick actions
- * - Encouraging message based on completion
+ * ProfileCompletionCard - Aurora 2026: full-width gradient progress bar + single text line
+ * No card container, no nested sections.
  */
 
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Circle } from "react-native-svg";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
-import { haptics } from "../../../utils/haptics";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  colors,
+  surface,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 
-interface ProfileSection {
-  id: string;
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  isComplete: boolean;
-}
+const { variants } = typography;
 
 interface ProfileCompletionCardProps {
   personalInfoComplete: boolean;
@@ -37,287 +27,103 @@ interface ProfileCompletionCardProps {
   animationDelay?: number;
 }
 
-export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
+export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = React.memo(({
   personalInfoComplete,
   goalsComplete,
   measurementsComplete,
   preferencesComplete,
-  onSectionPress,
   animationDelay = 0,
 }) => {
-  const sections: ProfileSection[] = useMemo(
-    () => [
-      {
-        id: "personal",
-        name: "Personal Info",
-        icon: "person-outline",
-        isComplete: personalInfoComplete,
-      },
-      {
-        id: "goals",
-        name: "Fitness Goals",
-        icon: "flag-outline",
-        isComplete: goalsComplete,
-      },
-      {
-        id: "measurements",
-        name: "Body Stats",
-        icon: "body-outline",
-        isComplete: measurementsComplete,
-      },
-      {
-        id: "preferences",
-        name: "Preferences",
-        icon: "settings-outline",
-        isComplete: preferencesComplete,
-      },
-    ],
-    [
-      personalInfoComplete,
-      goalsComplete,
-      measurementsComplete,
-      preferencesComplete,
-    ],
+  const completedCount = useMemo(
+    () =>
+      [personalInfoComplete, goalsComplete, measurementsComplete, preferencesComplete].filter(
+        Boolean,
+      ).length,
+    [personalInfoComplete, goalsComplete, measurementsComplete, preferencesComplete],
   );
 
-  const completedCount = sections.filter((s) => s.isComplete).length;
-  const totalCount = sections.length;
+  const totalCount = 4;
   const percentage = Math.round((completedCount / totalCount) * 100);
 
-  // Progress ring dimensions
-  const size = rw(70);
-  const strokeWidth = rw(6);
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (percentage / 100) * circumference;
-
-  const getMessage = () => {
-    if (percentage === 100) return "Profile complete! You're all set.";
-    if (percentage >= 75) return "Almost there! Just a few more details.";
-    if (percentage >= 50) return "Good progress! Keep going.";
-    if (percentage >= 25) return "Great start! Complete your profile.";
-    return "Let's get started with your profile!";
-  };
-
-  const getColor = () => {
-    if (percentage === 100) return colors.success;
-    if (percentage >= 75) return colors.successLight;
-    if (percentage >= 50) return colors.amber;
-    if (percentage >= 25) return colors.warning;
-    return colors.errorLight;
-  };
-
-  const incompleteSections = sections.filter((s) => !s.isComplete);
-
-  // Don't show if profile is 100% complete
   if (percentage === 100) return null;
+
+  const message =
+    percentage >= 75
+      ? "Almost there! Just a few more details."
+      : percentage >= 50
+        ? "Good progress! Keep going."
+        : percentage >= 25
+          ? "Great start! Complete your profile."
+          : "Let's get started with your profile!";
 
   return (
     <Animated.View
-      entering={FadeInRight.delay(animationDelay).duration(400)}
+      entering={FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
-      <GlassCard
-        elevation={2}
-        padding="md"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.card}
-      >
-        <View style={styles.header}>
-          {/* Progress Ring */}
-          <View style={styles.progressContainer}>
-            <Svg width={size} height={size}>
-              {/* Background circle */}
-              <Circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke="rgba(255, 255, 255, 0.1)"
-                strokeWidth={strokeWidth}
-                fill="transparent"
-              />
-              {/* Progress circle — rotate -90deg so the arc starts at 12
-                  o'clock instead of 3 o'clock (SVG circles default to the
-                  3 o'clock starting position). */}
-              <Circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                stroke={getColor()}
-                strokeWidth={strokeWidth}
-                fill="transparent"
-                strokeDasharray={`${progress} ${circumference - progress}`}
-                strokeDashoffset={circumference / 4}
-                strokeLinecap="round"
-                transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              />
-            </Svg>
-            <View style={styles.percentageContainer}>
-              <Text style={[styles.percentageText, { color: getColor() }]}>
-                {percentage}
-              </Text>
-              <Text style={styles.percentageSymbol}>%</Text>
-            </View>
-          </View>
+      {/* Label row */}
+      <View style={styles.labelRow}>
+        <Ionicons
+          name="person-circle-outline"
+          size={rf(16)}
+          color={colors.primary.DEFAULT}
+        />
+        <Text style={styles.label}>Complete Your Profile</Text>
+        <Text style={styles.pct}>{percentage}%</Text>
+      </View>
 
-          {/* Info */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.title}>Complete Your Profile</Text>
-            <Text style={styles.message}>{getMessage()}</Text>
-            <View style={styles.completionBar}>
-              <View
-                style={[
-                  styles.completionProgress,
-                  { width: `${percentage}%`, backgroundColor: getColor() },
-                ]}
-              />
-            </View>
-            <Text style={styles.completionText}>
-              {completedCount} of {totalCount} sections complete
-            </Text>
-          </View>
-        </View>
+      {/* Gradient progress bar */}
+      <View style={styles.track}>
+        <LinearGradient
+          colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.fill, { width: `${percentage}%` }]}
+        />
+      </View>
 
-        {/* Incomplete sections — show all (was slice(0,2) which hid the 3rd+
-            incomplete sections, leaving them with no quick-action button). */}
-        {incompleteSections.length > 0 && (
-          <View style={styles.sectionsContainer}>
-            {incompleteSections.map((section) => (
-              <AnimatedPressable
-                key={section.id}
-                onPress={() => {
-                  haptics.light();
-                  onSectionPress(section.id);
-                }}
-                scaleValue={0.97}
-                hapticFeedback={false}
-                style={styles.sectionButton}
-                accessibilityRole="button"
-                accessibilityLabel={`Complete ${section.name}`}
-              >
-                <View style={styles.sectionIcon}>
-                  <Ionicons
-                    name={section.icon}
-                    size={rf(14)}
-                    color={getColor()}
-                  />
-                </View>
-                <Text style={styles.sectionName} numberOfLines={1} ellipsizeMode="tail">{section.name}</Text>
-                <Ionicons
-                  name="add-circle-outline"
-                  size={rf(16)}
-                  color={getColor()}
-                />
-              </AnimatedPressable>
-            ))}
-          </View>
-        )}
-      </GlassCard>
+      {/* Single text line */}
+      <Text style={styles.message}>{message}</Text>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  card: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.warning, 0.2),
-  },
-  header: {
+  labelRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: spacing.sm,
+    gap: spacing.xs,
   },
-  progressContainer: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  percentageContainer: {
-    position: "absolute",
-    flexDirection: "row",
-    alignItems: "baseline",
-  },
-  percentageText: {
-    fontSize: rf(20),
-    fontWeight: "700",
-  },
-  percentageSymbol: {
-    fontSize: rf(10),
-    fontWeight: "600",
-    color: colors.textSecondary,
-  },
-  infoContainer: {
+  label: {
+    ...variants.cardHeadline,
+    color: colors.text.primary,
     flex: 1,
-    marginLeft: spacing.md,
-    minWidth: 0,
   },
-  title: {
-    fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.white,
-    marginBottom: rp(4),
+  pct: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(14),
+    color: colors.primary.DEFAULT,
   },
-  message: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
+  track: {
+    height: 6,
+    backgroundColor: surface[2],
+    borderRadius: 3,
+    overflow: "hidden",
     marginBottom: spacing.sm,
   },
-  completionBar: {
-    height: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 2,
-    overflow: "hidden",
-    marginBottom: rp(4),
-  },
-  completionProgress: {
+  fill: {
     height: "100%",
-    // No borderRadius — the parent bar already rounds both ends and clips
-    // the fill. The previous borderRadius on the fill produced a rounded
-    // right edge that floated inside the squared-left bar at low %.
+    borderRadius: 3,
   },
-  completionText: {
-    fontSize: rf(10),
-    color: colors.textMuted,
-  },
-  sectionsContainer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.08)",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  sectionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 44,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-    minWidth: 120,
-  },
-  sectionIcon: {
-    width: rw(24),
-    height: rw(24),
-    borderRadius: rw(12),
-    backgroundColor: hexToRgba(colors.warning, TINT_ALPHA_LOW),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sectionName: {
-    flex: 1,
-    fontSize: rf(11),
-    fontWeight: "500",
-    color: colors.white,
+  message: {
+    ...variants.body,
+    fontSize: rf(13),
+    color: colors.text.secondary,
   },
 });
 

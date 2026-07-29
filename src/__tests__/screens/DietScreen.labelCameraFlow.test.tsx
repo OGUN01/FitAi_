@@ -275,45 +275,16 @@ jest.mock("../../components/ui/aurora/AuroraBackground", () => ({
   ),
 }));
 
-jest.mock("../../components/diet/NutritionSummaryCard", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-  return {
-    NutritionSummaryCard: () => <Text>Nutrition Summary</Text>,
-  };
-});
-
-jest.mock("../../components/diet/MealPlanView", () => ({
-  MealPlanView: () => null,
+jest.mock("../../components/diet/StreakPill", () => ({
+  StreakPill: () => null,
+}));
+jest.mock("../../components/diet/WeekCalendarStrip", () => ({
+  WeekCalendarStrip: () => null,
 }));
 
 jest.mock("../../components/diet/WaterIntakeModal", () => ({
   WaterIntakeModal: () => null,
 }));
-
-jest.mock("../../components/diet/DietScreenHeader", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-  return {
-    DietScreenHeader: () => <Text>Diet Header</Text>,
-  };
-});
-
-jest.mock("../../components/diet/MealSuggestions", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-  return {
-    MealSuggestions: () => <Text>Meal Suggestions</Text>,
-  };
-});
-
-jest.mock("../../components/diet/DietQuickActions", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-  return {
-    DietQuickActions: () => <Text>Diet Quick Actions</Text>,
-  };
-});
 
 jest.mock("../../components/diet/DietModals", () => {
   const React = require("react");
@@ -365,10 +336,6 @@ jest.mock("../../components/diet/LogMealModal", () => {
       ) : null,
   };
 });
-
-jest.mock("../../components/diet/MealDetailModal", () => ({
-  MealDetailModal: () => null,
-}));
 
 jest.mock("../../components/diet/ProductDetailsModal", () => ({
   ProductDetailsModal: () => null,

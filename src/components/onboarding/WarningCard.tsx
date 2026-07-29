@@ -1,25 +1,27 @@
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+/**
+ * WarningCard — S5 "Choose your pace" ("Editorial Dark", no cards)
+ *
+ * Rebuilt on the fresh pattern: transparent background, hairline separators,
+ * ink type scale (small-caps SectionLabels + 13–15px body in ink2). Accent
+ * appears ONLY on the selected pace option (handled inside AlternativeOption)
+ * and on the agreement check. No tinted backgrounds, no borders, no radius,
+ * no fontWeight hacks, no glass checkbox.
+ *
+ * Selection / acknowledgment / auto-ack logic — UNCHANGED.
+ */
+
 import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from "react-native-reanimated";
-import { rf, rw, rp, rbr } from "../../utils/responsive";
-import { ValidationResult } from "../../services/validationEngine";
 import {
+  ValidationResult,
   SmartAlternative,
   SmartAlternativesResult,
 } from "../../services/validationEngine";
 import { AlternativeOption } from "./AlternativeOption";
 import { BMRInfoModal } from "./BMRInfoModal";
+import { SectionLabel, tokens, font, type as typeScale } from "./fresh";
 
 // ============================================================================
 // TYPES
@@ -48,7 +50,6 @@ export const WarningCard: React.FC<WarningCardProps> = ({
   const [acknowledged, setAcknowledged] = useState(false);
   const [showBMRModal, setShowBMRModal] = useState(false);
   const [showExerciseOptions, setShowExerciseOptions] = useState(false);
-  const checkScale = useSharedValue(1);
   const autoAckFiredRef = useRef(false);
 
   // Split warnings: actionable (with alternatives) vs info-only
@@ -78,14 +79,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     const newValue = !acknowledged;
     setAcknowledged(newValue);
     onAcknowledgmentChange?.(newValue);
-    checkScale.value = withSpring(newValue ? 1.1 : 1, { damping: 15 }, () => {
-      checkScale.value = withSpring(1);
-    });
   };
-
-  const animatedCheckStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: checkScale.value }],
-  }));
 
   const goalMode = smartAlternatives?.goalMode ?? "loss";
 
@@ -121,347 +115,306 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     }
   }, [selectedAlternativeId, smartAlternatives]);
 
+  // Shared context rendering for a warning: message + impact + risks
+  // (hairline-free quiet body blocks — no tinted containers).
+  const renderWarningContext = (warning: ValidationResult, keyPrefix: string) => (
+    <View style={styles.warningItem}>
+      <Text style={styles.warningMessage}>{warning.message}</Text>
+
+      {warning.impact && (
+        <View style={styles.metaRow}>
+          <Ionicons name="flash-outline" size={12} color={tokens.ink3} />
+          <Text style={styles.metaText}>{warning.impact}</Text>
+        </View>
+      )}
+
+      {warning.risks && warning.risks.length > 0 && (
+        <View style={styles.metaBlock}>
+          <Text style={styles.metaLabel}>What to watch</Text>
+          {warning.risks.map((risk, i) => (
+            <Text key={`${keyPrefix}-risk-${i}`} style={styles.metaItem}>
+              {risk}
+            </Text>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <View style={styles.headerIcon}>
-          <Ionicons
-            name="options"
-            size={rf(20)}
-            color={colors.warningAlt}
-          />
-        </View>
-        <Text style={styles.headerTitle}>Choose Your Pace</Text>
-      </View>
+      {/* ── Section label ── */}
+      <SectionLabel>Choose your pace</SectionLabel>
 
-      {/* ── Goal Summary (from RateComparisonCard) ── */}
+      {/* ── Goal Summary (hairline-bounded quiet text, no box) ── */}
       {smartAlternatives && (
-        <View style={styles.goalSummary}>
+        <Animated.View style={styles.goalSummary} entering={FadeInDown.duration(250)}>
           <Text style={styles.goalText}>
-            Your Goal:{" "}
-            <Text style={styles.goalHighlight}>
+            Your goal{"  "}
+            <Text style={styles.goalValue}>
               {typeof smartAlternatives.originalRequestedRate === "number"
                 ? smartAlternatives.originalRequestedRate.toFixed(2)
                 : smartAlternatives.originalRequestedRate}{" "}
               kg/week
             </Text>
-            {"  •  "}Target:{" "}
-            <Text style={styles.goalHighlight}>
+            {"   ·   "}Target{"  "}
+            <Text style={styles.goalValue}>
               {smartAlternatives.targetWeight} kg
             </Text>
           </Text>
-          <Text style={styles.weightToLose}>
+          <Text style={styles.goalCaption}>
             {smartAlternatives.weightToLose != null
               ? smartAlternatives.weightToLose.toFixed(1)
               : "--"}{" "}
             {goalMode === "gain" ? "kg to gain" : goalMode === "maintenance" ? "kg to balance" : "kg to lose"}
           </Text>
-        </View>
+        </Animated.View>
       )}
 
-      {/* ── BMR Warning Banner (from RateComparisonCard) ── */}
+      {/* ── BMR Warning Callout (hairline-separated, tappable → info modal) ── */}
       {belowBMR && smartAlternatives && (
-        <TouchableOpacity
-          style={styles.warningBanner}
+        <Pressable
+          style={({ pressed }) => [styles.callout, pressed && styles.pressed]}
           onPress={() => setShowBMRModal(true)}
-          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Open BMR warning details"
         >
-          <View style={styles.warningContent}>
-            <Ionicons
-              name="warning"
-              size={rf(18)}
-              color="#F59E0B"
-              style={styles.warningIcon}
-            />
-            <Text style={styles.warningBannerText}>
-              This pace requires eating below your BMR (
-              {smartAlternatives.userBMR} cal)
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.infoButton}
-            onPress={() => setShowBMRModal(true)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel="More info about BMR warning"
-          >
-            <Ionicons
-              name="information-circle"
-              size={rf(20)}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-        </TouchableOpacity>
+          <Ionicons name="warning" size={16} color={tokens.danger} />
+          <Text style={styles.calloutText}>
+            This pace requires eating below your BMR (
+            {smartAlternatives.userBMR} cal)
+          </Text>
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={tokens.ink3}
+          />
+        </Pressable>
       )}
 
       {/* ── Warning Context Messages ── */}
       {warningsWithAlternatives.map((warning, index) => (
-        <View key={`actionable-${index}`} style={styles.warningItem}>
-          <Text style={styles.warningMessage}>{warning.message}</Text>
-
-          {warning.impact && (
-            <View style={styles.impactContainer}>
-              <Ionicons
-                name="flash-outline"
-                size={rf(12)}
-                color={colors.warningAlt}
-              />
-              <Text style={styles.impactText}>{warning.impact}</Text>
-            </View>
-          )}
-
-          {warning.risks && warning.risks.length > 0 && (
-            <View style={styles.risksContainer}>
-              <View style={styles.riskHeader}>
-                <Ionicons
-                  name="warning-outline"
-                  size={rf(12)}
-                  color={colors.warning}
-                />
-                <Text style={styles.risksTitle}>Risks</Text>
-              </View>
-              {warning.risks.map((risk, i) => (
-                <Text key={i} style={styles.riskText}>
-                  {risk}
-                </Text>
-              ))}
-            </View>
-          )}
+        <View key={`actionable-${index}`}>
+          {renderWarningContext(warning, `a${index}`)}
         </View>
       ))}
 
       {/* ── Inline Rate Picker ── */}
       {smartAlternatives && (dietOptions.length > 0 || goalBoostOption) && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {goalMode === "maintenance" ? "YOUR BALANCE" : "SELECT YOUR RATE"}
-            </Text>
-          </View>
+        <View style={styles.rateSection}>
+          <SectionLabel>
+            {goalMode === "maintenance" ? "Your balance" : "Select your rate"}
+          </SectionLabel>
 
           {/* WEIGHT LOSS LAYOUT */}
           {goalMode === "loss" && (
-            <>
+            <View>
               {/* 1. KEEP MY GOAL (identified by isUserOriginal flag, not position) */}
               {(() => {
                 const keepMyGoalCard = dietOptions.find((alt) => alt.isUserOriginal === true);
                 return keepMyGoalCard ? (
-                  <AlternativeOption
-                    key={keepMyGoalCard.id}
-                    alternative={keepMyGoalCard}
-                    isSelected={selectedAlternativeId === keepMyGoalCard.id}
-                    onSelect={onSelectAlternative ?? (() => {})}
-                  />
+                  <Animated.View entering={FadeInDown.duration(250).delay(80)}>
+                    <AlternativeOption
+                      key={keepMyGoalCard.id}
+                      alternative={keepMyGoalCard}
+                      isSelected={selectedAlternativeId === keepMyGoalCard.id}
+                      onSelect={onSelectAlternative ?? (() => {})}
+                    />
+                  </Animated.View>
                 ) : null;
               })()}
 
-              {/* 2. Unlock banner + promoted boost card */}
+              {/* 2. Unlock hint + promoted boost row */}
               {goalBoostOption && (
-                <>
-                  <TouchableOpacity
-                    style={styles.unlockBanner}
+                <Animated.View entering={FadeInDown.duration(250).delay(140)}>
+                  <Pressable
+                    style={({ pressed }) => [styles.unlockHint, pressed && styles.pressed]}
                     onPress={() => onSelectAlternative?.(goalBoostOption)}
-                    activeOpacity={0.8}
                     accessibilityRole="button"
                     accessibilityLabel="Unlock your goal with exercise"
                   >
-                    <Ionicons name="lock-open-outline" size={rf(13)} color="#22C55E" />
-                    <Text style={styles.unlockBannerText}>
+                    <Ionicons name="lock-open-outline" size={12} color={tokens.ink3} />
+                    <Text style={styles.unlockHintText}>
                       Closer to your goal with exercise ↓
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                   <AlternativeOption
                     key={goalBoostOption.id}
                     alternative={goalBoostOption}
                     isSelected={selectedAlternativeId === goalBoostOption.id}
                     onSelect={onSelectAlternative ?? (() => {})}
                   />
-                  <View style={styles.sectionDivider} />
-                </>
+                </Animated.View>
               )}
 
               {/* 3. Remaining diet options (AGGRESSIVE, CHALLENGING, AT YOUR BMR, COMFORTABLE) */}
-              <View style={styles.optionsList}>
-                {dietOptions.filter((alt) => alt.isUserOriginal !== true).map((alternative) => (
-                  <AlternativeOption
+              <View>
+                {dietOptions.filter((alt) => alt.isUserOriginal !== true).map((alternative, i) => (
+                  <Animated.View
                     key={alternative.id}
-                    alternative={alternative}
-                    isSelected={selectedAlternativeId === alternative.id}
-                    onSelect={onSelectAlternative ?? (() => {})}
-                  />
+                    entering={FadeInDown.duration(250).delay(200 + i * 60)}
+                  >
+                    <AlternativeOption
+                      alternative={alternative}
+                      isSelected={selectedAlternativeId === alternative.id}
+                      onSelect={onSelectAlternative ?? (() => {})}
+                    />
+                  </Animated.View>
                 ))}
               </View>
 
               {/* 4. Other boost options in collapsible toggle (LIGHT BOOST, CARDIO BOOST) */}
               {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).length > 0 && (
-                <>
-                  <TouchableOpacity
-                    style={styles.exerciseDivider}
+                <View>
+                  <Pressable
+                    style={({ pressed }) => [styles.exerciseDivider, pressed && styles.pressed]}
                     onPress={() => setShowExerciseOptions(!showExerciseOptions)}
-                    activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel={showExerciseOptions ? "Hide exercise options" : "Show exercise options"}
                   >
                     <View style={styles.dividerLine} />
                     <View style={styles.dividerContent}>
-                      <Ionicons name="fitness-outline" size={rf(14)} color={colors.textSecondary} />
+                      <Ionicons name="fitness-outline" size={13} color={tokens.ink3} />
                       <Text style={styles.dividerText}>
                         {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
                       </Text>
                       <Ionicons
                         name={showExerciseOptions ? "chevron-up" : "chevron-down"}
-                        size={rf(14)}
-                        color={colors.textSecondary}
+                        size={13}
+                        color={tokens.ink3}
                       />
                     </View>
                     <View style={styles.dividerLine} />
-                  </TouchableOpacity>
+                  </Pressable>
 
                   {showExerciseOptions && (
-                    <View style={styles.optionsList}>
-                      {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).map((alternative) => (
-                        <AlternativeOption
+                    <View>
+                      {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).map((alternative, i) => (
+                        <Animated.View
                           key={alternative.id}
-                          alternative={alternative}
-                          isSelected={selectedAlternativeId === alternative.id}
-                          onSelect={onSelectAlternative ?? (() => {})}
-                        />
+                          entering={FadeInDown.duration(200).delay(i * 50)}
+                        >
+                          <AlternativeOption
+                            alternative={alternative}
+                            isSelected={selectedAlternativeId === alternative.id}
+                            onSelect={onSelectAlternative ?? (() => {})}
+                          />
+                        </Animated.View>
                       ))}
                     </View>
                   )}
-                </>
+                </View>
               )}
 
-              {/* Safe Rate Footer */}
-              <View style={styles.safeRateInfo}>
-                <Ionicons name="shield-checkmark" size={rf(14)} color="#22C55E" style={styles.safeRateIcon} />
+              {/* Safe rate note — quiet caption, no box */}
+              <View style={styles.safeRateRow}>
+                <Ionicons name="shield-checkmark" size={13} color={tokens.ink3} />
                 <Text style={styles.safeRateText}>
                   Safe rate at your BMR:{" "}
                   <Text style={styles.safeRateValue}>{smartAlternatives.rateAtBMR} kg/week</Text>
                 </Text>
               </View>
-            </>
+            </View>
           )}
 
           {/* WEIGHT GAIN LAYOUT */}
           {goalMode === "gain" && (
-            <>
-              <View style={styles.optionsList}>
-                {dietOptions.map((alternative) => (
-                  <AlternativeOption
+            <View>
+              <View>
+                {dietOptions.map((alternative, i) => (
+                  <Animated.View
                     key={alternative.id}
-                    alternative={alternative}
-                    isSelected={selectedAlternativeId === alternative.id}
-                    onSelect={onSelectAlternative ?? (() => {})}
-                  />
+                    entering={FadeInDown.duration(250).delay(80 + i * 60)}
+                  >
+                    <AlternativeOption
+                      alternative={alternative}
+                      isSelected={selectedAlternativeId === alternative.id}
+                      onSelect={onSelectAlternative ?? (() => {})}
+                    />
+                  </Animated.View>
                 ))}
               </View>
 
               {/* Frequency upgrade options */}
               {frequencyUpgradeOptions.length > 0 && (
-                <>
-                  <TouchableOpacity
-                    style={styles.exerciseDivider}
+                <View>
+                  <Pressable
+                    style={({ pressed }) => [styles.exerciseDivider, pressed && styles.pressed]}
                     onPress={() => setShowExerciseOptions(!showExerciseOptions)}
-                    activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel={showExerciseOptions ? "Hide training options" : "Add more training days"}
                   >
                     <View style={styles.dividerLine} />
                     <View style={styles.dividerContent}>
-                      <Ionicons name="barbell-outline" size={rf(14)} color={colors.textSecondary} />
+                      <Ionicons name="barbell-outline" size={13} color={tokens.ink3} />
                       <Text style={styles.dividerText}>
                         {showExerciseOptions ? "HIDE" : "OR ADD MORE"} TRAINING
                       </Text>
                       <Ionicons
                         name={showExerciseOptions ? "chevron-up" : "chevron-down"}
-                        size={rf(14)}
-                        color={colors.textSecondary}
+                        size={13}
+                        color={tokens.ink3}
                       />
                     </View>
                     <View style={styles.dividerLine} />
-                  </TouchableOpacity>
+                  </Pressable>
 
                   {showExerciseOptions && (
-                    <View style={styles.optionsList}>
-                      {frequencyUpgradeOptions.map((alternative) => (
-                        <AlternativeOption
+                    <View>
+                      {frequencyUpgradeOptions.map((alternative, i) => (
+                        <Animated.View
                           key={alternative.id}
-                          alternative={alternative}
-                          isSelected={selectedAlternativeId === alternative.id}
-                          onSelect={onSelectAlternative ?? (() => {})}
-                        />
+                          entering={FadeInDown.duration(200).delay(i * 50)}
+                        >
+                          <AlternativeOption
+                            alternative={alternative}
+                            isSelected={selectedAlternativeId === alternative.id}
+                            onSelect={onSelectAlternative ?? (() => {})}
+                          />
+                        </Animated.View>
                       ))}
                     </View>
                   )}
-                </>
+                </View>
               )}
-            </>
+            </View>
           )}
 
           {/* MAINTENANCE LAYOUT */}
           {goalMode === "maintenance" && (
-            <View style={styles.optionsList}>
-              {dietOptions.map((alternative) => (
-                <AlternativeOption
+            <View>
+              {dietOptions.map((alternative, i) => (
+                <Animated.View
                   key={alternative.id}
-                  alternative={alternative}
-                  isSelected={selectedAlternativeId === alternative.id}
-                  onSelect={onSelectAlternative ?? (() => {})}
-                />
+                  entering={FadeInDown.duration(250).delay(80 + i * 60)}
+                >
+                  <AlternativeOption
+                    alternative={alternative}
+                    isSelected={selectedAlternativeId === alternative.id}
+                    onSelect={onSelectAlternative ?? (() => {})}
+                  />
+                </Animated.View>
               ))}
             </View>
           )}
-        </>
+        </View>
       )}
 
       {/* ── Non-Actionable Warnings (info only) ── */}
       {warningsWithoutAlternatives.map((warning, index) => (
-        <View key={`info-${index}`} style={styles.warningItem}>
-          <Text style={styles.warningMessage}>{warning.message}</Text>
-
-          {warning.impact && (
-            <View style={styles.impactContainer}>
-              <Ionicons
-                name="flash-outline"
-                size={rf(12)}
-                color={colors.warningAlt}
-              />
-              <Text style={styles.impactText}>{warning.impact}</Text>
-            </View>
-          )}
-
-          {warning.risks && warning.risks.length > 0 && (
-            <View style={styles.risksContainer}>
-              <View style={styles.riskHeader}>
-                <Ionicons
-                  name="warning-outline"
-                  size={rf(12)}
-                  color={colors.warning}
-                />
-                <Text style={styles.risksTitle}>Risks</Text>
-              </View>
-              {warning.risks.map((risk, i) => (
-                <Text key={i} style={styles.riskText}>
-                  {risk}
-                </Text>
-              ))}
-            </View>
-          )}
+        <View key={`info-${index}`}>
+          {renderWarningContext(warning, `i${index}`)}
 
           {warning.recommendations && warning.recommendations.length > 0 && (
-            <View style={styles.recommendationsContainer}>
+            <View style={styles.metaBlock}>
               {warning.recommendations.map((rec, i) => (
-                <View key={i} style={styles.recommendationItem}>
+                <View key={`i${index}-rec-${i}`} style={styles.metaRow}>
                   <Ionicons
                     name="checkmark-circle"
-                    size={rf(14)}
-                    color={colors.successAlt}
+                    size={13}
+                    color={tokens.ink3}
                   />
-                  <Text style={styles.recommendationText}>{rec}</Text>
+                  <Text style={styles.metaText}>{rec}</Text>
                 </View>
               ))}
             </View>
@@ -469,32 +422,24 @@ export const WarningCard: React.FC<WarningCardProps> = ({
         </View>
       ))}
 
-      {/* ── Acknowledgment Checkbox — only for non-actionable warnings ── */}
+      {/* ── Acknowledgment — fresh hairline row + standard fresh checkbox ── */}
       {warningsWithoutAlternatives.length > 0 && (
-        <TouchableOpacity
-          style={styles.checkboxContainer}
+        <Pressable
+          style={({ pressed }) => [styles.ackRow, pressed && styles.pressed]}
           onPress={handleAcknowledgmentToggle}
-          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityState={{ selected: acknowledged }}
+          accessibilityLabel="I understand and will focus on consistency"
         >
-          <Animated.View
-            style={[
-              styles.checkboxBox,
-              acknowledged && styles.checkboxBoxChecked,
-              animatedCheckStyle,
-            ]}
-          >
+          <View style={[styles.checkbox, acknowledged && styles.checkboxChecked]}>
             {acknowledged && (
-              <Ionicons
-                name="checkmark"
-                size={rf(14)}
-                color={colors.white}
-              />
+              <Ionicons name="checkmark" size={13} color={tokens.accent} />
             )}
-          </Animated.View>
-          <Text style={styles.checkboxLabel}>
+          </View>
+          <Text style={styles.ackLabel}>
             I understand and will focus on consistency
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       )}
 
       {/* ── BMR Info Modal ── */}
@@ -510,278 +455,185 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 };
 
 // ============================================================================
-// STYLES
+// STYLES — transparent bg, hairlines only, ink type scale, zero fontWeight
 // ============================================================================
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.warningTint,
-    borderWidth: 1,
-    borderColor: `${colors.warning}4D`,
-    borderRadius: rbr(borderRadius.lg),
-    padding: rp(spacing.md),
-    marginBottom: rp(spacing.md),
+    // Transparent — this is a section, not a card.
+  },
+  pressed: {
+    opacity: 0.6,
   },
 
-  // Header
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: rp(spacing.md),
-  },
-  headerIcon: {
-    width: rw(32),
-    height: rw(32),
-    borderRadius: rw(16),
-    backgroundColor: `${colors.warningAlt}26`,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: rp(spacing.sm),
-  },
-  headerTitle: {
-    fontSize: rf(16),
-    fontWeight: "700",
-    color: colors.warning,
-    letterSpacing: -0.3,
-  },
-
-  // Goal Summary (from RateComparisonCard)
+  // Goal summary — hairline-bounded quiet text
   goalSummary: {
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-    borderRadius: rp(10),
-    padding: rp(12),
-    marginBottom: rp(12),
+    marginTop: 12,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: tokens.hairline,
   },
   goalText: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-    textAlign: "center",
+    fontFamily: font.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.ink2,
   },
-  goalHighlight: {
-    fontWeight: "700",
-    color: colors.text,
+  goalValue: {
+    fontFamily: font.semibold,
+    color: tokens.ink,
   },
-  weightToLose: {
-    fontSize: rf(11),
-    color: colors.textMuted,
-    textAlign: "center",
-    marginTop: rp(4),
-  },
-
-  // BMR Warning Banner (from RateComparisonCard)
-  warningBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 44,
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.3)",
-    borderRadius: rp(10),
-    padding: rp(12),
-    marginBottom: rp(12),
-  },
-  warningContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  warningIcon: {
-    marginRight: rp(8),
-  },
-  warningBannerText: {
-    fontSize: rf(12),
-    color: "#D97706",
-    flex: 1,
-    lineHeight: rf(18),
-  },
-  infoButton: {
-    marginLeft: rp(8),
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: "center",
-    alignItems: "center",
+  goalCaption: {
+    marginTop: 4,
+    ...typeScale.caption,
   },
 
-  // Warning Context
+  // BMR warning — hairline callout (not a tinted banner)
+  callout: {
+    marginTop: 12,
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: tokens.hairline,
+  },
+  calloutText: {
+    flex: 1,
+    fontFamily: font.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.danger,
+  },
+
+  // Warning context
   warningItem: {
-    marginBottom: rp(spacing.md),
+    marginTop: 14,
   },
   warningMessage: {
-    fontSize: rf(13),
-    fontWeight: "500",
-    color: colors.text,
-    lineHeight: rf(18),
+    fontFamily: font.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.ink,
   },
-  impactContainer: {
+  metaRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: rp(spacing.xs),
-    gap: rp(spacing.xs),
+    gap: 6,
+    marginTop: 6,
   },
-  impactText: {
+  metaText: {
     flex: 1,
-    fontSize: rf(12),
-    color: colors.warning,
-    fontWeight: "500",
+    fontFamily: font.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: tokens.ink2,
   },
-  risksContainer: {
-    marginTop: rp(spacing.sm),
-    backgroundColor: `${colors.warning}1A`,
-    padding: rp(spacing.sm),
-    borderRadius: rbr(borderRadius.sm),
+  metaBlock: {
+    marginTop: 10,
+    gap: 4,
   },
-  riskHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(spacing.xs),
-    marginBottom: rp(spacing.xs),
+  metaLabel: {
+    ...typeScale.sectionLabel,
+    marginBottom: 2,
   },
-  risksTitle: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.warning,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  riskText: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    lineHeight: rf(16),
-    marginLeft: rp(spacing.sm),
+  metaItem: {
+    fontFamily: font.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: tokens.ink2,
   },
 
-  // Inline Rate Picker (from RateComparisonCard)
-  sectionHeader: {
-    marginBottom: rp(10),
-    marginTop: rp(4),
+  // Rate picker
+  rateSection: {
+    marginTop: 24,
   },
-  sectionTitle: {
-    fontSize: rf(11),
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+  unlockHint: {
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
   },
-  optionsList: {
-    gap: rp(0),
+  unlockHintText: {
+    fontFamily: font.semibold,
+    fontSize: 12,
+    letterSpacing: 0.3,
+    color: tokens.ink2,
   },
   exerciseDivider: {
     flexDirection: "row",
     alignItems: "center",
     minHeight: 44,
-    marginVertical: rp(12),
-    gap: rp(12),
+    marginVertical: 8,
+    gap: 12,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: tokens.hairline,
   },
   dividerContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(6),
-    paddingHorizontal: rp(8),
+    gap: 6,
+    paddingHorizontal: 4,
   },
   dividerText: {
-    fontSize: rf(10),
-    fontWeight: "600",
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
+    fontFamily: font.semibold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: tokens.ink3,
   },
-  unlockBanner: {
+  safeRateRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(34, 197, 94, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(34, 197, 94, 0.3)",
-    borderRadius: rp(20),
-    paddingVertical: rp(6),
-    paddingHorizontal: rp(14),
-    marginTop: rp(10),
-    marginBottom: rp(6),
-    gap: rp(6),
-    alignSelf: "center",
-  },
-  unlockBannerText: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: "#22C55E",
-    letterSpacing: 0.2,
-  },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    marginVertical: rp(10),
-  },
-  safeRateInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(34, 197, 94, 0.08)",
-    borderRadius: rp(8),
-    padding: rp(10),
-    marginTop: rp(12),
-  },
-  safeRateIcon: {
-    marginRight: rp(6),
+    gap: 6,
+    marginTop: 12,
   },
   safeRateText: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
+    fontFamily: font.regular,
+    fontSize: 12,
+    color: tokens.ink3,
   },
   safeRateValue: {
-    fontWeight: "700",
-    color: "#22C55E",
+    fontFamily: font.semibold,
+    color: tokens.ink,
   },
 
-  // Recommendations (non-actionable warnings)
-  recommendationsContainer: {
-    marginTop: rp(spacing.sm),
-    gap: rp(spacing.xs),
-  },
-  recommendationItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: rp(spacing.xs),
-  },
-  recommendationText: {
-    flex: 1,
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    lineHeight: rf(16),
-  },
-
-  // Acknowledgment Checkbox
-  checkboxContainer: {
+  // Acknowledgment — hairline row + fresh checkbox (no glass)
+  ackRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: rp(spacing.md),
-    paddingTop: rp(spacing.md),
+    gap: 12,
+    minHeight: 44,
+    paddingVertical: 14,
+    marginTop: 20,
     borderTopWidth: 1,
-    borderTopColor: `${colors.warning}33`,
+    borderTopColor: tokens.hairline,
   },
-  checkboxBox: {
-    width: rw(22),
-    height: rw(22),
-    borderRadius: rbr(borderRadius.sm),
-    borderWidth: 2,
-    borderColor: `${colors.warning}80`,
-    backgroundColor: colors.glassSurface,
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: tokens.ink3,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: rp(spacing.sm),
   },
-  checkboxBoxChecked: {
-    borderColor: colors.successAlt,
-    backgroundColor: colors.successAlt,
+  checkboxChecked: {
+    borderColor: tokens.accent,
+    backgroundColor: tokens.accentDim,
   },
-  checkboxLabel: {
+  ackLabel: {
     flex: 1,
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    fontWeight: "500",
+    fontFamily: font.regular,
+    fontSize: 14,
+    color: tokens.ink2,
   },
 });

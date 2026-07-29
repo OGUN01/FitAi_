@@ -1,0 +1,143 @@
+======================================================================
+  PHASE 2 BARCODE DATABASE — F1 PLAN COMPLIANCE AUDIT
+  Date: 2026-03-01
+  Auditor: oracle (claude-opus-4.6)
+======================================================================
+
+=== CHECK 1: FORBIDDEN PATTERNS IN TS/TSX FILES ===
+Files checked: sqliteFood.ts, barcodeService.ts, ContributeFood.tsx, DatabaseDownloadBanner.tsx
+Patterns: 'as any', '@ts-ignore', '@ts-expect-error', 'downloadAsync', 'service_role'
+
+Results:
+  - as any:            NOT FOUND (PASS)
+  - @ts-ignore:        NOT FOUND (PASS)
+  - @ts-expect-error:  NOT FOUND (PASS)
+  - service_role:      NOT FOUND (PASS)
+  - downloadAsync in sqliteFood.ts: FOUND — but it is downloadResumable.downloadAsync()
+    which is the .downloadAsync() method on a DownloadResumable object created by
+    createDownloadResumable(). This is the CORRECT expo-file-system resumable API,
+    NOT the banned standalone FileSystem.downloadAsync(). PASS (false positive).
+  - downloadAsync in DatabaseDownloadBanner.tsx: NOT FOUND (PASS)
+
+VERDICT: ALL FORBIDDEN PATTERNS CLEAN ✅
+
+=== CHECK 2: MUST-HAVE SYMBOLS PRESENT ===
+sqliteFood.ts:
+  - lookupBarcode:           FOUND ✅
+  - searchByName:            FOUND ✅
+  - getStats:                FOUND ✅
+  - isDatabaseReady:         FOUND ✅
+  - createDownloadResumable: FOUND ✅
+  - SQLiteDownloadState:     FOUND ✅
+
+barcodeService.ts:
+  - sqliteFood:              FOUND ✅
+  - isDatabaseReady:         FOUND ✅
+  - sqlite-local:            FOUND ✅
+
+ContributeFood.tsx:
+  - user_food_contributions: FOUND ✅
+  - is_approved:             FOUND (value: false) ✅
+  - contribution_type:       FOUND ✅
+  - new_product:             FOUND ✅
+  - isSubmitting:            FOUND ✅
+
+DatabaseDownloadBanner.tsx:
+  - not_downloaded:          FOUND ✅
+  - downloading:             FOUND ✅
+  - ready:                   FOUND ✅
+  - error:                   FOUND ✅
+  - Download Now:            FOUND ✅
+  - Pause:                   FOUND ✅
+  - Cancel:                  FOUND ✅
+  - Animated:                FOUND ✅
+
+sync-off-global.mjs:
+  - off-parquet-global:      FOUND ✅
+  - off-delta-global:        FOUND ✅
+  - --delta:                 FOUND ✅
+
+Migration SQL:
+  - off-parquet-global:      FOUND ✅
+  - off-delta-global:        FOUND ✅
+
+VERDICT: ALL MUST-HAVE SYMBOLS PRESENT ✅
+
+=== CHECK 3: SQLite STEP BEFORE SUPABASE RPC ===
+  isDatabaseReady at char: 4302
+  supabase.rpc('lookup_barcode' at char: 6925
+  SQLite before RPC: TRUE ✅
+
+=== CHECK 4: ALL FILES EXIST ===
+  scripts/extract-off-global.mjs:  EXISTS ✅
+  scripts/sync-off-global.mjs:     EXISTS ✅
+  scripts/build-sqlite.mjs:        EXISTS ✅
+  scripts/upload-sqlite.mjs:       EXISTS ✅
+  src/services/sqliteFood.ts:      EXISTS ✅
+  src/screens/ContributeFood.tsx:   EXISTS ✅
+  src/components/DatabaseDownloadBanner.tsx: EXISTS ✅
+  supabase/migrations/20260228000002_expand_off_source_global.sql: EXISTS ✅
+
+VERDICT: ALL 8 FILES EXIST ✅
+
+=== CHECK 5: NO INDIA-ONLY FILTER IN GLOBAL SCRIPTS ===
+  extract-off-global.mjs: 'en:india' absent, "starts_with(code,'890')" absent
+  India filter absent: TRUE ✅
+  sync-off-global.mjs: 'off-delta-global' present: TRUE ✅
+
+=== CHECK 6: UPLOAD SCRIPT 50MB PREFLIGHT ===
+  has 50MB check: TRUE ✅
+  has exit(1):    TRUE ✅
+
+=== MIGRATION CONSTRAINT VALUES (5/5) ===
+  off-parquet-india:  FOUND ✅
+  off-parquet-global: FOUND ✅
+  off-api-live:       FOUND ✅
+  off-delta:          FOUND ✅
+  off-delta-global:   FOUND ✅
+
+=== MUST NOT HAVE COMPLIANCE ===
+  [1] No 'as any' in TS/TSX:                    PASS ✅
+  [2] No '@ts-ignore' in TS/TSX:                PASS ✅
+  [3] No '@ts-expect-error' in TS/TSX:          PASS ✅
+  [4] No standalone downloadAsync:               PASS ✅ (only resumable method call)
+  [5] No 'service_role' in RN app source:        PASS ✅
+  [6] No 'is_approved: true' in ContributeFood:  PASS ✅
+  [7] No India filter in extract-off-global.mjs: PASS ✅
+
+=== MUST HAVE COMPLIANCE ===
+  [1]  SQLite-first lookup in barcodeService.ts:     PASS ✅
+  [2]  Supabase RPC step still present:              PASS ✅
+  [3]  off_source constraint expanded (5 values):    PASS ✅
+  [4]  Resumable download (createDownloadResumable):  PASS ✅
+  [5]  User contribution form (ContributeFood.tsx):   PASS ✅
+  [6]  extract-off-global.mjs with no India filter:   PASS ✅
+  [7]  sync-off-global.mjs with --delta & off-delta-global: PASS ✅
+  [8]  build-sqlite.mjs exists:                       PASS ✅
+  [9]  upload-sqlite.mjs with 50MB preflight:         PASS ✅
+  [10] DatabaseDownloadBanner.tsx (4 states + Animated): PASS ✅
+
+=== TASK FILE DELIVERABLES ===
+  T1  - Migration SQL:                  EXISTS ✅
+  T2  - extract-off-global.mjs:         EXISTS ✅
+  T3  - sqliteFood.ts:                  EXISTS ✅
+  T4  - ContributeFood.tsx:             EXISTS ✅
+  T5  - sync-off-global.mjs:            EXISTS ✅
+  T6  - build-sqlite.mjs:               EXISTS ✅
+  T7  - upload-sqlite.mjs:              EXISTS ✅
+  T8  - sync-off-global.mjs (--delta):  EXISTS ✅ (same file as T5)
+  T9  - barcodeService.ts (modified):    EXISTS ✅
+  T10 - DatabaseDownloadBanner.tsx:      EXISTS ✅
+  T11 - ContributeFood.tsx (wired):      EXISTS ✅
+
+======================================================================
+  FINAL VERDICT
+======================================================================
+
+  Must Have  [10/10] ✅
+  Must NOT   [7/7]   ✅
+  Tasks      [11/11] ✅
+
+  VERDICT: APPROVE ✅
+
+======================================================================

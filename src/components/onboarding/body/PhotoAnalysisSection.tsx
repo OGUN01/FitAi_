@@ -1,8 +1,31 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * PhotoAnalysisSection — Body tab collapsed "Progress photos" group
+ * (Editorial Dark).
+ *
+ * Existing capture flow (openPhotoOptions / removePhoto / analyzePhotos) is
+ * kept intact — only the presentation is restyled: hairline-outlined capture
+ * tiles, an accent text action, and AI results as plain stats over a hairline.
+ * Renders flat inside the parent CollapsibleSection.
+ */
+
 import React, { type ComponentProps } from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rp, rbr } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
+import { rf } from "../../../utils/responsive";
+import { Rule } from "../../onboarding/fresh";
+import {
+  tokens,
+  type as freshType,
+  font,
+  spacing as freshSpacing,
+} from "../../onboarding/fresh/tokens";
 import { PHOTO_TYPES } from "../../../screens/onboarding/tabs/BodyAnalysisConstants";
 import { BodyAnalysisData } from "../../../types/onboarding";
 
@@ -27,332 +50,309 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
     formData.back_photo_url,
   ].filter(Boolean).length;
 
+  const hasAi =
+    formData.ai_estimated_body_fat != null &&
+    formData.ai_estimated_body_fat > 0;
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <View style={styles.photoTitleRow}>
-          <View>
-            <Text style={styles.sectionTitle} numberOfLines={1}>
-              📸 Photo Analysis
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.count} numberOfLines={1}>
+          {photoCount}/3 photos
+        </Text>
+        {photoCount > 0 && !hasAi && (
+          <Pressable
+            style={styles.analyzeButton}
+            onPress={analyzePhotos}
+            accessibilityRole="button"
+            accessibilityLabel="Analyze photos"
+          >
+            <Ionicons name="sparkles" size={rf(14)} color={tokens.accent} />
+            <Text style={styles.analyzeText}>
+              {isAnalyzingPhotos ? "Analyzing…" : "Analyze"}
             </Text>
-            <Text style={styles.sectionSubtitle} numberOfLines={1}>
-              AI-powered • {photoCount}/3 photos added
-            </Text>
-          </View>
-          {photoCount > 0 && !formData.ai_estimated_body_fat && (
-            <AnimatedPressable
-              style={styles.analyzeButtonCompact}
-              onPress={analyzePhotos}
-              scaleValue={0.95}
+          </Pressable>
+        )}
+      </View>
+
+      {/* Trust line — body photos are sensitive; explicit framing lowers
+          hesitation without adding a field. Presentation only. */}
+      <View style={styles.privacyRow}>
+        <Ionicons
+          name="shield-checkmark-outline"
+          size={13}
+          color={tokens.ink3}
+        />
+        <Text style={styles.privacyText} numberOfLines={2}>
+          Optional. Photos stay on this device — we never upload or share them.
+        </Text>
+      </View>
+
+      {/* Photo capture tiles — hairline outline, transparent, no fill. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.photoScroll}
+        decelerationRate="fast"
+      >
+        {PHOTO_TYPES.map((photoType) => {
+          const photoUrl = formData[
+            `${photoType.type}_photo_url` as keyof BodyAnalysisData
+          ] as string;
+          const hasPhoto = !!photoUrl;
+
+          return (
+            <Pressable
+              key={photoType.type}
+              style={styles.photoCard}
+              onPress={() => openPhotoOptions(photoType.type)}
+              accessibilityRole="button"
+              accessibilityLabel={`${photoType.title} photo`}
             >
-              <Ionicons name="sparkles" size={rf(14)} color={colors.white} />
-              <Text style={styles.analyzeButtonText}>
-                {isAnalyzingPhotos ? "Analyzing..." : "Analyze"}
-              </Text>
-            </AnimatedPressable>
-          )}
-        </View>
-      </View>
-
-      {/* Horizontal scrollable photo cards */}
-      <View style={styles.scrollClipContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.photoScrollContent}
-          decelerationRate="fast"
-        >
-          {PHOTO_TYPES.map((photoType) => {
-            const photoUrl = formData[
-              `${photoType.type}_photo_url` as keyof BodyAnalysisData
-            ] as string;
-            const hasPhoto = !!photoUrl;
-
-            return (
-              <AnimatedPressable
-                key={photoType.type}
-                style={styles.photoCardCompact}
-                onPress={() => openPhotoOptions(photoType.type)}
-                scaleValue={0.96}
+              <View
+                style={[
+                  styles.photoInner,
+                  hasPhoto && { borderColor: tokens.accent },
+                ]}
               >
-                <View
-                  style={[
-                    styles.photoCardCompactInner,
-                    hasPhoto && styles.photoCardCompactHasPhoto,
-                  ]}
-                >
-                  {hasPhoto ? (
-                    <>
-                      <Image
-                        source={{ uri: photoUrl }}
-                        style={styles.photoThumbnail}
-                      />
-                      <View style={styles.photoOverlay}>
-                        <Ionicons
-                          name="checkmark"
-                          size={rf(14)}
-                          color={colors.white}
-                        />
-                      </View>
-                      <AnimatedPressable
-                        style={styles.removePhotoSmall}
-                        onPress={() => removePhoto(photoType.type)}
-                        scaleValue={0.9}
-                      >
-                        <Ionicons name="close" size={rf(14)} color={colors.white} />
-                      </AnimatedPressable>
-                    </>
-                  ) : (
-                    <View style={styles.photoPlaceholderCompact}>
+                {hasPhoto ? (
+                  <>
+                    <Image source={{ uri: photoUrl }} style={styles.photoThumb} />
+                    <View style={styles.photoBadge}>
                       <Ionicons
-                        name={photoType.iconName as ComponentProps<typeof Ionicons>['name']}
-                        size={rf(36)}
-                        color={colors.primary}
+                        name="checkmark"
+                        size={rf(11)}
+                        color={tokens.bg}
                       />
-                      <View style={styles.addPhotoIcon}>
-                        <Ionicons
-                          name="add-circle"
-                          size={rf(20)}
-                          color={colors.primary}
-                        />
-                      </View>
                     </View>
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.photoLabelCompact,
-                    hasPhoto && styles.photoLabelCompactActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {photoType.title}
-                </Text>
-                <Text style={styles.photoHintCompact} numberOfLines={1}>
-                  {photoType.shortDesc}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+                    <Pressable
+                      style={styles.removeBtn}
+                      onPress={() => removePhoto(photoType.type)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${photoType.title} photo`}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={rf(12)}
+                        color={tokens.ink}
+                      />
+                    </Pressable>
+                  </>
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons
+                      name={
+                        photoType.iconName as ComponentProps<
+                          typeof Ionicons
+                        >["name"]
+                      }
+                      size={rf(28)}
+                      color={tokens.ink3}
+                    />
+                    <View style={styles.addBadge}>
+                      <Ionicons
+                        name="add"
+                        size={rf(14)}
+                        color={tokens.accent}
+                      />
+                    </View>
+                  </View>
+                )}
+              </View>
+              <Text
+                style={[
+                  styles.photoLabel,
+                  hasPhoto && { color: tokens.ink },
+                ]}
+                numberOfLines={1}
+              >
+                {photoType.title}
+              </Text>
+              <Text style={styles.photoHint} numberOfLines={1}>
+                {photoType.shortDesc}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
-      {/* AI Analysis Results - Compact inline display */}
-      {formData.ai_estimated_body_fat != null &&
-      formData.ai_estimated_body_fat > 0 ? (
-        <View style={styles.edgeToEdgeContentPadded}>
-          <View style={styles.aiResultsCompact}>
-            <View style={styles.aiResultItem}>
-              <Text style={styles.aiResultLabel}>Body Fat</Text>
-              <Text style={styles.aiResultValue}>
+      {/* AI results — plain stats over a hairline, no tinted box. */}
+      {hasAi ? (
+        <View>
+          <Rule />
+          <View style={styles.aiRow}>
+            <View style={styles.aiItem}>
+              <Text style={styles.aiLabel}>Body fat</Text>
+              <Text style={styles.aiValue}>
                 {formData.ai_estimated_body_fat}%
               </Text>
             </View>
-            <View style={styles.aiResultDivider} />
-            <View style={styles.aiResultItem}>
-              <Text style={styles.aiResultLabel}>Body Type</Text>
-              <Text style={styles.aiResultValue}>
+            <View style={styles.aiDivider} />
+            <View style={styles.aiItem}>
+              <Text style={styles.aiLabel}>Body type</Text>
+              <Text style={styles.aiValue}>
                 {formData.ai_body_type
                   ? formData.ai_body_type.charAt(0).toUpperCase() +
                     formData.ai_body_type.slice(1)
-                  : "-"}
+                  : "—"}
               </Text>
             </View>
-            <View style={styles.aiResultDivider} />
-            <View style={styles.aiResultItem}>
-              <Text style={styles.aiResultLabel}>Confidence</Text>
-              <Text style={styles.aiResultValue}>
+            <View style={styles.aiDivider} />
+            <View style={styles.aiItem}>
+              <Text style={styles.aiLabel}>Confidence</Text>
+              <Text style={styles.aiValue}>
                 {formData.ai_confidence_score}%
               </Text>
             </View>
-            <AnimatedPressable
-              style={styles.reanalyzeSmall}
+            <Pressable
+              style={styles.reanalyze}
               onPress={analyzePhotos}
-              scaleValue={0.9}
+              accessibilityRole="button"
+              accessibilityLabel="Re-analyze photos"
             >
-              <Ionicons
-                name="refresh"
-                size={rf(16)}
-                color={colors.primary}
-              />
-            </AnimatedPressable>
+              <Ionicons name="refresh" size={rf(16)} color={tokens.ink2} />
+            </Pressable>
           </View>
         </View>
       ) : null}
-
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
+  container: {
+    gap: freshSpacing.l,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  photoTitleRow: {
+  headerRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
   },
-  analyzeButtonCompact: {
+  count: {
+    ...freshType.caption,
+    color: tokens.ink2,
+  },
+  privacyRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: freshSpacing.s,
+  },
+  privacyText: {
+    ...freshType.caption,
+    color: tokens.ink3,
+    flex: 1,
+    lineHeight: 17,
+  },
+  analyzeButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.full,
-    gap: rp(4),
+    gap: freshSpacing.xs,
+    paddingVertical: freshSpacing.xs,
   },
-  analyzeButtonText: {
-    fontSize: fontSize.xs,
-    color: colors.white,
-    fontWeight: typography.fontWeight.semibold,
+  analyzeText: {
+    fontFamily: font.semibold,
+    fontSize: 14,
+    color: tokens.accent,
   },
-  scrollClipContainer: {
-    width: "100%",
-    overflow: "hidden",
-    marginTop: spacing.sm,
+  photoScroll: {
+    gap: freshSpacing.l,
+    paddingVertical: freshSpacing.xs,
   },
-  photoScrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    gap: rw(10),
-  },
-  photoCardCompact: {
-    width: rw(100),
+  photoCard: {
+    width: 112,
     alignItems: "center",
   },
-  photoCardCompactInner: {
-    width: rw(100),
-    height: rw(100),
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
+  photoInner: {
+    width: 112,
+    height: 140,
+    borderRadius: 16,
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: tokens.hairline,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xs,
+    marginBottom: freshSpacing.s,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "transparent",
   },
-  photoCardCompactHasPhoto: {
-    borderColor: colors.primary,
-  },
-  photoThumbnail: {
+  photoThumb: {
     width: "100%",
     height: "100%",
   },
-  photoOverlay: {
+  photoBadge: {
     position: "absolute",
-    top: rp(4),
-    right: rp(4),
-    backgroundColor: colors.success,
-    width: rp(20),
-    height: rp(20),
-    borderRadius: rbr(10),
-    justifyContent: "center",
+    top: freshSpacing.s,
+    right: freshSpacing.s,
+    width: 20,
+    height: 20,
+    borderRadius: 9999,
+    backgroundColor: tokens.accent,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  removeBtn: {
+    position: "absolute",
+    top: freshSpacing.s,
+    left: freshSpacing.s,
+    width: 20,
+    height: 20,
+    borderRadius: 9999,
+    backgroundColor: "rgba(5,5,5,0.6)",
     borderWidth: 1,
-    borderColor: colors.white,
-  },
-  removePhotoSmall: {
-    position: "absolute",
-    top: rp(4),
-    left: rp(4),
-    backgroundColor: colors.overlay,
-    width: rp(20),
-    height: rp(20),
-    borderRadius: rbr(10),
-    justifyContent: "center",
+    borderColor: tokens.hairline,
     alignItems: "center",
+    justifyContent: "center",
   },
-  photoPlaceholderCompact: {
+  photoPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
-    width: '100%',
+    width: "100%",
+  },
+  addBadge: {
+    position: "absolute",
+    bottom: freshSpacing.s,
+    right: freshSpacing.s,
+    width: 22,
+    height: 22,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: tokens.hairline,
+    backgroundColor: tokens.bg,
     alignItems: "center",
     justifyContent: "center",
   },
-  addPhotoIcon: {
-    position: "absolute",
-    bottom: rp(-4),
-    right: rp(-4),
-    backgroundColor: colors.background,
-    borderRadius: rbr(10),
+  photoLabel: {
+    ...freshType.body,
+    color: tokens.ink2,
   },
-  photoLabelCompact: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
-    marginBottom: rp(2),
+  photoHint: {
+    ...freshType.caption,
   },
-  photoLabelCompactActive: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  photoHintCompact: {
-    fontSize: rf(9),
-    color: colors.textMuted,
-  },
-  aiResultsCompact: {
+  aiRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${colors.primary}10`,
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
     justifyContent: "space-between",
+    paddingVertical: freshSpacing.l,
   },
-  aiResultItem: {
+  aiItem: {
     alignItems: "center",
+    flex: 1,
   },
-  aiResultLabel: {
-    fontSize: rf(9),
-    color: colors.textSecondary,
-    marginBottom: rp(2),
+  aiLabel: {
+    ...freshType.caption,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
   },
-  aiResultValue: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+  aiValue: {
+    ...freshType.value,
+    marginTop: freshSpacing.xs,
   },
-  aiResultDivider: {
-    width: rp(1),
-    height: "80%",
-    backgroundColor: `${colors.primary}30`,
+  aiDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: tokens.hairline,
   },
-  reanalyzeSmall: {
-    padding: rp(4),
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
+  reanalyze: {
+    padding: freshSpacing.xs,
   },
 });

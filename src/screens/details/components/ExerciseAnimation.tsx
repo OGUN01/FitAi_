@@ -1,15 +1,21 @@
-import React from "react";
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../../../components/ui";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rbr } from '../../../utils/responsive';
+/**
+ * ExerciseAnimation — hero media zone for the exercise detail screen.
+ *
+ * Full-width dark media surface at the top of the scroll content. The GIF
+ * (or placeholder) fills the zone; playback controls live in a bottom scrim
+ * bar so they stay legible over any frame of the animation.
+ *
+ * All stepping/playback logic is owned by the parent (useStepAnimation) —
+ * this component is presentational only. Props, a11y labels, hit slops, and
+ * haptics are unchanged from the previous implementation.
+ */
+import React from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { colors, spacing, borderRadius, typography } from '../../../theme/aurora-tokens';
+import { hexToRgba } from '../../../utils/colors';
+import { rf, rw, rh, rbr, rp } from '../../../utils/responsive';
 
 interface ExerciseAnimationProps {
   gifUrl?: string;
@@ -29,33 +35,35 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
   onStepChange,
 }) => {
   return (
-    <Card style={styles.animationCard}>
-      <View style={styles.animationContainer}>
+    <View style={styles.hero}>
+      <View style={styles.mediaZone}>
         {gifUrl ? (
-          <Image
-            source={{ uri: gifUrl }}
-            style={styles.exerciseGif}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: gifUrl }} style={styles.exerciseGif} resizeMode="contain" />
         ) : (
           <View style={styles.animationPlaceholder}>
-            <Ionicons name="barbell" size={rf(48)} color={colors.textSecondary} style={styles.animationEmoji} />
+            <View style={styles.placeholderIconWrap}>
+              <Ionicons name="barbell-outline" size={rf(28)} color={colors.text.tertiary} />
+            </View>
             <Text style={styles.animationText}>Exercise Animation</Text>
           </View>
         )}
 
         {instructionsCount > 1 && (
-          <View style={styles.animationControls}>
+          <View style={styles.controlsBar}>
             <AnimatedPressable
               style={styles.playButton}
               onPress={onTogglePlay}
               accessibilityRole="button"
-              accessibilityLabel={isPlaying ? "Pause animation" : "Play animation"}
+              accessibilityLabel={isPlaying ? 'Pause animation' : 'Play animation'}
               scaleValue={0.9}
               springConfig="snappy"
               hapticType="light"
             >
-              <Ionicons name={isPlaying ? "pause" : "play"} size={rf(20)} color={colors.surface} />
+              <Ionicons
+                name={isPlaying ? 'pause' : 'play'}
+                size={rf(20)}
+                color={colors.text.primary}
+              />
             </AnimatedPressable>
 
             <View style={styles.stepIndicators}>
@@ -81,69 +89,86 @@ export const ExerciseAnimation: React.FC<ExerciseAnimationProps> = ({
           </View>
         )}
       </View>
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  animationCard: {
-    marginBottom: spacing.md,
+  hero: {
+    marginBottom: rp(spacing.lg),
   },
-  animationContainer: {
-    alignItems: "center",
-    minWidth: 0,
-    flexShrink: 1,
+  mediaZone: {
+    width: '100%',
+    height: rh(260),
+    borderRadius: rbr(borderRadius.xl),
+    backgroundColor: colors.background.tertiary,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   exerciseGif: {
-    width: "100%",
-    height: rh(200),
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
+    width: '100%',
+    height: '100%',
   },
   animationPlaceholder: {
-    width: "100%",
-    height: rh(200),
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rp(spacing.sm),
   },
-  animationEmoji: {
-    fontSize: rf(48),
-    marginBottom: spacing.sm,
+  placeholderIconWrap: {
+    width: rw(64),
+    height: rw(64),
+    borderRadius: rbr(borderRadius.full),
+    backgroundColor: colors.glass.backgroundDark,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   animationText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.tertiary,
+    letterSpacing: 0.4,
   },
-  animationControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
+  // Dark scrim bar pinned to the bottom of the media zone so the controls
+  // stay legible over light GIF frames.
+  controlsBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    backgroundColor: hexToRgba(colors.aurora.space.base, 0.72),
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.glass.border,
   },
   playButton: {
     width: rw(48),
     height: rh(48),
     borderRadius: rbr(24),
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playButtonText: {
-    fontSize: rf(20),
+    backgroundColor: colors.primary.DEFAULT,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stepIndicators: {
-    flexDirection: "row",
-    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xs),
   },
   stepIndicator: {
     width: rw(8),
     height: rh(8),
     borderRadius: rbr(4),
-    backgroundColor: colors.surface,
+    backgroundColor: colors.glass.backgroundLight,
   },
   stepIndicatorActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
+    width: rw(20),
   },
 });

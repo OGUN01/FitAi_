@@ -1,7 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  typography,
+} from "../../theme/aurora-tokens";
 
 interface SummaryStatsSectionProps {
   weeklyProgress: any;
@@ -26,13 +31,7 @@ export const SummaryStatsSection: React.FC<SummaryStatsSectionProps> = ({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Overall Summary</Text>
-      <GlassCard
-        style={styles.summaryCard}
-        elevation={2}
-        blurIntensity="light"
-        padding="lg"
-        borderRadius="lg"
-      >
+      <View style={styles.summaryCard}>
         <View style={styles.summaryGrid}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>
@@ -62,7 +61,7 @@ export const SummaryStatsSection: React.FC<SummaryStatsSectionProps> = ({
             <Text style={styles.summaryLabel}>Day Streak</Text>
           </View>
         </View>
-      </GlassCard>
+      </View>
     </View>
   );
 };
@@ -73,13 +72,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   summaryCard: {
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
   summaryGrid: {
     flexDirection: "row",
@@ -91,13 +93,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryValue: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    ...typography.variants.cardHeadline,
+    fontFamily: "Manrope_700Bold",
+    fontSize: 20,
+    color: colors.primary.DEFAULT,
   },
   summaryLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     marginTop: spacing.xs,
     textAlign: "center",
   },

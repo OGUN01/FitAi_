@@ -1,0 +1,48 @@
+T12: Integration Tests
+======================
+Date: 2026-02-20
+Command: bun test --no-coverage src/__tests__/services/barcode/integration.test.ts
+
+RESULT: PASS (10 pass, 0 fail)
+
+Full output:
+  bun test v1.3.9 (cf6cdbbb)
+   10 pass
+   0 fail
+   49 expect() calls
+  Ran 10 tests across 1 file. [217.00ms]
+
+All 10 Integration Scenarios (as listed in plan):
+
+1. ✅ Happy path — EAN-13 found on OFF with full nutrition
+   - Nutella: calories=530, protein=6.3, carbs=57.5, fat=30.9
+   - nutriScore=d, novaGroup=4, gs1Country=France, source=openfoodfacts
+
+2. ✅ Happy path — Indian product found on OFF
+   - Parle-G: gs1Country=India, needsNutritionEstimate=false, calories=462
+
+3. ✅ Fallback — OFF miss, UPCitemdb hit
+   - Granola Bar from UPCitemdb, source contains "upcitemdb"
+
+4. ✅ Fallback — everything fails → null-like result
+   - success=false, product=undefined
+
+5. ✅ UPC-A normalization — 12 digits padded to 13
+   - 012345678905 → 0012345678905 in URL
+
+6. ✅ Invalid barcode → failure without calling fetch
+   - ABC123 → success=false, error defined, fetch NOT called
+
+7. ✅ Cache hit — second call returns from cache, fetch called once
+   - Same barcode twice → fetch called only once
+
+8. ✅ Indian barcode skips UPCitemdb when OFF misses
+   - 890 prefix → OFF then Gemini (no UPCitemdb URL in calls)
+
+9. ✅ OFF timeout → fallback to UPCitemdb
+   - Fake timers, 6s advance → UPCitemdb source
+
+10. ✅ Gemini estimation wired — OFF has name only, no nutrition
+    - Mystery Snack → source=gemini-estimation, calories=450
+
+VERDICT: PASS

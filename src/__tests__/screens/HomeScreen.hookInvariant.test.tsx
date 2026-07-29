@@ -131,6 +131,7 @@ jest.mock("@/screens/main/home", () => {
   return {
     HomeHeader: () => R.createElement(Stub, { name: "HomeHeader" }),
     GuestPromptBanner: () => R.createElement(Stub, { name: "GuestPromptBanner" }),
+    TodayHero: () => R.createElement(Stub, { name: "TodayHero" }),
     MotivationBanner: () => R.createElement(Stub, { name: "MotivationBanner" }),
     DailyProgressRings: () => R.createElement(Stub, { name: "DailyProgressRings" }),
     TodaysFocus: () => R.createElement(Stub, { name: "TodaysFocus" }),

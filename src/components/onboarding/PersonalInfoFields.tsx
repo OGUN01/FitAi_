@@ -1,9 +1,42 @@
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { GlassCard } from "../../components/ui/aurora";
-import { Input, SegmentedControl } from "../../components/ui";import { GENDER_OPTIONS } from "./PersonalInfoConstants";
+/**
+ * PersonalInfoFields — S1 "You" identity inputs, Editorial Dark skin.
+ *
+ * Name: two UnderlineInputs side by side (underline-only, accent focus) plus a
+ *   conversational greeting line that appears the moment a first name exists —
+ *   live micro-feedback at the point of entry (Typeform-style dialogue).
+ * Age: a self-labeled 56px hairline stepper row that mirrors TimeRow exactly —
+ *   label left, quiet [-] value [+] ghost-circle stepper right, hairline below.
+ *   The value opacity-pulses on each step so taps feel acknowledged.
+ * Gender: 4 OptionRows (single-select, accent check + 2px left bar) — type
+ *   only, no icons, one row language across the whole tab. Each risky/personal
+ *   field gets a one-line "why we ask" caption under it.
+ *
+ * Presentation only — props/hooks/validation stay identical to the data layer.
+ */
+import React, { useEffect } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  tokens,
+  type as typeScale,
+  spacing,
+  SectionLabel,
+  Rule,
+  OptionRow,
+  RowGroup,
+} from "./fresh";
+import { UnderlineInput } from "./aurora";
+import { GENDER_OPTIONS } from "./PersonalInfoConstants";
 import { PersonalInfoData } from "../../types/onboarding";
+
+const PRESS_DURATION = 120;
+const PRESS_OPACITY = 0.5;
 
 interface PersonalInfoFieldsProps {
   formData: PersonalInfoData;
@@ -22,167 +55,269 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
   formData,
   actions,
 }) => {
-  const { updateField, handleAgeChange, hasFieldError, getFieldError } =
-    actions;
+  const { updateField, hasFieldError, getFieldError } = actions;
+  const firstName = formData.first_name?.trim() ?? "";
 
   return (
-    <>
-      <GlassCard
-        style={styles.sectionEdgeToEdge}
-        elevation={2}
-        blurIntensity="default"
-        padding="none"
-        borderRadius="none"
+    <View>
+      <SectionLabel>Full Name</SectionLabel>
+      <View style={styles.nameRow}>
+        <UnderlineInput
+          label="First Name"
+          placeholder="John"
+          testID="onboarding-first-name"
+          value={formData.first_name}
+          onChangeText={(v) => updateField("first_name", v)}
+          autoFocus
+          accentColor={tokens.accent}
+          containerStyle={styles.nameField}
+        />
+        <UnderlineInput
+          label="Last Name"
+          placeholder="Doe"
+          testID="onboarding-last-name"
+          value={formData.last_name}
+          onChangeText={(v) => updateField("last_name", v)}
+          accentColor={tokens.accent}
+          containerStyle={styles.nameField}
+        />
+      </View>
+      {hasFieldError("first name") && (
+        <Text style={styles.errorText}>{getFieldError("first name")}</Text>
+      )}
+      {hasFieldError("last name") && (
+        <Text style={styles.errorText}>{getFieldError("last name")}</Text>
+      )}
+      {/* Conversational micro-feedback: the answer immediately talks back.
+          Key is constant so the entrance animation fires once (first non-empty
+          keystroke); later keystrokes just update the text. */}
+      {firstName.length > 0 && (
+        <Animated.Text
+          key="name-greeting"
+          entering={FadeInDown.duration(220)}
+          style={styles.greeting}
+        >
+          Nice to meet you, {firstName}.
+        </Animated.Text>
+      )}
+      <Rule spacing={36} />
+    </View>
+  );
+};
+
+export const DemographicsFields: React.FC<PersonalInfoFieldsProps> = ({
+  formData,
+  actions,
+}) => {
+  const { updateField, hasFieldError, getFieldError } = actions;
+
+  return (
+    <View>
+      <AgeStepper
+        value={Math.max(formData.age, 13)}
+        min={13}
+        max={120}
+        onChange={(v) => updateField("age", v)}
+        testID="onboarding-age"
+      />
+      <Text style={styles.fieldCaption}>
+        Drives your metabolic and calorie baseline.
+      </Text>
+      {hasFieldError("age") && (
+        <Text style={styles.errorText}>{getFieldError("age")}</Text>
+      )}
+
+      <RowGroup label="Gender" style={styles.genderGroup}>
+        {GENDER_OPTIONS.map((opt, i) => (
+          <OptionRow
+            key={opt.value}
+            label={opt.label}
+            selected={formData.gender === opt.value}
+            onPress={() =>
+              updateField("gender", opt.value as PersonalInfoData["gender"])
+            }
+            testID={i === 0 ? "onboarding-gender" : undefined}
+          />
+        ))}
+      </RowGroup>
+      <Text style={styles.fieldCaption}>
+        Only used for calorie and macro math.
+      </Text>
+      {hasFieldError("gender") && (
+        <Text style={styles.errorText}>{getFieldError("gender")}</Text>
+      )}
+      <Rule spacing={36} />
+    </View>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// AgeStepper — mirrors TimeRow: a 56px hairline row, "Age" label left, quiet
+// [-] value [+] ghost-circle stepper right (32px circles, 120ms opacity
+// press). No dial, no box — one stepper language across the whole tab.
+// ---------------------------------------------------------------------------
+
+interface AgeStepperProps {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (v: number) => void;
+  testID?: string;
+}
+
+const AgeStepper: React.FC<AgeStepperProps> = ({
+  value,
+  min,
+  max,
+  onChange,
+  testID,
+}) => {
+  // Quiet pulse on the value each time it steps — tap acknowledgement without
+  // sound or haptics (keeps the UI in sync with TimeRow's press language).
+  const flash = useSharedValue(1);
+  useEffect(() => {
+    flash.value = 0.3;
+    flash.value = withTiming(1, { duration: 180 });
+  }, [value, flash]);
+  const valueStyle = useAnimatedStyle(() => ({ opacity: flash.value }));
+
+  return (
+    <View testID={testID}>
+      <View style={styles.stepperRow}>
+        <Text style={styles.stepperLabel} numberOfLines={1}>
+          Age
+        </Text>
+        <View style={styles.stepper}>
+          <StepButton
+            icon="remove"
+            onPress={() => onChange(Math.max(min, value - 1))}
+            disabled={value <= min}
+            accessibilityLabel="Decrease age"
+            testID={testID ? `${testID}-minus` : undefined}
+          />
+          <Animated.Text style={[styles.stepperValue, valueStyle]}>
+            {value}
+          </Animated.Text>
+          <StepButton
+            icon="add"
+            onPress={() => onChange(Math.min(max, value + 1))}
+            disabled={value >= max}
+            accessibilityLabel="Increase age"
+            testID={testID ? `${testID}-plus` : undefined}
+          />
+        </View>
+      </View>
+      <View style={styles.hairline} />
+    </View>
+  );
+};
+
+const StepButton: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  disabled?: boolean;
+  accessibilityLabel: string;
+  testID?: string;
+}> = ({ icon, onPress, disabled = false, accessibilityLabel, testID }) => {
+  const opacity = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return (
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      onPressIn={() => {
+        if (!disabled) {
+          opacity.value = withTiming(PRESS_OPACITY, {
+            duration: PRESS_DURATION,
+          });
+        }
+      }}
+      onPressOut={() => {
+        opacity.value = withTiming(1, { duration: PRESS_DURATION });
+      }}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+      hitSlop={8}
+    >
+      <Animated.View
+        style={[
+          styles.stepButton,
+          animatedStyle,
+          disabled && styles.stepButtonDisabled,
+        ]}
       >
-        <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>
-            Full Name
-          </Text>
-        </View>
-        <View style={styles.edgeToEdgeContentPadded}>
-          <View style={styles.row}>
-            <View style={styles.halfWidth}>
-              <Input
-                label="First Name"
-                placeholder="John"
-                testID="onboarding-first-name"
-                value={formData.first_name}
-                onChangeText={(value) => updateField("first_name", value)}
-                error={
-                  hasFieldError("first name")
-                    ? getFieldError("first name")
-                    : undefined
-                }
-              />
-            </View>
-            <View style={styles.halfWidth}>
-              <Input
-                label="Last Name"
-                placeholder="Doe"
-                testID="onboarding-last-name"
-                value={formData.last_name}
-                onChangeText={(value) => updateField("last_name", value)}
-                error={
-                  hasFieldError("last name")
-                    ? getFieldError("last name")
-                    : undefined
-                }
-              />
-            </View>
-          </View>
-        </View>
-        <View style={styles.sectionBottomPad} />
-      </GlassCard>
-
-      <GlassCard
-        style={styles.sectionEdgeToEdge}
-        elevation={2}
-        blurIntensity="default"
-        padding="none"
-        borderRadius="none"
-      >
-        <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>
-            Demographics
-          </Text>
-        </View>
-
-        <View style={styles.edgeToEdgeContentPadded}>
-          <View style={styles.ageRow}>
-            <View style={styles.ageField}>
-              <Input
-                label="Age"
-                placeholder="25"
-                testID="onboarding-age"
-                value={formData.age > 0 ? formData.age.toString() : ""}
-                onChangeText={handleAgeChange}
-                keyboardType="numeric"
-                error={hasFieldError("age") ? getFieldError("age") : undefined}
-              />
-            </View>
-          </View>
-
-          <View style={styles.genderField}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              Gender *
-            </Text>
-            <SegmentedControl
-              options={GENDER_OPTIONS.map((opt) => ({
-                id: opt.value,
-                label: opt.label,
-                value: opt.value,
-              }))}
-              selectedId={formData.gender}
-              onSelect={(id) =>
-                updateField("gender", id as PersonalInfoData["gender"])
-              }
-              gradient={[colors.primary, colors.accent]}
-              style={styles.genderSegmentedControl}
-            />
-            {hasFieldError("gender") && (
-              <Text style={styles.errorText}>{getFieldError("gender")}</Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.sectionBottomPad} />
-      </GlassCard>
-    </>
+        <Ionicons name={icon} size={18} color={tokens.ink} />
+      </Animated.View>
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
-  },
-  row: {
+  nameRow: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: 24,
   },
-  halfWidth: {
+  nameField: {
     flex: 1,
   },
-  ageRow: {
-    marginBottom: spacing.md,
+  genderGroup: {
+    marginTop: 28,
   },
-  ageField: {
-    width: "50%",
+  stepperRow: {
+    height: spacing.rowH,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "transparent",
   },
-  genderField: {
-    marginTop: spacing.xs,
+  stepperLabel: {
+    ...typeScale.value,
+    color: tokens.ink2,
   },
-  inputLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    flexShrink: 1,
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  genderSegmentedControl: {
-    marginTop: spacing.sm,
+  stepButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: tokens.hairline,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  stepButtonDisabled: {
+    opacity: 0.3,
+  },
+  stepperValue: {
+    ...typeScale.valueLg,
+    minWidth: 44,
+    textAlign: "center",
+    fontVariant: ["tabular-nums"],
+  },
+  hairline: {
+    height: spacing.hair,
+    backgroundColor: tokens.hairline,
+    alignSelf: "stretch",
   },
   errorText: {
-    color: colors.error,
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
+    ...typeScale.caption,
+    color: tokens.danger,
+    marginTop: 8,
+  },
+  /** Conversational greeting under the name row — the first micro-reward. */
+  greeting: {
+    ...typeScale.body,
+    color: tokens.ink2,
+    marginTop: 12,
+  },
+  /** One-line "why we ask" caption under risky/personal fields. */
+  fieldCaption: {
+    ...typeScale.caption,
+    marginTop: 10,
   },
 });

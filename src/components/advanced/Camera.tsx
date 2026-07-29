@@ -1,4 +1,4 @@
-import React, { useState, useRef, ErrorInfo } from "react";
+import React, { useState, useRef, ErrorInfo } from 'react';
 import {
   View,
   Text,
@@ -10,20 +10,28 @@ import {
   StyleProp,
   ViewStyle,
   Keyboard,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "../ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rbr, rs, rh, rw } from '../../utils/responsive';
+  Linking,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '../ui';
+import { GlassButton } from '../ui/aurora/GlassButton';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../theme/aurora-tokens';
+import { rf, rbr, rs, rh } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import {
   isProductBarcode,
   matchesPackagedFoodBarcodeType,
   normalizeBarcode,
-} from "@/utils/countryMapping";
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+} from '@/utils/countryMapping';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 
 // Error Boundary Component
 class CameraErrorBoundary extends React.Component<
@@ -35,12 +43,12 @@ class CameraErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error) {
+  static getDerivedStateFromError(_error: Error) {
     return { hasError: true };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Camera Error:", error, errorInfo);
+    console.error('Camera Error:', error, errorInfo);
     this.props.onError();
   }
 
@@ -48,15 +56,13 @@ class CameraErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText} numberOfLines={1}>Camera Error</Text>
+          <Text style={styles.errorText} numberOfLines={1}>
+            Camera Error
+          </Text>
           <Text style={styles.errorSubtext} numberOfLines={3}>
             Unable to load camera. Please try again.
           </Text>
-          <Button
-            title="Close"
-            onPress={this.props.onError}
-            variant="outline"
-          />
+          <Button title="Close" onPress={this.props.onError} variant="outline" />
         </View>
       );
     }
@@ -66,26 +72,22 @@ class CameraErrorBoundary extends React.Component<
 }
 
 interface CameraProps {
-  mode: "food" | "progress" | "barcode" | "label";
+  mode: 'food' | 'progress' | 'barcode' | 'label';
   onCapture: (uri: string) => void;
-  onBarcodeScanned?: (
-    barcode: string,
-    type: string,
-    rawBarcode?: string,
-  ) => void;
+  onBarcodeScanned?: (barcode: string, type: string, rawBarcode?: string) => void;
   onLabelLibraryPick?: () => void | Promise<void>;
   onClose: () => void;
   visible?: boolean;
   style?: StyleProp<ViewStyle>;
   portionGrams?: number | null;
   onPortionGramsChange?: (grams: number | null) => void;
-  barcodeSessionState?: "idle" | "decoding" | "lookup_in_progress" | "transient_retry" | "resolved";
+  barcodeSessionState?: 'idle' | 'decoding' | 'lookup_in_progress' | 'transient_retry' | 'resolved';
   barcodeStatusMessage?: string | null;
   barcodeActions?: Array<{
     id: string;
     label: string;
     onPress: () => void;
-    variant?: "primary" | "secondary" | "ghost";
+    variant?: 'primary' | 'secondary' | 'ghost';
   }>;
 }
 
@@ -99,17 +101,17 @@ const CameraComponent: React.FC<CameraProps> = ({
   style,
   portionGrams,
   onPortionGramsChange,
-  barcodeSessionState = "idle",
+  barcodeSessionState = 'idle',
   barcodeStatusMessage,
   barcodeActions = [],
 }) => {
   const [permission, requestPermission] = useCameraPermissions();
-  const [cameraType, setCameraType] = useState<CameraType>("back");
-  const [flashMode, setFlashMode] = useState<"off" | "on">("off");
+  const [cameraType, setCameraType] = useState<CameraType>('back');
+  const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [gramsText, setGramsText] = useState(() =>
-    portionGrams != null ? String(portionGrams) : "",
+    portionGrams != null ? String(portionGrams) : ''
   );
   const cameraRef = useRef<CameraView>(null);
   // Top inset so the header clears notches on fullScreen modal. The previous
@@ -140,8 +142,8 @@ const CameraComponent: React.FC<CameraProps> = ({
         });
         onCapture(photo.uri);
       } catch (error) {
-        console.error("Camera capture error:", error);
-        crossPlatformAlert("Error", "Failed to take picture. Please try again.");
+        console.error('Camera capture error:', error);
+        crossPlatformAlert('Error', 'Failed to take picture. Please try again.');
       } finally {
         setIsCapturing(false);
       }
@@ -149,20 +151,14 @@ const CameraComponent: React.FC<CameraProps> = ({
   };
 
   const toggleCameraType = () => {
-    setCameraType((current) => (current === "back" ? "front" : "back"));
+    setCameraType((current) => (current === 'back' ? 'front' : 'back'));
   };
 
   const toggleFlash = () => {
-    setFlashMode((current) => (current === "off" ? "on" : "off"));
+    setFlashMode((current) => (current === 'off' ? 'on' : 'off'));
   };
 
-  const handleBarcodeScanned = ({
-    type,
-    data,
-  }: {
-    type: string;
-    data: string;
-  }) => {
+  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
     if (!isProductBarcode(type) || !matchesPackagedFoodBarcodeType(type, data)) {
       return;
     }
@@ -180,6 +176,9 @@ const CameraComponent: React.FC<CameraProps> = ({
         <Text style={styles.permissionText} numberOfLines={2}>
           Requesting camera permission...
         </Text>
+        <Text style={styles.permissionSubtext} numberOfLines={2}>
+          This lets us identify your food
+        </Text>
       </View>
     );
   }
@@ -187,63 +186,90 @@ const CameraComponent: React.FC<CameraProps> = ({
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText} numberOfLines={1}>No access to camera</Text>
-        <Text style={styles.permissionSubtext} numberOfLines={3}>
-          Please enable camera permissions in your device settings
-        </Text>
-        <Button
-          title="Close"
-          onPress={onClose}
-          variant="outline"
-          style={styles.closeButton}
+        <Ionicons
+          name="ban-outline"
+          size={rf(48)}
+          color={colors.textSecondary}
+          style={styles.permissionIcon}
         />
+        <Text style={styles.permissionText} numberOfLines={1}>
+          No access to camera
+        </Text>
+        <Text style={styles.permissionSubtext} numberOfLines={3}>
+          FitAI needs camera access to scan your meal
+        </Text>
+        <GlassButton
+          label="Open Settings"
+          onPress={() => Linking.openSettings()}
+          variant="primary"
+          fullWidth
+          style={styles.permissionPrimaryBtn}
+        />
+        {permission.canAskAgain !== false && (
+          <TouchableOpacity
+            style={styles.permissionSecondaryBtn}
+            onPress={requestPermission}
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+          >
+            <Text style={styles.permissionSecondaryText} numberOfLines={1}>
+              Try Again
+            </Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          style={styles.permissionCloseBtn}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close camera"
+        >
+          <Text style={styles.permissionCloseText} numberOfLines={1}>
+            Close
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   const getModeTitle = () => {
     switch (mode) {
-      case "food":
-        return "Scan Food";
-      case "progress":
-        return "Progress Photo";
-      case "barcode":
-        return "Scan Product";
-      case "label":
-        return "Scan Label";
+      case 'food':
+        return 'Scan Food';
+      case 'progress':
+        return 'Progress Photo';
+      case 'barcode':
+        return 'Scan Product';
+      case 'label':
+        return 'Scan Label';
       default:
-        return "Camera";
+        return 'Camera';
     }
   };
 
   const getModeInstructions = () => {
     switch (mode) {
-      case "food":
-        return "Position your food in the center of the frame for best results";
-      case "progress":
-        return "Stand in good lighting and position yourself in the frame";
-      case "barcode":
-        return "Point your camera at the barcode on the product packaging";
-      case "label":
-        return "Align the full nutrition facts table inside the frame";
+      case 'food':
+        return 'Position your food in the center of the frame for best results';
+      case 'progress':
+        return 'Stand in good lighting and position yourself in the frame';
+      case 'barcode':
+        return 'Point your camera at the barcode on the product packaging';
+      case 'label':
+        return 'Align the full nutrition facts table inside the frame';
       default:
-        return "Take a photo";
+        return 'Take a photo';
     }
   };
 
   const isBarcodeBusy =
-    mode === "barcode" &&
-    (barcodeSessionState === "decoding" ||
-      barcodeSessionState === "lookup_in_progress" ||
-      barcodeSessionState === "transient_retry");
+    mode === 'barcode' &&
+    (barcodeSessionState === 'decoding' ||
+      barcodeSessionState === 'lookup_in_progress' ||
+      barcodeSessionState === 'transient_retry');
 
   const effectiveBarcodeStatus =
     barcodeStatusMessage ||
-    (mode === "barcode"
-      ? isBarcodeBusy
-        ? "Looking up product..."
-        : "Ready to scan"
-      : null);
+    (mode === 'barcode' ? (isBarcodeBusy ? 'Looking up product...' : 'Ready to scan') : null);
 
   return (
     <View style={[styles.container, style]}>
@@ -258,18 +284,20 @@ const CameraComponent: React.FC<CameraProps> = ({
         >
           <Ionicons name="close" size={rf(22)} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>{getModeTitle()}</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {getModeTitle()}
+        </Text>
         <TouchableOpacity
           style={styles.flashButton}
           onPress={toggleFlash}
-          accessibilityLabel={`Flash ${flashMode === "on" ? "on" : "off"}`}
+          accessibilityLabel={`Flash ${flashMode === 'on' ? 'on' : 'off'}`}
           accessibilityRole="button"
           accessibilityHint="Double tap to toggle flash"
         >
           <Ionicons
-            name={flashMode === "on" ? "flash" : "flash-off"}
+            name={flashMode === 'on' ? 'flash' : 'flash-off'}
             size={rf(22)}
-            color={flashMode === "on" ? colors.primary : colors.text}
+            color={flashMode === 'on' ? colors.primary : colors.text}
           />
         </TouchableOpacity>
       </View>
@@ -290,40 +318,32 @@ const CameraComponent: React.FC<CameraProps> = ({
           flash={flashMode}
           onCameraReady={() => setIsCameraReady(true)}
           barcodeScannerSettings={
-            mode === "barcode"
+            mode === 'barcode'
               ? {
-                  barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"],
+                  barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'],
                 }
               : undefined
           }
-          onBarcodeScanned={
-            mode === "barcode" ? handleBarcodeScanned : undefined
-          }
+          onBarcodeScanned={mode === 'barcode' ? handleBarcodeScanned : undefined}
         >
           {/* Camera Overlay */}
           <View style={styles.overlay}>
-            {mode === "food" && (
+            {mode === 'food' && (
               <View style={styles.foodFrame}>
                 <View style={styles.frameCorner} />
-                <View
-                  style={[styles.frameCorner, styles.frameCornerTopRight]}
-                />
-                <View
-                  style={[styles.frameCorner, styles.frameCornerBottomLeft]}
-                />
-                <View
-                  style={[styles.frameCorner, styles.frameCornerBottomRight]}
-                />
+                <View style={[styles.frameCorner, styles.frameCornerTopRight]} />
+                <View style={[styles.frameCorner, styles.frameCornerBottomLeft]} />
+                <View style={[styles.frameCorner, styles.frameCornerBottomRight]} />
               </View>
             )}
 
-            {mode === "progress" && (
+            {mode === 'progress' && (
               <View style={styles.progressFrame}>
                 <View style={styles.bodyOutline} />
               </View>
             )}
 
-            {mode === "barcode" && (
+            {mode === 'barcode' && (
               <View style={styles.barcodeFrame}>
                 <View style={styles.scanningArea}>
                   <View style={styles.scanningLine} />
@@ -336,37 +356,19 @@ const CameraComponent: React.FC<CameraProps> = ({
                   )}
                 </View>
                 <View style={styles.barcodeCorner} />
-                <View
-                  style={[styles.barcodeCorner, styles.barcodeCornerTopRight]}
-                />
-                <View
-                  style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]}
-                />
-                <View
-                  style={[
-                    styles.barcodeCorner,
-                    styles.barcodeCornerBottomRight,
-                  ]}
-                />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerTopRight]} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomRight]} />
               </View>
             )}
 
-            {mode === "label" && (
+            {mode === 'label' && (
               <View style={styles.labelFrame}>
                 <View style={styles.labelGuide} />
                 <View style={styles.barcodeCorner} />
-                <View
-                  style={[styles.barcodeCorner, styles.barcodeCornerTopRight]}
-                />
-                <View
-                  style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]}
-                />
-                <View
-                  style={[
-                    styles.barcodeCorner,
-                    styles.barcodeCornerBottomRight,
-                  ]}
-                />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerTopRight]} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomRight]} />
               </View>
             )}
           </View>
@@ -385,12 +387,9 @@ const CameraComponent: React.FC<CameraProps> = ({
           <Ionicons name="camera-reverse-outline" size={rf(24)} color={colors.text} />
         </TouchableOpacity>
 
-        {mode !== "barcode" ? (
+        {mode !== 'barcode' ? (
           <TouchableOpacity
-            style={[
-              styles.captureButton,
-              isCapturing && styles.captureButtonDisabled,
-            ]}
+            style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
             onPress={takePicture}
             disabled={isCapturing}
             accessibilityLabel="Take picture"
@@ -401,21 +400,23 @@ const CameraComponent: React.FC<CameraProps> = ({
           </TouchableOpacity>
         ) : (
           <View style={styles.scanningStatus}>
-            <Text style={styles.scanningStatusText} numberOfLines={2} adjustsFontSizeToFit>{effectiveBarcodeStatus}</Text>
+            <Text style={styles.scanningStatusText} numberOfLines={2} adjustsFontSizeToFit>
+              {effectiveBarcodeStatus}
+            </Text>
           </View>
         )}
 
         <View style={styles.placeholder} />
       </View>
 
-      {mode === "barcode" && barcodeActions.length > 0 && (
+      {mode === 'barcode' && barcodeActions.length > 0 && (
         <View style={styles.barcodeActionRow}>
           {barcodeActions.map((action) => (
             <TouchableOpacity
               key={action.id}
               style={[
                 styles.barcodeActionButton,
-                action.variant === "primary" && styles.barcodeActionButtonPrimary,
+                action.variant === 'primary' && styles.barcodeActionButtonPrimary,
               ]}
               onPress={action.onPress}
               accessibilityRole="button"
@@ -423,7 +424,7 @@ const CameraComponent: React.FC<CameraProps> = ({
               <Text
                 style={[
                   styles.barcodeActionText,
-                  action.variant === "primary" && styles.barcodeActionTextPrimary,
+                  action.variant === 'primary' && styles.barcodeActionTextPrimary,
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -435,7 +436,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         </View>
       )}
 
-      {mode === "label" && onLabelLibraryPick && (
+      {mode === 'label' && onLabelLibraryPick && (
         <View style={styles.labelLibraryRow}>
           <TouchableOpacity
             style={styles.labelLibraryButton}
@@ -443,17 +444,21 @@ const CameraComponent: React.FC<CameraProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Choose nutrition label from library"
           >
-            <Text style={styles.labelLibraryButtonText} numberOfLines={1} adjustsFontSizeToFit>Choose From Library</Text>
+            <Text style={styles.labelLibraryButtonText} numberOfLines={1} adjustsFontSizeToFit>
+              Choose From Library
+            </Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Portion size hint for food mode */}
-      {mode === "food" && onPortionGramsChange && (
+      {mode === 'food' && onPortionGramsChange && (
         <View style={styles.portionHintContainer}>
           <View style={styles.portionHintLabelRow}>
             <Ionicons name="scale-outline" size={rf(13)} color={colors.text} />
-            <Text style={styles.portionHintLabel} numberOfLines={1} adjustsFontSizeToFit>Portion size hint (optional)</Text>
+            <Text style={styles.portionHintLabel} numberOfLines={1} adjustsFontSizeToFit>
+              Portion size hint (optional)
+            </Text>
           </View>
           <View style={styles.portionHintRow}>
             <TextInput
@@ -480,7 +485,7 @@ const CameraComponent: React.FC<CameraProps> = ({
             {gramsText.length > 0 && (
               <TouchableOpacity
                 onPress={() => {
-                  setGramsText("");
+                  setGramsText('');
                   onPortionGramsChange(null);
                 }}
                 style={styles.portionClearBtn}
@@ -494,7 +499,9 @@ const CameraComponent: React.FC<CameraProps> = ({
             {portionGrams != null && portionGrams > 0 && (
               <View style={styles.portionActiveRow}>
                 <Ionicons name="checkmark" size={rf(11)} color={colors.primary} />
-                <Text style={styles.portionActiveText} numberOfLines={1}>{portionGrams}g set</Text>
+                <Text style={styles.portionActiveText} numberOfLines={1}>
+                  {portionGrams}g set
+                </Text>
               </View>
             )}
           </View>
@@ -506,40 +513,58 @@ const CameraComponent: React.FC<CameraProps> = ({
 
       {/* Tips */}
       <View style={styles.tipsContainer}>
-        {mode === "food" && (
+        {mode === 'food' && (
           <View style={styles.tipItem}>
-            <Ionicons name="bulb-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
+            <Ionicons
+              name="bulb-outline"
+              size={rf(16)}
+              color={colors.textSecondary}
+              style={styles.tipIcon}
+            />
             <Text style={styles.tipText} numberOfLines={3}>
               Ensure good lighting and place food on a contrasting background
             </Text>
           </View>
         )}
 
-        {mode === "progress" && (
+        {mode === 'progress' && (
           <View style={styles.tipItem}>
-            <Ionicons name="resize-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
+            <Ionicons
+              name="resize-outline"
+              size={rf(16)}
+              color={colors.textSecondary}
+              style={styles.tipIcon}
+            />
             <Text style={styles.tipText} numberOfLines={3}>
               Stand 3-4 feet away from the camera for best results
             </Text>
           </View>
         )}
 
-        {mode === "barcode" && (
+        {mode === 'barcode' && (
           <View style={styles.tipItem}>
-            <Ionicons name="search" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
+            <Ionicons
+              name="search"
+              size={rf(16)}
+              color={colors.textSecondary}
+              style={styles.tipIcon}
+            />
             <Text style={styles.tipText} numberOfLines={3}>
-              Hold the barcode 6-8 inches away and keep it steady for best
-              scanning
+              Hold the barcode 6-8 inches away and keep it steady for best scanning
             </Text>
           </View>
         )}
 
-        {mode === "label" && (
+        {mode === 'label' && (
           <View style={styles.tipItem}>
-            <Ionicons name="document-text-outline" size={rf(16)} color={colors.textSecondary} style={styles.tipIcon} />
+            <Ionicons
+              name="document-text-outline"
+              size={rf(16)}
+              color={colors.textSecondary}
+              style={styles.tipIcon}
+            />
             <Text style={styles.tipText} numberOfLines={3}>
-              Keep the label flat, fill the frame, and avoid glare for the best
-              reading accuracy
+              Keep the label flat, fill the frame, and avoid glare for the best reading accuracy
             </Text>
           </View>
         )}
@@ -556,31 +581,67 @@ const styles = StyleSheet.create({
 
   permissionContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
   },
 
   permissionText: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.sm,
   },
 
   permissionSubtext: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.lg,
   },
 
+  permissionIcon: {
+    marginBottom: spacing.md,
+  },
+
+  permissionPrimaryBtn: {
+    width: '100%',
+    marginBottom: spacing.sm,
+  },
+
+  permissionSecondaryBtn: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center' as const,
+    marginBottom: spacing.sm,
+  },
+
+  permissionSecondaryText: {
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold as '600',
+    color: colors.text,
+  },
+
+  permissionCloseBtn: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+
+  permissionCloseText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+  },
+
   header: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
+    flexDirection: 'row',
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     paddingTop: spacing.lg,
@@ -591,16 +652,16 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: rbr(22),
     backgroundColor: colors.surface,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 
   title: {
     flex: 1,
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   flashButton: {
@@ -608,8 +669,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: rbr(22),
     backgroundColor: colors.surface,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 
   instructionsContainer: {
@@ -620,14 +681,14 @@ const styles = StyleSheet.create({
   instructionsText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   cameraContainer: {
     flex: 1,
     marginHorizontal: spacing.md,
     borderRadius: borderRadius.lg,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
 
   camera: {
@@ -636,18 +697,18 @@ const styles = StyleSheet.create({
 
   overlay: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
 
   foodFrame: {
     width: rs(250),
     height: rs(250),
-    position: "relative",
+    position: 'relative',
   },
 
   frameCorner: {
-    position: "absolute",
+    position: 'absolute',
     width: rs(30),
     height: rs(30),
     borderTopWidth: 3,
@@ -663,7 +724,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     top: 0,
     right: 0,
-    left: "auto",
+    left: 'auto',
   },
 
   frameCornerBottomLeft: {
@@ -671,7 +732,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderTopWidth: 0,
     bottom: 0,
-    top: "auto",
+    top: 'auto',
     left: 0,
   },
 
@@ -682,15 +743,15 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     bottom: 0,
     right: 0,
-    top: "auto",
-    left: "auto",
+    top: 'auto',
+    left: 'auto',
   },
 
   progressFrame: {
     width: rs(200),
     height: rs(400),
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
 
   bodyOutline: {
@@ -699,30 +760,30 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: rbr(75),
-    borderStyle: "dashed",
+    borderStyle: 'dashed',
   },
 
   labelFrame: {
     width: rs(260),
     height: rs(340),
-    position: "relative",
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    position: 'relative',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
 
   labelGuide: {
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: borderRadius.md,
-    backgroundColor: "rgba(0,0,0,0.08)",
+    backgroundColor: 'rgba(0,0,0,0.08)',
   },
 
   controls: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
+    flexDirection: 'row',
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
@@ -732,8 +793,8 @@ const styles = StyleSheet.create({
     height: Math.max(rs(50), 44),
     borderRadius: rbr(25),
     backgroundColor: colors.surface,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 
   captureButton: {
@@ -741,8 +802,8 @@ const styles = StyleSheet.create({
     height: rs(80),
     borderRadius: rbr(40),
     backgroundColor: colors.primary,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     borderWidth: 4,
     borderColor: colors.white,
   },
@@ -773,19 +834,19 @@ const styles = StyleSheet.create({
     borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.1),
   },
   portionHintLabelRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 4,
     marginBottom: 4,
   },
   portionHintLabel: {
     fontSize: fontSize.xs,
-    fontWeight: "600" as const,
+    fontWeight: '600' as const,
     color: colors.text,
   },
   portionHintRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 6,
     marginBottom: 2,
   },
@@ -796,32 +857,32 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
     fontSize: fontSize.sm,
-    fontWeight: "600" as const,
+    fontWeight: '600' as const,
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
-    textAlign: "center" as const,
+    textAlign: 'center' as const,
   },
   portionHintUnit: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: "600" as const,
+    fontWeight: '600' as const,
   },
   portionClearBtn: {
     minWidth: 44,
     minHeight: 44,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   portionActiveRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 2,
   },
   portionActiveText: {
     fontSize: fontSize.xs,
     color: colors.primary,
-    fontWeight: "600" as const,
+    fontWeight: '600' as const,
   },
   portionHintSubtext: {
     fontSize: fontSize.xs,
@@ -833,8 +894,8 @@ const styles = StyleSheet.create({
   },
 
   tipItem: {
-    flexDirection: "row",
-    alignItems: "center" as const,
+    flexDirection: 'row',
+    alignItems: 'center' as const,
     backgroundColor: colors.surface,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
@@ -852,24 +913,24 @@ const styles = StyleSheet.create({
 
   errorContainer: {
     flex: 1,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     backgroundColor: colors.background,
     padding: spacing.xl,
   },
 
   errorText: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.sm,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   errorSubtext: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: spacing.xl,
   },
 
@@ -877,31 +938,31 @@ const styles = StyleSheet.create({
   barcodeFrame: {
     width: rs(280),
     height: rs(160),
-    position: "relative",
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    position: 'relative',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
 
   scanningArea: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: borderRadius.md,
-    backgroundColor: "rgba(0,0,0,0.1)",
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
 
   scanningLine: {
-    width: "90%",
+    width: '90%',
     height: 2,
     backgroundColor: colors.primary,
     opacity: 0.7,
   },
 
   scanningIndicator: {
-    position: "absolute",
+    position: 'absolute',
     top: -30,
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.sm,
@@ -912,11 +973,11 @@ const styles = StyleSheet.create({
   scanningText: {
     color: colors.white,
     fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium as "500",
+    fontWeight: typography.fontWeight.medium as '500',
   },
 
   barcodeCorner: {
-    position: "absolute",
+    position: 'absolute',
     width: rs(20),
     height: rs(20),
     borderTopWidth: 3,
@@ -932,7 +993,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     top: -2,
     right: -2,
-    left: "auto",
+    left: 'auto',
   },
 
   barcodeCornerBottomLeft: {
@@ -940,7 +1001,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderTopWidth: 0,
     bottom: -2,
-    top: "auto",
+    top: 'auto',
     left: -2,
   },
 
@@ -951,8 +1012,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     bottom: -2,
     right: -2,
-    top: "auto",
-    left: "auto",
+    top: 'auto',
+    left: 'auto',
   },
 
   scanningStatus: {
@@ -960,8 +1021,8 @@ const styles = StyleSheet.create({
     height: rs(80),
     borderRadius: rbr(40),
     backgroundColor: colors.surface,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     borderWidth: 2,
     borderColor: colors.primary,
   },
@@ -969,28 +1030,28 @@ const styles = StyleSheet.create({
   scanningStatusText: {
     fontSize: fontSize.xs,
     color: colors.primary,
-    fontWeight: typography.fontWeight.medium as "500",
-    textAlign: "center",
+    fontWeight: typography.fontWeight.medium as '500',
+    textAlign: 'center',
   },
   barcodeActionRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
-    justifyContent: "center" as const,
+    justifyContent: 'center' as const,
   },
   barcodeActionButton: {
     minWidth: Math.max(rs(110), 110),
     minHeight: Math.max(rh(44), 44),
-    justifyContent: "center",
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
   },
   barcodeActionButtonPrimary: {
     backgroundColor: colors.primary,
@@ -998,7 +1059,7 @@ const styles = StyleSheet.create({
   },
   barcodeActionText: {
     fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text,
   },
   barcodeActionTextPrimary: {
@@ -1007,23 +1068,23 @@ const styles = StyleSheet.create({
   labelLibraryRow: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
   },
   labelLibraryButton: {
     minWidth: Math.max(rs(190), 190),
     minHeight: Math.max(rh(44), 44),
-    justifyContent: "center",
+    justifyContent: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    alignItems: "center" as const,
+    alignItems: 'center' as const,
   },
   labelLibraryButtonText: {
     fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text,
   },
 });

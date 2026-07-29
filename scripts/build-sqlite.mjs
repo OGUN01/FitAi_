@@ -23,8 +23,11 @@ const ROOT = resolve(__d, "..");
 const OUT = resolve(ROOT, "data", "fitai-foods.sqlite");
 
 // ── Management API credentials ─────────────────────────────────────────
-// PAT lives in .mcp.json — hardcode here since it's a build script only.
-const PAT = "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef";
+const PAT = process.env.SUPABASE_ACCESS_TOKEN;
+if (!PAT) {
+  console.error("ERROR: SUPABASE_ACCESS_TOKEN environment variable is required.");
+  process.exit(1);
+}
 const PROJECT_REF = "mqfrwtmkokivoxgukgsz";
 
 // ── columns to SELECT (slim: 14 cols) ──────────────────────────────────

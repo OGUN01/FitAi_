@@ -11,7 +11,7 @@ import {
   BodyCompositionCalculations,
 } from "../../utils/healthCalculations";
 import { calculateBMI } from "../../utils/healthCalculations/core/bmiCalculation";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import { chart } from "../../theme/aurora-tokens";
 
 interface UseBodyAnalysisProps {
   data: BodyAnalysisData | null;
@@ -20,18 +20,45 @@ interface UseBodyAnalysisProps {
   onUpdate: (data: Partial<BodyAnalysisData>) => void;
 }
 
+// §4 gender-aware slider medians. The hook initial state is static, so we
+// default to the neutral "other" median; BodyAnalysisTab applies the
+// gender-specific median once (see §4 gender-aware note) when gender is known
+// and the sliders are still at the untouched neutral default.
+export const NEUTRAL_HEIGHT_CM = 168;
+export const NEUTRAL_WEIGHT_KG = 72;
+export const NEUTRAL_TARGET_KG = 67; // 72 - 5 (default loss intent)
+
+export const GENDER_MEDIANS: Record<
+  string,
+  { height: number; weight: number; target: number }
+> = {
+  male: { height: 175, weight: 78, target: 73 },
+  female: { height: 162, weight: 65, target: 60 },
+  other: { height: NEUTRAL_HEIGHT_CM, weight: NEUTRAL_WEIGHT_KG, target: NEUTRAL_TARGET_KG },
+};
+
+// BMI category color (semantic, sourced from chart tokens — no hardcoded hex).
+const BMI_CATEGORY_COLOR = {
+  underweight: chart[5],
+  normal: chart[4],
+  overweight: chart[5],
+  obese: chart[1],
+} as const;
+
 export const useBodyAnalysis = ({
   data,
   personalInfoData,
   validationResult,
   onUpdate,
 }: UseBodyAnalysisProps) => {
-  // Form state
+  // Form state — §4 smart defaults: start at the neutral "other" median so the
+  // user dials from a realistic midpoint instead of 0. BodyAnalysisTab swaps in
+  // the gender-specific median once gender is known and sliders are untouched.
   const [formData, setFormData] = useState<BodyAnalysisData>({
     // Basic measurements
-    height_cm: data?.height_cm ?? 0,
-    current_weight_kg: data?.current_weight_kg ?? 0,
-    target_weight_kg: data?.target_weight_kg ?? 0,
+    height_cm: data?.height_cm ?? NEUTRAL_HEIGHT_CM,
+    current_weight_kg: data?.current_weight_kg ?? NEUTRAL_WEIGHT_KG,
+    target_weight_kg: data?.target_weight_kg ?? NEUTRAL_TARGET_KG,
     target_timeline_weeks: data?.target_timeline_weeks ?? 12,
 
     // Body composition
@@ -86,9 +113,9 @@ export const useBodyAnalysis = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        height_cm: data.height_cm,
-        current_weight_kg: data.current_weight_kg,
-        target_weight_kg: data.target_weight_kg,
+        height_cm: data.height_cm ?? NEUTRAL_HEIGHT_CM,
+        current_weight_kg: data.current_weight_kg ?? NEUTRAL_WEIGHT_KG,
+        target_weight_kg: data.target_weight_kg ?? NEUTRAL_TARGET_KG,
         target_timeline_weeks: data.target_timeline_weeks ?? 12,
         body_fat_percentage: data.body_fat_percentage || undefined,
         waist_cm: data.waist_cm || undefined,
@@ -226,24 +253,24 @@ export const useBodyAnalysis = ({
     if (bmi < 18.5)
       return {
         category: "Underweight",
-        color: colors.warning,
+        color: BMI_CATEGORY_COLOR.underweight,
         iconName: "alert-circle",
       };
     if (bmi < 25)
       return {
         category: "Normal",
-        color: colors.success,
+        color: BMI_CATEGORY_COLOR.normal,
         iconName: "checkmark-circle",
       };
     if (bmi < 30)
       return {
         category: "Overweight",
-        color: colors.warning,
+        color: BMI_CATEGORY_COLOR.overweight,
         iconName: "alert-circle",
       };
     return {
       category: "Obese",
-      color: colors.error,
+      color: BMI_CATEGORY_COLOR.obese,
       iconName: "alert-circle",
     };
   };
@@ -269,6 +296,15 @@ export const useBodyAnalysis = ({
     value: BodyAnalysisData[K],
   ) => {
     const updated = { ...formData, [field]: value };
+    setFormData(updated);
+    onUpdate(updated);
+  };
+
+  // Multi-field atomic update (avoids stale-closure over `formData` when several
+  // fields must change together, e.g. the S2 goal-arc recomputing the timeline
+  // alongside target_weight_kg).
+  const updateFields = (patch: Partial<BodyAnalysisData>) => {
+    const updated = { ...formData, ...patch };
     setFormData(updated);
     onUpdate(updated);
   };
@@ -401,6 +437,7 @@ export const useBodyAnalysis = ({
     showMeasurementGuide,
     setShowMeasurementGuide,
     updateField,
+    updateFields,
     handleNumberInput,
     handlePhotoCapture,
     handleImagePickerSelect,

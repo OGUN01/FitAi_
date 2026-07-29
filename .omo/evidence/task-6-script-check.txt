@@ -1,0 +1,27 @@
+== Task 6: build-sqlite.mjs — Script Check ==
+Date: 2026-02-28
+
+1. Syntax check (node --check):
+   PASS — no errors
+
+2. Symbol verification:
+   better-sqlite3: true
+   journal_mode: true
+   meta: true
+   version: true
+   idx_products_code: true
+   off-global: true
+   energy_kcal_100g: true
+   range(: true
+
+   ALL REQUIRED SYMBOLS PRESENT ✓
+
+3. File: scripts/build-sqlite.mjs (170 lines)
+   - Reads from Supabase off_products via REST API with range() pagination
+   - Filters: energy_kcal_100g IS NOT NULL
+   - SQLite schema: 14-column products table + meta table
+   - WAL mode during build → DELETE mode before shipping
+   - Logs progress every 100K rows
+   - Outputs to data/fitai-foods.sqlite
+   - Env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (exits code 1 if missing)
+   - Dependency: better-sqlite3 (installed)

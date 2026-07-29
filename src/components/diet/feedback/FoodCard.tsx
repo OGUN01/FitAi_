@@ -1,13 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import {
   flatColors as colors,
   spacing,
   flatFontSize as fontSize,
-} from "../../../theme/aurora-tokens";
-import { Card } from "../../ui";
-import { rbr } from "../../../utils/responsive";
-import { RecognizedFood } from "../../../services/foodRecognitionService";
+} from '../../../theme/aurora-tokens';
+import { Card } from '../../ui';
+import { rbr } from '../../../utils/responsive';
+import { RecognizedFood } from '../../../services/foodRecognitionService';
 
 interface FoodCardProps {
   food: RecognizedFood;
@@ -17,11 +17,11 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
   return (
     <Card style={styles.foodCard}>
       <View style={styles.foodHeader}>
-        <Text style={styles.foodName} numberOfLines={2}>{food.name}</Text>
+        <Text style={styles.foodName} numberOfLines={2}>
+          {food.name}
+        </Text>
         <View style={styles.confidenceBadge}>
-          <Text style={styles.confidenceText}>
-            {food.confidence}% confidence
-          </Text>
+          <Text style={styles.confidenceText}>{food.confidence}% confidence</Text>
         </View>
       </View>
 
@@ -34,15 +34,21 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Portion</Text>
-          <Text style={styles.detailValue} numberOfLines={1}>{food.userGrams ?? food.estimatedGrams}g</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>
+            {food.userGrams ?? food.estimatedGrams}g
+          </Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Cuisine</Text>
-          <Text style={styles.detailValue} numberOfLines={1}>{food.cuisine}</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>
+            {food.cuisine}
+          </Text>
         </View>
         <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Category</Text>
-          <Text style={styles.detailValue} numberOfLines={1}>{food.category}</Text>
+          <Text style={styles.detailValue} numberOfLines={1}>
+            {food.category}
+          </Text>
         </View>
       </View>
     </Card>
@@ -56,15 +62,15 @@ const styles = StyleSheet.create({
   },
 
   foodHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
 
   foodName: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     flex: 1,
     minWidth: 0,
@@ -81,18 +87,18 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: fontSize.xs,
     color: colors.white,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   detailsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
 
   detailItem: {
     flex: 1,
-    minWidth: "45%",
+    minWidth: '45%',
   },
 
   detailLabel: {
@@ -104,6 +110,6 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

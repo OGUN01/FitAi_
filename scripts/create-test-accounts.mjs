@@ -13,10 +13,14 @@
  *   - analytics_metrics (sample metrics for Analytics tab)
  */
 
-const SUPABASE_URL = "https://mqfrwtmkokivoxgukgsz.supabase.co";
-const SERVICE_ROLE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjkxMTg4NywiZXhwIjoyMDY4NDg3ODg3fQ.GodrW37wQvrL30QB26acYRYOiiAltyw3pXHXL4Xvxis";
-const PASSWORD = "TestFitAI@2024!";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || "https://mqfrwtmkokivoxgukgsz.supabase.co";
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_ROLE_KEY) {
+  console.error("ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable is required.");
+  process.exit(1);
+}
+const PASSWORD = process.env.TEST_ACCOUNT_PASSWORD || "TestFitAI@2024!";
 
 const TEST_ACCOUNTS = [
   {

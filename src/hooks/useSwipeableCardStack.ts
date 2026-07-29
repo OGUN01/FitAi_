@@ -67,7 +67,7 @@ export const useSwipeableCardStack = ({
       translateX.value = ctx.startX + event.translationX;
       translateY.value = ctx.startY + event.translationY * 0.2;
     },
-    onEnd: (event) => {
+    onEnd: (_event) => {
       const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
       const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 
@@ -93,14 +93,14 @@ export const useSwipeableCardStack = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
+      onPanResponderGrant: (_evt, _gestureState) => {
         startPositionRef.current = { x: translateX.value, y: translateY.value };
       },
-      onPanResponderMove: (evt, gestureState) => {
+      onPanResponderMove: (_evt, gestureState) => {
         translateX.value = startPositionRef.current.x + gestureState.dx;
         translateY.value = startPositionRef.current.y + gestureState.dy * 0.2;
       },
-      onPanResponderRelease: (evt, gestureState) => {
+      onPanResponderRelease: (_evt, _gestureState) => {
         const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
         const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
 

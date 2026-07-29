@@ -18,6 +18,8 @@ import {
   AchievementTier,
 } from "../services/achievementEngine";
 import { achievementDataService } from "../services/achievementData";
+import { analyticsDataService } from "../services/analyticsData";
+import { getCurrentUserId } from "../services/authUtils";
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { CompletedSession } from "./fitness/types";
 import { getLocalDateString } from "../utils/weekUtils";
@@ -202,6 +204,9 @@ interface AchievementStore {
   totalFitCoinsEarned: number;
   completionRate: number;
   currentStreak: number;
+  // Diet redesign: nutrition streak (consecutive days with >=1 logged meal).
+  nutritionStreak: number;
+  longestNutritionStreak: number;
 
   // Actions
   initialize: (userId: string) => Promise<void>;
@@ -269,6 +274,12 @@ interface AchievementStore {
   // and on hydration so currentStreak is always the real live value.
   updateCurrentStreak: () => void;
   updateCurrentStreakFromCount: (count: number) => void;
+
+  // Diet redesign: nutrition streak updater — called after every meal log
+  // so nutritionStreak is always the real live value. SSOT writer for
+  // analytics_metrics.nutrition_streak / longest_nutrition_streak.
+  updateNutritionStreak: () => void;
+  updateNutritionStreakFromCount: (count: number, longest?: number) => void;
 
   // Reset store (for logout)
   reset: () => void;
@@ -339,6 +350,8 @@ export const useAchievementStore = create<AchievementStore>()(
       totalFitCoinsEarned: 0,
       completionRate: 0,
       currentStreak: 0,
+      nutritionStreak: 0,
+      longestNutritionStreak: 0,
 
       // Initialize the achievement system
       initialize: async (userId: string) => {
@@ -711,6 +724,78 @@ export const useAchievementStore = create<AchievementStore>()(
         const current = useAchievementStore.getState().currentStreak;
         if (current === 0 && count > 0) {
           set({ currentStreak: count });
+        }
+      },
+
+      // Diet redesign: compute nutritionStreak reactively from nutritionStore.dailyMeals.
+      // This is the ONLY place nutrition streak is written so there is exactly one source
+      // of truth. The streak counts consecutive calendar days (from today backward) that
+      // have at least one logged meal (meal.loggedAt is a string).
+      updateNutritionStreak: () => {
+        // Lazy import avoids circular dependency (achievementStore ↔ nutritionStore)
+        const nutritionModule = require("./nutritionStore");
+        const meals: any[] = nutritionModule.useNutritionStore.getState().dailyMeals || [];
+
+        if (!meals || meals.length === 0) {
+          set({ nutritionStreak: 0 });
+          return;
+        }
+
+        // Build a set of unique LOCAL date strings (YYYY-MM-DD) for all logged meals.
+        // Must use getLocalDateString (not toISOString) to avoid timezone mismatches
+        // where UTC date differs from the user's local date.
+        const loggedDates = new Set<string>();
+        meals
+          .filter((m) => m && typeof m.loggedAt === "string")
+          .forEach((m) => {
+            loggedDates.add(getLocalDateString(m.loggedAt));
+          });
+
+        // Walk backward from today counting consecutive days
+        let streak = 0;
+        const checkDate = new Date();
+        checkDate.setHours(0, 0, 0, 0);
+
+        while (true) {
+          const dateStr = getLocalDateString(checkDate);
+          if (loggedDates.has(dateStr)) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+
+        const longest = Math.max(
+          streak,
+          useAchievementStore.getState().longestNutritionStreak || 0,
+        );
+        set({ nutritionStreak: streak, longestNutritionStreak: longest });
+
+        // Persist to Supabase (fire-and-forget). Single writer — see comment on
+        // analyticsDataService.persistNutritionStreaks.
+        try {
+          const userId = getCurrentUserId();
+          if (userId && !userId.startsWith("guest") && userId !== "local-user") {
+            analyticsDataService
+              .persistNutritionStreaks(userId, streak, longest)
+              .catch((err) =>
+                console.error("[achievementStore] persistNutritionStreaks failed:", err),
+              );
+          }
+        } catch (err) {
+          console.error("[achievementStore] updateNutritionStreak persist failed:", err);
+        }
+      },
+
+      // Convenience setter — bootstrap from persisted Supabase value on first launch
+      updateNutritionStreakFromCount: (count: number, longest?: number) => {
+        const current = useAchievementStore.getState().nutritionStreak;
+        if (current === 0 && count > 0) {
+          set({
+            nutritionStreak: count,
+            longestNutritionStreak: Math.max(longest ?? count, useAchievementStore.getState().longestNutritionStreak || 0),
+          });
         }
       },
 
@@ -1109,6 +1194,8 @@ export const useAchievementStore = create<AchievementStore>()(
           totalFitCoinsEarned: 0,
           completionRate: 0,
           currentStreak: 0,
+          nutritionStreak: 0,
+          longestNutritionStreak: 0,
         });
       },
     })),
@@ -1121,6 +1208,8 @@ export const useAchievementStore = create<AchievementStore>()(
         totalFitCoinsEarned: state.totalFitCoinsEarned,
         completionRate: state.completionRate,
         currentStreak: state.currentStreak,
+        nutritionStreak: state.nutritionStreak,
+        longestNutritionStreak: state.longestNutritionStreak,
         isInitialized: state.isInitialized,
       }),
       onRehydrateStorage: () => (state) => {

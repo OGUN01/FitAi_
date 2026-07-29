@@ -1,9 +1,16 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, colors as nestedColors } from "../../../theme/aurora-tokens";
-import { rf } from "../../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+  colors as nestedColors,
+} from '../../../theme/aurora-tokens';
+import { rf } from '../../../utils/responsive';
+import { hexToRgba, TINT_ALPHA_LOW } from '../../../utils/colors';
 
 interface AlertsSectionProps {
   alerts?: string[];
@@ -11,11 +18,7 @@ interface AlertsSectionProps {
   concerns?: string[];
 }
 
-export const AlertsSection: React.FC<AlertsSectionProps> = ({
-  alerts,
-  benefits,
-  concerns,
-}) => (
+export const AlertsSection: React.FC<AlertsSectionProps> = ({ alerts, benefits, concerns }) => (
   <>
     {alerts && alerts.length > 0 && (
       <View style={styles.alertsContainer}>
@@ -48,7 +51,11 @@ export const AlertsSection: React.FC<AlertsSectionProps> = ({
     {concerns && concerns.length > 0 && (
       <View style={styles.concernsContainer}>
         <View style={styles.sectionTitleRow}>
-          <Ionicons name="alert-circle-outline" size={rf(18)} color={nestedColors.warning.DEFAULT} />
+          <Ionicons
+            name="alert-circle-outline"
+            size={rf(18)}
+            color={nestedColors.warning.DEFAULT}
+          />
           <Text style={styles.sectionTitle}>Concerns</Text>
         </View>
         {concerns.map((concern) => (
@@ -64,13 +71,13 @@ export const AlertsSection: React.FC<AlertsSectionProps> = ({
 const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
   sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     marginBottom: spacing.md,
   },

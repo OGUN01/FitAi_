@@ -1,9 +1,14 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../../ui";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rf } from "../../../utils/responsive";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Card } from '../../ui';
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
+import { rf } from '../../../utils/responsive';
 
 export const RecipeAIFeatures: React.FC = () => {
   return (
@@ -34,8 +39,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   aiTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },

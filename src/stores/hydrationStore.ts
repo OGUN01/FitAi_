@@ -86,6 +86,7 @@ let isResyncingAfterReset = false;
 // adds here and re-apply them on top of the remote total when the sync
 // resolves, so neither the add nor the remote value is lost.
 let pendingAddML = 0;
+let syncInFlightCount = 0;
 
 /**
  * Queue a failed water intake insert for offline retry (P0-offline-water).
@@ -218,7 +219,12 @@ export const useHydrationStore = create<HydrationState>()(
         hydrationDataService
           .logWaterIntake(addAmountML)
           .then((result) => {
-            if (result.success) return;
+            if (result.success) {
+              if (syncInFlightCount === 0) {
+                pendingAddML = Math.max(0, pendingAddML - addAmountML);
+              }
+              return;
+            }
             console.error(
               "[HydrationStore] logWaterIntake returned non-success, queuing for offline retry:",
               result.error,
@@ -350,6 +356,7 @@ export const useHydrationStore = create<HydrationState>()(
 
       // Sync with Supabase - call on app start to reconcile local with remote
       syncWithSupabase: async () => {
+        syncInFlightCount++;
         try {
           const result = await hydrationDataService.syncHydrationWithSupabase();
           if (result.success) {
@@ -384,6 +391,8 @@ export const useHydrationStore = create<HydrationState>()(
               );
             }
           }, 3000);
+        } finally {
+          syncInFlightCount--;
         }
       },
     }),

@@ -1,0 +1,27 @@
+T1: jest.setup.js Mock Verification
+===================================
+Date: 2026-02-20
+Command: bun test --no-coverage src/__tests__/services/barcode/ 2>&1
+
+RESULT: PASS
+
+Evidence:
+- jest.setup.js has expo-camera mock at lines 57-72
+  - CameraView component (React.forwardRef)
+  - useCameraPermissions mock (returns granted: true)
+  - CameraType enum (back/front)
+
+- jest.setup.js has profileStore mock at lines 107-115
+  - getProfileStoreState returns { personalInfo: { country: "India" } }
+  - useProfileStore returns { personalInfo: { country: "India" } }
+
+- Full barcode test suite ran (58 tests, 3 files) with ZERO mock errors
+- No "Cannot find module" or "mock" errors related to expo-camera or profileStore
+- All 58 tests passed: 26 (countryMapping) + 22 (searchByBarcode) + 10 (integration)
+
+Console output confirms controlled mock behavior:
+- "[estimateNutritionWithAI] failed: all keys exhausted or errors" = expected test behavior
+- "[searchByBarcode] OFF v2 failed: warn: ..." = expected mock-driven fallback tests
+- No unhandled errors in barcode test files
+
+VERDICT: PASS

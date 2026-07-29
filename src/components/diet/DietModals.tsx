@@ -1,32 +1,32 @@
-import React from "react";
-import { Modal, View, StyleSheet } from "react-native";
-import { FoodRecognitionPanel } from "./FoodRecognitionPanel";
-import MealTypeSelector from "./MealTypeSelector";
-import JobStatusIndicator from "./JobStatusIndicator";
-import CreateRecipeModal from "./CreateRecipeModal";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import React from 'react';
+import { Modal, View, StyleSheet } from 'react-native';
+import { FoodRecognitionPanel } from './FoodRecognitionPanel';
+import MealTypeSelector from './MealTypeSelector';
+import JobStatusIndicator from './JobStatusIndicator';
+import CreateRecipeModal from './CreateRecipeModal';
+import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 
 interface DietModalsProps {
   showCamera: boolean;
-  cameraMode: "food" | "barcode" | "progress" | "label" | string;
+  cameraMode: 'food' | 'barcode' | 'progress' | 'label' | string;
   onHandleCameraCapture: (uri: string) => Promise<void>;
   onHandleLabelCapture: (uri: string) => Promise<void>;
   handleBarcodeScanned: (
     barcode: string,
     rawSymbology?: string,
-    rawBarcode?: string,
+    rawBarcode?: string
   ) => Promise<void>;
   handleLabelLibraryPick: () => Promise<void>;
   handleBarcodeCameraClose: () => void;
   setShowCamera: (show: boolean) => void;
   setCameraMode: (mode: any) => void;
-  barcodeCameraState?: "idle" | "decoding" | "lookup_in_progress" | "transient_retry" | "resolved";
+  barcodeCameraState?: 'idle' | 'decoding' | 'lookup_in_progress' | 'transient_retry' | 'resolved';
   barcodeStatusMessage?: string | null;
   barcodeInlineActions?: Array<{
     id: string;
     label: string;
     onPress: () => void;
-    variant?: "primary" | "secondary" | "ghost";
+    variant?: 'primary' | 'secondary' | 'ghost';
   }>;
   portionData: any;
   showPortionAdjustment: boolean;
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
   asyncJobModalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: spacing.lg,
   },
 });

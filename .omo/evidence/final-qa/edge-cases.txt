@@ -1,0 +1,49 @@
+Edge Case Boundary Condition Tests
+====================================
+Date: 2026-02-20
+
+Edge Case 1: Empty barcode input → validation error
+-----------------------------------------------------
+TEST: normalizeBarcode("") → null
+FILE: countryMapping.test.ts line 34-35
+RESULT: ✅ PASS - Returns null for empty string
+
+Edge Case 2: Invalid barcode (letters) → validation error
+-----------------------------------------------------------
+TEST: normalizeBarcode("ABC") → null
+FILE: countryMapping.test.ts line 36-37
+TEST: lookupProduct("ABC123") → success=false, error defined, fetch NOT called
+FILE: integration.test.ts lines 216-223
+RESULT: ✅ PASS - Returns null/failure, no API calls made
+
+Edge Case 3: QR code (non-product) → rejection
+-------------------------------------------------
+TEST: isProductBarcode("qr") → false
+FILE: countryMapping.test.ts line 53
+TEST: isProductBarcode("org.iso.Code128") → false
+FILE: countryMapping.test.ts lines 54-55
+TEST: isProductBarcode("pdf417") → false
+FILE: countryMapping.test.ts lines 56-57
+RESULT: ✅ PASS - Non-product barcode types correctly rejected
+
+Edge Case 4: API timeout → fallback triggers
+----------------------------------------------
+TEST: OFF timeout → fallback to UPCitemdb (fake timers, 6s advance)
+FILE: integration.test.ts lines 269-308 (test #9)
+TEST: searchByBarcode OFF timeout → UPCitemdb (fake timers, 6s advance)
+FILE: searchByBarcode.test.ts lines 147-177
+TEST: Gemini timeout → null return
+FILE: searchByBarcode.test.ts lines 456-484
+RESULT: ✅ PASS - Timeout triggers correct fallback behavior
+
+Edge Case 5: All APIs fail → graceful null return
+---------------------------------------------------
+TEST: OFF down + UPCitemdb down → success=false, product=undefined
+FILE: integration.test.ts lines 192-201 (test #4)
+TEST: Both OFF and UPCitemdb fail → null
+FILE: searchByBarcode.test.ts lines 232-240
+TEST: All Gemini keys return 429 → null
+FILE: searchByBarcode.test.ts lines 486-504
+RESULT: ✅ PASS - Graceful null/failure on complete API exhaustion
+
+OVERALL EDGE CASES: 5 tested, 5 pass

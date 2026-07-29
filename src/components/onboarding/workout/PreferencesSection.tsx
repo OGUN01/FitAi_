@@ -1,20 +1,25 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import React, { type ComponentProps } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+/**
+ * PreferencesSection — the visible "How do you want to train?" core
+ * (Editorial Dark reskin)
+ *
+ * Location (single-select OptionRows), intensity (single-select OptionRows +
+ * soft accent recommendation note), session duration (RangeSlider, volt
+ * accent), sessions/week (WeekRhythm ruler 0–7 + live Mon–Sun map), preferred
+ * times (multi-select OptionRows). No cards — SectionLabel + hairlines only.
+ *
+ * Data wiring unchanged: `updateField`, `toggleWorkoutTime`, and
+ * `intensityRecommendation` from useWorkoutPreferences.
+ */
+
+import React from "react";
+import { StyleSheet, View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../../utils/responsive";
-import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
-import { MultiSelect } from "../../../components/advanced/MultiSelect";
+import { tokens, OptionRow, SectionLabel, Rule } from "../fresh";
+import { RangeSlider } from "../aurora";
+import { WeekRhythm } from "./preferences/WeekRhythm";
 import {
   LOCATION_OPTIONS,
-  EQUIPMENT_OPTIONS,
-  STANDARD_GYM_EQUIPMENT,
+  INTENSITY_OPTIONS,
   WORKOUT_TIMES,
 } from "../../../screens/onboarding/tabs/WorkoutPreferencesConstants";
 import { WorkoutPreferencesData } from "../../../types/onboarding";
@@ -27,509 +32,226 @@ interface PreferencesSectionProps {
   ) => void;
   toggleWorkoutTime: (timeId: string) => void;
   showInfoTooltip: (title: string, description: string) => void;
+  intensityRecommendation?: {
+    level: "beginner" | "intermediate" | "advanced";
+    reasoning: string;
+  } | null;
 }
+
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  if (rem === 0) return `${hours}h`;
+  return `${hours}h ${rem}m`;
+};
 
 export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
   formData,
   updateField,
   toggleWorkoutTime,
   showInfoTooltip,
+  intensityRecommendation,
 }) => {
-  const handleInfoPress =
-    (title: string, description: string) => (event: any) => {
-      event.stopPropagation?.();
-      showInfoTooltip(title, description);
-    };
-
-  const formatTime = (minutes: number): string => {
-    if (minutes < 60) return `${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    if (remainingMinutes === 0) return `${hours}h`;
-    return `${hours}h ${remainingMinutes}m`;
-  };
+  const intensityLevel = intensityRecommendation?.level;
 
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Workout Preferences
-        </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
+    <View testID="training-setup-section">
+      {/* Location — single select */}
+      <View style={styles.headerRow}>
+        <SectionLabel>Workout location</SectionLabel>
+        <Pressable
+          onPress={() =>
+            showInfoTooltip(
+              "Workout location",
+              "Where you'll train. This shapes equipment and exercise choices.",
+            )
+          }
+          hitSlop={8}
+          accessibilityLabel="About workout location"
         >
-          Where and when do you prefer to workout?
-        </Text>
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={tokens.ink3}
+          />
+        </Pressable>
+      </View>
+      <View style={styles.rows} testID="location-chip-picker">
+        {LOCATION_OPTIONS.map((option) => (
+          <OptionRow
+            key={option.id}
+            label={option.title}
+            sublabel={option.description}
+            icon={option.iconName as keyof typeof Ionicons.glyphMap}
+            selected={formData.location === option.id}
+            onPress={() =>
+              updateField("location", option.id as WorkoutPreferencesData["location"])
+            }
+            testID={`location-row-${option.id}`}
+          />
+        ))}
       </View>
 
-      {/* Location - Horizontal scroll */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel} numberOfLines={1}>
-          Workout Location
-        </Text>
-      </View>
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(105) + rw(10)}
-          snapToAlignment="start"
+      {/* Intensity — single select + soft recommendation */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Intensity</SectionLabel>
+        <Pressable
+          onPress={() =>
+            showInfoTooltip(
+              "Intensity",
+              "Beginner, intermediate, or advanced. You can override our recommendation.",
+            )
+          }
+          hitSlop={8}
+          accessibilityLabel="About intensity"
         >
-          {LOCATION_OPTIONS.map((option) => {
-            const isSelected = formData.location === option.id;
-            return (
-              <AnimatedPressable
-                key={option.id}
-                onPress={() =>
-                  updateField(
-                    "location",
-                    option.id as WorkoutPreferencesData["location"],
-                  )
-                }
-                style={styles.consistentCardItem}
-                scaleValue={0.97}
-              >
-                <View
-                  style={[
-                    styles.consistentCard,
-                    isSelected && styles.consistentCardSelected,
-                  ]}
-                >
-                  {/* Icon + Info row */}
-                  <View style={styles.consistentCardHeader}>
-                    <Ionicons
-                      name={option.iconName as ComponentProps<typeof Ionicons>['name']}
-                      size={rf(22)}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                    <TouchableOpacity
-                      onPress={handleInfoPress(
-                        option.title,
-                        option.description,
-                      )}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`More info about ${option.title}`}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={rf(14)}
-                        color={colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {/* Title */}
-                  <Text
-                    style={[
-                      styles.consistentCardTitle,
-                      isSelected && styles.consistentCardTitleSelected,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {option.title}
-                  </Text>
-                  {/* Selection indicator */}
-                  <View
-                    style={[
-                      styles.consistentCardIndicator,
-                      isSelected && styles.consistentCardIndicatorSelected,
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(12)}
-                        color={colors.white}
-                      />
-                    )}
-                  </View>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={tokens.ink3}
+          />
+        </Pressable>
       </View>
-
-      {/* Equipment - Hidden for gym, shown for home/both */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        {formData.location !== "gym" ? (
-          <View style={styles.preferenceField}>
-            <MultiSelect
-              options={EQUIPMENT_OPTIONS}
-              selectedValues={formData.equipment}
-              onSelectionChange={(values) => updateField("equipment", values)}
-              label="Available Equipment"
-              placeholder="Select equipment you have access to"
-              searchable={true}
-            />
-          </View>
-        ) : (
-          <View style={styles.preferenceField}>
-            <Text style={styles.fieldLabel} numberOfLines={1}>
-              Available Equipment
+      {intensityLevel && (
+        <View style={styles.recoRow} testID="intensity-suggestion">
+          <Ionicons name="sparkles-outline" size={13} color={tokens.ink3} />
+          <Text style={styles.recoText}>
+            Recommended{"  "}
+            <Text style={styles.recoLevel}>
+              {intensityLevel.charAt(0).toUpperCase() + intensityLevel.slice(1)}
             </Text>
-            <GlassCard
-              elevation={2}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.gymEquipmentCard}
-            >
-              <View style={styles.gymEquipmentContent}>
-                <Ionicons
-                  name="fitness-outline"
-                  size={rf(24)}
-                  color={colors.primary}
-                  style={{ marginBottom: spacing.sm }}
-                />
-                <Text style={styles.gymEquipmentTitle} numberOfLines={1}>
-                  Full Gym Access
-                </Text>
-                <Text
-                  style={styles.gymEquipmentDescription}
-                  numberOfLines={3}
-                  ellipsizeMode="tail"
-                >
-                  All standard gym equipment is available. Equipment selection
-                  is automatically configured.
-                </Text>
-                <View style={styles.gymEquipmentList}>
-                  {STANDARD_GYM_EQUIPMENT.map((equipmentId) => {
-                    const equipment = EQUIPMENT_OPTIONS.find(
-                      (opt) => opt.value === equipmentId,
-                    );
-                    return equipment ? (
-                      <View key={equipmentId} style={styles.gymEquipmentItem}>
-                        <Ionicons
-                          name={equipment.iconName as ComponentProps<typeof Ionicons>['name']}
-                          size={rf(16)}
-                          color={colors.text}
-                          style={{ marginRight: spacing.xs }}
-                        />
-                        <Text style={styles.gymEquipmentItemLabel}>
-                          {equipment.label}
-                        </Text>
-                      </View>
-                    ) : null;
-                  })}
-                </View>
-              </View>
-            </GlassCard>
-          </View>
-        )}
+          </Text>
+        </View>
+      )}
+      <View style={styles.rows} testID="intensity-chip-picker">
+        {INTENSITY_OPTIONS.map((option) => (
+          <OptionRow
+            key={option.value}
+            label={option.label}
+            sublabel={option.description}
+            icon={option.iconName as keyof typeof Ionicons.glyphMap}
+            selected={formData.intensity === option.value}
+            onPress={() =>
+              updateField(
+                "intensity",
+                option.value as WorkoutPreferencesData["intensity"],
+              )
+            }
+            testID={`intensity-row-${option.value}`}
+          />
+        ))}
       </View>
 
-      {/* Workout Duration - Horizontal scroll compact pills */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel}>
-          Workout Duration: {formatTime(formData.time_preference)}
+      {/* Session duration — slider */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Session duration</SectionLabel>
+        <Text style={styles.valueLg}>
+          {formatDuration(formData.time_preference)}
         </Text>
       </View>
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(70) + rw(10)}
-          snapToAlignment="start"
-        >
-          {[15, 30, 45, 60, 75, 90, 120].map((minutes) => {
-            const isSelected = formData.time_preference === minutes;
-            return (
-              <AnimatedPressable
-                key={minutes}
-                style={
-                  isSelected
-                    ? [styles.durationPill, styles.durationPillSelected]
-                    : styles.durationPill
-                }
-                onPress={() => updateField("time_preference", minutes)}
-                scaleValue={0.97}
-              >
-                <Text
-                  style={[
-                    styles.durationPillText,
-                    isSelected && styles.durationPillTextSelected,
-                  ]}
-                >
-                  {formatTime(minutes)}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <RangeSlider
+        value={formData.time_preference}
+        min={15}
+        max={120}
+        step={5}
+        onChange={(v) => updateField("time_preference", v)}
+        unit="min"
+        tickHapticEvery={5}
+        accentColor={tokens.accent}
+        showValue={false}
+        style={styles.slider}
+        testID="time-preference-slider"
+      />
 
-      {/* Preferred Workout Times - Horizontal scroll */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel}>Preferred Workout Times</Text>
+      {/* Sessions per week — ruler + live week map */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Sessions per week</SectionLabel>
+        <Text style={styles.valueMd}>
+          {formData.workout_frequency_per_week}×/week
+        </Text>
       </View>
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(105) + rw(10)}
-          snapToAlignment="start"
-        >
-          {WORKOUT_TIMES.map((time) => {
-            const isSelected = formData.preferred_workout_times.includes(
-              time.value,
-            );
-            return (
-              <AnimatedPressable
-                key={time.value}
-                onPress={() => toggleWorkoutTime(time.value)}
-                style={styles.consistentCardItem}
-                scaleValue={0.97}
-              >
-                <View
-                  style={[
-                    styles.consistentCard,
-                    isSelected && styles.consistentCardSelected,
-                  ]}
-                >
-                  {/* Icon */}
-                  <View style={styles.consistentCardIconCenter}>
-                    <Ionicons
-                      name={time.iconName as ComponentProps<typeof Ionicons>['name']}
-                      size={rf(22)}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                  </View>
-                  {/* Title */}
-                  <Text
-                    style={[
-                      styles.consistentCardTitle,
-                      isSelected && styles.consistentCardTitleSelected,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {time.label}
-                  </Text>
-                  {/* Description */}
-                  <Text style={styles.consistentCardDesc} numberOfLines={1}>
-                    {time.description}
-                  </Text>
-                  {/* Selection indicator */}
-                  <View
-                    style={[
-                      styles.consistentCardIndicator,
-                      isSelected && styles.consistentCardIndicatorSelected,
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(12)}
-                        color={colors.white}
-                      />
-                    )}
-                  </View>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
+      <WeekRhythm
+        value={formData.workout_frequency_per_week}
+        onChange={(n) => updateField("workout_frequency_per_week", n)}
+        style={styles.stepper}
+        testID="frequency-stepper"
+      />
+
+      {/* Preferred workout times — multi select */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Preferred times</SectionLabel>
       </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+      <Text style={styles.caption}>When do you like to train?</Text>
+      <View style={styles.rows} testID="workout-times-chip-picker">
+        {WORKOUT_TIMES.map((time) => (
+          <OptionRow
+            key={time.value}
+            label={time.label}
+            sublabel={time.description}
+            icon={time.iconName as keyof typeof Ionicons.glyphMap}
+            selected={formData.preferred_workout_times.includes(time.value)}
+            onPress={() => toggleWorkoutTime(time.value)}
+            testID={`workout-time-row-${time.value}`}
+          />
+        ))}
+      </View>
+      <Rule spacing={0} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    flexShrink: 1,
-  },
-  scrollContainerInset: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    overflow: "hidden",
-    borderRadius: borderRadius.md,
-  },
-  scrollContentInset: {
-    paddingVertical: spacing.sm,
-    gap: rw(10),
-  },
-  consistentCardItem: {
-    width: rw(105),
-  },
-  consistentCard: {
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.sm,
-    minHeight: rh(12),
-    alignItems: "center",
-  },
-  consistentCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  consistentCardHeader: {
+  headerRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: spacing.xs,
   },
-  consistentCardIconCenter: {
-    alignItems: "center",
-    marginBottom: spacing.xs,
+  fieldGap: {
+    marginTop: 28,
   },
-  consistentCardTitle: {
-    fontSize: rf(11),
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.xs,
+  rows: {
+    marginTop: 8,
   },
-  consistentCardTitleSelected: {
-    color: colors.primary,
+  caption: {
+    marginTop: 6,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
-  consistentCardDesc: {
-    fontSize: rf(9),
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: rf(12),
-  },
-  consistentCardIndicator: {
-    width: rf(18),
-    height: rf(18),
-    borderRadius: rf(9),
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  consistentCardIndicatorSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  preferenceField: {
-    marginBottom: spacing.lg,
-  },
-  gymEquipmentCard: {
-    padding: spacing.md,
-    backgroundColor: `${colors.success}08`,
-    borderColor: `${colors.success}30`,
-    borderWidth: 1,
-  },
-  gymEquipmentContent: {
-    alignItems: "center",
-  },
-  gymEquipmentTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.success,
-    marginBottom: spacing.xs,
-    textAlign: "center",
-  },
-  gymEquipmentDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.md,
-    lineHeight: rf(18),
-  },
-  gymEquipmentList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: spacing.sm,
-  },
-  gymEquipmentItem: {
+  recoRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.backgroundTertiary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.xs,
+    marginTop: 8,
   },
-  gymEquipmentItemLabel: {
-    fontSize: fontSize.xs,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
+  recoText: {
+    marginLeft: 6,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
-  durationPill: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: colors.backgroundTertiary,
-    minWidth: rw(70),
-    alignItems: "center",
+  recoLevel: {
+    fontFamily: "Manrope_600SemiBold",
+    color: tokens.accent,
   },
-  durationPillSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}15`,
+  valueLg: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 22,
+    lineHeight: 26,
+    color: tokens.accent,
   },
-  durationPillText: {
-    fontSize: rf(12),
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
+  valueMd: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 17,
+    lineHeight: 22,
+    color: tokens.accent,
   },
-  durationPillTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
+  slider: {
+    marginTop: 8,
   },
-  sectionBottomPad: {
-    height: spacing.lg,
+  stepper: {
+    marginTop: 12,
   },
 });

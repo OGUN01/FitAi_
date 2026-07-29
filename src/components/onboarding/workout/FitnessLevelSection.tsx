@@ -1,13 +1,19 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import React, { type ComponentProps } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";import { GlassCard } from "../../../components/ui/aurora";
-import { Slider } from "../../../components/ui";
-import {
-  INTENSITY_OPTIONS,
-  WORKOUT_TYPE_OPTIONS,
-} from "../../../screens/onboarding/tabs/WorkoutPreferencesConstants";
+/**
+ * FitnessLevelSection — "Assess me" collapsible group (Editorial Dark reskin)
+ *
+ * Collapsed by default via the fresh `CollapsibleSection` (content is removed
+ * from layout when closed — fixes the empty-box bug). Fields:
+ * workout_experience_years, can_do_pushups, can_run_minutes (RangeSliders),
+ * flexibility_level (single-select OptionRows). Collapsed fields still save
+ * via `onUpdate` — collapse is pure UI state held in the parent tab.
+ *
+ * Data wiring unchanged: `updateField` from useWorkoutPreferences.
+ */
+
+import React from "react";
+import { StyleSheet, View, Text } from "react-native";
+import { tokens, OptionRow, SectionLabel, CollapsibleSection } from "../fresh";
+import { RangeSlider } from "../aurora";
 import { WorkoutPreferencesData } from "../../../types/onboarding";
 
 interface FitnessLevelSectionProps {
@@ -16,365 +22,151 @@ interface FitnessLevelSectionProps {
     field: K,
     value: WorkoutPreferencesData[K],
   ) => void;
-  intensityRecommendation: {
-    level: "beginner" | "intermediate" | "advanced";
-    reasoning: string;
-  } | null;
-  calculateRecommendedWorkoutTypes: () => string[];
+  /** Collapse state owned by the parent tab (local UI state). */
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
+
+const FLEXIBILITY_OPTIONS: {
+  id: NonNullable<WorkoutPreferencesData["flexibility_level"]>;
+  label: string;
+}[] = [
+  { id: "poor", label: "Poor" },
+  { id: "fair", label: "Fair" },
+  { id: "good", label: "Good" },
+  { id: "excellent", label: "Excellent" },
+];
 
 export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
   formData,
   updateField,
-  intensityRecommendation,
-  calculateRecommendedWorkoutTypes,
+  collapsed,
+  onToggleCollapse,
 }) => {
-  const levelInfo = INTENSITY_OPTIONS.find(
-    (opt) => opt.value === formData.intensity,
-  );
+  // Live collapsed summary: the header reflects the baseline you've entered.
+  const parts: string[] = [];
+  if (formData.workout_experience_years > 0)
+    parts.push(`${formData.workout_experience_years} yrs`);
+  if (formData.can_do_pushups > 0) parts.push(`${formData.can_do_pushups} pushups`);
+  if (formData.can_run_minutes > 0)
+    parts.push(`${formData.can_run_minutes} min run`);
+  if (formData.flexibility_level)
+    parts.push(
+      `flexibility ${
+        FLEXIBILITY_OPTIONS.find((o) => o.id === formData.flexibility_level)
+          ?.label.toLowerCase() ?? ""
+      }`.trim(),
+    );
+  const subtitle =
+    parts.length > 0
+      ? parts.join(" · ")
+      : "Your current baseline — optional, helps calibrate intensity";
 
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
+    <CollapsibleSection
+      title="Assess me"
+      subtitle={subtitle}
+      expanded={!collapsed}
+      onToggle={onToggleCollapse}
+      testID="assess-me-section"
     >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Current Fitness Assessment
-        </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          Help us understand your starting point
+      {/* Experience */}
+      <View style={styles.headerRow}>
+        <SectionLabel>Experience</SectionLabel>
+        <Text style={styles.valueText}>
+          {formData.workout_experience_years === 0
+            ? "New"
+            : `${formData.workout_experience_years} yrs`}
         </Text>
       </View>
+      <RangeSlider
+        value={formData.workout_experience_years}
+        min={0}
+        max={50}
+        step={1}
+        onChange={(v) => updateField("workout_experience_years", v)}
+        unit="yrs"
+        accentColor={tokens.accent}
+        showValue={false}
+        style={styles.slider}
+        testID="experience-stepper"
+      />
 
-      <View style={styles.edgeToEdgeContentPadded}>
-        {/* Intensity Recommendation with Reasoning */}
-        {intensityRecommendation && (
-          <GlassCard
-            elevation={2}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={styles.calculatedLevelCardInline}
-          >
-            <View style={styles.calculatedLevelContent}>
-              <Ionicons
-                name={(levelInfo?.iconName as ComponentProps<typeof Ionicons>['name']) || "leaf-outline"}
-                size={rf(24)}
-                color={colors.primary}
-                style={{ marginRight: spacing.sm }}
-              />
-              <View style={styles.calculatedLevelText}>
-                <Text style={styles.calculatedLevelTitle} numberOfLines={1}>
-                  Recommended Intensity:{" "}
-                  {intensityRecommendation.level.charAt(0).toUpperCase() +
-                    intensityRecommendation.level.slice(1)}
-                </Text>
-                <Text
-                  style={styles.calculatedLevelDescription}
-                  numberOfLines={3}
-                  ellipsizeMode="tail"
-                >
-                  {intensityRecommendation.reasoning}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: spacing.xs,
-                  }}
-                >
-                  <Ionicons
-                    name="bulb-outline"
-                    size={rf(12)}
-                    color={colors.primary}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text
-                    style={styles.calculatedLevelHint}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    You can change this below if you feel differently
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </GlassCard>
-        )}
-
-        {/* Recommended Workout Types */}
-        <GlassCard
-          elevation={2}
-          blurIntensity="default"
-          padding="md"
-          borderRadius="lg"
-          style={styles.recommendedTypesCard}
-        >
-          <View style={styles.recommendedTypesHeader}>
-            <Ionicons
-              name="flag-outline"
-              size={rf(20)}
-              color={colors.primary}
-              style={{ marginRight: spacing.xs }}
-            />
-            <Text style={styles.recommendedTypesTitle} numberOfLines={1}>
-              Recommended Workout Types
-            </Text>
-          </View>
-          <Text
-            style={styles.recommendedTypesDescription}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            Based on your goals, fitness level, and available equipment
-          </Text>
-          <View style={styles.recommendedTypesList}>
-            {calculateRecommendedWorkoutTypes().map((typeId) => {
-              const workoutType = WORKOUT_TYPE_OPTIONS.find(
-                (opt) => opt.value === typeId,
-              );
-              return workoutType ? (
-                <View key={typeId} style={styles.recommendedTypeItem}>
-                  <Ionicons
-                    name={workoutType.iconName as ComponentProps<typeof Ionicons>['name']}
-                    size={rf(16)}
-                    color={colors.text}
-                    style={{ marginRight: spacing.xs }}
-                  />
-                  <Text style={styles.recommendedTypeLabel} numberOfLines={1}>
-                    {workoutType.label}
-                  </Text>
-                </View>
-              ) : null;
-            })}
-          </View>
-        </GlassCard>
-
-        <View style={styles.fitnessGrid}>
-          <View style={styles.fitnessItem}>
-            <Slider
-              value={formData.workout_experience_years || 0}
-              onValueChange={(value) =>
-                updateField("workout_experience_years", value)
-              }
-              minimumValue={0}
-              maximumValue={20}
-              step={1}
-              label="Workout Experience"
-              showTooltip={true}
-              formatValue={(val) =>
-                val === 0 ? "New" : `${val} year${val > 1 ? "s" : ""}`
-              }
-              style={styles.experienceSlider}
-            />
-          </View>
-
-          <View style={styles.fitnessItem}>
-            <Slider
-              value={formData.workout_frequency_per_week || 0}
-              onValueChange={(value) =>
-                updateField("workout_frequency_per_week", value)
-              }
-              minimumValue={0}
-              maximumValue={7}
-              step={1}
-              label="Current Workout Frequency"
-              showTooltip={true}
-              formatValue={(val) => (val === 0 ? "None" : `${val}x per week`)}
-              style={styles.frequencySlider}
-            />
-          </View>
-
-          <View style={styles.fitnessItem}>
-            <Slider
-              value={formData.can_do_pushups || 0}
-              onValueChange={(value) => updateField("can_do_pushups", value)}
-              minimumValue={0}
-              maximumValue={100}
-              step={5}
-              label="Max Pushups"
-              showTooltip={true}
-              formatValue={(val) => (val === 0 ? "None" : `${val} pushups`)}
-              style={styles.pushupsSlider}
-            />
-          </View>
-
-          <View style={styles.fitnessItem}>
-            <Slider
-              value={formData.can_run_minutes || 0}
-              onValueChange={(value) => updateField("can_run_minutes", value)}
-              minimumValue={0}
-              maximumValue={60}
-              step={5}
-              label="Continuous Running"
-              showTooltip={true}
-              formatValue={(val) => (val === 0 ? "None" : `${val} minutes`)}
-              style={styles.runningSlider}
-            />
-          </View>
-
-          <View style={styles.fitnessItem}>
-            <Slider
-              value={
-                formData.flexibility_level === "poor"
-                  ? 2
-                  : formData.flexibility_level === "fair"
-                    ? 5
-                    : formData.flexibility_level === "good"
-                      ? 7
-                      : formData.flexibility_level === "excellent"
-                        ? 10
-                        : 5
-              }
-              onValueChange={(value) => {
-                let level: "poor" | "fair" | "good" | "excellent" = "fair";
-                if (value <= 3) level = "poor";
-                else if (value <= 6) level = "fair";
-                else if (value <= 8) level = "good";
-                else level = "excellent";
-                updateField("flexibility_level", level);
-              }}
-              minimumValue={1}
-              maximumValue={10}
-              step={1}
-              label="Flexibility Level"
-              showTooltip={true}
-              formatValue={(val) => {
-                if (val <= 3) return "Poor";
-                if (val <= 6) return "Fair";
-                if (val <= 8) return "Good";
-                return "Excellent";
-              }}
-              style={styles.flexibilityGrid}
-            />
-          </View>
-        </View>
+      {/* Max pushups */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Max pushups</SectionLabel>
+        <Text style={styles.valueText}>{formData.can_do_pushups}</Text>
       </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+      <RangeSlider
+        value={formData.can_do_pushups}
+        min={0}
+        max={200}
+        step={5}
+        onChange={(v) => updateField("can_do_pushups", v)}
+        unit="reps"
+        accentColor={tokens.accent}
+        showValue={false}
+        style={styles.slider}
+        testID="pushups-stepper"
+      />
+
+      {/* Continuous running */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Continuous running</SectionLabel>
+        <Text style={styles.valueText}>{formData.can_run_minutes} min</Text>
+      </View>
+      <RangeSlider
+        value={formData.can_run_minutes}
+        min={0}
+        max={300}
+        step={5}
+        onChange={(v) => updateField("can_run_minutes", v)}
+        unit="min"
+        accentColor={tokens.accent}
+        showValue={false}
+        style={styles.slider}
+        testID="run-minutes-stepper"
+      />
+
+      {/* Flexibility — single select */}
+      <View style={[styles.headerRow, styles.fieldGap]}>
+        <SectionLabel>Flexibility</SectionLabel>
+      </View>
+      <View style={styles.rows} testID="flexibility-chip-picker">
+        {FLEXIBILITY_OPTIONS.map((option) => (
+          <OptionRow
+            key={option.id}
+            label={option.label}
+            icon="body-outline"
+            selected={formData.flexibility_level === option.id}
+            onPress={() => updateField("flexibility_level", option.id)}
+            testID={`flexibility-row-${option.id}`}
+          />
+        ))}
+      </View>
+    </CollapsibleSection>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  calculatedLevelCardInline: {
-    marginBottom: spacing.md,
-  },
-  calculatedLevelContent: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
-  calculatedLevelText: {
-    flex: 1,
+  fieldGap: {
+    marginTop: 24,
   },
-  calculatedLevelTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
-    marginBottom: spacing.xs,
+  rows: {
+    marginTop: 8,
   },
-  calculatedLevelDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: rf(18),
+  valueText: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 17,
+    lineHeight: 22,
+    color: tokens.ink,
   },
-  calculatedLevelHint: {
-    flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-  },
-  recommendedTypesCard: {
-    padding: spacing.md,
-    backgroundColor: `${colors.secondary}10`,
-    marginBottom: spacing.lg,
-  },
-  recommendedTypesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xs,
-  },
-  recommendedTypesTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-  },
-  recommendedTypesDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  recommendedTypesList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  recommendedTypeItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.backgroundTertiary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
-  recommendedTypeLabel: {
-    fontSize: fontSize.xs,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
-  },
-  fitnessGrid: {
-    gap: spacing.lg,
-  },
-  fitnessItem: {
-    marginBottom: spacing.md,
-  },
-  experienceSlider: {
-    width: "100%",
-  },
-  frequencySlider: {
-    width: "100%",
-  },
-  pushupsSlider: {
-    width: "100%",
-  },
-  runningSlider: {
-    width: "100%",
-  },
-  flexibilityGrid: {},
-  sectionBottomPad: {
-    height: spacing.lg,
+  slider: {
+    marginTop: 8,
   },
 });

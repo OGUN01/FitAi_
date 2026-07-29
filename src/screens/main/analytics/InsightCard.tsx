@@ -1,15 +1,22 @@
 /**
  * InsightCard Component
- * Displays AI-powered insights with visual hierarchy
+ * Single accent left-border style (Aurora 2026) — no full heavy card.
+ * Accent bar on the left, content on the right, chart palette accent.
  */
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import {
+  colors,
+  chart as chartColors,
+  border as borderTokens,
+  typography,
+  spacing,
+  borderRadius,
+} from "../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 
@@ -31,69 +38,12 @@ interface InsightCardProps {
   delay?: number;
 }
 
-const getInsightConfig = (type: InsightType) => {
-  switch (type) {
-    case "positive":
-      return {
-        icon: "checkmark-circle" as const,
-        color: colors.success,
-        gradientColors: [colors.successTint, hexToRgba("#4CAF50", 0.05)] as [
-          string,
-          string,
-        ],
-        borderColor: hexToRgba("#4CAF50", 0.3),
-      };
-    case "negative":
-      return {
-        icon: "alert-circle" as const,
-        color: colors.error,
-        gradientColors: [colors.errorTint, hexToRgba("#F44336", 0.05)] as [
-          string,
-          string,
-        ],
-        borderColor: hexToRgba("#F44336", 0.3),
-      };
-    case "neutral":
-      return {
-        icon: "information-circle" as const,
-        color: colors.warning,
-        gradientColors: [colors.warningTint, hexToRgba("#FF9800", 0.05)] as [
-          string,
-          string,
-        ],
-        borderColor: hexToRgba("#FF9800", 0.3),
-      };
-    case "achievement":
-      return {
-        icon: "trophy" as const,
-        color: colors.gold,
-        gradientColors: [hexToRgba("#FFD700", 0.15), hexToRgba("#FFD700", 0.05)] as [
-          string,
-          string,
-        ],
-        borderColor: hexToRgba("#FFD700", 0.3),
-      };
-    case "recommendation":
-      return {
-        icon: "bulb" as const,
-        color: colors.primary,
-        gradientColors: [
-          colors.primaryTint,
-          hexToRgba("#FF6B35", 0.05),
-        ] as [string, string],
-        borderColor: hexToRgba("#FF6B35", 0.3),
-      };
-    default:
-      return {
-        icon: "information-circle" as const,
-        color: colors.neutral,
-        gradientColors: [
-          hexToRgba("#9E9E9E", 0.15),
-          hexToRgba("#9E9E9E", 0.05),
-        ] as [string, string],
-        borderColor: hexToRgba("#9E9E9E", 0.3),
-      };
-  }
+const ACCENT_MAP: Record<InsightType, { icon: string; color: string }> = {
+  positive: { icon: "checkmark-circle", color: chartColors[4] },
+  negative: { icon: "alert-circle", color: chartColors[6] },
+  neutral: { icon: "information-circle", color: chartColors[5] },
+  achievement: { icon: "trophy", color: chartColors[5] },
+  recommendation: { icon: "bulb", color: chartColors[1] },
 };
 
 export const InsightCard: React.FC<InsightCardProps> = ({
@@ -106,106 +56,87 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   onAction,
   delay = 0,
 }) => {
-  const config = getInsightConfig(type);
+  const accent = ACCENT_MAP[type] ?? ACCENT_MAP.neutral;
 
   return (
     <Animated.View entering={FadeInUp.delay(delay).springify()}>
       <AnimatedPressable
         onPress={onAction}
-        scaleValue={onAction ? 0.98 : 1}
+        scaleValue={onAction ? 0.97 : 1}
         hapticFeedback={!!onAction}
         hapticType="light"
         disabled={!onAction}
       >
-        <View style={[styles.container, { borderColor: config.borderColor }]}>
-          <LinearGradient
-            colors={config.gradientColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gradient}
-          >
-            <View style={styles.content}>
-              {/* Icon & Header Row */}
-              <View style={styles.headerRow}>
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: hexToRgba(config.color, 0.15) },
-                  ]}
-                >
-                  <Ionicons
-                    name={config.icon}
-                    size={rf(18)}
-                    color={config.color}
-                  />
-                </View>
+        <View style={styles.container}>
+          {/* Accent left border */}
+          <View style={[styles.accentBar, { backgroundColor: accent.color }]} />
 
-                <View style={styles.headerContent}>
-                  <View style={styles.titleRow}>
-                    <Text style={[styles.title, { color: config.color }]} numberOfLines={2}>
-                      {title}
-                    </Text>
-                    {category && (
-                      <View
-                        style={[
-                          styles.categoryBadge,
-                          { backgroundColor: hexToRgba(config.color, 0.12) },
-                        ]}
-                      >
-                        <Text
-                          style={[styles.categoryText, { color: config.color }]}
-                          numberOfLines={1}
-                        >
-                          {category}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {confidence !== undefined && (
-                    <View style={styles.confidenceRow}>
-                      <View style={styles.confidenceBar}>
-                        <View
-                          style={[
-                            styles.confidenceFill,
-                            {
-                              width: `${confidence}%`,
-                              backgroundColor: config.color,
-                            },
-                          ]}
-                        />
-                      </View>
-                      <Text style={styles.confidenceText} numberOfLines={1}>{confidence}%</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* Description */}
-              <Text style={styles.description} numberOfLines={3}>{description}</Text>
-
-              {/* Action Button */}
-              {actionText && onAction && (
-                <View style={styles.actionContainer}>
+          <View style={styles.content}>
+            <View style={styles.headerRow}>
+              <Ionicons
+                name={accent.icon as keyof typeof Ionicons.glyphMap}
+                size={rf(18)}
+                color={accent.color}
+                style={styles.icon}
+              />
+              <View style={styles.titleBlock}>
+                <Text style={[styles.title, { color: accent.color }]} numberOfLines={2}>
+                  {title}
+                </Text>
+                {category && (
                   <View
                     style={[
-                      styles.actionButton,
-                      { backgroundColor: hexToRgba(config.color, 0.12) },
+                      styles.categoryBadge,
+                      { backgroundColor: hexToRgba(accent.color, 0.12) },
                     ]}
                   >
-                    <Text style={[styles.actionText, { color: config.color }]} numberOfLines={1}>
-                      {actionText}
+                    <Text
+                      style={[styles.categoryText, { color: accent.color }]}
+                      numberOfLines={1}
+                    >
+                      {category}
                     </Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={rf(14)}
-                      color={config.color}
-                    />
                   </View>
-                </View>
-              )}
+                )}
+              </View>
             </View>
-          </LinearGradient>
+
+            <Text style={styles.description} numberOfLines={3}>
+              {description}
+            </Text>
+
+            {confidence !== undefined && (
+              <View style={styles.confidenceRow}>
+                <View style={styles.confidenceBar}>
+                  <View
+                    style={[
+                      styles.confidenceFill,
+                      {
+                        width: `${confidence}%`,
+                        backgroundColor: accent.color,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.confidenceText} numberOfLines={1}>
+                  {confidence}%
+                </Text>
+              </View>
+            )}
+
+            {actionText && onAction && (
+              <View style={styles.actionRow}>
+                <Text style={[styles.actionText, { color: accent.color }]} numberOfLines={1}>
+                  {actionText}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={rf(14)}
+                  color={accent.color}
+                />
+              </View>
+            )}
+          </View>
         </View>
       </AnimatedPressable>
     </Animated.View>
@@ -214,43 +145,39 @@ export const InsightCard: React.FC<InsightCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: borderRadius.md,
+    flexDirection: "row",
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
+    borderColor: borderTokens.subtle,
     overflow: "hidden",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
-  gradient: {
-    flex: 1,
+  accentBar: {
+    width: rw(3),
   },
   content: {
-    padding: spacing.sm,
+    flex: 1,
+    padding: spacing.md,
+    gap: spacing.xs,
   },
   headerRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: spacing.xs,
-  },
-  iconContainer: {
-    width: rw(30),
-    height: rw(30),
-    borderRadius: rw(8),
-    justifyContent: "center",
     alignItems: "center",
-    marginRight: spacing.sm,
-  },
-  headerContent: {
-    flex: 1,
-    minWidth: 0,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
     gap: spacing.sm,
   },
+  icon: {
+    flexShrink: 0,
+  },
+  titleBlock: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    minWidth: 0,
+  },
   title: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: rf(14),
-    fontWeight: "700",
     letterSpacing: 0.2,
     flexShrink: 1,
     minWidth: 0,
@@ -261,19 +188,26 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   categoryText: {
+    fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(10),
-    fontWeight: "600",
+  },
+  description: {
+    fontFamily: typography.variants.body.fontFamily,
+    fontSize: rf(13),
+    color: colors.text.secondary,
+    lineHeight: rf(19),
+    marginLeft: rw(26),
   },
   confidenceRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.xs,
     gap: spacing.sm,
+    marginLeft: rw(26),
   },
   confidenceBar: {
     flex: 1,
-    height: rh(4),
-    backgroundColor: colors.glassHighlight,
+    height: rh(3),
+    backgroundColor: borderTokens.subtle,
     borderRadius: rh(2),
     overflow: "hidden",
   },
@@ -282,36 +216,22 @@ const styles = StyleSheet.create({
     borderRadius: rh(2),
   },
   confidenceText: {
+    fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(10),
-    fontWeight: "600",
-    color: colors.textSecondary,
-    minWidth: rw(30),
+    color: colors.text.secondary,
+    minWidth: rw(28),
     textAlign: "right",
   },
-  description: {
-    fontSize: rf(12),
-    fontWeight: "500",
-    color: colors.text,
-    lineHeight: rf(17),
-    marginLeft: rw(30) + spacing.sm,
-  },
-  actionContainer: {
-    marginTop: spacing.xs,
-    marginLeft: rw(30) + spacing.sm,
-  },
-  actionButton: {
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
     gap: spacing.xs,
-    minHeight: 44,
+    marginLeft: rw(26),
+    marginTop: spacing.xs,
   },
   actionText: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: rf(12),
-    fontWeight: "600",
   },
 });
 

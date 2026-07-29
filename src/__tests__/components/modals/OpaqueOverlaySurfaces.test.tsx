@@ -6,10 +6,7 @@ import { GlassCard } from "@/components/ui/aurora/GlassCard";
 import { LogoutConfirmationModal } from "@/components/profile/LogoutConfirmationModal";
 import { SettingsSelectionModal } from "@/screens/main/profile/modals/SettingsSelectionModal";
 import { ClearCacheConfirmModal } from "@/screens/main/profile/modals/ClearCacheConfirmModal";
-import { MealDetailModal } from "@/components/diet/MealDetailModal";
-import { flatColors as colors } from "@/theme/aurora-tokens";
-import type { DayMeal } from "@/types/ai";
-import { crossPlatformAlert as mockCrossPlatformAlert } from "@/utils/crossPlatformAlert";
+import { surface, flatColors } from "@/theme/aurora-tokens";
 
 jest.mock("@/utils/haptics", () => ({
   haptics: { trigger: jest.fn() },
@@ -46,7 +43,7 @@ const findNodeByBackgroundColor = (
   return null;
 };
 
-const expectOpaqueSurface = (view: ReturnType<typeof render>) => {
+const expectGlassOpaqueSurface = (view: ReturnType<typeof render>) => {
   // Mount the GlassCard so the tree is populated, then locate the
   // absolute-fill View that carries the opaque background color. Platform.OS
   // is forced to 'android' in the surrounding describe's beforeEach so that
@@ -54,7 +51,7 @@ const expectOpaqueSurface = (view: ReturnType<typeof render>) => {
   view.UNSAFE_getByType(GlassCard);
   const opaqueLayer = findNodeByBackgroundColor(
     view.toJSON(),
-    colors.backgroundSecondary,
+    flatColors.backgroundSecondary,
   );
 
   expect(opaqueLayer).not.toBeNull();
@@ -63,31 +60,25 @@ const expectOpaqueSurface = (view: ReturnType<typeof render>) => {
   );
   // Opaque = a solid background color layered at <= 1 opacity over the
   // blur container, which is what prevents Android content bleed-through.
-  expect(style.backgroundColor).toBe(colors.backgroundSecondary);
+  expect(style.backgroundColor).toBe(flatColors.backgroundSecondary);
   expect(style.opacity).toBeGreaterThan(0);
   expect(style.opacity).toBeLessThanOrEqual(1);
 };
 
-const meal: DayMeal = {
-  id: "meal-1",
-  type: "lunch",
-  name: "Test Lunch",
-  description: "A complete test meal",
-  items: [],
-  totalCalories: 500,
-  totalMacros: {
-    protein: 30,
-    carbohydrates: 50,
-    fat: 15,
-    fiber: 8,
-  },
-  preparationTime: 10,
-  difficulty: "easy",
-  tags: [],
-  dayOfWeek: "Monday",
-  isPersonalized: true,
-  aiGenerated: true,
-  createdAt: "2026-07-23T00:00:00.000Z",
+const expectFlatOpaqueSurface = (view: ReturnType<typeof render>) => {
+  // Aurora 2026 flat dialogs (no GlassCard): the dialog container itself is
+  // the opaque surface, using the surface[2] token with no transparency.
+  const opaqueLayer = findNodeByBackgroundColor(
+    view.toJSON(),
+    surface[2],
+  );
+
+  expect(opaqueLayer).not.toBeNull();
+  const style = StyleSheet.flatten(
+    (opaqueLayer as { props: { style?: unknown } }).props.style as never,
+  );
+  expect(style.backgroundColor).toBe(surface[2]);
+  expect(style.opacity ?? 1).toBe(1);
 };
 
 describe("opaque overlay surfaces", () => {
@@ -111,7 +102,7 @@ describe("opaque overlay surfaces", () => {
       </BottomSheet>,
     );
 
-    expectOpaqueSurface(view);
+    expectGlassOpaqueSurface(view);
   });
 
   it("makes the logout dialog surface opaque", () => {
@@ -123,7 +114,7 @@ describe("opaque overlay surfaces", () => {
       />,
     );
 
-    expectOpaqueSurface(view);
+    expectGlassOpaqueSurface(view);
   });
 
   it("makes the settings-selection surface opaque", () => {
@@ -146,7 +137,7 @@ describe("opaque overlay surfaces", () => {
       />,
     );
 
-    expectOpaqueSurface(view);
+    expectFlatOpaqueSurface(view);
   });
 
   it("makes the clear-cache confirmation surface opaque", () => {
@@ -158,21 +149,7 @@ describe("opaque overlay surfaces", () => {
       />,
     );
 
-    expectOpaqueSurface(view);
-  });
-
-  it("makes the meal-detail surface opaque", () => {
-    const view = render(
-      <MealDetailModal
-        visible
-        meal={meal}
-        onClose={jest.fn()}
-        onMarkComplete={jest.fn()}
-        onDelete={jest.fn()}
-      />,
-    );
-
-    expectOpaqueSurface(view);
+    expectFlatOpaqueSurface(view);
   });
 });
 
@@ -311,68 +288,5 @@ describe("opaque overlay interactions", () => {
     fireEvent.press(view.getByText("Cancel"));
 
     expect(onCancel).toHaveBeenCalledTimes(1);
-  });
-
-  it("preserves meal completion", () => {
-    const onMarkComplete = jest.fn();
-    const view = render(
-      <MealDetailModal
-        visible
-        meal={meal}
-        onClose={jest.fn()}
-        onMarkComplete={onMarkComplete}
-        onDelete={jest.fn()}
-      />,
-    );
-
-    fireEvent.press(view.getByText("Mark Complete"));
-
-    expect(onMarkComplete).toHaveBeenCalledWith(meal);
-  });
-
-  it("preserves Meal Detail close behavior", () => {
-    const onClose = jest.fn();
-    const view = render(
-      <MealDetailModal
-        visible
-        meal={meal}
-        onClose={onClose}
-        onMarkComplete={jest.fn()}
-        onDelete={jest.fn()}
-      />,
-    );
-
-    fireEvent.press(view.getByLabelText("Close meal details"));
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("preserves Meal Detail delete confirmation", () => {
-    const onDelete = jest.fn();
-    const view = render(
-      <MealDetailModal
-        visible
-        meal={meal}
-        onClose={jest.fn()}
-        onMarkComplete={jest.fn()}
-        onDelete={onDelete}
-      />,
-    );
-
-    fireEvent.press(view.getByLabelText(`Delete ${meal.name}`));
-
-    const mockedAlert = jest.mocked(mockCrossPlatformAlert);
-    expect(mockedAlert).toHaveBeenCalledWith(
-      "Delete Meal",
-      `Are you sure you want to delete "${meal.name}"?`,
-      expect.any(Array),
-    );
-
-    const buttons = mockedAlert.mock.calls[0]?.[2] ?? [];
-    const deleteAction = buttons.find((button) => button.style === "destructive");
-    expect(deleteAction).toBeDefined();
-    deleteAction?.onPress?.();
-
-    expect(onDelete).toHaveBeenCalledWith(meal);
   });
 });

@@ -1,0 +1,38 @@
+Cross-Task Integration Flow Verification
+==========================================
+Date: 2026-02-20
+
+Flow 1: Barcode normalization → API lookup → UI display
+---------------------------------------------------------
+COVERED BY:
+- Integration test #5: UPC-A 012345678905 → normalized to 0012345678905 → OFF lookup
+- Integration test #1: EAN-13 3017620422003 → OFF lookup → full product with name/nutrition/score
+- countryMapping normalizeBarcode tests: 6 normalization scenarios
+- searchByBarcode test: OFF v2 returns complete product data with all fields mapped
+VERDICT: ✅ PASS
+
+Flow 2: Cache hit → skip API calls
+------------------------------------
+COVERED BY:
+- Integration test #7: Same barcode called twice → fetch called once → both results identical
+- searchByBarcode cache test: Cached result on second call, fetch called once
+- searchByBarcode LRU eviction test: Cache at 100 entries, evicts oldest on overflow
+VERDICT: ✅ PASS
+
+Flow 3: Indian barcode → skip UPCitemdb → try Gemini
+------------------------------------------------------
+COVERED BY:
+- Integration test #8: 890 prefix → OFF (miss) → Gemini (no UPCitemdb in URLs)
+- searchByBarcode Indian test: 8901234567890 → OFF → Gemini directly, UPCitemdb skipped
+- searchByBarcode Gemini integration: Indian 890 → OFF (miss) → Gemini with nutrition
+VERDICT: ✅ PASS
+
+Flow 4: Manual entry → lookup → display
+-----------------------------------------
+COVERED BY:
+- lookupProduct accepts any barcode string (manual or scanned)
+- Integration test #1: lookupProduct("3017620422003") → full product result
+- Integration test #6: Invalid barcode "ABC123" → validation failure
+VERDICT: ✅ PASS
+
+OVERALL CROSS-TASK VERDICT: 4/4 PASS

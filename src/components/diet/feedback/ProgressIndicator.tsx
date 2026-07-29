@@ -1,11 +1,11 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import {
   flatColors as colors,
   spacing,
   flatFontSize as fontSize,
-} from "../../../theme/aurora-tokens";
-import { rh, rbr } from "../../../utils/responsive";
+} from '../../../theme/aurora-tokens';
+import { rh, rbr } from '../../../utils/responsive';
 
 interface ProgressIndicatorProps {
   currentIndex: number;
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   progressBar: {
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: rbr(2),
   },

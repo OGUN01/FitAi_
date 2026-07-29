@@ -1,16 +1,20 @@
-import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import type { ScannedProduct } from "../../../services/barcodeService";
+import React from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
+import type { ScannedProduct } from '../../../services/barcodeService';
 
 interface ProductHeaderProps {
   product: ScannedProduct;
 }
 
 const getProductMetaLabel = (product: ScannedProduct): string =>
-  product.source === "vision-label"
-    ? "Source: Label scan"
-    : `Barcode: ${product.barcode}`;
+  product.source === 'vision-label' ? 'Source: Label scan' : `Barcode: ${product.barcode}`;
 
 export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
   <View style={styles.headerContainer}>
@@ -22,13 +26,11 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
       />
     )}
     <View style={styles.productInfo}>
-      <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-      {product.brand && (
-        <Text style={styles.productBrand}>{product.brand}</Text>
-      )}
-      {product.category && (
-        <Text style={styles.productCategory}>{product.category}</Text>
-      )}
+      <Text style={styles.productName} numberOfLines={2}>
+        {product.name}
+      </Text>
+      {product.brand && <Text style={styles.productBrand}>{product.brand}</Text>}
+      {product.category && <Text style={styles.productCategory}>{product.category}</Text>}
       <Text style={styles.barcodeText}>{getProductMetaLabel(product)}</Text>
     </View>
   </View>
@@ -36,7 +38,7 @@ export const ProductHeader: React.FC<ProductHeaderProps> = ({ product }) => (
 
 const styles = StyleSheet.create({
   headerContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -49,11 +51,11 @@ const styles = StyleSheet.create({
   },
   productInfo: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   productName: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -70,6 +72,6 @@ const styles = StyleSheet.create({
   barcodeText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
-    fontFamily: "monospace",
+    fontFamily: 'monospace',
   },
 });

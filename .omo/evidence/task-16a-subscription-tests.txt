@@ -1,0 +1,21 @@
+Task 16a — Subscription Test Evidence (UPDATED after vi.mocked fix)
+Date: 2026-02-20
+Command: cd fitai-workers && npx vitest run test/subscription.test.ts
+
+Fix: Replaced 12 instances of vi.mocked(fn) with (fn as unknown as ReturnType<typeof vi.fn>)
+Reason: vi.mocked() not available in @cloudflare/vitest-pool-workers runtime
+
+Result: 22/22 tests PASSED
+
+Output:
+-------
+ ✓ test/subscription.test.ts (22 tests) 292ms
+
+ Test Files  1 passed (1)
+      Tests  22 passed (22)
+   Start at  13:24:28
+   Duration  2.85s (transform 169ms, setup 0ms, collect 307ms, tests 292ms, environment 0ms, prepare 342ms)
+
+Notes:
+- EBUSY warnings on miniflare temp dirs are normal (no impact on tests)
+- All 7 endpoints covered: create, verify, webhook, status, cancel, pause, resume

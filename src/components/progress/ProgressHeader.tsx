@@ -1,8 +1,15 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { rf } from "../../utils/responsive";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 interface ProgressHeaderProps {
@@ -19,68 +26,54 @@ interface ProgressHeaderProps {
 export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
   navigation,
   trackBStatus,
-  showAnalytics,
-  setShowAnalytics,
   onAddEntry,
   onShare,
 }) => {
   return (
     <View style={styles.header}>
-      {/* Back button */}
       {navigation && (
         <AnimatedPressable
-          style={styles.backButton}
+          style={styles.iconButton}
           onPress={() => navigation.goBack()}
-          scaleValue={0.95}
+          scaleValue={0.97}
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons
-            name="arrow-back"
-            size={rf(20)}
-            color={colors.text}
-          />
+          <Ionicons name="arrow-back" size={rf(20)} color={colors.text.primary} />
         </AnimatedPressable>
       )}
+
       <Text style={styles.title}>Progress</Text>
+
       <View style={styles.headerButtons}>
-        {/* Track B Status Indicator - Only show when connected */}
         {trackBStatus.isConnected && (
-          <View style={styles.statusButton}>
-            <Ionicons
-              name="checkmark-circle"
-              size={rf(16)}
-              color={colors.success}
-            />
+          <View style={styles.iconButton} accessibilityLabel="Connected">
+            <Ionicons name="checkmark-circle" size={rf(18)} color={colors.success.DEFAULT} />
           </View>
         )}
+
         <AnimatedPressable
           style={styles.addButton}
           onPress={onAddEntry}
-          scaleValue={0.95}
+          scaleValue={0.97}
           hapticFeedback={true}
-          hapticType="medium"
+          hapticType="light"
           accessibilityRole="button"
           accessibilityLabel="Add entry"
         >
-          <Ionicons
-            name="add"
-            size={rf(16)}
-            color={colors.white}
-          />
+          <Ionicons name="add" size={rf(20)} color={colors.text.primary} />
         </AnimatedPressable>
+
         <AnimatedPressable
-          style={styles.shareButton}
+          style={styles.iconButton}
           onPress={onShare}
-          scaleValue={0.95}
+          scaleValue={0.97}
+          hapticFeedback={true}
+          hapticType="light"
           accessibilityRole="button"
           accessibilityLabel="Share"
         >
-          <Ionicons
-            name="share-outline"
-            size={rf(20)}
-            color={colors.text}
-          />
+          <Ionicons name="share-outline" size={rf(19)} color={colors.text.primary} />
         </AnimatedPressable>
       </View>
     </View>
@@ -93,62 +86,38 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
   },
   title: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    ...typography.variants.pageTitle,
+    color: colors.text.primary,
     flex: 1,
-  },
-  backButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rh(40), 44),
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: spacing.sm,
   },
   headerButtons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(12),
+    gap: spacing.sm,
   },
-  statusButton: {
-    width: rw(32),
-    height: rh(32),
+  iconButton: {
+    width: 44,
+    height: 44,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
     justifyContent: "center",
     alignItems: "center",
-  },
-  analyticsButton: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  analyticsButtonActive: {
-    backgroundColor: colors.primary,
   },
   addButton: {
-    width: Math.max(rs(36), 44),
-    height: Math.max(rs(36), 44),
-    borderRadius: Math.max(rs(18), 22),
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  shareButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rh(40), 44),
+    width: 44,
+    height: 44,
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: colors.primary.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
 });
+
+export default ProgressHeader;

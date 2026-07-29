@@ -1,16 +1,8 @@
 /**
- * SettingsModalWrapper - Consistent Modal Container for Profile Settings
- *
- * Features:
- * - Full screen modal that properly covers the background
- * - Glassmorphic header with title and close button
- * - ScrollView for content
- * - Save button with loading state
- * - Entry animations
- * - Haptic feedback
+ * SettingsModalWrapper - Consistent modal container with Aurora 2026 tokens
  */
 
-import React from "react";
+import React, { useCallback } from "react";
 import {
   View,
   Text,
@@ -22,19 +14,22 @@ import {
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  SlideInUp,
-} from "react-native-reanimated";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
-import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_SOFT } from "../../../../utils/colors";
-import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw, rh } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+
+const { variants } = typography;
 
 interface SettingsModalWrapperProps {
   visible: boolean;
@@ -55,7 +50,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
   title,
   subtitle,
   icon,
-  iconColor = colors.primary,
+  iconColor = colors.primary.DEFAULT,
   onClose,
   onSave,
   isSaving = false,
@@ -63,17 +58,17 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
   saveLabel = "Save Changes",
   children,
 }) => {
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     haptics.light();
     onClose();
-  };
+  }, [onClose]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (onSave && !saveDisabled && !isSaving) {
       haptics.medium();
       onSave();
     }
-  };
+  }, [onSave, saveDisabled, isSaving]);
 
   return (
     <Modal
@@ -84,10 +79,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
       statusBarTranslucent={Platform.OS === "android"}
       onRequestClose={handleClose}
     >
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.background}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={surface[0]} />
       <View style={styles.modalContainer}>
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
           <KeyboardAvoidingView
@@ -107,11 +99,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={`Close ${title}`}
               >
-                <Ionicons
-                  name="close"
-                  size={rf(22)}
-                  color={colors.text}
-                />
+                <Ionicons name="close" size={rf(22)} color={colors.text.primary} />
               </AnimatedPressable>
 
               <View style={styles.headerCenter}>
@@ -119,16 +107,20 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                   <View
                     style={[
                       styles.headerIcon,
-                      { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_SOFT) },
+                      { backgroundColor: `${iconColor}14` },
                     ]}
                   >
                     <Ionicons name={icon} size={rf(18)} color={iconColor} />
                   </View>
                 )}
                 <View style={styles.headerTitleText}>
-                  <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+                  <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+                    {title}
+                  </Text>
                   {subtitle && (
-                    <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text>
+                    <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                      {subtitle}
+                    </Text>
                   )}
                 </View>
               </View>
@@ -146,16 +138,15 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+              <Animated.View entering={FadeInDown.delay(200).duration(350)}>
                 {children}
               </Animated.View>
-
             </ScrollView>
 
             {/* Save Button */}
             {onSave && (
               <Animated.View
-                entering={FadeIn.delay(300).duration(400)}
+                entering={FadeIn.delay(300).duration(350)}
                 style={styles.footer}
               >
                 <AnimatedPressable
@@ -170,7 +161,9 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                 >
                   <LinearGradient
                     colors={
-                      saveDisabled ? ["#666", "#555"] : ["#FF6B6B", "#FF8E53"]
+                      saveDisabled
+                        ? [colors.text.tertiary, colors.text.tertiary]
+                        : [colors.primary.DEFAULT, colors.primary.light]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -186,7 +179,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                         <Ionicons
                           name="checkmark-circle"
                           size={rf(18)}
-                          color={colors.white}
+                          color={colors.text.primary}
                         />
                         <Text style={styles.saveButtonText}>{saveLabel}</Text>
                       </>
@@ -205,7 +198,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: surface[0],
   },
   safeArea: {
     flex: 1,
@@ -224,7 +217,7 @@ const styles = StyleSheet.create({
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: Math.max(rw(20), 22),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -236,9 +229,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   headerIcon: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: rw(32),
+    height: rw(32),
+    borderRadius: rw(8),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -247,21 +240,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   headerTitle: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.white,
+    ...variants.sectionTitle,
+    color: colors.text.primary,
   },
   headerSubtitle: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(2),
+    ...variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
   },
   headerSpacer: {
     width: Math.max(rw(40), 44),
   },
   divider: {
-    height: rp(1),
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: border.DEFAULT,
     marginHorizontal: spacing.md,
   },
   scrollView: {
@@ -270,20 +262,18 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
-    // Generous bottom padding so the last input isn't covered by the save
-    // footer when the keyboard is open.
     paddingBottom: spacing.xxl,
   },
   footer: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: surface[0],
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: border.DEFAULT,
     minHeight: rh(76),
   },
   saveButtonContainer: {
-    borderRadius: borderRadius.lg,
+    borderRadius: 14,
     overflow: "hidden",
   },
   saveButton: {
@@ -293,15 +283,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: spacing.md,
     minHeight: 44,
-    borderRadius: borderRadius.lg,
+    borderRadius: 14,
   },
   saveButtonDisabled: {
     opacity: 0.6,
   },
   saveButtonText: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.white,
+    ...variants.cardHeadline,
+    color: colors.text.primary,
   },
 });
 

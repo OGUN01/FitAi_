@@ -1,23 +1,5 @@
-import React, { useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
-import {
-  AnimatedPressable,
-  AnimatedSection,
-  HeroSection,
-} from "../../../components/ui/aurora";
-import { gradients } from "../../../theme/gradients";
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { Camera } from "../../../components/advanced/Camera";
 import { ImagePicker } from "../../../components/advanced/ImagePicker";
 import {
@@ -25,15 +7,25 @@ import {
   PersonalInfoData,
   TabValidationResult,
 } from "../../../types/onboarding";
-import { useBodyAnalysis } from "../../../hooks/onboarding/useBodyAnalysis";
+import {
+  useBodyAnalysis,
+  GENDER_MEDIANS,
+} from "../../../hooks/onboarding/useBodyAnalysis";
+import {
+  ScreenScaffold,
+  CollapsibleSection,
+} from "../../../components/onboarding/fresh";
+import {
+  tokens,
+  spacing as freshSpacing,
+} from "../../../components/onboarding/fresh/tokens";
 
-// Components
+// Section components
 import { MeasurementsSection } from "../../../components/onboarding/body/MeasurementsSection";
 import { GoalVisualizationSection } from "../../../components/onboarding/body/GoalVisualizationSection";
 import { BodyCompositionSection } from "../../../components/onboarding/body/BodyCompositionSection";
 import { PhotoAnalysisSection } from "../../../components/onboarding/body/PhotoAnalysisSection";
 import { MedicalSection } from "../../../components/onboarding/body/MedicalSection";
-import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
 
 interface BodyAnalysisTabProps {
   data: BodyAnalysisData | null;
@@ -47,6 +39,9 @@ interface BodyAnalysisTabProps {
   isAutoSaving?: boolean;
   isEditingFromReview?: boolean;
   onReturnToReview?: () => void;
+  /** §4 gender-aware slider defaults. The container passes S1's gender in
+   * Phase 2c; until then we fall back to personalInfoData?.gender. */
+  gender?: string;
 }
 
 const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
@@ -56,24 +51,21 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   onNext,
   onBack,
   onUpdate,
-  isAutoSaving = false,
   isEditingFromReview = false,
   onReturnToReview,
+  gender,
 }) => {
-  const isSubmittingRef = useRef(false);
-
   const {
     formData,
     showCamera,
     setShowCamera,
     showImagePicker,
     setShowImagePicker,
-    currentPhotoType,
     isAnalyzingPhotos,
     showMeasurementGuide,
     setShowMeasurementGuide,
     updateField,
-    handleNumberInput,
+    updateFields,
     handlePhotoCapture,
     handleImagePickerSelect,
     openPhotoOptions,
@@ -89,9 +81,61 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     onUpdate,
   });
 
+  // Progressive disclosure: optional sections default to collapsed and persist
+  // for the session.
+  const [showComposition, setShowComposition] = React.useState(false);
+  const [showPhotos, setShowPhotos] = React.useState(false);
+  const [showMedical, setShowMedical] = React.useState(false);
+
+  // §4 gender-aware defaults: IF the sliders are still at the untouched
+  // neutral "other" default AND a gender is available, swap to the
+  // gender-specific median as the starting position. Runs once per gender.
+  const effectiveGender = gender || personalInfoData?.gender;
+  const genderDefaultsApplied = useRef(false);
+  useEffect(() => {
+    if (genderDefaultsApplied.current) return;
+    if (!effectiveGender) return;
+    const m = GENDER_MEDIANS[effectiveGender] ?? GENDER_MEDIANS.other;
+    const atNeutralDefault =
+      formData.height_cm === GENDER_MEDIANS.other.height &&
+      formData.current_weight_kg === GENDER_MEDIANS.other.weight &&
+      formData.target_weight_kg === GENDER_MEDIANS.other.target;
+    if (atNeutralDefault && m !== GENDER_MEDIANS.other) {
+      updateFields({
+        height_cm: m.height,
+        current_weight_kg: m.weight,
+        target_weight_kg: m.target,
+      });
+    }
+    genderDefaultsApplied.current = true;
+  }, [
+    effectiveGender,
+    formData.height_cm,
+    formData.current_weight_kg,
+    formData.target_weight_kg,
+    updateFields,
+  ]);
+
+  const isSubmittingRef = useRef(false);
+
+  const handleNext = () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      onUpdate(formData);
+      if (isEditingFromReview && onReturnToReview) {
+        onReturnToReview();
+      } else {
+        setTimeout(() => onNext(formData), 100);
+      }
+    } finally {
+      isSubmittingRef.current = false;
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Camera Modal */}
+    <View style={styles.container}>
+      {/* Camera Modal — existing capture flow intact */}
       <Camera
         visible={showCamera}
         onClose={() => setShowCamera(false)}
@@ -99,7 +143,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         mode="progress"
       />
 
-      {/* Image Picker Modal */}
+      {/* Image Picker Modal — existing capture flow intact */}
       <ImagePicker
         visible={showImagePicker}
         onClose={() => setShowImagePicker(false)}
@@ -112,71 +156,56 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         style={styles.keyboardAvoidingView}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: rp(100) }}
+        <ScreenScaffold
+          question="Your body"
+          subtext="Just a starting point. Everything updates as you go."
+          onBack={onBack}
+          onNext={handleNext}
+          nextLabel={isEditingFromReview ? "Review" : "Next"}
         >
-          {/* Hero Section */}
-          <HeroSection
-            image={{
-              uri: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80",
-            }}
-            overlayGradient={gradients.overlay.dark}
-            contentPosition="center"
-            height={180}
-          >
-            <Text style={styles.title} numberOfLines={2}>
-              Body Analysis
-            </Text>
-            <Text style={styles.subtitle} numberOfLines={2}>
-              Track your measurements and visualize your progress
-            </Text>
+          <View style={styles.sections}>
+            {/* Default visible: measurements + live BMI ring */}
+            <MeasurementsSection
+              formData={formData}
+              updateField={updateField}
+              getBMICategory={getBMICategory}
+              getFieldError={getFieldError}
+              hasFieldError={hasFieldError}
+            />
 
-            {/* Auto-save Indicator */}
-            {isAutoSaving && (
-              <View style={styles.autoSaveIndicator}>
-                <Ionicons
-                  name="save-outline"
-                  size={rf(16)}
-                  color={colors.success}
-                  style={{ marginRight: 4 }}
-                />
-                <Text style={styles.autoSaveText}>Saving...</Text>
-              </View>
-            )}
-          </HeroSection>
+            {/* Default visible: goal ring (target_weight) + timeline */}
+            <GoalVisualizationSection
+              formData={formData}
+              updateField={updateField}
+              updateFields={updateFields}
+              personalInfoData={personalInfoData}
+            />
 
-          {/* Form Sections */}
-          <View style={styles.content}>
-            <AnimatedSection delay={0}>
-              <MeasurementsSection
-                formData={formData}
-                updateField={updateField}
-                handleNumberInput={handleNumberInput}
-                getFieldError={getFieldError}
-                hasFieldError={hasFieldError}
-                getBMICategory={getBMICategory}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={100}>
-              <GoalVisualizationSection formData={formData} />
-            </AnimatedSection>
-
-            <AnimatedSection delay={200}>
+            {/* Collapsed — "Body composition" (Add details) */}
+            <CollapsibleSection
+              title="Body composition"
+              subtitle="Add details for a sharper analysis"
+              expanded={showComposition}
+              onToggle={() => setShowComposition((v) => !v)}
+              testID="body-composition-section"
+            >
               <BodyCompositionSection
                 formData={formData}
                 updateField={updateField}
-                handleNumberInput={handleNumberInput}
                 showMeasurementGuide={showMeasurementGuide}
                 setShowMeasurementGuide={setShowMeasurementGuide}
                 personalInfoData={personalInfoData}
               />
-            </AnimatedSection>
+            </CollapsibleSection>
 
-            <AnimatedSection delay={300}>
+            {/* Collapsed — "Progress photos" (Optional) */}
+            <CollapsibleSection
+              title="Progress photos"
+              subtitle="Optional — AI body-fat estimate"
+              expanded={showPhotos}
+              onToggle={() => setShowPhotos((v) => !v)}
+              testID="progress-photos-section"
+            >
               <PhotoAnalysisSection
                 formData={formData}
                 openPhotoOptions={openPhotoOptions}
@@ -184,171 +213,39 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 analyzePhotos={analyzePhotos}
                 isAnalyzingPhotos={isAnalyzingPhotos}
               />
-            </AnimatedSection>
+            </CollapsibleSection>
 
-            <AnimatedSection delay={400}>
+            {/* Collapsed — "Medical & safety" (Add details) */}
+            <CollapsibleSection
+              title="Medical & safety"
+              subtitle="Add details so we keep recommendations safe"
+              expanded={showMedical}
+              onToggle={() => setShowMedical((v) => !v)}
+              testID="medical-section"
+            >
               <MedicalSection
                 formData={formData}
                 updateField={updateField}
                 personalInfoData={personalInfoData}
               />
-            </AnimatedSection>
+            </CollapsibleSection>
           </View>
-
-          {/* Validation Summary */}
-          <ValidationSection validationResult={validationResult} />
-        </ScrollView>
+        </ScreenScaffold>
       </KeyboardAvoidingView>
-      {/* Footer Navigation */}
-      <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          <AnimatedPressable
-            style={styles.backButtonCompact}
-            onPress={onBack}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to previous step"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.backButtonText}>Back</Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={styles.nextButtonCompact}
-            onPress={() => {
-              if (isSubmittingRef.current) return;
-              isSubmittingRef.current = true;
-              try {
-                onUpdate(formData);
-                if (isEditingFromReview && onReturnToReview) {
-                  onReturnToReview();
-                } else {
-                  setTimeout(() => {
-                    onNext(formData);
-                  }, 100);
-                }
-              } finally {
-                isSubmittingRef.current = false;
-              }
-            }}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
-          >
-            <Text style={styles.nextButtonText}>
-              {isEditingFromReview ? "Review" : "Next"}
-            </Text>
-            <Ionicons
-              name={
-                isEditingFromReview
-                  ? "checkmark-circle-outline"
-                  : "chevron-forward"
-              }
-              size={rf(18)}
-              color="#FFFFFF"
-            />
-          </AnimatedPressable>
-        </View>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: tokens.bg,
   },
   keyboardAvoidingView: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.5,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: fontSize.md,
-    color: hexToRgba(colors.white, 0.85),
-    lineHeight: fontSize.md * 1.5,
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-  autoSaveIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
-  autoSaveText: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-  },
-  footer: {
-    padding: spacing.lg,
-    paddingBottom:
-      Platform.OS === "ios"
-        ? spacing.lg
-        : spacing.xl,
-    backgroundColor: "transparent",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  backButtonCompact: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: 100,
-    minHeight: 52,
-  },
-  backButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
-    marginLeft: spacing.xs,
-    lineHeight: rf(18),
-  },
-  nextButtonCompact: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary,
-    minHeight: 52,
-  },
-  nextButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
-    marginRight: spacing.xs,
+  sections: {
+    gap: freshSpacing.sectionGap,
   },
 });
 

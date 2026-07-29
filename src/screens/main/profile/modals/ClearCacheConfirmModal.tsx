@@ -1,8 +1,6 @@
 /**
- * ClearCacheConfirmModal - Platform-aware cache-clear confirmation
- *
- * Uses Modal instead of Alert.alert (which silently fails on Expo web
- * when given multiple buttons). Matches LogoutConfirmationModal pattern.
+ * ClearCacheConfirmModal - Aurora 2026: cache-clear confirmation dialog.
+ * Flat surface.2 panel over blur, destructive CTA. No GlassCard, no shadows.
  */
 
 import React, { useState } from "react";
@@ -14,15 +12,20 @@ import {
   Pressable,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
-import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../../../utils/responsive";
-import { gradients, toLinearGradientProps } from "../../../../theme/gradients";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf } from "../../../../utils/responsive";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
+
+const { variants } = typography;
 
 interface ClearCacheConfirmModalProps {
   visible: boolean;
@@ -69,57 +72,51 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
         <BlurView intensity={80} style={styles.blurContainer}>
           <Pressable onPress={() => {}} style={styles.dialogPressable}>
             <View style={styles.dialogContainer} accessibilityRole="alert">
-              <GlassCard
-                elevation={5}
-                blurIntensity="heavy"
-                padding="lg"
-                borderRadius="xl"
-              >
-                <View style={styles.iconContainer}>
+              {/* Icon */}
+              <View style={styles.iconContainer}>
+                <View style={styles.iconSquircle}>
                   <Ionicons
                     name="trash-outline"
-                    size={rf(48)}
-                    color={colors.error}
+                    size={rf(28)}
+                    color={colors.error.DEFAULT}
                   />
                 </View>
-                <Text style={styles.title}>Clear Cache</Text>
-                <Text style={styles.message}>
-                  Are you sure you want to clear the cache? This will remove
-                  temporary data and may briefly slow down the app while it
-                  rebuilds.
-                </Text>
+              </View>
 
-                <View style={styles.actions}>
-                  <AnimatedPressable
-                    style={[styles.button, styles.cancelButton]}
-                    onPress={onCancel}
-                    scaleValue={0.95}
-                    disabled={isClearing}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </AnimatedPressable>
+              <Text style={styles.title}>Clear Cache</Text>
+              <Text style={styles.message}>
+                Are you sure you want to clear the cache? This will remove
+                temporary data and may briefly slow down the app while it
+                rebuilds.
+              </Text>
 
-                  <AnimatedPressable
-                    style={[styles.button, styles.confirmButton]}
-                    onPress={handleConfirm}
-                    scaleValue={0.95}
-                    disabled={isClearing}
-                  >
-                    <LinearGradient
-                      {...toLinearGradientProps(gradients.button.error)}
-                      style={styles.confirmGradient}
-                    >
-                      {isClearing ? (
-                        <AuroraSpinner customSize={rf(16)} theme="white" />
-                      ) : (
-                        <Text style={styles.confirmButtonText}>
-                          Clear Cache
-                        </Text>
-                      )}
-                    </LinearGradient>
-                  </AnimatedPressable>
-                </View>
-              </GlassCard>
+              <View style={styles.actions}>
+                <AnimatedPressable
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onCancel}
+                  scaleValue={0.97}
+                  disabled={isClearing}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={[styles.button, styles.confirmButton]}
+                  onPress={handleConfirm}
+                  scaleValue={0.97}
+                  disabled={isClearing}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear cache"
+                >
+                  {isClearing ? (
+                    <AuroraSpinner customSize={rf(16)} theme="white" />
+                  ) : (
+                    <Text style={styles.confirmButtonText}>Clear Cache</Text>
+                  )}
+                </AnimatedPressable>
+              </View>
             </View>
           </Pressable>
         </BlurView>
@@ -129,79 +126,79 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  overlayPressable: {
+    flex: 1,
+  },
   blurContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.overlay,
-  },
-  overlayPressable: {
-    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   dialogPressable: {
-    // Give the inner Pressable a style so it lays out the dialog card
-    // (previously it had no style, which could cause layout issues on some
-    // platforms).
     width: "85%",
     maxWidth: 340,
   },
   dialogContainer: {
-    width: "100%",
-    maxWidth: 340,
-    maxHeight: "80%",
+    backgroundColor: surface[2],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
+    alignItems: "center",
   },
   iconContainer: {
-    alignItems: "center",
     marginBottom: spacing.md,
   },
+  iconSquircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: `${colors.error.DEFAULT}1F`,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   title: {
-    fontSize: rf(20),
-    fontWeight: "700",
-    color: colors.white,
+    ...variants.sectionTitle,
+    color: colors.text.primary,
     textAlign: "center",
     marginBottom: spacing.sm,
   },
   message: {
+    ...variants.body,
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
-    lineHeight: rf(20),
     marginBottom: spacing.lg,
   },
   actions: {
     flexDirection: "row",
     gap: spacing.md,
+    width: "100%",
   },
   button: {
     flex: 1,
     minHeight: 44,
     justifyContent: "center",
-    borderRadius: borderRadius.md,
-    overflow: "hidden",
+    alignItems: "center",
+    borderRadius: 12,
+    paddingVertical: spacing.md,
   },
   cancelButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    paddingVertical: spacing.md,
-    alignItems: "center",
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
   confirmButton: {
-    overflow: "hidden",
-  },
-  confirmGradient: {
-    minHeight: 44,
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    alignItems: "center",
+    backgroundColor: colors.error.DEFAULT,
   },
   cancelButtonText: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.white,
+    ...variants.cardHeadline,
+    color: colors.text.primary,
   },
   confirmButtonText: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.white,
+    ...variants.cardHeadline,
+    color: colors.text.primary,
   },
 });
 

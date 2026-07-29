@@ -1,9 +1,26 @@
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * BodyCompositionSection — Body tab collapsed "Body composition" group
+ * (Editorial Dark).
+ *
+ * body_fat_percentage + waist_cm/hip_cm/chest_cm RangeSliders, each with a
+ * big-number readout beside the label and a short anatomical caption right
+ * beneath it (narrowest point / widest point / fullest part) so the guide
+ * toggle becomes a fallback rather than required reading. Shows the live
+ * waist_hip_ratio when both waist & hip are present. Presentation only —
+ * sliders call the same updateField the legacy Inputs did. Renders flat
+ * inside the parent CollapsibleSection (the section header lives there).
+ */
+
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
-import { Input } from "../../../components/ui";
+import {
+  tokens,
+  type as freshType,
+  font,
+  spacing as freshSpacing,
+} from "../../onboarding/fresh/tokens";
+import { RangeSlider } from "../../onboarding/aurora/RangeSlider";
 import { BodyAnalysisData, PersonalInfoData } from "../../../types/onboarding";
 
 interface BodyCompositionSectionProps {
@@ -12,265 +29,255 @@ interface BodyCompositionSectionProps {
     field: K,
     value: BodyAnalysisData[K],
   ) => void;
-  handleNumberInput: (field: keyof BodyAnalysisData, text: string) => void;
   showMeasurementGuide: boolean;
   setShowMeasurementGuide: (show: boolean) => void;
   personalInfoData?: PersonalInfoData | null;
 }
 
-export const BodyCompositionSection: React.FC<BodyCompositionSectionProps> = ({
+const FAT_MIN = 3;
+const FAT_MAX = 50;
+const GIRTH_MIN = 40;
+const GIRTH_MAX = 200;
+
+export const BodyCompositionSection: React.FC<
+  BodyCompositionSectionProps
+> = ({
   formData,
-  handleNumberInput,
+  updateField,
   showMeasurementGuide,
   setShowMeasurementGuide,
   personalInfoData,
 }) => {
+  const showRatio =
+    formData.waist_hip_ratio != null && formData.waist_hip_ratio > 0;
+  const ratioThreshold = personalInfoData?.gender === "female" ? 0.85 : 0.9;
+  const ratioHealthy = showRatio
+    ? (formData.waist_hip_ratio ?? 0) < ratioThreshold
+    : false;
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Body Composition (Optional)
+    <View style={styles.container}>
+      {/* Measurement guide — plain text toggle, no box. */}
+      <Pressable
+        style={styles.guideToggle}
+        onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
+        accessibilityRole="button"
+        accessibilityLabel="How to measure correctly"
+      >
+        <Ionicons
+          name="information-circle-outline"
+          size={18}
+          color={tokens.ink2}
+        />
+        <Text style={styles.guideToggleText} numberOfLines={1}>
+          How to measure correctly
         </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
-          Additional measurements for more accurate analysis
-        </Text>
-      </View>
+        <Ionicons
+          name={showMeasurementGuide ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={tokens.ink3}
+        />
+      </Pressable>
 
-      <View style={styles.edgeToEdgeContentPadded}>
-        <AnimatedPressable
-          style={styles.measurementGuideButton}
-          onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
-          scaleValue={0.95}
-        >
-          <View style={styles.measurementGuideContent}>
-            <Ionicons
-              name="information-circle-outline"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.measurementGuideText} numberOfLines={1}>
-              How to measure correctly
-            </Text>
-          </View>
-        </AnimatedPressable>
-
-        {showMeasurementGuide && (
-          <GlassCard
-            elevation={2}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={styles.measurementGuideInline}
-          >
-            <Text style={styles.guideTitle} numberOfLines={1}>
-              Measurement Guidelines
-            </Text>
-            <Text style={styles.guideText}>
-              • <Text style={styles.guideBold}>Waist:</Text> Measure at the
-              narrowest point, usually just above the belly button{"\n"}•{" "}
-              <Text style={styles.guideBold}>Hip:</Text> Measure at the widest
-              point of your hips{"\n"}•{" "}
-              <Text style={styles.guideBold}>Chest:</Text> Measure around the
-              fullest part of your chest{"\n"}•{" "}
-              <Text style={styles.guideBold}>Body Fat:</Text> Use a body fat
-              scale or professional measurement
-            </Text>
-          </GlassCard>
-        )}
-
-        <View style={styles.compositionGrid}>
-          <View style={styles.compositionItem}>
-            <Input
-              label="Body Fat % (Optional)"
-              placeholder="e.g. 20"
-              value={
-                formData.body_fat_percentage
-                  ? formData.body_fat_percentage.toString()
-                  : ""
-              }
-              onChangeText={(text) =>
-                handleNumberInput("body_fat_percentage", text)
-              }
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.compositionItem}>
-            <Input
-              label="Waist (cm)"
-              placeholder="e.g. 80"
-              value={formData.waist_cm ? formData.waist_cm.toString() : ""}
-              onChangeText={(text) => handleNumberInput("waist_cm", text)}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.compositionItem}>
-            <Input
-              label="Hip (cm)"
-              placeholder="e.g. 95"
-              value={formData.hip_cm ? formData.hip_cm.toString() : ""}
-              onChangeText={(text) => handleNumberInput("hip_cm", text)}
-              keyboardType="numeric"
-            />
-          </View>
-
-          <View style={styles.compositionItem}>
-            <Input
-              label="Chest (cm)"
-              placeholder="e.g. 100"
-              value={formData.chest_cm ? formData.chest_cm.toString() : ""}
-              onChangeText={(text) => handleNumberInput("chest_cm", text)}
-              keyboardType="numeric"
-            />
-          </View>
+      {showMeasurementGuide && (
+        <View style={styles.guide}>
+          <Text style={styles.guideText}>
+            {"• Waist: narrowest point, just above the belly button.\n"}
+            {"• Hip: widest point of your hips.\n"}
+            {"• Chest: fullest part of your chest.\n"}
+            {"• Body fat: use a body-fat scale or professional measurement."}
+          </Text>
         </View>
+      )}
 
-        {/* Waist-Hip Ratio Display */}
-        {formData.waist_hip_ratio != null && formData.waist_hip_ratio > 0
-          ? (() => {
-              const threshold =
-                personalInfoData?.gender === "female" ? 0.85 : 0.9;
-              const isHealthy = formData.waist_hip_ratio! < threshold;
-              return (
-                <GlassCard
-                  elevation={2}
-                  blurIntensity="default"
-                  padding="md"
-                  borderRadius="lg"
-                  style={styles.ratioCardInline}
-                >
-                  <Text style={styles.ratioTitle} numberOfLines={1}>
-                    Waist-Hip Ratio: {formData.waist_hip_ratio}
-                  </Text>
-                  <View style={styles.ratioStatusRow}>
-                    <Ionicons
-                      name={isHealthy ? "checkmark-circle" : "alert-circle"}
-                      size={rf(16)}
-                      color={
-                        isHealthy
-                          ? colors.secondary
-                          : colors.warning
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.ratioDescription,
-                        {
-                          color: isHealthy
-                            ? colors.secondary
-                            : colors.warning,
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {isHealthy ? "Healthy ratio" : "Consider waist reduction"}
-                    </Text>
-                  </View>
-                </GlassCard>
-              );
-            })()
-          : null}
-      </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+      {/* BODY FAT */}
+      <BodyField
+        label="Body fat"
+        value={formData.body_fat_percentage ?? null}
+        unit="%"
+        hint="A sharper signal than BMI — from a smart scale or trainer"
+      >
+        <RangeSlider
+          value={formData.body_fat_percentage ?? FAT_MIN}
+          min={FAT_MIN}
+          max={FAT_MAX}
+          step={1}
+          unit="%"
+          accentColor={tokens.accent}
+          onChange={(v) => updateField("body_fat_percentage", v)}
+          testID="body-fat-slider"
+        />
+      </BodyField>
+
+      {/* WAIST */}
+      <BodyField
+        label="Waist"
+        value={formData.waist_cm ?? null}
+        unit="cm"
+        hint="Narrowest point, just above your belly button"
+      >
+        <RangeSlider
+          value={formData.waist_cm ?? GIRTH_MIN}
+          min={GIRTH_MIN}
+          max={GIRTH_MAX}
+          step={1}
+          unit="cm"
+          accentColor={tokens.accent}
+          onChange={(v) => updateField("waist_cm", v)}
+          testID="waist-slider"
+        />
+      </BodyField>
+
+      {/* HIP */}
+      <BodyField
+        label="Hip"
+        value={formData.hip_cm ?? null}
+        unit="cm"
+        hint="Widest point of your hips"
+      >
+        <RangeSlider
+          value={formData.hip_cm ?? GIRTH_MIN}
+          min={GIRTH_MIN}
+          max={GIRTH_MAX}
+          step={1}
+          unit="cm"
+          accentColor={tokens.accent}
+          onChange={(v) => updateField("hip_cm", v)}
+          testID="hip-slider"
+        />
+      </BodyField>
+
+      {/* CHEST */}
+      <BodyField
+        label="Chest"
+        value={formData.chest_cm ?? null}
+        unit="cm"
+        hint="Fullest part of your chest, tape level"
+      >
+        <RangeSlider
+          value={formData.chest_cm ?? GIRTH_MIN}
+          min={GIRTH_MIN}
+          max={GIRTH_MAX}
+          step={1}
+          unit="cm"
+          accentColor={tokens.accent}
+          onChange={(v) => updateField("chest_cm", v)}
+          testID="chest-slider"
+        />
+      </BodyField>
+
+      {/* Live waist-hip ratio */}
+      {showRatio ? (
+        <View style={styles.ratioRow}>
+          <Ionicons
+            name={ratioHealthy ? "checkmark-circle" : "alert-circle"}
+            size={16}
+            color={ratioHealthy ? tokens.accent : tokens.danger}
+          />
+          <Text style={styles.ratioText} numberOfLines={1}>
+            Waist-hip ratio {formData.waist_hip_ratio} —{" "}
+            {ratioHealthy ? "healthy" : "consider waist reduction"}
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 };
 
+/** Local layout helper — label + small caption over the slider, big number on
+ * the right. Pure presentation; children carry the interactivity. */
+const BodyField: React.FC<{
+  label: string;
+  value: number | null;
+  unit: string;
+  hint: string;
+  children: React.ReactNode;
+}> = ({ label, value, unit, hint, children }) => (
+  <View style={styles.field}>
+    <View style={styles.fieldHeader}>
+      <View style={styles.fieldLabels}>
+        <Text style={styles.fieldLabel} numberOfLines={1}>
+          {label}
+        </Text>
+        <Text style={styles.fieldHint} numberOfLines={2}>
+          {hint}
+        </Text>
+      </View>
+      <Text style={styles.fieldValue} numberOfLines={1}>
+        <Text style={styles.fieldNumber}>
+          {value != null && value > 0 ? value : "—"}
+        </Text>
+        <Text style={styles.fieldUnit}> {unit}</Text>
+      </Text>
+    </View>
+    {children}
+  </View>
+);
+
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
+  container: {
+    gap: freshSpacing.l,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  measurementGuideButton: {
-    marginBottom: spacing.md,
-  },
-  measurementGuideContent: {
+  guideToggle: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: freshSpacing.s,
+    paddingVertical: freshSpacing.xs,
   },
-  measurementGuideText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
+  guideToggleText: {
+    ...freshType.body,
+    flex: 1,
   },
-  measurementGuideInline: {
-    marginBottom: spacing.lg,
-    backgroundColor: `${colors.primary}05`,
-  },
-  guideTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
+  guide: {
+    paddingBottom: freshSpacing.xs,
   },
   guideText: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: rf(18),
+    ...freshType.caption,
+    color: tokens.ink2,
   },
-  guideBold: {
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+  field: {
+    gap: freshSpacing.xs,
   },
-  compositionGrid: {
-    gap: spacing.md,
+  fieldHeader: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: freshSpacing.s,
   },
-  compositionItem: {
-    marginBottom: spacing.sm,
+  fieldLabels: {
+    flex: 1,
+    gap: 2,
   },
-  ratioCardInline: {
-    marginTop: spacing.lg,
+  fieldLabel: {
+    ...freshType.sectionLabel,
   },
-  ratioTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  fieldHint: {
+    ...freshType.caption,
+    color: tokens.ink2,
   },
-  ratioStatusRow: {
+  fieldValue: {
+    flexShrink: 0,
+  },
+  fieldNumber: {
+    fontFamily: font.light,
+    fontSize: 26,
+    lineHeight: 28,
+    letterSpacing: -0.6,
+    color: tokens.ink,
+  },
+  fieldUnit: {
+    ...freshType.body,
+    color: tokens.ink2,
+  },
+  ratioRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: freshSpacing.s,
+    marginTop: freshSpacing.xs,
   },
-  ratioDescription: {
-    fontSize: fontSize.sm,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
+  ratioText: {
+    ...freshType.caption,
+    color: tokens.ink2,
+    flex: 1,
   },
 });

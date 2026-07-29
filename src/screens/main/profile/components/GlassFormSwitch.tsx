@@ -1,25 +1,21 @@
 /**
- * GlassFormSwitch - Glassmorphic Toggle Switch Component
- *
- * Features:
- * - Glassmorphic card styling
- * - Icon support
- * - Description text
- * - Animated switch
- *
- * The whole row is NOT wrapped in a Pressable — only the Switch itself is
- * interactive. The previous implementation wrapped the row in an
- * AnimatedPressable AND wired the inner Switch, so a single tap fired both
- * handlers (double toggle) or conflicted with gesture handling.
+ * GlassFormSwitch - Unified FormField pattern for toggles
  */
 
-import React from "react";
-import { View, Text, StyleSheet, Switch, Platform } from "react-native";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Switch } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+
+const { variants } = typography;
 
 interface GlassFormSwitchProps {
   label: string;
@@ -31,20 +27,23 @@ interface GlassFormSwitchProps {
   disabled?: boolean;
 }
 
-export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
+export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = React.memo(({
   label,
   description,
   icon,
-  iconColor = colors.primary,
+  iconColor = colors.primary.DEFAULT,
   value,
   onValueChange,
   disabled = false,
 }) => {
-  const handleValueChange = (newValue: boolean) => {
-    if (disabled) return;
-    haptics.light();
-    onValueChange(newValue);
-  };
+  const handleValueChange = useCallback(
+    (newValue: boolean) => {
+      if (disabled) return;
+      haptics.light();
+      onValueChange(newValue);
+    },
+    [disabled, onValueChange],
+  );
 
   return (
     <View
@@ -53,25 +52,26 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
       accessibilityState={{ checked: value, disabled }}
       accessibilityLabel={label}
     >
-      {/* Icon */}
       {icon && (
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW + 0.03) },
+            { backgroundColor: `${iconColor}14` },
           ]}
         >
           <Ionicons
             name={icon}
             size={rf(18)}
-            color={disabled ? colors.textMuted : iconColor}
+            color={disabled ? colors.text.tertiary : iconColor}
           />
         </View>
       )}
 
-      {/* Text */}
       <View style={styles.textContainer}>
-        <Text style={[styles.label, disabled && styles.labelDisabled]} numberOfLines={2}>
+        <Text
+          style={[styles.label, disabled && styles.labelDisabled]}
+          numberOfLines={2}
+        >
           {label}
         </Text>
         {description && (
@@ -81,31 +81,29 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
         )}
       </View>
 
-      {/* Switch — the only interactive element. The row itself is not
-          pressable, eliminating the double-toggle conflict. */}
       <Switch
         value={value}
         onValueChange={handleValueChange}
         disabled={disabled}
         trackColor={{
-          false: "rgba(255, 255, 255, 0.15)",
-          true: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.4),
+          false: border.DEFAULT,
+          true: `${colors.primary.DEFAULT}66`,
         }}
-        thumbColor={value ? colors.primary : "rgba(255, 255, 255, 0.6)"}
-        ios_backgroundColor="rgba(255, 255, 255, 0.15)"
+        thumbColor={value ? colors.primary.DEFAULT : colors.text.tertiary}
+        ios_backgroundColor={border.DEFAULT}
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderRadius: borderRadius.lg,
+    backgroundColor: surface[1],
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: border.DEFAULT,
     padding: spacing.md,
     marginBottom: spacing.sm,
     minHeight: 44,
@@ -114,9 +112,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   iconContainer: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(12),
+    width: rw(32),
+    height: rw(32),
+    borderRadius: rw(8),
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -126,18 +124,16 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   label: {
-    fontSize: rf(15),
-    fontWeight: "500",
-    color: colors.white,
+    ...variants.body,
+    color: colors.text.primary,
   },
   labelDisabled: {
-    color: colors.textMuted,
+    color: colors.text.tertiary,
   },
   description: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(2),
-    lineHeight: rf(16),
+    ...variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
   },
 });
 

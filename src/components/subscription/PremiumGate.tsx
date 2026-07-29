@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { usePaywall } from "../../hooks/usePaywall";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
@@ -66,11 +67,16 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
     return (
       <View style={styles.container}>
         <View style={styles.blurOverlay}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.iconText}>👑</Text>
-          </View>
+          <LinearGradient
+            colors={[colors.primaryLight, colors.primary, colors.primaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.iconContainer}
+          >
+            <Ionicons name="diamond" size={rf(28)} color={colors.white} />
+          </LinearGradient>
 
-          <Text style={styles.title}>{upgradeText}</Text>
+          <Text style={styles.title} accessibilityRole="header">{upgradeText}</Text>
 
           <Text style={styles.description}>
             {upgradeDescription ?? FEATURE_MESSAGES[featureKey]}
@@ -87,15 +93,16 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
               haptics.light();
               triggerPaywall(FEATURE_MESSAGES[featureKey]);
             }}
+            accessibilityLabel="Upgrade to premium"
             style={styles.upgradeButton}
           >
             <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
+              colors={[colors.primaryLight, colors.primary, colors.primaryDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.upgradeGradient}
             >
-              <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+              <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
             </LinearGradient>
           </AnimatedPressable>
         </View>
@@ -121,15 +128,12 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   iconContainer: {
-    backgroundColor: "rgba(255, 107, 53, 0.15)",
-    borderRadius: rbr(9999),
-    padding: rw(12),
+    width: rw(64),
+    height: rw(64),
+    borderRadius: rbr(18),
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: rh(16),
-    borderWidth: 1,
-    borderColor: colors.primaryFaded,
-  },
-  iconText: {
-    fontSize: rf(32),
   },
   title: {
     fontSize: rf(18),

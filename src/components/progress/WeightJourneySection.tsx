@@ -1,5 +1,8 @@
 /**
- * WeightJourneySection - Hero section for Progress screen
+ * WeightJourneySection - Hero section for Progress screen (Aurora 2026)
+ *
+ * Full-bleed custom SVG area chart (no boxed card) — gradient fill,
+ * smooth bezier curve, animated draw-on. Big current weight + delta chip.
  *
  * DATA SOURCE (single source of truth):
  *  - weightHistory from analyticsDataService.getWeightHistory()
@@ -9,16 +12,33 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { LineChart, type ChartData } from '../../screens/main/analytics/components/LineChart';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import Svg, {
+  Path,
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from 'react-native-svg';
+import Animated, { FadeInDown, useAnimatedProps, useSharedValue, withTiming, useAnimatedReaction, runOnJS } from 'react-native-reanimated';
 import type { ProgressEntry } from '../../services/progressData';
 import type { CalculatedMetrics } from '../../hooks/useCalculatedMetrics';
-import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
-import { rf, rp, rh, rbr, rs } from '../../utils/responsive';
-import { type WeightUnit, toDisplayWeight } from '../../utils/units';
+import {
+  surface,
+  border as borderTokens,
+  chart,
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+} from '../../theme/aurora-tokens';
+import { haptics } from '../../utils/haptics';
+import type { WeightUnit } from '../../utils/units';
+import { toDisplayWeight } from '../../utils/units';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 type Period = '1W' | '1M' | '3M' | 'ALL';
 
@@ -28,6 +48,12 @@ const PERIODS: { key: Period; label: string; days: number }[] = [
   { key: '3M', label: '3M', days: 90 },
   { key: 'ALL', label: 'All', days: Infinity },
 ];
+
+const CHART_HEIGHT = 180;
+const CHART_PADDING_X = 4;
+const CHART_PADDING_TOP = 12;
+const CHART_PADDING_BOTTOM = 20;
+const LINE_COLOR = chart[1];
 
 interface WeightJourneySectionProps {
   weightHistory?: Array<{ date: string; weight: number }>;
@@ -42,6 +68,44 @@ interface RawChartPoint {
   valueKg: number;
 }
 
+const buildSmoothPath = (
+  values: number[],
+  width: number,
+  height: number,
+  padX: number,
+  padTop: number,
+  padBottom: number,
+): { line: string; area: string; lastX: number; lastY: number } => {
+  if (values.length < 2) {
+    return { line: '', area: '', lastX: 0, lastY: 0 };
+  }
+  const innerW = width - padX * 2;
+  const innerH = height - padTop - padBottom;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const divisor = values.length > 1 ? values.length - 1 : 1;
+
+  const pts = values.map((v, i) => {
+    const x = padX + (i / divisor) * innerW;
+    const y = padTop + innerH - ((v - min) / range) * innerH;
+    return { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+  });
+
+  let line = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1];
+    const curr = pts[i];
+    const cpX = Math.round(((prev.x + curr.x) / 2) * 100) / 100;
+    const cpY = Math.round(((prev.y + curr.y) / 2) * 100) / 100;
+    line += ` Q ${cpX} ${prev.y}, ${cpX} ${cpY} T ${curr.x} ${curr.y}`;
+  }
+
+  const last = pts[pts.length - 1];
+  const area = `${line} L ${last.x} ${height - padBottom} L ${pts[0].x} ${height - padBottom} Z`;
+  return { line, area, lastX: last.x, lastY: last.y };
+};
+
 export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.memo(({
   weightHistory,
   progressEntries,
@@ -51,52 +115,35 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
 }) => {
   const [period, setPeriod] = useState<Period>('1M');
   const cutoffDays = PERIODS.find((item) => item.key === period)?.days ?? 30;
+  const { width: windowWidth } = useWindowDimensions();
+  const chartWidth = windowWidth - spacing.lg * 2;
 
   const rawChartData = useMemo((): RawChartPoint[] => {
     const now = Date.now();
     const cutoff = cutoffDays === Infinity ? 0 : now - cutoffDays * 24 * 60 * 60 * 1000;
 
+    const toLabel = (date: Date) =>
+      cutoffDays <= 7
+        ? date.toLocaleDateString('en-US', { weekday: 'short' })
+        : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
     if (weightHistory && weightHistory.length > 0) {
       return weightHistory
         .filter((entry) => new Date(entry.date).getTime() >= cutoff)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .map((entry) => {
-          const date = new Date(entry.date);
-          const label =
-            cutoffDays <= 7
-              ? date.toLocaleDateString('en-US', { weekday: 'short' })
-              : date.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                });
-          return { label, valueKg: entry.weight };
-        });
+        .map((entry) => ({ label: toLabel(new Date(entry.date)), valueKg: entry.weight }));
     }
 
     return progressEntries
       .filter((entry) => entry.weight_kg != null)
       .filter((entry) => new Date(entry.entry_date).getTime() >= cutoff)
       .sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime())
-      .map((entry) => {
-        const date = new Date(entry.entry_date);
-        const label =
-          cutoffDays <= 7
-            ? date.toLocaleDateString('en-US', { weekday: 'short' })
-            : date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              });
-        return { label, valueKg: entry.weight_kg };
-      });
+      .map((entry) => ({ label: toLabel(new Date(entry.entry_date)), valueKg: entry.weight_kg }));
   }, [cutoffDays, progressEntries, weightHistory]);
 
-  const chartData: ChartData[] = useMemo(
-    () =>
-      rawChartData.map((entry) => ({
-        label: entry.label,
-        value: toDisplayWeight(entry.valueKg, unit) ?? 0,
-      })),
-    [rawChartData, unit]
+  const chartValues = useMemo(
+    () => rawChartData.map((entry) => toDisplayWeight(entry.valueKg, unit) ?? 0),
+    [rawChartData, unit],
   );
 
   const currentWeightKg =
@@ -110,35 +157,6 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
     totalChangeKg != null && startWeightKg != null && startWeightKg !== 0
       ? (totalChangeKg / startWeightKg) * 100
       : null;
-
-  const stats = useMemo(() => {
-    if (rawChartData.length < 2) {
-      return null;
-    }
-
-    const values = rawChartData.map((entry) => entry.valueKg);
-    const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-
-    const weeklyRateKg =
-      totalChangeKg != null && cutoffDays > 0 && cutoffDays !== Infinity
-        ? (totalChangeKg / cutoffDays) * 7
-        : totalChangeKg != null && cutoffDays === Infinity
-          ? (() => {
-              const oldestDate = weightHistory?.[0]?.date ?? progressEntries[0]?.entry_date;
-              if (!oldestDate) {
-                return null;
-              }
-
-              const spanDays =
-                (Date.now() - new Date(oldestDate).getTime()) / (1000 * 60 * 60 * 24);
-              return spanDays > 0 ? (totalChangeKg / spanDays) * 7 : null;
-            })()
-          : null;
-
-    return { avg, min, max, weeklyRateKg };
-  }, [cutoffDays, progressEntries, rawChartData, totalChangeKg, weightHistory]);
 
   const goalToGoKg =
     currentWeightKg != null && targetWeightKg != null
@@ -154,324 +172,302 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
   const displayCurrentWeight = toDisplayWeight(currentWeightKg, unit);
   const displayTargetWeight = toDisplayWeight(targetWeightKg, unit);
   const displayGoalToGo = toDisplayWeight(goalToGoKg, unit);
-  const displayStats = stats
-    ? {
-        avg: toDisplayWeight(stats.avg, unit),
-        min: toDisplayWeight(stats.min, unit),
-        max: toDisplayWeight(stats.max, unit),
-        weeklyRate: toDisplayWeight(stats.weeklyRateKg, unit),
+
+  const drawProgress = useSharedValue(0);
+  const [drawn, setDrawn] = useState(false);
+
+  React.useEffect(() => {
+    drawProgress.value = 0;
+    drawProgress.value = withTiming(1, { duration: 900 });
+  }, [period, chartValues.length, drawProgress]);
+
+  useAnimatedReaction(
+    () => drawProgress.value,
+    (value) => {
+      if (value >= 1) {
+        runOnJS(setDrawn)(true);
       }
-    : null;
+    },
+    [drawProgress],
+  );
+
+  const geom = useMemo(
+    () =>
+      buildSmoothPath(
+        chartValues,
+        chartWidth,
+        CHART_HEIGHT,
+        CHART_PADDING_X,
+        CHART_PADDING_TOP,
+        CHART_PADDING_BOTTOM,
+      ),
+    [chartValues, chartWidth],
+  );
+
+  const animatedLineProps = useAnimatedProps(() => {
+    return {
+      strokeDasharray: 1200,
+      strokeDashoffset: 1200 * (1 - drawProgress.value),
+    } as const;
+  });
+
+  const isDown = (totalChangePct ?? 0) <= 0;
+  const deltaColor = isDown ? colors.success.DEFAULT : colors.error.DEFAULT;
+  const deltaTint = isDown ? `${colors.success.DEFAULT}26` : `${colors.error.DEFAULT}26`;
+
+  const onPeriodPress = (key: Period) => {
+    haptics.light();
+    setPeriod(key);
+  };
 
   return (
-    <GlassCard style={styles.card}>
+    <Animated.View entering={FadeInDown.delay(0).duration(320)} style={styles.section}>
+      {/* Header row */}
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <LinearGradient
-            colors={['rgba(255,107,53,0.25)', 'rgba(255,107,53,0.05)']}
-            style={styles.iconBg}
-          >
-            <Ionicons name="trending-down" size={rf(16)} color={colors.primary} />
-          </LinearGradient>
-          <Text style={styles.sectionTitle}>Weight Journey</Text>
-        </View>
-        <TouchableOpacity
+        <Text style={styles.sectionTitle}>Weight Journey</Text>
+        <AnimatedPressable
           style={styles.logButton}
-          onPress={onLogWeight}
-          activeOpacity={0.8}
+          onPress={() => {
+            haptics.light();
+            onLogWeight();
+          }}
+          scaleValue={0.97}
+          hapticFeedback={false}
           accessibilityRole="button"
           accessibilityLabel="Log weight"
         >
-          <Ionicons name="add" size={rf(14)} color={colors.white} />
+          <Ionicons name="add" size={16} color={colors.text.primary} />
           <Text style={styles.logButtonText}>Log</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
-      {displayTargetWeight != null && displayGoalToGo != null && goalDirection != null && (
-        <View style={styles.goalRow}>
-          <Ionicons name="flag-outline" size={rf(12)} color={colors.primary} />
-          <Text style={styles.goalText}>
-            Goal: {displayTargetWeight.toFixed(1)} {unit} - {displayGoalToGo.toFixed(1)} {unit}{' '}
-            {goalDirection}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.periodRow}>
-        {PERIODS.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={[styles.periodTab, period === item.key && styles.periodTabActive]}
-            onPress={() => setPeriod(item.key)}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={`${item.label} period`}
-          >
-            <Text style={[styles.periodLabel, period === item.key && styles.periodLabelActive]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.weightRow}>
-        <View>
-          <Text style={styles.currentLabel}>CURRENT</Text>
-          <Text style={styles.currentWeight}>
-            {displayCurrentWeight != null ? `${displayCurrentWeight.toFixed(1)} ${unit}` : '—'}
+      {/* Hero weight + delta chip */}
+      <View style={styles.heroRow}>
+        <View style={styles.heroLeft}>
+          <Text style={styles.heroLabel}>CURRENT</Text>
+          <Text style={styles.heroWeight}>
+            {displayCurrentWeight != null ? displayCurrentWeight.toFixed(1) : '—'}
+            <Text style={styles.heroUnit}> {unit}</Text>
           </Text>
         </View>
         {totalChangePct != null && (
-          <View
-            style={[
-              styles.changeBadge,
-              {
-                backgroundColor:
-                  totalChangePct <= 0 ? 'rgba(52,199,89,0.15)' : 'rgba(255,59,48,0.15)',
-              },
-            ]}
-          >
+          <View style={[styles.deltaChip, { backgroundColor: deltaTint }]}>
             <Ionicons
-              name={totalChangePct <= 0 ? 'trending-down' : 'trending-up'}
-              size={rf(12)}
-              color={
-                totalChangePct <= 0 ? colors.success : colors.error
-              }
+              name={isDown ? 'trending-down' : 'trending-up'}
+              size={14}
+              color={deltaColor}
             />
-            <Text
-              style={[
-                styles.changeBadgeText,
-                {
-                  color:
-                    totalChangePct <= 0
-                      ? colors.success
-                      : colors.error,
-                },
-              ]}
-            >
+            <Text style={[styles.deltaChipText, { color: deltaColor }]}>
               {totalChangePct > 0 ? '+' : ''}
               {totalChangePct.toFixed(1)}%
             </Text>
-            <Text style={styles.changeBadgeVs}>vs start</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.chartWrapper}>
-        <LineChart
-          data={chartData}
-          color={colors.primary}
-          unit={unit}
-          showValues
-          showHeader={false}
-        />
+      {/* Goal hint */}
+      {displayTargetWeight != null && displayGoalToGo != null && goalDirection != null && (
+        <Text style={styles.goalHint}>
+          Goal {displayTargetWeight.toFixed(1)} {unit} · {displayGoalToGo.toFixed(1)} {unit}{' '}
+          {goalDirection}
+        </Text>
+      )}
+
+      {/* Full-bleed chart */}
+      <View style={styles.chartWrap}>
+        {chartValues.length >= 2 ? (
+          <Svg width={chartWidth} height={CHART_HEIGHT}>
+            <Defs>
+              <SvgLinearGradient id="weightArea" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={LINE_COLOR} stopOpacity={0.28} />
+                <Stop offset="1" stopColor={LINE_COLOR} stopOpacity={0} />
+              </SvgLinearGradient>
+            </Defs>
+            {drawn && geom.area !== '' && (
+              <Path d={geom.area} fill="url(#weightArea)" />
+            )}
+            <AnimatedPath
+              d={geom.line}
+              fill="none"
+              stroke={LINE_COLOR}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              animatedProps={animatedLineProps}
+            />
+            <Circle cx={geom.lastX} cy={geom.lastY} r={5} fill={LINE_COLOR} />
+            <Circle cx={geom.lastX} cy={geom.lastY} r={9} fill={LINE_COLOR} opacity={0.22} />
+          </Svg>
+        ) : (
+          <View style={styles.emptyChart}>
+            <Ionicons name="stats-chart-outline" size={28} color={colors.text.muted} />
+            <Text style={styles.emptyChartText}>Log at least 2 entries to see your journey</Text>
+          </View>
+        )}
       </View>
 
-      {stats && displayStats && (
-        <View style={styles.statsBar}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>AVG</Text>
-            <Text style={styles.statValue}>
-              {displayStats.avg?.toFixed(1)} {unit}
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>MIN</Text>
-            <Text style={[styles.statValue, { color: colors.success }]}>
-              {displayStats.min?.toFixed(1)} {unit}
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>MAX</Text>
-            <Text style={[styles.statValue, { color: colors.error }]}>
-              {displayStats.max?.toFixed(1)} {unit}
-            </Text>
-          </View>
-          {stats.weeklyRateKg != null && displayStats.weeklyRate != null && (
-            <>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>/ WEEK</Text>
-                <Text
-                  style={[
-                    styles.statValue,
-                    {
-                      color:
-                        stats.weeklyRateKg <= 0
-                          ? colors.success
-                          : colors.error,
-                    },
-                  ]}
-                >
-                  {stats.weeklyRateKg > 0 ? '+' : ''}
-                  {displayStats.weeklyRate.toFixed(2)} {unit}
-                </Text>
-              </View>
-            </>
-          )}
+      {/* X-axis labels (first / last) */}
+      {rawChartData.length >= 2 && (
+        <View style={styles.axisRow}>
+          <Text style={styles.axisLabel}>{rawChartData[0].label}</Text>
+          <Text style={styles.axisLabel}>{rawChartData[rawChartData.length - 1].label}</Text>
         </View>
       )}
-    </GlassCard>
+
+      {/* Period selector */}
+      <View style={styles.periodRow}>
+        {PERIODS.map((item) => {
+          const active = period === item.key;
+          return (
+            <AnimatedPressable
+              key={item.key}
+              style={[styles.periodTab, active && styles.periodTabActive]}
+              onPress={() => onPeriodPress(item.key)}
+              scaleValue={0.97}
+              hapticFeedback={false}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.label} period`}
+            >
+              <Text style={[styles.periodLabel, active && styles.periodLabelActive]}>
+                {item.label}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
+      </View>
+    </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
-  card: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    padding: rp(16),
+  section: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: rp(10),
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rp(8),
-  },
-  iconBg: {
-    width: rs(28),
-    height: rs(28),
-    borderRadius: rbr(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
-    fontSize: rf(16),
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
   },
   logButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rp(4),
-    backgroundColor: colors.primary,
-    paddingHorizontal: rp(10),
-    paddingVertical: rp(6),
-    borderRadius: rbr(12),
+    gap: spacing.xs,
+    backgroundColor: colors.primary.DEFAULT,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.lg,
     minHeight: 44,
     justifyContent: 'center',
   },
   logButtonText: {
-    fontSize: rf(12),
-    fontWeight: '600',
-    color: colors.white,
+    ...typography.variants.caption2,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.text.primary,
   },
-  goalRow: {
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+  },
+  heroLeft: {
+    flex: 1,
+  },
+  heroLabel: {
+    ...typography.variants.caption,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    color: colors.text.muted,
+    marginBottom: spacing.xxs,
+  },
+  heroWeight: {
+    ...typography.variants.heroStat,
+    color: colors.text.primary,
+  },
+  heroUnit: {
+    ...typography.variants.cardHeadline,
+    fontFamily: 'Manrope_500Medium',
+    color: colors.text.secondary,
+  },
+  deltaChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rp(6),
-    marginBottom: rp(10),
-    backgroundColor: colors.primaryTint,
-    paddingHorizontal: rp(10),
-    paddingVertical: rp(5),
-    borderRadius: rbr(10),
-    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
   },
-  goalText: {
-    fontSize: rf(11),
-    fontWeight: '600',
-    color: colors.primary,
+  deltaChipText: {
+    ...typography.variants.caption2,
+    fontFamily: 'Manrope_700Bold',
+  },
+  goalHint: {
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  chartWrap: {
+    marginTop: spacing.md,
+    marginHorizontal: -spacing.xs,
+  },
+  axisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
+    marginTop: spacing.xxs,
+  },
+  axisLabel: {
+    ...typography.variants.caption,
+    color: colors.text.muted,
+  },
+  emptyChart: {
+    height: CHART_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: surface[1],
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
+  },
+  emptyChartText: {
+    ...typography.variants.caption,
+    color: colors.text.muted,
   },
   periodRow: {
     flexDirection: 'row',
-    gap: rp(6),
-    marginBottom: rp(10),
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
   periodTab: {
-    paddingHorizontal: rp(12),
-    paddingVertical: rp(5),
-    borderRadius: rbr(10),
-    backgroundColor: colors.glassSurface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    backgroundColor: surface[1],
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: borderTokens.subtle,
     minHeight: 44,
     justifyContent: 'center',
   },
   periodTabActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
+    borderColor: colors.primary.DEFAULT,
   },
   periodLabel: {
-    fontSize: rf(11),
-    fontWeight: '600',
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    fontFamily: 'Manrope_600SemiBold',
+    color: colors.text.muted,
   },
   periodLabelActive: {
-    color: colors.white,
-  },
-  weightRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginBottom: rp(4),
-  },
-  currentLabel: {
-    fontSize: rf(10),
-    fontWeight: '600',
-    color: colors.textMuted,
-    letterSpacing: 0.8,
-    marginBottom: rp(2),
-  },
-  currentWeight: {
-    fontSize: rf(32),
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  changeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rp(3),
-    paddingHorizontal: rp(8),
-    paddingVertical: rp(5),
-    borderRadius: rbr(10),
-    marginBottom: rp(4),
-  },
-  changeBadgeText: {
-    fontSize: rf(12),
-    fontWeight: '700',
-  },
-  changeBadgeVs: {
-    fontSize: rf(10),
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  chartWrapper: {
-    marginTop: rp(4),
-  },
-  statsBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    marginTop: rp(12),
-    paddingTop: rp(12),
-    borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: rf(9),
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 0.6,
-    marginBottom: rp(3),
-  },
-  statValue: {
-    fontSize: rf(13),
-    fontWeight: '700',
-    color: colors.text,
-  },
-  statDivider: {
-    width: 1,
-    height: rh(28),
-    backgroundColor: colors.glassBorder,
+    color: colors.text.primary,
   },
 });
+
+export default WeightJourneySection;

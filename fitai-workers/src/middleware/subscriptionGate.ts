@@ -147,6 +147,8 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 					planRow = planData as SubscriptionPlanRow;
 					subscription = { ...subData, plan: planRow } as unknown as SubscriptionWithPlan;
 					planFeatures = extractFeatures(planRow);
+				} else {
+					console.error('[SubscriptionGate] Active subscription but plan row missing for tier:', subData.tier);
 				}
 			}
 		} catch (gateError) {

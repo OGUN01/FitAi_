@@ -1,21 +1,23 @@
 /**
- * ConnectedAccountsCard - Shows linked social accounts
- *
- * Features:
- * - Google account connection status
- * - Apple account connection status (iOS only)
- * - Connect/disconnect functionality
+ * ConnectedAccountsCard - Aurora 2026: linked social accounts.
+ * iOS-style grouped list — one surface.1 container, hairline separators.
  */
 
-import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Platform, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rp, rw } from "../../../utils/responsive";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+
+const { variants } = typography;
 
 interface ConnectedAccount {
   id: string;
@@ -25,6 +27,7 @@ interface ConnectedAccount {
   bgColor: string;
   isConnected: boolean;
   email?: string;
+  onPress: () => void;
 }
 
 interface ConnectedAccountsCardProps {
@@ -34,6 +37,69 @@ interface ConnectedAccountsCardProps {
   onApplePress?: () => void;
   animationDelay?: number;
 }
+
+const AccountRow: React.FC<{
+  account: ConnectedAccount;
+  isLast: boolean;
+}> = React.memo(({ account, isLast }) => {
+  const handlePress = useCallback(() => {
+    haptics.light();
+    account.onPress();
+  }, [account]);
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`${account.name} ${account.isConnected ? "connected" : "connect"}`}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && styles.rowPressed,
+        !isLast && styles.rowBorder,
+      ]}
+    >
+      {/* Provider icon */}
+      <View style={[styles.iconSquircle, { backgroundColor: account.bgColor }]}>
+        <Ionicons name={account.icon} size={rf(16)} color={account.iconColor} />
+      </View>
+
+      {/* Info */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.providerName} numberOfLines={1}>
+          {account.name}
+        </Text>
+        {account.isConnected && account.email ? (
+          <Text style={styles.email} numberOfLines={1}>
+            {account.email}
+          </Text>
+        ) : (
+          <Text style={styles.notConnected}>Not connected</Text>
+        )}
+      </View>
+
+      {/* Status */}
+      <View
+        style={[
+          styles.statusBadge,
+          account.isConnected
+            ? styles.connectedBadge
+            : styles.disconnectedBadge,
+        ]}
+      >
+        <Text
+          style={[
+            styles.statusText,
+            account.isConnected
+              ? styles.connectedText
+              : styles.disconnectedText,
+          ]}
+        >
+          {account.isConnected ? "Connected" : "Connect"}
+        </Text>
+      </View>
+    </Pressable>
+  );
+});
 
 export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
   isGoogleConnected,
@@ -47,10 +113,11 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
       id: "google",
       name: "Google",
       icon: "logo-google",
-      iconColor: colors.white,
-      bgColor: "#EA4335",
+      iconColor: colors.text.primary,
+      bgColor: colors.error.DEFAULT,
       isConnected: isGoogleConnected,
       email: googleEmail,
+      onPress: onGooglePress,
     },
     // Only render the Apple row when the host actually wires onApplePress —
     // otherwise the row was a dead "Connect" button that did nothing on tap.
@@ -60,10 +127,11 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
             id: "apple",
             name: "Apple",
             icon: "logo-apple" as keyof typeof Ionicons.glyphMap,
-            iconColor: colors.white,
-            bgColor: colors.black,
+            iconColor: colors.text.primary,
+            bgColor: surface[2],
             isConnected: false,
             email: undefined,
+            onPress: onApplePress,
           },
         ]
       : []),
@@ -71,124 +139,76 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInRight.delay(animationDelay).duration(400)}
+      entering={FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
-      <Text style={styles.sectionTitle}>Connected Accounts</Text>
-      <GlassCard
-        elevation={1}
-        padding="none"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.card}
-      >
+      <View style={styles.sectionHeader}>
+        <Ionicons
+          name="link-outline"
+          size={rf(14)}
+          color={colors.text.secondary}
+          style={styles.sectionIcon}
+        />
+        <Text style={styles.sectionTitle}>Connected Accounts</Text>
+      </View>
+
+      <View style={styles.listSurface}>
         {accounts.map((account, index) => (
-          <React.Fragment key={account.id}>
-            <AnimatedPressable
-              onPress={() => {
-                haptics.light();
-                if (account.id === "google") {
-                  onGooglePress();
-                } else if (account.id === "apple" && onApplePress) {
-                  onApplePress();
-                }
-              }}
-              scaleValue={0.98}
-              hapticFeedback={false}
-              accessibilityRole="button"
-              accessibilityLabel={`${account.name} ${account.isConnected ? "connected" : "connect"}`}
-            >
-              <View style={styles.row}>
-                {/* Provider Icon */}
-                <View
-                  style={[
-                    styles.iconContainer,
-                    { backgroundColor: account.bgColor },
-                  ]}
-                >
-                  <Ionicons
-                    name={account.icon}
-                    size={rf(18)}
-                    color={account.iconColor}
-                  />
-                </View>
-
-                {/* Info */}
-                <View style={styles.infoContainer}>
-                  <Text style={styles.providerName}>{account.name}</Text>
-                  {account.isConnected && account.email ? (
-                    <Text style={styles.email} numberOfLines={1}>
-                      {account.email}
-                    </Text>
-                  ) : (
-                    <Text style={styles.notConnected}>Not connected</Text>
-                  )}
-                </View>
-
-                {/* Status/Action */}
-                <View
-                  style={[
-                    styles.statusBadge,
-                    account.isConnected
-                      ? styles.connectedBadge
-                      : styles.disconnectedBadge,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.statusText,
-                      account.isConnected
-                        ? styles.connectedText
-                        : styles.disconnectedText,
-                    ]}
-                  >
-                    {account.isConnected ? "Connected" : "Connect"}
-                  </Text>
-                </View>
-              </View>
-            </AnimatedPressable>
-
-            {index < accounts.length - 1 && (
-              <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-              </View>
-            )}
-          </React.Fragment>
+          <AccountRow
+            key={account.id}
+            account={account}
+            isLast={index === accounts.length - 1}
+          />
         ))}
-      </GlassCard>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
-  sectionTitle: {
-    fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: spacing.sm,
     marginLeft: spacing.xs,
   },
-  card: {
+  sectionIcon: {
+    marginRight: spacing.xs,
+  },
+  sectionTitle: {
+    ...variants.caption,
+    color: colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+  },
+  listSurface: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
     overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    // Guarantee the WCAG 44px touch floor across the connect/disconnect row.
-    minHeight: 44,
+    minHeight: 56,
   },
-  iconContainer: {
-    width: rw(36),
-    height: rw(36),
+  rowPressed: {
+    backgroundColor: surface[2],
+  },
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: border.DEFAULT,
+  },
+  iconSquircle: {
+    width: rw(32),
+    height: rw(32),
     borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
@@ -199,48 +219,41 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   providerName: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.white,
+    ...variants.body,
+    color: colors.text.primary,
   },
   email: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(2),
+    ...variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
   },
   notConnected: {
-    fontSize: rf(12),
-    color: colors.textMuted,
-    marginTop: rp(2),
+    ...variants.caption,
+    color: colors.text.tertiary,
+    marginTop: spacing.xxs,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
+    borderRadius: 8,
     flexShrink: 0,
+    marginLeft: spacing.sm,
   },
   connectedBadge: {
-    backgroundColor: "rgba(76, 175, 80, 0.15)",
+    backgroundColor: `${colors.success.DEFAULT}26`,
   },
   disconnectedBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: surface[2],
   },
   statusText: {
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(11),
-    fontWeight: "600",
   },
   connectedText: {
-    color: colors.success,
+    color: colors.success.DEFAULT,
   },
   disconnectedText: {
-    color: colors.textSecondary,
-  },
-  dividerContainer: {
-    paddingLeft: rw(36) + spacing.md * 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    color: colors.text.secondary,
   },
 });
 

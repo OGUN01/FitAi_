@@ -1,22 +1,31 @@
-import React, { useEffect, useState, useRef } from "react";
-import { View, Text, StyleSheet, Modal } from "react-native";
-import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
-import { rf } from "../../utils/responsive";
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+} from '../../theme/aurora-tokens';
+import { rf } from '../../utils/responsive';
 
 const CYCLING_TEXTS = [
-  "Analyzing your meal...",
-  "Identifying foods...",
-  "Calculating nutrition...",
-  "Estimating portions...",
+  'Analyzing your meal...',
+  'Identifying foods...',
+  'Calculating nutrition...',
+  'Estimating portions...',
 ];
 
 interface FoodScanLoadingOverlayProps {
   visible: boolean;
+  /** Optional cancel callback. When provided, renders a subtle "Cancel" text button below the status text. */
+  onCancel?: () => void;
 }
 
 export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
   visible,
+  onCancel,
 }) => {
   const [textIndex, setTextIndex] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,7 +52,19 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <AuroraSpinner size="lg" theme="primary" />
-          <Text style={styles.text}>{CYCLING_TEXTS[textIndex]}</Text>
+          <Animated.Text key={textIndex} entering={FadeIn.duration(400)} style={styles.text}>
+            {CYCLING_TEXTS[textIndex]}
+          </Animated.Text>
+          {onCancel && (
+            <TouchableOpacity
+              onPress={onCancel}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel scan"
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -53,23 +74,30 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   card: {
     backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.xl,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.xl * 1.5,
-    alignItems: "center",
+    alignItems: 'center',
     gap: spacing.lg,
     minWidth: 220,
   },
   text: {
     fontSize: rf(15),
-    fontWeight: "500",
+    fontWeight: '500',
     color: colors.text,
-    textAlign: "center",
+    textAlign: 'center',
+  },
+  cancelText: {
+    fontSize: rf(fontSize.sm),
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
 });
+
+export default FoodScanLoadingOverlay;

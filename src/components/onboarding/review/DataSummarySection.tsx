@@ -1,9 +1,17 @@
-import { flatColors as colors, flatFontSize as fontSize, typography, borderRadius } from "../../../theme/aurora-tokens";
+/**
+ * DataSummarySection — S5 review group ("Editorial Dark", no cards)
+ *
+ * Editorial rows summarizing S1–S4 (Personal, Diet, Body, Workout):
+ * micro-label left, value right, hairline separators, chevron affordance.
+ * Each row tappable → onNavigateToTab(sourceScreen). Data props unchanged.
+ */
+
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { StyleSheet, View, Text, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rw, rh } from "../../../utils/responsive";import { GlassCard } from "../../ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
+import { RowGroup, tokens } from "../../../components/onboarding/fresh";
 import {
   PersonalInfoData,
   DietPreferencesData,
@@ -20,7 +28,58 @@ interface DataSummarySectionProps {
   workoutPreferences: WorkoutPreferencesData | null;
   calculatedData: AdvancedReviewData | null;
   onNavigateToTab?: (tabNumber: number) => void;
+  /** Global reveal sequencing: ms offset added to every internal stagger. */
+  enterDelay?: number;
 }
+
+const fireSelection = () => {
+  Haptics.selectionAsync().catch(() => {});
+};
+
+interface SummaryRowProps {
+  label: string;
+  value: string;
+  sub: string;
+  onPress: () => void;
+  delay: number;
+  testID: string;
+}
+
+const SummaryRow: React.FC<SummaryRowProps> = ({
+  label,
+  value,
+  sub,
+  onPress,
+  delay,
+  testID,
+}) => (
+  <Animated.View entering={FadeInDown.duration(250).delay(delay)}>
+    <Pressable
+      onPress={() => {
+        fireSelection();
+        onPress();
+      }}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityHint="Tap to edit"
+      testID={testID}
+    >
+      <Text style={styles.rowLabel} numberOfLines={1}>
+        {label}
+      </Text>
+      <View style={styles.rowRight}>
+        <Text style={styles.rowValue} numberOfLines={1}>
+          {value}
+        </Text>
+        <Text style={styles.rowSub} numberOfLines={1}>
+          {sub}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={14} color={tokens.ink3} />
+    </Pressable>
+  </Animated.View>
+);
 
 export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
   personalInfo,
@@ -29,290 +88,99 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
   workoutPreferences,
   calculatedData,
   onNavigateToTab,
+  enterDelay = 0,
 }) => {
+  const dietTitle =
+    DIET_TYPE_OPTIONS.find((o) => o.id === dietPreferences?.diet_type)?.title ??
+    dietPreferences?.diet_type ??
+    "—";
+
+  const bodyValue =
+    bodyAnalysis?.current_weight_kg && bodyAnalysis?.target_weight_kg
+      ? `${bodyAnalysis.current_weight_kg}kg → ${bodyAnalysis.target_weight_kg}kg`
+      : "—";
+  const bodySub = calculatedData?.calculated_bmi
+    ? `BMI ${calculatedData.calculated_bmi.toFixed(1)}`
+    : "BMI —";
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <View style={styles.sectionTitleContainer}>
-          <Ionicons
-            name="document-text-outline"
-            size={rf(18)}
-            color={colors.primary}
-            style={styles.sectionTitleIcon}
-          />
-          <Text style={styles.sectionTitle} numberOfLines={1}>
-            Data Summary
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.summaryScrollContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.summaryScrollContent}
-          decelerationRate="fast"
-          snapToInterval={rw(130) + rw(12)}
-          snapToAlignment="start"
-        >
-          {/* Personal Info Card */}
-          <AnimatedPressable
-            onPress={() => onNavigateToTab?.(1)}
-            scaleValue={0.97}
-            style={styles.summaryScrollCard}
-          >
-            <GlassCard
-              elevation={2}
-              blurIntensity="light"
-              padding="md"
-              borderRadius="lg"
-              style={styles.summaryScrollCardInner}
-            >
-              <View style={styles.summaryScrollHeader}>
-                <View style={styles.summaryScrollIconBg}>
-                  <Ionicons
-                    name="person"
-                    size={rf(18)}
-                    color={colors.primary}
-                  />
-                </View>
-                <Ionicons
-                  name="create-outline"
-                  size={rf(14)}
-                  color={colors.textMuted}
-                />
-              </View>
-              <Text style={styles.summaryScrollTitle}>Personal Info</Text>
-              <Text style={styles.summaryScrollValue} numberOfLines={1}>
-                {personalInfo?.first_name} {personalInfo?.last_name}
-              </Text>
-              <Text style={styles.summaryScrollSub} numberOfLines={1}>
-                {personalInfo?.age}y • {personalInfo?.gender}
-              </Text>
-              <Text style={styles.summaryScrollSub} numberOfLines={1}>
-                {personalInfo?.country}
-              </Text>
-            </GlassCard>
-          </AnimatedPressable>
-
-          {/* Diet Card */}
-          <AnimatedPressable
-            onPress={() => onNavigateToTab?.(2)}
-            scaleValue={0.97}
-            style={styles.summaryScrollCard}
-          >
-            <GlassCard
-              elevation={2}
-              blurIntensity="light"
-              padding="md"
-              borderRadius="lg"
-              style={styles.summaryScrollCardInner}
-            >
-              <View style={styles.summaryScrollHeader}>
-                <View
-                  style={[
-                    styles.summaryScrollIconBg,
-                    { backgroundColor: `${colors.success}20` },
-                  ]}
-                >
-                  <Ionicons
-                    name="restaurant"
-                    size={rf(18)}
-                    color={colors.success}
-                  />
-                </View>
-                <Ionicons
-                  name="create-outline"
-                  size={rf(14)}
-                  color={colors.textMuted}
-                />
-              </View>
-              <Text style={styles.summaryScrollTitle}>Diet</Text>
-              <Text style={styles.summaryScrollValue} numberOfLines={1}>
-                {DIET_TYPE_OPTIONS.find((o) => o.id === dietPreferences?.diet_type)?.title ?? dietPreferences?.diet_type ?? "—"}
-              </Text>
-              <View style={styles.summaryScrollMeals}>
-                <Text style={styles.summaryScrollSub}>Preferences Set</Text>
-              </View>
-            </GlassCard>
-          </AnimatedPressable>
-
-          {/* Body Analysis Card */}
-          <AnimatedPressable
-            onPress={() => onNavigateToTab?.(3)}
-            scaleValue={0.97}
-            style={styles.summaryScrollCard}
-          >
-            <GlassCard
-              elevation={2}
-              blurIntensity="light"
-              padding="md"
-              borderRadius="lg"
-              style={styles.summaryScrollCardInner}
-            >
-              <View style={styles.summaryScrollHeader}>
-                <View
-                  style={[
-                    styles.summaryScrollIconBg,
-                    { backgroundColor: `${colors.warning}20` },
-                  ]}
-                >
-                  <Ionicons
-                    name="body"
-                    size={rf(18)}
-                    color={colors.warning}
-                  />
-                </View>
-                <Ionicons
-                  name="create-outline"
-                  size={rf(14)}
-                  color={colors.textMuted}
-                />
-              </View>
-              <Text style={styles.summaryScrollTitle}>Body Analysis</Text>
-              <Text style={styles.summaryScrollValue} numberOfLines={1}>
-                {bodyAnalysis?.current_weight_kg && bodyAnalysis?.target_weight_kg
-                  ? `${bodyAnalysis.current_weight_kg}kg \u2192 ${bodyAnalysis.target_weight_kg}kg`
-                  : "\u2014"}
-              </Text>
-              <Text style={styles.summaryScrollSub} numberOfLines={1}>
-                {calculatedData?.calculated_bmi
-                  ? `BMI: ${calculatedData.calculated_bmi.toFixed(1)}`
-                  : "BMI: \u2014"}
-              </Text>
-            </GlassCard>
-          </AnimatedPressable>
-
-          {/* Workout Card */}
-          <AnimatedPressable
-            onPress={() => onNavigateToTab?.(4)}
-            scaleValue={0.97}
-            style={styles.summaryScrollCard}
-          >
-            <GlassCard
-              elevation={2}
-              blurIntensity="light"
-              padding="md"
-              borderRadius="lg"
-              style={styles.summaryScrollCardInner}
-            >
-              <View style={styles.summaryScrollHeader}>
-                <View
-                  style={[
-                    styles.summaryScrollIconBg,
-                    { backgroundColor: `${colors.error}20` },
-                  ]}
-                >
-                  <Ionicons
-                    name="barbell"
-                    size={rf(18)}
-                    color={colors.error}
-                  />
-                </View>
-                <Ionicons
-                  name="create-outline"
-                  size={rf(14)}
-                  color={colors.textMuted}
-                />
-              </View>
-              <Text style={styles.summaryScrollTitle}>Workout</Text>
-              <Text style={styles.summaryScrollValue} numberOfLines={1}>
-                {workoutPreferences?.intensity}
-              </Text>
-              <Text style={styles.summaryScrollSub} numberOfLines={1}>
-                {workoutPreferences?.location}
-              </Text>
-            </GlassCard>
-          </AnimatedPressable>
-        </ScrollView>
-      </View>
-      <View style={styles.sectionBottomPadSmall} />
-    </GlassCard>
+    <RowGroup label="Your details" style={styles.group}>
+      <SummaryRow
+        label="Personal"
+        value={`${personalInfo?.first_name ?? ""} ${personalInfo?.last_name ?? ""}`.trim() || "—"}
+        sub={`${personalInfo?.age ?? "—"}y • ${personalInfo?.gender ?? "—"}`}
+        onPress={() => onNavigateToTab?.(1)}
+        delay={enterDelay}
+        testID="summary-personal"
+      />
+      <SummaryRow
+        label="Diet"
+        value={dietTitle}
+        sub={personalInfo?.country || "—"}
+        onPress={() => onNavigateToTab?.(2)}
+        delay={enterDelay + 40}
+        testID="summary-diet"
+      />
+      <SummaryRow
+        label="Body"
+        value={bodyValue}
+        sub={bodySub}
+        onPress={() => onNavigateToTab?.(3)}
+        delay={enterDelay + 80}
+        testID="summary-body"
+      />
+      <SummaryRow
+        label="Workout"
+        value={workoutPreferences?.intensity ?? "—"}
+        sub={workoutPreferences?.location ?? "—"}
+        onPress={() => onNavigateToTab?.(4)}
+        delay={enterDelay + 120}
+        testID="summary-workout"
+      />
+    </RowGroup>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginBottom: rp(16),
-    marginHorizontal: 0,
-    borderLeftWidth: 0,
-    borderRightWidth: 0,
-    borderRadius: 0,
+  group: {
+    marginTop: 8,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: rp(20),
-    paddingTop: rp(16),
-    paddingBottom: rp(12),
-  },
-  sectionTitleContainer: {
+  row: {
+    minHeight: 56,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.hairline,
   },
-  sectionTitleIcon: {
-    marginRight: rp(8),
+  pressed: {
+    opacity: 0.6,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+  rowLabel: {
+    width: 84,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: tokens.ink3,
+  },
+  rowRight: {
     flex: 1,
+    alignItems: "flex-end",
   },
-  summaryScrollContainer: {
-    height: rh(190),
+  rowValue: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: 15,
+    lineHeight: 20,
+    color: tokens.ink,
+    textAlign: "right",
   },
-  summaryScrollContent: {
-    paddingHorizontal: rp(20),
-    paddingBottom: rp(12),
-  },
-  summaryScrollCard: {
-    width: rw(130),
-    height: rh(170),
-    marginRight: rp(12),
-  },
-  summaryScrollCardInner: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  summaryScrollHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  summaryScrollIconBg: {
-    width: rf(32),
-    height: rf(32),
-    borderRadius: rf(borderRadius.xl),
-    backgroundColor: `${colors.primary}20`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  summaryScrollTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
-    marginTop: rp(8),
-  },
-  summaryScrollValue: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-  },
-  summaryScrollSub: {
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  summaryScrollMeals: {
-    flexDirection: "row",
-    gap: rp(4),
-  },
-  sectionBottomPadSmall: {
-    height: rp(12),
+  rowSub: {
+    marginTop: 2,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
+    textAlign: "right",
   },
 });

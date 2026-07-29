@@ -1,18 +1,13 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
-import { rf, rp, rh } from "../../utils/responsive";
-import { gradients, toLinearGradientProps } from "../../theme/gradients";
+import React from 'react';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from '../../utils/colors';
+import { rf, rp, rh, rw } from '../../utils/responsive';
+import { gradients, toLinearGradientProps } from '../../theme/gradients';
+import { MACRO_PILL_COLORS } from './macroColors';
 
 export interface ScanResultData {
   recognizedFoods: any[];
@@ -36,23 +31,23 @@ interface ScanResultModalProps {
 }
 
 const MACRO_COLORS = {
-  calories: "#F97316",
-  protein: "#3B82F6",
-  carbs: "#F59E0B",
-  fat: "#10B981",
-  fiber: "#8B5CF6",
+  calories: colors.primary,
+  protein: MACRO_PILL_COLORS.protein,
+  carbs: MACRO_PILL_COLORS.carbs,
+  fat: MACRO_PILL_COLORS.fat,
+  fiber: MACRO_PILL_COLORS.fiber,
 };
 
 const getConfidenceColor = (confidence: number) => {
-  if (confidence >= 80) return "#10B981";
-  if (confidence >= 60) return "#F59E0B";
-  return "#EF4444";
+  if (confidence >= 80) return colors.successAlt;
+  if (confidence >= 60) return colors.warningAlt;
+  return colors.errorAlt;
 };
 
 const getConfidenceLabel = (confidence: number) => {
-  if (confidence >= 80) return "High";
-  if (confidence >= 60) return "Medium";
-  return "Low";
+  if (confidence >= 80) return 'High';
+  if (confidence >= 60) return 'Medium';
+  return 'Low';
 };
 
 export const ScanResultModal: React.FC<ScanResultModalProps> = ({
@@ -71,7 +66,6 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
     totalProtein,
     totalCarbs,
     totalFat,
-    totalFiber,
     confidence,
     mealType,
   } = scanResult;
@@ -84,22 +78,16 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           {/* Header */}
-          <View style={styles.header}>
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
             <View style={styles.headerLeft}>
-              <Ionicons
-                name="checkmark-circle"
-                size={rf(22)}
-                color="#10B981"
-              />
+              <View style={styles.successIconDisc}>
+                <Ionicons name="checkmark-circle" size={rf(18)} color={colors.successAlt} />
+              </View>
               <Text style={styles.title}>Meal Recognized</Text>
             </View>
             <View style={styles.headerBadges}>
-              <View
-                style={[styles.badge, { backgroundColor: `${confColor}20` }]}
-              >
-                <View
-                  style={[styles.badgeDot, { backgroundColor: confColor }]}
-                />
+              <View style={[styles.badge, { backgroundColor: `${confColor}20` }]}>
+                <View style={[styles.badgeDot, { backgroundColor: confColor }]} />
                 <Text style={[styles.badgeText, { color: confColor }]}>
                   {confLabel} {confidence}%
                 </Text>
@@ -110,155 +98,145 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                 </Text>
               </View>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Food cards */}
-          <ScrollView
-            style={styles.foodList}
-            showsVerticalScrollIndicator={false}
-          >
-            {recognizedFoods.map((food: any, idx: number) => (
-              <View key={idx} style={styles.foodCard}>
-                <View style={styles.foodHeader}>
-                  <Text style={styles.foodName}>
-                    {food.localName || food.name}
-                  </Text>
-                  <Text style={styles.foodServing}>
-                    {food.userGrams ?? food.estimatedGrams ?? 100}g
-                  </Text>
+          <Animated.View entering={FadeInDown.delay(60).duration(400)}>
+            <ScrollView style={styles.foodList} showsVerticalScrollIndicator={false}>
+              {recognizedFoods.map((food: any, idx: number) => (
+                <View key={idx} style={styles.foodCard}>
+                  <View style={styles.foodHeader}>
+                    <View style={styles.foodIconDisc}>
+                      <Ionicons name="restaurant-outline" size={rf(14)} color={colors.primary} />
+                    </View>
+                    <Text style={styles.foodName}>{food.localName || food.name}</Text>
+                    <Text style={styles.foodServing}>
+                      {food.userGrams ?? food.estimatedGrams ?? 100}g
+                    </Text>
+                  </View>
+                  <View style={styles.macroRow}>
+                    <MacroChip
+                      label="Cal"
+                      value={Math.round(food.nutrition?.calories || 0)}
+                      color={MACRO_COLORS.calories}
+                    />
+                    <MacroChip
+                      label="P"
+                      value={Math.round((food.nutrition?.protein || 0) * 10) / 10}
+                      unit="g"
+                      color={MACRO_COLORS.protein}
+                    />
+                    <MacroChip
+                      label="C"
+                      value={Math.round((food.nutrition?.carbs || 0) * 10) / 10}
+                      unit="g"
+                      color={MACRO_COLORS.carbs}
+                    />
+                    <MacroChip
+                      label="F"
+                      value={Math.round((food.nutrition?.fat || 0) * 10) / 10}
+                      unit="g"
+                      color={MACRO_COLORS.fat}
+                    />
+                    <MacroChip
+                      label="Fb"
+                      value={Math.round((food.nutrition?.fiber || 0) * 10) / 10}
+                      unit="g"
+                      color={MACRO_COLORS.fiber}
+                    />
+                  </View>
                 </View>
-                <View style={styles.macroRow}>
-                  <MacroChip
-                    label="Cal"
-                    value={Math.round(food.nutrition?.calories || 0)}
-                    color={MACRO_COLORS.calories}
-                  />
-                  <MacroChip
-                    label="P"
-                    value={Math.round((food.nutrition?.protein || 0) * 10) / 10}
-                    unit="g"
-                    color={MACRO_COLORS.protein}
-                  />
-                  <MacroChip
-                    label="C"
-                    value={Math.round((food.nutrition?.carbs || 0) * 10) / 10}
-                    unit="g"
-                    color={MACRO_COLORS.carbs}
-                  />
-                  <MacroChip
-                    label="F"
-                    value={Math.round((food.nutrition?.fat || 0) * 10) / 10}
-                    unit="g"
-                    color={MACRO_COLORS.fat}
-                  />
-                  <MacroChip
-                    label="Fb"
-                    value={Math.round((food.nutrition?.fiber || 0) * 10) / 10}
-                    unit="g"
-                    color={MACRO_COLORS.fiber}
-                  />
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          </Animated.View>
 
           {/* Total summary bar */}
-          <View style={styles.totalBar}>
-            <TotalItem
-              label="Calories"
-              value={Math.round(totalCalories)}
-              color={MACRO_COLORS.calories}
-            />
-            <TotalItem
-              label="Protein"
-              value={`${Math.round(totalProtein * 10) / 10}g`}
-              color={MACRO_COLORS.protein}
-            />
-            <TotalItem
-              label="Carbs"
-              value={`${Math.round(totalCarbs * 10) / 10}g`}
-              color={MACRO_COLORS.carbs}
-            />
-            <TotalItem
-              label="Fat"
-              value={`${Math.round(totalFat * 10) / 10}g`}
-              color={MACRO_COLORS.fat}
-            />
-          </View>
+          <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+            <View style={styles.totalBar}>
+              <TotalItem
+                label="Calories"
+                value={Math.round(totalCalories)}
+                color={MACRO_COLORS.calories}
+              />
+              <TotalItem
+                label="Protein"
+                value={`${Math.round(totalProtein * 10) / 10}g`}
+                color={MACRO_COLORS.protein}
+              />
+              <TotalItem
+                label="Carbs"
+                value={`${Math.round(totalCarbs * 10) / 10}g`}
+                color={MACRO_COLORS.carbs}
+              />
+              <TotalItem
+                label="Fat"
+                value={`${Math.round(totalFat * 10) / 10}g`}
+                color={MACRO_COLORS.fat}
+              />
+            </View>
 
-          {/* AI disclaimer */}
-          <View style={styles.disclaimer}>
-            <Ionicons
-              name="information-circle-outline"
-              size={rf(14)}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.disclaimerText}>
-              AI estimate — review before logging
-            </Text>
-          </View>
+            {/* AI disclaimer */}
+            <View style={styles.disclaimer}>
+              <Ionicons
+                name="information-circle-outline"
+                size={rf(14)}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.disclaimerText}>AI estimate — review before logging</Text>
+            </View>
+          </Animated.View>
 
           {/* Action buttons */}
-          <TouchableOpacity
-            style={styles.primaryButton}
-            activeOpacity={0.8}
-            onPress={onAccept}
-            accessibilityRole="button"
-            accessibilityLabel="Accept and log"
-          >
-            <LinearGradient
-              {...toLinearGradientProps(gradients.button.primary)}
-              style={styles.primaryButtonGradient}
-            >
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={rf(18)}
-                color="#fff"
-              />
-              <Text style={styles.primaryButtonText}>Accept & Log</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <View style={styles.secondaryRow}>
+          <Animated.View entering={FadeInDown.delay(180).duration(400)}>
             <TouchableOpacity
-              style={styles.outlineButton}
-              activeOpacity={0.7}
-              onPress={onAdjustPortions}
+              style={styles.primaryButton}
+              activeOpacity={0.8}
+              onPress={onAccept}
               accessibilityRole="button"
-              accessibilityLabel="Adjust portions"
+              accessibilityLabel="Accept and log"
             >
-              <Ionicons
-                name="resize-outline"
-                size={rf(16)}
-                color={colors.primary}
-              />
-              <Text style={styles.outlineButtonText}>Adjust Portions</Text>
+              <LinearGradient
+                {...toLinearGradientProps(gradients.button.primary)}
+                style={styles.primaryButtonGradient}
+              >
+                <Ionicons name="checkmark-circle-outline" size={rf(18)} color={colors.text} />
+                <Text style={styles.primaryButtonText}>Accept & Log</Text>
+              </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.outlineButton}
-              activeOpacity={0.7}
-              onPress={onFeedback}
-              accessibilityRole="button"
-              accessibilityLabel="Feedback"
-            >
-              <Ionicons
-                name="chatbubble-outline"
-                size={rf(16)}
-                color={colors.primary}
-              />
-              <Text style={styles.outlineButtonText}>Feedback</Text>
-            </TouchableOpacity>
-          </View>
 
-          <TouchableOpacity
-            style={styles.cancelButton}
-            activeOpacity={0.7}
-            onPress={onDismiss}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel"
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
+            <View style={styles.secondaryRow}>
+              <TouchableOpacity
+                style={styles.outlineButton}
+                activeOpacity={0.7}
+                onPress={onAdjustPortions}
+                accessibilityRole="button"
+                accessibilityLabel="Adjust portions"
+              >
+                <Ionicons name="resize-outline" size={rf(16)} color={colors.primary} />
+                <Text style={styles.outlineButtonText}>Adjust Portions</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.outlineButton}
+                activeOpacity={0.7}
+                onPress={onFeedback}
+                accessibilityRole="button"
+                accessibilityLabel="Feedback"
+              >
+                <Ionicons name="chatbubble-outline" size={rf(16)} color={colors.primary} />
+                <Text style={styles.outlineButtonText}>Feedback</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              activeOpacity={0.7}
+              onPress={onDismiss}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </View>
     </Modal>
@@ -271,11 +249,11 @@ const MacroChip: React.FC<{
   unit?: string;
   color: string;
 }> = ({ label, value, unit, color }) => (
-  <View style={[styles.macroChip, { backgroundColor: `${color}15` }]}>
+  <View style={[styles.macroChip, { backgroundColor: `${color}15`, borderColor: `${color}30` }]}>
     <Text style={[styles.macroChipLabel, { color }]}>{label}</Text>
     <Text style={[styles.macroChipValue, { color }]}>
       {value}
-      {unit || ""}
+      {unit || ''}
     </Text>
   </View>
 );
@@ -294,8 +272,8 @@ const TotalItem: React.FC<{
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "flex-end",
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: colors.backgroundSecondary,
@@ -306,32 +284,42 @@ const styles = StyleSheet.create({
     maxHeight: rh(724),
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
+  },
+  successIconDisc: {
+    width: rw(34),
+    height: rw(34),
+    borderRadius: rw(17),
+    backgroundColor: hexToRgba(colors.successAlt, TINT_ALPHA_LOW),
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.successAlt, TINT_ALPHA_MEDIUM),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: rf(18),
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   headerBadges: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
   },
   badge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.full,
     gap: 4,
   },
   badgeDot: {
@@ -341,17 +329,19 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   mealTypeBadge: {
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
   },
   mealTypeText: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.primary,
   },
   foodList: {
@@ -363,71 +353,88 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   foodHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.sm,
+  },
+  foodIconDisc: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: rw(14),
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.xs,
   },
   foodName: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.text,
     flex: 1,
   },
   foodServing: {
     fontSize: rf(12),
     color: colors.textSecondary,
-    fontWeight: "500",
+    fontWeight: '500',
     marginLeft: spacing.sm,
   },
   macroRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.xs,
-    flexWrap: "wrap",
+    flexWrap: 'wrap',
   },
   macroChip: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 3,
     paddingHorizontal: rp(7),
     paddingVertical: rp(3),
     borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   macroChipLabel: {
     fontSize: rf(10),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
   },
   macroChipValue: {
     fontSize: rf(11),
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   totalBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: colors.surface,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
   totalItem: {
-    alignItems: "center",
+    alignItems: 'center',
   },
   totalLabel: {
     fontSize: rf(10),
     color: colors.textSecondary,
-    fontWeight: "500",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   totalValue: {
     fontSize: rf(14),
-    fontWeight: "700",
+    fontWeight: String(typography.fontWeight.bold) as any,
   },
   disclaimer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
     marginBottom: spacing.md,
   },
@@ -438,44 +445,45 @@ const styles = StyleSheet.create({
   primaryButton: {
     marginBottom: spacing.sm,
     borderRadius: borderRadius.md,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   primaryButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: rp(14),
     borderRadius: borderRadius.md,
   },
   primaryButtonText: {
     fontSize: rf(15),
-    fontWeight: "700",
-    color: "#fff",
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.text,
   },
   secondaryRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
   outlineButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: rp(11),
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
   outlineButtonText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.primary,
   },
   cancelButton: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: rp(8),
   },
   cancelText: {

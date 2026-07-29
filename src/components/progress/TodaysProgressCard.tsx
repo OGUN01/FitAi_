@@ -2,8 +2,13 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../utils/responsive";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  typography,
+} from "../../theme/aurora-tokens";
 
 interface TodaysProgress {
   workoutProgress: number;
@@ -36,13 +41,7 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Today's Progress</Text>
-      <GlassCard
-        style={styles.todaysCard}
-        elevation={2}
-        blurIntensity="light"
-        padding="lg"
-        borderRadius="lg"
-      >
+      <View style={styles.todaysCard}>
         <View style={styles.todaysHeader}>
           <Text style={styles.todaysDate}>
             {new Date().toLocaleDateString("en-US", {
@@ -59,7 +58,7 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <Ionicons
               name="barbell-outline"
               size={rf(24)}
-              color={colors.primary}
+              color={colors.primary.DEFAULT}
               style={{
                 marginBottom: spacing.xs,
               }}
@@ -79,7 +78,7 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <Ionicons
               name="restaurant-outline"
               size={rf(24)}
-              color={colors.primary}
+              color={colors.primary.DEFAULT}
               style={{
                 marginBottom: spacing.xs,
               }}
@@ -101,7 +100,7 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             <Ionicons
               name="flame-outline"
               size={rf(24)}
-              color={colors.primary}
+              color={colors.primary.DEFAULT}
               style={{
                 marginBottom: spacing.xs,
               }}
@@ -122,7 +121,7 @@ export const TodaysProgressCard: React.FC<TodaysProgressCardProps> = ({
             </View>
           </View>
         </View>
-      </GlassCard>
+      </View>
     </View>
   );
 };
@@ -133,21 +132,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   todaysCard: {
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
   todaysHeader: {
     marginBottom: spacing.md,
   },
   todaysDate: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
     textAlign: "center",
   },
   todaysStats: {
@@ -162,13 +163,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   todaysStatLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     marginBottom: spacing.xs,
   },
   todaysStatValue: {
-    fontSize: fontSize.md,
-    fontWeight: "600",
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    fontSize: 15,
+    color: colors.text.primary,
   },
 });

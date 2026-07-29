@@ -1,9 +1,15 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../utils/responsive";
-import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import { rf } from "../../utils/responsive";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { Button } from "../../components/ui";
 
@@ -20,7 +26,6 @@ interface ProgressErrorStatesProps {
 }
 
 export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
-  isLoading,
   progressLoading,
   statsLoading,
   error,
@@ -30,7 +35,6 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
   onRefresh,
   onAddEntry,
 }) => {
-  // Loading State
   if (progressLoading || statsLoading) {
     return (
       <View
@@ -42,22 +46,11 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
     );
   }
 
-  // Error State
   if (error) {
     return (
-      <GlassCard
-        style={styles.errorCard}
-        elevation={1}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
-      >
-        <View style={styles.errorHeader}>
-          <Ionicons
-            name="warning-outline"
-            size={rf(24)}
-            color={colors.error}
-          />
+      <View style={styles.panel}>
+        <View style={styles.row}>
+          <Ionicons name="warning-outline" size={rf(22)} color={colors.error.DEFAULT} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
         <Button
@@ -65,40 +58,23 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
           onPress={onRefresh}
           variant="outline"
           size="sm"
-          style={styles.retryButton}
+          style={styles.actionButton}
         />
-      </GlassCard>
+      </View>
     );
   }
 
-  // No Authentication State
   if (!isAuthenticated && !hasCalculatedMetrics) {
     return (
-      <GlassCard
-        style={styles.errorCard}
-        elevation={1}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
-      >
-        <View style={styles.errorHeader}>
-          <Ionicons
-            name="lock-closed-outline"
-            size={rf(24)}
-            color={colors.error}
-          />
-          <Text style={styles.errorText}>
-            Please sign in to track your progress
-          </Text>
+      <View style={styles.panel}>
+        <View style={styles.row}>
+          <Ionicons name="lock-closed-outline" size={rf(22)} color={colors.error.DEFAULT} />
+          <Text style={styles.errorText}>Please sign in to track your progress</Text>
         </View>
-      </GlassCard>
+      </View>
     );
   }
 
-  // No Body Measurements State
-  // Only shown when user has no manual weight entries AND no onboarding metrics.
-  // hasCalculatedMetrics = user completed onboarding → body data already exists,
-  // so we don't block the page just because they haven't added extra measurements.
   if (
     isAuthenticated &&
     !hasCalculatedMetrics &&
@@ -106,32 +82,20 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
     !progressLoading
   ) {
     return (
-      <GlassCard
-        style={styles.errorCard}
-        elevation={1}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
-      >
-        <View style={styles.noDataHeader}>
-          <Ionicons
-            name="stats-chart-outline"
-            size={rf(24)}
-            color={colors.textSecondary}
-          />
-          <Text style={styles.noDataText}>No body measurements yet</Text>
+      <View style={styles.panel}>
+        <View style={styles.row}>
+          <Ionicons name="stats-chart-outline" size={rf(22)} color={colors.text.secondary} />
+          <Text style={styles.bodyText}>No body measurements yet</Text>
         </View>
-        <Text style={styles.errorSubtext}>
-          Add your first measurement to start tracking!
-        </Text>
+        <Text style={styles.subText}>Add your first measurement to start tracking!</Text>
         <Button
           title="Add Entry"
           onPress={onAddEntry}
           variant="primary"
           size="sm"
-          style={styles.retryButton}
+          style={styles.actionButton}
         />
-      </GlassCard>
+      </View>
     );
   }
 
@@ -143,51 +107,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.xl,
     zIndex: 10,
-    backgroundColor: colors.overlay, // Semi-transparent background
+    backgroundColor: colors.glass.backgroundDark,
     justifyContent: "center",
   },
   loadingText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    ...typography.variants.body,
+    color: colors.text.secondary,
     marginTop: spacing.md,
   },
-  errorCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    alignItems: "center",
+  panel: {
     marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
+    alignItems: "center",
   },
-  errorHeader: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(8),
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
   errorText: {
-    fontSize: fontSize.md,
-    color: colors.error,
+    ...typography.variants.body,
+    color: colors.error.DEFAULT,
     textAlign: "center",
     flex: 1,
   },
-  errorSubtext: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+  bodyText: {
+    ...typography.variants.body,
+    color: colors.text.secondary,
+    textAlign: "center",
+    flex: 1,
+  },
+  subText: {
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     textAlign: "center",
     marginBottom: spacing.md,
   },
-  retryButton: {
+  actionButton: {
     paddingHorizontal: spacing.lg,
   },
-  noDataHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(8),
-    marginBottom: spacing.md,
-  },
-  noDataText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textAlign: "center",
-    flex: 1,
-  },
 });
+
+export default ProgressErrorStates;

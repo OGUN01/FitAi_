@@ -1,7 +1,10 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../utils/responsive";
+import { headingA11yProps } from "../../../utils/accessibility/props";
 
 interface PaywallHeaderProps {
   title: string;
@@ -19,7 +22,7 @@ const PaywallHeader: React.FC<PaywallHeaderProps> = ({
   return (
     <View style={styles.header}>
       <View style={styles.headerContent}>
-        <View style={styles.headerText}>
+        <View style={styles.headerText} {...headingA11yProps(title, 1)}>
           <Text style={styles.headerTitle}>{title}</Text>
           <Text style={styles.headerDescription}>{description}</Text>
         </View>
@@ -30,17 +33,30 @@ const PaywallHeader: React.FC<PaywallHeaderProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Close paywall"
         >
-          <Text style={styles.closeButtonText}>×</Text>
+          <Ionicons name="close" size={rf(20)} color={colors.textSecondary} />
         </Pressable>
       </View>
 
       {trialInfo.isEligible && (
-        <View style={styles.trialBanner}>
-          <Text style={styles.trialTitle}>🎁 Start your FREE trial today!</Text>
-          <Text style={styles.trialDescription}>
-            Try all premium features free for 7-14 days
-          </Text>
-        </View>
+        <LinearGradient
+          colors={[colors.primaryTint, "rgba(255,107,53,0.04)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.trialBanner}
+        >
+          <Ionicons
+            name="gift"
+            size={rf(18)}
+            color={colors.primaryLight}
+            style={styles.trialIcon}
+          />
+          <View style={styles.trialTextWrap}>
+            <Text style={styles.trialTitle}>Start your FREE trial today</Text>
+            <Text style={styles.trialDescription}>
+              Try all premium features free for 7–14 days
+            </Text>
+          </View>
+        </LinearGradient>
       )}
     </View>
   );
@@ -63,9 +79,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: rf(24),
-    fontWeight: "bold",
+    fontWeight: "800",
     color: colors.text,
-    marginBottom: rp(8),
+    marginBottom: rp(6),
   },
   headerDescription: {
     fontSize: rf(14),
@@ -73,33 +89,36 @@ const styles = StyleSheet.create({
     lineHeight: rf(20),
   },
   closeButton: {
-    width: Math.max(rp(32), 44),
-    height: Math.max(rp(32), 44),
-    borderRadius: Math.max(rbr(16), 22),
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.backgroundTertiary,
     justifyContent: "center",
     alignItems: "center",
   },
-  closeButtonText: {
-    fontSize: rf(24),
-    color: colors.textSecondary,
-  },
   trialBanner: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: rp(16),
     padding: rp(12),
-    backgroundColor: colors.primaryTint,
-    borderRadius: rbr(8),
+    borderRadius: rbr(12),
     borderWidth: 1,
     borderColor: colors.primaryFaded,
   },
+  trialIcon: {
+    marginRight: rp(10),
+  },
+  trialTextWrap: {
+    flex: 1,
+  },
   trialTitle: {
-    fontSize: rf(16),
-    fontWeight: "600",
+    fontSize: rf(15),
+    fontWeight: "700",
     color: colors.primaryLight,
-    marginBottom: rp(4),
+    marginBottom: rp(2),
   },
   trialDescription: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     color: colors.primary,
   },
 });

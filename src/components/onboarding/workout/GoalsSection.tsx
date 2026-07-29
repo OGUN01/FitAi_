@@ -1,18 +1,20 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import React, { type ComponentProps } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+/**
+ * GoalsSection — primary_goals (Editorial Dark reskin)
+ *
+ * "How do you want to train?" starts with goals. Multi-select presented as
+ * OptionRows (hairline rows, accent check + 2px left bar when selected) — no
+ * cards, no chips. Body-type-aware suggestions are surfaced inline in the
+ * sublabel ("Suggested") when S2's `ai_body_type` is present.
+ *
+ * Data wiring unchanged: `toggleGoal` + `getFieldError`/`hasFieldError` from
+ * useWorkoutPreferences. Props kept identical to before.
+ */
+
+import React from "react";
+import { StyleSheet, View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rw, rh } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
-import {
-  FITNESS_GOALS,
-  ACTIVITY_LEVELS,
-} from "../../../screens/onboarding/tabs/WorkoutPreferencesConstants";
+import { tokens, OptionRow, SectionLabel, Rule } from "../fresh";
+import { FITNESS_GOALS } from "../../../screens/onboarding/tabs/WorkoutPreferencesConstants";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
@@ -22,406 +24,141 @@ interface GoalsSectionProps {
   formData: WorkoutPreferencesData;
   bodyAnalysisData?: BodyAnalysisData | null;
   toggleGoal: (goalId: string) => void;
-  updateField: <K extends keyof WorkoutPreferencesData>(field: K, value: WorkoutPreferencesData[K]) => void;
+  // Kept for prop-contract parity (activity_level moved out; Phase 2c reroute).
+  updateField: <K extends keyof WorkoutPreferencesData>(
+    field: K,
+    value: WorkoutPreferencesData[K],
+  ) => void;
   getFieldError: (field: string) => string | undefined;
   hasFieldError: (field: string) => boolean;
   showInfoTooltip: (title: string, description: string) => void;
 }
 
+// Body-type → suggested goal ids (kept in S4 per blueprint; Phase 2c may move).
+const BODY_TYPE_GOAL_SUGGESTIONS: Record<string, string[]> = {
+  ectomorph: ["muscle-gain", "strength"],
+  endomorph: ["weight-loss", "endurance"],
+  mesomorph: ["strength", "muscle-gain"],
+};
+
 export const GoalsSection: React.FC<GoalsSectionProps> = ({
   formData,
   bodyAnalysisData,
   toggleGoal,
-  updateField,
+  updateField: _updateField,
   getFieldError,
   hasFieldError,
   showInfoTooltip,
 }) => {
-  const handleInfoPress =
-    (title: string, description: string) => (event: any) => {
-      event.stopPropagation?.();
-      showInfoTooltip(title, description);
-    };
+  const suggestions = bodyAnalysisData?.ai_body_type
+    ? BODY_TYPE_GOAL_SUGGESTIONS[bodyAnalysisData.ai_body_type] ?? []
+    : [];
+  const selectedCount = formData.primary_goals.length;
+  // Selected goal titles, in canonical order — used for the acknowledgment line.
+  const selectedTitles = FITNESS_GOALS.filter((g) =>
+    formData.primary_goals.includes(g.id),
+  ).map((g) => g.title);
 
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Fitness Goals
-        </Text>
-        <Text
-          style={styles.sectionSubtitle}
-          numberOfLines={2}
-          ellipsizeMode="tail"
+    <View testID="primary-goals-section">
+      <View style={styles.headerRow}>
+        <SectionLabel>Primary goals</SectionLabel>
+        <Pressable
+          onPress={() =>
+            showInfoTooltip(
+              "Fitness goals",
+              "Your goals shape your plan's intensity, volume, and exercise selection.",
+            )
+          }
+          hitSlop={8}
+          accessibilityLabel="About fitness goals"
         >
-          What are your fitness goals? (Select all that apply)
-        </Text>
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={tokens.ink3}
+          />
+        </Pressable>
       </View>
+      <Text style={styles.caption}>
+        {selectedCount > 0
+          ? `${selectedCount} selected — tap to add or remove`
+          : suggestions.length > 0
+            ? "Select all that apply — suggestions marked for your body type"
+            : "Select all that apply"}
+      </Text>
 
-      {/* Body type suggestion */}
-      {bodyAnalysisData?.ai_body_type && (
-        <View style={styles.edgeToEdgeContentPadded}>
-          <View style={styles.autoSuggestText}>
-            <Ionicons
-              name="bulb-outline"
-              size={rf(16)}
-              color={colors.primary}
-              style={{ marginRight: spacing.xs }}
+      <View style={styles.rows} testID="primary-goals-chip-picker">
+        {FITNESS_GOALS.map((goal) => {
+          const selected = formData.primary_goals.includes(goal.id);
+          const suggested = suggestions.includes(goal.id);
+          return (
+            <OptionRow
+              key={goal.id}
+              label={goal.title}
+              sublabel={
+                suggested ? `${goal.description} · Suggested` : goal.description
+              }
+              icon={goal.iconName as keyof typeof Ionicons.glyphMap}
+              selected={selected}
+              onPress={() => toggleGoal(goal.id)}
+              testID={`goal-row-${goal.id}`}
             />
-            <Text
-              style={styles.autoSuggestTextContent}
-              numberOfLines={3}
-              ellipsizeMode="tail"
-            >
-              Based on your {bodyAnalysisData.ai_body_type} body type, we
-              suggest focusing on{" "}
-              {bodyAnalysisData.ai_body_type === "ectomorph"
-                ? "muscle gain and strength"
-                : bodyAnalysisData.ai_body_type === "endomorph"
-                  ? "weight loss and endurance"
-                  : "strength and muscle gain"}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Horizontal scroll for fitness goals - inset from card edges */}
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(105) + rw(10)}
-          snapToAlignment="start"
-        >
-          {FITNESS_GOALS.map((goal: any) => {
-            const isSelected = formData.primary_goals.includes(goal.id);
-            return (
-              <AnimatedPressable
-                key={goal.id}
-                onPress={() => toggleGoal(goal.id)}
-                style={styles.consistentCardItem}
-                scaleValue={0.97}
-              >
-                <View
-                  style={[
-                    styles.consistentCard,
-                    isSelected && styles.consistentCardSelected,
-                  ]}
-                >
-                  {/* Icon + Info row */}
-                  <View style={styles.consistentCardHeader}>
-                    <Ionicons
-                      name={goal.iconName as ComponentProps<typeof Ionicons>['name']}
-                      size={rf(22)}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                    <TouchableOpacity
-                      onPress={handleInfoPress(goal.title, goal.description)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      accessibilityRole="button"
-                      accessibilityLabel={`More info about ${goal.title}`}
-                    >
-                      <Ionicons
-                        name="information-circle-outline"
-                        size={rf(14)}
-                        color={colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  {/* Title */}
-                  <Text
-                    style={[
-                      styles.consistentCardTitle,
-                      isSelected && styles.consistentCardTitleSelected,
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {goal.title}
-                  </Text>
-                  {/* Selection indicator */}
-                  <View
-                    style={[
-                      styles.consistentCardIndicator,
-                      isSelected && styles.consistentCardIndicatorSelected,
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(12)}
-                        color={colors.white}
-                      />
-                    )}
-                  </View>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
+          );
+        })}
       </View>
 
       {hasFieldError("goals") && (
-        <View style={styles.edgeToEdgeContentPadded}>
-          <Text style={styles.errorText}>{getFieldError("goals")}</Text>
-        </View>
+        <Text style={styles.errorText}>{getFieldError("goals")}</Text>
       )}
 
-      {/* Activity Level - User Selection (SSOT for activity_level) */}
-      <View style={styles.edgeToEdgeContentPadded}>
-        <View style={styles.activityField}>
-          <Text style={styles.fieldLabel} numberOfLines={1}>
-            Daily Activity Level *
+      {selectedCount > 0 && (
+        <Text style={styles.ack} testID="goals-selection-ack">
+          <Text style={styles.ackEmphasis}>
+            {selectedTitles.slice(0, 3).join(" · ")}
+            {selectedTitles.length > 3 ? ` +${selectedTitles.length - 3}` : ""}
           </Text>
-          <Text
-            style={styles.fieldSubtitle}
-            numberOfLines={2}
-            ellipsizeMode="tail"
-          >
-            How active are you in your daily life, including work and leisure?
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(105) + rw(10)}
-          snapToAlignment="start"
-        >
-          {ACTIVITY_LEVELS.map((level: any) => {
-            const isSelected = formData.activity_level === level.value;
-            return (
-              <AnimatedPressable
-                key={level.value}
-                style={styles.activityCardItem}
-                onPress={() => updateField("activity_level", level.value)}
-                scaleValue={0.95}
-              >
-                <View
-                  style={[
-                    styles.activityCard,
-                    isSelected && styles.activityCardSelected,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.activityIconContainer,
-                      isSelected && styles.activityIconContainerSelected,
-                    ]}
-                  >
-                    <Ionicons
-                      name={level.iconName as ComponentProps<typeof Ionicons>['name']}
-                      size={rf(24)}
-                      color={
-                        isSelected
-                          ? colors.primary
-                          : colors.textSecondary
-                      }
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.activityCardTitle,
-                      isSelected && styles.activityCardTitleSelected,
-                    ]}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    {level.label}
-                  </Text>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      <View style={styles.edgeToEdgeContentPadded}>
-        {hasFieldError("activity_level") && (
-          <Text style={styles.errorText}>{getFieldError("activity_level")}</Text>
-        )}
-      </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+          {"  — "}your plan leads with{" "}
+          {selectedCount === 1 ? "this" : "these"}
+        </Text>
+      )}
+      <Rule spacing={0} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  autoSuggestText: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: `${colors.primary}10`,
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
-  },
-  autoSuggestTextContent: {
-    flex: 1,
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    lineHeight: rf(18),
-  },
-  scrollContainerInset: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    overflow: "hidden",
-    borderRadius: borderRadius.md,
-  },
-  scrollContentInset: {
-    paddingVertical: spacing.sm,
-    gap: rw(10),
-  },
-  consistentCardItem: {
-    width: rw(105),
-  },
-  consistentCard: {
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.sm,
-    minHeight: rh(12),
-    alignItems: "center",
-  },
-  consistentCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  consistentCardHeader: {
-    flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: spacing.xs,
   },
-  consistentCardTitle: {
-    fontSize: rf(11),
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.xs,
+  caption: {
+    marginTop: 6,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
-  consistentCardTitleSelected: {
-    color: colors.primary,
-  },
-  consistentCardIndicator: {
-    width: rf(18),
-    height: rf(18),
-    borderRadius: rf(9),
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: spacing.xs,
-  },
-  consistentCardIndicatorSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+  rows: {
+    marginTop: 12,
   },
   errorText: {
-    fontSize: fontSize.xs,
-    color: colors.error,
-    marginTop: spacing.xs,
+    marginTop: 12,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.danger,
   },
-  activityField: {
-    marginBottom: spacing.lg,
+  ack: {
+    marginTop: 16,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 13,
+    lineHeight: 18,
+    color: tokens.ink3,
   },
-  fieldLabel: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    flexShrink: 1,
-  },
-  fieldSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  activityCardItem: {
-    width: rw(105),
-  },
-  activityCard: {
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    padding: spacing.sm,
-    minHeight: rh(10),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activityCardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  activityIconContainer: {
-    width: rf(44),
-    height: rf(44),
-    borderRadius: rf(22),
-    backgroundColor: `${colors.textSecondary}15`,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  activityIconContainerSelected: {
-    backgroundColor: `${colors.primary}15`,
-  },
-  activityCardTitle: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(14),
-  },
-  activityCardTitleSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
+  ackEmphasis: {
+    fontFamily: "Manrope_500Medium",
+    color: tokens.ink2,
   },
 });

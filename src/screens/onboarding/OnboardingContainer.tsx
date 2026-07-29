@@ -74,6 +74,23 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
             data={logic.personalInfo}
             validationResult={logic.tabValidationStatus[1]}
             onUpdate={logic.updatePersonalInfo}
+            // activity_level SSOT lives on workoutPreferences (its DB home — read
+            // by handleCompletionGetStarted, aiRequestTransformers, and
+            // calculatePersonalizedStepGoal). The dial renders on S1 only when
+            // both props are wired; without this it stayed defaulted to
+            // "sedentary" forever, under-counting calorie burn for active users
+            // (audit finding). Forward the value + change to the workout store.
+            activityLevel={logic.workoutPreferences?.activity_level ?? "sedentary"}
+            onActivityLevelChange={(v) =>
+              logic.updateWorkoutPreferences({
+                activity_level: v as
+                  | "sedentary"
+                  | "light"
+                  | "moderate"
+                  | "active"
+                  | "extreme",
+              })
+            }
           />
         );
 

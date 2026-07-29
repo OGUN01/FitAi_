@@ -15,10 +15,17 @@ import { Button, Input, PasswordInput } from "../../components/ui";
 import { useAuth } from "../../hooks/useAuth";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { LoginCredentials } from "../../types/user";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -211,7 +218,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <Ionicons
                   name="arrow-back"
                   size={rf(22)}
-                  color={colors.primary}
+                  color={colors.primary.DEFAULT}
                 />
               </AnimatedPressable>
               <View style={styles.signInTitleBlock}>
@@ -321,7 +328,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <Ionicons
                   name="fitness"
                   size={rf(36)}
-                  color={colors.primary}
+                  color={colors.primary.DEFAULT}
                 />
               </View>
             </View>
@@ -342,7 +349,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   <Ionicons
                     name={feature.icon}
                     size={rf(22)}
-                    color={colors.primary}
+                    color={colors.primary.DEFAULT}
                   />
                 </View>
                 <View style={styles.featureTextBlock}>
@@ -399,7 +406,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: surface[0],
   },
 
   scrollView: {
@@ -431,33 +438,34 @@ const styles = StyleSheet.create({
     width: rw(76),
     height: rw(76),
     borderRadius: rw(22),
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW),
     borderWidth: 1.5,
-    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    borderColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_MEDIUM),
     alignItems: "center",
     justifyContent: "center",
   },
 
   appName: {
+    fontFamily: "Manrope_800ExtraBold",
     fontSize: rf(52),
-    fontWeight: typography.fontWeight.extrabold,
-    color: colors.text,
+    color: colors.text.primary,
     letterSpacing: -1.5,
     marginBottom: spacing.sm,
   },
 
   tagline: {
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(18),
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
+    color: colors.primary.DEFAULT,
     textAlign: "center",
     letterSpacing: 0.3,
     marginBottom: spacing.sm,
   },
 
   taglineSecondary: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    fontFamily: "Manrope_400Regular",
+    fontSize: typography.fontSize.body,
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: rf(22),
     maxWidth: rw(280),
@@ -472,9 +480,9 @@ const styles = StyleSheet.create({
   featureCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: hexToRgba(colors.surface, 0.8),
+    backgroundColor: surface[1],
     borderWidth: 1,
-    borderColor: hexToRgba(colors.border, 0.5),
+    borderColor: border.subtle,
     borderRadius: borderRadius.xl,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
@@ -485,9 +493,9 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW),
     borderWidth: 1.5,
-    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    borderColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_MEDIUM),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -497,15 +505,16 @@ const styles = StyleSheet.create({
   },
 
   featureLabel: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: typography.fontSize.body,
+    color: colors.text.primary,
     marginBottom: rh(2),
   },
 
   featureDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    fontFamily: "Manrope_400Regular",
+    fontSize: typography.fontSize.caption,
+    color: colors.text.secondary,
     lineHeight: rf(18),
   },
 
@@ -515,7 +524,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     gap: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: hexToRgba(colors.border, 0.25),
+    borderTopColor: border.subtle,
   },
 
   signInPromptRow: {
@@ -548,16 +557,17 @@ const styles = StyleSheet.create({
   },
 
   signInTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    fontFamily: "Manrope_700Bold",
+    fontSize: typography.fontSize.h1,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
     textAlign: "center",
   },
 
   signInSubtitle: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    fontFamily: "Manrope_400Regular",
+    fontSize: typography.fontSize.body,
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: rf(22),
     maxWidth: rw(280),
@@ -568,17 +578,17 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
   },
 
+  // Google brand blue is a brand asset (not a design-system color), kept as a
+  // literal. Shadows removed per Aurora 2026 (border hairline + surface tint
+  // instead of elevation).
   googleButton: {
     backgroundColor: "#4285F4",
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    elevation: 3,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
 
   buttonDisabled: {
@@ -597,9 +607,9 @@ const styles = StyleSheet.create({
 
   googleButtonText: {
     flexShrink: 1,
-    color: colors.white,
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
+    fontSize: typography.fontSize.h3,
+    fontFamily: "Manrope_600SemiBold",
   },
 
   dividerContainer: {
@@ -611,14 +621,14 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: border.subtle,
     opacity: 0.3,
   },
 
   dividerText: {
     marginHorizontal: spacing.md,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    fontSize: typography.fontSize.caption,
+    color: colors.text.secondary,
     fontStyle: "italic",
   },
 
@@ -642,9 +652,9 @@ const styles = StyleSheet.create({
   },
 
   forgotPasswordText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.caption,
+    color: colors.primary.DEFAULT,
+    fontFamily: "Manrope_500Medium",
   },
 
   footerContainer: {
@@ -656,13 +666,13 @@ const styles = StyleSheet.create({
   },
 
   footerText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
+    fontSize: typography.fontSize.body,
+    color: colors.text.secondary,
   },
 
   footerLink: {
-    fontSize: fontSize.md,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.body,
+    color: colors.primary.DEFAULT,
+    fontFamily: "Manrope_500Medium",
   },
 });

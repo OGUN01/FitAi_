@@ -88,6 +88,7 @@ function mockSubscriptionQuery(subscription: any, freePlan: any = FREE_PLAN) {
 		select: vi.fn().mockReturnThis(),
 		eq: vi.fn().mockReturnThis(),
 		single: vi.fn().mockResolvedValue({ data: freePlan, error: null }),
+		maybeSingle: vi.fn().mockResolvedValue({ data: freePlan, error: null }),
 	};
 
 	const fromFn = vi.fn().mockImplementation((table: string) => {
@@ -227,7 +228,7 @@ describe('subscriptionGateMiddleware', () => {
 		expect(body.error.message).toContain('5/5');
 	});
 
-	it('returns 500 if incrementUsage throws', async () => {
+	it('allows request but does not 500 if incrementUsage throws (fail-open increment)', async () => {
 		mockSubscriptionQuery(null, FREE_PLAN);
 		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
 			allowed: true,
@@ -240,9 +241,8 @@ describe('subscriptionGateMiddleware', () => {
 		const app = buildApp();
 		const res = await app.fetch(new Request('http://localhost/test'), makeEnv());
 
-		expect(res.status).toBe(500);
+		expect(res.status).toBe(200);
 		const body = (await res.json()) as any;
-		expect(body.success).toBe(false);
-		expect(body.error.code).toBe(ErrorCode.INTERNAL_ERROR);
+		expect(body.success).toBe(true);
 	});
 });

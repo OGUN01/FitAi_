@@ -1,9 +1,22 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf, rp, rw } from "../../utils/responsive";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+/**
+ * AchievementsSection — horizontal scroll of circular badges (Aurora 2026)
+ *
+ * Not a boxed grid: a flat horizontal ScrollView of circular tier-ringed
+ * badges. Locked badges sit at 40% opacity with a lock glyph.
+ */
+
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import {
+  chart,
+  colors,
+  surface,
+  typography,
+  spacing,
+  borderRadius,
+} from '../../theme/aurora-tokens';
 
 interface Achievement {
   id: string;
@@ -25,15 +38,26 @@ interface AchievementsSectionProps {
   totalCount: number;
 }
 
-const ITEM_HEIGHT = 68;
-const VISIBLE_COUNT = 3;
+const BADGE_SIZE = 64;
+const RING_WIDTH = 2.5;
 
-const rarityColor: Record<string, string> = {
-  common: "#9CA3AF",
-  uncommon: "#3B82F6",
-  rare: "#9333EA",
-  epic: "#F97316",
-  legendary: "#FFD700",
+const tierColor = (rarity: string | undefined, completed: boolean): string => {
+  if (completed) {
+    return chart[4];
+  }
+  switch (rarity) {
+    case 'uncommon':
+      return chart[2];
+    case 'rare':
+      return chart[3];
+    case 'epic':
+      return chart[1];
+    case 'legendary':
+      return chart[5];
+    case 'common':
+    default:
+      return colors.text.muted;
+  }
 };
 
 export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
@@ -42,265 +66,160 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   totalCount,
 }) => {
   const sorted = [...achievements].sort((a, b) => {
-    if (a.completed && !b.completed) return -1;
-    if (!a.completed && b.completed) return 1;
+    if (a.completed && !b.completed) {
+      return -1;
+    }
+    if (!a.completed && b.completed) {
+      return 1;
+    }
     return 0;
   });
 
-  const containerHeight =
-    ITEM_HEIGHT * VISIBLE_COUNT + rp(8) * (VISIBLE_COUNT - 1);
-
   return (
-    <View style={styles.section}>
+    <Animated.View
+      entering={FadeInDown.delay(270).duration(320)}
+      style={styles.section}
+    >
       <View style={styles.headerRow}>
-        <View style={styles.titleRow}>
-          <Ionicons
-            name="trophy"
-            size={rf(16)}
-            color={colors.gold}
-          />
-          <Text style={styles.sectionTitle}>Achievements</Text>
-        </View>
-        <Text style={styles.countBadge}>
-          {completedCount}/{totalCount}
+        <Text style={styles.sectionTitle}>Achievements</Text>
+        <Text style={styles.countText}>
+          <Text style={styles.countValue}>{completedCount}</Text>/{totalCount}
         </Text>
       </View>
 
-      <GlassCard
-        elevation={1}
-        blurIntensity="light"
-        padding="sm"
-        borderRadius="lg"
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        <ScrollView
-          style={{ maxHeight: containerHeight }}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-          contentContainerStyle={styles.listContent}
-        >
-          {sorted.map((achievement, index) => {
-            const rarity = achievement.rarity ?? "common";
-            const accentColor = achievement.completed
-              ? colors.success
-              : (rarityColor[rarity] ?? "#9CA3AF");
-            const hasProgress =
-              !achievement.completed &&
-              (achievement.progress ?? 0) > 0 &&
-              (achievement.target ?? 0) > 0;
-            const pct = hasProgress
-              ? Math.min(
-                  100,
-                  ((achievement.progress ?? 0) / (achievement.target ?? 1)) *
-                    100,
-                )
-              : 0;
+        {sorted.map((achievement, index) => {
+          const accent = tierColor(achievement.rarity, achievement.completed);
+          const locked = !achievement.completed;
+          const hasProgress =
+            locked &&
+            (achievement.progress ?? 0) > 0 &&
+            (achievement.target ?? 0) > 0;
+          const pct = hasProgress
+            ? Math.min(1, (achievement.progress ?? 0) / (achievement.target ?? 1))
+            : 0;
 
-            return (
+          return (
+            <Animated.View
+              key={achievement.id}
+              entering={FadeInDown.delay(300 + index * 40).duration(260)}
+              style={styles.badgeWrap}
+            >
               <View
-                key={achievement.id}
                 style={[
-                  styles.row,
-                  index < sorted.length - 1 && styles.rowBorder,
+                  styles.badgeRing,
+                  { borderColor: accent },
+                  locked && styles.badgeLocked,
                 ]}
               >
-                {/* Icon */}
-                <View
-                  style={[
-                    styles.iconWrap,
-                    { backgroundColor: `${accentColor}20` },
-                  ]}
-                >
+                <View style={[styles.badgeCore, { backgroundColor: surface[1] }]}>
                   <Ionicons
                     name={
-                      achievement.iconName as keyof typeof Ionicons.glyphMap
+                      locked
+                        ? 'lock-closed'
+                        : (achievement.iconName as keyof typeof Ionicons.glyphMap)
                     }
-                    size={rf(18)}
-                    color={accentColor}
+                    size={24}
+                    color={locked ? colors.text.muted : accent}
                   />
                 </View>
-
-                {/* Text block */}
-                <View style={styles.textBlock}>
-                  <View style={styles.nameLine}>
-                    <Text style={styles.title} numberOfLines={1}>
-                      {achievement.title}
-                    </Text>
+                {hasProgress && (
+                  <View style={styles.progressTrack}>
                     <View
                       style={[
-                        styles.categoryTag,
-                        { backgroundColor: `${accentColor}18` },
+                        styles.progressFill,
+                        { width: `${Math.round(pct * 100)}%`, backgroundColor: accent },
                       ]}
-                    >
-                      <Text
-                        style={[styles.categoryText, { color: accentColor }]}
-                      >
-                        {achievement.category.toUpperCase()}
-                      </Text>
-                    </View>
+                    />
                   </View>
-                  <Text style={styles.description} numberOfLines={1}>
-                    {achievement.description}
-                  </Text>
-                  {hasProgress && (
-                    <View style={styles.progressRow}>
-                      <View style={styles.progressTrack}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            { width: `${pct}%`, backgroundColor: accentColor },
-                          ]}
-                        />
-                      </View>
-                      <Text style={styles.progressLabel}>
-                        {achievement.progress}/{achievement.target}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Right: points + status */}
-                <View style={styles.rightBlock}>
-                  <Text style={[styles.pts, { color: accentColor }]}>
-                    +{achievement.points}
-                  </Text>
-                  {achievement.completed ? (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={rf(16)}
-                      color={colors.success}
-                    />
-                  ) : (
-                    <Ionicons
-                      name="lock-closed-outline"
-                      size={rf(16)}
-                      color={colors.textMuted}
-                    />
-                  )}
-                </View>
+                )}
               </View>
-            );
-          })}
-        </ScrollView>
-      </GlassCard>
-    </View>
+              <Text style={styles.badgeTitle} numberOfLines={2}>
+                {achievement.title}
+              </Text>
+            </Animated.View>
+          );
+        })}
+      </ScrollView>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rw(6),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
   },
-  countBadge: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.textMuted,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    paddingHorizontal: rp(8),
-    paddingVertical: rp(3),
-    borderRadius: rp(10),
+  countText: {
+    ...typography.variants.caption,
+    color: colors.text.muted,
   },
-  listContent: {
-    paddingVertical: rp(4),
+  countValue: {
+    ...typography.variants.caption,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.text.primary,
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: rp(10),
-    paddingHorizontal: rp(8),
-    gap: rw(10),
-    minHeight: ITEM_HEIGHT,
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.06)",
+  badgeWrap: {
+    width: BADGE_SIZE + 12,
+    alignItems: 'center',
   },
-  iconWrap: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
+  badgeRing: {
+    width: BADGE_SIZE,
+    height: BADGE_SIZE,
+    borderRadius: BADGE_SIZE / 2,
+    borderWidth: RING_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
-  textBlock: {
-    flex: 1,
-    gap: rp(2),
-    overflow: "hidden",
+  badgeLocked: {
+    opacity: 0.4,
   },
-  nameLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rw(6),
-  },
-  title: {
-    fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.text,
-    flexShrink: 1,
-  },
-  categoryTag: {
-    paddingHorizontal: rp(5),
-    paddingVertical: rp(1),
-    borderRadius: rp(4),
-    flexShrink: 0,
-  },
-  categoryText: {
-    fontSize: rf(8),
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  description: {
-    fontSize: rf(10),
-    color: colors.textMuted,
-  },
-  progressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rw(6),
-    marginTop: rp(2),
+  badgeCore: {
+    width: BADGE_SIZE - RING_WIDTH * 4,
+    height: BADGE_SIZE - RING_WIDTH * 4,
+    borderRadius: (BADGE_SIZE - RING_WIDTH * 4) / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   progressTrack: {
-    flex: 1,
-    height: rp(3),
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: rp(2),
-    overflow: "hidden",
+    position: 'absolute',
+    bottom: -6,
+    left: 8,
+    right: 8,
+    height: 3,
+    borderRadius: borderRadius.xs,
+    backgroundColor: surface[2],
+    overflow: 'hidden',
   },
   progressFill: {
-    height: "100%",
-    borderRadius: rp(2),
+    height: '100%',
+    borderRadius: borderRadius.xs,
   },
-  progressLabel: {
-    fontSize: rf(9),
-    color: colors.textMuted,
-    flexShrink: 0,
-  },
-  rightBlock: {
-    alignItems: "center",
-    gap: rp(4),
-    flexShrink: 0,
-    minWidth: rw(30),
-  },
-  pts: {
-    fontSize: rf(10),
-    fontWeight: "700",
+  badgeTitle: {
+    ...typography.variants.caption,
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
 });
 

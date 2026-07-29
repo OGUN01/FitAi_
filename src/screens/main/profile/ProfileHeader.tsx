@@ -1,30 +1,18 @@
 /**
- * ProfileHeader - Compact Hero Section with Avatar and User Info
- *
- * Features:
- * - Compact animated avatar with edit badge
- * - User name and member since date
- * - Minimal, elegant design
- * - NO streak badge (moved to stats row)
+ * ProfileHeader - Aurora 2026: Large avatar with gradient ring, name, member-since
+ * Sits directly on bg, no card container.
  */
 
-import React from "react";
-import { View, Text, StyleSheet, Platform, Pressable } from "react-native";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  gradientAuroraSpace,
-  toLinearGradientProps,
-} from "../../../theme/gradients";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rp, rw } from "../../../utils/responsive";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, surface, spacing, typography } from "../../../theme/aurora-tokens";
+import { rf, rw } from "../../../utils/responsive";
+import { haptics } from "../../../utils/haptics";
 
-const avatarShadow = {
-  shadowColor: colors.errorLight,
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.3,
-  shadowRadius: 12,
-};
+const { variants } = typography;
 
 interface ProfileHeaderProps {
   userName: string;
@@ -32,12 +20,12 @@ interface ProfileHeaderProps {
   onEditPress: () => void;
 }
 
-export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({
   userName,
   memberSince,
   onEditPress,
 }) => {
-  const getInitials = (name?: string) => {
+  const getInitials = useCallback((name?: string) => {
     if (!name || !name.trim()) return "?";
     return name
       .split(" ")
@@ -45,7 +33,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
+  }, []);
 
   const memberSinceLabel =
     memberSince === null || memberSince === undefined
@@ -54,103 +42,132 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         ? `Member for ${memberSince}`
         : `Member since ${memberSince}`;
 
+  const handlePress = useCallback(() => {
+    haptics.light();
+    onEditPress();
+  }, [onEditPress]);
+
   return (
-    <LinearGradient
-      {...toLinearGradientProps(gradientAuroraSpace)}
+    <Animated.View
+      entering={FadeInDown.delay(0).duration(350)}
       style={styles.container}
     >
-      <View style={styles.content}>
-        {/* Avatar — tap to edit personal info */}
-        <Animated.View
-          entering={FadeIn.delay(100).duration(400)}
-          style={styles.avatarContainer}
-        >
-          <Pressable
-            onPress={onEditPress}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Edit personal information"
-            accessibilityHint="Opens the personal info editor"
-            style={({ pressed }) => pressed && styles.avatarPressed}
+      {/* Avatar with gradient ring */}
+      <Pressable
+        onPress={handlePress}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        accessibilityRole="button"
+        accessibilityLabel="Edit personal information"
+        accessibilityHint="Opens the personal info editor"
+        style={({ pressed }) => pressed && styles.pressed}
+      >
+        <View style={styles.avatarRingOuter}>
+          <LinearGradient
+            colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarRing}
           >
-            <LinearGradient
-              colors={["#FF6B6B", "#FF8E53"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.avatar, Platform.OS !== 'web' && avatarShadow]}
-            >
+            <View style={styles.avatarInner}>
               <Text style={styles.avatarText}>{getInitials(userName)}</Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
+            </View>
+          </LinearGradient>
+          {/* Edit badge */}
+          <View style={styles.editBadge}>
+            <Ionicons name="pencil" size={rf(11)} color={colors.text.primary} />
+          </View>
+        </View>
+      </Pressable>
 
-        {/* User Info */}
-        <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-          <Text
-            style={styles.userName}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
-            {userName || ""}
-          </Text>
-          {memberSinceLabel ? (
-            <Text style={styles.memberSince} numberOfLines={1}>{memberSinceLabel}</Text>
-          ) : null}
-        </Animated.View>
-      </View>
-    </LinearGradient>
+      {/* Name */}
+      <Text
+        style={styles.userName}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {userName || ""}
+      </Text>
+
+      {/* Member since */}
+      {memberSinceLabel ? (
+        <Text style={styles.memberSince} numberOfLines={1}>
+          {memberSinceLabel}
+        </Text>
+      ) : null}
+    </Animated.View>
   );
-};
+});
+
+const AVATAR_SIZE = rw(80);
+const RING_SIZE = AVATAR_SIZE + rw(6);
+const RING_RADIUS = RING_SIZE / 2;
+const AVATAR_RADIUS = AVATAR_SIZE / 2;
 
 const styles = StyleSheet.create({
   container: {
+    alignItems: "center",
     paddingTop: spacing.lg,
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
+    backgroundColor: surface[0],
   },
-  content: {
-    alignItems: "center",
-  },
-  avatarContainer: {
-    marginBottom: spacing.sm,
-  },
-  avatar: {
-    width: rw(80),
-    height: rw(80),
-    borderRadius: rw(40),
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.25)",
-    elevation: 8,
-  },
-  avatarPressed: {
+  pressed: {
     opacity: 0.85,
     transform: [{ scale: 0.96 }],
   },
+  avatarRingOuter: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_RADIUS,
+    marginBottom: spacing.md,
+  },
+  avatarRing: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_RADIUS,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarInner: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_RADIUS,
+    backgroundColor: surface[1],
+    justifyContent: "center",
+    alignItems: "center",
+  },
   avatarText: {
-    fontSize: rf(32),
-    fontWeight: "700",
-    color: colors.white,
-    lineHeight: rw(80),
-    textAlignVertical: "center",
+    fontFamily: "Manrope_800ExtraBold",
+    fontSize: rf(30),
+    color: colors.text.primary,
     includeFontPadding: false,
   },
-
+  editBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: rw(2),
+    width: rw(24),
+    height: rw(24),
+    borderRadius: rw(12),
+    backgroundColor: colors.primary.DEFAULT,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: surface[0],
+  },
   userName: {
+    ...variants.pageTitle,
     fontSize: rf(22),
-    fontWeight: "700",
-    color: colors.white,
+    color: colors.text.primary,
     textAlign: "center",
-    marginBottom: rp(2),
+    marginBottom: spacing.xxs,
     letterSpacing: 0.3,
   },
   memberSince: {
-    fontSize: rf(12),
-    color: colors.text,
-    textAlign: 'center',
-    opacity: 0.9,
+    ...variants.caption,
+    color: colors.text.secondary,
+    textAlign: "center",
   },
 });
 

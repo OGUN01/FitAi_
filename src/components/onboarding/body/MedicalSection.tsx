@@ -1,13 +1,34 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * MedicalSection — Body tab collapsed "Medical & safety" group (Editorial Dark).
+ *
+ * medical_conditions + physical_limitations keep the existing
+ * MultiSelectWithCustom (searchable + custom-add — data wiring unchanged).
+ * medications becomes an UnderlineInput. pregnancy_status /
+ * breastfeeding_status and pregnancy_trimester / stress_level become
+ * OptionRows (single-select rows with the accent check; tapping the active
+ * row clears optional fields). Renders flat inside the parent
+ * CollapsibleSection (the section header lives there).
+ */
+
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rs, rbr, rp } from "../../../utils/responsive";import { GlassCard, AnimatedPressable } from "../../../components/ui/aurora";
-import { Input, Slider } from "../../../components/ui";
+import {
+  RowGroup,
+  OptionRow,
+  SectionLabel,
+} from "../../onboarding/fresh";
+import {
+  tokens,
+  type as freshType,
+  spacing as freshSpacing,
+} from "../../onboarding/fresh/tokens";
 import { MultiSelectWithCustom } from "../../../components/advanced/MultiSelectWithCustom";
+import { UnderlineInput } from "../../onboarding/aurora/UnderlineInput";
 import {
   MEDICAL_CONDITIONS_OPTIONS,
   PHYSICAL_LIMITATIONS_OPTIONS,
+  STRESS_LEVELS,
 } from "../../../screens/onboarding/tabs/BodyAnalysisConstants";
 import { BodyAnalysisData, PersonalInfoData } from "../../../types/onboarding";
 
@@ -20,421 +41,239 @@ interface MedicalSectionProps {
   personalInfoData?: PersonalInfoData | null;
 }
 
+const TRIMESTER_OPTIONS = [
+  { id: "1", label: "First (1–13 w)" },
+  { id: "2", label: "Second (14–26 w)" },
+  { id: "3", label: "Third (27–40 w)" },
+];
+
 export const MedicalSection: React.FC<MedicalSectionProps> = ({
   formData,
   updateField,
   personalInfoData,
 }) => {
+  const isFemale = personalInfoData?.gender === "female";
+
+  const handleStressSelect = (id: string) => {
+    // Single-select behavior: tapping the active row clears it (optional field).
+    const next =
+      formData.stress_level === id
+        ? undefined
+        : (id as BodyAnalysisData["stress_level"]);
+    updateField("stress_level", next);
+  };
+
+  const handleTrimesterSelect = (id: string) => {
+    const n = parseInt(id, 10) as 1 | 2 | 3;
+    const next = formData.pregnancy_trimester === n ? undefined : n;
+    updateField("pregnancy_trimester", next);
+  };
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle}>Medical Information</Text>
-        <Text style={styles.sectionSubtitle}>
-          Help us create safe and effective recommendations
+    <View style={styles.container}>
+      {/* Trust-first framing: calm, no jargon, explicit that this is optional
+          and private. Presentation only — no data wiring changes. */}
+      <View style={styles.trustBlock}>
+        <Ionicons
+          name="lock-closed-outline"
+          size={14}
+          color={tokens.ink3}
+          style={styles.trustIcon}
+        />
+        <Text style={styles.trustText} numberOfLines={3}>
+          All optional. We use this only to keep your plan safe — never shown
+          to anyone else, never used for anything besides your coaching.
         </Text>
       </View>
 
-      <View style={styles.edgeToEdgeContentPadded}>
-        {/* Medical Conditions */}
-        <View style={styles.medicalField}>
-          <MultiSelectWithCustom
-            options={MEDICAL_CONDITIONS_OPTIONS}
-            selectedValues={formData.medical_conditions}
-            onSelectionChange={(values) =>
-              updateField("medical_conditions", values)
-            }
-            label="Medical Conditions (Optional)"
-            placeholder="Select any medical conditions"
-            searchable={true}
-            allowCustom={true}
-            customLabel="Add Custom Condition"
-            customPlaceholder="Enter your specific condition"
-          />
-        </View>
+      {/* Medical conditions — searchable multi-select (data wiring unchanged) */}
+      <View style={styles.field}>
+        <MultiSelectWithCustom
+          options={MEDICAL_CONDITIONS_OPTIONS}
+          selectedValues={formData.medical_conditions}
+          onSelectionChange={(values) =>
+            updateField("medical_conditions", values)
+          }
+          label="Medical conditions (optional)"
+          placeholder="Select any medical conditions"
+          searchable={true}
+          allowCustom={true}
+          customLabel="Add custom condition"
+          customPlaceholder="Enter your specific condition"
+        />
+      </View>
 
-        {/* Medications */}
-        <View style={styles.medicalField}>
-          <Input
-            label="Current Medications (Optional)"
-            placeholder="e.g., Metformin, Lisinopril (separate with commas)"
-            value={formData.medications.join(", ")}
-            onChangeText={(text) =>
-              updateField(
-                "medications",
-                text
-                  .split(",")
-                  .map((med) => med.trim())
-                  .filter(Boolean),
-              )
-            }
-            multiline
-            numberOfLines={2}
-          />
-        </View>
+      {/* Medications — freeform text on a hairline underline */}
+      <View style={styles.field}>
+        <UnderlineInput
+          label="Current medications (optional)"
+          placeholder="e.g., Metformin, Lisinopril (comma-separated)"
+          accentColor={tokens.accent}
+          value={formData.medications.join(", ")}
+          onChangeText={(text) =>
+            updateField(
+              "medications",
+              text
+                .split(",")
+                .map((m) => m.trim())
+                .filter(Boolean),
+            )
+          }
+          multiline
+          numberOfLines={2}
+        />
+      </View>
 
-        {/* Physical Limitations */}
-        <View style={styles.medicalField}>
-          <MultiSelectWithCustom
-            options={PHYSICAL_LIMITATIONS_OPTIONS}
-            selectedValues={formData.physical_limitations}
-            onSelectionChange={(values) =>
-              updateField("physical_limitations", values)
-            }
-            label="Physical Limitations (Optional)"
-            placeholder="Select any physical limitations"
-            searchable={true}
-            allowCustom={true}
-            customLabel="Add Custom Limitation"
-            customPlaceholder="Enter your specific limitation"
-          />
-        </View>
+      {/* Physical limitations — searchable multi-select (data wiring unchanged) */}
+      <View style={styles.field}>
+        <MultiSelectWithCustom
+          options={PHYSICAL_LIMITATIONS_OPTIONS}
+          selectedValues={formData.physical_limitations}
+          onSelectionChange={(values) =>
+            updateField("physical_limitations", values)
+          }
+          label="Physical limitations (optional)"
+          placeholder="Select any physical limitations"
+          searchable={true}
+          allowCustom={true}
+          customLabel="Add custom limitation"
+          customPlaceholder="Enter your specific limitation"
+        />
+      </View>
 
-        {/* Women-specific health status */}
-        {personalInfoData?.gender === "female" && (
-          <View style={styles.medicalField}>
-            <Text style={styles.fieldLabel}>
-              Pregnancy & Breastfeeding Status
-            </Text>
-            <Text style={styles.fieldHint}>
-              Critical for safe calorie recommendations
-            </Text>
-
-            <View style={styles.checkboxContainer}>
-              <AnimatedPressable
-                style={styles.checkbox}
-                onPress={() => {
-                  const newStatus = !formData.pregnancy_status;
-                  updateField("pregnancy_status", newStatus);
-                  if (!newStatus) updateField("pregnancy_trimester", undefined);
-                }}
-                scaleValue={0.95}
-              >
-                <View
-                  style={[
-                    styles.checkboxBox,
-                    ...(formData.pregnancy_status
-                      ? [styles.checkboxBoxChecked]
-                      : []),
-                  ]}
-                >
-                  {formData.pregnancy_status && (
-                    <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
-                  )}
-                </View>
-                <Text style={styles.checkboxLabel}>Currently Pregnant</Text>
-              </AnimatedPressable>
-            </View>
-
-            {formData.pregnancy_status && (
-              <View style={styles.trimesterSelector}>
-                <Text style={styles.inputLabel}>
-                  Trimester{" "}
-                  <Text style={styles.requiredAsterisk}>*</Text>
-                </Text>
-                <View style={styles.trimesterButtons}>
-                  {[1, 2, 3].map((trimester) => (
-                    <AnimatedPressable
-                      key={`trimester-${trimester}`}
-                      style={[
-                        styles.trimesterButton,
-                        ...(formData.pregnancy_trimester === trimester
-                          ? [styles.trimesterButtonSelected]
-                          : []),
-                      ]}
-                      onPress={() =>
-                        updateField(
-                          "pregnancy_trimester",
-                          trimester as 1 | 2 | 3,
-                        )
-                      }
-                      scaleValue={0.95}
-                    >
-                      <Text
-                        style={[
-                          styles.trimesterButtonText,
-                          ...(formData.pregnancy_trimester === trimester
-                            ? [styles.trimesterButtonTextSelected]
-                            : []),
-                        ]}
-                      >
-                        {trimester === 1
-                          ? "First (1-13 weeks)"
-                          : trimester === 2
-                            ? "Second (14-26 weeks)"
-                            : "Third (27-40 weeks)"}
-                      </Text>
-                    </AnimatedPressable>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            <View style={styles.checkboxContainer}>
-              <AnimatedPressable
-                style={styles.checkbox}
-                onPress={() =>
-                  updateField(
-                    "breastfeeding_status",
-                    !formData.breastfeeding_status,
-                  )
-                }
-                scaleValue={0.95}
-              >
-                <View
-                  style={[
-                    styles.checkboxBox,
-                    ...(formData.breastfeeding_status
-                      ? [styles.checkboxBoxChecked]
-                      : []),
-                  ]}
-                >
-                  {formData.breastfeeding_status && (
-                    <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
-                  )}
-                </View>
-                <Text style={styles.checkboxLabel}>
-                  Currently Breastfeeding
-                </Text>
-              </AnimatedPressable>
-            </View>
-          </View>
-        )}
-
-        {/* Stress Level */}
-        <View style={styles.medicalField}>
-          <Text style={styles.fieldHint}>
-            Your stress level affects recovery and calorie management. You can
-            also measure this in the main app by connecting your fitness band or
-            smartwatch.
+      {/* Women-specific health status */}
+      {isFemale && (
+        <View style={styles.field}>
+          <SectionLabel>Pregnancy &amp; breastfeeding</SectionLabel>
+          <Text style={styles.fieldHint} numberOfLines={2}>
+            Critical for safe calorie recommendations
           </Text>
 
-          <Slider
-            value={
-              formData.stress_level === "low"
-                ? 1
-                : formData.stress_level === "moderate"
-                  ? 2
-                  : formData.stress_level === "high"
-                    ? 3
-                    : 2
-            }
-            onValueChange={(value) => {
-              const stressLevel =
-                value === 1 ? "low" : value === 2 ? "moderate" : "high";
-              updateField(
-                "stress_level",
-                stressLevel as "low" | "moderate" | "high",
-              );
-            }}
-            minimumValue={1}
-            maximumValue={3}
-            step={1}
-            label="Current Stress Level (Optional)"
-            showTooltip={true}
-            formatValue={(val) => {
-              if (val === 1) return "Low Stress";
-              if (val === 2) return "Moderate Stress";
-              return "High Stress";
-            }}
-            style={styles.stressSlider}
-          />
+          <View style={styles.rows}>
+            <OptionRow
+              label="Currently pregnant"
+              selected={!!formData.pregnancy_status}
+              onPress={() => {
+                const next = !formData.pregnancy_status;
+                updateField("pregnancy_status", next);
+                if (!next) updateField("pregnancy_trimester", undefined);
+              }}
+              testID="pregnancy-toggle"
+            />
+            <OptionRow
+              label="Currently breastfeeding"
+              selected={!!formData.breastfeeding_status}
+              onPress={() =>
+                updateField(
+                  "breastfeeding_status",
+                  !formData.breastfeeding_status,
+                )
+              }
+              testID="breastfeeding-toggle"
+            />
+          </View>
 
-          {!formData.stress_level && (
-            <GlassCard
-              elevation={2}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.infoCard}
-            >
-              <View style={styles.infoContent}>
-                <Ionicons
-                  name="bulb-outline"
-                  size={rf(18)}
-                  color={colors.primary}
-                />
-                <Text style={styles.infoText}>
-                  Skip for now? You can connect a fitness band or smartwatch in
-                  the main app to automatically track your stress levels.
-                </Text>
+          {formData.pregnancy_status && (
+            <View style={styles.trimesterBlock}>
+              <SectionLabel>Trimester</SectionLabel>
+              <View style={styles.rows}>
+                {TRIMESTER_OPTIONS.map((opt) => (
+                  <OptionRow
+                    key={opt.id}
+                    label={opt.label}
+                    selected={formData.pregnancy_trimester === parseInt(opt.id, 10)}
+                    onPress={() => handleTrimesterSelect(opt.id)}
+                    testID={`trimester-${opt.id}`}
+                  />
+                ))}
               </View>
-            </GlassCard>
-          )}
-
-          {formData.stress_level === "high" && (
-            <GlassCard
-              elevation={2}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.warningCard}
-            >
-              <View style={styles.warningRow}>
-                <Ionicons
-                  name="alert-circle"
-                  size={rf(18)}
-                  color={colors.warning}
-                />
-                <Text style={styles.warningText}>
-                  High stress detected - we'll use conservative calorie targets
-                  to protect your health and hormones
-                </Text>
-              </View>
-            </GlassCard>
+            </View>
           )}
         </View>
-      </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+      )}
+
+      {/* Stress level — single-select rows (tapping the active row clears) */}
+      <RowGroup label="Current stress level (optional)">
+        <View style={styles.stressStack}>
+          <View style={styles.rows}>
+            {STRESS_LEVELS.map((opt) => (
+              <OptionRow
+                key={opt.level}
+                label={opt.title}
+                sublabel={opt.description}
+                icon={opt.iconName as keyof typeof Ionicons.glyphMap}
+                selected={formData.stress_level === opt.level}
+                onPress={() => handleStressSelect(opt.level)}
+                testID={`stress-${opt.level}`}
+              />
+            ))}
+          </View>
+          <Text style={styles.fieldHint} numberOfLines={3}>
+            Stress affects recovery and calorie management. You can also
+            measure this in the main app by connecting a fitness band or
+            smartwatch.
+          </Text>
+          {formData.stress_level === "high" && (
+            <View style={styles.notice}>
+              <Ionicons name="alert-circle" size={16} color={tokens.danger} />
+              <Text style={styles.noticeText} numberOfLines={3}>
+                High stress detected — we&apos;ll use conservative calorie
+                targets to protect your health.
+              </Text>
+            </View>
+          )}
+        </View>
+      </RowGroup>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
+  container: {
+    gap: freshSpacing.screenPad,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+  trustBlock: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: freshSpacing.s,
+    paddingBottom: freshSpacing.s,
+    borderBottomWidth: 1,
+    borderBottomColor: tokens.hairline,
   },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
+  trustIcon: {
+    marginTop: 2,
   },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
+  trustText: {
+    ...freshType.caption,
+    color: tokens.ink2,
+    flex: 1,
+    lineHeight: 18,
   },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
+  field: {
+    gap: freshSpacing.s,
   },
-  medicalField: {
-    marginBottom: spacing.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
+  rows: {
+    // OptionRows bring their own hairlines; stack flush.
   },
   fieldHint: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: rf(18),
+    ...freshType.caption,
   },
-  checkboxContainer: {
-    marginBottom: spacing.md,
+  trimesterBlock: {
+    marginTop: freshSpacing.m,
+    gap: freshSpacing.s,
   },
-  checkbox: {
+  stressStack: {
+    gap: freshSpacing.s,
+  },
+  notice: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: freshSpacing.s,
+    marginTop: freshSpacing.xs,
   },
-  checkboxBox: {
-    width: rs(24),
-    height: rs(24),
-    borderRadius: rbr(6),
-    borderWidth: 2,
-    borderColor: colors.primary,
-    backgroundColor: "transparent",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxBoxChecked: {
-    backgroundColor: colors.primary,
-  },
-  checkboxLabel: {
-    fontSize: fontSize.md,
-    color: colors.text,
-  },
-  trimesterSelector: {
-    marginLeft: rp(32),
-    marginBottom: spacing.lg,
-  },
-  inputLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  requiredAsterisk: {
-    color: colors.error,
-  },
-  trimesterButtons: {
-    gap: spacing.xs,
-  },
-  trimesterButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  trimesterButtonSelected: {
-    backgroundColor: `${colors.primary}15`,
-    borderColor: colors.primary,
-  },
-  trimesterButtonText: {
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  trimesterButtonTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  stressSlider: {
-    width: "100%",
-    marginBottom: spacing.md,
-  },
-  infoCard: {
-    backgroundColor: `${colors.primary}05`,
-    borderColor: colors.border,
-    borderWidth: 1,
-  },
-  infoContent: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  infoText: {
+  noticeText: {
+    ...freshType.caption,
+    color: tokens.ink2,
     flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: rf(16),
-  },
-  warningCard: {
-    backgroundColor: `${colors.warning}10`,
-    borderColor: `${colors.warning}30`,
-    borderWidth: 1,
-  },
-  warningRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: fontSize.xs,
-    color: colors.warning,
-    fontWeight: typography.fontWeight.medium,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
   },
 });

@@ -1,12 +1,7 @@
-import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from "react-native";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rh, rw, rbr } from "../../../utils/responsive";
+import React, { useState } from 'react';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { rh, rw, rbr } from '../../../utils/responsive';
 
 interface CustomSliderProps {
   minimumValue: number;
@@ -23,17 +18,14 @@ export const CustomSlider: React.FC<CustomSliderProps> = ({
   onValueChange,
   style,
 }) => {
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging] = useState(false);
   const [trackWidth, setTrackWidth] = useState(0);
 
   const handleTrackPress = (event: any) => {
     const { locationX } = event.nativeEvent;
     const percentage = locationX / trackWidth;
     const newValue = minimumValue + (maximumValue - minimumValue) * percentage;
-    const clampedValue = Math.max(
-      minimumValue,
-      Math.min(maximumValue, newValue),
-    );
+    const clampedValue = Math.max(minimumValue, Math.min(maximumValue, newValue));
     onValueChange(clampedValue);
   };
 
@@ -58,11 +50,7 @@ export const CustomSlider: React.FC<CustomSliderProps> = ({
           ]}
         />
         <View
-          style={[
-            styles.thumb,
-            { left: getThumbPosition() },
-            isDragging && styles.thumbActive,
-          ]}
+          style={[styles.thumb, { left: getThumbPosition() }, isDragging && styles.thumbActive]}
         />
       </View>
     </View>
@@ -71,27 +59,27 @@ export const CustomSlider: React.FC<CustomSliderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
+    width: '100%',
     height: rh(40),
-    justifyContent: "center",
+    justifyContent: 'center',
     marginVertical: spacing.md,
   },
   track: {
     height: rh(4),
     backgroundColor: colors.backgroundSecondary,
     borderRadius: rbr(2),
-    position: "relative",
+    position: 'relative',
   },
   fill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: rbr(2),
-    position: "absolute",
+    position: 'absolute',
     left: 0,
     top: 0,
   },
   thumb: {
-    position: "absolute",
+    position: 'absolute',
     top: rh(-10),
     width: rw(24),
     height: rh(24),

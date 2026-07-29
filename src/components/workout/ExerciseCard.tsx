@@ -1,9 +1,27 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Card, Button } from "../ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rw } from "../../utils/responsive";
+/**
+ * FitAI — Exercise Card (Aurora, 2026 session redesign)
+ *
+ * NOTE: This file appears unused — the live workout session uses the
+ * ExerciseCard in src/features/workouts/components/. Kept for alignment;
+ * completed-set colors already use colors.successAlt (audit row 17).
+ *
+ * Flat exercise summary surface. No boxed card chrome: a typographic exercise
+ * title, a plain meta line (sets × reps · weight · rest), sets rendered as
+ * flat rows (completed sets read as success-tinted text + check, not badge
+ * boxes), a notes section, and a plain stats line.
+ *
+ * All props, handlers, tap affordances (per-set TouchableOpacity with its
+ * exact accessibility labels) and the start-button label logic are unchanged.
+ */
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../ui/aurora';
+import { flatColors as colors, spacing, typography } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
+import { rf, rp, rw, rbr } from '../../utils/responsive';
+
 interface ExerciseCardProps {
   exerciseName: string;
   sets: number;
@@ -22,10 +40,10 @@ interface ExerciseCardProps {
   repsDisplay: string;
 }
 
-const safeString = (value: any, fallback: string = ""): string => {
+const safeString = (value: any, fallback: string = ''): string => {
   if (value === null || value === undefined) return fallback;
-  if (typeof value === "number" && Number.isNaN(value)) return fallback;
-  if (typeof value === "string") return value;
+  if (typeof value === 'number' && Number.isNaN(value)) return fallback;
+  if (typeof value === 'string') return value;
   try {
     return String(value);
   } catch {
@@ -43,13 +61,15 @@ const formatDuration = (totalSeconds: number): string => {
   const s = Math.max(0, Math.floor(totalSeconds));
   const m = Math.floor(s / 60);
   const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2, "0")}`;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 };
+
+const META_BULLET = '  •  ';
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   exerciseName,
   sets,
-  reps,
+  reps: _reps,
   weight,
   restTime,
   notes,
@@ -63,284 +83,259 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   isTimeBased,
   repsDisplay,
 }) => {
+  const completedCount = completedSets.filter(Boolean).length || 0;
+
+  // Meta line: "3 sets × 10 · 60kg · Rest 90s" (weight/rest only when present)
+  const metaParts = [`${safeString(sets, '0')} sets × ${repsDisplay}`];
+  if (safeNumber(weight, 0) > 0) metaParts.push(`${safeString(weight, '0')}kg`);
+  if (safeNumber(restTime, 0) > 0) metaParts.push(`Rest ${safeString(restTime, '0')}s`);
+
   return (
-    <Card style={styles.exerciseCard} variant="elevated">
-      <View style={styles.exerciseHeader}>
-        <Text
-          style={styles.exerciseName}
-          numberOfLines={2}
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
-        >
-          {safeString(exerciseName, "Current Exercise")}
-        </Text>
+    <View style={styles.container}>
+      {/* ── Hero: exercise name + plain meta line ── */}
+      <Text
+        style={styles.exerciseName}
+        numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
+        {safeString(exerciseName, 'Current Exercise')}
+      </Text>
+      <Text style={styles.metaLine} numberOfLines={1}>
+        {metaParts.join(META_BULLET)}
+      </Text>
 
-        <Button
-          title={
-            isCompleted
-              ? "Exercise Complete"
-              : isTimeBased
-                ? `Start ${repsDisplay}`
-                : "Start Exercise"
-          }
-          onPress={onStartExercise}
-          variant={isCompleted ? "outline" : "primary"}
-          disabled={isCompleted}
-          style={styles.startButton}
-        />
-
-        <View style={styles.exerciseDetails}>
-          <Text style={styles.exerciseDetailText} numberOfLines={1}>
-            {safeString(sets, "0")} sets x {repsDisplay}
-          </Text>
-
-          {safeNumber(weight, 0) > 0 && (
-            <Text style={styles.exerciseDetailText} numberOfLines={1}>
-              {safeString(weight, "0")}kg
+      {/* ── Primary CTA (labels + handler unchanged) ── */}
+      <AnimatedPressable
+        onPress={onStartExercise}
+        disabled={isCompleted}
+        scaleValue={0.97}
+        springConfig="snappy"
+        hapticType="medium"
+        style={[styles.startButton, isCompleted && styles.startButtonDone]}
+        accessibilityRole="button"
+        accessibilityLabel={
+          isCompleted
+            ? 'Exercise Complete'
+            : isTimeBased
+              ? `Start ${repsDisplay}`
+              : 'Start Exercise'
+        }
+      >
+        {isCompleted ? (
+          <View style={styles.startButtonInner}>
+            <Ionicons name="checkmark-circle" size={rf(18)} color={colors.successAlt} />
+            <Text style={styles.startButtonDoneText}>Exercise Complete</Text>
+          </View>
+        ) : (
+          <LinearGradient
+            colors={[colors.primary, colors.primaryLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.startButtonGradient}
+          >
+            <Text style={styles.startButtonText}>
+              {isTimeBased ? `Start ${repsDisplay}` : 'Start Exercise'}
             </Text>
-          )}
+            <Ionicons name="play" size={rf(16)} color={colors.white} />
+          </LinearGradient>
+        )}
+      </AnimatedPressable>
 
-          {safeNumber(restTime, 0) > 0 && (
-            <Text style={styles.exerciseDetailText} numberOfLines={1}>
-              Rest: {safeString(restTime, "0")}s
-            </Text>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.setsContainer}>
-        <Text style={styles.setsTitle} numberOfLines={1}>Sets Progress</Text>
-        <View style={styles.setsGrid}>
-          {completedSets.map((isSetCompleted, setIndex) => (
-            <TouchableOpacity
-              key={setIndex}
-              style={[
-                styles.setButton,
-                isSetCompleted && styles.setButtonCompleted,
-              ]}
-              onPress={() => onSetComplete(setIndex)}
-              activeOpacity={0.8}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Set ${setIndex + 1}${isSetCompleted ? ", completed" : ", not completed"}`}
+      {/* ── Sets: flat rows, success-tinted text when done ── */}
+      <Text style={styles.sectionEyebrow} numberOfLines={1}>
+        Sets
+      </Text>
+      <View style={styles.setsList}>
+        {completedSets.map((isSetCompleted, setIndex) => (
+          <TouchableOpacity
+            key={setIndex}
+            style={styles.setRow}
+            onPress={() => onSetComplete(setIndex)}
+            activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Set ${setIndex + 1}${isSetCompleted ? ', completed' : ', not completed'}`}
+          >
+            <Text
+              style={[styles.setRowIndex, isSetCompleted && styles.setRowIndexDone]}
+              numberOfLines={1}
             >
-              <Text
-                style={[
-                  styles.setButtonText,
-                  isSetCompleted && styles.setButtonTextCompleted,
-                ]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.8}
-              >
-                {safeString(setIndex + 1)}
-              </Text>
-              {isSetCompleted && (
-                <View style={styles.setButtonCheck} pointerEvents="none">
-                  <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+              {`SET ${safeString(setIndex + 1)}`}
+            </Text>
+            <Text
+              style={[styles.setRowMeta, isSetCompleted && styles.setRowMetaDone]}
+              numberOfLines={1}
+            >
+              {safeNumber(weight, 0) > 0
+                ? `${safeString(weight, '0')}kg × ${repsDisplay}`
+                : repsDisplay}
+            </Text>
+            {isSetCompleted ? (
+              <Ionicons name="checkmark" size={rf(16)} color={colors.successAlt} />
+            ) : (
+              <View style={styles.setRowPendingDot} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={styles.setsProgressText} numberOfLines={1}>
+        {safeString(completedCount)} / {safeString(completedSets.length || 0)} completed
+      </Text>
 
-        <Text style={styles.setsProgressText} numberOfLines={1}>
-          {safeString(completedSets.filter(Boolean).length || 0)} /{" "}
-          {safeString(completedSets.length || 0)} completed
+      {/* ── Notes: flat typographic section ── */}
+      <Text style={styles.sectionEyebrow} numberOfLines={1}>
+        Notes
+      </Text>
+      <Text style={styles.notesText} numberOfLines={4} adjustsFontSizeToFit minimumFontScale={0.85}>
+        {safeString(
+          notes ||
+            'Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.',
+          'Exercise instructions not available'
+        )}
+      </Text>
+
+      {/* ── Stats: plain text line ── */}
+      <View style={styles.statsRow}>
+        <Text style={styles.statText} numberOfLines={1}>
+          {`${safeString(setsCompleted)} sets done`}
+        </Text>
+        <Text style={styles.statText} numberOfLines={1}>
+          {formatDuration(totalDuration)}
+        </Text>
+        <Text style={styles.statText} numberOfLines={1}>
+          {`${safeString(caloriesBurned)} kcal`}
         </Text>
       </View>
-
-      <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsTitle} numberOfLines={1}>Exercise Notes</Text>
-        <Text
-          style={styles.instructionsText}
-          numberOfLines={4}
-          adjustsFontSizeToFit
-          minimumFontScale={0.85}
-        >
-          {safeString(
-            notes ||
-              "Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.",
-            "Exercise instructions not available",
-          )}
-        </Text>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{safeString(setsCompleted)}</Text>
-          <Text style={styles.statLabel} numberOfLines={1}>Sets Done</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue} numberOfLines={1}>{formatDuration(totalDuration)}</Text>
-          <Text style={styles.statLabel} numberOfLines={1}>Duration</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{safeString(caloriesBurned)}</Text>
-          <Text style={styles.statLabel} numberOfLines={1}>Calories</Text>
-        </View>
-      </View>
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  exerciseCard: {
-    padding: spacing.xl,
+  container: {
+    width: '100%',
     marginBottom: spacing.lg,
-    width: "100%",
   },
-
-  exerciseHeader: {
-    marginBottom: spacing.xl,
-  },
-
-  startButton: {
-    // Replaces inline `marginTop: spacing.md` — that double-margined the
-    // header (exerciseName already has marginBottom: spacing.md). Now zero
-    // top margin so the Button sits flush under the title.
-    marginTop: 0,
-  },
-
   exerciseName: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: rf(24),
+    fontWeight: String(typography.fontWeight.extrabold) as any,
     color: colors.text,
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-
-  exerciseDetails: {
-    flexDirection: "row",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    gap: spacing.md,
-  },
-
-  exerciseDetailText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    backgroundColor: colors.backgroundSecondary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-  },
-
-  setsContainer: {
-    marginBottom: spacing.xl,
-  },
-
-  setsTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-
-  setsGrid: {
-    flexDirection: "row",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    gap: spacing.md,
-    marginBottom: spacing.sm,
-  },
-
-  setButton: {
-    // Clamp to 56px minimum (rw(56) drops below on small screens). Use a
-    // hairline border so the 2px borderWidth didn't eat into the tap area.
-    width: Math.max(rw(56), 56),
-    height: Math.max(rw(56), 56),
-    borderRadius: rbr(28),
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    position: "relative",
-  },
-
-  setButtonCompleted: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-
-  setButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.textSecondary,
-  },
-
-  setButtonTextCompleted: {
-    color: colors.white,
-  },
-
-  setButtonCheck: {
-    position: "absolute",
-    top: rp(-2),
-    right: rp(2),
-    // Wrapper for the Ionicons checkmark (was a Text "OK" that overlapped
-    // the set number — an icon is clearer and consistent with the rest of
-    // the workout components).
-    alignItems: "center",
-    justifyContent: "center",
-    width: rf(18),
-    height: rf(18),
-    borderRadius: rf(9),
-    backgroundColor: colors.success,
-  },
-
-  setsProgressText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: "center",
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  instructionsContainer: {
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
-  },
-
-  instructionsTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-
-  instructionsText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: fontSize.sm * 1.5,
-  },
-
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingTop: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-
-  statItem: {
-    alignItems: "center",
-  },
-
-  statValue: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    letterSpacing: -0.3,
     marginBottom: spacing.xs,
   },
-
-  statLabel: {
-    fontSize: fontSize.xs,
+  metaLine: {
+    fontSize: rf(13),
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    textTransform: "uppercase",
+    fontWeight: String(typography.fontWeight.medium) as any,
+    letterSpacing: 0.2,
+    marginBottom: spacing.lg,
+  },
+  startButton: {
+    borderRadius: rbr(16),
+    overflow: 'hidden',
+    marginBottom: spacing.xl,
+  },
+  startButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    minHeight: Math.max(rp(52), 52),
+  },
+  startButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: Math.max(rp(52), 52),
+    backgroundColor: colors.successTint,
+  },
+  startButtonText: {
+    fontSize: rf(16),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.white,
+    letterSpacing: 0.3,
+  },
+  startButtonDone: {
+    // Keep the same outer radius/overflow; tint applied on inner row.
+  },
+  startButtonDoneText: {
+    fontSize: rf(16),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.successAlt,
+    letterSpacing: 0.3,
+  },
+
+  sectionEyebrow: {
+    fontSize: rf(11),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.6,
+    marginBottom: spacing.sm,
+  },
+  setsList: {
+    marginBottom: spacing.xs,
+  },
+  setRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rw(12),
+    minHeight: Math.max(rp(44), 44),
+    paddingVertical: rp(spacing.xs),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: hexToRgba(colors.white, 0.08),
+  },
+  setRowIndex: {
+    width: rw(48),
+    fontSize: rf(13),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    color: colors.textSecondary,
+    letterSpacing: 0.8,
+  },
+  setRowIndexDone: {
+    color: colors.successAlt,
+  },
+  setRowMeta: {
+    flex: 1,
+    fontSize: rf(14),
+    color: colors.textSecondary,
+    fontWeight: String(typography.fontWeight.medium) as any,
+  },
+  setRowMetaDone: {
+    color: colors.successAlt,
+  },
+  setRowPendingDot: {
+    width: rw(6),
+    height: rw(6),
+    borderRadius: rw(3),
+    backgroundColor: hexToRgba(colors.white, 0.25),
+  },
+  setsProgressText: {
+    fontSize: rf(12),
+    color: colors.textMuted,
+    fontWeight: String(typography.fontWeight.medium) as any,
+    marginBottom: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  notesText: {
+    fontSize: rf(13),
+    color: colors.textSecondary,
+    lineHeight: rf(20),
+    marginBottom: spacing.lg,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: hexToRgba(colors.white, 0.08),
+  },
+  statText: {
+    fontSize: rf(12),
+    color: colors.textMuted,
+    fontWeight: String(typography.fontWeight.medium) as any,
+    fontVariant: ['tabular-nums'],
   },
 });

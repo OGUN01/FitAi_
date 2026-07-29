@@ -170,7 +170,6 @@ export const calculateExerciseAlternatives = (
   safeOptimalRate: number,
 ): Alternative[] => {
   const {
-    bmr,
     tdee,
     currentWeight,
     targetWeight,
@@ -279,14 +278,11 @@ export const calculateExerciseAlternatives = (
 
 export const calculateTrainingReductionAlternatives = (
   data: CurrentData,
-  isWeightLoss: boolean,
+  _isWeightLoss: boolean,
 ): Alternative[] => {
   const {
-    bmr,
     tdee,
     currentWeight,
-    targetWeight,
-    currentTimeline,
     currentFrequency,
   } = data;
   const alternatives: Alternative[] = [];

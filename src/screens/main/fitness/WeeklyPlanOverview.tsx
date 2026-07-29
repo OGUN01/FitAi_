@@ -1,22 +1,36 @@
 /**
  * WeeklyPlanOverview Component
- * Compact weekly calendar with workout stats and visual progress
+ * Flat full-width week strip (Mon–Sun) — 2026 redesign.
+ *
+ *  - No card wrapper: a small uppercase "THIS WEEK" eyebrow header (with a
+ *    right-aligned "View plan" text button) and 7 day cells sit directly on
+ *    the screen background.
+ *  - Day cell anatomy: day letter on top, date number in a circle, status dot
+ *    below. States:
+ *      selected  = filled primary date circle
+ *      today     = accent ring around the date
+ *      completed = success check dot
+ *      rest      = moon icon (violet)
+ *      scheduled = muted filled dot (primary when also today)
+ *      none      = hollow dot
+ *  - A thin 4px weekly completion bar sits under the strip.
+ *
+ * All completion / stale-progress detection logic is unchanged.
  */
 
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw, rh, rp, rbr } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
-import { WeeklyWorkoutPlan } from "../../../ai";
-import { DayName } from "../../../stores/appStateStore";
-import { useFitnessStore } from "../../../stores/fitnessStore";
-import { getCurrentWeekStart, getWeekStartForDate } from "../../../utils/weekUtils";
-import { findCompletedSessionForWorkout } from "../../../utils/workoutIdentity";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { rf, rw, rp, rbr } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
+import { WeeklyWorkoutPlan } from '../../../ai';
+import { DayName } from '../../../stores/appStateStore';
+import { useFitnessStore } from '../../../stores/fitnessStore';
+import { getCurrentWeekStart, getWeekStartForDate } from '../../../utils/weekUtils';
+import { findCompletedSessionForWorkout } from '../../../utils/workoutIdentity';
 
 interface WorkoutProgressItem {
   workoutId: string;
@@ -34,39 +48,19 @@ interface WeeklyPlanOverviewProps {
   isRegenerating?: boolean;
 }
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_KEYS: DayName[] = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
 ];
 
-// rest-day violet (no theme token available; closest is colors.purple #9333EA
-// but visually too dark for the rest-day moon accent). Leave as hardcoded hex
-// pending a dedicated rest-day token.
-const REST_DAY_VIOLET = "#A78BFA";
-
-/** Compute the current ISO 8601 week number (1..53). Used only as a fallback
- *  for the subtitle when the plan has no explicit week number/duration. */
-const computeISOWeekNumber = (): number => {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-  const week1 = new Date(d.getFullYear(), 0, 4);
-  return (
-    1 +
-    Math.round(
-      ((d.getTime() - week1.getTime()) / 86400000 -
-        3 +
-        ((week1.getDay() + 6) % 7)) /
-        7,
-    )
-  );
-};
+// rest-day violet — see note in original file; no token available.
+const REST_DAY_VIOLET = '#A78BFA';
 
 export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   plan,
@@ -78,53 +72,22 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   isRegenerating = false,
 }) => {
   const completedSessions = useFitnessStore((state) => state.completedSessions);
+  const currentWeekStart = getCurrentWeekStart();
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const totalWorkouts = plan.workouts?.length || 0;
-    const currentPlanIds = new Set((plan.workouts || []).map((w) => w.id));
-    const currentWeekStart = getCurrentWeekStart();
-    const completedPlannedSessions = completedSessions.filter(
-      (session) =>
-        session.type === "planned" &&
-        session.weekStart === currentWeekStart &&
-        currentPlanIds.has(session.workoutId),
-    );
-    const completedWorkoutIds = new Set(
-      completedPlannedSessions.map((session) => session.workoutId),
-    );
-    const completedWorkouts = completedWorkoutIds.size;
-    const completedCalories = completedPlannedSessions.reduce(
-      (sum, session) => sum + (session.caloriesBurned ?? 0),
-      0,
-    );
-    const remainingEstimatedCalories = (plan.workouts || [])
-      .filter((workout) => !completedWorkoutIds.has(workout.id))
-      .reduce((sum, workout) => sum + (workout.estimatedCalories || 0), 0);
-    const totalCalories = completedCalories + remainingEstimatedCalories;
-    const restDays = plan.restDays?.length || 0;
-
-    return {
-      totalWorkouts,
-      completedWorkouts,
-      totalCalories,
-      restDays,
-      progressPercent:
-        totalWorkouts > 0
-          ? Math.round((completedWorkouts / totalWorkouts) * 100)
-          : 0,
-    };
-  }, [completedSessions, plan]);
+  // Calendar date number for each day of the current week (Mon..Sun).
+  const weekDates = DAY_KEYS.map((_, index) => {
+    const date = new Date(`${currentWeekStart}T00:00:00`);
+    date.setDate(date.getDate() + index);
+    return date.getDate();
+  });
 
   // Get day status for mini calendar
   const getDayStatus = (dayKey: string) => {
-    const currentWeekStart = getCurrentWeekStart();
-    const workout = plan.workouts?.find((w) => w.dayOfWeek === dayKey);
+    const workout = plan.workouts?.find((w) => w.dayOfWeek?.toLowerCase() === dayKey);
     const restDayIndices = plan.restDays || [];
     const dayIndex = DAY_KEYS.indexOf(dayKey as DayName);
-    // Handle both number indices (Monday=0) and string day names from AI
     const isRestDay = restDayIndices.some((d: number | string) =>
-      typeof d === "string" ? d === dayKey : d === dayIndex
+      typeof d === 'string' ? d.toLowerCase() === dayKey : d === dayIndex
     );
     const completedSession = workout
       ? findCompletedSessionForWorkout({
@@ -147,9 +110,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
           : Math.min(progressEntry?.progress ?? 0, 99)
       : 0;
     const isSelected = selectedDay === dayKey;
-    const isToday =
-      DAY_KEYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1] ===
-      dayKey;
+    const isToday = DAY_KEYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1] === dayKey;
 
     return {
       hasWorkout: !!workout && !isRestDay,
@@ -161,32 +122,19 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     };
   };
 
+  const statuses = DAY_KEYS.map((dayKey) => getDayStatus(dayKey));
+  const scheduledCount = statuses.filter((s) => s.hasWorkout).length;
+  const completedCount = statuses.filter((s) => s.isCompleted).length;
+  const barPercent = scheduledCount > 0 ? (completedCount / scheduledCount) * 100 : 0;
+
   return (
     <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-      <GlassCard
-        elevation={2}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="xl"
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text
-              style={styles.planTitle}
-              numberOfLines={1}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.75}
-            >
-              {plan.planTitle || "Weekly Workout Plan"}
-            </Text>
-            <Text style={styles.planSubtitle} numberOfLines={1}>
-              {plan.duration
-                ? String(plan.duration)
-                : `Week ${plan.weekNumber || computeISOWeekNumber()}`}
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
+      {/* Section header — eyebrow + actions */}
+      <View style={styles.header}>
+        <Text style={styles.eyebrow} numberOfLines={1}>
+          This Week
+        </Text>
+        <View style={styles.headerActions}>
           {onRegeneratePlan && (
             <AnimatedPressable
               onPress={onRegeneratePlan}
@@ -200,284 +148,256 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               springConfig="snappy"
               hapticType="medium"
             >
-              <View style={styles.regenerateButtonInner}>
-                <Ionicons
-                  name={isRegenerating ? "sync" : "refresh"}
-                  size={rf(14)}
-                  color={
-                    isRegenerating
-                      ? colors.textSecondary
-                      : colors.primary
-                  }
-                />
-                <Text
-                  style={[styles.regenerateText, isRegenerating && styles.regenerateTextDisabled]}
-                  numberOfLines={1}
-                >
-                  {isRegenerating ? "Generating..." : "Regenerate"}
-                </Text>
-              </View>
+              <Ionicons
+                name={isRegenerating ? 'sync' : 'refresh'}
+                size={rf(16)}
+                color={isRegenerating ? colors.textSecondary : colors.text}
+              />
             </AnimatedPressable>
           )}
+          <AnimatedPressable
+            onPress={onViewFullPlan}
+            scaleValue={0.95}
+            hapticFeedback={true}
+            hapticType="light"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.viewPlanButton}
+          >
+            <View style={styles.viewPlanContent}>
+              <Text style={styles.viewPlanText} numberOfLines={1}>
+                View plan
+              </Text>
+              <Ionicons name="chevron-forward" size={rf(14)} color={colors.primary} />
+            </View>
+          </AnimatedPressable>
+        </View>
+      </View>
+
+      {/* Day strip — 7 flat cells directly on the background */}
+      <View style={styles.dayStrip}>
+        {DAYS.map((day, index) => {
+          const dayKey = DAY_KEYS[index];
+          const status = statuses[index];
+
+          return (
             <AnimatedPressable
-              onPress={onViewFullPlan}
-              scaleValue={0.95}
+              key={dayKey}
+              onPress={() => onDayPress(dayKey)}
+              scaleValue={0.97}
               hapticFeedback={true}
               hapticType="light"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.seeAllButton}
+              style={styles.dayCell}
+              hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
             >
-              <View style={styles.seeAllContent}>
-                <Text style={styles.seeAllText} numberOfLines={1}>View All</Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={rf(14)}
-                  color={colors.primary}
-                />
-              </View>
-            </AnimatedPressable>
-          </View>
-        </View>
-
-        {/* Mini Calendar */}
-        <View style={styles.calendarContainer}>
-          {DAYS.map((day, index) => {
-            const dayKey = DAY_KEYS[index];
-            const status = getDayStatus(dayKey);
-
-            return (
-              <AnimatedPressable
-                key={dayKey}
-                onPress={() => onDayPress(dayKey)}
-                scaleValue={0.9}
-                hapticFeedback={true}
-                hapticType="light"
-                style={styles.dayContainer}
-                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+              <Text
+                style={[
+                  styles.dayLabel,
+                  (status.isToday || status.isSelected) && styles.dayLabelActive,
+                ]}
+              >
+                {day}
+              </Text>
+              <View
+                style={[
+                  styles.dateCircle,
+                  status.isSelected && styles.dateCircleSelected,
+                  status.isToday && !status.isSelected && styles.dateCircleToday,
+                ]}
               >
                 <Text
                   style={[
-                    styles.dayLabel,
-                    status.isToday && styles.dayLabelToday,
-                    status.isSelected && styles.dayLabelSelected,
+                    styles.dateText,
+                    status.isSelected && styles.dateTextSelected,
+                    status.isToday && !status.isSelected && styles.dateTextToday,
                   ]}
                 >
-                  {day}
+                  {weekDates[index]}
                 </Text>
-                <View
-                  style={[
-                    styles.dayCircle,
-                    status.isSelected && styles.dayCircleSelected,
-                    status.isToday &&
-                      !status.isSelected &&
-                      styles.dayCircleToday,
-                  ]}
-                >
-                  {status.isCompleted ? (
-                    <Ionicons name="checkmark" size={rf(14)} color={colors.successAlt} />
-                  ) : status.isRestDay ? (
-                    <Ionicons name="moon" size={rf(12)} color={REST_DAY_VIOLET} />
-                  ) : status.hasWorkout ? (
-                    <View
-                      style={[
-                        styles.workoutDot,
-                        status.progress > 0 && styles.workoutDotInProgress,
-                      ]}
-                    />
-                  ) : (
-                    <View style={styles.emptyDot} />
-                  )}
-                </View>
-              </AnimatedPressable>
-            );
-          })}
-        </View>
+              </View>
+              <View style={styles.dotSlot}>
+                <DayDot status={status} />
+              </View>
+            </AnimatedPressable>
+          );
+        })}
+      </View>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit={true} minimumFontScale={0.7}>
-              {stats.completedWorkouts}/{stats.totalWorkouts}
-            </Text>
-            <Text style={styles.statLabel} numberOfLines={1}>Workouts</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text
-              style={styles.statValue}
-              numberOfLines={1}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.6}
-            >
-              {Math.round(stats.totalCalories)}
-            </Text>
-            <Text style={styles.statLabel} numberOfLines={1}>Est. Calories</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text
-              style={[
-                styles.statValue,
-                { color: colors.primary },
-              ]}
-              numberOfLines={1}
-              adjustsFontSizeToFit={true}
-              minimumFontScale={0.7}
-            >
-              {stats.progressPercent}%
-            </Text>
-            <Text style={styles.statLabel} numberOfLines={1}>Progress</Text>
-          </View>
-        </View>
-      </GlassCard>
+      {/* Thin weekly completion bar */}
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${barPercent}%` }]} />
+      </View>
     </Animated.View>
   );
 };
 
+/** Day status shape produced by `getDayStatus`. */
+interface DayStatus {
+  hasWorkout: boolean;
+  isRestDay: boolean;
+  isCompleted: boolean;
+  isSelected: boolean;
+  isToday: boolean;
+  progress: number;
+}
+
+/** Dot indicator below the date circle. Encodes the day's state. */
+interface DayDotProps {
+  status: DayStatus;
+}
+
+const DayDot: React.FC<DayDotProps> = ({ status }) => {
+  if (status.isCompleted) {
+    // Green filled dot with a subtle checkmark for a11y + testability.
+    return (
+      <View style={[styles.dotDone]}>
+        <Ionicons name="checkmark" size={rf(9)} color={colors.white} />
+      </View>
+    );
+  }
+  if (status.isRestDay) {
+    return <Ionicons name="moon" size={rf(11)} color={hexToRgba(REST_DAY_VIOLET, 0.7)} />;
+  }
+  if (status.hasWorkout) {
+    // Scheduled (not done, not today) — filled muted dot.
+    // Today with a workout gets the primary fill.
+    return <View style={[styles.dot, status.isToday ? styles.dotToday : styles.dotScheduled]} />;
+  }
+  // Future / no workout — hollow dot.
+  return <View style={[styles.dot, styles.dotFuture]} />;
+};
+
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
-  headerLeft: {
-    flex: 1,
-    minWidth: 0,
-  },
-  planTitle: {
-    fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.text,
+  eyebrow: {
+    fontSize: rf(11),
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
     flexShrink: 1,
   },
-  planSubtitle: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(2),
-  },
   headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     flexShrink: 0,
   },
   regenerateButton: {
-    padding: spacing.xs,
+    width: rw(40),
+    height: rw(40),
     minHeight: 44,
-    justifyContent: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: rbr(20),
   },
-  regenerateButtonInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(4),
-  },
-  regenerateText: {
-    fontSize: rf(12),
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  regenerateTextDisabled: {
-    color: colors.textSecondary,
-  },
-  seeAllButton: {
+  viewPlanButton: {
     minHeight: 44,
-    justifyContent: "center",
+    justifyContent: 'center',
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
   },
-  seeAllContent: {
-    flexDirection: "row",
-    alignItems: "center",
+  viewPlanContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(2),
   },
-  seeAllText: {
-    fontSize: rf(12),
-    fontWeight: "600",
+  viewPlanText: {
+    fontSize: rf(13),
+    fontWeight: '600',
     color: colors.primary,
   },
-  calendarContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: spacing.lg,
+  dayStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  dayContainer: {
-    alignItems: "center",
-    gap: spacing.xs,
+  dayCell: {
+    flex: 1,
+    alignItems: 'center',
+    gap: rp(6),
+    paddingVertical: rp(spacing.xs),
   },
   dayLabel: {
-    fontSize: rf(10),
-    fontWeight: "500",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
+    fontSize: rf(11),
+    fontWeight: '600',
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
   },
-  dayLabelToday: {
-    color: colors.primary,
-    fontWeight: "700",
-  },
-  dayLabelSelected: {
+  dayLabelActive: {
     color: colors.text,
-    fontWeight: "700",
+    fontWeight: '700',
   },
-  dayCircle: {
+  dateCircle: {
     width: rw(36),
     height: rw(36),
     borderRadius: rbr(18),
-    backgroundColor: colors.glassSurface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dateCircleSelected: {
+    backgroundColor: colors.primary,
+  },
+  dateCircleToday: {
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+  },
+  dateText: {
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  dateTextSelected: {
+    color: colors.white,
+    fontWeight: '700',
+  },
+  dateTextToday: {
+    color: colors.accent,
+    fontWeight: '700',
+  },
+  dotSlot: {
+    height: rp(16),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dot: {
+    width: rw(6),
+    height: rw(6),
+    borderRadius: rbr(3),
+  },
+  dotToday: {
+    backgroundColor: colors.primary,
+  },
+  dotDone: {
+    width: rw(14),
+    height: rw(14),
+    borderRadius: rbr(7),
+    backgroundColor: colors.successAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dotScheduled: {
+    backgroundColor: colors.glassBorder,
+  },
+  dotFuture: {
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.glassBorder,
   },
-  dayCircleSelected: {
-    backgroundColor: hexToRgba(colors.primary, 0.125),
-    borderColor: colors.primary,
-  },
-  dayCircleToday: {
-    borderColor: colors.primary,
-    borderWidth: 2,
-  },
-  workoutDot: {
-    width: rw(8),
-    height: rw(8),
-    borderRadius: rbr(4),
-    backgroundColor: colors.errorLight,
-  },
-  workoutDotInProgress: {
-    backgroundColor: colors.primaryLight,
-  },
-  emptyDot: {
-    width: rw(4),
-    height: rw(4),
+  progressTrack: {
+    height: 4,
     borderRadius: rbr(2),
-    backgroundColor: colors.glassHighlight,
+    backgroundColor: hexToRgba(colors.text, 0.08),
+    marginTop: spacing.md,
+    overflow: 'hidden',
   },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statValue: {
-    fontSize: rf(16),
-    fontWeight: "700",
-    color: colors.text,
-  },
-  statLabel: {
-    fontSize: rf(11),
-    color: colors.textSecondary,
-    marginTop: rp(2),
-  },
-  statDivider: {
-    width: 1,
-    height: rh(24),
-    backgroundColor: colors.glassBorder,
+  progressFill: {
+    height: 4,
+    borderRadius: rbr(2),
+    backgroundColor: colors.primary,
   },
 });
 

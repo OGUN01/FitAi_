@@ -1,15 +1,19 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import type { ScannedProduct } from "../../../services/barcodeService";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
+import type { ScannedProduct } from '../../../services/barcodeService';
 
 interface NutritionFactsProps {
-  nutrition: ScannedProduct["nutrition"];
+  nutrition: ScannedProduct['nutrition'];
 }
 
-export const NutritionFacts: React.FC<NutritionFactsProps> = ({
-  nutrition,
-}) => (
+export const NutritionFacts: React.FC<NutritionFactsProps> = ({ nutrition }) => (
   <View style={styles.nutritionContainer}>
     <Text style={styles.sectionTitle}>Nutrition Facts (per 100g)</Text>
     <View style={styles.nutritionGrid}>
@@ -55,22 +59,22 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
   nutritionGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   nutritionItem: {
-    width: "48%",
+    width: '48%',
     backgroundColor: colors.surface,
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
-    alignItems: "center",
+    alignItems: 'center',
   },
   nutritionLabel: {
     fontSize: fontSize.sm,
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
   },
   nutritionValue: {
     fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
   },
 });

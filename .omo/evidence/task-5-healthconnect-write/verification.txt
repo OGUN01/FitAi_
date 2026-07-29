@@ -1,0 +1,16 @@
+=== Verification Commands ===
+
+1. WRITE permissions in app.config.js:
+        NSHealthUpdateUsageDescription: "FitAI writes workout and nutrition data to help you maintain a comprehensive health record.",
+        // Health Connect WRITE permissions for workout sync
+        "android.permission.health.WRITE_EXERCISE",
+        "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED"
+          healthUpdatePermission: "Allow FitAI to write workout and nutrition data to the Health app to maintain your comprehensive health record."
+
+2. writeWorkoutSession count:
+   Count: 1
+
+3. insertRecords count:
+   Count: 5
+
+4. Tests passed: 43/43

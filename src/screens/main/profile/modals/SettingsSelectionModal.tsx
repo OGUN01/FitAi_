@@ -1,8 +1,7 @@
 /**
- * SettingsSelectionModal - Reusable bottom-sheet style selection modal
- *
- * Used for Theme, Units, and Language preference selection.
- * Web-safe (no Alert.alert), uses Modal + GlassCard + AnimatedPressable pattern.
+ * SettingsSelectionModal - Aurora 2026: bottom-sheet selection dialog.
+ * Flat surface.2 panel over blur backdrop, option rows with radio-style check.
+ * No GlassCard, no shadows, tokens only.
  */
 
 import React from "react";
@@ -15,11 +14,17 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../../../utils/colors";
-import { rf, rp, rbr, rw, rh } from "../../../../utils/responsive";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw } from "../../../../utils/responsive";
+
+const { variants } = typography;
 
 export interface SelectionOption {
   value: string;
@@ -62,145 +67,142 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable onPress={onClose}>
+      <Pressable onPress={onClose} style={styles.overlayPressable}>
         <BlurView intensity={80} style={styles.blurContainer}>
-          <Pressable onPress={() => {}}>
-            <View style={styles.dialogContainer}>
-              <GlassCard
-                elevation={5}
-                blurIntensity="heavy"
-                padding="lg"
-                borderRadius="xl"
-              >
-                {/* Header */}
-                <View style={styles.headerRow}>
-                  <View
-                    style={[
-                      styles.headerIconWrap,
-                      { backgroundColor: hexToRgba(iconColor, TINT_ALPHA_LOW) },
-                    ]}
-                  >
-                    <Ionicons name={icon} size={rf(22)} color={iconColor} />
-                  </View>
-                  <View style={styles.headerText}>
-                    <Text style={styles.title} numberOfLines={1}>{title}</Text>
-                    {subtitle && (
-                      <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
-                    )}
-                  </View>
-                  <AnimatedPressable
-                    onPress={onClose}
-                    scaleValue={0.9}
-                    style={styles.closeBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Close ${title}`}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={rf(18)}
-                      color={colors.textSecondary}
-                    />
-                  </AnimatedPressable>
-                </View>
-
-                {/* Divider */}
-                <View style={styles.divider} />
-
-                {/* Options */}
+          <Pressable onPress={() => {}} style={styles.dialogPressable}>
+            <View style={styles.dialogContainer} accessibilityRole="alert">
+              {/* Header */}
+              <View style={styles.headerRow}>
                 <View
-                  style={styles.optionsList}
-                  accessibilityRole="radiogroup"
-                  accessibilityLabel={title}
+                  style={[
+                    styles.headerIconWrap,
+                    { backgroundColor: `${iconColor}1F` },
+                  ]}
                 >
-                  {options.map((opt) => {
-                    const isSelected = opt.value === selectedValue;
-                    const isDisabled = opt.disabled === true;
+                  <Ionicons name={icon} size={rf(20)} color={iconColor} />
+                </View>
+                <View style={styles.headerText}>
+                  <Text style={styles.title} numberOfLines={1}>
+                    {title}
+                  </Text>
+                  {subtitle && (
+                    <Text style={styles.subtitle} numberOfLines={1}>
+                      {subtitle}
+                    </Text>
+                  )}
+                </View>
+                <AnimatedPressable
+                  onPress={onClose}
+                  scaleValue={0.9}
+                  style={styles.closeBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Close ${title}`}
+                >
+                  <Ionicons
+                    name="close"
+                    size={rf(18)}
+                    color={colors.text.secondary}
+                  />
+                </AnimatedPressable>
+              </View>
 
-                    return (
-                      <AnimatedPressable
-                        key={opt.value}
-                        onPress={() => {
-                          if (!isDisabled) {
-                            onSelect(opt.value);
-                          }
-                        }}
-                        scaleValue={isDisabled ? 1.0 : 0.97}
-                        disabled={isDisabled}
-                        accessibilityRole="radio"
-                        accessibilityState={{ checked: isSelected }}
-                        accessibilityLabel={opt.label}
+              {/* Divider */}
+              <View style={styles.divider} />
+
+              {/* Options */}
+              <View
+                style={styles.optionsList}
+                accessibilityRole="radiogroup"
+                accessibilityLabel={title}
+              >
+                {options.map((opt) => {
+                  const isSelected = opt.value === selectedValue;
+                  const isDisabled = opt.disabled === true;
+
+                  return (
+                    <AnimatedPressable
+                      key={opt.value}
+                      onPress={() => {
+                        if (!isDisabled) {
+                          onSelect(opt.value);
+                        }
+                      }}
+                      scaleValue={isDisabled ? 1.0 : 0.97}
+                      disabled={isDisabled}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: isSelected }}
+                      accessibilityLabel={opt.label}
+                      style={[
+                        styles.optionRow,
+                        isSelected && styles.optionRowSelected,
+                        isDisabled && styles.optionRowDisabled,
+                      ]}
+                    >
+                      <View
                         style={[
-                          styles.optionRow,
-                          ...(isSelected ? [styles.optionRowSelected] : []),
-                          ...(isDisabled ? [styles.optionRowDisabled] : []),
+                          styles.optionIconWrap,
+                          isSelected && {
+                            backgroundColor: `${iconColor}2E`,
+                          },
                         ]}
                       >
-                        <View
-                          style={[
-                            styles.optionIconWrap,
-                            isSelected && {
-                              backgroundColor: hexToRgba(iconColor, TINT_ALPHA_MEDIUM),
-                            },
-                          ]}
-                        >
-                          <Ionicons
-                            name={opt.icon}
-                            size={rf(18)}
-                            color={
-                              isSelected
-                                ? iconColor
-                                : colors.textSecondary
-                            }
-                          />
-                        </View>
+                        <Ionicons
+                          name={opt.icon}
+                          size={rf(18)}
+                          color={
+                            isSelected
+                              ? iconColor
+                              : colors.text.secondary
+                          }
+                        />
+                      </View>
 
-                        <View style={styles.optionContent}>
+                      <View style={styles.optionContent}>
+                        <Text
+                          style={[
+                            styles.optionLabel,
+                            isSelected && styles.optionLabelSelected,
+                            isDisabled && styles.optionLabelDisabled,
+                          ]}
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
+                        >
+                          {opt.label}
+                        </Text>
+                        {opt.description && (
                           <Text
-                            style={[
-                              styles.optionLabel,
-                              isSelected && { color: colors.white },
-                              isDisabled && styles.optionLabelDisabled,
-                            ]}
-                            numberOfLines={2}
+                            style={styles.optionDescription}
+                            numberOfLines={3}
                             ellipsizeMode="tail"
                           >
-                            {opt.label}
+                            {opt.description}
                           </Text>
-                          {opt.description && (
-                            <Text
-                              style={styles.optionDescription}
-                              numberOfLines={3}
-                              ellipsizeMode="tail"
-                            >
-                              {opt.description}
-                            </Text>
-                          )}
-                        </View>
-
-                        {isSelected && (
-                          <Ionicons
-                            name="checkmark-circle"
-                            size={rf(20)}
-                            color={iconColor}
-                          />
                         )}
-                      </AnimatedPressable>
-                    );
-                  })}
-                </View>
+                      </View>
 
-                {/* Footer note */}
-                {footerNote && (
-                  <View style={styles.footerNoteWrap}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      size={rf(14)}
-                      color={colors.textMuted}
-                    />
-                    <Text style={styles.footerNoteText}>{footerNote}</Text>
-                  </View>
-                )}
-              </GlassCard>
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={rf(20)}
+                          color={iconColor}
+                        />
+                      )}
+                    </AnimatedPressable>
+                  );
+                })}
+              </View>
+
+              {/* Footer note */}
+              {footerNote && (
+                <View style={styles.footerNoteWrap}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={rf(14)}
+                    color={colors.text.tertiary}
+                  />
+                  <Text style={styles.footerNoteText}>{footerNote}</Text>
+                </View>
+              )}
             </View>
           </Pressable>
         </BlurView>
@@ -210,18 +212,25 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
 };
 
 const styles = StyleSheet.create({
+  overlayPressable: {
+    flex: 1,
+  },
   blurContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.overlay,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  dialogContainer: {
+  dialogPressable: {
     width: "88%",
     maxWidth: 380,
-    // Use percentage maxHeight so the dialog never exceeds the viewport on
-    // short screens (rh(682) was an absolute px value that could exceed
-    // screen height on small devices).
+  },
+  dialogContainer: {
+    backgroundColor: surface[2],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
     maxHeight: "85%",
   },
   headerRow: {
@@ -242,29 +251,25 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   title: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.white,
+    ...variants.sectionTitle,
+    color: colors.text.primary,
   },
   subtitle: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(2),
+    ...variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
   },
   closeBtn: {
-    // Match headerIconWrap dimensions (rw(40)) so the header row stays
-    // visually symmetric (previously closeBtn was rw(32) — smaller than the
-    // icon wrap on the other side).
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
     borderRadius: Math.max(rw(20), 22),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: surface[1],
     justifyContent: "center",
     alignItems: "center",
   },
   divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: border.DEFAULT,
     marginVertical: spacing.sm,
   },
   optionsList: {
@@ -276,13 +281,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
     minHeight: 44,
-    borderRadius: borderRadius.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderRadius: 12,
+    backgroundColor: surface[1],
   },
   optionRowSelected: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderColor: border.strong,
   },
   optionRowDisabled: {
     opacity: 0.5,
@@ -291,7 +295,7 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(10),
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.sm,
@@ -301,17 +305,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   optionLabel: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    ...variants.body,
+    color: colors.text.secondary,
+  },
+  optionLabelSelected: {
+    color: colors.text.primary,
+    fontFamily: "Manrope_600SemiBold",
   },
   optionLabelDisabled: {
-    color: colors.textMuted,
+    color: colors.text.tertiary,
   },
   optionDescription: {
-    fontSize: rf(12),
-    color: colors.textMuted,
-    marginTop: rp(2),
+    ...variants.caption,
+    color: colors.text.tertiary,
+    marginTop: spacing.xxs,
   },
   footerNoteWrap: {
     flexDirection: "row",
@@ -321,9 +328,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   footerNoteText: {
-    fontSize: rf(12),
-    color: colors.textMuted,
-    fontStyle: "italic",
+    ...variants.caption,
+    color: colors.text.tertiary,
     flex: 1,
   },
 });

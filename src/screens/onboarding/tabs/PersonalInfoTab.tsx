@@ -1,33 +1,87 @@
-import React from "react";
+/**
+ * PersonalInfoTab — S1 "You", Editorial Dark skin (docs/onboarding-fresh-design.md).
+ *
+ * Frame: ScreenScaffold (question "Who are you?" + Back/Next footer).
+ * Sections: SectionLabel + a one-line "why we ask" caption + content + Rule
+ * hairline — no cards, no shells. Sleep schedule: two compact TimeRow steppers
+ * (Wake / Sleep) + a SleepInsight row — the one computed key-number of the tab
+ * (accent, tabular-nums, opacity pulse on change).
+ * Activity level: OptionRows (single-select).
+ * Mount motion: FadeInDown stagger (360ms, 70ms steps) — micro-motion only.
+ *
+ * Presentation/layout only — props, hooks, validation, and data wiring stay
+ * identical to the previous implementation.
+ */
+import React, { useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, shadows } from "../../../theme/aurora-tokens";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
 import {
-  AnimatedPressable,
-  AnimatedSection,
-  HeroSection,
-  AnimatedIcon,
-} from "../../../components/ui/aurora";
-import { gradients } from "../../../theme/gradients";
+  tokens,
+  type as typeScale,
+  ScreenScaffold,
+  SectionLabel,
+  Rule,
+  OptionRow,
+  TimeRow,
+} from "../../../components/onboarding/fresh";
 import {
   PersonalInfoData,
   TabValidationResult,
 } from "../../../types/onboarding";
 import { usePersonalInfoForm } from "../../../hooks/usePersonalInfoForm";
-import { PersonalInfoFields } from "../../../components/onboarding/PersonalInfoFields";
+import {
+  PersonalInfoFields,
+  DemographicsFields,
+} from "../../../components/onboarding/PersonalInfoFields";
 import { LocationFields } from "../../../components/onboarding/LocationFields";
-import { LifestyleFields } from "../../../components/onboarding/LifestyleFields";
 import { ValidationSummary } from "../../../components/onboarding/ValidationSummary";
+
+const MOUNT_DURATION = 360;
+const STAGGER = 70;
+
+// ---------------------------------------------------------------------------
+// SleepInsight — the tab's one computed key-number. Caption left, accent value
+// right (accent discipline: key numbers only). The value opacity-pulses when
+// wake/sleep times change — quiet confirmation that the steppers did something.
+// ---------------------------------------------------------------------------
+
+const SleepInsight: React.FC<{ value: string }> = ({ value }) => {
+  const flash = useSharedValue(1);
+  useEffect(() => {
+    flash.value = 0.3;
+    flash.value = withTiming(1, { duration: 240 });
+  }, [value, flash]);
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flash.value }));
+  return (
+    <View style={styles.insightRow}>
+      <Text style={styles.insightLabel}>Sleep duration</Text>
+      <Animated.Text style={[styles.insightValue, flashStyle]}>
+        {value}
+      </Animated.Text>
+    </View>
+  );
+};
+
+// activity_level option set — identical to WorkoutPreferencesData (blueprint §8
+// rule 18 + typeTransformers mapActivityLevelForHealthCalc boundary).
+const ACTIVITY_LEVEL_OPTIONS = [
+  { id: "sedentary", label: "Sedentary", sublabel: "Desk life · little to no exercise" },
+  { id: "light", label: "Light", sublabel: "Easy walks · 1–3 workouts a week" },
+  { id: "moderate", label: "Moderate", sublabel: "3–5 workouts a week" },
+  { id: "active", label: "Active", sublabel: "Daily hard exercise or sports" },
+  { id: "extreme", label: "Extreme", sublabel: "Physical job plus daily training" },
+];
 
 interface PersonalInfoTabProps {
   data: PersonalInfoData | null;
@@ -40,6 +94,10 @@ interface PersonalInfoTabProps {
   isAutoSaving?: boolean;
   isEditingFromReview?: boolean;
   onReturnToReview?: () => void;
+  /** activity_level relocated from S4 (blueprint §8 rule 18). Rendered as
+   * OptionRows ONLY when both are provided. */
+  activityLevel?: string;
+  onActivityLevelChange?: (v: string) => void;
 }
 
 const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
@@ -51,6 +109,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   isAutoSaving = false,
   isEditingFromReview = false,
   onReturnToReview,
+  activityLevel,
+  onActivityLevelChange,
 }) => {
   const { state, actions } = usePersonalInfoForm({
     data,
@@ -63,272 +123,207 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     availableStates,
     showCustomCountry,
     customCountry,
-    showWakeTimePicker,
-    showSleepTimePicker,
+    detectedNonMetric,
   } = state;
 
+  const showActivitySection =
+    activityLevel !== undefined && !!onActivityLevelChange;
+
+  const isDisabled = !!(validationResult && !validationResult.is_valid);
+
+  const handleNext = () => {
+    const finalData =
+      showCustomCountry && customCountry
+        ? { ...formData, country: customCountry }
+        : formData;
+    onUpdate(finalData);
+    if (isEditingFromReview && onReturnToReview) {
+      onReturnToReview();
+    } else {
+      onNext(finalData);
+    }
+  };
+
+  const sleepDuration = actions.calculateSleepDuration();
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.keyboardAvoidingView}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    >
+      <ScreenScaffold
+        question="Who are you?"
+        subtext="A minute here shapes every plan we build."
+        onBack={onBack}
+        onNext={handleNext}
+        nextLabel={isEditingFromReview ? "Review" : "Next"}
+        nextDisabled={isDisabled}
+        footerNote={
+          isAutoSaving ? (
+            <Text style={styles.autoSaveText} numberOfLines={1}>
+              Saving…
+            </Text>
+          ) : undefined
+        }
       >
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+        <Animated.View entering={FadeInDown.duration(MOUNT_DURATION)}>
+          <PersonalInfoFields formData={formData} actions={actions} />
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER)}
         >
-          <HeroSection
-            image={{
-              uri: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80",
-            }}
-            overlayGradient={gradients.overlay.dark}
-            contentPosition="center"
-            minHeight={180}
-            maxHeight={260}
+          <DemographicsFields formData={formData} actions={actions} />
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 2)}
+        >
+          <LocationFields
+            formData={formData}
+            availableStates={availableStates}
+            showCustomCountry={showCustomCountry}
+            customCountry={customCountry}
+            actions={actions}
+          />
+        </Animated.View>
+
+        {/* Sleep schedule — two compact TimeRow steppers + the SleepInsight
+            key-number row. NO dials, NO filled circles (docs/onboarding-fresh-design.md). */}
+        <Animated.View
+          entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 3)}
+        >
+          <View style={styles.labelWrap}>
+            <SectionLabel>Sleep Schedule</SectionLabel>
+            <Text style={styles.sectionCaption}>
+              Anchors your workout and meal timing.
+            </Text>
+          </View>
+          <TimeRow
+            label="Wake"
+            value={formData.wake_time}
+            onChange={(v) => actions.handleTimeChange("wake_time", v)}
+            stepMinutes={15}
+            testID="onboarding-wake-dial"
+          />
+          <TimeRow
+            label="Sleep"
+            value={formData.sleep_time}
+            onChange={(v) => actions.handleTimeChange("sleep_time", v)}
+            stepMinutes={15}
+            testID="onboarding-sleep-dial"
+          />
+          {sleepDuration ? <SleepInsight value={sleepDuration} /> : null}
+          <Rule spacing={36} />
+        </Animated.View>
+
+        {/* activity_level — relocated from S4 (blueprint §8 rule 18).
+            Rendered only when the parent wires the optional props. */}
+        {showActivitySection && (
+          <Animated.View
+            entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 4)}
           >
-            <View style={styles.avatarContainer}>
-              <AnimatedIcon
-                icon={
-                  <View style={styles.avatarCircle}>
-                    <Ionicons name="person" size={rf(32)} color="#FFFFFF" />
-                  </View>
+            <View style={styles.labelWrap}>
+              <SectionLabel>Daily Activity</SectionLabel>
+              <Text style={styles.sectionCaption}>
+                How much you move on a normal day — this sets your calorie
+                baseline.
+              </Text>
+            </View>
+            <View testID="onboarding-activity-level">
+              {ACTIVITY_LEVEL_OPTIONS.map((opt) => (
+                <OptionRow
+                  key={opt.id}
+                  label={opt.label}
+                  sublabel={opt.sublabel}
+                  selected={(activityLevel ?? "sedentary") === opt.id}
+                  onPress={() => onActivityLevelChange?.(opt.id)}
+                />
+              ))}
+            </View>
+            <Rule spacing={36} />
+          </Animated.View>
+        )}
+
+        {/* Units — hidden unless detected ≠ metric (blueprint §6). */}
+        {detectedNonMetric && (
+          <Animated.View
+            entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 5)}
+          >
+            <View style={styles.labelWrap}>
+              <SectionLabel>Units</SectionLabel>
+              <Text style={styles.sectionCaption}>
+                Detected from your region — switch if this looks wrong.
+              </Text>
+            </View>
+            <View testID="onboarding-units">
+              <OptionRow
+                label="Metric"
+                selected={(formData.units ?? "metric") === "metric"}
+                onPress={() =>
+                  actions.updateField(
+                    "units",
+                    "metric" as PersonalInfoData["units"],
+                  )
                 }
-                animationType="pulse"
-                continuous={true}
-                animationDuration={1500}
-                size={rf(80)}
+              />
+              <OptionRow
+                label="Imperial"
+                selected={(formData.units ?? "metric") === "imperial"}
+                onPress={() =>
+                  actions.updateField(
+                    "units",
+                    "imperial" as PersonalInfoData["units"],
+                  )
+                }
               />
             </View>
+            <Rule spacing={36} />
+          </Animated.View>
+        )}
 
-            <Text style={styles.title} numberOfLines={2}>
-              Tell us about yourself
-            </Text>
-            <Text
-              style={styles.subtitle}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              This helps us create a personalized fitness plan just for you
-            </Text>
-
-            {isAutoSaving && (
-              <View style={styles.autoSaveIndicator}>
-                <Ionicons
-                  name="cloud-upload-outline"
-                  size={rf(16)}
-                  color={colors.success}
-                />
-                <Text style={styles.autoSaveText} numberOfLines={1}>
-                  Saving...
-                </Text>
-              </View>
-            )}
-          </HeroSection>
-
-          <View style={styles.content}>
-            <AnimatedSection delay={0}>
-              <PersonalInfoFields formData={formData} actions={actions} />
-            </AnimatedSection>
-
-            <AnimatedSection delay={200}>
-              <LocationFields
-                formData={formData}
-                availableStates={availableStates}
-                showCustomCountry={showCustomCountry}
-                customCountry={customCountry}
-                actions={actions}
-              />
-            </AnimatedSection>
-
-            <AnimatedSection delay={400}>
-              <LifestyleFields
-                formData={formData}
-                showWakeTimePicker={showWakeTimePicker}
-                showSleepTimePicker={showSleepTimePicker}
-                actions={actions}
-              />
-            </AnimatedSection>
-          </View>
-
-          {validationResult && (
-            <ValidationSummary
-              validationResult={validationResult}
-            />
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          <AnimatedPressable
-            style={styles.backButtonCompact}
-            onPress={onBack}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to previous step"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.backButtonText}>Back</Text>
-          </AnimatedPressable>
-
-          <AnimatedPressable
-            style={[
-              styles.nextButtonCompact,
-              validationResult && !validationResult.is_valid && styles.nextButtonDisabled,
-            ]}
-            disabled={!!(validationResult && !validationResult.is_valid)}
-            onPress={() => {
-              const finalData =
-                showCustomCountry && customCountry
-                  ? { ...formData, country: customCountry }
-                  : formData;
-              onUpdate(finalData);
-              if (isEditingFromReview && onReturnToReview) {
-                onReturnToReview();
-              } else {
-                onNext(finalData);
-              }
-            }}
-            scaleValue={0.96}
-            accessibilityRole="button"
-            accessibilityLabel={isEditingFromReview ? "Return to review" : "Continue to next step"}
-            accessibilityState={{ disabled: !!(validationResult && !validationResult.is_valid) }}
-          >
-            <Text style={styles.nextButtonText}>
-              {isEditingFromReview ? "Review" : "Next"}
-            </Text>
-            <Ionicons
-              name={
-                isEditingFromReview
-                  ? "checkmark-circle-outline"
-                  : "chevron-forward"
-              }
-              size={rf(18)}
-              color="#FFFFFF"
-            />
-          </AnimatedPressable>
-        </View>
-      </View>
-    </SafeAreaView>
+        {validationResult && (
+          <ValidationSummary validationResult={validationResult} />
+        )}
+      </ScreenScaffold>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
   keyboardAvoidingView: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.white,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-    letterSpacing: -0.5,
-    flexShrink: 1,
-  },
-  subtitle: {
-    fontSize: fontSize.md,
-    color: hexToRgba(colors.white, 0.85),
-    lineHeight: fontSize.md * 1.5,
-    marginBottom: spacing.md,
-    textAlign: "center",
-    flexShrink: 1,
-  },
-  autoSaveIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    alignSelf: "flex-start",
-    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
   autoSaveText: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
+    ...typeScale.caption,
   },
-  avatarContainer: {
-    marginBottom: spacing.md,
+  /** Section label + "why we ask" caption, 12px above the content. */
+  labelWrap: {
+    marginBottom: 12,
   },
-  avatarCircle: {
-    width: rf(80),
-    height: rf(80),
-    borderRadius: borderRadius.full,
-    backgroundColor: hexToRgba(colors.white, 0.2),
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: hexToRgba(colors.white, 0.4),
+  sectionCaption: {
+    ...typeScale.caption,
+    marginTop: 6,
   },
-  content: {
-    paddingHorizontal: spacing.lg,
-  },
-  footer: {
-    padding: spacing.lg,
-    paddingBottom:
-      Platform.OS === "ios"
-        ? spacing.lg
-        : spacing.xl,
-    backgroundColor: "transparent",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: spacing.md,
-  },
-  backButtonCompact: {
+  /** SleepInsight — quiet full-width row under the two TimeRows. */
+  insightRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: 100,
-    minHeight: 52,
+    justifyContent: "space-between",
+    marginTop: 14,
   },
-  backButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.primary,
-    marginLeft: spacing.xs,
+  insightLabel: {
+    ...typeScale.body,
+    color: tokens.ink2,
   },
-  nextButtonCompact: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary,
-    minHeight: 52,
-    ...shadows.level3,
-  },
-  nextButtonDisabled: {
-    opacity: 0.5,
-  },
-  nextButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: "#FFFFFF",
-    marginRight: spacing.xs,
+  /** Key number — the one computed insight of the tab (accent discipline:
+   *  selection/focus/key-numbers/primary-CTA only). */
+  insightValue: {
+    ...typeScale.valueLg,
+    fontSize: 18,
+    color: tokens.accent,
+    fontVariant: ["tabular-nums"],
   },
 });
 

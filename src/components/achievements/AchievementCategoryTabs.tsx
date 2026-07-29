@@ -1,15 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   ScrollView,
   Text,
   StyleSheet,
   View,
 } from "react-native";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+import {
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../theme/aurora-tokens";
 import { AchievementCategory } from "../../services/achievements/types";
-import { rh, rw, rf, rbr } from "../../utils/responsive";
-import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
 interface AchievementCategoryTabsProps {
   selectedCategory: AchievementCategory | "all";
@@ -28,10 +37,49 @@ const CATEGORIES: { id: AchievementCategory | "all"; label: string }[] = [
   { id: "special", label: "Special" },
 ];
 
+const TabItem: React.FC<{
+  label: string;
+  isSelected: boolean;
+  onPress: () => void;
+}> = ({ label, isSelected, onPress }) => {
+  const indicatorScale = useSharedValue(isSelected ? 1 : 0);
+
+  useEffect(() => {
+    indicatorScale.value = withSpring(isSelected ? 1 : 0, {
+      damping: 20,
+      stiffness: 200,
+    });
+  }, [isSelected]);
+
+  const underlineStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: indicatorScale.value }],
+    opacity: indicatorScale.value,
+  }));
+
+  return (
+    <AnimatedPressable
+      style={styles.tab}
+      onPress={onPress}
+      scaleValue={0.97}
+      hapticFeedback={false}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={label}
+    >
+      <Text
+        style={[styles.tabText, isSelected && styles.tabTextActive]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      <Animated.View style={[styles.underline, underlineStyle]} />
+    </AnimatedPressable>
+  );
+};
+
 export const AchievementCategoryTabs: React.FC<
   AchievementCategoryTabsProps
 > = ({ selectedCategory, onSelectCategory }) => {
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -39,31 +87,17 @@ export const AchievementCategoryTabs: React.FC<
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {CATEGORIES.map((category) => {
-          const isSelected = selectedCategory === category.id;
-          return (
-            <AnimatedPressable
-              key={category.id}
-              style={[styles.tab, isSelected && styles.selectedTab]}
-              onPress={() => {
-                haptics.light();
-                onSelectCategory(category.id);
-              }}
-              scaleValue={0.95}
-              hapticFeedback={false}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isSelected }}
-              accessibilityLabel={category.label}
-            >
-              <Text
-                style={[styles.tabText, isSelected && styles.selectedTabText]}
-                numberOfLines={1}
-              >
-                {category.label}
-              </Text>
-            </AnimatedPressable>
-          );
-        })}
+        {CATEGORIES.map((category) => (
+          <TabItem
+            key={category.id}
+            label={category.label}
+            isSelected={selectedCategory === category.id}
+            onPress={() => {
+              haptics.selection();
+              onSelectCategory(category.id);
+            }}
+          />
+        ))}
       </ScrollView>
     </View>
   );
@@ -71,38 +105,35 @@ export const AchievementCategoryTabs: React.FC<
 
 const styles = StyleSheet.create({
   container: {
-    // Use minHeight instead of fixed height so the row can grow with the
-    // user's font scale (the previous height: rh(48) clipped tabs at large
-    // text sizes).
-    minHeight: 44,
-    marginBottom: rh(8),
+    marginBottom: spacing.sm,
   },
   scrollContent: {
-    paddingHorizontal: rw(16),
+    paddingHorizontal: spacing.lg,
     alignItems: "center",
   },
   tab: {
-    paddingHorizontal: rw(16),
-    paddingVertical: rh(8),
-    borderRadius: rbr(20),
-    marginRight: rw(8),
-    backgroundColor: colors.glassSurface,
-    borderWidth: 1,
-    borderColor: colors.glassHighlight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginRight: spacing.xs,
     minHeight: 44,
-    justifyContent: "center" as const,
-  },
-  selectedTab: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
   },
   tabText: {
-    color: colors.textSecondary,
-    fontSize: rf(14),
-    fontWeight: "500",
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
-  selectedTabText: {
-    color: colors.white,
-    fontWeight: "700",
+  tabTextActive: {
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.primary,
+  },
+  underline: {
+    position: "absolute",
+    bottom: 2,
+    left: spacing.md,
+    right: spacing.md,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: chart[1],
   },
 });

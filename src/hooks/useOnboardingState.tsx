@@ -406,36 +406,41 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
       let result: TabValidationResult;
 
       switch (tabNumber) {
-        case 1:
+        case 1: {
           // Use provided currentData if available, otherwise fall back to state
           const personalInfoToValidate =
             currentData !== undefined ? currentData : currentState.personalInfo;
           result = validatePersonalInfo(personalInfoToValidate);
           return result;
-        case 2:
+        }
+        case 2: {
           const dietPrefsToValidate =
             currentData !== undefined
               ? currentData
               : currentState.dietPreferences;
           result = validateDietPreferences(dietPrefsToValidate);
           return result;
-        case 3:
+        }
+        case 3: {
           const bodyAnalysisToValidate =
             currentData !== undefined ? currentData : currentState.bodyAnalysis;
           return validateBodyAnalysis(bodyAnalysisToValidate);
-        case 4:
+        }
+        case 4: {
           const workoutPrefsToValidate =
             currentData !== undefined
               ? currentData
               : currentState.workoutPreferences;
           result = validateWorkoutPreferences(workoutPrefsToValidate);
           return result;
-        case 5:
+        }
+        case 5: {
           const advancedReviewToValidate =
             currentData !== undefined
               ? currentData
               : currentState.advancedReview;
           return validateAdvancedReview(advancedReviewToValidate);
+        }
         default:
           return {
             is_valid: false,
@@ -751,11 +756,25 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         serialized,
       );
 
-      // Clear error on success
-      setState((prev) => ({
-        ...prev,
-        errors: { ...prev.errors, saveLocal: "" },
-      }));
+      setState((prev) => {
+        // A newer edit may have landed while the async write was in flight;
+        // keep the dirty flag in that case so it auto-saves again.
+        const stale =
+          prev.personalInfo !== currentState.personalInfo ||
+          prev.dietPreferences !== currentState.dietPreferences ||
+          prev.bodyAnalysis !== currentState.bodyAnalysis ||
+          prev.workoutPreferences !== currentState.workoutPreferences ||
+          prev.advancedReview !== currentState.advancedReview;
+
+        const finalState: OnboardingState = {
+          ...prev,
+          hasUnsavedChanges: stale ? prev.hasUnsavedChanges : false,
+          errors: { ...prev.errors, saveLocal: "" },
+        };
+
+        stateRef.current = finalState;
+        return finalState;
+      });
     } catch (error) {
       const message =
         error instanceof Error

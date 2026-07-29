@@ -1,0 +1,317 @@
+================================================================================
+F4 SCOPE FIDELITY AUDIT — phase2-barcode-database
+Auditor: Sisyphus F4 Scope Fidelity Checker
+Date: 2026-03-01
+Plan: .sisyphus/plans/phase2-barcode-database.md
+================================================================================
+
+Tasks [11/11 compliant] | Contamination [CLEAN] | Unaccounted [CLEAN] | VERDICT: APPROVE
+
+================================================================================
+DELIVERABLE FILE EXISTENCE CHECK
+================================================================================
+
+  [✅] supabase/migrations/20260228000002_expand_off_source_global.sql
+  [✅] scripts/extract-off-global.mjs
+  [✅] src/services/sqliteFood.ts
+  [✅] src/screens/ContributeFood.tsx
+  [✅] scripts/sync-off-global.mjs
+  [✅] scripts/build-sqlite.mjs
+  [✅] scripts/upload-sqlite.mjs
+  [✅] src/services/barcodeService.ts
+  [✅] src/components/DatabaseDownloadBanner.tsx
+
+  All 9 expected files exist: 9/9 ✅
+
+================================================================================
+GUARDRAIL FILE CHECK (must NOT be deleted/modified beyond scope)
+================================================================================
+
+  [✅] scripts/extract-off-india.mjs  — exists, not modified by this phase
+  [✅] scripts/sync-off-india.mjs     — exists, not modified by this phase
+  [✅] src/services/freeNutritionAPIs.ts — exists, not modified by this phase
+
+================================================================================
+PER-TASK AUDIT
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+T1: Migration — expand off_source CHECK constraint
+File: supabase/migrations/20260228000002_expand_off_source_global.sql (9 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ ALTER TABLE (not DROP/recreate) — uses ALTER TABLE DROP CONSTRAINT + ADD CONSTRAINT (line 5-7)
+    ✅ 'off-parquet-global' present in CHECK — line 7
+    ✅ 'off-delta-global' present in CHECK  — line 7
+    ✅ Existing values preserved: 'off-parquet-india', 'off-api-live', 'off-delta' — line 7
+    ✅ Updated COMMENT on table — line 9
+    ✅ Standalone .sql file in supabase/migrations/ — confirmed
+
+  Must NOT do:
+    ✅ No DROP TABLE / recreate — confirmed, uses ALTER only
+    ✅ No data modification — confirmed, DDL only
+
+  VERDICT: T1 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T2: Extract — DuckDB parquet extraction (global)
+File: scripts/extract-off-global.mjs (129 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ No India-specific WHERE clause — confirmed, no country filter
+    ✅ off_source hardcoded as 'off-parquet-global' — line 110
+    ✅ --all flag for unfiltered extraction — line 32 (process.argv.includes("--all"))
+    ✅ Default mode filters energy_kcal_100g IS NOT NULL — lines 64-66
+    ✅ Output to data/off-global-nutrition.csv (default) or data/off-global.csv (--all) — lines 34-35
+    ✅ DuckDB @duckdb/node-api — line 23
+
+  Must NOT do:
+    ✅ Did NOT modify extract-off-india.mjs — guardrail check confirms file untouched
+    ✅ No country-specific filtering — confirmed
+
+  VERDICT: T2 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T3: SQLite Food Service
+File: src/services/sqliteFood.ts (324 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ lookupBarcode(barcode) → exact match — line 195, uses "WHERE code = ?"
+    ✅ searchByName(query, limit) → LIKE search — line 211, uses "WHERE product_name LIKE ?"
+    ✅ getStats() → totalProducts, withNutrition, version — line 227
+    ✅ isDatabaseReady() — line 82, returns this.state === "ready"
+    ✅ createDownloadResumable() (NOT downloadAsync) — line 124: FileSystem.createDownloadResumable(...)
+    ✅ SQLiteDownloadState type: "not_downloaded" | "downloading" | "ready" | "error" — lines 38-42
+    ✅ Singleton pattern — line 324: SqliteFoodService.getInstance()
+    ✅ Resume support via AsyncStorage — lines 109-122
+    ✅ Integrity check (file size > 100MB) — line 155
+    ✅ expo-sqlite for opening DB — line 12, openDatabaseAsync
+    ✅ expo-file-system for download — line 11
+
+  Must NOT do:
+    ✅ No FTS for barcode lookup (exact match only) — confirmed, uses "code = ?" not FTS
+    ✅ No downloadAsync — confirmed; line 140 calls downloadResumable.downloadAsync() which is
+        the DownloadResumable object's method (resume-capable), NOT FileSystem.downloadAsync()
+    ✅ Not bundled in app binary — downloads from Supabase Storage URL at runtime
+
+  VERDICT: T3 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T4: ContributeFood form screen
+File: src/screens/ContributeFood.tsx (717 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ Required fields: productName, calories, protein, carbs, fat — lines 45-49 (FormData), lines 79-117 (validation)
+    ✅ Barcode pre-filled from route params — line 220: route.params?.barcode
+    ✅ Form validation before submit — lines 76-120 (validateForm function)
+    ✅ Range validation (calories 0-900, protein/carbs/fat 0-100) — lines 88-89, 97-98, 106-107, 115-116
+    ✅ Optional fields: brand, fiber, sugar, sodium — lines 50-53
+
+  Must NOT do:
+    ✅ No admin moderation UI — confirmed, user-facing form only
+
+  VERDICT: T4 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T5: Bulk import CSV → Supabase
+File: scripts/sync-off-global.mjs (lines 83-126, runImport function)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ off_source: "off-parquet-global" — line 72
+    ✅ BATCH = 500 — line 34
+    ✅ Progress logging every 10K rows — line 109: if (total % 10000 === 0)
+    ✅ csv-parse for CSV parsing — line 18
+    ✅ Upsert to off_products with onConflict: "code" — line 79
+    ✅ Reads from data/off-global-nutrition.csv — line 26
+    ✅ --import flag — line 204
+
+  Must NOT do:
+    ✅ Did NOT modify sync-off-india.mjs — guardrail check confirms
+    ✅ No India-specific filtering — confirmed
+
+  VERDICT: T5 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T6: Build SQLite file
+File: scripts/build-sqlite.mjs (169 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ better-sqlite3 — line 13: import Database from "better-sqlite3"
+    ✅ Meta table with version/source/built_at — lines 95 (CREATE TABLE meta), 152-154 (INSERT)
+    ✅ energy_kcal_100g IS NOT NULL filter — line 131: .not("energy_kcal_100g", "is", null)
+    ✅ WAL mode during build — line 75: db.pragma("journal_mode = WAL")
+    ✅ Switch to DELETE mode before close — line 157: db.pragma("journal_mode = DELETE")
+    ✅ Products table with 14 columns — lines 78-93
+    ✅ Paginated fetch from Supabase (PAGE_SIZE = 1000) — line 52
+    ✅ Output to data/fitai-foods.sqlite — line 21
+
+  Must NOT do:
+    ✅ No bundling in app binary — file is built for upload, not embedded
+
+  VERDICT: T6 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T7: Upload SQLite to Supabase Storage
+File: scripts/upload-sqlite.mjs (101 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ 50 MB preflight minimum — line 30: MIN_SIZE = 50 * 1024 * 1024
+    ✅ exit(1) if file too small — line 44: process.exit(1)
+    ✅ Versioned upload (YYYY-MM-DD) — line 68: fitai-foods-${today}.sqlite
+    ✅ Stable alias: fitai-foods-latest.sqlite — line 87
+    ✅ getPublicUrl — line 99: sb.storage.from("food-databases").getPublicUrl(...)
+    ✅ Public bucket — line 56: public: true
+    ✅ Bucket name: "food-databases" — line 55
+
+  Minor scope addition (not in plan):
+    ⚠️ --force flag (line 39) bypasses 50MB check for test builds. This is a benign
+       developer convenience that does NOT weaken the production safeguard (the default
+       path still exits with code 1). NOT a scope violation.
+
+  Must NOT do:
+    ✅ No private bucket — confirmed, public: true
+
+  VERDICT: T7 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T8: Delta sync (weekly incremental)
+File: scripts/sync-off-global.mjs (lines 150-196, runDelta function)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ --delta flag — line 205: if (args.includes("--delta")) await runDelta()
+    ✅ zlib.createGunzip() for streaming decompression — line 143
+    ✅ off_source: "off-delta-global" — line 189
+    ✅ Fetches from static.openfoodfacts.org/data/delta/ — line 152 (index), line 161 (files)
+    ✅ readline interface for line-by-line JSON parsing — line 144
+    ✅ 7-day cutoff — line 155: Date.now()/1000 - 7*86400
+    ✅ Batch upsert (reuses BATCH = 500) — line 191
+
+  Must NOT do:
+    ✅ No India-specific filtering in delta — confirmed, no country filter
+    ✅ Did NOT modify sync-off-india.mjs — guardrail check confirms
+
+  VERDICT: T8 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T9: Barcode service integration
+File: src/services/barcodeService.ts (489 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ import sqliteFood at top — line 9: import { sqliteFood } from './sqliteFood'
+    ✅ isDatabaseReady() guard — line 168: if (sqliteFood.isDatabaseReady())
+    ✅ try/catch with console.warn fallthrough — lines 207-209
+    ✅ SQLite lookup BEFORE Supabase RPC — SQLite block starts line 167, RPC block starts line 218
+    ✅ Existing lookup_barcode RPC chain untouched — lines 218-266 preserved
+    ✅ Existing FreeNutritionAPIs fallback untouched — line 271
+    ✅ Existing upsert_barcode_cache untouched — line 326
+
+  Must NOT do:
+    ✅ Did NOT break freeNutritionAPIs.ts pipeline — confirmed, import on line 6 preserved
+    ✅ Did NOT remove existing lookup tiers — all tiers preserved (SQLite → RPC → Live API)
+
+  VERDICT: T9 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T10: DatabaseDownloadBanner component
+File: src/components/DatabaseDownloadBanner.tsx (581 lines)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ 4 states: not_downloaded, downloading, ready, error — lines 192, 244, 323, 348
+    ✅ Animated progress bar — lines 266-277 (Animated.View with interpolated width)
+    ✅ Button: "Download Now" — line 227
+    ✅ Button: "Pause" — line 300
+    ✅ Button: "Cancel" — line 316
+    ✅ Button: "Skip for Now" — line 237
+    ✅ Button: "Retry" — line 382
+    ✅ Uses sqliteFood service — line 21: import { sqliteFood, SQLiteDownloadState }
+    ✅ Progress callback (downloaded, total) — lines 136-138
+    ✅ Percentage label — lines 281-284
+    ✅ Auto-dismiss after ready — line 95-98: setTimeout 3000ms
+
+  Must NOT do:
+    ✅ No FTS / search UI in banner — confirmed, download-only component
+
+  VERDICT: T10 COMPLIANT ✅
+
+────────────────────────────────────────────────────────────────────────────────
+T11: Supabase wiring for ContributeFood
+File: src/screens/ContributeFood.tsx (shared with T4)
+────────────────────────────────────────────────────────────────────────────────
+
+  Plan requires:
+    ✅ Insert to user_food_contributions — line 261
+    ✅ is_approved: false (hardcoded) — line 274
+    ✅ contribution_type: 'new_product' — line 265
+    ✅ isSubmitting state — line 234
+    ✅ setIsSubmitting(false) in finally block — lines 288-290
+    ✅ supabase.auth.getUser() for user_id — line 259
+    ✅ Error handling with try/catch — lines 256-290
+    ✅ Success state after submit — line 281: setSubmitted(true)
+
+  Must NOT do:
+    ✅ is_approved NEVER set to true — confirmed, hardcoded false on line 274
+    ✅ No admin moderation UI — confirmed
+
+  VERDICT: T11 COMPLIANT ✅
+
+================================================================================
+CROSS-CONTAMINATION CHECK
+================================================================================
+
+  ✅ extract-off-india.mjs — NOT modified (confirmed exists, separate from global)
+  ✅ sync-off-india.mjs    — NOT modified (confirmed exists, separate from global)
+  ✅ freeNutritionAPIs.ts  — NOT modified (barcodeService.ts imports it, doesn't change it)
+  ✅ No "Must NOT do" items violated across any task
+
+  CONTAMINATION: CLEAN ✅
+
+================================================================================
+UNACCOUNTED FILES CHECK
+================================================================================
+
+  Expected 9 deliverable files — all 9 accounted for.
+  No unexpected files found in the deliverable set.
+  No files outside the plan scope were created or modified by this phase.
+
+  UNACCOUNTED: CLEAN ✅
+
+================================================================================
+MINOR OBSERVATIONS (informational, non-blocking)
+================================================================================
+
+  1. T7 upload-sqlite.mjs includes a --force flag (line 39) not explicitly in the plan
+     spec. This allows bypassing the 50MB size check for test builds. The default
+     production path still enforces the check and exits with code 1 as required.
+     Assessment: Benign developer convenience, NOT a scope violation.
+
+  2. T3 sqliteFood.ts calls downloadResumable.downloadAsync() (line 140). This is the
+     DownloadResumable object's method for initiating a resumable download — distinct
+     from FileSystem.downloadAsync() which the plan forbids. The plan's requirement to
+     use createDownloadResumable() is satisfied (line 124).
+
+================================================================================
+FINAL VERDICT
+================================================================================
+
+  Tasks [11/11 compliant] | Contamination [CLEAN] | Unaccounted [CLEAN]
+
+  ██████████████████████████████████████████████████████████████████████████████
+  ██                                                                          ██
+  ██   VERDICT: APPROVE                                                       ██
+  ██                                                                          ██
+  ██████████████████████████████████████████████████████████████████████████████
+
+  All 11 tasks built exactly to spec. No scope creep. No cross-contamination.
+  Guardrail files preserved. "Must NOT do" constraints respected across all tasks.
+
+================================================================================

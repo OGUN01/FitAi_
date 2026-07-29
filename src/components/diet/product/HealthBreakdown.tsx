@@ -1,6 +1,12 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
 
 interface HealthBreakdownProps {
   breakdown: {
@@ -13,28 +19,22 @@ interface HealthBreakdownProps {
   getScoreColor: (score: number) => string;
 }
 
-export const HealthBreakdown: React.FC<HealthBreakdownProps> = ({
-  breakdown,
-  getScoreColor,
-}) => (
+export const HealthBreakdown: React.FC<HealthBreakdownProps> = ({ breakdown, getScoreColor }) => (
   <View style={styles.breakdownContainer}>
     <Text style={styles.sectionTitle}>Health Breakdown</Text>
     {Object.entries(breakdown).map(([key, assessment]) => (
       <View key={key} style={styles.breakdownItem}>
         <View style={styles.breakdownHeader}>
-          <Text style={styles.breakdownLabel}>
-            {key.charAt(0).toUpperCase() + key.slice(1)}
-          </Text>
+          <Text style={styles.breakdownLabel}>{key.charAt(0).toUpperCase() + key.slice(1)}</Text>
           <View
-            style={[
-              styles.breakdownScore,
-              { backgroundColor: getScoreColor(assessment.score) },
-            ]}
+            style={[styles.breakdownScore, { backgroundColor: getScoreColor(assessment.score) }]}
           >
             <Text style={styles.breakdownScoreText}>{assessment.score}</Text>
           </View>
         </View>
-        <Text style={styles.breakdownMessage} numberOfLines={3}>{assessment.message}</Text>
+        <Text style={styles.breakdownMessage} numberOfLines={3}>
+          {assessment.message}
+        </Text>
       </View>
     ))}
   </View>
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -56,14 +56,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   breakdownHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.xs,
   },
   breakdownLabel: {
     fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontWeight: typography.fontWeight.semibold as '600',
     color: colors.text,
   },
   breakdownScore: {
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   breakdownScoreText: {
     fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.white,
   },
   breakdownMessage: {

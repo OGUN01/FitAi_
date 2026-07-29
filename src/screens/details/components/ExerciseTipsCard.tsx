@@ -1,79 +1,89 @@
-import React from "react";
-import { Text, StyleSheet } from "react-native";
-import { Card } from "../../../components/ui";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * ExerciseTipsCard — flat tips + safety rows for the exercise detail screen.
+ *
+ * No card wrapper: uppercase muted eyebrows over flat rows, each row led by
+ * a small icon bullet (checkmark for coaching tips, warning for safety).
+ * Props are unchanged from the previous implementation.
+ */
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, typography } from '../../../theme/aurora-tokens';
+import { rf, rp } from '../../../utils/responsive';
 
 interface ExerciseTipsCardProps {
   tips: string[];
   safetyTips: string[];
 }
 
-export const ExerciseTipsCard: React.FC<ExerciseTipsCardProps> = ({
-  tips,
-  safetyTips,
-}) => {
+export const ExerciseTipsCard: React.FC<ExerciseTipsCardProps> = ({ tips, safetyTips }) => {
   return (
     <>
       {tips.length > 0 && (
-        <Card style={styles.safetyCard}>
-          <Text style={styles.safetyTitle}>Tips</Text>
+        <View style={styles.section}>
+          <Text style={styles.eyebrow}>TIPS</Text>
           {tips.map((tip: string, index: number) => (
-            <Text key={index} style={styles.safetyTip}>
-              • {tip}
-            </Text>
+            <View key={index} style={styles.tipRow}>
+              <Ionicons
+                name="checkmark-circle"
+                size={rf(14)}
+                color={colors.success.DEFAULT}
+                style={styles.bulletIcon}
+              />
+              <Text style={styles.tipText}>{tip}</Text>
+            </View>
           ))}
-        </Card>
+        </View>
       )}
 
       {safetyTips.length > 0 && (
-        <Card style={styles.mistakesCard}>
-          <Text style={styles.mistakesTitle}>Safety Considerations</Text>
+        <View style={styles.sectionLast}>
+          <Text style={styles.eyebrow}>SAFETY CONSIDERATIONS</Text>
           {safetyTips.map((tip: string, index: number) => (
-            <Text key={index} style={styles.mistakeText}>
-              • {tip}
-            </Text>
+            <View key={index} style={styles.tipRow}>
+              <Ionicons
+                name="warning"
+                size={rf(14)}
+                color={colors.warning.DEFAULT}
+                style={styles.bulletIcon}
+              />
+              <Text style={styles.tipText}>{tip}</Text>
+            </View>
           ))}
-        </Card>
+        </View>
       )}
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  safetyCard: {
-    marginBottom: spacing.md,
-    backgroundColor: colors.success + "10",
-    borderWidth: 1,
-    borderColor: colors.success + "30",
+  section: {
+    marginBottom: rp(spacing.lg),
   },
-  safetyTitle: {
-    fontSize: fontSize.md,
+  sectionLast: {
+    // Extra bottom room so the last row clears the sticky Start Exercise CTA.
+    marginBottom: rp(spacing.xxl),
+  },
+  eyebrow: {
+    fontSize: rf(typography.fontSize.micro),
     fontWeight: typography.fontWeight.semibold,
-    color: colors.success,
-    marginBottom: spacing.sm,
+    color: colors.text.tertiary,
+    letterSpacing: 1.2,
+    marginBottom: rp(spacing.sm),
   },
-  safetyTip: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: spacing.xs,
+  tipRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
   },
-  mistakesCard: {
-    marginBottom: spacing.xxl,
-    backgroundColor: colors.warning + "10",
-    borderWidth: 1,
-    borderColor: colors.warning + "30",
+  bulletIcon: {
+    marginTop: rp(3),
   },
-  mistakesTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.warning,
-    marginBottom: spacing.sm,
-  },
-  mistakeText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: spacing.xs,
+  tipText: {
+    flex: 1,
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.relaxed,
   },
 });

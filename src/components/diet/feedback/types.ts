@@ -1,4 +1,4 @@
-import { RecognizedFood } from "../../../services/foodRecognitionService";
+import { RecognizedFood } from '../../../services/foodRecognitionService';
 
 export interface FoodFeedback {
   foodId: string;

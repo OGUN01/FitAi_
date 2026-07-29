@@ -1,8 +1,22 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Button } from "../ui";
-import { flatColors as colors } from "../../theme/aurora-tokens";
-import { rp, rh } from "../../utils/responsive";
+/**
+ * FitAI — Workout Navigation (Aurora, 2026 session redesign)
+ *
+ * NOTE: This file appears unused — the live workout session uses its own
+ * hero + GlassButton footer. Kept for reference; no completed-set colors
+ * to align (audit rows 17/25).
+ *
+ * Bottom thumb-zone navigation for the session: a flat text "Previous"
+ * button next to one dominant gradient CTA ("Next Exercise" / "Finish
+ * Workout"). Labels, disabled logic and handlers are unchanged.
+ */
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../ui/aurora';
+import { flatColors as colors, spacing, typography } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
+import { rf, rp, rbr } from '../../utils/responsive';
 
 interface WorkoutNavigationProps {
   currentExercise: number;
@@ -19,52 +33,95 @@ export const WorkoutNavigation: React.FC<WorkoutNavigationProps> = ({
   onPrevious,
   onNext,
 }) => {
+  const isLast = currentExercise === totalExercises - 1;
+
   return (
     <View style={styles.navigationContainer}>
-      <Button
-        title="Previous"
+      <AnimatedPressable
         onPress={onPrevious}
-        variant="outline"
         disabled={currentExercise === 0}
-        style={styles.navButton}
-      />
+        scaleValue={0.97}
+        springConfig="snappy"
+        hapticType="light"
+        style={[styles.previousButton, currentExercise === 0 && styles.buttonDisabled]}
+        accessibilityRole="button"
+        accessibilityLabel="Previous"
+      >
+        <Ionicons name="chevron-back" size={rf(16)} color={colors.textSecondary} />
+        <Text style={styles.previousText}>Previous</Text>
+      </AnimatedPressable>
 
-      <Button
-        title={
-          currentExercise === totalExercises - 1
-            ? "Finish Workout"
-            : "Next Exercise"
-        }
+      <AnimatedPressable
         onPress={onNext}
-        variant="primary"
         disabled={!canAdvance}
-        style={StyleSheet.flatten([styles.navButton, styles.primaryNavButton])}
-      />
+        scaleValue={0.97}
+        springConfig="snappy"
+        hapticType="medium"
+        style={[styles.primaryButton, !canAdvance && styles.buttonDisabled]}
+        accessibilityRole="button"
+        accessibilityLabel={isLast ? 'Finish Workout' : 'Next Exercise'}
+      >
+        <LinearGradient
+          colors={[colors.primary, colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.primaryGradient}
+        >
+          <Text style={styles.primaryText}>{isLast ? 'Finish Workout' : 'Next Exercise'}</Text>
+          <Ionicons
+            name={isLast ? 'checkmark-circle' : 'arrow-forward'}
+            size={rf(18)}
+            color={colors.white}
+          />
+        </LinearGradient>
+      </AnimatedPressable>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   navigationContainer: {
-    flexDirection: "row",
-    // Use rp() consistently for both axes (was mixing rp(16) and rw(12) —
-    // inconsistent scaling between width/height-based responsive helpers).
-    paddingHorizontal: rp(16),
-    paddingVertical: rp(8),
-    gap: rp(12),
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: rp(spacing.lg),
+    paddingVertical: rp(spacing.sm),
+    gap: rp(spacing.md),
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: hexToRgba(colors.white, 0.08),
   },
-
-  navButton: {
+  previousButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rp(spacing.xxs),
+    paddingHorizontal: rp(spacing.md),
+    minHeight: Math.max(rp(44), 44),
+  },
+  previousText: {
+    fontSize: rf(14),
+    fontWeight: String(typography.fontWeight.medium) as any,
+    color: colors.textSecondary,
+  },
+  primaryButton: {
     flex: 1,
-    // Clamp to 44px minimum touch target (rh(44) drops below on small screens).
-    minHeight: Math.max(rh(44), 44),
-    maxHeight: Math.max(rh(48), 48),
+    borderRadius: rbr(16),
+    overflow: 'hidden',
   },
-
-  primaryNavButton: {
-    elevation: 2,
+  primaryGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    minHeight: Math.max(rp(52), 52),
+  },
+  primaryText: {
+    fontSize: rf(16),
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.white,
+    letterSpacing: 0.3,
+  },
+  buttonDisabled: {
+    opacity: 0.4,
   },
 });

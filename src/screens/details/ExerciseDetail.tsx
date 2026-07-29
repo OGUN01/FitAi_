@@ -1,30 +1,26 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { Button } from "../../components/ui";
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Button } from '../../components/ui';
 import {
   AuroraBackground,
   AuroraSpinner,
   GlassHeader,
   EmptyState,
   AnimatedPressable,
-} from "../../components/ui/aurora";
-import { colors, spacing, typography, borderRadius } from "../../theme/aurora-tokens";
-import { rf, rp } from "../../utils/responsive";
-import { hexToRgba } from "../../utils/colors";
-import { useExerciseData } from "./hooks/useExerciseData";
-import { useExerciseVisual } from "./hooks/useExerciseVisual";
-import { useStepAnimation } from "./hooks/useStepAnimation";
-import { ExerciseInfoCard } from "./components/ExerciseInfoCard";
-import { ExerciseAnimation } from "./components/ExerciseAnimation";
-import { InstructionsList } from "./components/InstructionsList";
-import { ExerciseTipsCard } from "./components/ExerciseTipsCard";
+} from '../../components/ui/aurora';
+import { colors, spacing, typography, borderRadius } from '../../theme/aurora-tokens';
+import { rf, rp } from '../../utils/responsive';
+import { hexToRgba } from '../../utils/colors';
+import { titleCaseExerciseName } from '../../utils/textFormat';
+import { useExerciseData } from './hooks/useExerciseData';
+import { useExerciseVisual } from './hooks/useExerciseVisual';
+import { useStepAnimation } from './hooks/useStepAnimation';
+import { ExerciseInfoCard } from './components/ExerciseInfoCard';
+import { ExerciseAnimation } from './components/ExerciseAnimation';
+import { InstructionsList } from './components/InstructionsList';
+import { ExerciseTipsCard } from './components/ExerciseTipsCard';
 
 interface ExerciseInstruction {
   step: number;
@@ -57,8 +53,9 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
         }))
       : exercise?.instructions || [];
 
-  const { currentStep, isPlaying, setIsPlaying, animateToStep } =
-    useStepAnimation(displayInstructions.length);
+  const { currentStep, isPlaying, setIsPlaying, animateToStep } = useStepAnimation(
+    displayInstructions.length
+  );
 
   const displayTargetMuscles =
     visualData?.targetMuscles && visualData.targetMuscles.length > 0
@@ -84,7 +81,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
             icon="barbell-outline"
             title="Exercise Not Found"
             subtitle="This exercise may have been removed or is not available."
-            ctaText={onBack ? "Go Back" : undefined}
+            ctaText={onBack ? 'Go Back' : undefined}
             onCta={onBack}
           />
         </View>
@@ -94,22 +91,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
   return (
     <AuroraBackground theme="space">
-      <GlassHeader
-        title="Exercise Guide"
-        onBack={onBack}
-        rightAction={null}
-      />
+      <GlassHeader title="Exercise Guide" onBack={onBack} rightAction={null} />
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <ExerciseInfoCard
-          name={visualData?.name || exercise.name}
-          description={
-            exercise.description ||
-            `Targets: ${displayTargetMuscles.join(", ")}`
-          }
+          name={titleCaseExerciseName(visualData?.name || exercise.name)}
+          description={exercise.description || `Targets: ${displayTargetMuscles.join(', ')}`}
           difficulty={exercise.difficulty}
           sets={exercise.sets}
           reps={exercise.reps}
@@ -144,18 +131,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           />
         )}
 
-        <InstructionsList
-          instructions={displayInstructions}
-          currentStep={currentStep}
-        />
+        <InstructionsList instructions={displayInstructions} currentStep={currentStep} />
 
-        <ExerciseTipsCard
-          tips={exercise.tips}
-          safetyTips={exercise.safetyTips}
-        />
+        <ExerciseTipsCard tips={exercise.tips} safetyTips={exercise.safetyTips} />
       </ScrollView>
 
-      <SafeAreaView edges={["bottom"]} style={styles.bottomContainer}>
+      <SafeAreaView edges={['bottom']} style={styles.bottomContainer}>
         <Button
           title="Start Exercise"
           onPress={onStartExercise ?? (() => {})}
@@ -172,12 +153,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyWrap: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
@@ -189,15 +170,15 @@ const styles = StyleSheet.create({
     borderTopColor: colors.glass.border,
   },
   visualErrorWrap: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: rp(spacing.lg),
     gap: rp(spacing.sm),
   },
   visualErrorText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
   visualRetryBtn: {
     paddingHorizontal: rp(spacing.md),
@@ -207,11 +188,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary.DEFAULT,
     minHeight: 44,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   visualRetryText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.primary.DEFAULT,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

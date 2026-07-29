@@ -1,8 +1,14 @@
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * ValidationSection — fresh ("Editorial Dark") validation status block.
+ *
+ * Replaces the aurora-era GlassCard: no container, no elevation. Status lives
+ * in a color dot + typographic hierarchy; errors/warnings sit under a single
+ * hairline. Accent discipline per tokens.ts: accent marks "ready", danger
+ * marks blocking errors, ink2 carries non-blocking recommendations.
+ */
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";import { GlassCard } from "../../../components/ui/aurora";
+import { tokens, type, spacing } from "../fresh/tokens";
 import { TabValidationResult } from "../../../types/onboarding";
 
 interface ValidationSectionProps {
@@ -14,120 +20,100 @@ export const ValidationSection: React.FC<ValidationSectionProps> = ({
 }) => {
   if (!validationResult) return null;
 
+  const ready = validationResult.is_valid;
+  const statusText = ready ? "Ready to continue" : "Please complete";
+  const completionText =
+    ready && validationResult.completion_percentage === 0
+      ? "Optional"
+      : `${validationResult.completion_percentage}%`;
+
   return (
-    <View style={styles.validationSummary}>
-      <GlassCard
-        elevation={3}
-        blurIntensity="default"
-        padding="md"
-        borderRadius="lg"
-        style={styles.validationCard}
-      >
+    <View style={styles.container} accessibilityRole="summary">
+      <View style={styles.headerRow}>
         <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: spacing.xs,
-          }}
-        >
-          <Ionicons
-            name={
-              validationResult.is_valid
-                ? "checkmark-circle-outline"
-                : "warning-outline"
-            }
-            size={rf(20)}
-            color={
-              validationResult.is_valid
-                ? colors.success
-                : colors.warning
-            }
-            style={{ marginRight: spacing.xs }}
-          />
-          <Text style={styles.validationTitle}>
-            {validationResult.is_valid
-              ? "Ready to Continue"
-              : "Please Complete"}
-          </Text>
+          style={[styles.statusDot, ready ? styles.dotReady : styles.dotDanger]}
+        />
+        <Text style={styles.statusText}>{statusText}</Text>
+        <Text style={styles.completionText}>{completionText}</Text>
+      </View>
+      <View style={styles.hairline} />
+
+      {validationResult.errors.length > 0 && (
+        <View style={styles.list}>
+          <Text style={styles.listLabel}>Required</Text>
+          {validationResult.errors.map((error, index) => (
+            <View key={index} style={styles.itemRow}>
+              <Text style={styles.errorText} accessibilityLiveRegion="polite">
+                {error}
+              </Text>
+            </View>
+          ))}
         </View>
-        <Text style={styles.validationPercentage}>
-          {validationResult.is_valid && validationResult.completion_percentage === 0
-            ? "Optional"
-            : `${validationResult.completion_percentage}% Complete`}
-        </Text>
+      )}
 
-        {validationResult.errors.length > 0 && (
-          <View style={styles.validationErrors}>
-            <Text style={styles.validationErrorTitle}>Required:</Text>
-            {validationResult.errors.map((error, index) => (
-              <Text key={index} style={styles.validationErrorText}>
-                • {error}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {validationResult.warnings.length > 0 && (
-          <View style={styles.validationWarnings}>
-            <Text style={styles.validationWarningTitle}>Recommendations:</Text>
-            {validationResult.warnings.map((warning, index) => (
-              <Text key={index} style={styles.validationWarningText}>
-                • {warning}
-              </Text>
-            ))}
-          </View>
-        )}
-      </GlassCard>
+      {validationResult.warnings.length > 0 && (
+        <View style={styles.list}>
+          <Text style={styles.listLabel}>Recommended</Text>
+          {validationResult.warnings.map((warning, index) => (
+            <View key={index} style={styles.itemRow}>
+              <Text style={styles.warningText}>{warning}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  validationSummary: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+  container: {
+    paddingHorizontal: spacing.screenPad,
+    marginBottom: spacing.xl,
   },
-  validationCard: {
-    padding: spacing.md,
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.m,
   },
-  validationTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.s,
+  },
+  dotReady: {
+    backgroundColor: tokens.accent,
+  },
+  dotDanger: {
+    backgroundColor: tokens.danger,
+  },
+  statusText: {
+    ...type.value,
+    flex: 1,
+  },
+  completionText: {
+    ...type.valueLg,
+    color: tokens.ink2,
+  },
+  hairline: {
+    height: spacing.hair,
+    backgroundColor: tokens.hairline,
+  },
+  list: {
+    paddingTop: spacing.s,
+  },
+  listLabel: {
+    ...type.sectionLabel,
     marginBottom: spacing.xs,
   },
-  validationPercentage: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
-    marginBottom: spacing.md,
+  itemRow: {
+    paddingVertical: spacing.xs,
   },
-  validationErrors: {
-    marginBottom: spacing.md,
+  errorText: {
+    ...type.body,
+    color: tokens.danger,
   },
-  validationErrorTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.error,
-    marginBottom: spacing.xs,
-  },
-  validationErrorText: {
-    fontSize: fontSize.sm,
-    color: colors.error,
-    lineHeight: fontSize.sm * 1.3,
-  },
-  validationWarnings: {
-    marginBottom: spacing.md,
-  },
-  validationWarningTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.warning,
-    marginBottom: spacing.xs,
-  },
-  validationWarningText: {
-    fontSize: fontSize.sm,
-    color: colors.warning,
-    lineHeight: fontSize.sm * 1.3,
+  warningText: {
+    ...type.body,
   },
 });

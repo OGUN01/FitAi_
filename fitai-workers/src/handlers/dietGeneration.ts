@@ -47,6 +47,7 @@ import {
 } from '../services/userMetricsService';
 import { adjustForProteinTarget } from '../utils/portionAdjustment';
 import { getAIConfig } from '../utils/appConfig';
+import { resolveMealImages } from '../utils/mealImageResolver';
 
 // Import the new specialized diet prompt system
 import { buildDietPrompt } from '../prompts/diet';
@@ -1217,6 +1218,15 @@ export async function generateFreshDiet(request: DietGenerationRequest, env: Env
 		targetProtein: planProteinTarget,
 		proteinDifference: Math.abs(adjustedDiet.totalNutrition.protein - planProteinTarget),
 	});
+
+	// 6. Resolve real meal photos (Wikimedia Commons, KV-cached). Non-fatal:
+	//    any lookup failure leaves imageUrl undefined and the client renders its
+	//    gradient placeholder. Deduplicated by dish name inside resolveMealImages.
+	try {
+		await resolveMealImages(adjustedDiet.meals, env);
+	} catch (imageError) {
+		console.warn('[Diet Generation] Meal image resolution failed (non-fatal):', imageError);
+	}
 
 	// Return diet with metadata for deduplication/caching
 	return {

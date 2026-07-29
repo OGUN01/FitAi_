@@ -1,0 +1,11 @@
+Task 5 Verification - sync-off-global.mjs symbol checks
+Date: 2026-02-28T17:47:02.877Z
+
+off-parquet-global: true
+off-global-nutrition: true
+upsertBatch: true
+runImport: true
+csv-parse: true
+10000: true
+
+All checks: PASS

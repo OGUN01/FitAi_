@@ -15,9 +15,16 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { flatColors as colors, spacing } from "../../../../theme/aurora-tokens";
-import { rf, rw, rh, rp, rbr } from "../../../../utils/responsive";
+import {
+  surface,
+  border as borderTokens,
+  chart as chartColors,
+  colors,
+  typography,
+  spacing,
+} from "../../../../theme/aurora-tokens";
+import { rf, rw, rh } from "../../../../utils/responsive";
+import { haptics } from "../../../../utils/haptics";
 import {
   GridLines,
   YAxisLabels,
@@ -44,11 +51,8 @@ interface LineChartProps {
   unit?: string;
   showValues?: boolean;
   showHeader?: boolean;
-  /** Empty-state message title. Defaults to "No data recorded". */
   emptyTitle?: string;
-  /** Empty-state message subtitle. Defaults to "Start tracking to see progress". */
   emptySubtitle?: string;
-  /** When true, weight gain is treated as a negative trend (weight-loss goal). */
   weightLossGoal?: boolean;
 }
 
@@ -66,10 +70,6 @@ export const LineChart: React.FC<LineChartProps> = ({
   const animationProgress = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
 
-  // Measure the actual container width so the SVG chart fits inside the
-  // centered 480px app column on web/tablet. Using useWindowDimensions() here
-  // returned the full desktop window width (e.g. 1920px), making the chart
-  // massively overflow the phone-width column.
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const handleLayout = (e: LayoutChangeEvent) => {
     const { width } = e.nativeEvent.layout;
@@ -78,9 +78,13 @@ export const LineChart: React.FC<LineChartProps> = ({
     }
   };
 
-  // Chart dimensions — use measured container width (clamped to the 480px
-  // app column on web/tablet via responsive.ts). Fall back to a phone-sized
-  // estimate until layout fires so the first paint isn't zero-width.
+  const handlePointSelect = (index: number | null) => {
+    if (index !== null && index !== selectedPoint) {
+      haptics.light();
+    }
+    setSelectedPoint(index);
+  };
+
   const CHART_WIDTH = containerWidth > 0 ? containerWidth : rw(300);
   const CHART_HEIGHT = rh(180);
   const PADDING_LEFT = rw(45);
@@ -144,85 +148,69 @@ export const LineChart: React.FC<LineChartProps> = ({
   if (!hasData) {
     return (
       <View style={styles.emptyChart} onLayout={handleLayout}>
-        <View style={styles.emptyChartIconContainer}>
-          <LinearGradient
-            colors={["rgba(156, 39, 176, 0.2)", "rgba(156, 39, 176, 0.05)"]}
-            style={styles.emptyChartIconBg}
-          />
+        <View style={styles.emptyIconWrap}>
           <Ionicons
             name="analytics-outline"
-            size={rf(36)}
-            color="rgba(156, 39, 176, 0.6)"
+            size={rf(32)}
+            color={surface[2]}
           />
         </View>
-        <Text style={styles.emptyChartText} numberOfLines={2}>{emptyTitle}</Text>
-        <Text style={styles.emptyChartSubtext} numberOfLines={2}>{emptySubtitle}</Text>
-        <View style={styles.emptyChartHint}>
-          <Ionicons
-            name="add-circle-outline"
-            size={rf(14)}
-            color={colors.primary}
-          />
-          <Text style={styles.emptyChartHintText} numberOfLines={1}>
-            Open Progress to log weight
-          </Text>
-        </View>
+        <Text style={styles.emptyTitle} numberOfLines={2}>{emptyTitle}</Text>
+        <Text style={styles.emptySubtitle} numberOfLines={2}>{emptySubtitle}</Text>
       </View>
     );
   }
 
-  // Goal-aware trend: for weight-loss goals, weight gain (positive trend) is
-  // semantically negative. For other metrics or weight-gain goals, positive
-  // trend is positive.
   const { trend, trendPercent, isPositiveTrend } = calculateTrend(data, weightLossGoal);
 
   return (
-    <View style={styles.premiumChartContainer} onLayout={handleLayout}>
+    <View style={styles.container} onLayout={handleLayout}>
       {/* Stats Header */}
-      {showHeader && <View style={styles.chartStatsHeader}>
-        <View style={styles.currentValueContainer}>
-          <Text style={styles.currentValueLabel}>Current</Text>
-          <Text
-            style={[styles.currentValue, { color }]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
-            {data[data.length - 1].value.toFixed(1)}
-            {unit}
-          </Text>
-        </View>
-        <View style={styles.trendContainer}>
-          <View
-            style={[
-              styles.trendBadge,
-              {
-                backgroundColor: isPositiveTrend
-                  ? colors.successTint
-                  : colors.errorTint,
-              },
-            ]}
-          >
-            <Ionicons
-              name={isPositiveTrend ? "trending-up" : "trending-down"}
-              size={rf(12)}
-              color={isPositiveTrend ? colors.success : colors.error}
-            />
+      {showHeader && (
+        <View style={styles.statsHeader}>
+          <View style={styles.currentValueWrap}>
+            <Text style={styles.currentLabel}>Current</Text>
             <Text
-              style={[
-                styles.trendText,
-                { color: isPositiveTrend ? colors.success : colors.error },
-              ]}
+              style={[styles.currentValue, { color }]}
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
             >
-              {Math.abs(parseFloat(trendPercent))}%
+              {data[data.length - 1].value.toFixed(1)}
+              {unit}
             </Text>
           </View>
-          <Text style={styles.trendPeriod} numberOfLines={1}>vs start</Text>
+          <View style={styles.trendWrap}>
+            <View
+              style={[
+                styles.trendBadge,
+                {
+                  backgroundColor: isPositiveTrend
+                    ? surface[2]
+                    : surface[2],
+                },
+              ]}
+            >
+              <Ionicons
+                name={isPositiveTrend ? "trending-up" : "trending-down"}
+                size={rf(12)}
+                color={isPositiveTrend ? chartColors[4] : chartColors[6]}
+              />
+              <Text
+                style={[
+                  styles.trendText,
+                  { color: isPositiveTrend ? chartColors[4] : chartColors[6] },
+                ]}
+                numberOfLines={1}
+              >
+                {Math.abs(parseFloat(trendPercent))}%
+              </Text>
+            </View>
+            <Text style={styles.trendPeriod} numberOfLines={1}>vs start</Text>
+          </View>
         </View>
-      </View>}
+      )}
 
-      {/* SVG Chart — render with fallback width (rw(300)) until measured */}
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
         <Defs>
           <SvgLinearGradient
@@ -247,17 +235,6 @@ export const LineChart: React.FC<LineChartProps> = ({
             <Stop offset="0%" stopColor={color} stopOpacity="0.6" />
             <Stop offset="50%" stopColor={color} stopOpacity="1" />
             <Stop offset="100%" stopColor={color} stopOpacity="1" />
-          </SvgLinearGradient>
-
-          <SvgLinearGradient
-            id="glowGradient"
-            x1="0%"
-            y1="0%"
-            x2="0%"
-            y2="100%"
-          >
-            <Stop offset="0%" stopColor={color} stopOpacity="0.8" />
-            <Stop offset="100%" stopColor={color} stopOpacity="0.2" />
           </SvgLinearGradient>
         </Defs>
 
@@ -289,7 +266,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           getY={getY}
           color={color}
           selectedPoint={selectedPoint}
-          onPointPress={(idx) => setSelectedPoint(idx === -1 ? null : idx)}
+          onPointPress={(idx) => handlePointSelect(idx === -1 ? null : idx)}
         />
 
         <XAxisLabels
@@ -310,10 +287,10 @@ export const LineChart: React.FC<LineChartProps> = ({
         )}
       </Svg>
 
-      {/* Bottom insight */}
-      <View style={styles.chartInsight}>
-        <Ionicons name="sparkles" size={rf(12)} color={color} />
-        <Text style={styles.chartInsightText} numberOfLines={2}>
+      {/* Insight strip */}
+      <View style={styles.insightStrip}>
+        <View style={[styles.insightDot, { backgroundColor: color }]} />
+        <Text style={styles.insightText} numberOfLines={2}>
           {trend > 0
             ? `Gained ${Math.abs(trend).toFixed(1)}${unit} over this period`
             : trend < 0
@@ -326,118 +303,97 @@ export const LineChart: React.FC<LineChartProps> = ({
 };
 
 const styles = StyleSheet.create({
-  premiumChartContainer: {
-    alignItems: "center",
+  container: {
+    width: "100%",
   },
-  chartStatsHeader: {
+  statsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    width: "100%",
     marginBottom: spacing.md,
     paddingHorizontal: spacing.xs,
   },
-  currentValueContainer: {
+  currentValueWrap: {
     alignItems: "flex-start",
   },
-  currentValueLabel: {
+  currentLabel: {
+    fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(10),
-    fontWeight: "500",
-    color: colors.textMuted,
+    color: surface[2],
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: rp(2),
+    marginBottom: rh(2),
   },
   currentValue: {
+    fontFamily: typography.variants.pageTitle.fontFamily,
     fontSize: rf(28),
-    fontWeight: "800",
     letterSpacing: -0.5,
   },
-  trendContainer: {
+  trendWrap: {
     alignItems: "flex-end",
   },
   trendBadge: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.sm,
-    paddingVertical: rp(4),
-    borderRadius: rbr(12),
-    gap: rp(4),
+    paddingVertical: rh(4),
+    borderRadius: 12,
+    gap: rw(4),
   },
   trendText: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: rf(12),
-    fontWeight: "700",
   },
   trendPeriod: {
-    fontSize: rf(9),
-    fontWeight: "500",
-    color: colors.textMuted,
-    marginTop: rp(4),
+    fontFamily: typography.variants.caption.fontFamily,
+    fontSize: rf(10),
+    color: surface[2],
+    marginTop: rh(4),
   },
-  chartInsight: {
+  insightStrip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: spacing.sm,
     marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.glassSurface,
-    borderRadius: rbr(20),
+    paddingHorizontal: spacing.xs,
   },
-  chartInsightText: {
-    fontSize: rf(11),
-    fontWeight: "500",
-    color: colors.textSecondary,
+  insightDot: {
+    width: rw(6),
+    height: rw(6),
+    borderRadius: rw(3),
+  },
+  insightText: {
+    fontFamily: typography.variants.caption.fontFamily,
+    fontSize: rf(12),
+    color: colors.text.secondary,
   },
   emptyChart: {
-    minHeight: rh(180),
+    minHeight: rh(160),
     justifyContent: "center",
     alignItems: "center",
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  emptyChartIconContainer: {
-    width: rw(70),
-    height: rw(70),
-    borderRadius: rbr(35),
+  emptyIconWrap: {
+    width: rw(56),
+    height: rw(56),
+    borderRadius: rw(28),
+    backgroundColor: surface[1],
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.sm,
-    overflow: "hidden",
   },
-  emptyChartIconBg: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  emptyChartText: {
+  emptyTitle: {
+    fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     textAlign: "center",
   },
-  emptyChartSubtext: {
+  emptySubtitle: {
+    fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(12),
-    fontWeight: "500",
-    color: colors.textMuted,
+    color: colors.text.secondary,
     textAlign: "center",
-  },
-  emptyChartHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.primaryTint,
-    borderRadius: rbr(16),
-  },
-  emptyChartHintText: {
-    fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.primary,
   },
 });

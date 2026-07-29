@@ -25,10 +25,7 @@ const ROOT = resolve(__d, "..");
 
 // ── credentials ────────────────────────────────────────────────────────
 const PROJECT_REF = "mqfrwtmkokivoxgukgsz";
-// Prefer env var; fall back to known key (service_role JWT from .env)
-const KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MjkxMTg4NywiZXhwIjoyMDY4NDg3ODg3fQ.GodrW37wQvrL30QB26acYRYOiiAltyw3pXHXL4Xvxis";
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!KEY) {
   console.error("ERROR: SUPABASE_SERVICE_ROLE_KEY must be set");

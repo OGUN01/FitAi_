@@ -1,6 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 interface PeriodSelectorProps {
@@ -53,8 +60,10 @@ const styles = StyleSheet.create({
   periodSelector: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: surface[1],
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
     padding: spacing.xs,
     gap: spacing.xs,
   },
@@ -66,14 +75,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   periodButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
   periodText: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
   periodTextActive: {
-    color: colors.white,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.text.primary,
   },
 });

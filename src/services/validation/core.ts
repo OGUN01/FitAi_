@@ -354,7 +354,7 @@ export class ValidationEngine {
     );
     if (pregnancyCheck.status === "BLOCKED") errors.push(pregnancyCheck);
 
-    const goalCheck = validateGoalConflict(workoutPreferences.primary_goals);
+    const goalCheck = validateGoalConflict(workoutPreferences.primary_goals ?? []);
     if (goalCheck.status === "BLOCKED") errors.push(goalCheck);
 
     const mealsCheck = validateMealsEnabled(
@@ -403,13 +403,13 @@ export class ValidationEngine {
       if (sleepWarn.status === "WARNING") warnings.push(sleepWarn);
 
       const medicalWarn = warnMedicalConditions(
-        bodyAnalysis.medical_conditions,
+        bodyAnalysis.medical_conditions ?? [],
         isAggressive,
       );
       if (medicalWarn.status === "WARNING") warnings.push(medicalWarn);
 
       const recompWarn = warnBodyRecomp(
-        workoutPreferences.primary_goals,
+        workoutPreferences.primary_goals ?? [],
         workoutPreferences.workout_experience_years,
         bodyFatData.value,
         bodyFatData.confidence,
@@ -438,14 +438,14 @@ export class ValidationEngine {
       if (teenWarn.status === "WARNING") warnings.push(teenWarn);
 
       const heartWarn = warnHeartDisease(
-        bodyAnalysis.medical_conditions,
+        bodyAnalysis.medical_conditions ?? [],
         workoutPreferences.intensity,
         isAggressive,
       );
       if (heartWarn.status === "WARNING") warnings.push(heartWarn);
 
       const interferenceWarn = warnConcurrentTrainingInterference(
-        workoutPreferences.primary_goals,
+        workoutPreferences.primary_goals ?? [],
       );
       if (interferenceWarn.status === "WARNING")
         warnings.push(interferenceWarn);
@@ -479,14 +479,14 @@ export class ValidationEngine {
       if (menopauseWarn.status === "WARNING") warnings.push(menopauseWarn);
 
       const equipmentWarn = warnEquipmentLimitations(
-        workoutPreferences.primary_goals,
+        workoutPreferences.primary_goals ?? [],
         workoutPreferences.location,
-        workoutPreferences.equipment,
+        workoutPreferences.equipment ?? [],
       );
       if (equipmentWarn.status === "WARNING") warnings.push(equipmentWarn);
 
       const limitationsWarn = warnPhysicalLimitationsVsIntensity(
-        bodyAnalysis.physical_limitations,
+        bodyAnalysis.physical_limitations ?? [],
         workoutPreferences.intensity,
       );
       if (limitationsWarn.status === "WARNING") warnings.push(limitationsWarn);
@@ -511,12 +511,12 @@ export class ValidationEngine {
       );
       const veganWarn = warnVeganProteinLimitations(
         dietPreferences.diet_type,
-        dietPreferences.allergies,
+        dietPreferences.allergies ?? [],
         proteinTarget,
       );
       if (veganWarn.status === "WARNING") warnings.push(veganWarn);
 
-      const medWarn = warnMedicationEffects(bodyAnalysis.medications);
+      const medWarn = warnMedicationEffects(bodyAnalysis.medications ?? []);
       if (medWarn.status === "WARNING") warnings.push(medWarn);
 
       if (isWeightGain) {
@@ -554,7 +554,7 @@ export class ValidationEngine {
       this.applyMedicalAdjustments(
         tdee,
         macros,
-        bodyAnalysis.medical_conditions,
+        bodyAnalysis.medical_conditions ?? [],
       );
 
     // BUG-28: Re-anchor targetCalories to adjustedTDEE to preserve the deficit ratio.

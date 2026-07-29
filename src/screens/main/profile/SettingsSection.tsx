@@ -1,26 +1,24 @@
 /**
- * SettingsSection - Reusable Settings Group Component
- *
- * Features:
- * - Section title with optional badge
- * - Animated setting rows with proper icons (not text chevrons)
- * - Premium styling for subscription items
- * - Warning/destructive styling for dangerous actions
- * - Haptic feedback on all interactions
- * - Staggered entry animations
+ * SettingsSection - Aurora 2026: clean iOS-style list
+ * Icon in soft-tinted squircle + label + chevron, ONE surface, hairline separators.
+ * No nested cards (max 1 surface depth).
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr, rw, rh } from "../../../utils/responsive";
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
+import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
+
+const { variants } = typography;
 
 export interface SettingItem {
   id: string;
@@ -34,10 +32,9 @@ export interface SettingItem {
   disabled?: boolean;
   isDestructive?: boolean;
   isPremium?: boolean;
-  isIncomplete?: boolean; // Shows warning indicator
+  isIncomplete?: boolean;
 }
 
-// Section header icons mapping
 const SECTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Account: "person-circle-outline",
   Preferences: "settings-outline",
@@ -52,7 +49,101 @@ interface SettingsSectionProps {
   animationDelay?: number;
 }
 
-export const SettingsSection: React.FC<SettingsSectionProps> = ({
+const SettingRow: React.FC<{
+  item: SettingItem;
+  isLast: boolean;
+  onPress: (item: SettingItem) => void;
+}> = React.memo(({ item, isLast, onPress }) => {
+  const handlePress = useCallback(() => {
+    if (item.disabled) return;
+    haptics.light();
+    onPress(item);
+  }, [item, onPress]);
+
+  const iconColor = item.isDestructive
+    ? colors.error.DEFAULT
+    : item.iconColor || colors.primary.DEFAULT;
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      disabled={item.disabled}
+      accessibilityRole="button"
+      accessibilityLabel={item.title}
+      accessibilityHint={item.subtitle}
+      accessibilityState={{ disabled: item.disabled }}
+      style={({ pressed }) => [
+        styles.row,
+        pressed && !item.disabled && styles.rowPressed,
+        item.disabled && styles.rowDisabled,
+        !isLast && styles.rowBorder,
+      ]}
+    >
+      {/* Icon squircle */}
+      <View
+        style={[
+          styles.iconSquircle,
+          { backgroundColor: `${iconColor}14` },
+          item.isDestructive && { backgroundColor: `${colors.error.DEFAULT}14` },
+        ]}
+      >
+        <Ionicons
+          name={item.icon}
+          size={rf(18)}
+          color={item.disabled ? colors.text.tertiary : iconColor}
+        />
+      </View>
+
+      {/* Text */}
+      <View style={styles.textContainer}>
+        <View style={styles.titleRow}>
+          <Text
+            style={[
+              styles.title,
+              item.isDestructive && styles.destructiveText,
+              item.disabled && styles.disabledTitle,
+            ]}
+            numberOfLines={1}
+          >
+            {item.title}
+          </Text>
+          {item.badge && (
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: item.badgeColor || colors.primary.DEFAULT },
+              ]}
+            >
+              <Text style={styles.badgeText}>{item.badge}</Text>
+            </View>
+          )}
+          {item.isIncomplete && <View style={styles.incompleteDot} />}
+        </View>
+        {item.subtitle && (
+          <Text
+            style={[styles.subtitle, item.disabled && styles.disabledSubtitle]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.subtitle}
+          </Text>
+        )}
+      </View>
+
+      {/* Chevron */}
+      {!item.disabled && item.showChevron !== false && (
+        <Ionicons
+          name="chevron-forward"
+          size={rf(18)}
+          color={colors.text.tertiary}
+          style={styles.chevron}
+        />
+      )}
+    </Pressable>
+  );
+});
+
+export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(({
   title,
   items,
   onItemPress,
@@ -62,159 +153,40 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInRight.delay(animationDelay).duration(400)}
+      entering={FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
+      {/* Section header */}
       <View style={styles.sectionHeader}>
         {sectionIcon && (
           <Ionicons
             name={sectionIcon}
             size={rf(14)}
-            color={colors.textSecondary}
+            color={colors.text.secondary}
             style={styles.sectionIcon}
           />
         )}
         <Text style={styles.sectionTitle}>{title}</Text>
       </View>
-      <GlassCard
-        elevation={1}
-        padding="none"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.card}
-      >
+
+      {/* Single surface list */}
+      <View style={styles.listSurface}>
         {items.map((item, index) => (
-          <React.Fragment key={item.id}>
-            <AnimatedPressable
-              onPress={() => {
-                haptics.light();
-                onItemPress(item);
-              }}
-              scaleValue={0.98}
-              hapticFeedback={false}
-              disabled={item.disabled}
-              accessibilityRole="button"
-              accessibilityLabel={item.title}
-              accessibilityHint={item.subtitle}
-              accessibilityState={{ disabled: item.disabled }}
-            >
-              <View
-                style={[
-                  styles.row,
-                  item.isPremium && styles.premiumRow,
-                  item.disabled && styles.disabledRow,
-                ]}
-              >
-                {/* Icon with colored background */}
-                <View
-                  style={[
-                    styles.iconContainer,
-                    {
-                      backgroundColor: hexToRgba(item.iconColor || colors.primary, TINT_ALPHA_LOW),
-                    },
-                    item.isDestructive && styles.destructiveIconBg,
-                    item.isPremium && styles.premiumIconBg,
-                    item.disabled && styles.disabledIconBg,
-                  ]}
-                >
-                  {item.isPremium ? (
-                    <LinearGradient
-                      colors={["#FFD700", "#FFA500"]}
-                      style={styles.premiumIconGradient}
-                    >
-                      <Ionicons name={item.icon} size={rf(18)} color={colors.white} />
-                    </LinearGradient>
-                  ) : (
-                    <Ionicons
-                      name={item.icon}
-                      size={rf(18)}
-                      color={
-                        item.isDestructive
-                          ? colors.error
-                          : item.iconColor || colors.primary
-                      }
-                    />
-                  )}
-                </View>
-
-                {/* Text content */}
-                <View style={styles.textContainer}>
-                  <View style={styles.titleRow}>
-                    <Text
-                      style={[
-                        styles.title,
-                        item.isDestructive && styles.destructiveText,
-                        item.isPremium && styles.premiumText,
-                        item.disabled && styles.disabledTitle,
-                      ]}
-                    >
-                      {item.title}
-                    </Text>
-                    {item.badge && (
-                      <View
-                        style={[
-                          styles.badge,
-                          {
-                            backgroundColor:
-                              item.badgeColor || colors.primary,
-                          },
-                          item.isPremium && styles.premiumBadge,
-                        ]}
-                      >
-                        <Text style={styles.badgeText}>{item.badge}</Text>
-                      </View>
-                    )}
-                    {item.isIncomplete && <View style={styles.incompleteDot} />}
-                  </View>
-                  {item.subtitle && (
-                    <Text
-                      style={[
-                        styles.subtitle,
-                        item.isPremium && styles.premiumSubtitle,
-                        item.disabled && styles.disabledSubtitle,
-                      ]}
-                      numberOfLines={2}
-                      ellipsizeMode="tail"
-                    >
-                      {item.subtitle}
-                    </Text>
-                  )}
-                </View>
-
-                {/* Chevron */}
-                {!item.disabled && item.showChevron !== false && (
-                  <View style={styles.chevronContainer}>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={rf(18)}
-                      color={
-                        item.isPremium
-                          ? colors.gold
-                          : item.isDestructive
-                            ? colors.error
-                            : colors.textMuted
-                      }
-                    />
-                  </View>
-                )}
-              </View>
-            </AnimatedPressable>
-
-            {index < items.length - 1 && (
-              <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-              </View>
-            )}
-          </React.Fragment>
+          <SettingRow
+            key={item.id}
+            item={item}
+            isLast={index === items.length - 1}
+            onPress={onItemPress}
+          />
         ))}
-      </GlassCard>
+      </View>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.lg,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
   },
   sectionHeader: {
@@ -227,126 +199,93 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   sectionTitle: {
-    fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.textSecondary,
+    ...variants.caption,
+    color: colors.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 1.5,
   },
-  card: {
+  listSurface: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
     overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    minHeight: rh(60),
+    minHeight: 56,
   },
-  premiumRow: {
-    backgroundColor: "rgba(255, 215, 0, 0.05)",
+  rowPressed: {
+    backgroundColor: surface[2],
   },
-  disabledRow: {
-    opacity: 0.68,
+  rowDisabled: {
+    opacity: 0.5,
   },
-  iconContainer: {
-    width: rw(36),
-    height: rw(36),
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: border.DEFAULT,
+  },
+  iconSquircle: {
+    width: rw(32),
+    height: rw(32),
     borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
   },
-  destructiveIconBg: {
-    backgroundColor: "rgba(244, 67, 54, 0.15)",
-  },
-  premiumIconBg: {
-    backgroundColor: "transparent",
-    overflow: "hidden",
-  },
-  disabledIconBg: {
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-  },
-  premiumIconGradient: {
-    width: "100%",
-    height: "100%",
-    borderRadius: rw(10),
-    justifyContent: "center",
-    alignItems: "center",
-  },
   textContainer: {
     flex: 1,
     justifyContent: "center",
-    overflow: "hidden",
+    minWidth: 0,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexShrink: 1,
   },
   title: {
-    fontSize: rf(15),
-    fontWeight: "500",
-    color: colors.white,
+    ...variants.body,
+    color: colors.text.primary,
     flexShrink: 1,
   },
   destructiveText: {
-    color: colors.error,
-  },
-  premiumText: {
-    color: colors.gold,
-    fontWeight: "600",
+    color: colors.error.DEFAULT,
   },
   disabledTitle: {
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   subtitle: {
-    fontSize: rf(12),
-    // WCAG AA: body text needs alpha >= 0.7 against the dark glass surface
-    // (was 0.65, which fell below the contrast floor on the dimmest cards).
-    color: "rgba(255, 255, 255, 0.7)",
-    marginTop: rp(2),
-  },
-  premiumSubtitle: {
-    color: "rgba(255, 215, 0, 0.85)",
+    ...variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xxs,
   },
   disabledSubtitle: {
-    color: colors.textMuted,
+    color: colors.text.tertiary,
   },
   badge: {
     marginLeft: spacing.sm,
     paddingHorizontal: spacing.xs + 2,
-    paddingVertical: rp(3),
-    borderRadius: rf(4),
-  },
-  premiumBadge: {
-    backgroundColor: colors.gold,
+    paddingVertical: spacing.xxs,
+    borderRadius: 8,
   },
   badgeText: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(9),
-    fontWeight: "800",
-    color: colors.white,
+    color: colors.text.primary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   incompleteDot: {
-    width: rw(8),
-    height: rw(8),
-    borderRadius: rw(4),
-    backgroundColor: colors.warning,
+    width: rw(6),
+    height: rw(6),
+    borderRadius: rw(3),
+    backgroundColor: colors.warning.DEFAULT,
     marginLeft: spacing.sm,
   },
-  chevronContainer: {
-    width: rw(24),
-    alignItems: "center",
-  },
-  dividerContainer: {
-    paddingLeft: rw(36) + spacing.md * 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  chevron: {
+    marginLeft: spacing.sm,
   },
 });
 

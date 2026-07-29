@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,22 @@ import {
   Modal,
   ScrollView,
   TextInput,
-
   ActivityIndicator,
   SafeAreaView,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { Button, Card } from "../ui";
-import { RecognizedFood } from "../../services/foodRecognitionService";
-import { rf, rh, rw, rbr } from "../../utils/responsive";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../theme/aurora-tokens';
+import { Button, Card } from '../ui';
+import { RecognizedFood } from '../../services/foodRecognitionService';
+import { rf, rh, rw, rbr } from '../../utils/responsive';
 
-import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 interface FoodRecognitionFeedbackProps {
   visible: boolean;
   recognizedFoods: RecognizedFood[];
@@ -42,9 +47,7 @@ export interface FoodFeedback {
   accuracyRating: 1 | 2 | 3 | 4 | 5; // 1 = Very Poor, 5 = Excellent
 }
 
-export const FoodRecognitionFeedback: React.FC<
-  FoodRecognitionFeedbackProps
-> = ({
+export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = ({
   visible,
   recognizedFoods,
   onClose,
@@ -64,16 +67,14 @@ export const FoodRecognitionFeedback: React.FC<
           originalName: food.name,
           isCorrect: true, // Default to correct
           accuracyRating: 4, // Default to good rating
-        })),
+        }))
       );
       setCurrentFoodIndex(0);
     }
   }, [recognizedFoods]);
 
   const updateFeedback = (index: number, updates: Partial<FoodFeedback>) => {
-    setFeedback((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, ...updates } : item)),
-    );
+    setFeedback((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
   };
 
   const handleSubmit = async () => {
@@ -82,14 +83,14 @@ export const FoodRecognitionFeedback: React.FC<
       await onSubmitFeedback(feedback);
 
       crossPlatformAlert(
-        "🙏 Thank You!",
-        "Your feedback helps improve our food recognition accuracy for everyone!",
-        [{ text: "You're Welcome!" }],
+        '🙏 Thank You!',
+        'Your feedback helps improve our food recognition accuracy for everyone!',
+        [{ text: "You're Welcome!" }]
       );
 
       onClose();
     } catch {
-      crossPlatformAlert("Error", "Failed to submit feedback. Please try again.");
+      crossPlatformAlert('Error', 'Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,10 +103,7 @@ export const FoodRecognitionFeedback: React.FC<
     return null;
   }
 
-  const renderAccuracyStars = (
-    rating: number,
-    onPress: (rating: 1 | 2 | 3 | 4 | 5) => void,
-  ) => {
+  const renderAccuracyStars = (rating: number, onPress: (rating: 1 | 2 | 3 | 4 | 5) => void) => {
     return (
       <View style={styles.starsContainer}>
         {[1, 2, 3, 4, 5].map((star) => (
@@ -115,10 +113,10 @@ export const FoodRecognitionFeedback: React.FC<
             style={styles.starButton}
             hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
             accessibilityRole="button"
-            accessibilityLabel={`${star} star${star > 1 ? "s" : ""}`}
+            accessibilityLabel={`${star} star${star > 1 ? 's' : ''}`}
           >
             <Ionicons
-              name={star <= rating ? "star" : "star-outline"}
+              name={star <= rating ? 'star' : 'star-outline'}
               size={rf(24)}
               color={star <= rating ? colors.amberBright : colors.textMuted}
             />
@@ -170,24 +168,18 @@ export const FoodRecognitionFeedback: React.FC<
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.confidenceBadge}>
-                <Text style={styles.confidenceText}>
-                  {currentFood.confidence}% confidence
-                </Text>
+                <Text style={styles.confidenceText}>{currentFood.confidence}% confidence</Text>
               </View>
             </View>
 
             <View style={styles.detailsGrid}>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Calories</Text>
-                <Text style={styles.detailValue}>
-                  {Math.round(currentFood.nutrition.calories)}
-                </Text>
+                <Text style={styles.detailValue}>{Math.round(currentFood.nutrition.calories)}</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Portion</Text>
-                <Text style={styles.detailValue}>
-                  {currentFood.estimatedGrams}g
-                </Text>
+                <Text style={styles.detailValue}>{currentFood.estimatedGrams}g</Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Cuisine</Text>
@@ -202,20 +194,16 @@ export const FoodRecognitionFeedback: React.FC<
 
           {/* Accuracy Rating */}
           <Card style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>
-              How accurate is this recognition?
-            </Text>
+            <Text style={styles.sectionTitle}>How accurate is this recognition?</Text>
             {renderAccuracyStars(currentFeedback.accuracyRating, (rating) =>
-              updateFeedback(currentFoodIndex, { accuracyRating: rating }),
+              updateFeedback(currentFoodIndex, { accuracyRating: rating })
             )}
             <Text style={styles.ratingLabel}>
-              {currentFeedback.accuracyRating === 1 &&
-                "Very Poor - Completely wrong"}
-              {currentFeedback.accuracyRating === 2 && "Poor - Mostly wrong"}
-              {currentFeedback.accuracyRating === 3 && "Fair - Some mistakes"}
-              {currentFeedback.accuracyRating === 4 && "Good - Mostly correct"}
-              {currentFeedback.accuracyRating === 5 &&
-                "Excellent - Perfect recognition"}
+              {currentFeedback.accuracyRating === 1 && 'Very Poor - Completely wrong'}
+              {currentFeedback.accuracyRating === 2 && 'Poor - Mostly wrong'}
+              {currentFeedback.accuracyRating === 3 && 'Fair - Some mistakes'}
+              {currentFeedback.accuracyRating === 4 && 'Good - Mostly correct'}
+              {currentFeedback.accuracyRating === 5 && 'Excellent - Perfect recognition'}
             </Text>
           </Card>
 
@@ -247,8 +235,7 @@ export const FoodRecognitionFeedback: React.FC<
                 <Text
                   style={[
                     styles.correctnessButtonText,
-                    currentFeedback.isCorrect &&
-                      styles.correctnessButtonTextActive,
+                    currentFeedback.isCorrect && styles.correctnessButtonTextActive,
                   ]}
                 >
                   Correct
@@ -260,9 +247,7 @@ export const FoodRecognitionFeedback: React.FC<
                   styles.correctnessButton,
                   !currentFeedback.isCorrect && styles.correctnessButtonActive,
                 ]}
-                onPress={() =>
-                  updateFeedback(currentFoodIndex, { isCorrect: false })
-                }
+                onPress={() => updateFeedback(currentFoodIndex, { isCorrect: false })}
                 accessibilityRole="button"
                 accessibilityLabel="Food name is incorrect"
                 accessibilityState={{ selected: !currentFeedback.isCorrect }}
@@ -276,8 +261,7 @@ export const FoodRecognitionFeedback: React.FC<
                 <Text
                   style={[
                     styles.correctnessButtonText,
-                    !currentFeedback.isCorrect &&
-                      styles.correctnessButtonTextActive,
+                    !currentFeedback.isCorrect && styles.correctnessButtonTextActive,
                   ]}
                 >
                   Incorrect
@@ -287,16 +271,12 @@ export const FoodRecognitionFeedback: React.FC<
 
             {!currentFeedback.isCorrect && (
               <View style={styles.correctionSection}>
-                <Text style={styles.correctionLabel}>
-                  What should it be called?
-                </Text>
+                <Text style={styles.correctionLabel}>What should it be called?</Text>
                 <TextInput
                   style={styles.correctionInput}
                   placeholder="Enter correct food name..."
-                  value={currentFeedback.correctName || ""}
-                  onChangeText={(text) =>
-                    updateFeedback(currentFoodIndex, { correctName: text })
-                  }
+                  value={currentFeedback.correctName || ''}
+                  onChangeText={(text) => updateFeedback(currentFoodIndex, { correctName: text })}
                   multiline={false}
                 />
               </View>
@@ -305,16 +285,12 @@ export const FoodRecognitionFeedback: React.FC<
 
           {/* Additional Notes */}
           <Card style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>
-              Additional comments (optional)
-            </Text>
+            <Text style={styles.sectionTitle}>Additional comments (optional)</Text>
             <TextInput
               style={styles.notesInput}
               placeholder="Any other feedback about this recognition..."
-              value={currentFeedback.userNotes || ""}
-              onChangeText={(text) =>
-                updateFeedback(currentFoodIndex, { userNotes: text })
-              }
+              value={currentFeedback.userNotes || ''}
+              onChangeText={(text) => updateFeedback(currentFoodIndex, { userNotes: text })}
               multiline={true}
               numberOfLines={3}
             />
@@ -341,7 +317,7 @@ export const FoodRecognitionFeedback: React.FC<
               />
             ) : (
               <Button
-                title={isSubmitting ? "Submitting..." : "Submit Feedback"}
+                title={isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
                 style={styles.navButton}
@@ -351,10 +327,7 @@ export const FoodRecognitionFeedback: React.FC<
 
           {isSubmitting && (
             <View style={styles.submittingIndicator}>
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-              />
+              <ActivityIndicator size="small" color={colors.primary} />
               <Text style={styles.submittingText}>Sending feedback...</Text>
             </View>
           )}
@@ -371,9 +344,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
@@ -391,8 +364,8 @@ const styles = StyleSheet.create({
     height: Math.max(rh(32), 44),
     borderRadius: Math.max(rbr(16), 22),
     backgroundColor: colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   progressIndicator: {
@@ -404,7 +377,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
-    textAlign: "center",
+    textAlign: 'center',
   },
 
   progressBar: {
@@ -414,7 +387,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: rbr(2),
   },
@@ -430,9 +403,9 @@ const styles = StyleSheet.create({
   },
 
   foodHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
 
@@ -457,14 +430,14 @@ const styles = StyleSheet.create({
   },
 
   detailsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
 
   detailItem: {
     flex: 1,
-    minWidth: "45%",
+    minWidth: '45%',
   },
 
   detailLabel: {
@@ -492,8 +465,8 @@ const styles = StyleSheet.create({
   },
 
   starsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.sm,
     gap: spacing.xs,
   },
@@ -501,27 +474,27 @@ const styles = StyleSheet.create({
   starButton: {
     width: 44,
     height: 44,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   ratingLabel: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
-    fontStyle: "italic",
+    fontStyle: 'italic',
   },
 
   correctnessButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.md,
   },
 
   correctnessButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
     minHeight: 44,
     paddingVertical: spacing.md,
@@ -583,7 +556,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.surface,
     minHeight: rh(80),
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
   },
 
   navigationContainer: {
@@ -594,7 +567,7 @@ const styles = StyleSheet.create({
   },
 
   navigationButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.md,
   },
 
@@ -603,9 +576,9 @@ const styles = StyleSheet.create({
   },
 
   submittingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.md,
   },
 

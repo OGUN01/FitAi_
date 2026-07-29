@@ -10,11 +10,10 @@ import {
 
 export const calculateGainRateAlternatives = (
   data: CurrentData,
-  hasMuscleGoal: boolean,
-  safeOptimalRate: number,
+  _hasMuscleGoal: boolean,
+  _safeOptimalRate: number,
 ): Alternative[] => {
   const {
-    bmr,
     tdee,
     currentWeight,
     targetWeight,
@@ -167,7 +166,6 @@ export const calculateAlternativesForError = (
     ];
   }
 
-  const weightDiff = Math.abs(targetWeight - currentWeight);
   const isWeightLoss = currentWeight > targetWeight;
   const isWeightGain = currentWeight < targetWeight;
 
@@ -175,9 +173,6 @@ export const calculateAlternativesForError = (
     goals.includes("muscle-gain") || goals.includes("strength");
   const hasEnduranceGoal =
     goals.includes("endurance") || goals.includes("cardio");
-  const hasRecompGoal =
-    goals.includes("body-recomp") ||
-    (goals.includes("weight-loss") && goals.includes("muscle-gain"));
 
   // Bug 1 fix: prefer SSOT weekly_weight_loss_goal when available; fall back to body-weight %
   const derivedOptimalRate = currentWeight * 0.0075;

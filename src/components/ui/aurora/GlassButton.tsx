@@ -88,12 +88,13 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       springConfig="snappy"
       hapticType={isDisabled ? undefined : (hapticType as any)}
       disableAnimation={isDisabled}
-      style={[
+      containerStyle={[
         styles.container,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
         style,
       ]}
+      style={styles.pressable}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: isDisabled }}
@@ -130,6 +131,16 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     overflow: "hidden",
   },
+  // Inner Pressable must stretch to fill the outer Animated.View wrapper so
+  // the gradient + content honor the wrapper's flex/width constraints. Without
+  // this, the wrapper sizes to content and flex:1 from callers has no effect,
+  // causing buttons to overflow their row (e.g. CustomPlanEmptyState CTAs).
+  pressable: {
+    flex: 1,
+    alignSelf: "stretch",
+    borderRadius: borderRadius.xl,
+    overflow: "hidden",
+  },
   fullWidth: {
     // Use flex:1 instead of width:"100%" so the button sizes correctly when
     // placed inside a flex row alongside other elements (known issue pattern:
@@ -138,6 +149,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gradient: {
+    flex: 1,
+    alignSelf: "stretch",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -149,6 +162,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 1,
   },
   icon: {
     marginRight: rp(spacing.sm),
@@ -158,6 +172,8 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.body),
     fontWeight: String(typography.fontWeight.semibold) as any,
     letterSpacing: 0.3,
+    flexShrink: 1,
+    textAlign: "center",
   },
   disabled: {
     // 0.6 keeps the gradient label above the WCAG AA 4.5:1 threshold on the

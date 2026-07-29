@@ -1,7 +1,7 @@
 // 🍽️ Meal Type Selection Overlay for Food Scanning
 // Enhanced UI component for selecting meal type before food recognition
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,20 @@ import {
   StyleSheet,
   Animated,
   ScrollView,
-  } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { MealType } from "../../services/foodRecognitionService";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rh, rw, rs, rp, rbr, dimensions } from "../../utils/responsive";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { MealType } from '../../services/foodRecognitionService';
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  flatFontSize as fontSize,
+  typography,
+} from '../../theme/aurora-tokens';
+import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
+import { haptics } from '../../utils/haptics';
+import { rf, rh, rw, rs, rp, rbr, dimensions } from '../../utils/responsive';
 
 interface MealTypeSelectorProps {
   visible: boolean;
@@ -34,36 +42,36 @@ interface MealTypeOption {
 
 const mealTypeOptions: MealTypeOption[] = [
   {
-    type: "breakfast",
-    label: "Breakfast",
-    emoji: "🌅",
-    description: "Start your day with nutritious fuel",
-    suggestedTime: "6:00 - 10:00 AM",
-    color: "#f59e0b", // amber
+    type: 'breakfast',
+    label: 'Breakfast',
+    emoji: '🌅',
+    description: 'Start your day with nutritious fuel',
+    suggestedTime: '6:00 - 10:00 AM',
+    color: colors.warningAlt, // amber
   },
   {
-    type: "lunch",
-    label: "Lunch",
-    emoji: "☀️",
-    description: "Midday energy boost and nutrients",
-    suggestedTime: "12:00 - 2:00 PM",
-    color: "#10b981", // emerald
+    type: 'lunch',
+    label: 'Lunch',
+    emoji: '☀️',
+    description: 'Midday energy boost and nutrients',
+    suggestedTime: '12:00 - 2:00 PM',
+    color: colors.successAlt, // emerald
   },
   {
-    type: "dinner",
-    label: "Dinner",
-    emoji: "🌙",
-    description: "Evening meal for recovery and rest",
-    suggestedTime: "6:00 - 9:00 PM",
-    color: "#FF8A5C", // violet
+    type: 'dinner',
+    label: 'Dinner',
+    emoji: '🌙',
+    description: 'Evening meal for recovery and rest',
+    suggestedTime: '6:00 - 9:00 PM',
+    color: colors.primaryLight, // coral
   },
   {
-    type: "snack",
-    label: "Snack",
-    emoji: "🍎",
-    description: "Quick bite between meals",
-    suggestedTime: "Anytime",
-    color: "#f97316", // orange
+    type: 'snack',
+    label: 'Snack',
+    emoji: '🍎',
+    description: 'Quick bite between meals',
+    suggestedTime: 'Anytime',
+    color: colors.primary, // orange
   },
 ];
 
@@ -77,9 +85,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
   // Use the clamped screen height from the responsive module so the slide
   // animation distance stays phone-sized on web/tablet (capped at 900)
   // instead of the full desktop window height.
-  const [slideAnim] = useState(
-    new Animated.Value(dimensions.screenHeight),
-  );
+  const [slideAnim] = useState(new Animated.Value(dimensions.screenHeight));
 
   React.useEffect(() => {
     if (visible) {
@@ -113,18 +119,17 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 
   const handleSelect = (mealType: MealType) => {
     setSelectedType(mealType);
-    setTimeout(() => {
-      onSelect(mealType);
-      setSelectedType(null);
-    }, 150); // Short delay for visual feedback
+    haptics.light();
+    onSelect(mealType);
+    setSelectedType(null);
   };
 
   const getCurrentTimeBasedSuggestion = (): MealType => {
     const hour = new Date().getHours();
-    if (hour < 10) return "breakfast";
-    if (hour < 16) return "lunch";
-    if (hour < 22) return "dinner";
-    return "snack";
+    if (hour < 10) return 'breakfast';
+    if (hour < 16) return 'lunch';
+    if (hour < 22) return 'dinner';
+    return 'snack';
   };
 
   const suggestedMeal = getCurrentTimeBasedSuggestion();
@@ -172,17 +177,27 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                   Choose what type of meal you're scanning for better accuracy
                 </Text>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Close meal type selector">
-                <Ionicons name="close" size={rf(20)} color={colors.text} />
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close meal type selector"
+              >
+                <Ionicons name="chevron-down" size={rf(20)} color={colors.text} />
               </TouchableOpacity>
             </View>
 
             <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
               {/* Time-based suggestion */}
               <View style={styles.suggestionBanner}>
-                <Ionicons name="bulb-outline" size={rf(16)} color={colors.warningAlt} style={styles.suggestionIcon} />
+                <Ionicons
+                  name="bulb-outline"
+                  size={rf(16)}
+                  color={colors.primaryLight}
+                  style={styles.suggestionIcon}
+                />
                 <Text style={styles.suggestionText}>
-                  Based on current time, we suggest:{" "}
+                  Based on current time, we suggest:{' '}
                   <Text style={styles.suggestionMeal}>
                     {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
                   </Text>
@@ -211,14 +226,9 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                     >
                       <View style={styles.optionContent}>
                         <View
-                          style={[
-                            styles.optionEmoji,
-                            { backgroundColor: option.color + "20" },
-                          ]}
+                          style={[styles.optionEmoji, { backgroundColor: hexToRgba(option.color, TINT_ALPHA_LOW) }]}
                         >
-                          <Text style={styles.optionEmojiText}>
-                            {option.emoji}
-                          </Text>
+                          <Text style={styles.optionEmojiText}>{option.emoji}</Text>
                         </View>
 
                         <View style={styles.optionInfo}>
@@ -226,26 +236,15 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                             <Text style={styles.optionLabel}>{option.label}</Text>
                             {isSuggested && (
                               <View style={styles.suggestedBadge}>
-                                <Text style={styles.suggestedBadgeText}>
-                                  Suggested
-                                </Text>
+                                <Text style={styles.suggestedBadgeText}>Suggested</Text>
                               </View>
                             )}
                           </View>
-                          <Text style={styles.optionDescription}>
-                            {option.description}
-                          </Text>
-                          <Text style={styles.optionTime}>
-                            {option.suggestedTime}
-                          </Text>
+                          <Text style={styles.optionDescription}>{option.description}</Text>
+                          <Text style={styles.optionTime}>{option.suggestedTime}</Text>
                         </View>
 
-                        <View
-                          style={[
-                            styles.selectIndicator,
-                            { borderColor: option.color },
-                          ]}
-                        >
+                        <View style={[styles.selectIndicator, { borderColor: option.color }]}>
                           {isSelected && (
                             <View
                               style={[
@@ -263,10 +262,15 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 
               {/* Footer tip */}
               <View style={styles.footer}>
-                <Ionicons name="ribbon-outline" size={rf(16)} color={colors.primary} style={styles.footerIcon} />
+                <Ionicons
+                  name="ribbon-outline"
+                  size={rf(16)}
+                  color={colors.primary}
+                  style={styles.footerIcon}
+                />
                 <Text style={styles.footerText}>
-                  Selecting the correct meal type helps our AI provide more
-                  accurate nutrition analysis
+                  Selecting the correct meal type helps our AI provide more accurate nutrition
+                  analysis
                 </Text>
               </View>
             </ScrollView>
@@ -284,8 +288,8 @@ const styles = StyleSheet.create({
 
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
+    backgroundColor: colors.overlay,
+    justifyContent: 'flex-end',
   },
 
   backdropTouchable: {
@@ -301,9 +305,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     padding: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
 
   headerContent: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
 
   headerEmoji: {
@@ -329,7 +333,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: rf(18),
   },
 
@@ -338,23 +342,17 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: rbr(22),
     backgroundColor: colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "absolute",
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
     right: spacing.lg,
     top: spacing.lg,
   },
 
-  closeButtonText: {
-    fontSize: rf(16),
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
-  },
-
   suggestionBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.warningTint,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     margin: spacing.lg,
     padding: spacing.md,
     borderRadius: borderRadius.md,
@@ -366,7 +364,7 @@ const styles = StyleSheet.create({
 
   suggestionText: {
     fontSize: fontSize.sm,
-    color: "#92400e", // amber-800
+    color: colors.primaryLight,
     flex: 1,
   },
 
@@ -384,7 +382,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 2,
     borderColor: colors.border,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
 
   optionCardSelected: {
@@ -393,18 +391,18 @@ const styles = StyleSheet.create({
   },
 
   optionCardSuggested: {
-    borderColor: "#f59e0b",
-    shadowColor: "#f59e0b",
+    borderColor: colors.primaryLight,
+    shadowColor: colors.primaryLight,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    boxShadow: '0px 2px 4px rgba(245, 158, 11, 0.1)',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    boxShadow: `0px 2px 6px ${hexToRgba(colors.primaryLight, 0.15)}`,
     elevation: 3,
   },
 
   optionContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.lg,
   },
 
@@ -412,8 +410,8 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rh(56),
     borderRadius: rs(16),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: spacing.md,
   },
 
@@ -426,8 +424,8 @@ const styles = StyleSheet.create({
   },
 
   optionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing.xs,
   },
 
@@ -439,7 +437,7 @@ const styles = StyleSheet.create({
   },
 
   suggestedBadge: {
-    backgroundColor: "#f59e0b",
+    backgroundColor: colors.primary,
     paddingHorizontal: rp(8),
     paddingVertical: rp(2),
     borderRadius: rs(8),
@@ -469,8 +467,8 @@ const styles = StyleSheet.create({
     height: rh(24),
     borderRadius: rs(12),
     borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: spacing.md,
   },
 
@@ -481,8 +479,8 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.backgroundSecondary,
     margin: spacing.lg,
     padding: spacing.md,

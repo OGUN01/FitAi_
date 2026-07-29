@@ -1,162 +1,152 @@
+/**
+ * WearableActivityCard - Aurora 2026
+ *
+ * Single surface.1 container, icon + stat rows, no drop shadows.
+ */
+
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf, rp } from "../../utils/responsive";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { rf } from "../../utils/responsive";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  chart,
+  spacing,
+  typography,
+} from "../../theme/aurora-tokens";
 
 interface WearableActivityCardProps {
   healthMetrics: any;
 }
 
+interface StatProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  label: string;
+  value: string;
+}
+
+const WearableStat: React.FC<StatProps> = ({ icon, color, label, value }) => (
+  <View style={styles.stat}>
+    <View
+      style={[styles.statIconWrap, { backgroundColor: `${color}1A` }]}
+    >
+      <Ionicons name={icon} size={rf(18)} color={color} />
+    </View>
+    <Text style={styles.statLabel}>{label}</Text>
+    <Text style={styles.statValue}>{value}</Text>
+  </View>
+);
+
 export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
   healthMetrics,
 }) => {
   return (
-    <View style={styles.section}>
+    <Animated.View
+      entering={FadeInDown.delay(120).duration(300)}
+      style={styles.section}
+    >
       <Text style={styles.sectionTitle}>Wearable Activity</Text>
-      <GlassCard
-        style={styles.todaysCard}
-        elevation={2}
-        blurIntensity="light"
-        padding="lg"
-        borderRadius="lg"
-      >
-        <View style={styles.wearableHeader}>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
           <Ionicons
             name="watch-outline"
-            size={rf(20)}
-            color={colors.primary}
+            size={rf(18)}
+            color={colors.primary.DEFAULT}
           />
-          <Text style={styles.wearableLabel}>From your smartwatch</Text>
+          <Text style={styles.headerLabel}>From your smartwatch</Text>
         </View>
-        <View style={styles.todaysStats}>
-          {/* Steps */}
-          <View style={styles.todaysStat}>
-            <Ionicons
-              name="walk-outline"
-              size={rf(24)}
-              color={colors.success}
-              style={{
-                marginBottom: spacing.xs,
-              }}
+        <View style={styles.statsRow}>
+          <WearableStat
+            icon="walk-outline"
+            color={chart[4]}
+            label="Steps"
+            value={(healthMetrics?.steps ?? 0).toLocaleString()}
+          />
+          <WearableStat
+            icon="flame-outline"
+            color={chart[5]}
+            label="Burned"
+            value={`${healthMetrics?.activeCalories ?? 0} cal`}
+          />
+          <WearableStat
+            icon="heart-outline"
+            color={chart[1]}
+            label="Heart Rate"
+            value={`${healthMetrics.heartRate || "--"} bpm`}
+          />
+          {healthMetrics.sleepHours ? (
+            <WearableStat
+              icon="bed-outline"
+              color={chart[2]}
+              label="Sleep"
+              value={`${healthMetrics.sleepHours.toFixed(1)}h`}
             />
-            <View style={styles.todaysStatContent}>
-              <Text style={styles.todaysStatLabel}>Steps</Text>
-              <Text style={styles.todaysStatValue}>
-                {(healthMetrics?.steps ?? 0).toLocaleString()}
-              </Text>
-            </View>
-          </View>
-
-          {/* Active Calories */}
-          <View style={styles.todaysStat}>
-            <Ionicons
-              name="flame-outline"
-              size={rf(24)}
-              color={colors.warning}
-              style={{
-                marginBottom: spacing.xs,
-              }}
-            />
-            <View style={styles.todaysStatContent}>
-              <Text style={styles.todaysStatLabel}>Burned</Text>
-              <Text style={styles.todaysStatValue}>
-                {healthMetrics?.activeCalories ?? 0} cal
-              </Text>
-            </View>
-          </View>
-
-          {/* Heart Rate */}
-          <View style={styles.todaysStat}>
-            <Ionicons
-              name="heart-outline"
-              size={rf(24)}
-              color={colors.error}
-              style={{
-                marginBottom: spacing.xs,
-              }}
-            />
-            <View style={styles.todaysStatContent}>
-              <Text style={styles.todaysStatLabel}>Heart Rate</Text>
-              <Text style={styles.todaysStatValue}>
-                {healthMetrics.heartRate || "--"} bpm
-              </Text>
-            </View>
-          </View>
-
-          {/* Sleep Hours */}
-          {healthMetrics.sleepHours && (
-            <View style={styles.todaysStat}>
-              <Ionicons
-                name="bed-outline"
-                size={rf(24)}
-                color={colors.primary}
-                style={{
-                  marginBottom: spacing.xs,
-                }}
-              />
-              <View style={styles.todaysStatContent}>
-                <Text style={styles.todaysStatLabel}>Sleep</Text>
-                <Text style={styles.todaysStatValue}>
-                  {healthMetrics.sleepHours.toFixed(1)}h
-                </Text>
-              </View>
-            </View>
-          )}
+          ) : null}
         </View>
-      </GlassCard>
-    </View>
+      </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
-  todaysCard: {
+  card: {
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
   },
-  wearableHeader: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(8),
+    gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.glassBorder,
+    borderBottomColor: borderTokens.subtle,
   },
-  wearableLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+  headerLabel: {
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
-  todaysStats: {
+  statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
   },
-  todaysStat: {
+  stat: {
     alignItems: "center",
     flex: 1,
   },
-  todaysStatContent: {
+  statIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
-  },
-  todaysStatLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    justifyContent: "center",
     marginBottom: spacing.xs,
   },
-  todaysStatValue: {
-    fontSize: fontSize.md,
-    fontWeight: "600",
-    color: colors.text,
+  statLabel: {
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
+    marginBottom: spacing.xxs,
+  },
+  statValue: {
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
   },
 });
+
+export default WearableActivityCard;

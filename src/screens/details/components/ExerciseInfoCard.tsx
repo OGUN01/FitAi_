@@ -1,7 +1,17 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Card } from "../../../components/ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * ExerciseInfoCard — flat exercise summary for the detail screen.
+ *
+ * No card chrome: bold exercise name + tinted difficulty badge, hairline-
+ * bounded flat stat row (sets / reps / weight / rest), and target muscles
+ * rendered as muted inline text rather than chip boxes.
+ *
+ * Props are unchanged from the previous implementation.
+ */
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, spacing, typography } from '../../../theme/aurora-tokens';
+import { hexToRgba } from '../../../utils/colors';
+import { rf, rp } from '../../../utils/responsive';
 
 interface ExerciseInfoCardProps {
   name: string;
@@ -26,14 +36,14 @@ export const ExerciseInfoCard: React.FC<ExerciseInfoCardProps> = ({
 }) => {
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
-      case "beginner":
-        return colors.success;
-      case "intermediate":
-        return colors.warning;
-      case "advanced":
-        return colors.error;
+      case 'beginner':
+        return colors.success.DEFAULT;
+      case 'intermediate':
+        return colors.warning.DEFAULT;
+      case 'advanced':
+        return colors.error.DEFAULT;
       default:
-        return colors.textSecondary;
+        return colors.text.secondary;
     }
   };
 
@@ -41,144 +51,144 @@ export const ExerciseInfoCard: React.FC<ExerciseInfoCardProps> = ({
     return diff.charAt(0).toUpperCase() + diff.slice(1).toLowerCase();
   };
 
+  const difficultyColor = getDifficultyColor(difficulty);
+
   return (
-    <Card style={styles.exerciseCard} variant="elevated">
-      <View style={styles.exerciseHeader}>
-        <View style={styles.exerciseInfo}>
-          <Text style={styles.exerciseName}>{name}</Text>
-          <Text style={styles.exerciseDescription}>{description}</Text>
-        </View>
-        <View style={styles.difficultyBadge}>
-          <Text
-            style={[
-              styles.difficultyText,
-              { color: getDifficultyColor(difficulty) },
-            ]}
-          >
+    <View style={styles.container}>
+      {/* Name + difficulty */}
+      <View style={styles.headerRow}>
+        <Text style={styles.exerciseName} numberOfLines={2}>
+          {name}
+        </Text>
+        <View
+          style={[styles.difficultyBadge, { backgroundColor: hexToRgba(difficultyColor, 0.12) }]}
+        >
+          <Text style={[styles.difficultyText, { color: difficultyColor }]}>
             {formatDifficulty(difficulty)}
           </Text>
         </View>
       </View>
 
-      <View style={styles.statsContainer}>
+      {!!description && <Text style={styles.exerciseDescription}>{description}</Text>}
+
+      {/* Flat stat row — hairline top/bottom, no boxes */}
+      <View style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{sets}</Text>
-          <Text style={styles.statLabel}>Sets</Text>
+          <Text style={styles.statLabel}>SETS</Text>
         </View>
+        <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{reps}</Text>
-          <Text style={styles.statLabel}>Reps</Text>
+          <Text style={styles.statLabel}>REPS</Text>
         </View>
-        {weight && (
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{weight}</Text>
-            <Text style={styles.statLabel}>Weight</Text>
-          </View>
-        )}
+        {weight ? (
+          <>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{weight}</Text>
+              <Text style={styles.statLabel}>WEIGHT</Text>
+            </View>
+          </>
+        ) : null}
+        <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{restTime}</Text>
-          <Text style={styles.statLabel}>Rest</Text>
+          <Text style={styles.statLabel}>REST</Text>
         </View>
       </View>
 
+      {/* Target muscles — muted inline text, not chips */}
       {targetMuscles.length > 0 && (
-        <View style={styles.musclesContainer}>
-          <Text style={styles.musclesTitle}>Target Muscles</Text>
-          <View style={styles.musclesList}>
-            {targetMuscles.map((muscle: string, index: number) => (
-              <View key={index} style={styles.muscleTag}>
-                <Text style={styles.muscleText}>{muscle}</Text>
-              </View>
-            ))}
-          </View>
+        <View style={styles.musclesBlock}>
+          <Text style={styles.musclesEyebrow}>TARGET MUSCLES</Text>
+          <Text style={styles.musclesText}>{targetMuscles.join('  ·  ')}</Text>
         </View>
       )}
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  exerciseCard: {
-    marginVertical: spacing.md,
+  container: {
+    marginBottom: rp(spacing.lg),
   },
-  exerciseHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing.md,
-  },
-  exerciseInfo: {
-    flex: 1,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: rp(spacing.sm),
   },
   exerciseName: {
-    fontSize: fontSize.xxl,
+    flex: 1,
+    fontSize: rf(typography.fontSize.h2),
     fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  exerciseDescription: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    lineHeight: 22,
+    color: colors.text.primary,
+    letterSpacing: -0.3,
   },
   difficultyBadge: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    marginLeft: spacing.md,
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
+    borderRadius: rp(8),
+    marginTop: rp(spacing.xxs),
   },
   difficultyText: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-    marginVertical: spacing.md,
+  exerciseDescription: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.relaxed,
+    marginTop: rp(spacing.sm),
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: rp(spacing.md),
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.glass.border,
+    marginTop: rp(spacing.md),
   },
   statItem: {
-    alignItems: "center",
+    flex: 1,
+    alignItems: 'center',
+    gap: rp(spacing.xxs),
   },
   statValue: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    fontSize: rf(typography.fontSize.body),
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.primary,
   },
   statLabel: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: spacing.xs / 2,
-  },
-  musclesContainer: {
-    marginBottom: spacing.md,
-  },
-  musclesTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  musclesList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  muscleTag: {
-    backgroundColor: colors.primary + "20",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primary + "40",
-  },
-  muscleText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
+    fontSize: rf(typography.fontSize.micro),
     fontWeight: typography.fontWeight.medium,
+    color: colors.text.tertiary,
+    letterSpacing: 1,
+  },
+  statDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: rp(28),
+    backgroundColor: colors.glass.border,
+  },
+  musclesBlock: {
+    marginTop: rp(spacing.md),
+    gap: rp(spacing.xxs),
+  },
+  musclesEyebrow: {
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text.tertiary,
+    letterSpacing: 1.2,
+  },
+  musclesText: {
+    fontSize: rf(typography.fontSize.caption),
+    color: colors.text.secondary,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
+    textTransform: 'capitalize',
   },
 });

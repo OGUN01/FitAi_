@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 
@@ -18,9 +19,23 @@ const PaywallFeaturesList: React.FC<PaywallFeaturesListProps> = ({
 }) => {
   return (
     <View style={styles.featuresSection}>
-      <Pressable onPress={onToggle} style={styles.featuresHeader}>
+      <Pressable
+        onPress={onToggle}
+        style={styles.featuresHeader}
+        accessibilityRole="button"
+        accessibilityLabel={
+          showFeatures
+            ? "Hide premium features"
+            : `Show ${features.length} premium features`
+        }
+        accessibilityState={{ expanded: showFeatures }}
+      >
         <Text style={styles.featuresTitle}>Premium Features</Text>
-        <Text style={styles.featuresToggle}>{showFeatures ? "⌃" : "⌄"}</Text>
+        <Ionicons
+          name={showFeatures ? "chevron-up" : "chevron-down"}
+          size={rf(20)}
+          color={colors.textSecondary}
+        />
       </Pressable>
 
       {showFeatures && (
@@ -39,26 +54,23 @@ const PaywallFeaturesList: React.FC<PaywallFeaturesListProps> = ({
 
 const styles = StyleSheet.create({
   featuresSection: {
-    padding: rp(16),
-    paddingTop: 0,
+    paddingHorizontal: rp(16),
+    paddingBottom: rp(12),
   },
   featuresHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: rp(12),
+    minHeight: 44,
   },
   featuresTitle: {
     fontSize: rf(16),
     fontWeight: "600",
     color: colors.text,
   },
-  featuresToggle: {
-    fontSize: rf(24),
-    color: colors.textSecondary,
-  },
   featuresList: {
-    marginTop: rp(8),
+    marginTop: rp(4),
   },
   featureItem: {
     flexDirection: "row",
@@ -73,6 +85,7 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: colors.textSecondary,
     flex: 1,
+    lineHeight: rf(20),
   },
 });
 

@@ -15,11 +15,17 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw, rp } from "../../../utils/responsive";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
-import { hexToRgba } from "../../../utils/colors";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 
 interface AnalyticsHeaderProps {
@@ -35,14 +41,11 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  // Calculate top padding - use insets on Android where SafeAreaView may not work properly
   const topPadding =
     Platform.OS === "android"
-      ? Math.max(insets.top, StatusBar.currentHeight || 0) +
-        spacing.sm
+      ? Math.max(insets.top, StatusBar.currentHeight || 0) + spacing.sm
       : spacing.md;
 
-  // Get period label for display
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
       case "week":
@@ -60,26 +63,30 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
-      {/* Title Row */}
-      <Animated.View entering={Platform.OS !== 'web' ? FadeInDown.delay(100) : undefined} style={styles.titleRow}>
+      <Animated.View
+        entering={Platform.OS !== "web" ? FadeInDown.delay(100).duration(350) : undefined}
+        style={styles.titleRow}
+      >
         <View style={styles.titleLeft}>
           <LinearGradient
-            colors={[colors.primary, colors.primaryDark]}
+            colors={[chart[1], chart[1]]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconContainer}
           >
-            <Ionicons name="analytics" size={rf(18)} color={colors.white} />
+            <Ionicons name="analytics" size={rf(18)} color={colors.text.primary} />
           </LinearGradient>
           <View>
-            <Text style={styles.title} numberOfLines={1}>Analytics</Text>
-            <Text style={styles.subtitle} numberOfLines={1}>{getPeriodLabel()}</Text>
+            <Text style={styles.title} numberOfLines={1}>
+              Analytics
+            </Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {getPeriodLabel()}
+            </Text>
           </View>
         </View>
 
-        {/* Right side: Navigation icons + AI badge */}
         <View style={styles.titleRight}>
-          {/* Progress Screen Button */}
           {onProgressPress && (
             <AnimatedPressable
               style={styles.navButton}
@@ -95,14 +102,11 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
               <Ionicons
                 name="fitness-outline"
                 size={rf(18)}
-                color={colors.primary}
+                color={chart[1]}
               />
             </AnimatedPressable>
           )}
 
-
-
-          {/* Honest status badge - do not render fake CTA for unavailable insights */}
           <View
             style={styles.badge}
             accessibilityRole="text"
@@ -114,9 +118,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
         </View>
       </Animated.View>
 
-      {/* Period Selector */}
       <Animated.View
-        entering={Platform.OS !== 'web' ? FadeInDown.delay(200) : undefined}
+        entering={Platform.OS !== "web" ? FadeInDown.delay(200).duration(350) : undefined}
         style={styles.periodSelectorWrapper}
       >
         <PeriodSelector
@@ -131,7 +134,6 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
-    // paddingTop is applied dynamically via style prop to handle safe area
     paddingBottom: spacing.lg,
     gap: spacing.sm,
     alignItems: "stretch",
@@ -155,56 +157,53 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   navButton: {
-    width: Math.max(rw(32), 44),
-    height: Math.max(rw(32), 44),
-    borderRadius: Math.max(rw(8), 12),
-    backgroundColor: colors.glassBorder,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.glassHighlight,
   },
   iconContainer: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(10),
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
-    fontSize: rf(20),
-    fontWeight: "800",
-    color: colors.text,
+    ...typography.variants.pageTitle,
+    color: colors.text.primary,
     letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: rf(11),
-    fontWeight: "500",
-    color: colors.textSecondary,
-    marginTop: rp(-2),
+    ...typography.variants.caption,
+    color: colors.text.secondary,
   },
   badge: {
-    height: Math.max(rw(24), 30),
-    borderRadius: Math.max(rw(12), 15),
-    backgroundColor: hexToRgba(colors.amber, 0.14),
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: `${chart[5]}18`,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: hexToRgba(colors.amber, 0.25),
+    borderColor: `${chart[5]}30`,
   },
   badgeDot: {
-    width: rw(6),
-    height: rw(6),
-    borderRadius: rw(3),
-    backgroundColor: colors.gold,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: chart[5],
   },
   badgeText: {
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(10),
-    fontWeight: "600",
-    color: colors.gold,
+    color: chart[5],
     letterSpacing: 0.2,
     textAlign: "center",
     lineHeight: rf(10),

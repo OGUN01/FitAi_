@@ -1,30 +1,28 @@
 /**
- * FitAI — Workout Progress Bar (Aurora)
+ * FitAI — Workout Progress Bar (Aurora, 2026 session redesign)
  *
- * Slim progress bar shown under the workout header. Previously a flat track with
- * a solid-color fill and a legacy RN `Animated.Value` driving opacity.
+ * Hairline full-bleed progress bar pinned directly under the compact header
+ * row. No percentage label, no boxed track — a thin gradient fill over a
+ * faint white hairline track so the bar reads as part of the background.
  *
- * Aurora modernization:
- *  - Solid fill → LinearGradient (primary token gradient) for a richer bar.
- *  - Legacy `Animated.Value` opacity → Reanimated shared value (the parent
- *    useWorkoutAnimations hook now returns SharedValue<number>).
- *  - Hardcoded colors → aurora tokens.
- *  - Width is now driven by Reanimated `withTiming` so progress changes animate
- *    smoothly instead of snapping.
+ * Behavior preserved: Reanimated `withTiming` width animation driven by
+ * `progress` (0..1), opacity driven by the parent's `fadeAnim` shared value,
+ * accessibilityRole="progressbar" with a percent accessibility label.
  */
-import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   SharedValue,
-} from "react-native-reanimated";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
-import { rf, rp, rh } from "../../utils/responsive";
-import { gradientPrimary } from "../../theme/gradients";
-import { animations } from "../../theme/animations";
+} from 'react-native-reanimated';
+import { rh } from '../../utils/responsive';
+import { colors } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
+import { gradientPrimary } from '../../theme/gradients';
+import { animations } from '../../theme/animations';
 
 interface WorkoutProgressBarProps {
   progress: number; // 0..1
@@ -32,10 +30,10 @@ interface WorkoutProgressBarProps {
   fadeAnim: SharedValue<number>;
 }
 
-const safeString = (value: any, fallback: string = ""): string => {
+const safeString = (value: any, fallback: string = ''): string => {
   if (value === null || value === undefined) return fallback;
-  if (typeof value === "number" && Number.isNaN(value)) return fallback;
-  if (typeof value === "string") return value;
+  if (typeof value === 'number' && Number.isNaN(value)) return fallback;
+  if (typeof value === 'string') return value;
   try {
     return String(value);
   } catch {
@@ -43,10 +41,7 @@ const safeString = (value: any, fallback: string = ""): string => {
   }
 };
 
-export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
-  progress,
-  fadeAnim,
-}) => {
+export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({ progress, fadeAnim }) => {
   const widthSV = useSharedValue(0);
 
   // Animate the bar width whenever progress changes (smooth instead of snap).
@@ -63,59 +58,34 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({
 
   return (
     <View
-      style={styles.outerWrapper}
+      style={styles.track}
       accessibilityRole="progressbar"
       accessibilityLabel={`Workout progress: ${safeString(Math.round(progress * 100))}%`}
     >
-      <Text style={styles.progressPercentage}>
-        {safeString(Math.round(progress * 100))}%
-      </Text>
-      <View style={styles.progressBarContainer}>
-        <Animated.View style={[styles.progressBar, barAnimatedStyle]}>
-          <LinearGradient
-            colors={gradientPrimary.colors as [string, string, ...string[]]}
-            start={gradientPrimary.start}
-            end={gradientPrimary.end}
-            style={styles.gradientFill}
-          />
-        </Animated.View>
-      </View>
+      <Animated.View style={[styles.fill, barAnimatedStyle]}>
+        <LinearGradient
+          colors={gradientPrimary.colors as [string, string, ...string[]]}
+          start={gradientPrimary.start}
+          end={gradientPrimary.end}
+          style={styles.gradientFill}
+        />
+      </Animated.View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  outerWrapper: {
-    flexDirection: "column",
+  track: {
+    height: rh(3),
+    backgroundColor: hexToRgba(colors.text.primary, 0.08),
+    overflow: 'hidden',
   },
-  progressBarContainer: {
-    height: rh(6),
-    backgroundColor: colors.glass.backgroundDark,
-    // Removed marginHorizontal:rp(spacing.lg) — parent WorkoutHeader already
-    // applies paddingHorizontal, so the extra horizontal margin double-padded
-    // and narrowed the progress bar.
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
-  },
-  progressBar: {
-    height: "100%",
-    borderRadius: borderRadius.sm,
-    overflow: "hidden",
+  fill: {
+    height: '100%',
+    overflow: 'hidden',
   },
   gradientFill: {
     flex: 1,
-    height: "100%",
-  },
-  progressPercentage: {
-    // Aligned to the progress bar's right edge (no horizontal margin so
-    // "100%" doesn't overflow on narrow screens).
-    alignSelf: "flex-end",
-    marginBottom: rp(spacing.xxs),
-    fontSize: rf(typography.fontSize.micro),
-    // Bumped from text.tertiary (#8A8A8A) → text.secondary (#B0B0B0). At
-    // micro (12px) the tertiary gray failed WCAG AA on the dark aurora
-    // background. Secondary clears AA for small text.
-    color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    height: '100%',
   },
 });

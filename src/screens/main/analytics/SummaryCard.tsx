@@ -1,8 +1,15 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
-import { rf, rp, rbr } from "../../../utils/responsive";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
+import { rf } from "../../../utils/responsive";
 import { TrendPeriod } from "../../../hooks/useProgressTrendsLogic";
 import { DailyMetrics } from "../../../services/analyticsData";
 
@@ -23,67 +30,80 @@ export const SummaryCard: React.FC<SummaryCardProps> = React.memo(({
     return { mealsLogged: meals, waterLiters: (waterMl / 1000).toFixed(1) + "L" };
   }, [metricsHistory]);
 
+  const stats = [
+    { id: "workouts", value: workoutTrend.total, label: "Workouts", color: chart[2] },
+    { id: "meals", value: mealsLogged, label: "Meals", color: chart[4] },
+    { id: "water", value: waterLiters, label: "Water", color: chart[3] },
+  ];
+
   return (
     <Animated.View
       entering={FadeInDown.duration(400)}
-      style={styles.summaryCard}
+      style={styles.panel}
     >
-      <Text style={styles.summaryTitle} numberOfLines={1}>
+      <Text style={styles.title} numberOfLines={1}>
         {selectedPeriod.charAt(0).toUpperCase() +
           selectedPeriod.slice(1) +
           "ly Summary"}
       </Text>
-      <View style={styles.summaryStats}>
-        <View style={styles.summaryStatItem}>
-          <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>{workoutTrend.total}</Text>
-          <Text style={styles.summaryStatLabel} numberOfLines={1}>Workouts</Text>
-        </View>
-        <View style={styles.summaryStatItem}>
-          <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>
-            {mealsLogged}
-          </Text>
-          <Text style={styles.summaryStatLabel} numberOfLines={1}>Meals Logged</Text>
-        </View>
-        <View style={styles.summaryStatItem}>
-          <Text style={styles.summaryStatValue} numberOfLines={1} adjustsFontSizeToFit>
-            {waterLiters}
-          </Text>
-          <Text style={styles.summaryStatLabel} numberOfLines={1}>Water</Text>
-        </View>
+      <View style={styles.row}>
+        {stats.map((stat, i) => (
+          <React.Fragment key={stat.id}>
+            <View style={styles.statItem}>
+              <Text
+                style={[styles.statValue, { color: stat.color }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {stat.value}
+              </Text>
+              <Text style={styles.statLabel} numberOfLines={1}>
+                {stat.label}
+              </Text>
+            </View>
+            {i < stats.length - 1 && <View style={styles.divider} />}
+          </React.Fragment>
+        ))}
       </View>
     </Animated.View>
   );
 });
 
 const styles = StyleSheet.create({
-  summaryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: rbr(16),
-    padding: rp(16),
+  panel: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
   },
-  summaryTitle: {
-    fontSize: rf(16),
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: rp(12),
+  title: {
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
   },
-  summaryStats: {
+  row: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    alignItems: "center",
   },
-  summaryStatItem: {
+  statItem: {
     flex: 1,
     alignItems: "center",
     minWidth: 0,
   },
-  summaryStatValue: {
+  statValue: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(24),
-    fontWeight: "bold",
-    color: colors.primary,
+    letterSpacing: -0.5,
   },
-  summaryStatLabel: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    marginTop: rp(6),
+  statLabel: {
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  divider: {
+    width: 1,
+    height: "60%",
+    backgroundColor: border.subtle,
   },
 });

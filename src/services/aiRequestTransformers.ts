@@ -156,6 +156,51 @@ function inferDayOfWeekFromPosition(
  * The backend loads actual user data from Supabase (profile, preferences) via JWT auth.
  * Fields like 'profile' and 'dietPreferences' are stripped by Zod validation.
  */
+
+/**
+ * Map onboarding fitness goals to Workers API format.
+ * Onboarding uses hyphens (weight-loss); the health-calculations layer uses
+ * snake_case (fat_loss, weight_gain); the Workers FitnessGoalSchema enum
+ * accepts only: weight_loss | muscle_gain | maintenance | strength |
+ * endurance | flexibility | athletic_performance. Any unmapped goal folds
+ * to "maintenance" so the worker never rejects a valid client selection.
+ * Used by BOTH the diet and workout request transformers.
+ */
+const FITNESS_GOAL_MAP: Record<string, string> = {
+  "weight-loss": "weight_loss",
+  // BUG-55: weight-gain (health/recovery intent) ≠ muscle_gain (hypertrophy intent).
+  // Keep muscle_gain as it IS a weight-gain goal; muscle-gain explicitly selects bodybuilding.
+  // weight-gain users may be underweight/recovering — use maintenance (general programming).
+  "weight-gain": "maintenance",
+  "weight_gain": "maintenance",
+  "muscle-gain": "muscle_gain",
+  // fat_loss is the health-calculations layer's term for a deficit; the
+  // Workers FitnessGoalSchema enum has no fat_loss — fold to weight_loss.
+  fat_loss: "weight_loss",
+  "fat-loss": "weight_loss",
+  general_fitness: "maintenance", // Map general fitness to maintenance
+  "general-fitness": "maintenance",
+  strength: "strength",
+  endurance: "endurance",
+  flexibility: "flexibility",
+  "athletic-performance": "athletic_performance",
+  athletic_performance: "athletic_performance",
+  // Already correct format
+  weight_loss: "weight_loss",
+  muscle_gain: "muscle_gain",
+  maintenance: "maintenance",
+};
+
+/**
+ * Map a raw client fitness goal to the Workers FitnessGoalSchema enum.
+ * Falls back to "maintenance" for any unrecognized value so the worker's
+ * Zod validation never rejects a valid client selection.
+ */
+function mapFitnessGoal(rawGoal: string | undefined | null): string {
+  if (!rawGoal) return "maintenance";
+  return FITNESS_GOAL_MAP[rawGoal] || "maintenance";
+}
+
 export function transformForDietRequest(
   personalInfo: PersonalInfo,
   fitnessGoals: FitnessGoals,
@@ -181,11 +226,15 @@ export function transformForDietRequest(
     "moderate"
   );
 
-  // Get primary fitness goal
-  const primaryGoal =
+  // Get primary fitness goal and map to the Workers FitnessGoalSchema enum.
+  // The client may store onboarding hyphen-form ("weight-loss"), the
+  // health-calcs snake-form ("fat_loss"), or "general_fitness" — none of
+  // those are in the worker enum, so map every value before sending.
+  const rawPrimaryGoal =
     fitnessGoals.primary_goals?.[0] ||
     fitnessGoals.primaryGoals?.[0] ||
     "general_fitness";
+  const primaryGoal = mapFitnessGoal(rawPrimaryGoal);
 
   // Build dietaryRestrictions array from diet_type (backend expects this for cache key)
   // Valid values: 'vegetarian', 'vegan', 'pescatarian', 'gluten_free', 'dairy_free',
@@ -374,30 +423,6 @@ export function transformForDietRequest(
 // ============================================================================
 
 /**
- * Map onboarding fitness goals to Workers API format
- * Onboarding uses hyphens (weight-loss), API expects underscores (weight_loss)
- */
-const FITNESS_GOAL_MAP: Record<string, string> = {
-  "weight-loss": "weight_loss",
-  // BUG-55: weight-gain (health/recovery intent) ≠ muscle_gain (hypertrophy intent).
-  // Keep muscle_gain as it IS a weight-gain goal; muscle-gain explicitly selects bodybuilding.
-  // weight-gain users may be underweight/recovering — use maintenance (general programming).
-  "weight-gain": "maintenance",
-  "muscle-gain": "muscle_gain",
-  general_fitness: "maintenance", // Map general fitness to maintenance
-  "general-fitness": "maintenance",
-  strength: "strength",
-  endurance: "endurance",
-  flexibility: "flexibility",
-  "athletic-performance": "athletic_performance",
-  athletic_performance: "athletic_performance",
-  // Already correct format
-  weight_loss: "weight_loss",
-  muscle_gain: "muscle_gain",
-  maintenance: "maintenance",
-};
-
-/**
  * Map onboarding equipment to Workers API format
  * Onboarding: plural, hyphens (dumbbells, cable-machine)
  * API: singular, spaces (dumbbell, cable)
@@ -470,7 +495,7 @@ export function transformForWorkoutRequest(
     fitnessGoals.primary_goals?.[0] ||
     fitnessGoals.primaryGoals?.[0] ||
     "general_fitness";
-  const primaryGoal = FITNESS_GOAL_MAP[rawGoal] || "maintenance";
+  const primaryGoal = mapFitnessGoal(rawGoal);
 
   // Get available equipment and map to API format
   // Empty arrays are truthy, so check .length to ensure bodyweight fallback fires

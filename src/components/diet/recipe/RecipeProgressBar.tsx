@@ -1,7 +1,11 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rh, rs } from "../../../utils/responsive";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+} from '../../../theme/aurora-tokens';
+import { rh, rs } from '../../../utils/responsive';
 
 interface RecipeProgressBarProps {
   filledFields: number;
@@ -47,7 +51,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: colors.primary,
     borderRadius: rs(2),
   },
@@ -55,6 +59,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: fontSize.xs,
     color: colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

@@ -1,0 +1,4 @@
+
+> fitai@0.1.6 test
+> jest searchByBarcode --no-coverage
+

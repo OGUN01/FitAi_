@@ -1,0 +1,56 @@
+Task 17: Integration Tests for Subscription Flows
+===================================================
+Date: 2026-02-20
+Test File: fitai-workers/test/integration/subscription-flow.test.ts
+
+RESULTS: ALL 18 INTEGRATION TESTS PASS ✅
+
+Test Summary:
+  Test Files: 15 passed (18 total — 3 pre-existing failures unrelated to this task)
+  Tests: 361 passed (368 total — 7 pre-existing failures in barcodeScanning/dietGeneration)
+  Duration: ~97s total
+
+Integration Test Breakdown (18 tests across 6 flows):
+------------------------------------------------------
+
+Flow 1 — Free user hits feature limit (3 tests):
+  ✅ returns 403 FEATURE_LIMIT_EXCEEDED when monthly AI limit reached
+  ✅ includes usage data in the 403 response
+  ✅ returns 401 when no Authorization header is provided
+
+Flow 2 — Full subscription lifecycle (3 tests):
+  ✅ creates a subscription via POST /api/subscription/create
+  ✅ verifies payment via POST /api/subscription/verify
+  ✅ returns active status with basic plan features via GET /api/subscription/status
+
+Flow 3 — Cancel subscription (2 tests):
+  ✅ cancels active subscription at end of billing cycle
+  ✅ returns 404 when no active subscription exists
+
+Flow 4 — Pause and resume subscription (3 tests):
+  ✅ pauses an active subscription
+  ✅ resumes a paused subscription
+  ✅ returns 404 when trying to resume a non-paused subscription
+
+Flow 5 — Webhook idempotency (4 tests):
+  ✅ processes a valid webhook event and returns 200
+  ✅ returns already-processed for duplicate event IDs
+  ✅ does not call subscription update for duplicate events
+  ✅ rejects webhook with invalid signature but still returns 200
+
+Flow 6 — Usage reset at period boundary (3 tests):
+  ✅ allows generation when usage resets in new period
+  ✅ blocks generation when usage is at limit
+  ✅ paid user with high limits is not blocked
+
+Pre-existing Test Suites (all still passing):
+  ✅ subscription.test.ts — 22 tests
+  ✅ subscriptionGate.test.ts — 6 tests
+  ✅ usageTracker.test.ts — 12 tests
+  ✅ razorpay.test.ts — 10 tests
+  ✅ index.spec.ts — 2 tests
+
+Pre-existing Failures (NOT related to this task):
+  ❌ barcodeScanning.test.ts — 6 failures (OpenFoodFacts API timeouts)
+  ❌ dietGeneration.test.ts — 1 failure (calorie validation)
+  ❌ temp_vicheck.test.ts — 1 error (bun:test import)

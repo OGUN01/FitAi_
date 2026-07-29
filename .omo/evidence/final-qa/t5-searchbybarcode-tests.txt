@@ -1,0 +1,50 @@
+T5: searchByBarcode Tests
+=========================
+Date: 2026-02-20
+Command: bun test --no-coverage src/__tests__/services/barcode/searchByBarcode.test.ts
+
+RESULT: PASS (22 pass, 0 fail)
+
+Full output:
+  bun test v1.3.9 (cf6cdbbb)
+   22 pass
+   0 fail
+   94 expect() calls
+  Ran 22 tests across 1 file. [255.00ms]
+
+Test Coverage by describe block:
+
+1. searchByBarcode (15 tests):
+   - OFF v2 full product data with correct source
+   - needsNutritionEstimate true when no nutriments
+   - Falls through to UPCitemdb when OFF returns status 0
+   - Falls through to UPCitemdb when OFF times out
+   - Falls through to UPCitemdb when OFF fetch throws
+   - UPCitemdb returns product info with needsNutritionEstimate
+   - Returns null when UPCitemdb responds with 404
+   - Returns null when both OFF and UPCitemdb fail
+   - Skips UPCitemdb for Indian barcodes (890 prefix)
+   - Returns cached result on second call
+   - Evicts oldest entry when cache exceeds 100 entries
+   - Sends User-Agent header on OFF requests
+   - Correctly maps nutriScore and novaGroup
+   - Skips UPCitemdb for South Korean barcodes (880 prefix)
+   - Calls OFF v2 API with correct URL and fields
+
+2. estimateNutritionWithAI (5 tests):
+   - Returns nutrition data with gemini-estimation source
+   - Caps confidence at 40
+   - Returns null on malformed JSON
+   - Returns null on timeout
+   - Returns null when all keys return 429
+
+3. searchByBarcode Gemini integration (2 tests):
+   - Wires Gemini when UPCitemdb returns name-only result
+   - Calls Gemini directly for Indian 890 barcode when OFF fails
+
+API Fallback Chain Tests:
+✅ OFF → UPCitemdb → AI: Tests 1, 3, 7, 8 (Gemini integration)
+✅ Timeout tests: OFF timeout → UPCitemdb, Gemini timeout → null
+✅ Cache tests: Second call from cache, LRU eviction at 100 entries
+
+VERDICT: PASS

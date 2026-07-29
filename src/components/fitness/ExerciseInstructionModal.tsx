@@ -13,24 +13,16 @@
  *    (also used by ExerciseDetails), so the tips live in one place.
  *  - Hardcoded colors → aurora tokens.
  */
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  BottomSheet,
-  AnimatedPressable,
-} from "../ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
-import { hexToRgba } from "../../utils/colors";
-import { rf, rp, rh } from "../../utils/responsive";
-import { exerciseFilterService } from "../../services/exerciseFilterService";
-import { ExerciseTipsCard } from "./instruction/ExerciseTipsCard";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { BottomSheet, AnimatedPressable } from '../ui/aurora';
+import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
+import { rf, rp, rh } from '../../utils/responsive';
+import { exerciseFilterService } from '../../services/exerciseFilterService';
+import { ExerciseTipsCard } from './instruction/ExerciseTipsCard';
 
 interface ExerciseInstructionModalProps {
   isVisible: boolean;
@@ -39,28 +31,28 @@ interface ExerciseInstructionModalProps {
   exerciseName?: string;
 }
 
-export const ExerciseInstructionModal: React.FC<
-  ExerciseInstructionModalProps
-> = ({ isVisible, onClose, exerciseId, exerciseName }) => {
-  const [activeTab, setActiveTab] = useState<"instructions" | "details">(
-    "instructions",
-  );
+export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> = ({
+  isVisible,
+  onClose,
+  exerciseId,
+  exerciseName,
+}) => {
+  const [activeTab, setActiveTab] = useState<'instructions' | 'details'>('instructions');
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
 
   // Direct lookup by exercise ID
   const exercise = exerciseFilterService.getExerciseById(exerciseId);
-  const displayName = exerciseName || exercise?.name || "Exercise";
+  // Title-case the display name so the sheet title isn't lowercase when the
+  // workout plan stores the name in lowercase (e.g. "kettlebell two arm clean").
+  const rawName = exerciseName || exercise?.name || 'Exercise';
+  const displayName = rawName.replace(/\b\w/g, (l) => l.toUpperCase());
 
   const renderGifSection = () => {
     if (!exercise?.gifUrl) return null;
 
     return (
       <View style={styles.gifSection}>
-        <Image
-          source={{ uri: exercise.gifUrl }}
-          style={styles.modalGif}
-          contentFit="contain"
-        />
+        <Image source={{ uri: exercise.gifUrl }} style={styles.modalGif} contentFit="contain" />
       </View>
     );
   };
@@ -68,38 +60,28 @@ export const ExerciseInstructionModal: React.FC<
   const renderTabs = () => (
     <View style={styles.tabContainer}>
       <AnimatedPressable
-        onPress={() => setActiveTab("instructions")}
+        onPress={() => setActiveTab('instructions')}
         scaleValue={0.96}
         springConfig="snappy"
         hapticType="selection"
-        style={[styles.tab, activeTab === "instructions" && styles.activeTab]}
+        style={[styles.tab, activeTab === 'instructions' && styles.activeTab]}
         accessibilityRole="button"
         accessibilityLabel="Show instructions tab"
       >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === "instructions" && styles.activeTabText,
-          ]}
-        >
+        <Text style={[styles.tabText, activeTab === 'instructions' && styles.activeTabText]}>
           Instructions
         </Text>
       </AnimatedPressable>
       <AnimatedPressable
-        onPress={() => setActiveTab("details")}
+        onPress={() => setActiveTab('details')}
         scaleValue={0.96}
         springConfig="snappy"
         hapticType="selection"
-        style={[styles.tab, activeTab === "details" && styles.activeTab]}
+        style={[styles.tab, activeTab === 'details' && styles.activeTab]}
         accessibilityRole="button"
         accessibilityLabel="Show details tab"
       >
-        <Text
-          style={[
-            styles.tabText,
-            activeTab === "details" && styles.activeTabText,
-          ]}
-        >
+        <Text style={[styles.tabText, activeTab === 'details' && styles.activeTabText]}>
           Details
         </Text>
       </AnimatedPressable>
@@ -111,9 +93,7 @@ export const ExerciseInstructionModal: React.FC<
       return (
         <View style={styles.noDataContainer} accessibilityRole="text">
           <Ionicons name="information-circle-outline" size={rf(48)} color={colors.text.tertiary} />
-          <Text style={styles.noDataText}>
-            No detailed instructions available
-          </Text>
+          <Text style={styles.noDataText}>No detailed instructions available</Text>
           <Text style={styles.noDataSubtext}>
             Follow the general form shown in the demonstration above
           </Text>
@@ -135,11 +115,8 @@ export const ExerciseInstructionModal: React.FC<
                 <Text style={styles.stepNumberText}>{index + 1}</Text>
               </View>
               <View style={styles.instructionTextWrapper}>
-                <Text
-                  style={styles.instructionText}
-                  numberOfLines={isExpanded ? undefined : 5}
-                >
-                  {instruction.replace(/^Step:\d+\s*/, "")}
+                <Text style={styles.instructionText} numberOfLines={isExpanded ? undefined : 5}>
+                  {instruction.replace(/^Step:\d+\s*/, '')}
                 </Text>
                 <AnimatedPressable
                   onPress={() =>
@@ -154,12 +131,10 @@ export const ExerciseInstructionModal: React.FC<
                     })
                   }
                   accessibilityRole="button"
-                  accessibilityLabel={isExpanded ? "Show less" : "Show more"}
+                  accessibilityLabel={isExpanded ? 'Show less' : 'Show more'}
                   style={styles.showMoreButton}
                 >
-                  <Text style={styles.showMoreText}>
-                    {isExpanded ? "Show less" : "Show more"}
-                  </Text>
+                  <Text style={styles.showMoreText}>{isExpanded ? 'Show less' : 'Show more'}</Text>
                 </AnimatedPressable>
               </View>
             </View>
@@ -187,10 +162,7 @@ export const ExerciseInstructionModal: React.FC<
             <Text style={styles.detailSectionTitle}>Primary Muscles</Text>
             <View style={styles.chipContainer}>
               {exercise.targetMuscles.map((muscle) => (
-                <View
-                  key={`primary-${muscle}`}
-                  style={[styles.chip, styles.primaryChip]}
-                >
+                <View key={`primary-${muscle}`} style={[styles.chip, styles.primaryChip]}>
                   <Text style={styles.primaryChipText}>{muscle}</Text>
                 </View>
               ))}
@@ -204,10 +176,7 @@ export const ExerciseInstructionModal: React.FC<
             <Text style={styles.detailSectionTitle}>Secondary Muscles</Text>
             <View style={styles.chipContainer}>
               {exercise.secondaryMuscles.map((muscle) => (
-                <View
-                  key={`secondary-${muscle}`}
-                  style={[styles.chip, styles.secondaryChip]}
-                >
+                <View key={`secondary-${muscle}`} style={[styles.chip, styles.secondaryChip]}>
                   <Text style={styles.secondaryChipText}>{muscle}</Text>
                 </View>
               ))}
@@ -221,10 +190,7 @@ export const ExerciseInstructionModal: React.FC<
             <Text style={styles.detailSectionTitle}>Equipment Needed</Text>
             <View style={styles.chipContainer}>
               {exercise.equipments.map((equipment) => (
-                <View
-                  key={`equipment-${equipment}`}
-                  style={[styles.chip, styles.equipmentChip]}
-                >
+                <View key={`equipment-${equipment}`} style={[styles.chip, styles.equipmentChip]}>
                   <Text style={styles.equipmentChipText}>{equipment}</Text>
                 </View>
               ))}
@@ -238,10 +204,7 @@ export const ExerciseInstructionModal: React.FC<
             <Text style={styles.detailSectionTitle}>Body Parts</Text>
             <View style={styles.chipContainer}>
               {exercise.bodyParts.map((bodyPart) => (
-                <View
-                  key={`bodypart-${bodyPart}`}
-                  style={[styles.chip, styles.bodyPartChip]}
-                >
+                <View key={`bodypart-${bodyPart}`} style={[styles.chip, styles.bodyPartChip]}>
                   <Text style={styles.bodyPartChipText}>{bodyPart}</Text>
                 </View>
               ))}
@@ -278,29 +241,23 @@ export const ExerciseInstructionModal: React.FC<
       {renderGifSection()}
       {renderTabs()}
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          style={styles.content}
-        >
-          <View style={styles.tabContent}>
-            {activeTab === "instructions"
-              ? renderInstructions()
-              : renderDetails()}
-          </View>
-        </ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} style={styles.content}>
+        <View style={styles.tabContent}>
+          {activeTab === 'instructions' ? renderInstructions() : renderDetails()}
+        </View>
+      </ScrollView>
     </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
   verifiedRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: rp(spacing.sm),
   },
   qualityBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: rp(spacing.xxs),
     backgroundColor: hexToRgba(colors.success.DEFAULT, 0.12),
     paddingHorizontal: rp(spacing.sm),
@@ -315,23 +272,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  tabContentScroll: {},
   gifSection: {
     backgroundColor: colors.glass.backgroundDark,
     paddingVertical: rp(spacing.lg),
-    alignItems: "center",
+    alignItems: 'center',
     borderRadius: borderRadius.lg,
     marginBottom: rp(spacing.md),
   },
   modalGif: {
-    width: "80%",
+    width: '80%',
     aspectRatio: 1,
     maxWidth: rh(200),
     height: rh(200),
     borderRadius: borderRadius.lg,
   },
   tabContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     backgroundColor: colors.glass.backgroundDark,
     borderRadius: borderRadius.lg,
     padding: rp(spacing.xxs),
@@ -342,8 +298,8 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
     minHeight: 44,
     borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activeTab: {
     backgroundColor: colors.primary.DEFAULT,
@@ -369,17 +325,17 @@ const styles = StyleSheet.create({
     marginBottom: rp(spacing.lg),
   },
   instructionItem: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: rp(spacing.md),
-    alignItems: "flex-start",
+    alignItems: 'flex-start',
   },
   stepNumber: {
     width: rp(28),
     height: rp(28),
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary.DEFAULT,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: rp(spacing.md),
     marginTop: rp(2),
   },
@@ -399,7 +355,7 @@ const styles = StyleSheet.create({
   },
   showMoreButton: {
     marginTop: rp(spacing.xs),
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
   },
   showMoreText: {
     fontSize: rf(typography.fontSize.caption),
@@ -419,8 +375,8 @@ const styles = StyleSheet.create({
     marginBottom: rp(spacing.md),
   },
   chipContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: rp(spacing.sm),
   },
   chip: {
@@ -435,7 +391,7 @@ const styles = StyleSheet.create({
     color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    textTransform: "capitalize",
+    textTransform: 'capitalize',
   },
   secondaryChip: {
     backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.12),
@@ -444,7 +400,7 @@ const styles = StyleSheet.create({
     color: colors.warning.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    textTransform: "capitalize",
+    textTransform: 'capitalize',
   },
   equipmentChip: {
     backgroundColor: hexToRgba(colors.info.DEFAULT, 0.12),
@@ -453,7 +409,7 @@ const styles = StyleSheet.create({
     color: colors.info.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    textTransform: "capitalize",
+    textTransform: 'capitalize',
   },
   bodyPartChip: {
     backgroundColor: hexToRgba(colors.success.DEFAULT, 0.12),
@@ -462,10 +418,10 @@ const styles = StyleSheet.create({
     color: colors.success.DEFAULT,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    textTransform: "capitalize",
+    textTransform: 'capitalize',
   },
   noDataContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: rp(spacing.xl),
   },
   noDataText: {
@@ -477,6 +433,6 @@ const styles = StyleSheet.create({
   noDataSubtext: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

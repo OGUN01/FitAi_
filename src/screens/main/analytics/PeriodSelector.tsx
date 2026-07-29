@@ -1,6 +1,7 @@
 /**
  * PeriodSelector Component
- * Animated segmented control for time period selection
+ * Sliding segmented control with an animated indicator (Reanimated).
+ * Aurora 2026: surface.1 track, surface.2 indicator, border.subtle hairline.
  */
 
 import React, { useEffect, useState } from "react";
@@ -10,10 +11,16 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import {
+  surface,
+  border as borderTokens,
+  borderRadius,
+  colors,
+  typography,
+} from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
+import { haptics } from "../../../utils/haptics";
 
 export type Period = "week" | "month" | "quarter" | "year";
 
@@ -29,6 +36,8 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: "year", label: "Year" },
 ];
 
+const TRACK_PADDING = rp(4);
+
 export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   selectedPeriod,
   onPeriodChange,
@@ -36,12 +45,11 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const selectedIndex = PERIODS.findIndex((p) => p.key === selectedPeriod);
 
-  // Calculate segment width based on container
-  const padding = rp(4);
   const segmentWidth =
-    containerWidth > 0 ? (containerWidth - padding * 2) / PERIODS.length : 0;
+    containerWidth > 0
+      ? (containerWidth - TRACK_PADDING * 2) / PERIODS.length
+      : 0;
 
-  // Animate position
   const translateX = useSharedValue(0);
 
   useEffect(() => {
@@ -56,8 +64,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
     setContainerWidth(width);
-    // Immediately set position on layout
-    const seg = (width - padding * 2) / PERIODS.length;
+    const seg = (width - TRACK_PADDING * 2) / PERIODS.length;
     translateX.value = selectedIndex * seg;
   };
 
@@ -69,30 +76,29 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   return (
     <View style={styles.container} onLayout={handleLayout}>
       {/* Sliding Indicator */}
-      <Animated.View style={[styles.indicator, indicatorStyle]}>
-        <LinearGradient
-          colors={[colors.primary, colors.primaryDark]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.indicatorGradient}
-        />
-      </Animated.View>
+      <Animated.View style={[styles.indicator, indicatorStyle]} />
 
       {/* Period Buttons */}
-      {PERIODS.map((period, index) => (
+      {PERIODS.map((period) => (
         <View key={period.key} style={styles.buttonWrapper}>
           <AnimatedPressable
             style={styles.button}
-            onPress={() => onPeriodChange(period.key)}
-            scaleValue={0.95}
-            hapticFeedback={true}
-            hapticType="light"
+            onPress={() => {
+              haptics.selection();
+              onPeriodChange(period.key);
+            }}
+            scaleValue={0.97}
+            hapticFeedback={false}
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedPeriod === period.key }}
+            accessibilityLabel={period.label}
           >
             <Text
               style={[
                 styles.buttonText,
                 selectedPeriod === period.key && styles.buttonTextActive,
               ]}
+              numberOfLines={1}
             >
               {period.label}
             </Text>
@@ -106,21 +112,22 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    backgroundColor: colors.glassBorder,
+    backgroundColor: surface[1],
     borderRadius: borderRadius.lg,
-    padding: rp(4),
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
+    padding: TRACK_PADDING,
     position: "relative",
   },
   indicator: {
     position: "absolute",
-    top: rp(4),
-    left: rp(4),
-    bottom: rp(4),
+    top: TRACK_PADDING,
+    left: TRACK_PADDING,
+    bottom: TRACK_PADDING,
     borderRadius: borderRadius.md,
-    overflow: "hidden",
-  },
-  indicatorGradient: {
-    flex: 1,
+    backgroundColor: surface[2],
+    borderWidth: 1,
+    borderColor: borderTokens.DEFAULT,
   },
   buttonWrapper: {
     flex: 1,
@@ -128,20 +135,20 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: rp(10),
     alignItems: "center",
     justifyContent: "center",
     minHeight: 44,
   },
   buttonText: {
+    fontFamily: typography.variants.caption2.fontFamily,
     fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     letterSpacing: 0.3,
   },
   buttonTextActive: {
-    color: colors.white,
-    fontWeight: "700",
+    fontFamily: typography.variants.cardHeadline.fontFamily,
+    color: colors.text.primary,
   },
 });
 

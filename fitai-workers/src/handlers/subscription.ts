@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FitAI Workers - Subscription Handler
  *
  * Razorpay subscription lifecycle endpoints:
@@ -446,14 +446,36 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 		throw new APIError('Cannot create a paid subscription for the free tier', 400, ErrorCode.INVALID_REQUEST);
 	}
 
-	// Determine the Razorpay plan ID based on billing cycle
-	const razorpayPlanId = body.billing_cycle === 'yearly' ? plan.razorpay_plan_id_yearly : plan.razorpay_plan_id_monthly;
+	// Determine the Razorpay plan ID based on billing cycle.
+	// Primary source: the subscription_plans DB row. Fallback: the per-tier
+	// RAZORPAY_PLAN_ID_* worker secret (so payment works before an admin back-
+	// fills the DB columns — the seed migration leaves them NULL).
+	let razorpayPlanId = body.billing_cycle === 'yearly'
+		? plan.razorpay_plan_id_yearly
+		: plan.razorpay_plan_id_monthly;
+
+	if (!razorpayPlanId) {
+		const tier = plan.tier as 'basic' | 'pro';
+		if (tier === 'basic' && body.billing_cycle === 'monthly') {
+			razorpayPlanId = env.RAZORPAY_PLAN_ID_BASIC_MONTHLY;
+		} else if (tier === 'pro' && body.billing_cycle === 'monthly') {
+			razorpayPlanId = env.RAZORPAY_PLAN_ID_PRO_MONTHLY;
+		} else if (tier === 'pro' && body.billing_cycle === 'yearly') {
+			razorpayPlanId = env.RAZORPAY_PLAN_ID_PRO_YEARLY;
+		}
+	}
 
 	if (!razorpayPlanId) {
 		throw new APIError(`Plan does not support ${body.billing_cycle} billing`, 400, ErrorCode.INVALID_PARAMETER);
 	}
 
-	// Check if user already has any non-terminal subscription record
+	// Check if user already has any non-terminal subscription record.
+	// A `created` record means a previous checkout was opened but never
+	// authenticated (user cancelled or it failed) — that orphan would
+	// otherwise block every future subscribe attempt with a 409. Reclaim it:
+	// cancel the stale Razorpay subscription (best-effort) and mark the record
+	// terminal, then proceed to create a fresh one. Genuine
+	// active/authenticated/pending/halted/paused subs still block.
 	const existingSubscription = await fetchLatestSubscriptionForUser(supabase, userId, [
 		'created',
 		'authenticated',
@@ -464,7 +486,31 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 	]);
 
 	if (existingSubscription?.id) {
-		throw new APIError('User already has an active or pending subscription', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
+		if (existingSubscription.status !== 'created') {
+			throw new APIError('User already has an active or pending subscription', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
+		}
+
+		// Reclaim an abandoned `created` checkout.
+		console.warn('[Subscription] Reclaiming abandoned `created` subscription for user', userId, 'id=', existingSubscription.id);
+		try {
+			// Real Razorpay IDs start with `sub_`. Dev/test overrides (e.g.
+			// `dev_pro_unlimited`) have no remote record to cancel — skip them.
+			if (existingSubscription.razorpay_subscription_id?.startsWith('sub_')) {
+				await razorpayFetch(
+					env,
+					`/subscriptions/${existingSubscription.razorpay_subscription_id}/cancel`,
+					'POST',
+					{ cancel_at_cycle_end: false },
+				);
+			}
+		} catch (cancelError) {
+			// Best-effort only — the remote sub may already be gone. Log and proceed.
+			console.warn('[Subscription] Best-effort cancel of abandoned subscription failed (non-fatal):', cancelError);
+		}
+		await supabase
+			.from('subscriptions')
+			.update({ status: 'cancelled' satisfies SubscriptionStatus, cancelled_at: Math.floor(Date.now() / 1000) })
+			.eq('id', existingSubscription.id);
 	}
 
 	// Create subscription via Razorpay API
@@ -823,8 +869,15 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 		}),
 	};
 
-	// Update period timestamps for activation/charge events
-	if (eventType === 'subscription.activated' || eventType === 'subscription.charged') {
+	// Update period timestamps for activation/charge/cancel/halt events so the
+	// stored window always reflects Razorpay's authoritative period (cancel/halt
+	// may carry a prorated current_end that differs from the last charge).
+	if (
+		eventType === 'subscription.activated' ||
+		eventType === 'subscription.charged' ||
+		eventType === 'subscription.cancelled' ||
+		eventType === 'subscription.halted'
+	) {
 		updateData.current_period_start = subscriptionEntity.current_start;
 		updateData.current_period_end = subscriptionEntity.current_end;
 	}

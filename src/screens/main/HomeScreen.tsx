@@ -32,32 +32,27 @@ import { GuestSignUpScreen } from './GuestSignUpScreen';
 import {
   HomeHeader,
   GuestPromptBanner,
-  MotivationBanner,
+  TodayHero,
   DailyProgressRings,
-  TodaysFocus,
   QuickActions,
   WeeklyMiniCalendar,
   HealthIntelligenceHub,
-  HydrationTracker,
   BodyProgressCard,
   SyncStatusIndicator,
   ErrorBanner,
   EmptyMealsMessage,
   EmptyCalendarMessage,
   createQuickActions,
-  AchievementShowcase,
   HomeSkeleton,
 } from './home';
 import { WeightEntryModal } from '../../components/progress/WeightEntryModal';
 import { useHomeLogic } from '../../hooks/useHomeLogic';
+import { useHealthIntelligenceLogic } from '../../hooks/useHealthIntelligenceLogic';
 import { useAppStateStore, type DayName } from '../../stores/appStateStore';
-import { useAchievementStore } from '../../stores/achievementStore';
-import { buildAchievementViewModels } from '../../utils/achievementViewModel';
 import { getLocalDayName } from '../../utils/weekUtils';
 
 import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 interface HomeScreenProps {
-  // eslint-disable-next-line no-unused-vars
   onNavigateToTab?: (tab: string, params?: Record<string, unknown>) => void;
 }
 
@@ -96,13 +91,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     caloriesConsumed,
     workoutMinutes,
     weekCalendarData,
-    waterIntakeML,
-    waterGoal,
     weightData,
     calculatedMetrics,
     workoutPreferences,
     handleRefresh,
-    handleAddWater,
     weightUnit,
     syncHealthData,
     syncFromHealthConnect,
@@ -120,29 +112,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const isHealthKitAuthorized = wearableConnected;
   const isHealthConnectAuthorized = wearableConnected;
 
-  // Achievement data
-  const achievements = useAchievementStore((s) => s.achievements);
-  const userAchievements = useAchievementStore((s) => s.userAchievements);
-  const achievementItems = React.useMemo(
-    () => buildAchievementViewModels(achievements, userAchievements),
-    [achievements, userAchievements]
-  );
-  const achievementPreview = React.useMemo(() => achievementItems.slice(0, 6), [achievementItems]);
-  const totalBadges = React.useMemo(
-    () => achievementItems.filter((achievement) => achievement.completed).length,
-    [achievementItems]
-  );
-
   // --- useCallback: child component prop callbacks ---
   const handleGuestBack = useCallback(() => setShowGuestSignUp(false), []);
   const handleGuestSignUpSuccess = useCallback(() => setShowGuestSignUp(false), []);
   const handleProfilePress = useCallback(() => onNavigateToTab?.('profile'), [onNavigateToTab]);
-  const handleNotificationPress = useCallback(
-    () => onNavigateToTab?.('profile', { settingsScreen: 'notifications' }),
-    [onNavigateToTab]
-  );
   const handleStreakPress = useCallback(() => onNavigateToTab?.('achievements'), [onNavigateToTab]);
-  const handleMotivationPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
   const handleGuestSignUpPress = useCallback(() => setShowGuestSignUp(true), []);
   const handleHealthHubPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
   const handleRingsPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
@@ -151,13 +125,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     [onNavigateToTab]
   );
   const handleWorkoutPress = useCallback(() => onNavigateToTab?.('fitness'), [onNavigateToTab]);
-  const handleHydrationPress = useCallback(
-    () => onNavigateToTab?.('diet', { openWaterModal: true }),
+  const handleBodyProgressPress = useCallback(
+    () => onNavigateToTab?.('progress'),
     [onNavigateToTab]
   );
-  const handleBodyProgressPress = useCallback(() => onNavigateToTab?.('progress'), [onNavigateToTab]);
   const handleLogWeight = useCallback(() => setShowWeightModal(true), []);
-  const handleViewAllAchievements = useCallback(() => onNavigateToTab?.('achievements'), [onNavigateToTab]);
   const handlePlanWorkout = useCallback(() => onNavigateToTab?.('fitness'), [onNavigateToTab]);
   const handleDayPress = useCallback(
     (date: Date) => {
@@ -220,45 +192,82 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   // → hook count mismatch → HomeScreen crash for every logged-in user.
   // See src/docs/VERIFIED-FINDINGS.md "P0-4". Regression-guarded by
   // src/__tests__/screens/HomeScreen.hookInvariant.test.tsx.
-  const todaysFocusWorkoutInfo = React.useMemo(
-    () => ({
+  // TodayHero workout info — flat shape matching TodayHeroProps.workoutInfo.
+  // Replaces the prior TodaysFocus memo (TodaysFocus card is dropped; TodayHero
+  // owns the workout CTA now). workoutType narrowed to TodayHero's strict union.
+  const todayHeroWorkoutInfo = React.useMemo(() => {
+    const t = todaysWorkoutInfo.workoutType;
+    const mappedType: 'strength' | 'cardio' | 'flexibility' | 'hiit' | 'mixed' | undefined =
+      t === 'strength' || t === 'cardio' || t === 'flexibility' || t === 'hiit' || t === 'mixed'
+        ? t
+        : undefined;
+    return {
       hasWeeklyPlan: todaysWorkoutInfo.hasWeeklyPlan,
       isRestDay: todaysWorkoutInfo.isRestDay,
       isCompleted: todaysWorkoutInfo.isCompleted,
       hasWorkout: todaysWorkoutInfo.hasWorkout,
-      dayStatus: todaysWorkoutInfo.dayStatus,
-      workoutType: (() => {
-        const t = todaysWorkoutInfo.workoutType;
-        if (
-          t === 'strength' ||
-          t === 'cardio' ||
-          t === 'flexibility' ||
-          t === 'hiit' ||
-          t === 'mixed'
-        )
-          return t;
-        return undefined;
-      })(),
-      workout: todaysWorkoutInfo.workout
-        ? {
-            title: todaysWorkoutInfo.workout.title ?? '',
-            duration: todaysWorkoutInfo.workout.duration ?? 0,
-            estimatedCalories: todaysWorkoutInfo.workout.estimatedCalories ?? 0,
-            exercises: todaysWorkoutInfo.workout.exercises?.length,
-          }
-        : undefined,
-    }),
-    [todaysWorkoutInfo]
-  );
+      workoutType: mappedType,
+      workoutTitle: todaysWorkoutInfo.workout?.title,
+      duration: todaysWorkoutInfo.workout?.duration,
+      exerciseCount: todaysWorkoutInfo.workout?.exercises?.length,
+      estimatedCalories: todaysWorkoutInfo.workout?.estimatedCalories,
+    };
+  }, [todaysWorkoutInfo]);
+
+  // Coach insight + recovery color for TodayHero. Same hook HealthIntelligenceHub
+  // uses (pure derived memo, cheap). When no wearable data, returns a graceful
+  // placeholder insight + muted color — TodayHero still reads meaningfully.
+  const {
+    insightText: heroInsightText,
+    recoveryColor: heroRecoveryColor,
+    hasRealData: hasRealHealthData,
+  } = useHealthIntelligenceLogic({
+    sleepHours: healthMetrics?.sleepHours,
+    sleepQuality: healthMetrics?.sleepQuality,
+    restingHeartRate: healthMetrics?.restingHeartRate,
+    steps: currentSteps,
+    stepsGoal: healthMetrics?.stepsGoal,
+    activeCalories: healthMetrics?.activeCalories,
+  });
+
+  // TodayHero coach line. When real wearable data exists, use the recovery
+  // insight (it's personalized + true). When no data, the hook's fallback reads
+  // as a sync chore — replace with a warm, CTA-tied welcome instead so the first
+  // impression is an invitation, not a demand.
+  const heroInsightLine = React.useMemo(() => {
+    const first = userName.split(' ')[0];
+    const name = first ? `${first}, ` : '';
+    if (hasRealHealthData) return heroInsightText;
+    if (!todaysWorkoutInfo.hasWeeklyPlan)
+      return `${name}your personalized plan is one tap away. Let’s make today count.`;
+    if (todaysWorkoutInfo.isRestDay)
+      return `${name}rest day. Recovery is where the growth happens — take it easy today.`;
+    if (todaysWorkoutInfo.isCompleted)
+      return `${name}workout done. Momentum is on your side — soak it in.`;
+    if (todaysWorkoutInfo.hasWorkout)
+      return `${name}today’s workout is ready. Small start, big payoff.`;
+    return `${name}let’s pick up where you left off.`;
+  }, [hasRealHealthData, heroInsightText, todaysWorkoutInfo, userName]);
+
+  // Insight accent dot only when the line is a real recovery insight (colored);
+  // for the warm welcome fallbacks, no dot — keep it pure typography.
+  const heroInsightDotColor = hasRealHealthData ? heroRecoveryColor : undefined;
+
+  // Context-bar day label: workout type or rest, appended to the date.
+  const dayLabel = React.useMemo(() => {
+    if (!todaysWorkoutInfo.hasWeeklyPlan) return undefined;
+    if (todaysWorkoutInfo.isRestDay) return 'Rest Day';
+    if (!todaysWorkoutInfo.hasWorkout) return undefined;
+    const t = todaysWorkoutInfo.workoutType;
+    if (t === 'none' || t === 'rest' || t === 'workout') return 'Workout Day';
+    return `${t[0].toUpperCase()}${t.slice(1)} Day`;
+  }, [todaysWorkoutInfo]);
 
   const fadeStyle = useAnimatedStyle(() => ({ opacity: fadeAnim.value }));
 
   if (showGuestSignUp) {
     return (
-      <GuestSignUpScreen
-        onBack={handleGuestBack}
-        onSignUpSuccess={handleGuestSignUpSuccess}
-      />
+      <GuestSignUpScreen onBack={handleGuestBack} onSignUpSuccess={handleGuestSignUpSuccess} />
     );
   }
 
@@ -266,9 +275,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={['top']}>
-          <Animated.ScrollView
-            contentContainerStyle={{ paddingTop: insets.top + rp(8) }}
-          >
+          <Animated.ScrollView contentContainerStyle={{ paddingTop: insets.top + rp(8) }}>
             <HomeSkeleton />
           </Animated.ScrollView>
         </SafeAreaView>
@@ -294,27 +301,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 />
               }
             >
-              {/* 1. Header */}
+              {/* 1. Context Bar */}
               <HomeHeader
                 userName={userName} // SSOT: from profileStore via useHomeLogic
                 userInitial={userName.charAt(0)}
                 streak={realStreak}
                 onProfilePress={handleProfilePress}
-                onNotificationPress={handleNotificationPress}
                 onStreakPress={handleStreakPress}
-                // TODO: notificationStore.getScheduledCount() is async — wire a
-                // synchronous unread count accessor there and pass it here so the
-                // badge can show. Until then pass 0 (badge stays hidden).
-                notificationCount={0}
+                dayLabel={dayLabel} // contextual: "Strength Day" / "Rest Day" / undefined
               />
 
               {/* Error Banner */}
               {error && <ErrorBanner error={error} onRetry={handleRefresh} />}
 
-              {/* 2. Motivation Banner */}
-              <View style={styles.section}>
-                <MotivationBanner onPress={handleMotivationPress} />
-              </View>
+              {/* TodayHero — flat editorial hook + the single solid CTA */}
+              <TodayHero
+                insightText={heroInsightLine}
+                insightColor={heroInsightDotColor}
+                workoutInfo={todayHeroWorkoutInfo}
+                workoutProgress={todaysData?.progress?.workoutProgress}
+                onPress={handleWorkoutPress}
+              />
 
               {/* Guest Banner */}
               {isGuestMode && (
@@ -323,26 +330,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 </View>
               )}
 
-              {/* 3. Health Intelligence Hub - PREMIUM */}
-              <View style={styles.section}>
-                <HealthIntelligenceHub
-                  sleepHours={healthMetrics?.sleepHours}
-                  sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
-                  restingHeartRate={healthMetrics?.restingHeartRate}
-                  // No real trend available from a single snapshot — omit hrTrend
-                  // so MetricItem doesn't render a misleading trend arrow based
-                  // on a <65 bpm threshold masquerading as "trending down".
-                  steps={currentSteps} // Freshness-gated (today's synced snapshot only)
-                  stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
-                  activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
-                  onPress={handleHealthHubPress}
-                  // All per-metric detail taps route to the same analytics tab —
-                  // omitted onDetailPress so individual metric taps don't imply
-                  // distinct destinations.
-                />
-              </View>
-
-              {/* 4. Daily Progress Rings */}
+              {/* 2. Daily Progress Rings — premium hero */}
               <View style={styles.section}>
                 <DailyProgressRings
                   caloriesBurned={realCaloriesBurned}
@@ -350,8 +338,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     // Active calorie goal = TDEE - BMR (calories from activity only, not resting metabolism).
                     // Using full TDEE as a Move goal is unachievable since BMR accounts for most of it.
                     // No hardcoded fallback — 0 reveals missing data.
-                    (calculatedMetrics?.calculatedTDEE && calculatedMetrics?.calculatedBMR)
-                      ? Math.round(calculatedMetrics.calculatedTDEE - calculatedMetrics.calculatedBMR)
+                    calculatedMetrics?.calculatedTDEE && calculatedMetrics?.calculatedBMR
+                      ? Math.round(
+                          calculatedMetrics.calculatedTDEE - calculatedMetrics.calculatedBMR
+                        )
                       : 0
                   }
                   workoutMinutes={workoutMinutes}
@@ -371,10 +361,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   stepsSource={currentStepsSource} // Hide stale source attribution with stale metrics
                   onPress={handleRingsPress}
                 />
-                <EmptyMealsMessage
-                  mealsLogged={caloriesConsumed}
-                  onLogMeal={handleLogMealPress}
-                />
+                <EmptyMealsMessage mealsLogged={caloriesConsumed} onLogMeal={handleLogMealPress} />
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
                   <View style={{ marginTop: rp(spacing.sm) }}>
@@ -383,30 +370,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 )}
               </View>
 
-              {/* 5. Today's Workout */}
-              <View style={styles.section}>
-                <TodaysFocus
-                  workoutInfo={todaysFocusWorkoutInfo}
-                  workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
-                  onWorkoutPress={handleWorkoutPress}
+              {/* 3. Health Intelligence — minimalist companion (paired tight below rings) */}
+              <View style={styles.pairSection}>
+                <HealthIntelligenceHub
+                  sleepHours={healthMetrics?.sleepHours}
+                  sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
+                  restingHeartRate={healthMetrics?.restingHeartRate}
+                  // No real trend available from a single snapshot — omit hrTrend
+                  // so MetricItem doesn't render a misleading trend arrow based
+                  // on a <65 bpm threshold masquerading as "trending down".
+                  steps={currentSteps} // Freshness-gated (today's synced snapshot only)
+                  stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
+                  activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
+                  onPress={handleHealthHubPress}
+                  // All per-metric detail taps route to the same analytics tab —
+                  // omitted onDetailPress so individual metric taps don't imply
+                  // distinct destinations.
                 />
               </View>
-              {/* 6. Quick Actions - Unique utilities */}
+
+              {/* 4. Quick Log Row */}
               <View style={styles.quickActionsSection}>
                 <QuickActions actions={quickActions} />
               </View>
 
-              {/* 7. Hydration Tracker - PREMIUM (uses hydrationStore) */}
-              <View style={styles.section}>
-                <HydrationTracker
-                  currentIntake={waterIntakeML}
-                  dailyGoal={waterGoal ?? 0}
-                  onAddWater={handleAddWater}
-                  onPress={handleHydrationPress}
-                />
-              </View>
-
-              {/* 9. Body Progress - PREMIUM */}
+              {/* 6. Body Progress */}
               <View style={styles.section}>
                 <BodyProgressCard
                   currentWeight={weightData.currentWeight}
@@ -419,17 +407,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 />
               </View>
 
-              {/* 10. Achievements */}
-              <View style={styles.section}>
-                <AchievementShowcase
-                  achievements={achievementPreview}
-                  totalBadges={totalBadges}
-                  totalAchievements={achievementItems.length}
-                  onViewAll={handleViewAllAchievements}
-                  onAchievementPress={handleViewAllAchievements}
-                />
-              </View>
-
+              {/* 7. Week Strip */}
               <View style={styles.section}>
                 <EmptyCalendarMessage
                   weekCalendarData={weekCalendarData}
@@ -480,6 +458,12 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: rp(spacing.md),
     marginBottom: rp(spacing.md),
+  },
+  // pairSection — tight gap so Rings + Health Intelligence read as a pair,
+  // not two strangers. Uses sm (8) instead of md (16) between them.
+  pairSection: {
+    paddingHorizontal: rp(spacing.md),
+    marginBottom: rp(spacing.sm),
   },
   quickActionsSection: {
     marginBottom: rp(spacing.md),

@@ -269,53 +269,56 @@ class SyncEngine {
 
     const completedIds: string[] = [];
 
-    for (const operation of this.queue) {
-      if (operation.status === "processing") {
-        continue;
-      }
+    try {
+      for (const operation of this.queue) {
+        if (operation.status === "processing") {
+          continue;
+        }
 
-      operation.status = "processing";
+        operation.status = "processing";
 
-      try {
-        await this.executeOperation(operation);
-        completedIds.push(operation.id);
-        result.syncedItems++;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        operation.error = errorMessage;
-        operation.retryCount++;
-
-        if (operation.retryCount >= MAX_RETRIES) {
-          operation.status = "failed";
-          result.failedItems++;
-          result.errors.push(`${operation.type}: ${errorMessage}`);
+        try {
+          await this.executeOperation(operation);
           completedIds.push(operation.id);
-          console.error(
-            `[SyncEngine] Operation failed after ${MAX_RETRIES} retries: ${operation.type}`,
-          );
-        } else {
-          operation.status = "pending";
-          console.warn(
-            `[SyncEngine] Operation failed, will retry (${operation.retryCount}/${MAX_RETRIES}): ${operation.type}`,
-          );
+          result.syncedItems++;
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          operation.error = errorMessage;
+          operation.retryCount++;
+
+          if (operation.retryCount >= MAX_RETRIES) {
+            operation.status = "failed";
+            result.failedItems++;
+            result.errors.push(`${operation.type}: ${errorMessage}`);
+            completedIds.push(operation.id);
+            console.error(
+              `[SyncEngine] Operation failed after ${MAX_RETRIES} retries: ${operation.type}`,
+            );
+          } else {
+            operation.status = "pending";
+            console.warn(
+              `[SyncEngine] Operation failed, will retry (${operation.retryCount}/${MAX_RETRIES}): ${operation.type}`,
+            );
+          }
         }
       }
-    }
 
-    this.queue = this.queue.filter((op) => !completedIds.includes(op.id));
-    await this.saveQueue();
+      this.queue = this.queue.filter((op) => !completedIds.includes(op.id));
+      await this.saveQueue();
 
-    this.lastSyncAt = new Date().toISOString();
-    await AsyncStorage.setItem(LAST_SYNC_KEY, this.lastSyncAt);
+      this.lastSyncAt = new Date().toISOString();
+      await AsyncStorage.setItem(LAST_SYNC_KEY, this.lastSyncAt);
 
-    this.isSyncing = false;
-    result.success = result.failedItems === 0;
+      result.success = result.failedItems === 0;
 
-    if (result.errors.length > 0) {
-      this.lastError = result.errors.join("; ");
-    } else {
-      this.lastError = null;
+      if (result.errors.length > 0) {
+        this.lastError = result.errors.join("; ");
+      } else {
+        this.lastError = null;
+      }
+    } finally {
+      this.isSyncing = false;
     }
 
     return result;
@@ -517,7 +520,6 @@ class SyncEngine {
       };
     }
 
-    this.isSyncing = true;
     const result: SyncResult = {
       success: true,
       syncedItems: 0,
@@ -525,18 +527,24 @@ class SyncEngine {
       errors: [],
     };
 
-    if (this.queue.length > 0) {
-      const queueResult = await this.processQueueInternal();
-      result.syncedItems += queueResult.syncedItems;
-      result.failedItems += queueResult.failedItems;
-      result.errors.push(...queueResult.errors);
+    try {
+      if (this.queue.length > 0) {
+        const queueResult = await this.processQueueInternal();
+        result.syncedItems += queueResult.syncedItems;
+        result.failedItems += queueResult.failedItems;
+        result.errors.push(...queueResult.errors);
+      }
+
+      this.lastSyncAt = new Date().toISOString();
+      await AsyncStorage.setItem(LAST_SYNC_KEY, this.lastSyncAt);
+
+      result.success = result.failedItems === 0;
+    } catch (error) {
+      result.success = false;
+      result.errors.push(
+        error instanceof Error ? error.message : "Unknown sync error",
+      );
     }
-
-    this.isSyncing = false;
-    this.lastSyncAt = new Date().toISOString();
-    await AsyncStorage.setItem(LAST_SYNC_KEY, this.lastSyncAt);
-
-    result.success = result.failedItems === 0;
 
     return result;
   }

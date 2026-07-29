@@ -1,15 +1,22 @@
 /**
  * MetricSummaryGrid Component
- * 2x2 grid of animated metric summary cards
+ * 2x2 clean stat layout — one surface.1 panel with hairline dividers,
+ * big Manrope_700Bold numbers, no cards-in-cards (Aurora 2026).
  */
 
 import React from "react";
 import { View, Text, StyleSheet, Platform } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
+import {
+  surface,
+  border as borderTokens,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { SectionHeader } from "../home/SectionHeader";
@@ -54,8 +61,8 @@ interface MetricSummaryGridProps {
   onMetricPress?: (metric: string) => void;
 }
 
-// Single Metric Card
-const MetricCard: React.FC<{
+// Single stat cell — lives inside the shared surface panel (depth 1).
+const StatCell: React.FC<{
   title: string;
   value: string;
   subtitle?: string;
@@ -95,24 +102,24 @@ const MetricCard: React.FC<{
     // For weight, down is good. For others, up is good.
     if (title.toLowerCase().includes("weight")) {
       return trend === "down"
-        ? colors.success
+        ? chart[4]
         : trend === "up"
-          ? colors.error
-          : colors.neutral;
+          ? chart[6]
+          : chart[3];
     }
     return trend === "up"
-      ? colors.success
+      ? chart[4]
       : trend === "down"
-        ? colors.error
-        : colors.neutral;
+        ? chart[6]
+        : chart[3];
   };
 
   return (
     <Animated.View
       entering={
-        Platform.OS !== "web" ? FadeInUp.delay(delay).duration(400) : undefined
+        Platform.OS !== "web" ? FadeInDown.delay(delay).duration(300) : undefined
       }
-      style={styles.cardWrapper}
+      style={styles.cellWrapper}
     >
       <AnimatedPressable
         onPress={() => {
@@ -125,61 +132,48 @@ const MetricCard: React.FC<{
         scaleValue={0.97}
         hapticFeedback={true}
         hapticType="light"
-        style={styles.cardPressable}
+        style={styles.cellPressable}
       >
-        <GlassCard
-          elevation={2}
-          blurIntensity="light"
-          padding="sm"
-          borderRadius="lg"
-          style={styles.cardGlass}
-        >
-          <View style={styles.cardContent}>
-            {/* Icon */}
+        <View style={styles.cellContent}>
+          <View style={styles.cellHeader}>
             <View
-              style={[styles.iconCircle, { backgroundColor: hexToRgba(color, 0.12) }]}
+              style={[styles.iconWrap, { backgroundColor: hexToRgba(color, 0.14) }]}
             >
               <Ionicons name={icon} size={rf(16)} color={color} />
             </View>
-
-            {/* Value */}
-            <Text
-              style={[
-                styles.metricValue,
-                {
-                  color:
-                    value === "--"
-                      ? colors.textMuted
-                      : colors.text,
-                },
-              ]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.6}
-            >
-              {value}
-            </Text>
-
-            {/* Label */}
-            <Text style={styles.metricLabel} numberOfLines={1}>{title}</Text>
-
-            {/* Subtitle or Trend */}
-            {trend && trendValue ? (
-              <View style={styles.trendRow}>
-                <Ionicons
-                  name={getTrendIcon()}
-                  size={rf(12)}
-                  color={getTrendColor()}
-                />
-                <Text style={[styles.trendText, { color: getTrendColor() }]} numberOfLines={1}>
-                  {trendValue}
-                </Text>
-              </View>
-            ) : subtitle ? (
-              <Text style={styles.subtitleText} numberOfLines={1}>{subtitle}</Text>
-            ) : null}
+            <Text style={styles.cellLabel} numberOfLines={1}>{title}</Text>
           </View>
-        </GlassCard>
+
+          <Text
+            style={[
+              styles.cellValue,
+              { color: value === "--" ? colors.text.muted : colors.text.primary },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.6}
+          >
+            {value}
+          </Text>
+
+          {trend && trendValue ? (
+            <View style={styles.trendRow}>
+              <Ionicons
+                name={getTrendIcon()}
+                size={rf(12)}
+                color={getTrendColor()}
+              />
+              <Text
+                style={[styles.trendText, { color: getTrendColor() }]}
+                numberOfLines={1}
+              >
+                {trendValue}
+              </Text>
+            </View>
+          ) : subtitle ? (
+            <Text style={styles.subtitleText} numberOfLines={1}>{subtitle}</Text>
+          ) : null}
+        </View>
       </AnimatedPressable>
     </Animated.View>
   );
@@ -224,160 +218,169 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
   const hasWorkoutsData =
     data.workouts?.count !== undefined && data.workouts.count > 0;
 
+  const hasHealthMetrics = Boolean(
+    data.bmi || data.bmr || data.tdee || data.dailyWater,
+  );
+
   return (
     <View style={styles.container}>
       {/* Section Header */}
       <SectionHeader
         title="This Period"
         icon="stats-chart"
-        iconColor={colors.primary}
+        iconColor={chart[1]}
       />
 
-      {/* Row 1: Weight + Calories */}
-      <View style={styles.row}>
-        <MetricCard
-          title="Weight"
-          value={formatWeight(data.weight?.current)}
-          icon="scale-outline"
-          color={colors.primary}
-          trend={hasWeightTrendData ? data.weight?.trend : undefined}
-          trendValue={
-            hasWeightTrendData &&
-            data.weight?.change !== undefined &&
-            data.weight.change !== 0
-              ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
-              : undefined
-          }
-          subtitle={!hasWeightTrendData ? "Log again to see trend" : undefined}
-          delay={0}
-          metricId="weight"
-          onMetricPress={onMetricPress}
-        />
+      {/* Single surface panel: 2x2 stats with hairline dividers */}
+      <View style={styles.panel}>
+        <View style={styles.row}>
+          <StatCell
+            title="Weight"
+            value={formatWeight(data.weight?.current)}
+            icon="scale-outline"
+            color={chart[1]}
+            trend={hasWeightTrendData ? data.weight?.trend : undefined}
+            trendValue={
+              hasWeightTrendData &&
+              data.weight?.change !== undefined &&
+              data.weight.change !== 0
+                ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
+                : undefined
+            }
+            subtitle={!hasWeightTrendData ? "Log again to see trend" : undefined}
+            delay={0}
+            metricId="weight"
+            onMetricPress={onMetricPress}
+          />
+          <View style={styles.vDivider} />
+          <StatCell
+            title="Calories"
+            value={hasCaloriesData ? formatCalories(data.calories?.consumed) : "--"}
+            subtitle={!hasCaloriesData ? "Log meals to track" : `This ${(data.calories?.period || period).charAt(0).toUpperCase() + (data.calories?.period || period).slice(1)}`}
+            icon="flame-outline"
+            color={chart[5]}
+            trend={
+              hasCaloriesData && data.calories?.change !== undefined
+                ? data.calories?.trend
+                : undefined
+            }
+            trendValue={
+              hasCaloriesData && data.calories?.change !== undefined
+                ? `${data.calories.change > 0 ? "+" : ""}${data.calories.change}%`
+                : undefined
+            }
+            delay={80}
+            metricId="calories"
+            onMetricPress={onMetricPress}
+          />
+        </View>
 
-        <MetricCard
-          title="Calories"
-          value={hasCaloriesData ? formatCalories(data.calories?.consumed) : "--"}
-          subtitle={!hasCaloriesData ? "Log meals to track" : `This ${(data.calories?.period || period).charAt(0).toUpperCase() + (data.calories?.period || period).slice(1)}`}
-          icon="flame-outline"
-          color={colors.warning}
-          trend={
-            hasCaloriesData && data.calories?.change !== undefined
-              ? data.calories?.trend
-              : undefined
-          }
-          trendValue={
-            hasCaloriesData && data.calories?.change !== undefined
-              ? `${data.calories.change > 0 ? "+" : ""}${data.calories.change}%`
-              : undefined
-          }
-          delay={100}
-          metricId="calories"
-          onMetricPress={onMetricPress}
-        />
-      </View>
+        <View style={styles.hDivider} />
 
-      {/* Row 2: Workouts + Streak */}
-      <View style={styles.row}>
-        <MetricCard
-          title="Workouts"
-          value={data.workouts?.count?.toString() || "0"}
-          subtitle={`This ${period.charAt(0).toUpperCase() + period.slice(1)}`}
-          icon="barbell-outline"
-          color={colors.info}
-          trend={hasWorkoutsData ? data.workouts?.trend : undefined}
-          trendValue={
-            hasWorkoutsData && data.workouts?.change
-              ? `${data.workouts.change > 0 ? "+" : ""}${data.workouts.change}`
-              : undefined
-          }
-          delay={200}
-          metricId="workouts"
-          onMetricPress={onMetricPress}
-        />
-
-        <MetricCard
-          title="Day Streak"
-          value={data.streak?.days?.toString() ?? "--"}
-          subtitle={getStreakMessage()}
-          icon="flame"
-          color={colors.errorLight}
-          delay={300}
-          metricId="streak"
-          onMetricPress={onMetricPress}
-        />
+        <View style={styles.row}>
+          <StatCell
+            title="Workouts"
+            value={data.workouts?.count?.toString() || "0"}
+            subtitle={`This ${period.charAt(0).toUpperCase() + period.slice(1)}`}
+            icon="barbell-outline"
+            color={chart[2]}
+            trend={hasWorkoutsData ? data.workouts?.trend : undefined}
+            trendValue={
+              hasWorkoutsData && data.workouts?.change
+                ? `${data.workouts.change > 0 ? "+" : ""}${data.workouts.change}`
+                : undefined
+            }
+            delay={160}
+            metricId="workouts"
+            onMetricPress={onMetricPress}
+          />
+          <View style={styles.vDivider} />
+          <StatCell
+            title="Day Streak"
+            value={data.streak?.days?.toString() ?? "--"}
+            subtitle={getStreakMessage()}
+            icon="flame"
+            color={chart[6]}
+            delay={240}
+            metricId="streak"
+            onMetricPress={onMetricPress}
+          />
+        </View>
       </View>
 
       {/* Health Metrics Section - from onboarding calculations */}
-      {(data.bmi || data.bmr || data.tdee || data.dailyWater) && (
+      {hasHealthMetrics && (
         <>
           <SectionHeader
             title="Health Metrics"
             icon="fitness-outline"
-            iconColor={colors.successAlt}
+            iconColor={chart[4]}
           />
 
-          {/* Row 3: BMI + BMR */}
-          <View style={styles.row}>
-            <MetricCard
-              title="BMI"
-              value={data.bmi ? data.bmi.toFixed(1) : "--"}
-              subtitle={
-                data.bmi
-                  ? data.bmi < 18.5
-                    ? "Underweight"
-                    : data.bmi < 25
-                      ? "Normal"
-                      : data.bmi < 30
-                        ? "Overweight"
-                        : "Obese"
-                  : undefined
-              }
-              icon="body-outline"
-              color={colors.accent}
-              delay={400}
-              metricId="bmi"
-              onMetricPress={onMetricPress}
-            />
+          <View style={styles.panel}>
+            <View style={styles.row}>
+              <StatCell
+                title="BMI"
+                value={data.bmi ? data.bmi.toFixed(1) : "--"}
+                subtitle={
+                  data.bmi
+                    ? data.bmi < 18.5
+                      ? "Underweight"
+                      : data.bmi < 25
+                        ? "Normal"
+                        : data.bmi < 30
+                          ? "Overweight"
+                          : "Obese"
+                    : undefined
+                }
+                icon="body-outline"
+                color={chart[4]}
+                delay={320}
+                metricId="bmi"
+                onMetricPress={onMetricPress}
+              />
+              <View style={styles.vDivider} />
+              <StatCell
+                title="BMR"
+                value={data.bmr ? `${Math.round(data.bmr)}` : "--"}
+                subtitle="cal/day"
+                icon="pulse-outline"
+                color={chart[6]}
+                delay={400}
+                metricId="bmr"
+                onMetricPress={onMetricPress}
+              />
+            </View>
 
-            <MetricCard
-              title="BMR"
-              value={data.bmr ? `${Math.round(data.bmr)}` : "--"}
-              subtitle="cal/day"
-              icon="pulse-outline"
-              color={colors.pink}
-              delay={500}
-              metricId="bmr"
-              onMetricPress={onMetricPress}
-            />
-          </View>
+            <View style={styles.hDivider} />
 
-          {/* Row 4: TDEE + Water */}
-          <View style={styles.row}>
-            <MetricCard
-              title="TDEE"
-              value={data.tdee ? `${Math.round(data.tdee)}` : "--"}
-              subtitle="cal/day"
-              icon="flash-outline"
-              color={colors.warningAlt}
-              delay={600}
-              metricId="tdee"
-              onMetricPress={onMetricPress}
-            />
-
-            <MetricCard
-              title="Water Goal"
-              value={
-                data.dailyWater
-                  ? `${(data.dailyWater / 1000).toFixed(1)}L`
-                  : "--"
-              }
-              subtitle="daily target"
-              icon="water-outline"
-              color={colors.cyan}
-              delay={700}
-              metricId="water"
-              onMetricPress={onMetricPress}
-            />
+            <View style={styles.row}>
+              <StatCell
+                title="TDEE"
+                value={data.tdee ? `${Math.round(data.tdee)}` : "--"}
+                subtitle="cal/day"
+                icon="flash-outline"
+                color={chart[5]}
+                delay={480}
+                metricId="tdee"
+                onMetricPress={onMetricPress}
+              />
+              <View style={styles.vDivider} />
+              <StatCell
+                title="Water Goal"
+                value={
+                  data.dailyWater
+                    ? `${(data.dailyWater / 1000).toFixed(1)}L`
+                    : "--"
+                }
+                subtitle="daily target"
+                icon="water-outline"
+                color={chart[2]}
+                delay={560}
+                metricId="water"
+                onMetricPress={onMetricPress}
+              />
+            </View>
           </View>
         </>
       )}
@@ -392,57 +395,75 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     zIndex: 3,
   },
+  panel: {
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: borderTokens.subtle,
+    overflow: "hidden",
+  },
   row: {
     flexDirection: "row",
-    gap: spacing.md,
   },
-  cardWrapper: {
+  vDivider: {
+    width: 1,
+    backgroundColor: borderTokens.subtle,
+  },
+  hDivider: {
+    height: 1,
+    backgroundColor: borderTokens.subtle,
+  },
+  cellWrapper: {
     flex: 1,
-    minWidth: 0, // Allow flex shrink
+    minWidth: 0,
   },
-  cardPressable: {
+  cellPressable: {
     flex: 1,
   },
-  cardGlass: {
-    minHeight: rh(105),
+  cellContent: {
+    alignItems: "flex-start",
+    justifyContent: "center",
+    padding: spacing.md,
+    minHeight: rh(112),
   },
-  cardContent: {
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    flex: 1,
+  cellHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  iconCircle: {
-    width: rw(32),
-    height: rw(32),
-    borderRadius: rw(16),
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-    marginBottom: spacing.xs,
+  iconWrap: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: rw(8),
+    justifyContent: "center",
+    alignItems: "center",
   },
-  metricValue: {
-    fontSize: rf(22),
-    fontWeight: "800",
-    color: colors.text,
+  cellLabel: {
+    fontFamily: typography.variants.caption2.fontFamily,
+    fontSize: rf(13),
+    color: colors.text.secondary,
+    flexShrink: 1,
+  },
+  cellValue: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(28),
+    letterSpacing: -0.5,
     marginBottom: rp(2),
   },
-  metricLabel: {
-    fontSize: rf(11),
-    fontWeight: "500",
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
   subtitleText: {
+    fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   trendRow: {
     flexDirection: "row",
-    alignItems: "center" as const,
+    alignItems: "center",
     gap: rp(3),
   },
   trendText: {
-    fontSize: rf(10),
-    fontWeight: "600",
+    fontFamily: typography.variants.cardHeadline.fontFamily,
+    fontSize: rf(12),
   },
 });
 

@@ -1,23 +1,24 @@
 /**
- * ProfileStats - Compact Stats Grid
- *
- * World-class design:
- * - Horizontal scrollable row (edge-to-edge)
- * - Includes Day Streak (moved from header)
- * - Compact, elegant stat cards
- * - Smooth entry animations
+ * ProfileStats - Aurora 2026: 3 equal stat pills separated by thin dividers
+ * No individual boxed cards — one clean row on surface.0
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
+import React, { useCallback } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
-import { rf, rw, rp } from '../../../utils/responsive';
+import {
+  colors,
+  surface,
+  border,
+  spacing,
+  typography,
+  chart,
+} from "../../../theme/aurora-tokens";
+import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
-import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
+
+const { variants } = typography;
 
 interface StatItem {
   id: string;
@@ -25,8 +26,6 @@ interface StatItem {
   value: number | string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-  gradientColors: [string, string];
-  suffix?: string;
 }
 
 interface ProfileStatsProps {
@@ -38,73 +37,54 @@ interface ProfileStatsProps {
   onStatPress?: (statId: string) => void;
 }
 
-const StatCard: React.FC<{
+function formatValue(value: number | string): string {
+  if (typeof value === "number") {
+    if (value >= 10000) return `${(value / 1000).toFixed(0)}k`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+    return value.toString();
+  }
+  return value;
+}
+
+const StatPill: React.FC<{
   stat: StatItem;
   index: number;
   onPress?: () => void;
-}> = ({ stat, index, onPress }) => {
-  const formatValue = (value: number | string): string => {
-    if (typeof value === "number") {
-      if (value >= 10000) return `${(value / 1000).toFixed(0)}k`;
-      if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
-      return value.toString();
-    }
-    return value;
-  };
+}> = React.memo(({ stat, index, onPress }) => {
+  const handlePress = useCallback(() => {
+    haptics.light();
+    onPress?.();
+  }, [onPress]);
 
   return (
     <Animated.View
-      entering={FadeInRight.delay(100 + index * 80).duration(400)}
-      style={styles.statCardWrapper}
+      entering={FadeInDown.delay(150 + index * 80).duration(350)}
+      style={styles.pillWrapper}
     >
-      <AnimatedPressable
-        onPress={() => {
-          haptics.light();
-          onPress?.();
-        }}
-        scaleValue={0.95}
-        hapticFeedback={false}
+      <Pressable
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`${stat.label}: ${formatValue(stat.value)}`}
+        style={({ pressed }) => [
+          styles.pill,
+          pressed && styles.pillPressed,
+        ]}
       >
-        <LinearGradient
-          colors={[hexToRgba(stat.color, 0.08), hexToRgba(stat.color, 0.03)]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.statCard, { borderColor: hexToRgba(stat.color, 0.21) }]}
-        >
-          {/* Icon */}
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: hexToRgba(stat.color, TINT_ALPHA_LOW) },
-            ]}
-          >
-            <Ionicons name={stat.icon} size={rf(20)} color={stat.color} />
-          </View>
-
-          {/* Value */}
-          <Text
-            style={[styles.statValue, { color: stat.color }]}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-          >
-            {formatValue(stat.value)}
-            {stat.suffix && (
-              <Text style={styles.statSuffix}>{stat.suffix}</Text>
-            )}
-          </Text>
-
-          {/* Label */}
-          <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {stat.label}
-          </Text>
-        </LinearGradient>
-      </AnimatedPressable>
+        <View style={[styles.iconWrap, { backgroundColor: `${stat.color}18` }]}>
+          <Ionicons name={stat.icon} size={rf(16)} color={stat.color} />
+        </View>
+        <Text style={[styles.statValue, { color: stat.color }]} numberOfLines={1}>
+          {formatValue(stat.value)}
+        </Text>
+        <Text style={styles.statLabel} numberOfLines={1}>
+          {stat.label}
+        </Text>
+      </Pressable>
     </Animated.View>
   );
-};
+});
 
-export const ProfileStats: React.FC<ProfileStatsProps> = ({
+export const ProfileStats: React.FC<ProfileStatsProps> = React.memo(({
   currentStreak,
   totalWorkouts,
   totalCaloriesBurned,
@@ -114,120 +94,106 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
 }) => {
   const stats: StatItem[] = [
     {
-      id: 'current-streak',
-      label: 'Day Streak',
+      id: "current-streak",
+      label: "Day Streak",
       value: currentStreak,
-      icon: 'flame',
-      color: colors.errorLight,
-      gradientColors: [colors.errorLight, colors.errorAlt],
+      icon: "flame",
+      color: chart[1],
     },
     {
-      id: 'workouts',
-      label: 'Workouts',
+      id: "workouts",
+      label: "Workouts",
       value: totalWorkouts,
-      icon: 'barbell',
-      color: colors.successAlt,
-      gradientColors: [colors.successAlt, colors.successAltDark],
+      icon: "barbell",
+      color: chart[4],
     },
     {
-      id: 'calories',
-      label: 'Calories',
+      id: "calories",
+      label: "Calories",
       value: totalCaloriesBurned,
-      icon: 'flash',
-      color: colors.amber,
-      gradientColors: [colors.amber, colors.warningAlt],
-    },
-    {
-      id: 'best-streak',
-      label: 'Best Streak',
-      value: longestStreak,
-      icon: 'trophy',
-      color: colors.primary,
-      gradientColors: [colors.primary, colors.primaryDark],
-    },
-    {
-      id: 'achievements',
-      label: 'Achievements',
-      value: achievements,
-      icon: 'ribbon',
-      color: colors.gold,
-      gradientColors: [colors.gold, colors.amberBright],
+      icon: "flash",
+      color: chart[5],
     },
   ];
 
+  const handleStatPress = useCallback(
+    (id: string) => {
+      onStatPress?.(id);
+    },
+    [onStatPress],
+  );
+
   return (
-    <View style={styles.container}>
-      <View style={styles.statsGrid}>
+    <Animated.View
+      entering={FadeInDown.delay(100).duration(350)}
+      style={styles.container}
+    >
+      <View style={styles.row}>
         {stats.map((stat, index) => (
-          <StatCard
-            key={stat.id}
-            stat={stat}
-            index={index}
-            onPress={() => onStatPress?.(stat.id)}
-          />
+          <React.Fragment key={stat.id}>
+            <StatPill
+              stat={stat}
+              index={index}
+              onPress={() => handleStatPress(stat.id)}
+            />
+            {index < stats.length - 1 && <View style={styles.divider} />}
+          </React.Fragment>
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing.sm,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    paddingHorizontal: rp(spacing.lg),
+    backgroundColor: surface[1],
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    overflow: "hidden",
   },
-  statsGrid: {
+  row: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: rp(spacing.sm),
+    alignItems: "center",
   },
-  // Use flexGrow:1 + flexBasis:32% so three cards always fit per row without
-  // the previous 31.5% width overflowing to a 4th-column wrap on devices
-  // where 1% rounding differs.
-  statCardWrapper: {
-    flexGrow: 1,
-    flexBasis: "32%",
+  pillWrapper: {
+    flex: 1,
   },
-  statCard: {
+  pill: {
     alignItems: "center",
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    width: "100%",
-    // Guarantee the WCAG 44px touch floor even when the value/label are short.
-    minHeight: Math.max(rw(44), 44),
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    paddingHorizontal: spacing.sm,
+    minHeight: 44,
   },
-  iconContainer: {
+  pillPressed: {
+    opacity: 0.7,
+  },
+  iconWrap: {
     width: rw(32),
     height: rw(32),
-    borderRadius: rw(16),
+    borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.xs,
   },
   statValue: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(20),
-    fontWeight: "800",
     letterSpacing: -0.5,
-    marginBottom: rp(2),
-  },
-  statSuffix: {
-    fontSize: rf(12),
-    fontWeight: "600",
+    marginBottom: spacing.xxs,
   },
   statLabel: {
-    // Math.max floor keeps the label legible above the WCAG AA floor on
-    // small devices where rf(10) scales below 10px (matches the pattern used
-    // for bmiScaleLabel in BodyMeasurementsEditModal).
-    fontSize: Math.max(rf(10), 10),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    ...variants.caption,
+    color: colors.text.secondary,
     textAlign: "center",
-    flexShrink: 1,
+  },
+  divider: {
+    width: 1,
+    height: "56%",
+    backgroundColor: border.DEFAULT,
+    alignSelf: "center",
   },
 });
 

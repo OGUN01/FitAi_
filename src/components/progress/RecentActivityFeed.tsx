@@ -1,4 +1,11 @@
-﻿import React from "react";
+/**
+ * RecentActivityFeed - Aurora 2026
+ *
+ * Flat surface.1 rows with icon squircle + content + time/indicator.
+ * No emojis, no drop shadows, Manrope type, chart-palette accents.
+ */
+
+import React from "react";
 import {
   View,
   Text,
@@ -6,15 +13,19 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rs, rbr, rp, rh } from "../../utils/responsive";
-
-/**
- * RecentActivityFeed Component
- *
- * Shows recent workouts, meals, and achievements
- * Clean, card-based layout with safe data handling
- */
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  colors,
+  surface,
+  border as borderTokens,
+  chart,
+  spacing,
+  borderRadius,
+  typography,
+} from "../../theme/aurora-tokens";
+import { rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 interface ActivityItem {
   id: string;
@@ -38,99 +49,86 @@ interface RecentActivityFeedProps {
   maxItems?: number;
 }
 
-const ActivityCard: React.FC<{
+const TYPE_META: Record<
+  string,
+  { icon: keyof typeof Ionicons.glyphMap; color: string }
+> = {
+  workout: { icon: "barbell-outline", color: chart[4] },
+  meal: { icon: "restaurant-outline", color: chart[1] },
+  achievement: { icon: "trophy-outline", color: chart[5] },
+};
+
+const getTypeMeta = (type: string) =>
+  TYPE_META[type] ?? { icon: "ellipse-outline", color: colors.text.muted };
+
+const formatTimestamp = (timestamp: Date) => {
+  try {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days} day${days === 1 ? "" : "s"} ago`;
+    if (hours > 0) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    return "Just now";
+  } catch {
+    return "Recently";
+  }
+};
+
+const formatDetails = (activity: ActivityItem) => {
+  const { details } = activity;
+  if (!details) return null;
+
+  const parts: string[] = [];
+  if (details.duration) parts.push(`${details.duration} min`);
+  if (details.calories) parts.push(`${details.calories} cal`);
+  if (details.exercises) parts.push(`${details.exercises} exercises`);
+  if (details.meals) parts.push(`${details.meals} meals`);
+
+  return parts.length > 0 ? parts.join(" • ") : null;
+};
+
+const ActivityRow: React.FC<{
   activity: ActivityItem;
+  index: number;
   onPress?: (activity: ActivityItem) => void;
-}> = ({ activity, onPress }) => {
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "workout":
-        return "💪";
-      case "meal":
-        return "🍽️";
-      case "achievement":
-        return "🏆";
-      default:
-        return "📋";
-    }
-  };
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case "workout":
-        return colors.success;
-      case "meal":
-        return colors.primary;
-      case "achievement":
-        return colors.warning;
-      default:
-        return colors.textMuted;
-    }
-  };
-
-  const formatTimestamp = (timestamp: Date) => {
-    try {
-      const now = new Date();
-      const diff = now.getTime() - timestamp.getTime();
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const days = Math.floor(hours / 24);
-
-      if (days > 0) return `${days} day${days === 1 ? "" : "s"} ago`;
-      if (hours > 0) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-      return "Just now";
-    } catch {
-      return "Recently";
-    }
-  };
-
-  const formatDetails = (activity: ActivityItem) => {
-    const { details } = activity;
-    if (!details) return null;
-
-    const parts: string[] = [];
-
-    if (details.duration) {
-      parts.push(`${details.duration} min`);
-    }
-    if (details.calories) {
-      parts.push(`${details.calories} cal`);
-    }
-    if (details.exercises) {
-      parts.push(`${details.exercises} exercises`);
-    }
-    if (details.meals) {
-      parts.push(`${details.meals} meals`);
-    }
-
-    return parts.length > 0 ? parts.join(" • ") : null;
-  };
+}> = React.memo(({ activity, index, onPress }) => {
+  const meta = getTypeMeta(activity.type);
+  const detailsText = formatDetails(activity);
 
   return (
-    <TouchableOpacity
-      style={styles.activityCard}
-      onPress={() => onPress?.(activity)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.activityHeader}>
-        <View style={styles.activityIconContainer}>
-          <Text style={styles.activityIcon}>
-            {getActivityIcon(activity.type)}
-          </Text>
+    <Animated.View entering={FadeInDown.delay(index * 50).duration(260)}>
+      <TouchableOpacity
+        style={styles.activityCard}
+        onPress={() => {
+          haptics.light();
+          onPress?.(activity);
+        }}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={activity.title}
+      >
+        <View
+          style={[
+            styles.activityIconWrap,
+            { backgroundColor: `${meta.color}1A` },
+          ]}
+        >
+          <Ionicons name={meta.icon} size={18} color={meta.color} />
         </View>
 
         <View style={styles.activityContent}>
-          <Text style={styles.activityTitle}>{activity.title}</Text>
-
+          <Text style={styles.activityTitle} numberOfLines={1}>
+            {activity.title}
+          </Text>
           {activity.description && (
-            <Text style={styles.activityDescription}>
+            <Text style={styles.activityDescription} numberOfLines={1}>
               {activity.description}
             </Text>
           )}
-
-          {formatDetails(activity) && (
-            <Text style={styles.activityDetails}>
-              {formatDetails(activity)}
-            </Text>
+          {detailsText && (
+            <Text style={styles.activityDetails}>{detailsText}</Text>
           )}
         </View>
 
@@ -141,18 +139,24 @@ const ActivityCard: React.FC<{
           <View
             style={[
               styles.activityIndicator,
-              { backgroundColor: getActivityColor(activity.type) },
+              { backgroundColor: meta.color },
             ]}
           />
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
-};
+});
 
 const EmptyState: React.FC = () => (
   <View style={styles.emptyContainer}>
-    <Text style={styles.emptyIcon}>📊</Text>
+    <View style={styles.emptyIconWrap}>
+      <Ionicons
+        name="pulse-outline"
+        size={28}
+        color={colors.text.muted}
+      />
+    </View>
     <Text style={styles.emptyTitle}>No Recent Activity</Text>
     <Text style={styles.emptyDescription}>
       Complete a workout or log a meal to see your activity here
@@ -160,13 +164,12 @@ const EmptyState: React.FC = () => (
   </View>
 );
 
-export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
+export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = React.memo(({
   activities = [],
   onActivityPress,
   onViewAll,
   maxItems = 5,
 }) => {
-  // Real activity tracking from workout sessions and meal logs pending implementation
   const displayActivities = activities;
   const limitedActivities = displayActivities.slice(0, maxItems);
 
@@ -179,7 +182,14 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         {onViewAll && displayActivities.length > maxItems && (
-          <TouchableOpacity onPress={onViewAll}>
+          <TouchableOpacity
+            onPress={() => {
+              haptics.light();
+              onViewAll();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="View all activities"
+          >
             <Text style={styles.viewAllButton}>View All</Text>
           </TouchableOpacity>
         )}
@@ -189,17 +199,18 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
         style={styles.activityList}
         showsVerticalScrollIndicator={false}
       >
-        {limitedActivities.map((activity) => (
-          <ActivityCard
+        {limitedActivities.map((activity, index) => (
+          <ActivityRow
             key={activity.id}
             activity={activity}
+            index={index}
             onPress={onActivityPress}
           />
         ))}
       </ScrollView>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -213,92 +224,91 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
   },
   viewAllButton: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.primary,
+    ...typography.variants.caption2,
+    fontFamily: "Manrope_600SemiBold",
+    color: colors.primary.DEFAULT,
   },
   activityList: {
     maxHeight: rh(300),
   },
   activityCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: surface[1],
+    borderRadius: 20,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: borderTokens.subtle,
   },
-  activityHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  activityIconContainer: {
-    marginRight: spacing.sm,
-  },
-  activityIcon: {
-    fontSize: rf(20),
+  activityIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing.md,
   },
   activityContent: {
     flex: 1,
     marginRight: spacing.sm,
   },
   activityTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.xs,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
+    marginBottom: spacing.xxs,
   },
   activityDescription: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.regular,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
+    marginBottom: spacing.xxs,
   },
   activityDetails: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
   },
   activityMeta: {
     alignItems: "flex-end",
   },
   activityTime: {
-    fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textMuted,
+    ...typography.variants.caption,
+    color: colors.text.muted,
     marginBottom: spacing.xs,
   },
   activityIndicator: {
-    width: rs(8),
-    height: rs(8),
-    borderRadius: rbr(4),
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   emptyContainer: {
     alignItems: "center",
     paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.lg,
   },
-  emptyIcon: {
-    fontSize: rf(48),
+  emptyIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: surface[1],
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
     textAlign: "center",
   },
   emptyDescription: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.regular,
-    color: colors.textSecondary,
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
     textAlign: "center",
-    lineHeight: rf(20),
   },
 });
+
+export default RecentActivityFeed;

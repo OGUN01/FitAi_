@@ -3,14 +3,14 @@
  * Compact 7-day view - NO redundant legend
  */
 
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../../theme/aurora-tokens";
-import { rf, rw, rp } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { GlassCard } from '../../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { flatColors as colors, spacing, typography } from '../../../theme/aurora-tokens';
+import { rf, rw, rp } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 
 interface DayActivity {
   date: Date;
@@ -25,7 +25,7 @@ interface WeeklyMiniCalendarProps {
   onViewFullCalendar?: () => void;
 }
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
   weekData,
@@ -50,23 +50,16 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
 
   return (
     <View>
-      <GlassCard
-        elevation={2}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
-      >
+      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.headerIconBg}>
-              <Ionicons
-                name="calendar-outline"
-                size={rf(14)}
-                color={colors.primary}
-              />
+              <Ionicons name="calendar-outline" size={rf(14)} color={colors.primary} />
             </View>
-            <Text style={styles.headerTitle} numberOfLines={1}>This Week</Text>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              This Week
+            </Text>
           </View>
           <AnimatedPressable
             onPress={onViewFullCalendar}
@@ -78,11 +71,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             <Text style={styles.statsText} numberOfLines={1}>
               {stats.completed}/{stats.total}
             </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={rf(14)}
-              color={colors.textSecondary}
-            />
+            <Ionicons name="chevron-forward" size={rf(14)} color={colors.textSecondary} />
           </AnimatedPressable>
         </View>
 
@@ -141,14 +130,14 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   headerIconBg: {
@@ -156,54 +145,53 @@ const styles = StyleSheet.create({
     height: rw(28),
     borderRadius: rw(14),
     backgroundColor: hexToRgba(colors.primary, 0.07),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: rf(14),
-    fontWeight: "700",
+    ...typography.variants.cardHeadline,
     color: colors.text,
   },
   statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
   },
   statsText: {
     fontSize: rf(12),
-    fontWeight: "600",
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   weekGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   dayWrapper: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: rp(4),
     minHeight: 44,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   dayLabel: {
-    fontSize: rf(10),
-    fontWeight: "600",
+    ...typography.variants.caption,
     color: colors.textSecondary,
   },
   todayLabel: {
     color: colors.primary,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   dayCell: {
     width: rw(34),
     height: rw(34),
     borderRadius: rw(17),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dayNumber: {
-    fontSize: rf(12),
-    fontWeight: "600",
+    ...typography.variants.caption2,
+    fontWeight: '700',
   },
   defaultCell: {
     backgroundColor: colors.backgroundTertiary,

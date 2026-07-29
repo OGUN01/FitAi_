@@ -1,8 +1,13 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
-import { rf } from "../../../utils/responsive";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  flatColors as colors,
+  spacing,
+  flatFontSize as fontSize,
+  typography,
+} from '../../../theme/aurora-tokens';
+import { rf } from '../../../utils/responsive';
 
 interface RecommendationsSectionProps {
   recommendations?: string[];
@@ -47,13 +52,13 @@ export const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
 const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold as "700",
+    fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
   sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     marginBottom: spacing.md,
   },

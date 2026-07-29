@@ -1,34 +1,29 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Platform } from "react-native";
-import { crossPlatformAlert } from "../utils/crossPlatformAlert";
-import {
-  useNutritionStore,
-  useAppStateStore,
-  useAchievementStore,
-  DayName,
-} from "../stores";
-import { useProfileStore } from "../stores/profileStore";
-import { aiService } from "../ai";
-import { completionTrackingService } from "../services/completionTracking";
-import { WeeklyMealPlan, DayMeal } from "../types/ai";
-import type { DietPreferences } from "../types/user";
-import { crudOperations } from "../services/crudOperations";
-import { useCalculatedMetrics } from "./useCalculatedMetrics";
-import { useNutritionData } from "./useNutritionData";
-import { useAuth } from "./useAuth";
-import { useSubscriptionStore } from "../stores/subscriptionStore";
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Platform } from 'react-native';
+import { crossPlatformAlert } from '../utils/crossPlatformAlert';
+import { useNutritionStore, useAppStateStore, useAchievementStore, DayName } from '../stores';
+import { useProfileStore } from '../stores/profileStore';
+import { aiService } from '../ai';
+import { completionTrackingService } from '../services/completionTracking';
+import { WeeklyMealPlan, DayMeal } from '../types/ai';
+import type { DietPreferences } from '../types/user';
+import { crudOperations } from '../services/crudOperations';
+import { useCalculatedMetrics } from './useCalculatedMetrics';
+import { useNutritionData } from './useNutritionData';
+import { useAuth } from './useAuth';
+import { useSubscriptionStore } from '../stores/subscriptionStore';
 // usePaywall import removed â€” triggerPaywall now via subscriptionStore
-import { mealMotivationService } from "../features/nutrition/MealMotivation";
+import { mealMotivationService } from '../features/nutrition/MealMotivation';
 import {
   buildLegacyDietPreferences,
   buildLegacyFitnessGoals,
   buildLegacyPersonalInfo,
-} from "../utils/profileLegacyAdapter";
+} from '../utils/profileLegacyAdapter';
 
 export const useMealPlanning = (navigation: any) => {
   const [asyncJob, setAsyncJob] = useState<{
     jobId: string;
-    status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+    status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
     error?: string;
     createdAt: string;
     estimatedTimeRemaining?: number;
@@ -45,24 +40,18 @@ export const useMealPlanning = (navigation: any) => {
   // most once per guest session, then never again regardless of store churn.
   const hasFetchedGuestDataRef = useRef(false);
 
-  const [showMealPreparationModal, setShowMealPreparationModal] =
-    useState(false);
-  const [selectedMealForPreparation, setSelectedMealForPreparation] =
-    useState<DayMeal | null>(null);
+  const [showMealPreparationModal, setShowMealPreparationModal] = useState(false);
+  const [selectedMealForPreparation, setSelectedMealForPreparation] = useState<DayMeal | null>(
+    null
+  );
 
   const weeklyMealPlan = useNutritionStore((state) => state.weeklyMealPlan);
   const isGeneratingPlan = useNutritionStore((state) => state.isGeneratingPlan);
   const mealProgress = useNutritionStore((state) => state.mealProgress);
   const dailyMeals = useNutritionStore((state) => state.dailyMeals);
-  const saveWeeklyMealPlan = useNutritionStore(
-    (state) => state.saveWeeklyMealPlan,
-  );
-  const setWeeklyMealPlan = useNutritionStore(
-    (state) => state.setWeeklyMealPlan,
-  );
-  const setGeneratingPlan = useNutritionStore(
-    (state) => state.setGeneratingPlan,
-  );
+  const saveWeeklyMealPlan = useNutritionStore((state) => state.saveWeeklyMealPlan);
+  const setWeeklyMealPlan = useNutritionStore((state) => state.setWeeklyMealPlan);
+  const setGeneratingPlan = useNutritionStore((state) => state.setGeneratingPlan);
   const mealProgressMap = useNutritionStore((state) => state.mealProgress);
   const getMealProgress = (mealId: string) => mealProgressMap[mealId] ?? null;
   const loadNutritionStoreData = useNutritionStore((state) => state.loadData);
@@ -72,15 +61,9 @@ export const useMealPlanning = (navigation: any) => {
   // SSOT: profileStore is authoritative for all onboarding data
   const bodyAnalysis = useProfileStore((state) => state.bodyAnalysis);
   const profilePersonalInfo = useProfileStore((state) => state.personalInfo);
-  const profileWorkoutPreferences = useProfileStore(
-    (state) => state.workoutPreferences,
-  );
-  const profileDietPreferences = useProfileStore(
-    (state) => state.dietPreferences,
-  );
-  const profileAdvancedReview = useProfileStore(
-    (state) => state.advancedReview,
-  );
+  const profileWorkoutPreferences = useProfileStore((state) => state.workoutPreferences);
+  const profileDietPreferences = useProfileStore((state) => state.dietPreferences);
+  const profileAdvancedReview = useProfileStore((state) => state.advancedReview);
   const achievementStreak = useAchievementStore((state) => state.currentStreak);
 
   const legacyPersonalInfo = useMemo(
@@ -90,21 +73,23 @@ export const useMealPlanning = (navigation: any) => {
         bodyAnalysis,
         workoutPreferences: profileWorkoutPreferences,
       }),
-    [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences],
+    [profilePersonalInfo, bodyAnalysis, profileWorkoutPreferences]
   );
   const mergedFitnessGoals = useMemo(
     () => buildLegacyFitnessGoals(profileWorkoutPreferences),
-    [profileWorkoutPreferences],
+    [profileWorkoutPreferences]
   );
   const mergedDietPreferences = useMemo(
     () => buildLegacyDietPreferences(profileDietPreferences),
-    [profileDietPreferences],
+    [profileDietPreferences]
   );
 
   const { getCalorieTarget } = useCalculatedMetrics();
-  const canUseFeature = useSubscriptionStore((state) => state.canUseFeature);
   const incrementUsage = useSubscriptionStore((state) => state.incrementUsage);
   const triggerPaywall = useSubscriptionStore((state) => state.triggerPaywall);
+  const fetchSubscriptionStatus = useSubscriptionStore(
+    (state) => state.fetchSubscriptionStatus
+  );
 
   // NOTE: useNutritionData still returns `dietPreferences` (an independent Supabase
   // fetch of the diet_preferences table), but that is a VESTIGIAL second source of
@@ -123,7 +108,7 @@ export const useMealPlanning = (navigation: any) => {
   useEffect(() => {
     let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      if (event.type === "meal") {
+      if (event.type === 'meal') {
         refreshTimeout = setTimeout(() => {
           forceRefresh();
         }, 100);
@@ -138,12 +123,13 @@ export const useMealPlanning = (navigation: any) => {
   useEffect(() => {
     let isMounted = true;
 
-    const authenticatedUserId =
-      user?.id && !user.id.startsWith("guest") ? user.id : null;
+    const authenticatedUserId = user?.id && !user.id.startsWith('guest') ? user.id : null;
 
     if (authenticatedUserId) {
       if (lastRemoteHydratedUserIdRef.current === authenticatedUserId) {
-        return () => { isMounted = false; };
+        return () => {
+          isMounted = false;
+        };
       }
 
       lastRemoteHydratedUserIdRef.current = authenticatedUserId;
@@ -152,10 +138,12 @@ export const useMealPlanning = (navigation: any) => {
       hasFetchedGuestDataRef.current = false;
       if (isMounted) {
         loadNutritionStoreData().catch((error) => {
-          console.error("[ERROR] Error loading remote meal plan:", error);
+          console.error('[ERROR] Error loading remote meal plan:', error);
         });
       }
-      return () => { isMounted = false; };
+      return () => {
+        isMounted = false;
+      };
     }
 
     lastRemoteHydratedUserIdRef.current = null;
@@ -166,26 +154,25 @@ export const useMealPlanning = (navigation: any) => {
     // is the ref flag, not the store state it just wrote. The warm-data check is
     // preserved so a guest with existing local data is not redundantly refetched.
     if (hasFetchedGuestDataRef.current) {
-      return () => { isMounted = false; };
+      return () => {
+        isMounted = false;
+      };
     }
     const hasHydratedDietData =
-      Boolean(weeklyMealPlan) ||
-      Object.keys(mealProgress).length > 0 ||
-      dailyMeals.length > 0;
+      Boolean(weeklyMealPlan) || Object.keys(mealProgress).length > 0 || dailyMeals.length > 0;
     // Mark the one-shot as attempted regardless of whether we fetch, so the
     // effect never re-fires on store churn from this branch.
     hasFetchedGuestDataRef.current = true;
     if (!hasHydratedDietData && isMounted) {
       loadNutritionStoreData().catch((error) => {
-        console.error("[ERROR] Error loading meal plan:", error);
+        console.error('[ERROR] Error loading meal plan:', error);
       });
     }
 
-    return () => { isMounted = false; };
-  }, [
-    loadNutritionStoreData,
-    user?.id,
-  ]);
+    return () => {
+      isMounted = false;
+    };
+  }, [loadNutritionStoreData, user?.id]);
 
   useEffect(() => {
     return () => {
@@ -199,7 +186,7 @@ export const useMealPlanning = (navigation: any) => {
     try {
       await loadNutritionStoreData();
     } catch (error) {
-      console.error("[ERROR] Error refreshing meal data:", error);
+      console.error('[ERROR] Error refreshing meal data:', error);
     }
   }, [loadNutritionStoreData]);
 
@@ -216,19 +203,17 @@ export const useMealPlanning = (navigation: any) => {
         saveErr instanceof Error
           ? saveErr.message
           : "We couldn't save your meal plan. Please try again.";
-      crossPlatformAlert("Couldn't save meal plan", reason, [
-        { text: "OK", onPress: () => {} },
-      ]);
+      crossPlatformAlert("Couldn't save meal plan", reason, [{ text: 'OK', onPress: () => {} }]);
       return;
     }
     setWeeklyMealPlan(weeklyPlan);
 
     crossPlatformAlert(
-      "Meal Plan Generated!",
+      'Meal Plan Generated!',
       `Your personalized 7-day meal plan "${weeklyPlan.planTitle}" is ready!`,
-      [{ text: "View Plan", onPress: () => {} }],
+      [{ text: 'View Plan', onPress: () => {} }]
     );
-    incrementUsage("ai_generation");
+    incrementUsage('ai_generation');
   };
 
   const startJobPolling = (jobId: string) => {
@@ -253,7 +238,7 @@ export const useMealPlanning = (navigation: any) => {
 
         if (!response.success || !response.data) {
           console.warn(
-            `[DIET] ⚠️  poll #${pollAttempt} checkMealPlanJobStatus failed: success=${response.success} error=${response.error}`,
+            `[DIET] ⚠️  poll #${pollAttempt} checkMealPlanJobStatus failed: success=${response.success} error=${response.error}`
           );
           if (pollAttempt < maxAttempts) scheduleNextPoll();
           else handlePollTimeout();
@@ -261,37 +246,32 @@ export const useMealPlanning = (navigation: any) => {
         }
 
         const { status, plan, error, generationTimeMs } = response.data;
-        setAsyncJob((prev) =>
-          prev ? { ...prev, status, error, generationTimeMs } : null,
-        );
+        setAsyncJob((prev) => (prev ? { ...prev, status, error, generationTimeMs } : null));
 
-        if (status === "completed" && plan) {
+        if (status === 'completed' && plan) {
           await handleMealPlanResult(plan);
           cleanupPolling();
           return;
         }
 
-        if (status === "completed" && !plan) {
-          console.warn(`[DIET] ⚠️  status=completed but plan is null/undefined — will retry or timeout`);
+        if (status === 'completed' && !plan) {
+          console.warn(
+            `[DIET] ⚠️  status=completed but plan is null/undefined — will retry or timeout`
+          );
         }
 
-
-        if (status === "failed") {
+        if (status === 'failed') {
           const errMsg =
             typeof error === 'string'
               ? error
-              : (error as any)?.message ?? "Meal plan generation failed";
+              : ((error as any)?.message ?? 'Meal plan generation failed');
           setAiError(errMsg);
-          crossPlatformAlert(
-            "Generation Failed",
-            errMsg,
-          );
+          crossPlatformAlert('Generation Failed', errMsg);
           cleanupPolling();
           return;
-
         }
 
-        if (status === "cancelled") {
+        if (status === 'cancelled') {
           cleanupPolling();
           return;
         }
@@ -308,15 +288,15 @@ export const useMealPlanning = (navigation: any) => {
     const scheduleNextPoll = () => {
       const interval = Math.min(
         initialInterval * Math.pow(1.5, Math.floor(pollAttempt / 5)),
-        maxInterval,
+        maxInterval
       );
       asyncJobPollingRef.current = setTimeout(poll, interval);
     };
 
     const handlePollTimeout = () => {
-      setAiError("Generation is taking longer than expected.");
+      setAiError('Generation is taking longer than expected.');
       setAsyncJob(null);
-      crossPlatformAlert("Taking Longer Than Expected", "Check back later.");
+      crossPlatformAlert('Taking Longer Than Expected', 'Check back later.');
       cleanupPolling();
     };
 
@@ -332,47 +312,52 @@ export const useMealPlanning = (navigation: any) => {
   };
 
   // eslint-disable-next-line no-unused-vars
-  const generateWeeklyMealPlan = async (
-    setShowGuestSignUp: (show: boolean) => void,
-  ) => {
-    if (!user?.id || user.id.startsWith("guest")) {
+  const generateWeeklyMealPlan = async (setShowGuestSignUp: (show: boolean) => void) => {
+    if (!user?.id || user.id.startsWith('guest')) {
       crossPlatformAlert(
-        "Sign In Required",
-        "Create a free account to generate your personalized AI meal plan and save your progress.",
+        'Sign In Required',
+        'Create a free account to generate your personalized AI meal plan and save your progress.',
         [
           {
-            text: "Sign Up",
+            text: 'Sign Up',
             onPress: () => setShowGuestSignUp(true),
           },
-          { text: "Not Now", style: "cancel" },
-        ],
+          { text: 'Not Now', style: 'cancel' },
+        ]
       );
       return;
     }
 
     const missingItems = [];
-    if (!legacyPersonalInfo) missingItems.push("Personal Information");
-    if (
-      !mergedFitnessGoals?.primary_goals?.length &&
-      !mergedFitnessGoals?.primaryGoals?.length
-    )
-      missingItems.push("Fitness Goals");
+    if (!legacyPersonalInfo) missingItems.push('Personal Information');
+    if (!mergedFitnessGoals?.primary_goals?.length && !mergedFitnessGoals?.primaryGoals?.length)
+      missingItems.push('Fitness Goals');
     // Single source of truth: profileStore.dietPreferences (architecture doc §E.3).
     // The legacy transform `mergedDietPreferences` is derived from this same value,
     // so checking the SSOT alone is sufficient and avoids the stale-fallback drift.
-    if (!profileDietPreferences)
-      missingItems.push("Diet Preferences");
+    if (!profileDietPreferences) missingItems.push('Diet Preferences');
 
     if (missingItems.length > 0) {
-      crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
+      crossPlatformAlert('Profile Incomplete', 'Please complete your profile.');
       return;
     }
 
-    if (!canUseFeature("ai_generation")) {
-      triggerPaywall(
-        "You've used your free AI generation for this month. Upgrade to Pro for unlimited meal plans.",
-      );
-      return;
+    // The worker's `/diet/generate` endpoint runs `subscriptionGateMiddleware`,
+    // which authoritatively checks the live subscription server-side. The
+    // client `canUseFeature` reads persisted/local state that can be stale
+    // after a server-side entitlement change (admin override, webhook,
+    // cross-device purchase, localhost-web status-fetch skip). Gating here
+    // on that stale state falsely paywalls genuinely-entitled users — the
+    // "refresh keeps asking me to upgrade" bug. Per Single Source of Truth
+    // (architecture §E.1), the server is the authority for the generate
+    // action: let the call go through, and surface the paywall only if the
+    // server actually returns FEATURE_LIMIT_EXCEEDED (handled in the catch
+    // block below). Refresh the client status non-blocking so UI affordances
+    // (lock icons) stay accurate without ever blocking the request.
+    try {
+      void fetchSubscriptionStatus({ preserveExistingOnError: true });
+    } catch {
+      // Non-fatal — UI state stays stale; the server still decides.
     }
 
     setGeneratingPlan(true);
@@ -381,7 +366,7 @@ export const useMealPlanning = (navigation: any) => {
     try {
       const userCalorieTarget = getCalorieTarget();
 
-      if (!userCalorieTarget) throw new Error("Calorie target not calculated");
+      if (!userCalorieTarget) throw new Error('Calorie target not calculated');
 
       // Single source of truth for diet preferences: profileStore.dietPreferences
       // (architecture doc §E.3). The legacy transform `mergedDietPreferences` is
@@ -391,11 +376,10 @@ export const useMealPlanning = (navigation: any) => {
       // that can lag the store — see Wave A-04 P1-5). If the SSOT is null here we
       // already surfaced "Profile Incomplete" above; surface a warning rather than
       // fabricate prefs (Principle 8).
-      const dietPreferencesForAI =
-        profileDietPreferences ?? mergedDietPreferences;
+      const dietPreferencesForAI = profileDietPreferences ?? mergedDietPreferences;
       if (!dietPreferencesForAI) {
         console.warn(
-          "[DIET] generateWeeklyMealPlan: profileStore.dietPreferences is null — generating without diet prefs (profileStore SSOT not hydrated).",
+          '[DIET] generateWeeklyMealPlan: profileStore.dietPreferences is null — generating without diet prefs (profileStore SSOT not hydrated).'
         );
       }
 
@@ -409,27 +393,27 @@ export const useMealPlanning = (navigation: any) => {
           calorieTarget: userCalorieTarget,
           advancedReview: profileAdvancedReview || undefined,
           skipCache: true, // Always bypass cache — user explicitly requested fresh generation
-        },
+        }
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.error || "Failed to start generation");
+        throw new Error(response.error || 'Failed to start generation');
       }
 
-      if (response.data.type === "cache_hit") {
+      if (response.data.type === 'cache_hit') {
         await handleMealPlanResult(response.data.plan);
         setGeneratingPlan(false);
         return;
       }
 
-      if (response.data.type === "job_started") {
+      if (response.data.type === 'job_started') {
         if (asyncJobPollingRef.current) {
           clearTimeout(asyncJobPollingRef.current);
           asyncJobPollingRef.current = null;
         }
         setAsyncJob({
           jobId: response.data.jobId,
-          status: "pending",
+          status: 'pending',
           createdAt: new Date().toISOString(),
           estimatedTimeRemaining: response.data.estimatedTimeMinutes * 60,
         });
@@ -440,19 +424,19 @@ export const useMealPlanning = (navigation: any) => {
       const errMsg = error instanceof Error ? error.message : String(error);
       console.error('[DIET] ❌ generateWeeklyMealPlan CATCH:', errMsg, error);
       if (
-        errMsg.toLowerCase().includes("feature limit exceeded") ||
-        errMsg.toLowerCase().includes("limit exceeded")
+        errMsg.toLowerCase().includes('feature limit exceeded') ||
+        errMsg.toLowerCase().includes('limit exceeded')
       ) {
         triggerPaywall(
-          "You've reached your AI generation limit. Upgrade to Pro for unlimited access.",
+          "You've reached your AI generation limit. Upgrade to Pro for unlimited access."
         );
       } else {
         setAiError(errMsg);
         const friendlyMsg =
-          errMsg === "Calorie target not calculated"
-            ? "Please complete your profile so we can calculate your nutrition targets before generating a plan."
-            : "Failed to start meal plan generation.";
-        crossPlatformAlert("Error", friendlyMsg);
+          errMsg === 'Calorie target not calculated'
+            ? 'Please complete your profile so we can calculate your nutrition targets before generating a plan.'
+            : 'Failed to start meal plan generation.';
+        crossPlatformAlert('Error', friendlyMsg);
       }
       setGeneratingPlan(false);
     }
@@ -472,17 +456,13 @@ export const useMealPlanning = (navigation: any) => {
     if (!weeklyMealPlan?.meals) {
       return [];
     }
-    return weeklyMealPlan.meals.filter(
-      (meal) => meal.dayOfWeek === selectedDay,
-    );
+    return weeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
   }, [weeklyMealPlan?.meals, selectedDay]);
 
   const handleDeleteMeal = async (meal: DayMeal) => {
     try {
       if (weeklyMealPlan) {
-        const updatedMeals = weeklyMealPlan.meals.filter(
-          (m) => m.id !== meal.id,
-        );
+        const updatedMeals = weeklyMealPlan.meals.filter((m) => m.id !== meal.id);
         const updatedPlan = { ...weeklyMealPlan, meals: updatedMeals };
         setWeeklyMealPlan(updatedPlan);
         await saveWeeklyMealPlan(updatedPlan);
@@ -505,15 +485,15 @@ export const useMealPlanning = (navigation: any) => {
       forceRefresh();
       return true;
     } catch (error) {
-      console.error("Delete failed", error);
-      crossPlatformAlert("Error", "Failed to delete meal");
+      console.error('Delete failed', error);
+      crossPlatformAlert('Error', 'Failed to delete meal');
       return false;
     }
   };
 
   const startMealPreparation = async (meal: DayMeal) => {
     completionTrackingService.updateMealProgress(meal.id, 0, {
-      source: "diet_screen_start",
+      source: 'diet_screen_start',
       startedAt: new Date().toISOString(),
     });
 
@@ -521,56 +501,46 @@ export const useMealPlanning = (navigation: any) => {
       meal.cookingInstructions = [
         {
           step: 1,
-          instruction: "Gather all ingredients and prepare your workspace",
+          instruction: 'Gather all ingredients and prepare your workspace',
         },
         {
           step: 2,
-          instruction: "Follow your preferred cooking method for this meal",
+          instruction: 'Follow your preferred cooking method for this meal',
         },
         {
           step: 3,
-          instruction: "Cook according to the preparation time specified",
+          instruction: 'Cook according to the preparation time specified',
         },
-        { step: 4, instruction: "Season to taste and serve immediately" },
-        { step: 5, instruction: "Enjoy your healthy meal!" },
+        { step: 4, instruction: 'Season to taste and serve immediately' },
+        { step: 5, instruction: 'Enjoy your healthy meal!' },
       ];
     }
 
     if (navigation) {
-      navigation.navigate("CookingSession", { meal });
+      navigation.navigate('CookingSession', { meal });
     }
   };
 
   const handleStartMeal = (meal: DayMeal) => {
     if (!navigation) {
-      crossPlatformAlert("Error", "Navigation not available");
+      crossPlatformAlert('Error', 'Navigation not available');
       return;
     }
 
-    if (Platform.OS === "web") {
+    if (Platform.OS === 'web') {
       setSelectedMealForPreparation(meal);
       setShowMealPreparationModal(true);
       return;
     }
 
     const today = new Date();
-    const dayNames = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-    ];
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayName = dayNames[today.getDay()] as DayName;
 
-    const completedMealsToday = Object.entries(mealProgress).filter(
-      ([mealId, progress]) => {
-        const m = weeklyMealPlan?.meals.find((m) => m.id === mealId);
-        return progress.progress === 100 && m?.dayOfWeek === todayName;
-      },
-    ).length;
+    const completedMealsToday = Object.entries(mealProgress).filter(([mealId, progress]) => {
+      const m = weeklyMealPlan?.meals.find((m) => m.id === mealId);
+      return progress.progress === 100 && m?.dayOfWeek === todayName;
+    }).length;
 
     const motivationConfig = {
       personalInfo: legacyPersonalInfo || undefined,
@@ -579,19 +549,16 @@ export const useMealPlanning = (navigation: any) => {
       completedMealsToday,
     };
 
-    const dynamicMessage = mealMotivationService.getMealStartMessage(
-      meal,
-      motivationConfig,
-    );
+    const dynamicMessage = mealMotivationService.getMealStartMessage(meal, motivationConfig);
     const preparationTips = mealMotivationService.getPreparationTips(meal);
 
     const fullMessage = `${dynamicMessage}\n\nQuick Tips:\n${preparationTips
       .slice(0, 2)
       .map((tip) => `- ${tip}`)
-      .join("\n")}`;
+      .join('\n')}`;
 
-    crossPlatformAlert("Ready to Cook?", fullMessage, [
-      { text: "Maybe Later", style: "cancel" },
+    crossPlatformAlert('Ready to Cook?', fullMessage, [
+      { text: 'Maybe Later', style: 'cancel' },
       {
         text: "Let's Cook!",
         onPress: () => startMealPreparation(meal),
@@ -605,34 +572,81 @@ export const useMealPlanning = (navigation: any) => {
         meal.id,
         {
           completedAt: new Date().toISOString(),
-          source: "diet_screen_manual",
+          source: 'diet_screen_manual',
         },
-        user?.id,
+        user?.id
       );
 
       if (success) {
         try {
           await loadDailyNutrition();
         } catch (refreshError) {
-          console.warn("Failed to refresh nutrition data:", refreshError);
+          console.warn('Failed to refresh nutrition data:', refreshError);
         }
 
-        if (Platform.OS === "web") {
+        if (Platform.OS === 'web') {
           setShowMealPreparationModal(false);
           setSelectedMealForPreparation(null);
         } else {
           crossPlatformAlert(
-            "Meal Complete!",
-            `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`,
+            'Meal Complete!',
+            `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`
           );
         }
       } else {
-        crossPlatformAlert("Error", "Failed to mark meal as complete.");
+        crossPlatformAlert('Error', 'Failed to mark meal as complete.');
       }
     } catch {
-      crossPlatformAlert("Error", "Failed to mark meal as complete.");
+      crossPlatformAlert('Error', 'Failed to mark meal as complete.');
     }
   };
+
+  const [isSwappingMeal, setIsSwappingMeal] = useState(false);
+
+  const swapMealInPlan = useCallback(
+    async (meal: DayMeal) => {
+      if (!weeklyMealPlan) return;
+      setIsSwappingMeal(true);
+      try {
+        const meals = [...(weeklyMealPlan.meals || [])];
+        const idx = meals.findIndex((m) => m.id === meal.id);
+        if (idx === -1) {
+          crossPlatformAlert('Error', 'Meal not found in plan.');
+          return;
+        }
+
+        const dietPrefs = buildLegacyDietPreferences(useProfileStore.getState().dietPreferences);
+
+        const swapped = await aiService.swapMealInPlan(meal, {
+          dietType: dietPrefs?.diet_type || 'balanced',
+          allergies: dietPrefs?.allergies || [],
+          targetCalories: meal.totalCalories || 500,
+        });
+
+        if (swapped) {
+          meals[idx] = { ...swapped, id: meal.id, dayOfWeek: meal.dayOfWeek };
+          const updatedPlan = { ...weeklyMealPlan, meals };
+          setWeeklyMealPlan(updatedPlan);
+          await saveWeeklyMealPlan(updatedPlan);
+          await forceRefresh();
+        } else {
+          crossPlatformAlert(
+            'Swap Failed',
+            'Could not generate a replacement meal. Please try again.'
+          );
+        }
+      } catch (error) {
+        console.error('[useMealPlanning] swapMealInPlan error:', error);
+        crossPlatformAlert(
+          'Swap Failed',
+          'Could not generate a replacement meal. Please try again.'
+        );
+      } finally {
+        setIsSwappingMeal(false);
+      }
+    },
+    [weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan, forceRefresh]
+  );
 
   return {
     weeklyMealPlan,
@@ -655,5 +669,7 @@ export const useMealPlanning = (navigation: any) => {
     handleStartMeal,
     startMealPreparation,
     completeMealPreparation,
+    swapMealInPlan,
+    isSwappingMeal,
   };
 };

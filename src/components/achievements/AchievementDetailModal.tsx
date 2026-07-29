@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Modal,
   View,
@@ -10,13 +10,30 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { BlurView } from "expo-blur";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withDelay,
+  withTiming,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Achievement,
   UserAchievement,
 } from "../../services/achievements/types";
-import { flatColors as colors } from "../../theme/aurora-tokens";
-import { rf, rh, rw, rp, rbr } from "../../utils/responsive";
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
+import {
+  surface,
+  border,
+  chart,
+  colors,
+  typography,
+  spacing,
+} from "../../theme/aurora-tokens";
+import { rf } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 
@@ -27,37 +44,79 @@ interface AchievementDetailModalProps {
   onClose: () => void;
 }
 
+const tierGradients: Record<string, readonly [string, string]> = {
+  bronze: [chart[1], chart[1]] as const,
+  silver: [chart[2], chart[2]] as const,
+  gold: [chart[5], chart[5]] as const,
+  platinum: [chart[3], chart[3]] as const,
+  diamond: [chart[6], chart[6]] as const,
+  legendary: [chart[4], chart[4]] as const,
+};
+
 export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
   visible,
   achievement,
   userAchievement,
   onClose,
 }) => {
-  const getTierColor = (tier: string) => {
-    switch (tier) {
-      case "bronze":
-        return "#CD7F32";
-      case "silver":
-        return "#C0C0C0";
-      case "gold":
-        return colors.gold;
-      case "platinum":
-        return "#E5E4E2";
-      case "diamond":
-        return "#B9F2FF";
-      case "legendary":
-        return "#FF5555";
-      default:
-        return colors.textSecondary;
-    }
-  };
+  const badgeScale = useSharedValue(0);
+  const badgeRotate = useSharedValue(0);
+  const contentOpacity = useSharedValue(0);
 
   const isUnlocked = userAchievement?.isCompleted || false;
   const progress = userAchievement?.progress || 0;
   const maxProgress =
     userAchievement?.maxProgress || achievement?.requirements[0]?.target || 1;
   const progressPercent = Math.min((progress / maxProgress) * 100, 100);
-  const tierColor = achievement ? getTierColor(achievement.tier) : "#CD7F32";
+  const tierColor = achievement
+    ? (tierGradients[achievement.tier]?.[0] ?? chart[1])
+    : chart[1];
+  const tierGradient = achievement
+    ? (tierGradients[achievement.tier] ?? ([chart[1], chart[1]] as const))
+    : ([chart[1], chart[1]] as const);
+
+  useEffect(() => {
+    if (visible && achievement) {
+      badgeScale.value = 0;
+      badgeRotate.value = 0;
+      contentOpacity.value = 0;
+
+      badgeScale.value = withDelay(
+        100,
+        withSpring(1, { damping: 12, stiffness: 120 })
+      );
+      badgeRotate.value = withDelay(
+        100,
+        withSpring(1, { damping: 12, stiffness: 100 })
+      );
+      contentOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
+    }
+  }, [visible, achievement]);
+
+  const badgeStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(
+      badgeRotate.value,
+      [0, 1],
+      [-180, 0],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ scale: badgeScale.value }, { rotate: `${rotate}deg` }],
+    };
+  });
+
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
+
+  if (!achievement) {
+    return (
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+      </Modal>
+    );
+  }
+
   return (
     <Modal
       visible={visible}
@@ -65,22 +124,13 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      {!achievement ? (
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
-      ) : (
       <View style={styles.overlay}>
         {Platform.OS === "ios" ? (
           <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlayDark }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.7)" }]} />
         )}
 
-        {/*
-          Backdrop tap target rendered BEFORE the modal card so it sits in the
-          z-stack below the content. Previously it was an absoluteFillObject
-          placed after the BlurView, which let it intercept taps meant for the
-          modal content. Now it only catches taps on the area outside the card.
-        */}
         <Pressable
           style={styles.backdrop}
           onPress={onClose}
@@ -92,12 +142,22 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
           style={styles.modalContent}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
+          {/* Hero badge with spring entrance */}
           <View style={styles.header}>
-            <View
-              style={[styles.iconContainer, !isUnlocked && styles.grayscale]}
-            >
-              <Text style={styles.icon}>{achievement.icon}</Text>
-            </View>
+            <Animated.View style={[styles.heroBadgeWrap, badgeStyle]}>
+              <LinearGradient
+                colors={tierGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.heroBadge}
+              >
+                <Ionicons
+                  name={isUnlocked ? "trophy" : "lock-closed"}
+                  size={rf(32)}
+                  color={colors.text.primary}
+                />
+              </LinearGradient>
+            </Animated.View>
             <AnimatedPressable
               onPress={onClose}
               scaleValue={0.9}
@@ -109,98 +169,108 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
               <Ionicons
                 name="close"
                 size={rf(22)}
-                color={colors.text}
+                color={colors.text.primary}
               />
             </AnimatedPressable>
           </View>
 
-          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{achievement.title}</Text>
-
-          <View style={[styles.tierBadge, { borderColor: tierColor }]}>
-            <Text style={[styles.tierText, { color: tierColor }]} numberOfLines={1}>
-              {(achievement.tier ?? 'unknown').toUpperCase()} TIER
+          <Animated.View style={contentStyle}>
+            <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+              {achievement.title}
             </Text>
-          </View>
 
-          <ScrollView
-            style={styles.scrollContent}
-            contentContainerStyle={styles.scrollContentInner}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={styles.description}>{achievement.description}</Text>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>REQUIREMENTS</Text>
-              {achievement.requirements.map((req, index) => (
-                <View key={index} style={styles.requirementRow}>
-                  <Ionicons
-                    name={
-                      isUnlocked || progress >= req.target
-                        ? "checkbox"
-                        : "square-outline"
-                    }
-                    size={rf(20)}
-                    color={
-                      isUnlocked || progress >= req.target
-                        ? colors.success
-                        : colors.textTertiary
-                    }
-                  />
-                  <Text style={styles.requirementText} numberOfLines={3}>
-                    {req.target} {req.type.replace(/_/g, " ")}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>REWARDS</Text>
-              <View style={styles.rewardRow}>
-                <Ionicons name="ribbon-outline" size={rf(18)} color={colors.primary} style={styles.rewardIcon} />
-                <Text style={styles.rewardText} numberOfLines={1}>
-                  {achievement.reward.value} FitCoins
-                </Text>
-              </View>
-              <Text style={styles.rewardDesc} numberOfLines={3}>
-                {achievement.reward.description}
+            <View style={[styles.tierChip, { backgroundColor: `${tierColor}18` }]}>
+              <Text style={[styles.tierChipText, { color: tierColor }]} numberOfLines={1}>
+                {(achievement.tier ?? "unknown").toUpperCase()} TIER
               </Text>
             </View>
 
-            {!isUnlocked && progress > 0 && (
-              <View style={styles.progressContainer}>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel} numberOfLines={1}>Current Progress</Text>
-                  <Text style={styles.progressValue} numberOfLines={1}>
-                    {Math.round(progressPercent)}%
+            <ScrollView
+              style={styles.scrollContent}
+              contentContainerStyle={styles.scrollContentInner}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.description}>{achievement.description}</Text>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>REQUIREMENTS</Text>
+                {achievement.requirements.map((req, index) => (
+                  <View key={index} style={styles.requirementRow}>
+                    <Ionicons
+                      name={
+                        isUnlocked || progress >= req.target
+                          ? "checkbox"
+                          : "square-outline"
+                      }
+                      size={rf(20)}
+                      color={
+                        isUnlocked || progress >= req.target
+                          ? chart[4]
+                          : colors.text.muted
+                      }
+                    />
+                    <Text style={styles.requirementText} numberOfLines={3}>
+                      {req.target} {req.type.replace(/_/g, " ")}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>REWARDS</Text>
+                <View style={styles.rewardRow}>
+                  <Ionicons
+                    name="ribbon-outline"
+                    size={rf(18)}
+                    color={chart[5]}
+                    style={styles.rewardIcon}
+                  />
+                  <Text style={styles.rewardText} numberOfLines={1}>
+                    {achievement.reward.value} FitCoins
                   </Text>
                 </View>
-                <View style={styles.progressBarBg}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        width: `${progressPercent}%`,
-                        backgroundColor: tierColor,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            )}
-
-            {isUnlocked && userAchievement?.unlockedAt && (
-              <View style={styles.unlockedContainer}>
-                <Ionicons name="trophy" size={rf(20)} color={colors.gold} />
-                <Text style={styles.unlockedText} numberOfLines={2}>
-                  Unlocked on{" "}
-                  {new Date(userAchievement.unlockedAt).toLocaleDateString()}
+                <Text style={styles.rewardDesc} numberOfLines={3}>
+                  {achievement.reward.description}
                 </Text>
               </View>
-            )}
-          </ScrollView>
+
+              {!isUnlocked && progress > 0 && (
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressHeader}>
+                    <Text style={styles.progressLabel} numberOfLines={1}>
+                      Current Progress
+                    </Text>
+                    <Text style={styles.progressValue} numberOfLines={1}>
+                      {Math.round(progressPercent)}%
+                    </Text>
+                  </View>
+                  <View style={styles.progressBarBg}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          width: `${progressPercent}%`,
+                          backgroundColor: tierColor,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+              )}
+
+              {isUnlocked && userAchievement?.unlockedAt && (
+                <View style={styles.unlockedContainer}>
+                  <Ionicons name="trophy" size={rf(20)} color={chart[5]} />
+                  <Text style={styles.unlockedText} numberOfLines={2}>
+                    Unlocked on{" "}
+                    {new Date(userAchievement.unlockedAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
-      )}
     </Modal>
   );
 };
@@ -210,7 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: rw(20),
+    padding: spacing.lg,
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -219,23 +289,18 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxHeight: "85%",
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: rbr(24),
-    padding: rw(24),
+    backgroundColor: surface[2],
+    borderRadius: 24,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.glassHighlight,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    borderColor: border.DEFAULT,
     zIndex: 2,
   },
   header: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "flex-start",
-    marginBottom: rh(16),
+    marginBottom: spacing.md,
     position: "relative",
   },
   closeButton: {
@@ -247,141 +312,134 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  iconContainer: {
-    width: rw(72),
-    height: rw(72),
-    borderRadius: rw(36),
-    backgroundColor: colors.glassSurface,
+  heroBadgeWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    overflow: "hidden",
+  },
+  heroBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.glassHighlight,
-  },
-  grayscale: {
-    opacity: 0.5,
-    backgroundColor: colors.overlayDark,
-  },
-  icon: {
-    fontSize: rf(36),
   },
   title: {
+    ...typography.variants.pageTitle,
     fontSize: rf(22),
-    fontWeight: "800",
-    color: colors.text,
+    color: colors.text.primary,
     textAlign: "center",
-    marginBottom: rh(8),
+    marginBottom: spacing.sm,
   },
-  tierBadge: {
+  tierChip: {
     alignSelf: "center",
-    paddingHorizontal: rw(12),
-    paddingVertical: rh(4),
-    borderRadius: rbr(12),
-    borderWidth: 1,
-    marginBottom: rh(20),
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
+    marginBottom: spacing.md,
   },
-  tierText: {
-    fontSize: rf(12),
-    fontWeight: "700",
+  tierChipText: {
+    fontFamily: "Manrope_700Bold",
+    fontSize: rf(11),
     letterSpacing: 1,
   },
   scrollContent: {
     flexGrow: 1,
   },
   scrollContentInner: {
-    paddingBottom: rh(16),
+    paddingBottom: spacing.md,
   },
   description: {
-    fontSize: rf(14),
-    color: colors.textSecondary,
+    ...typography.variants.body,
+    color: colors.text.secondary,
     textAlign: "center",
-    marginBottom: rh(20),
+    marginBottom: spacing.md,
     lineHeight: rf(20),
   },
   section: {
-    marginBottom: rh(20),
-    backgroundColor: hexToRgba(colors.white, 0.03),
-    padding: rw(16),
-    borderRadius: rbr(16),
+    marginBottom: spacing.md,
+    backgroundColor: hexToRgba("#FFFFFF", 0.03),
+    padding: spacing.md,
+    borderRadius: 16,
   },
   sectionTitle: {
+    fontFamily: "Manrope_700Bold",
     fontSize: rf(11),
-    color: colors.textTertiary,
-    fontWeight: "700",
-    marginBottom: rh(12),
+    color: colors.text.muted,
+    marginBottom: spacing.sm,
     letterSpacing: 1,
   },
   requirementRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rh(8),
+    marginBottom: spacing.sm,
   },
   requirementText: {
-    marginLeft: rw(12),
-    color: colors.text,
-    fontSize: rf(14),
+    marginLeft: spacing.sm,
+    ...typography.variants.body,
+    color: colors.text.primary,
     flex: 1,
     flexShrink: 1,
   },
   rewardRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: rh(4),
+    marginBottom: spacing.xs,
   },
   rewardIcon: {
-    marginRight: rw(8),
+    marginRight: spacing.sm,
   },
   rewardText: {
-    color: colors.primary,
+    fontFamily: "Manrope_700Bold",
+    color: chart[5],
     fontSize: rf(16),
-    fontWeight: "700",
   },
   rewardDesc: {
-    color: colors.textSecondary,
-    fontSize: rf(12),
-    marginTop: rh(4),
+    ...typography.variants.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
   },
   progressContainer: {
-    marginBottom: rh(20),
+    marginBottom: spacing.md,
   },
   progressHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: rh(8),
+    marginBottom: spacing.sm,
   },
   progressLabel: {
-    color: colors.textSecondary,
-    fontSize: rf(12),
+    ...typography.variants.caption,
+    color: colors.text.secondary,
   },
   progressValue: {
-    color: colors.text,
-    fontWeight: "700",
+    fontFamily: "Manrope_700Bold",
+    color: colors.text.primary,
     fontSize: rf(12),
   },
   progressBarBg: {
-    height: rp(8),
-    backgroundColor: colors.glassHighlight,
-    borderRadius: rbr(4),
+    height: 8,
+    backgroundColor: surface[1],
+    borderRadius: 4,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: rbr(4),
+    borderRadius: 4,
   },
   unlockedContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    // Darken gold tint to meet WCAG AA contrast for white text. The previous
-    // 10% gold was nearly invisible and made the "Unlocked on" badge wash out.
-    backgroundColor: hexToRgba(colors.gold, TINT_ALPHA_LOW + 0.18),
-    padding: rw(12),
-    borderRadius: rbr(12),
-    marginTop: rh(8),
-    gap: rw(8),
+    backgroundColor: hexToRgba(chart[5], 0.18),
+    padding: spacing.md,
+    borderRadius: 12,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
   },
   unlockedText: {
-    color: colors.gold,
-    fontWeight: "700",
+    fontFamily: "Manrope_700Bold",
+    color: chart[5],
     fontSize: rf(12),
     flex: 1,
   },

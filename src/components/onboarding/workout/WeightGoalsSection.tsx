@@ -1,8 +1,16 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+/**
+ * WeightGoalsSection — read-only weight goal summary (Editorial Dark reskin)
+ *
+ * Mirrors the Body tab's weight goal so the user sees the target their training
+ * supports. Read-only (entered on the Body tab). Presented as a quiet
+ * SectionLabel + hairline metric rows (label left, value right) — no boxed
+ * card, no badge, no accent line. Data wiring unchanged — still receives
+ * `bodyAnalysisData` + `formData` and renders derived values only.
+ */
+
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";import { GlassCard } from "../../../components/ui/aurora";
+import { StyleSheet, View, Text } from "react-native";
+import { tokens, SectionLabel, Rule } from "../fresh";
 import {
   WorkoutPreferencesData,
   BodyAnalysisData,
@@ -13,185 +21,125 @@ interface WeightGoalsSectionProps {
   formData: WorkoutPreferencesData;
 }
 
+const MetricRow: React.FC<{
+  label: string;
+  value: string;
+  hint?: string;
+  last?: boolean;
+}> = ({ label, value, hint, last = false }) => (
+  <View style={[styles.metricRow, last && styles.metricRowLast]}>
+    <Text style={styles.metricLabel}>{label}</Text>
+    <View style={styles.metricValueWrap}>
+      <Text style={styles.metricValue}>{value}</Text>
+      {hint && <Text style={styles.metricHint}>{hint}</Text>}
+    </View>
+  </View>
+);
+
+const formatSigned = (delta: number): string =>
+  `${delta > 0 ? "+" : "−"}${Math.abs(delta)} kg`;
+
 export const WeightGoalsSection: React.FC<WeightGoalsSectionProps> = ({
   bodyAnalysisData,
-  formData,
+  formData: _formData,
 }) => {
   if (!bodyAnalysisData) return null;
 
+  const current = bodyAnalysisData.current_weight_kg;
+  const target = bodyAnalysisData.target_weight_kg;
+  const weeks = bodyAnalysisData.target_timeline_weeks;
+
+  const hasAll = !!(current && target && weeks);
+  const weeklyRate = hasAll
+    ? (Math.abs(current! - target!) / weeks!).toFixed(2)
+    : null;
+  const delta = current && target ? target - current : null;
+  // Descriptive pace read — mirrors the number, keeps the tone motivational.
+  const rateNum = weeklyRate ? parseFloat(weeklyRate) : 0;
+  const paceNote = weeklyRate
+    ? rateNum > 1
+      ? "Ambitious"
+      : rateNum >= 0.5
+        ? "Strong"
+        : "Steady"
+    : null;
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Weight Goals Summary</Text>
-          <View style={styles.readOnlyBadge}>
-            <Ionicons
-              name="document-text-outline"
-              size={rf(12)}
-              color={colors.warning}
-              style={{ marginRight: 4 }}
-            />
-            <Text style={styles.readOnlyText}>READ ONLY</Text>
-          </View>
-        </View>
-        <Text style={styles.sectionSubtitle}>
-          This information was entered in your Body Analysis
-        </Text>
+    <View testID="weight-goals-card">
+      <SectionLabel>Weight goal</SectionLabel>
+      <Text style={styles.caption}>
+        From the Body tab — your training supports this target
+      </Text>
+
+      <View style={styles.rows}>
+        <MetricRow label="Current" value={current ? `${current} kg` : "—"} />
+        <MetricRow
+          label="Target"
+          value={target ? `${target} kg` : "Not set"}
+          hint={delta !== null && delta !== 0 ? formatSigned(delta) : undefined}
+        />
+        <MetricRow
+          label="Timeline"
+          value={weeks ? `${weeks} weeks` : "—"}
+          last={!weeklyRate}
+        />
+        {weeklyRate && (
+          <MetricRow
+            label="Pace"
+            value={`${weeklyRate} kg/week`}
+            hint={paceNote ?? undefined}
+            last
+          />
+        )}
       </View>
-
-      <View style={styles.edgeToEdgeContentPadded}>
-        <GlassCard
-          elevation={2}
-          blurIntensity="default"
-          padding="md"
-          borderRadius="lg"
-          style={styles.weightGoalsCardInline}
-        >
-          <View style={styles.weightGoalsContent}>
-            <View style={styles.weightGoalItem}>
-              <Text style={styles.weightGoalLabel}>Current Weight</Text>
-              <Text style={styles.weightGoalValue}>
-                {bodyAnalysisData.current_weight_kg}kg
-              </Text>
-            </View>
-
-            <Ionicons
-              name="arrow-forward-outline"
-              size={rf(20)}
-              color={colors.textSecondary}
-            />
-
-            <View style={styles.weightGoalItem}>
-              <Text style={styles.weightGoalLabel}>Target Weight</Text>
-              <Text style={styles.weightGoalValue}>
-                {bodyAnalysisData.target_weight_kg ? `${bodyAnalysisData.target_weight_kg}kg` : 'Not set'}
-              </Text>
-            </View>
-
-            <Ionicons
-              name="time-outline"
-              size={rf(20)}
-              color={colors.textSecondary}
-            />
-
-            <View style={styles.weightGoalItem}>
-              <Text style={styles.weightGoalLabel}>Timeline</Text>
-              <Text style={styles.weightGoalValue}>
-                {bodyAnalysisData.target_timeline_weeks}w
-              </Text>
-            </View>
-          </View>
-
-          {bodyAnalysisData.current_weight_kg &&
-            bodyAnalysisData.target_weight_kg &&
-            bodyAnalysisData.target_timeline_weeks && (
-              <View style={styles.weeklyRateInfo}>
-                <Text style={styles.weeklyRateText}>
-                  Target pace (from Body tab):{" "}
-                  {(
-                    Math.abs(
-                      bodyAnalysisData.current_weight_kg -
-                        bodyAnalysisData.target_weight_kg,
-                    ) / bodyAnalysisData.target_timeline_weeks
-                  ).toFixed(2)}{" "}
-                  kg/week — safe achievable rate confirmed on Review tab
-                </Text>
-              </View>
-            )}
-        </GlassCard>
-      </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+      <Rule spacing={0} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-    marginHorizontal: -spacing.lg,
+  caption: {
+    marginTop: 6,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+  rows: {
+    marginTop: 8,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  readOnlyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: `${colors.warning}20`,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
-  readOnlyText: {
-    fontSize: fontSize.xs,
-    color: colors.warning,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  sectionSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: fontSize.sm * 1.4,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  weightGoalsCardInline: {
-    marginTop: spacing.xs,
-  },
-  weightGoalsContent: {
+  metricRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: tokens.hairline,
   },
-  weightGoalItem: {
-    alignItems: "center",
+  metricRowLast: {
+    borderBottomWidth: 0,
   },
-  weightGoalLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  metricLabel: {
+    fontFamily: "Manrope_400Regular",
+    fontSize: 14,
+    lineHeight: 20,
+    color: tokens.ink2,
   },
-  weightGoalValue: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.secondary,
+  metricValueWrap: {
+    flexDirection: "row",
+    alignItems: "baseline",
   },
-  weeklyRateInfo: {
-    alignItems: "center",
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  metricValue: {
+    fontFamily: "Manrope_600SemiBold",
+    fontSize: 17,
+    lineHeight: 22,
+    color: tokens.ink,
   },
-  weeklyRateText: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-    fontWeight: typography.fontWeight.medium,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
+  metricHint: {
+    marginLeft: 8,
+    fontFamily: "Manrope_400Regular",
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
   },
 });

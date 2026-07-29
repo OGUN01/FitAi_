@@ -1,8 +1,20 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+/**
+ * LocationFields — S1 "You" location inputs, Editorial Dark skin.
+ *
+ * Country: Pill wrap (7 countries + Other) — single-select chips, accent on
+ * selected, plus a one-line "why we ask" caption. State: Pill wrap when the
+ * country has states, otherwise an UnderlineInput. Custom-country and state
+ * reveals fade in (progressive disclosure — no popping). Region/city:
+ * UnderlineInput. No cards, no boxed chip grids — hairlines and type only.
+ *
+ * Presentation only — props/hooks/validation identical to the data layer.
+ */
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { GlassCard, AnimatedPressable } from "../../components/ui/aurora";
-import { Input } from "../../components/ui";import { COUNTRIES_WITH_STATES } from "./PersonalInfoConstants";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { tokens, type as typeScale, SectionLabel, Rule, Pill } from "./fresh";
+import { UnderlineInput } from "./aurora";
+import { COUNTRIES_WITH_STATES } from "./PersonalInfoConstants";
 import { PersonalInfoData } from "../../types/onboarding";
 
 interface LocationFieldsProps {
@@ -37,250 +49,115 @@ export const LocationFields: React.FC<LocationFieldsProps> = ({
     getFieldError,
   } = actions;
 
+  const countryOptions = [
+    ...COUNTRIES_WITH_STATES.map((c) => ({ id: c.name, label: c.name })),
+    { id: "Other", label: "Other" },
+  ];
+
   return (
-    <GlassCard
-      style={styles.sectionEdgeToEdge}
-      elevation={2}
-      blurIntensity="default"
-      padding="none"
-      borderRadius="none"
-    >
-      <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>
-          Location
-        </Text>
-      </View>
-
-      <View style={styles.edgeToEdgeContentPadded}>
-        <View style={styles.locationField}>
-          <Text style={styles.inputLabel} numberOfLines={1}>
-            Country *
-          </Text>
-          <View style={styles.countryGrid}>
-            {COUNTRIES_WITH_STATES.map((country) => (
-              <AnimatedPressable
-                key={country.name}
-                style={[
-                  styles.countryOption,
-                  formData.country === country.name
-                    ? styles.countryOptionSelected
-                    : {},
-                ]}
-                onPress={() => handleCountryChange(country.name)}
-                scaleValue={0.95}
-              >
-                <Text
-                  style={[
-                    styles.countryOptionText,
-                    formData.country === country.name &&
-                      styles.countryOptionTextSelected,
-                  ]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {country.name}
-                </Text>
-              </AnimatedPressable>
-            ))}
-            <AnimatedPressable
-              style={[
-                styles.countryOption,
-                formData.country === "Other"
-                  ? styles.countryOptionSelected
-                  : {},
-              ]}
-              onPress={() => handleCountryChange("Other")}
-              scaleValue={0.95}
-            >
-              <Text
-                style={[
-                  styles.countryOptionText,
-                  formData.country === "Other" &&
-                    styles.countryOptionTextSelected,
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                Other
-              </Text>
-            </AnimatedPressable>
-          </View>
-          {hasFieldError("country") && (
-            <Text style={styles.errorText}>{getFieldError("country")}</Text>
-          )}
-        </View>
-
-        {showCustomCountry && (
-          <View style={styles.locationField}>
-            <Input
-              label="Country Name"
-              placeholder="Enter your country"
-              value={customCountry}
-              onChangeText={setCustomCountry}
-            />
-          </View>
-        )}
-
-        {availableStates.length > 0 && (
-          <View style={styles.locationField}>
-            <Text style={styles.inputLabel} numberOfLines={1}>
-              State/Province *
-            </Text>
-            <View style={styles.stateGrid}>
-              {availableStates.map((state) => (
-                <AnimatedPressable
-                  key={state}
-                  style={[
-                    styles.stateOption,
-                    formData.state === state ? styles.stateOptionSelected : {},
-                  ]}
-                  onPress={() => updateField("state", state)}
-                  scaleValue={0.95}
-                >
-                  <Text
-                    style={[
-                      styles.stateOptionText,
-                      formData.state === state &&
-                        styles.stateOptionTextSelected,
-                    ]}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {state}
-                  </Text>
-                </AnimatedPressable>
-              ))}
-            </View>
-            {hasFieldError("state") && (
-              <Text style={styles.errorText}>{getFieldError("state")}</Text>
-            )}
-          </View>
-        )}
-
-        {showCustomCountry && (
-          <View style={styles.locationField}>
-            <Input
-              label="State/Province *"
-              placeholder="Enter your state or province"
-              value={formData.state}
-              onChangeText={(value) => updateField("state", value)}
-            />
-          </View>
-        )}
-
-        <View style={styles.locationField}>
-          <Input
-            label="Region/City (Optional)"
-            placeholder="e.g., Mumbai, Los Angeles, London"
-            value={formData.region || ""}
-            onChangeText={(value) => updateField("region", value)}
+    <View>
+      <SectionLabel>Country</SectionLabel>
+      <View style={styles.pillWrap} testID="onboarding-country">
+        {countryOptions.map((c) => (
+          <Pill
+            key={c.id}
+            label={c.label}
+            selected={formData.country === c.id}
+            onPress={() => handleCountryChange(c.id)}
+            testID={`onboarding-country-${c.id}`}
           />
-        </View>
+        ))}
       </View>
-      <View style={styles.sectionBottomPad} />
-    </GlassCard>
+      <Text style={styles.fieldCaption}>
+        Sets your food database and measurement units.
+      </Text>
+      {hasFieldError("country") && (
+        <Text style={styles.errorText}>{getFieldError("country")}</Text>
+      )}
+
+      {showCustomCountry && (
+        <Animated.View entering={FadeInDown.duration(280)}>
+          <UnderlineInput
+            label="Country Name"
+            placeholder="Enter your country"
+            value={customCountry}
+            onChangeText={setCustomCountry}
+            accentColor={tokens.accent}
+            containerStyle={styles.fieldBlock}
+            testID="onboarding-custom-country"
+          />
+        </Animated.View>
+      )}
+
+      {availableStates.length > 0 && (
+        <Animated.View
+          entering={FadeInDown.duration(280)}
+          style={styles.fieldBlock}
+        >
+          <SectionLabel>State / Province</SectionLabel>
+          <View style={styles.pillWrap} testID="onboarding-state">
+            {availableStates.map((s) => (
+              <Pill
+                key={s}
+                label={s}
+                selected={formData.state === s}
+                onPress={() => updateField("state", s)}
+                testID={`onboarding-state-${s}`}
+              />
+            ))}
+          </View>
+          {hasFieldError("state") && (
+            <Text style={styles.errorText}>{getFieldError("state")}</Text>
+          )}
+        </Animated.View>
+      )}
+
+      {showCustomCountry && (
+        <Animated.View entering={FadeInDown.duration(280)}>
+          <UnderlineInput
+            label="State / Province"
+            placeholder="Enter your state or province"
+            value={formData.state || ""}
+            onChangeText={(v) => updateField("state", v)}
+            accentColor={tokens.accent}
+            containerStyle={styles.fieldBlock}
+            testID="onboarding-custom-state"
+          />
+        </Animated.View>
+      )}
+
+      <UnderlineInput
+        label="Region / City (Optional)"
+        placeholder="e.g., Mumbai, Los Angeles, London"
+        value={formData.region || ""}
+        onChangeText={(v) => updateField("region", v)}
+        accentColor={tokens.accent}
+        containerStyle={styles.fieldBlock}
+        testID="onboarding-region"
+      />
+      <Rule spacing={36} />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionEdgeToEdge: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-    marginHorizontal: -spacing.lg,
-  },
-  sectionTitlePadded: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  sectionBottomPad: {
-    height: spacing.lg,
-  },
-  locationField: {
-    marginBottom: spacing.md,
-  },
-  inputLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    flexShrink: 1,
-  },
-  countryGrid: {
+  pillWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.sm,
+    gap: 8,
+    marginTop: 4,
   },
-  countryOption: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: colors.backgroundTertiary,
-    minWidth: "30%",
-    alignItems: "center",
-    justifyContent: "center",
+  fieldBlock: {
+    marginTop: 28,
   },
-  countryOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}15`,
-  },
-  countryOptionText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    textAlign: "center",
-    flexShrink: 1,
-  },
-  countryOptionTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
+  /** One-line "why we ask" caption under the country chips. */
+  fieldCaption: {
+    ...typeScale.caption,
+    marginTop: 10,
   },
   errorText: {
-    color: colors.error,
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
-  },
-  stateGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  stateOption: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: colors.backgroundTertiary,
-    marginBottom: spacing.xs,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stateOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}15`,
-  },
-  stateOptionText: {
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    textAlign: "center",
-    flexShrink: 1,
-  },
-  stateOptionTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
+    ...typeScale.caption,
+    color: tokens.danger,
+    marginTop: 8,
   },
 });

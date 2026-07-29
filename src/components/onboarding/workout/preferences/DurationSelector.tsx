@@ -1,108 +1,50 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../../theme/aurora-tokens";
+/**
+ * DurationSelector — time_preference as a RangeSlider (blueprint §6/§7.6)
+ *
+ * Aurora redesign of the legacy pill-scroll. Used by PreferencesSection
+ * inline; this leaf is kept for any caller that wants the slider in isolation.
+ * Data wiring unchanged: `onDurationChange(minutes)`.
+ */
+
 import React from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
-import { rf, rw } from "../../../../utils/responsive";import { AnimatedPressable } from "../../../../components/ui/aurora";
-import { formatTime } from "../../../../hooks/useWorkoutPreferences";
+import { View } from "react-native";
+import { RangeSlider, SectionHeader } from "../../aurora";
+import { chart } from "../../../../theme/aurora-tokens";
 
 interface DurationSelectorProps {
   selectedDuration: number;
   onDurationChange: (duration: number) => void;
 }
 
-const DURATIONS = [15, 30, 45, 60, 75, 90, 120];
+const formatTime = (minutes: number): string => {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  if (rem === 0) return `${hours}h`;
+  return `${hours}h ${rem}m`;
+};
 
 export const DurationSelector: React.FC<DurationSelectorProps> = ({
   selectedDuration,
   onDurationChange,
 }) => {
   return (
-    <>
-      <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel}>
-          Workout Duration: {formatTime(selectedDuration)}
-        </Text>
-      </View>
-      <View style={styles.scrollContainerInset}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContentInset}
-          decelerationRate="fast"
-          snapToInterval={rw(70) + rw(10)}
-          snapToAlignment="start"
-        >
-          {DURATIONS.map((minutes) => {
-            const isSelected = selectedDuration === minutes;
-            return (
-              <AnimatedPressable
-                key={minutes}
-                style={
-                  isSelected
-                    ? [styles.durationPill, styles.durationPillSelected]
-                    : styles.durationPill
-                }
-                onPress={() => onDurationChange(minutes)}
-                scaleValue={0.97}
-              >
-                <Text
-                  style={[
-                    styles.durationPillText,
-                    isSelected && styles.durationPillTextSelected,
-                  ]}
-                >
-                  {formatTime(minutes)}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-    </>
+    <View>
+      <SectionHeader
+        title="Session duration"
+        subtitle={`Target: ${formatTime(selectedDuration)}`}
+      />
+      <RangeSlider
+        value={selectedDuration}
+        min={15}
+        max={120}
+        step={5}
+        onChange={onDurationChange}
+        unit="min"
+        tickHapticEvery={5}
+        accentColor={chart[1]}
+        testID="duration-slider"
+      />
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  edgeToEdgeContentPadded: {
-    paddingHorizontal: spacing.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-    flexShrink: 1,
-  },
-  scrollContainerInset: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    overflow: "hidden",
-    borderRadius: borderRadius.md,
-  },
-  scrollContentInset: {
-    paddingVertical: spacing.sm,
-    gap: rw(10),
-  },
-  durationPill: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: "transparent",
-    backgroundColor: colors.backgroundTertiary,
-    minWidth: rw(70),
-    alignItems: "center",
-  },
-  durationPillSelected: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}15`,
-  },
-  durationPillText: {
-    fontSize: rf(12),
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
-  },
-  durationPillTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.semibold,
-  },
-});

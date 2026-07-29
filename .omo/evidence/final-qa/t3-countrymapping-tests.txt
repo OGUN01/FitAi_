@@ -1,0 +1,40 @@
+T3: countryMapping Tests
+========================
+Date: 2026-02-20
+Command: bun test --no-coverage src/__tests__/services/barcode/countryMapping.test.ts
+
+RESULT: PASS (26 pass, 0 fail)
+
+Full output:
+  bun test v1.3.9 (cf6cdbbb)
+   26 pass
+   0 fail
+   26 expect() calls
+  Ran 26 tests across 1 file. [202.00ms]
+
+Test Coverage by describe block:
+1. getCountryFromBarcode (9 tests):
+   - India (890), USA (001), Germany (400), France (301)
+   - UK (500), Japan (490), Australia (930), Brazil (789)
+   - Unknown for too-short barcode
+
+2. normalizeBarcode (6 tests):
+   - Zero-pads 12-digit UPC-A to 13 digits
+   - Leaves 13-digit EAN-13 unchanged
+   - Returns null for: empty string, non-numeric, too-short
+   - Handles 8-digit EAN-8
+
+3. isProductBarcode (7 tests):
+   - true: ean13, org.gs1.EAN-13, Android numeric 32, upc_a
+   - false: qr, org.iso.Code128, pdf417
+
+4. normalizeCountryName (4 tests):
+   - India→IN, United States→US, USA→US
+   - Unknown→XX
+
+Specific tests verified:
+✅ GS1 prefix map: 9 countries tested with correct prefix mapping
+✅ normalizeBarcode: 6 scenarios including edge cases
+✅ isProductBarcode: 7 format types tested
+
+VERDICT: PASS

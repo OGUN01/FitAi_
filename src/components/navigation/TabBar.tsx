@@ -1,13 +1,9 @@
-import React from "react";
-import {
-  View,
-  Pressable,
-  Text,
-  StyleSheet,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { rp, rh, rw } from "../../utils/responsive";
-import { useResponsiveTheme } from "../../hooks/useResponsiveTheme";
+import React from 'react';
+import { View, Pressable, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { rp, rh, rw } from '../../utils/responsive';
+import { spacing } from '../../theme/aurora-tokens';
+import { useResponsiveTheme } from '../../hooks/useResponsiveTheme';
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -25,11 +21,7 @@ interface TabBarProps {
   onTabPress: (tabKey: string) => void;
 }
 
-export const TabBar: React.FC<TabBarProps> = ({
-  tabs,
-  activeTab,
-  onTabPress,
-}) => {
+export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) => {
   const responsiveTheme = useResponsiveTheme();
   const insets = useSafeAreaInsets();
 
@@ -39,7 +31,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         styles.container,
         {
           backgroundColor: responsiveTheme.colors.backgroundSecondary,
-          paddingBottom: Math.max(insets.bottom, rp(10)),
+          paddingBottom: Math.max(insets.bottom, rp(spacing.sm)),
           borderTopWidth: 1,
           borderTopColor: responsiveTheme.colors.border,
         },
@@ -73,12 +65,11 @@ export const TabBar: React.FC<TabBarProps> = ({
               accessibilityState={{ selected: isActive }}
               testID={`tab-${tab.key}`}
             >
-
               <View
                 style={[
                   styles.iconContainer,
                   {
-                    marginBottom: rp(2),
+                    marginBottom: rp(4),
                   },
                 ]}
               >
@@ -90,7 +81,9 @@ export const TabBar: React.FC<TabBarProps> = ({
                   styles.tabText,
                   {
                     fontSize: responsiveTheme.fontSize.xs,
-                    fontWeight: responsiveTheme.fontWeight.medium,
+                    fontWeight: isActive
+                      ? responsiveTheme.fontWeight.semibold
+                      : responsiveTheme.fontWeight.medium,
                     color: isActive
                       ? responsiveTheme.colors.primary
                       : responsiveTheme.colors.textMuted,
@@ -128,16 +121,16 @@ const styles = StyleSheet.create({
   },
 
   tabBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
   },
 
   tab: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
     minHeight: 44,
     // overflow:hidden would clip the active indicator (which sits at the
     // bottom edge). Let it render outside the tab bounds.
@@ -148,6 +141,6 @@ const styles = StyleSheet.create({
   },
 
   tabText: {
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

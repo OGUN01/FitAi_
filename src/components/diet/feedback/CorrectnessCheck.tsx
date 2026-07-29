@@ -1,21 +1,15 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   flatColors as colors,
   spacing,
   borderRadius,
   flatFontSize as fontSize,
-} from "../../../theme/aurora-tokens";
-import { Card } from "../../ui";
-import { rf } from "../../../utils/responsive";
-import { FoodFeedback } from "./types";
+} from '../../../theme/aurora-tokens';
+import { Card } from '../../ui';
+import { rf } from '../../../utils/responsive';
+import { FoodFeedback } from './types';
 
 interface CorrectnessCheckProps {
   feedback: FoodFeedback;
@@ -31,10 +25,7 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
       <Text style={styles.sectionTitle}>Is the food name correct?</Text>
       <View style={styles.correctnessButtons}>
         <TouchableOpacity
-          style={[
-            styles.correctnessButton,
-            feedback.isCorrect && styles.correctnessButtonActive,
-          ]}
+          style={[styles.correctnessButton, feedback.isCorrect && styles.correctnessButtonActive]}
           onPress={() =>
             onFeedbackChange({
               isCorrect: true,
@@ -62,10 +53,7 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.correctnessButton,
-            !feedback.isCorrect && styles.correctnessButtonActive,
-          ]}
+          style={[styles.correctnessButton, !feedback.isCorrect && styles.correctnessButtonActive]}
           onPress={() => onFeedbackChange({ isCorrect: false })}
           accessibilityRole="button"
           accessibilityLabel="Food name is incorrect"
@@ -94,7 +82,7 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
           <TextInput
             style={styles.correctionInput}
             placeholder="Enter correct food name..."
-            value={feedback.correctName || ""}
+            value={feedback.correctName || ''}
             onChangeText={(text) => onFeedbackChange({ correctName: text })}
             multiline={false}
           />
@@ -112,22 +100,22 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontWeight: '700',
     color: colors.text,
     marginBottom: spacing.md,
   },
 
   correctnessButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.md,
     marginBottom: spacing.md,
   },
 
   correctnessButton: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
     minHeight: 44,
     paddingVertical: spacing.md,
@@ -150,7 +138,7 @@ const styles = StyleSheet.create({
   correctnessButtonText: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   correctnessButtonTextActive: {
@@ -165,7 +153,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
     marginBottom: spacing.sm,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 
   correctionInput: {

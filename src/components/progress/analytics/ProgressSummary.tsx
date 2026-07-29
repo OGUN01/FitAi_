@@ -1,7 +1,18 @@
-﻿import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../../theme/aurora-tokens';
+/**
+ * ProgressSummary (analytics) - Aurora 2026
+ *
+ * Slim single-line stats strip with icons; no boxed rows, Manrope type.
+ */
 
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  colors,
+  border as borderTokens,
+  spacing,
+  typography,
+} from "../../../theme/aurora-tokens";
 
 interface ProgressStats {
   totalEntries: number;
@@ -15,22 +26,50 @@ interface ProgressSummaryProps {
   stats: ProgressStats;
 }
 
+interface RowProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  last: boolean;
+}
+
+const SummaryRow: React.FC<RowProps> = ({ icon, text, last }) => (
+  <View style={[styles.row, !last && styles.rowDivider]}>
+    <Ionicons name={icon} size={16} color={colors.text.secondary} />
+    <Text style={styles.rowText}>{text}</Text>
+  </View>
+);
+
 export const ProgressSummary: React.FC<ProgressSummaryProps> = ({ stats }) => {
+  const rows: { icon: keyof typeof Ionicons.glyphMap; text: string }[] = [
+    {
+      icon: "trending-up-outline",
+      text: `${stats.totalEntries} Total Entries`,
+    },
+    {
+      icon: "calendar-outline",
+      text: `${stats.timeRange}-Day Tracking Period`,
+    },
+  ];
+
+  if (stats.weightChange.changePercentage !== 0) {
+    rows.push({
+      icon: "scale-outline",
+      text: `${stats.weightChange.changePercentage.toFixed(1)}% Weight Change`,
+    });
+  }
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Summary</Text>
-      <View style={styles.summaryContainer}>
-        <Text style={styles.summaryText}>
-          📈 Total Entries: {stats.totalEntries}
-        </Text>
-        <Text style={styles.summaryText}>
-          📅 Tracking Period: {stats.timeRange} days
-        </Text>
-        {stats.weightChange.changePercentage !== 0 && (
-          <Text style={styles.summaryText}>
-            ⚖️ Weight Change: {stats.weightChange.changePercentage.toFixed(1)}%
-          </Text>
-        )}
+      <View>
+        {rows.map((row, idx) => (
+          <SummaryRow
+            key={idx}
+            icon={row.icon}
+            text={row.text}
+            last={idx === rows.length - 1}
+          />
+        ))}
       </View>
     </View>
   );
@@ -41,19 +80,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
     marginBottom: spacing.md,
   },
-  summaryContainer: {
-    gap: spacing.sm,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  summaryText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+  rowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: borderTokens.subtle,
+  },
+  rowText: {
+    ...typography.variants.caption2,
+    color: colors.text.secondary,
   },
 });
+
+export default ProgressSummary;

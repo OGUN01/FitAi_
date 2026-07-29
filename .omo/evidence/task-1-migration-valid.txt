@@ -1,0 +1,13 @@
+QA Evidence: task-1-migration-valid
+Date: 2026-02-28
+
+Verification command output:
+off-parquet-global: true
+off-delta-global: true
+off-parquet-india: true
+off-api-live: true
+off-delta: true
+ALTER: true
+
+All 6 checks passed. Migration file is valid.
+File: supabase/migrations/20260228000002_expand_off_source_global.sql

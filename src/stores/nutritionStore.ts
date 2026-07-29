@@ -529,6 +529,14 @@ export const useNutritionStore = create<NutritionState>()(
         set((state) => ({
           dailyMeals: [meal, ...state.dailyMeals],
         }));
+
+        // Diet redesign: recompute nutrition streak after every logged meal.
+        // Lazy require avoids circular dependency (nutritionStore ↔ achievementStore).
+        try {
+          require("./achievementStore").useAchievementStore.getState().updateNutritionStreak();
+        } catch (err) {
+          console.error("[nutritionStore.addDailyMeal] streak update failed:", err);
+        }
       },
 
       setDailyMeals: (meals) => {
@@ -616,6 +624,14 @@ export const useNutritionStore = create<NutritionState>()(
               mealProgress: newProgress,
             };
           });
+
+          // Diet redesign: recompute nutrition streak after meal completion.
+          // Lazy require avoids circular dependency (nutritionStore ↔ achievementStore).
+          try {
+            require("./achievementStore").useAchievementStore.getState().updateNutritionStreak();
+          } catch (err) {
+            console.error("[nutritionStore.completeMeal] streak update failed:", err);
+          }
         } catch (error) {
           console.error(`âŒ Failed to complete meal ${mealId}:`, error);
 
