@@ -5,15 +5,16 @@ import {
   TextInput,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
   Switch,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { GestureDetector } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, interpolate, FadeInDown } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, FadeInUp, FadeInDown } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { useDragToReorder } from "../../gestures/handlers";
 import {
   getCuratedExercises,
@@ -34,14 +35,17 @@ import { haptics } from "../../utils/haptics";
 import {
   AuroraBackground,
   EmptyState,
-  GlassCard,
-  GlassHeader,
-  AnimatedPressable,
   AuroraSpinner,
+  AnimatedPressable,
 } from "../../components/ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+} from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { hexToRgba } from "../../utils/colors";
-import { rp, rf, rw, rh } from "../../utils/responsive";
+import { rf, rw, rh, rp } from "../../utils/responsive";
 
 interface Props {
   navigation: any;
@@ -432,36 +436,63 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     }
   };
 
-  const renderExercisePickerItem = ({ item }: { item: CuratedExercise }) => (
-    <View style={styles.pickerRow}>
-      <View style={styles.pickerInfo}>
-        <Text style={styles.pickerName}>{item.name}</Text>
-        <Text style={styles.pickerMuscles}>
-          {item.muscleGroups.slice(0, 3).join(", ")}
-        </Text>
-      </View>
+  const renderExercisePickerItem = ({ item }: { item: CuratedExercise }) => {
+    const isAdded = addedExercises.some((ex) => ex.exerciseId === item.id);
+    return (
       <AnimatedPressable
-        style={styles.addButton}
         onPress={() => addExercise(item)}
         testID={`add-exercise-${item.id}`}
         accessibilityLabel={`Add ${item.name}`}
+        scaleValue={0.98}
+        springConfig="smooth"
+        hapticType="light"
+        style={styles.pickerRow}
       >
-        <Text style={styles.addButtonText}>+</Text>
+        <View style={styles.pickerInfo}>
+          <Text style={styles.pickerName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.pickerMuscles} numberOfLines={1}>
+            {item.muscleGroups.slice(0, 3).join(", ")}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.pickerCircle,
+            isAdded ? styles.pickerCircleSelected : styles.pickerCircleUnselected,
+          ]}
+        >
+          <Ionicons
+            name={isAdded ? "checkmark" : "add"}
+            size={rf(16)}
+            color={isAdded ? colors.white : colors.primary}
+          />
+        </View>
       </AnimatedPressable>
-    </View>
-  );
+    );
+  };
 
   // Edit-hydration loading state — only renders when templateId was set (edit
   // mode). The create-new path has loadingTemplate=false from initialization.
   if (loadingTemplate) {
     return (
-      <AuroraBackground theme="space">
-        <SafeAreaView style={styles.flex}>
-          <GlassHeader
-            title="Edit Workout"
-            onBack={() => navigation.goBack()}
-            backAccessibilityLabel="Go back"
-          />
+      <AuroraBackground theme="space" animated intensity={0.3}>
+        <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>
+              {isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
+            </Text>
+            <View style={styles.topRowSpacer} />
+          </View>
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -475,20 +506,28 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   // would risk saving an empty template over the existing one).
   if (loadError) {
     return (
-      <AuroraBackground theme="space">
-        <SafeAreaView style={styles.flex}>
-          <GlassHeader
-            title="Edit Workout"
-            onBack={() => navigation.goBack()}
-            backAccessibilityLabel="Go back"
-          />
+      <AuroraBackground theme="space" animated intensity={0.3}>
+        <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>EDIT WORKOUT</Text>
+            <View style={styles.topRowSpacer} />
+          </View>
           <View
             style={styles.emptyWrap}
             testID="create-workout-load-error"
           >
             <EmptyState
               icon="cloud-offline-outline"
-              iconColor={colors.error.DEFAULT}
+              iconColor={colors.error}
               title="Couldn't load workout"
               subtitle="Check your connection and try again."
               ctaText="Try Again"
@@ -504,66 +543,86 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   }
 
   return (
-    <AuroraBackground theme="space">
-      <SafeAreaView style={styles.flex}>
+    <AuroraBackground theme="space" animated intensity={0.3}>
+      <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          <GlassHeader
-            title={isEditing ? "Edit Workout" : "Create Workout"}
-            onBack={() => navigation.goBack()}
-            rightAction={
-              <AnimatedPressable
-                onPress={handleSaveTemplate}
-                disabled={saving}
-                testID="save-button"
-                accessibilityRole="button"
-                accessibilityLabel={isEditing ? "Update template" : "Save template"}
-                style={styles.headerSaveBtn}
-              >
-                {saving ? (
-                  <AuroraSpinner size="sm" customSize={rf(16)} theme="white" />
-                ) : (
-                  <Text style={styles.headerSaveText}>
-                    {isEditing ? "Update" : "Save"}
-                  </Text>
-                )}
-              </AnimatedPressable>
-            }
-          />
+          {/* Compact top row — plain back + eyebrow */}
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>
+              {isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
+            </Text>
+            <View style={styles.topRowSpacer} />
+          </View>
 
-          <TextInput
-            style={styles.nameInput}
-            placeholder="Workout Name"
-            placeholderTextColor={colors.text.tertiary}
-            value={workoutName}
-            onChangeText={setWorkoutName}
-            testID="workout-name-input"
-          />
-
-          {addedExercises.length > 0 && (
-            <View style={styles.addedSection}>
-              <Text style={styles.sectionTitle}>
-                Added ({addedExercises.length})
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Animated.View entering={FadeInUp.delay(80).duration(450)}>
+              <Text style={styles.title}>
+                {isEditing ? "Edit workout" : "Create workout"}
               </Text>
-              {addedExercises.length > 1 && (
-                <Text style={styles.dragHint}>Hold to drag & reorder</Text>
-              )}
-              <ScrollView style={styles.addedList} nestedScrollEnabled>
-                {addedExercises.map((ex, index) => (
-                  <DraggableRow
-                    key={`${ex.exerciseId}-${index}`}
-                    index={index}
-                    totalCount={addedExercises.length}
-                    onReorder={handleDragReorder}
-                  >
-                    <GlassCard padding="sm" elevation={2} contentStyle={styles.addedRowContent}>
-                      <View style={styles.addedRow}>
+              <Text style={styles.subtitle}>
+                Add exercises, tune sets & reps, then save or start.
+              </Text>
+            </Animated.View>
+
+            {/* Workout name input — rounded 12, tinted bg, no border */}
+            <TextInput
+              style={styles.nameInput}
+              placeholder="Workout name"
+              placeholderTextColor={colors.textTertiary}
+              value={workoutName}
+              onChangeText={setWorkoutName}
+              testID="workout-name-input"
+            />
+
+            {/* Added exercises — flat rows, hairline separators */}
+            {addedExercises.length > 0 && (
+              <View style={styles.addedSection}>
+                <View style={styles.addedHeader}>
+                  <Text style={styles.sectionTitle}>
+                    Added ({addedExercises.length})
+                  </Text>
+                  {addedExercises.length > 1 && (
+                    <Text style={styles.dragHint}>Hold to drag & reorder</Text>
+                  )}
+                </View>
+                <View style={styles.addedList}>
+                  {addedExercises.map((ex, index) => (
+                    <DraggableRow
+                      key={`${ex.exerciseId}-${index}`}
+                      index={index}
+                      totalCount={addedExercises.length}
+                      onReorder={handleDragReorder}
+                    >
+                      <View
+                        style={[
+                          styles.addedRow,
+                          index < addedExercises.length - 1 &&
+                            styles.addedRowSeparator,
+                        ]}
+                      >
                         <View style={styles.addedInfo}>
-                          <Text style={styles.addedName}>{ex.name}</Text>
+                          <Text style={styles.addedName} numberOfLines={1}>
+                            {ex.name}
+                          </Text>
                           <View style={styles.inputRow}>
-                            <Text style={styles.inputLabel}>Sets:</Text>
+                            <Text style={styles.inputLabel}>Sets</Text>
                             <TextInput
                               style={styles.smallInput}
                               keyboardType="numeric"
@@ -573,7 +632,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                               }
                               testID={`sets-input-${index}`}
                             />
-                            <Text style={styles.inputLabel}>Reps:</Text>
+                            <Text style={styles.inputLabel}>Reps</Text>
                             <TextInput
                               style={styles.smallInput}
                               keyboardType="numeric"
@@ -595,7 +654,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                               }}
                               testID={`reps-max-input-${index}`}
                             />
-                            <Text style={styles.inputLabel}>Rest:</Text>
+                            <Text style={styles.inputLabel}>Rest</Text>
                             <TextInput
                               style={styles.smallInput}
                               keyboardType="numeric"
@@ -609,7 +668,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                               }
                               testID={`rest-input-${index}`}
                             />
-                            <Text style={styles.inputLabel}>kg:</Text>
+                            <Text style={styles.inputLabel}>kg</Text>
                             <TextInput
                               style={styles.smallInput}
                               keyboardType="decimal-pad"
@@ -622,7 +681,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                                 )
                               }
                               placeholder="0"
-                              placeholderTextColor={colors.text.disabled}
+                              placeholderTextColor={colors.textTertiary}
                               testID={`weight-input-${index}`}
                             />
                           </View>
@@ -634,7 +693,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                             accessibilityLabel="Move exercise up"
                             style={styles.iconBtn}
                           >
-                            <Ionicons name="chevron-up" size={rf(16)} color={colors.primary.DEFAULT} />
+                            <Ionicons name="chevron-up" size={rf(16)} color={colors.primary} />
                           </AnimatedPressable>
                           <AnimatedPressable
                             onPress={() => moveExercise(index, "down")}
@@ -642,7 +701,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                             accessibilityLabel="Move exercise down"
                             style={styles.iconBtn}
                           >
-                            <Ionicons name="chevron-down" size={rf(16)} color={colors.primary.DEFAULT} />
+                            <Ionicons name="chevron-down" size={rf(16)} color={colors.primary} />
                           </AnimatedPressable>
                           <AnimatedPressable
                             onPress={() => removeExercise(index)}
@@ -650,195 +709,240 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                             accessibilityLabel="Remove exercise"
                             style={styles.iconBtn}
                           >
-                            <Ionicons name="close" size={rf(16)} color={colors.error.DEFAULT} />
+                            <Ionicons name="close" size={rf(16)} color={colors.error} />
                           </AnimatedPressable>
                         </View>
                       </View>
-                    </GlassCard>
-                  </DraggableRow>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          <View style={styles.categoryTabs}>
-            {CATEGORY_TABS.map((tab) => (
-              <AnimatedPressable
-                key={tab.key}
-                style={[
-                  styles.tab,
-                  selectedCategory === tab.key && styles.tabActive,
-                ]}
-                onPress={() => setSelectedCategory(tab.key)}
-                testID={`category-tab-${tab.key}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Filter by ${tab.label}`}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    selectedCategory === tab.key && styles.tabTextActive,
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </View>
-
-          <FlatList
-            data={availableExercises}
-            keyExtractor={(item) => item.id}
-            renderItem={renderExercisePickerItem}
-            style={styles.exerciseList}
-            testID="exercise-picker-list"
-          />
-
-          {/* ── Share to Community toggle (Phase 10) ─────────────────────────── */}
-          {/* When ON, the template is saved with is_public=true and the
-              category / difficulty / tags fields below are submitted with the
-              create call. When OFF, the template is private (existing behavior). */}
-          <View style={styles.shareToggleWrap}>
-            <View style={styles.shareToggleRow}>
-              <View style={styles.shareToggleInfo}>
-                <Ionicons
-                  name="people-outline"
-                  size={rf(18)}
-                  color={colors.primary.DEFAULT}
-                />
-                <View style={styles.shareToggleText}>
-                  <Text style={styles.shareToggleTitle}>Share to Community</Text>
-                  <Text style={styles.shareToggleSubtitle}>
-                    Let other users discover, fork, and rate this template.
-                  </Text>
+                    </DraggableRow>
+                  ))}
                 </View>
               </View>
-              <Switch
-                value={shareToCommunity}
-                onValueChange={handleShareToggle}
-                trackColor={{
-                  false: colors.background.tertiary,
-                  true: colors.primary.DEFAULT,
-                }}
-                thumbColor={colors.text.primary}
-                accessibilityRole="switch"
-                accessibilityLabel="Share to community"
-                accessibilityState={{ checked: shareToCommunity }}
-                testID="share-to-community-toggle"
+            )}
+
+            {/* Category filter — flat pill chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryTabs}
+            >
+              {CATEGORY_TABS.map((tab) => {
+                const active = selectedCategory === tab.key;
+                return (
+                  <AnimatedPressable
+                    key={tab.key}
+                    style={[styles.tab, active && styles.tabActive]}
+                    onPress={() => setSelectedCategory(tab.key)}
+                    testID={`category-tab-${tab.key}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Filter by ${tab.label}`}
+                    scaleValue={0.97}
+                    springConfig="smooth"
+                    hapticType="light"
+                  >
+                    <Text
+                      style={[styles.tabText, active && styles.tabTextActive]}
+                    >
+                      {tab.label}
+                    </Text>
+                  </AnimatedPressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Exercise picker — flat rows with hairline separators */}
+            <View style={styles.pickerListWrap}>
+              <FlatList
+                data={availableExercises}
+                keyExtractor={(item) => item.id}
+                renderItem={renderExercisePickerItem}
+                style={styles.exerciseList}
+                testID="exercise-picker-list"
+                scrollEnabled={false}
               />
             </View>
 
-            {shareToCommunity ? (
-              <Animated.View
-                entering={FadeInDown.duration(250)}
-                style={styles.shareFields}
-              >
-                {/* Difficulty (required for community templates) */}
-                <Text style={styles.shareFieldLabel}>
-                  Difficulty <Text style={styles.required}>*</Text>
-                </Text>
-                <View style={styles.difficultyRow}>
-                  {SHARE_DIFFICULTY_OPTIONS.map((opt) => {
-                    const active = shareDifficulty === opt.key;
-                    return (
-                      <AnimatedPressable
-                        key={opt.key}
-                        onPress={() => {
-                          haptics.selection();
-                          setShareDifficulty(opt.key);
-                        }}
-                        style={[
-                          styles.difficultyChip,
-                          active && styles.difficultyChipActive,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={opt.label}
-                        accessibilityState={{ selected: active }}
-                        testID={`share-difficulty-${opt.key}`}
-                      >
-                        <Text
-                          style={[
-                            styles.difficultyChipText,
-                            active && styles.difficultyChipTextActive,
-                          ]}
-                        >
-                          {opt.label}
-                        </Text>
-                      </AnimatedPressable>
-                    );
-                  })}
+            {/* ── Share to Community toggle (Phase 10) ─────────────────────────── */}
+            <View style={styles.shareToggleWrap}>
+              <View style={styles.shareToggleRow}>
+                <View style={styles.shareToggleInfo}>
+                  <View
+                    style={[
+                      styles.iconDisc,
+                      { backgroundColor: hexToRgba(colors.primary, 0.12) },
+                    ]}
+                  >
+                    <Ionicons
+                      name="people-outline"
+                      size={rf(18)}
+                      color={colors.primary}
+                    />
+                  </View>
+                  <View style={styles.shareToggleText}>
+                    <Text style={styles.shareToggleTitle}>Share to Community</Text>
+                    <Text style={styles.shareToggleSubtitle}>
+                      Let other users discover, fork, and rate this template.
+                    </Text>
+                  </View>
                 </View>
-
-                {/* Category (optional — helps community browse filters) */}
-                <Text style={styles.shareFieldLabel}>Category (optional)</Text>
-                <View style={styles.categoryChipsRow}>
-                  {SHARE_CATEGORY_OPTIONS.map((cat) => {
-                    const active = shareCategory === cat;
-                    return (
-                      <AnimatedPressable
-                        key={cat}
-                        onPress={() => {
-                          haptics.selection();
-                          setShareCategory((prev) => (prev === cat ? null : cat));
-                        }}
-                        style={[
-                          styles.categoryChip,
-                          active && styles.categoryChipActive,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Category ${cat}`}
-                        accessibilityState={{ selected: active }}
-                        testID={`share-category-${cat}`}
-                      >
-                        <Text
-                          style={[
-                            styles.categoryChipText,
-                            active && styles.categoryChipTextActive,
-                          ]}
-                        >
-                          {cat}
-                        </Text>
-                      </AnimatedPressable>
-                    );
-                  })}
-                </View>
-
-                {/* Tags (optional, comma-separated) */}
-                <Text style={styles.shareFieldLabel}>
-                  Tags (optional, comma-separated)
-                </Text>
-                <TextInput
-                  style={styles.tagsInput}
-                  value={shareTagsInput}
-                  onChangeText={setShareTagsInput}
-                  placeholder="e.g. hypertrophy, push, home"
-                  placeholderTextColor={colors.text.tertiary}
-                  maxLength={120}
-                  testID="share-tags-input"
+                <Switch
+                  value={shareToCommunity}
+                  onValueChange={handleShareToggle}
+                  trackColor={{
+                    false: colors.backgroundTertiary,
+                    true: colors.primary,
+                  }}
+                  thumbColor={colors.white}
+                  accessibilityRole="switch"
+                  accessibilityLabel="Share to community"
+                  accessibilityState={{ checked: shareToCommunity }}
+                  testID="share-to-community-toggle"
                 />
-              </Animated.View>
-            ) : null}
-          </View>
+              </View>
 
-          <View style={styles.bottomButtons}>
+              {shareToCommunity ? (
+                <Animated.View
+                  entering={FadeInDown.duration(250)}
+                  style={styles.shareFields}
+                >
+                  {/* Difficulty (required for community templates) */}
+                  <Text style={styles.shareFieldLabel}>
+                    Difficulty <Text style={styles.required}>*</Text>
+                  </Text>
+                  <View style={styles.difficultyRow}>
+                    {SHARE_DIFFICULTY_OPTIONS.map((opt) => {
+                      const active = shareDifficulty === opt.key;
+                      return (
+                        <AnimatedPressable
+                          key={opt.key}
+                          onPress={() => {
+                            haptics.selection();
+                            setShareDifficulty(opt.key);
+                          }}
+                          style={[
+                            styles.difficultyChip,
+                            active && styles.difficultyChipActive,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={opt.label}
+                          accessibilityState={{ selected: active }}
+                          testID={`share-difficulty-${opt.key}`}
+                          scaleValue={0.97}
+                          springConfig="smooth"
+                          hapticType="light"
+                        >
+                          <Text
+                            style={[
+                              styles.difficultyChipText,
+                              active && styles.difficultyChipTextActive,
+                            ]}
+                          >
+                            {opt.label}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })}
+                  </View>
+
+                  {/* Category (optional — helps community browse filters) */}
+                  <Text style={styles.shareFieldLabel}>Category (optional)</Text>
+                  <View style={styles.categoryChipsRow}>
+                    {SHARE_CATEGORY_OPTIONS.map((cat) => {
+                      const active = shareCategory === cat;
+                      return (
+                        <AnimatedPressable
+                          key={cat}
+                          onPress={() => {
+                            haptics.selection();
+                            setShareCategory((prev) => (prev === cat ? null : cat));
+                          }}
+                          style={[
+                            styles.categoryChip,
+                            active && styles.categoryChipActive,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Category ${cat}`}
+                          accessibilityState={{ selected: active }}
+                          testID={`share-category-${cat}`}
+                          scaleValue={0.97}
+                          springConfig="smooth"
+                          hapticType="light"
+                        >
+                          <Text
+                            style={[
+                              styles.categoryChipText,
+                              active && styles.categoryChipTextActive,
+                            ]}
+                          >
+                            {cat}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })}
+                  </View>
+
+                  {/* Tags (optional, comma-separated) */}
+                  <Text style={styles.shareFieldLabel}>
+                    Tags (optional, comma-separated)
+                  </Text>
+                  <TextInput
+                    style={styles.tagsInput}
+                    value={shareTagsInput}
+                    onChangeText={setShareTagsInput}
+                    placeholder="e.g. hypertrophy, push, home"
+                    placeholderTextColor={colors.textTertiary}
+                    maxLength={120}
+                    testID="share-tags-input"
+                  />
+                </Animated.View>
+              ) : null}
+            </View>
+
+            {/* Bottom spacer so content isn't hidden behind sticky CTA */}
+            <View style={styles.footerSpacer} />
+          </ScrollView>
+
+          {/* Sticky bottom CTA — gradient primary + ghost secondary */}
+          <View style={styles.footer}>
             <AnimatedPressable
-              style={styles.startButton}
+              style={styles.secondaryCta}
               onPress={handleStartNow}
               testID="start-now-button"
               accessibilityRole="button"
               accessibilityLabel="Start workout now"
+              scaleValue={0.97}
+              springConfig="smooth"
+              hapticType="medium"
             >
-              <Text style={styles.startButtonText}>Start Now</Text>
+              <Text style={styles.secondaryCtaText}>Start Now</Text>
             </AnimatedPressable>
             <AnimatedPressable
-              style={styles.saveTemplateButton}
               onPress={handleSaveTemplate}
               disabled={saving}
               testID="save-template-button"
               accessibilityRole="button"
               accessibilityLabel="Save template"
+              accessibilityState={{ disabled: saving }}
+              scaleValue={0.97}
+              hapticType="medium"
+              style={[styles.primaryCta, saving && styles.ctaDisabled]}
             >
-              <Text style={styles.saveTemplateText}>Save Template</Text>
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.primaryCtaGradient}
+              >
+                {saving ? (
+                  <AuroraSpinner size="sm" customSize={rf(16)} theme="white" />
+                ) : (
+                  <>
+                    <Text style={styles.primaryCtaText}>
+                      {isEditing ? "Update" : "Save Template"}
+                    </Text>
+                    <Ionicons name="checkmark" size={rf(18)} color={colors.white} />
+                  </>
+                )}
+              </LinearGradient>
             </AnimatedPressable>
           </View>
         </KeyboardAvoidingView>
@@ -849,6 +953,52 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+  },
+  backBtn: {
+    width: rw(44),
+    height: rw(44),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  topRowSpacer: {
+    width: rw(44),
+  },
+  stepEyebrow: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: rp(spacing.lg),
+    paddingBottom: rp(spacing.md),
+  },
+  title: {
+    fontSize: rf(28),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: "800",
+    color: colors.text,
+    lineHeight: rf(34),
+    letterSpacing: -0.3,
+    marginBottom: rp(spacing.sm),
+  },
+  subtitle: {
+    fontSize: rf(14),
+    color: colors.textSecondary,
+    lineHeight: rf(20),
+    marginBottom: rp(spacing.lg),
+  },
   loader: {
     flex: 1,
     justifyContent: "center",
@@ -858,182 +1008,215 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  headerSaveBtn: {
-    paddingHorizontal: rp(spacing.sm),
-    paddingVertical: rp(spacing.xs),
+  iconDisc: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  headerSaveText: {
-    fontSize: rf(15),
-    color: colors.primary.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
-  },
+  // ── Name input ──
   nameInput: {
-    backgroundColor: colors.glass.background,
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.body),
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    color: colors.text,
+    fontSize: rf(15),
+    fontWeight: "600",
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.md),
-    marginHorizontal: rp(spacing.md),
-    marginTop: rp(spacing.sm),
     borderRadius: borderRadius.lg,
+    marginBottom: rp(spacing.md),
   },
-  addedSection: { maxHeight: 220, marginTop: rp(spacing.sm), paddingHorizontal: rp(spacing.md) },
-  sectionTitle: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.secondary,
+  // ── Added section ──
+  addedSection: {
+    marginBottom: rp(spacing.md),
+  },
+  addedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: rp(spacing.sm),
+  },
+  sectionTitle: {
+    fontSize: rf(13),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   dragHint: {
     fontSize: rf(11),
-    color: colors.text.tertiary,
-    marginBottom: rp(spacing.xs),
+    color: colors.textTertiary,
     fontStyle: "italic",
   },
-  addedList: { maxHeight: 200 },
-  addedRowContent: { marginBottom: rp(spacing.xs) },
+  addedList: {
+    borderTopWidth: 1,
+    borderTopColor: hexToRgba(colors.white, 0.06),
+  },
   addedRow: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: rp(spacing.md),
+    gap: rp(spacing.sm),
+    minHeight: 44,
   },
-  addedInfo: { flex: 1 },
+  addedRowSeparator: {
+    borderBottomWidth: 1,
+    borderBottomColor: hexToRgba(colors.white, 0.06),
+  },
+  addedInfo: { flex: 1, minWidth: 0 },
   addedName: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: "600",
+    color: colors.text,
     marginBottom: rp(spacing.xs),
   },
-  inputRow: { flexDirection: "row", alignItems: "center", gap: rp(spacing.xs), flexWrap: "wrap" },
-  inputLabel: { fontSize: rf(typography.fontSize.micro), color: colors.text.secondary },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+    flexWrap: "wrap",
+  },
+  inputLabel: {
+    fontSize: rf(11),
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    fontWeight: "600",
+  },
   smallInput: {
-    backgroundColor: colors.background.DEFAULT,
-    color: colors.text.primary,
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    color: colors.text,
     width: rw(44),
     height: rh(32),
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     textAlign: "center",
     fontSize: rf(13),
+    fontWeight: "600",
   },
   addedActions: {
     flexDirection: "column",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    marginLeft: rp(spacing.sm),
   },
   iconBtn: {
     alignItems: "center",
     justifyContent: "center",
-    width: rw(36),
-    height: rw(36),
+    width: Math.max(rw(32), 44),
+    height: Math.max(rw(32), 44),
   },
+  // ── Category tabs ──
   categoryTabs: {
     flexDirection: "row",
-    paddingHorizontal: rp(spacing.md),
-    marginTop: rp(spacing.sm),
-    marginBottom: rp(spacing.sm),
-    flexWrap: "wrap",
     gap: rp(spacing.xs),
+    paddingVertical: rp(spacing.sm),
+    marginBottom: rp(spacing.sm),
   },
   tab: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.glass.background,
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.white, 0.06),
   },
-  tabActive: { backgroundColor: colors.primary.DEFAULT },
-  tabText: { fontSize: rf(typography.fontSize.caption), color: colors.text.secondary },
-  tabTextActive: { color: colors.text.primary, fontWeight: String(typography.fontWeight.semibold) as any },
-  exerciseList: { flex: 1, paddingHorizontal: rp(spacing.md) },
+  tabActive: { backgroundColor: colors.primary },
+  tabText: {
+    fontSize: rf(13),
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+  tabTextActive: {
+    color: colors.white,
+    fontWeight: "700",
+  },
+  // ── Exercise picker ──
+  pickerListWrap: {
+    borderTopWidth: 1,
+    borderTopColor: hexToRgba(colors.white, 0.06),
+  },
+  exerciseList: { flex: 1 },
   pickerRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: rp(spacing.sm),
+    gap: rp(spacing.md),
+    paddingVertical: rp(spacing.md),
     borderBottomWidth: 1,
-    borderBottomColor: colors.glass.border,
+    borderBottomColor: hexToRgba(colors.white, 0.06),
+    minHeight: 44,
   },
-  pickerInfo: { flex: 1 },
+  pickerInfo: { flex: 1, minWidth: 0 },
   pickerName: {
     fontSize: rf(15),
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    color: colors.text,
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: "600",
   },
   pickerMuscles: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.tertiary,
-    marginTop: rp(spacing.xxs),
+    fontSize: rf(12),
+    color: colors.textSecondary,
+    marginTop: rp(2),
   },
-  addButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: 999,
-    backgroundColor: colors.primary.DEFAULT,
-    justifyContent: "center",
+  pickerCircle: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: borderRadius.full,
     alignItems: "center",
+    justifyContent: "center",
+    marginLeft: rp(spacing.xs),
   },
-  addButtonText: {
-    fontSize: rf(20),
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.bold) as any,
-    lineHeight: rf(22),
+  pickerCircleSelected: {
+    backgroundColor: colors.primary,
   },
-  bottomButtons: {
-    flexDirection: "row",
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.md),
-    gap: rp(spacing.md),
-    borderTopWidth: 1,
-    borderTopColor: colors.glass.border,
-  },
-  // ── Share-to-Community styles (Phase 10) ────────────────────────────────
-  shareToggleWrap: {
-    marginHorizontal: rp(spacing.md),
-    marginVertical: rp(spacing.sm),
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.glass.background,
+  pickerCircleUnselected: {
     borderWidth: 1,
-    borderColor: colors.glass.border,
-    overflow: "hidden",
+    borderColor: hexToRgba(colors.white, 0.25),
+  },
+  // ── Share-to-Community ──
+  shareToggleWrap: {
+    marginTop: rp(spacing.md),
+    borderTopWidth: 1,
+    borderTopColor: hexToRgba(colors.white, 0.06),
+    paddingTop: rp(spacing.md),
   },
   shareToggleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.md),
+    gap: rp(spacing.sm),
   },
   shareToggleInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(spacing.sm),
+    gap: rp(spacing.md),
     flex: 1,
     paddingRight: rp(spacing.sm),
   },
   shareToggleText: {
     flex: 1,
-    gap: rp(spacing.xxs),
+    gap: rp(2),
   },
   shareToggleTitle: {
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    fontSize: rf(15),
+    fontWeight: "600",
+    color: colors.text,
   },
   shareToggleSubtitle: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
+    fontSize: rf(12),
+    color: colors.textSecondary,
+    lineHeight: rf(18),
   },
   shareFields: {
-    paddingHorizontal: rp(spacing.md),
-    paddingBottom: rp(spacing.md),
+    marginTop: rp(spacing.md),
     gap: rp(spacing.xs),
   },
   shareFieldLabel: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.primary,
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: colors.text,
     marginTop: rp(spacing.xs),
   },
   required: {
-    color: colors.primary.DEFAULT,
+    color: colors.primary,
   },
   difficultyRow: {
     flexDirection: "row",
@@ -1043,23 +1226,20 @@ const styles = StyleSheet.create({
   difficultyChip: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.background.DEFAULT,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.white, 0.06),
   },
   difficultyChipActive: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.DEFAULT,
+    backgroundColor: colors.primary,
   },
   difficultyChipText: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontSize: rf(13),
+    color: colors.textSecondary,
+    fontWeight: "600",
   },
   difficultyChipTextActive: {
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.white,
+    fontWeight: "700",
   },
   categoryChipsRow: {
     flexDirection: "row",
@@ -1069,58 +1249,78 @@ const styles = StyleSheet.create({
   categoryChip: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.xs),
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.background.DEFAULT,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.white, 0.06),
   },
   categoryChipActive: {
-    backgroundColor: hexToRgba(colors.secondary.DEFAULT, 0.15),
-    borderColor: colors.secondary.DEFAULT,
+    backgroundColor: hexToRgba(colors.secondary, 0.15),
+    borderWidth: 1,
+    borderColor: colors.secondary,
   },
   categoryChipText: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-    textTransform: "capitalize" as any,
+    fontSize: rf(13),
+    color: colors.textSecondary,
+    textTransform: "capitalize",
   },
   categoryChipTextActive: {
-    color: colors.text.primary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.white,
+    fontWeight: "700",
   },
   tagsInput: {
-    backgroundColor: colors.background.DEFAULT,
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.body),
-    borderRadius: borderRadius.md,
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    color: colors.text,
+    fontSize: rf(14),
+    borderRadius: borderRadius.lg,
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
-    borderWidth: 1,
-    borderColor: colors.glass.border,
   },
-  startButton: {
+  // ── Footer ──
+  footerSpacer: {
+    height: rp(100),
+  },
+  footer: {
+    flexDirection: "row",
+    paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.sm),
+    gap: rp(spacing.md),
+  },
+  primaryCta: {
     flex: 1,
-    backgroundColor: colors.primary.DEFAULT,
-    paddingVertical: rp(spacing.lg),
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
+    overflow: "hidden",
+    minHeight: 52,
+  },
+  primaryCtaGradient: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: rp(spacing.sm),
+    paddingVertical: rp(spacing.md),
+    paddingHorizontal: rp(spacing.xl),
+    minHeight: 52,
   },
-  startButtonText: {
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text.primary,
+  primaryCtaText: {
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.white,
   },
-  saveTemplateButton: {
-    flex: 1,
-    backgroundColor: colors.glass.background,
-    paddingVertical: rp(spacing.lg),
-    borderRadius: borderRadius.lg,
+  ctaDisabled: {
+    opacity: 0.4,
+  },
+  secondaryCta: {
+    paddingHorizontal: rp(spacing.lg),
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.primary.DEFAULT,
+    justifyContent: "center",
+    minHeight: 52,
+    borderRadius: borderRadius.xl,
+    backgroundColor: hexToRgba(colors.white, 0.06),
   },
-  saveTemplateText: {
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.primary.DEFAULT,
+  secondaryCtaText: {
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.text,
   },
 });
