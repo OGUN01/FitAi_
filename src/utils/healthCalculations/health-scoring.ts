@@ -61,10 +61,12 @@ export class HealthScoring {
   ): number {
     let score = 50;
 
-    score += Math.min(workoutPreferences.workout_experience_years * 3, 15);
+    // All three self-assessment fields are optional — coerce to 0 so a skipped
+    // assessment reduces the score instead of producing NaN.
+    score += Math.min((workoutPreferences.workout_experience_years ?? 0) * 3, 15);
 
-    score += Math.min(workoutPreferences.can_do_pushups * 0.5, 15);
-    score += Math.min(workoutPreferences.can_run_minutes * 0.3, 15);
+    score += Math.min((workoutPreferences.can_do_pushups ?? 0) * 0.5, 15);
+    score += Math.min((workoutPreferences.can_run_minutes ?? 0) * 0.3, 15);
 
     const activityBonus = {
       sedentary: -10,

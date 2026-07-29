@@ -35,7 +35,9 @@ export class CardiovascularCalculations {
 
     const baseVO2 = peakVO2 - ageAdjustment;
 
-    const runningBonus = Math.max(0, Math.min(canRunMinutes, 60)) * 0.3;
+    // canRunMinutes is optional in onboarding (user may skip the assessment) —
+    // coerce to 0 so skipping yields baseVO2 instead of NaN propagating downstream.
+    const runningBonus = Math.max(0, Math.min(canRunMinutes ?? 0, 60)) * 0.3;
 
     return Math.max(20, Math.min(80, baseVO2 + runningBonus));
   }

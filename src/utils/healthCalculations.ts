@@ -758,8 +758,9 @@ export class CardiovascularCalculations {
 
     const baseVO2 = peakVO2 - ageAdjustment;
 
-    // Adjust based on running ability (clamped to [0,60] min to prevent absurd inputs)
-    const runningBonus = Math.max(0, Math.min(canRunMinutes, 60)) * 0.3;
+    // Adjust based on running ability (clamped to [0,60] min to prevent absurd inputs;
+    // ?? 0: optional field — skipping the assessment yields baseVO2 instead of NaN)
+    const runningBonus = Math.max(0, Math.min(canRunMinutes ?? 0, 60)) * 0.3;
 
     // Cap between realistic bounds (20-80 ml/kg/min)
     return Math.max(20, Math.min(80, baseVO2 + runningBonus));
@@ -910,12 +911,12 @@ export class HealthScoring {
   ): number {
     let score = 50; // Base score
 
-    // Experience bonus
-    score += Math.min(workoutPreferences.workout_experience_years * 3, 15);
+    // Experience bonus (?? 0: optional self-assessment — skipping reduces the score instead of NaN)
+    score += Math.min((workoutPreferences.workout_experience_years ?? 0) * 3, 15);
 
     // Current fitness level
-    score += Math.min(workoutPreferences.can_do_pushups * 0.5, 15);
-    score += Math.min(workoutPreferences.can_run_minutes * 0.3, 15);
+    score += Math.min((workoutPreferences.can_do_pushups ?? 0) * 0.5, 15);
+    score += Math.min((workoutPreferences.can_run_minutes ?? 0) * 0.3, 15);
 
     // Activity level
     const activityBonus = {

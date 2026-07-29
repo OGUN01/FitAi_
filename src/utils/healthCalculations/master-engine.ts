@@ -249,6 +249,7 @@ export class HealthCalculationEngine {
       fat_mass: bodyComposition.fatMass,
 
       estimated_vo2_max: Math.round(estimatedVO2Max * 10) / 10,
+      max_heart_rate: maxHeartRate,
       target_hr_fat_burn_min: heartRateZones.fatBurn.min,
       target_hr_fat_burn_max: heartRateZones.fatBurn.max,
       target_hr_cardio_min: heartRateZones.cardio.min,
