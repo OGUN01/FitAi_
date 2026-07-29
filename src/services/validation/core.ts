@@ -12,10 +12,17 @@ import {
   ValidationResults,
   SmartAlternativesResult,
 } from "./types";
-import { CALORIE_PER_KG, MAX_SURPLUS_FRACTION } from "./constants";
+import {
+  CALORIE_PER_KG,
+  MAX_SURPLUS_FRACTION,
+  MIN_CALORIES_MALE,
+  MIN_CALORIES_FEMALE,
+  DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
+} from "./constants";
 import {
   validateMinimumBodyFat,
   validateMinimumBMI,
+  validateMaximumBMI,
   validateBMRSafety,
   validateAbsoluteMinimum,
   validateTimeline,
@@ -48,6 +55,8 @@ import {
   warnMedicationEffects,
   warnExcessiveWeightGain,
   warnMultipleBadHabits,
+  warnUnderweightTargetBand,
+  warnSingleMeal,
 } from "./warningValidations";
 import { calculateSmartAlternatives } from "./smartAlternatives";
 
@@ -197,6 +206,21 @@ export class ValidationEngine {
       originalDeficitPercent: number;
       adjustedDeficitPercent: number;
     } | null = null;
+    // S10/S12: set when the gain surplus is clamped to MAX_SURPLUS_FRACTION —
+    // drives the SURPLUS_LIMITED warning, wasRateCapped, and timeline recompute.
+    let gainSurplusWasCapped = false;
+
+    // S19: extra energy need for pregnancy/breastfeeding (ACOG: +0 T1, +340 T2,
+    // +450 T3, +500 lactation). Wired into maintenance/gain branches below —
+    // previously calculatePregnancyCalories was dead code and pregnant users
+    // validated as "maintenance" got bare TDEE.
+    const pregnancyBonusPerDay =
+      MetabolicCalculations.calculatePregnancyCalories(
+        tdee,
+        bodyAnalysis.pregnancy_status ?? false,
+        bodyAnalysis.pregnancy_trimester ?? undefined,
+        bodyAnalysis.breastfeeding_status ?? false,
+      ) - tdee;
 
     if (isWeightLoss) {
       // Boost card exercise burn: when the user selected a boost_* pace card,
@@ -209,7 +233,7 @@ export class ValidationEngine {
       if (boostExtraMin > 0) {
         const effectiveFreq = workoutPreferences.workout_frequency_per_week > 0
           ? workoutPreferences.workout_frequency_per_week
-          : 4; // same default as smartAlternatives.ts
+          : DEFAULT_EXERCISE_SESSIONS_PER_WEEK; // parity with smartAlternatives.ts
         const burnPerSession = MetabolicCalculations.estimateSessionCalorieBurn(
           boostExtraMin,
           workoutPreferences.intensity ?? "beginner",
@@ -231,7 +255,10 @@ export class ValidationEngine {
         // via "KEEP MY GOAL" and the system would silently allow it in bypass mode.
         const isHighRisk =
           bodyAnalysis.stress_level === "high" ||
-          (bodyAnalysis.medical_conditions?.length ?? 0) > 0;
+          (bodyAnalysis.medical_conditions?.length ?? 0) > 0 ||
+          // S18: minors get conservative deficits — their physiology is still
+          // developing; aggressive restriction risks growth/hormonal disruption.
+          personalInfo.age < 18;
         const conservativeFloor = isHighRisk
           ? Math.round(tdee * (1 - 0.15))  // 15% max deficit for high-risk
           : 0;                              // no extra floor for normal users
@@ -251,9 +278,17 @@ export class ValidationEngine {
           bmr,
           bodyAnalysis.stress_level || "moderate",
           (bodyAnalysis.medical_conditions?.length ?? 0) > 0,
+          personalInfo.age < 18,
         );
       }
       targetCalories = deficitLimitResult.adjustedCalories;
+
+      // S08: a computed target within 5 kcal above BMR is, for every practical
+      // purpose, eating at BMR — snap to it so the persisted plan matches the
+      // pace card's "Eat at BMR" promise instead of drifting by rounding.
+      if (targetCalories > bmr && targetCalories - bmr <= 5) {
+        targetCalories = bmr;
+      }
 
       if (deficitLimitResult.wasLimited) {
         const actualDailyDeficit = tdee - targetCalories;
@@ -293,16 +328,53 @@ export class ValidationEngine {
       // 15% was too aggressive and led primarily to fat gain not muscle gain.
       // Science: ~5-10% surplus above TDEE maximises muscle-to-fat ratio.
       const cappedSurplus = Math.min(dailySurplus, tdee * MAX_SURPLUS_FRACTION);
-      targetCalories = tdee + cappedSurplus;
-      weeklyRate = (cappedSurplus * 7) / CALORIE_PER_KG;
+      // S10/S12: the cap used to be silent — the card promised 1.0 kg/wk while
+      // the plan delivered 0.25 with no warning and no timeline recompute.
+      gainSurplusWasCapped = cappedSurplus < dailySurplus - 1e-9;
+      // S19: pregnancy/breastfeeding energy needs override a smaller gain surplus.
+      targetCalories = tdee + Math.max(cappedSurplus, pregnancyBonusPerDay);
+      weeklyRate = ((targetCalories - tdee) * 7) / CALORIE_PER_KG;
+      if (gainSurplusWasCapped) {
+        warnings.push({
+          status: "WARNING",
+          code: "SURPLUS_LIMITED_FOR_SAFETY",
+          message: `Gain rate reduced from ${requiredWeeklyRate.toFixed(2)} to ${weeklyRate.toFixed(2)} kg/week — surplus capped at ${Math.round(MAX_SURPLUS_FRACTION * 100)}% of TDEE`,
+          recommendations: [
+            "Gaining faster than this adds mostly fat, not muscle",
+            `Adjusted target: ${Math.round(targetCalories)} cal/day`,
+            "💡 Slower lean gains are easier to keep long-term",
+          ],
+          canProceed: true,
+        });
+      }
     } else {
-      targetCalories = tdee;
-      weeklyRate = 0;
+      // Maintenance. S19: pregnancy needs override everything. S13/S14: honor the
+      // selected BODY RECOMP card (stored goal > 0) — previously this branch
+      // silently delivered exact TDEE while the card promised tdee−200.
+      const storedRecompGoal = workoutPreferences.weekly_weight_loss_goal ?? 0;
+      if (pregnancyBonusPerDay > 0) {
+        targetCalories = tdee + pregnancyBonusPerDay;
+        weeklyRate = (pregnancyBonusPerDay * 7) / CALORIE_PER_KG;
+      } else if (storedRecompGoal > 0) {
+        const dailyDeficit = (storedRecompGoal * CALORIE_PER_KG) / 7;
+        const minCalorieFloor =
+          personalInfo.gender === "female"
+            ? MIN_CALORIES_FEMALE
+            : MIN_CALORIES_MALE;
+        targetCalories = Math.max(tdee - dailyDeficit, bmr, minCalorieFloor);
+        weeklyRate = ((tdee - targetCalories) * 7) / CALORIE_PER_KG;
+      } else {
+        targetCalories = tdee;
+        weeklyRate = 0;
+      }
     }
 
     if (isWeightLoss) {
+      // S20: use the RESOLVED body-fat value (manual → AI-estimate → BMI-derived
+      // → sex default) instead of the raw manual entry. Previously an AI-estimated
+      // 4.5% BF user with no manual entry slipped past the essential-fat block.
       const bodyFatCheck = validateMinimumBodyFat(
-        bodyAnalysis.body_fat_percentage,
+        bodyFatData.value,
         personalInfo.gender,
       );
       if (bodyFatCheck.status === "BLOCKED") errors.push(bodyFatCheck);
@@ -317,6 +389,14 @@ export class ValidationEngine {
         bodyAnalysis.height_cm,
       );
       if (bmiCheck.status === "BLOCKED") errors.push(bmiCheck);
+
+      // S21: the 17.5–18.5 band passes the hard block but is still underweight.
+      const underweightBandWarn = warnUnderweightTargetBand(
+        bodyAnalysis.target_weight_kg,
+        bodyAnalysis.height_cm,
+      );
+      if (underweightBandWarn.status === "WARNING")
+        warnings.push(underweightBandWarn);
 
       const bmrCheck = validateBMRSafety(targetCalories, bmr);
       if (bmrCheck.status === "BLOCKED") errors.push(bmrCheck);
@@ -346,6 +426,15 @@ export class ValidationEngine {
       if (exerciseCheck.status === "BLOCKED") errors.push(exerciseCheck);
     }
 
+    // S21: gain-side ceiling — no plan should actively target morbid obesity.
+    if (isWeightGain) {
+      const maxBmiCheck = validateMaximumBMI(
+        bodyAnalysis.target_weight_kg,
+        bodyAnalysis.height_cm,
+      );
+      if (maxBmiCheck.status === "BLOCKED") errors.push(maxBmiCheck);
+    }
+
     const pregnancyCheck = validatePregnancyBreastfeeding(
       bodyAnalysis.pregnancy_status,
       bodyAnalysis.breastfeeding_status,
@@ -365,9 +454,21 @@ export class ValidationEngine {
     );
     if (mealsCheck.status === "BLOCKED") errors.push(mealsCheck);
 
+    // S22: one enabled meal passes the block but concentrates the day's calories.
+    const enabledMealCount = [
+      dietPreferences.breakfast_enabled,
+      dietPreferences.lunch_enabled,
+      dietPreferences.dinner_enabled,
+      dietPreferences.snacks_enabled,
+    ].filter(Boolean).length;
+    const singleMealWarn = warnSingleMeal(enabledMealCount);
+    if (singleMealWarn.status === "WARNING") warnings.push(singleMealWarn);
+
     const sleepComboCheck = validateSleepAggressiveCombo(
       sleepHours,
-      requiredWeeklyRate,
+      // S14/S23: validate the DELIVERED rate, not the requested one. A BMR-floored
+      // plan delivering 0.03 kg/wk is not aggressive regardless of the stored goal.
+      weeklyRate,
       bodyAnalysis.current_weight_kg,
     );
     if (sleepComboCheck.status === "BLOCKED") errors.push(sleepComboCheck);
@@ -380,13 +481,20 @@ export class ValidationEngine {
     );
     if (volumeCheck.status === "BLOCKED") errors.push(volumeCheck);
 
-    if (errors.length === 0) {
+    // S23: warnings are computed even when blocking errors exist. The old
+    // errors.length===0 gate hid every warning behind the first error — a user
+    // fixing the error was then hit by an avalanche of previously-invisible
+    // warnings. All warning functions are null-safe; showing everything upfront
+    // lets the wizard and the user act on the full picture.
+    {
+      // S14/S23: aggressiveness is judged on the DELIVERED rate (post floor/cap),
+      // not the requested stored goal — a stale stored goal must not false-flag.
       const isAggressive =
-        requiredWeeklyRate > bodyAnalysis.current_weight_kg * 0.0075;
+        weeklyRate > bodyAnalysis.current_weight_kg * 0.0075;
 
       if (isWeightLoss || isWeightGain) {
         const timelineWarn = warnAggressiveTimeline(
-          requiredWeeklyRate,
+          weeklyRate,
           bodyAnalysis.current_weight_kg,
           bodyAnalysis.target_weight_kg,
           bodyAnalysis.target_timeline_weeks,
@@ -458,12 +566,17 @@ export class ValidationEngine {
       );
       if (obesityWarn.status === "WARNING") warnings.push(obesityWarn);
 
-      const zeroExerciseWarn = warnZeroExercise(
-        workoutPreferences.workout_frequency_per_week,
-        isWeightLoss ? "weight-loss" : "other",
-      );
-      if (zeroExerciseWarn.status === "WARNING")
-        warnings.push(zeroExerciseWarn);
+      // S09: suppress the "no exercise planned" warning when a boost card was
+      // selected — the user just committed to extra cardio sessions, so the
+      // warning would contradict the card they tapped.
+      if ((workoutPreferences.boost_extra_cardio_minutes ?? 0) === 0) {
+        const zeroExerciseWarn = warnZeroExercise(
+          workoutPreferences.workout_frequency_per_week,
+          isWeightLoss ? "weight-loss" : "other",
+        );
+        if (zeroExerciseWarn.status === "WARNING")
+          warnings.push(zeroExerciseWarn);
+      }
 
       const highVolumeWarn = warnHighTrainingVolume(
         workoutPreferences.workout_frequency_per_week,
@@ -520,8 +633,10 @@ export class ValidationEngine {
       if (medWarn.status === "WARNING") warnings.push(medWarn);
 
       if (isWeightGain) {
+        // S10: warn on the DELIVERED (post-cap) rate. A 1.0 kg/wk request capped
+        // to 0.25 must not fire "will be mostly fat" — the plan never uses 1.0.
         const gainWarn = warnExcessiveWeightGain(
-          requiredWeeklyRate,
+          weeklyRate,
           bodyAnalysis.current_weight_kg,
         );
         if (gainWarn.status === "WARNING") warnings.push(gainWarn);
@@ -588,6 +703,20 @@ export class ValidationEngine {
       if (adjustedBmrCheck.status === "BLOCKED") errors.push(adjustedBmrCheck);
     }
 
+    // S19: hypothyroid/hyperthyroid multipliers re-anchor targetCalories — the
+    // pregnancy guard must be re-checked against the ADJUSTED values, not the
+    // pre-adjustment ones compared earlier.
+    if (bodyAnalysis.pregnancy_status || bodyAnalysis.breastfeeding_status) {
+      const adjustedPregnancyCheck = validatePregnancyBreastfeeding(
+        bodyAnalysis.pregnancy_status,
+        bodyAnalysis.breastfeeding_status,
+        medicallyAdjustedTargetCalories,
+        adjustedTDEE,
+      );
+      if (adjustedPregnancyCheck.status === "BLOCKED")
+        errors.push(adjustedPregnancyCheck);
+    }
+
     const deficitPercent = isWeightLoss ? (adjustedTDEE - medicallyAdjustedTargetCalories) / adjustedTDEE : 0;
     const refeedSchedule = this.calculateRefeedSchedule(
       bodyAnalysis.target_timeline_weeks,
@@ -599,9 +728,6 @@ export class ValidationEngine {
           : "maintenance",
     );
 
-    const wasRateCapped =
-      isWeightLoss && deficitLimitResult?.wasLimited === true;
-
     // D1-FIX: When the BMR floor was applied in bypass mode, derive the timeline
     // from the actual enforced weeklyRate so chart / macros / daily_calories are
     // mathematically consistent (all three now reflect eating at BMR).
@@ -611,8 +737,18 @@ export class ValidationEngine {
       !!opts?.bypassDeficitLimit &&
       Math.round(medicallyAdjustedTargetCalories) === Math.round(bmr) &&
       weeklyRate < requiredWeeklyRate;
+
+    // S10/S17: wasRateCapped must cover EVERY path where the delivered rate is
+    // lower than requested — the UI "pace reduced for safety" callout and the
+    // timeline recompute both read this. Previously only the loss deficit-cap
+    // path set it; capped gains and bypass BMR-floors sailed through silently.
+    const wasRateCapped =
+      (isWeightLoss && deficitLimitResult?.wasLimited === true) ||
+      wasBMRFlooredInBypass ||
+      gainSurplusWasCapped;
+
     const computedTimeline =
-      (wasBMRFlooredInBypass || wasRateCapped) && weeklyRate > 0
+      wasRateCapped && weeklyRate > 0
         ? Math.ceil(weightDifference / weeklyRate)
         : bodyAnalysis.target_timeline_weeks;
 
@@ -728,6 +864,7 @@ export class ValidationEngine {
     bmr: number,
     stressLevel: "low" | "moderate" | "high",
     hasMedicalConditions: boolean,
+    isTeen: boolean = false,
   ): {
     adjustedCalories: number;
     wasLimited: boolean;
@@ -753,6 +890,10 @@ export class ValidationEngine {
     } else if (hasMedicalConditions) {
       maxDeficit = MAX_DEFICIT_PERCENT.conservative;
       limitReason = "medical conditions";
+    } else if (isTeen) {
+      // S18: minors always get the conservative cap — developing physiology.
+      maxDeficit = MAX_DEFICIT_PERCENT.conservative;
+      limitReason = "age under 18 (safe deficit for development)";
     }
 
     if (currentDeficitPercent > maxDeficit) {
@@ -763,7 +904,10 @@ export class ValidationEngine {
         wasLimited: true,
         limitReason,
         originalDeficitPercent: currentDeficitPercent,
-        adjustedDeficitPercent: maxDeficit,
+        // S23: report the deficit ACTUALLY enforced. When the BMR floor binds,
+        // the real deficit is far below the nominal cap (e.g. "capped at 15%"
+        // was displayed while the enforced deficit was 2.5%).
+        adjustedDeficitPercent: (tdee - finalCalories) / tdee,
       };
     }
 

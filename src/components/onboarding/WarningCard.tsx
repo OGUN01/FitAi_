@@ -10,7 +10,7 @@
  * Selection / acknowledgment / auto-ack logic — UNCHANGED.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -50,7 +50,6 @@ export const WarningCard: React.FC<WarningCardProps> = ({
   const [acknowledged, setAcknowledged] = useState(false);
   const [showBMRModal, setShowBMRModal] = useState(false);
   const [showExerciseOptions, setShowExerciseOptions] = useState(false);
-  const autoAckFiredRef = useRef(false);
 
   // Split warnings: actionable (with alternatives) vs info-only
   const warningsWithAlternatives = warnings.filter(
@@ -59,21 +58,11 @@ export const WarningCard: React.FC<WarningCardProps> = ({
   const warningsWithoutAlternatives = warnings.filter(
     (w) => !w.alternatives || w.alternatives.length === 0,
   );
-  const hasActionableWarnings = warningsWithAlternatives.length > 0;
-  const noInfoWarnings = warningsWithoutAlternatives.length === 0;
-  const noWarningsAtAll = warnings.length === 0;
 
-  // If no non-actionable warnings remain, auto-acknowledge — guard prevents re-fire on parent re-render
-  useEffect(() => {
-    if ((noInfoWarnings && hasActionableWarnings) || (noWarningsAtAll && smartAlternatives)) {
-      if (!autoAckFiredRef.current) {
-        autoAckFiredRef.current = true;
-        onAcknowledgmentChange?.(true);
-      }
-    } else {
-      autoAckFiredRef.current = false;
-    }
-  }, [noInfoWarnings, hasActionableWarnings, noWarningsAtAll, !!smartAlternatives]);
+  // S03: auto-acknowledgment is owned by useAdvancedReviewForm (single owner).
+  // The child-side effect raced the parent's reset effect and lost, leaving
+  // users with an un-acknowledgeable disabled CTA. Manual taps still flow
+  // through handleAcknowledgmentToggle below.
 
   const handleAcknowledgmentToggle = () => {
     const newValue = !acknowledged;
@@ -82,6 +71,12 @@ export const WarningCard: React.FC<WarningCardProps> = ({
   };
 
   const goalMode = smartAlternatives?.goalMode ?? "loss";
+
+  // S15: every pace option blocked (or none offered) — say so honestly instead
+  // of rendering a dead picker the user can tap through into engine errors.
+  const selectableCount =
+    smartAlternatives?.alternatives.filter((a) => !a.isBlocked).length ?? 1;
+  const noSelectableOptions = !!smartAlternatives && selectableCount === 0;
 
   // Diet-only options (all modes)
   const dietOptions =
@@ -397,6 +392,23 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               ))}
             </View>
           )}
+        </View>
+      )}
+
+      {/* ── S15: infeasible-goal guidance — no safe pace exists at these numbers ── */}
+      {noSelectableOptions && (
+        <View style={styles.warningItem}>
+          <Text style={styles.warningMessage}>
+            No safe pace fits this goal at your current numbers
+          </Text>
+          <View style={styles.metaRow}>
+            <Ionicons name="flag-outline" size={12} color={tokens.ink3} />
+            <Text style={styles.metaText}>
+              {goalMode === "gain"
+                ? "Try a smaller weight-gain target — you can set the next milestone after reaching it."
+                : "Try a slightly higher target weight or a smaller weekly change — safe options will reappear here automatically."}
+            </Text>
+          </View>
         </View>
       )}
 

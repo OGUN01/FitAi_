@@ -142,8 +142,11 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       newErrors.name = "Name is required";
     }
 
-    if (!age || isNaN(Number(age)) || Number(age) < 10 || Number(age) > 120) {
-      newErrors.age = "Enter a valid age (10-120)";
+    // S18: floor is 13 everywhere else (onboarding, DB check_age_range, worker
+    // Zod, bmrCalculation throws <13). 10-12 previously passed this modal, then
+    // the DB rejected it and the store diverged from the database.
+    if (!age || isNaN(Number(age)) || Number(age) < 13 || Number(age) > 120) {
+      newErrors.age = "Enter a valid age (13-120)";
     }
 
     if (!gender) {
@@ -175,10 +178,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
           if (
             !value ||
             isNaN(Number(value)) ||
-            Number(value) < 10 ||
+            Number(value) < 13 ||
             Number(value) > 120
           ) {
-            newErrors.age = "Enter a valid age (10-120)";
+            newErrors.age = "Enter a valid age (13-120)";
           } else {
             delete newErrors.age;
           }

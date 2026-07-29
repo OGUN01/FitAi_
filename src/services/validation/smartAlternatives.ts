@@ -4,8 +4,17 @@ import {
   CALORIE_PER_KG,
   MIN_CALORIES_FEMALE,
   MIN_CALORIES_MALE,
+  MAX_SURPLUS_FRACTION,
   DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
 } from "./constants";
+
+/** S11: human-readable timeline — raw "150 weeks" reads as a bug, not a plan. */
+const formatTimeline = (weeks: number): string =>
+  weeks < 12
+    ? `${weeks} week${weeks === 1 ? "" : "s"}`
+    : weeks < 52
+      ? `≈ ${Math.max(1, Math.round(weeks / 4.33))} months`
+      : `≈ ${(weeks / 52).toFixed(1)} years`;
 
 export function calculateSmartAlternatives(
   userRequestedRate: number,
@@ -17,6 +26,13 @@ export function calculateSmartAlternatives(
   workoutFrequency: number = DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
   workoutIntensity: string = "beginner",
   workoutTimeMinutes: number = 60,
+  opts?: {
+    /** S19: suppress all deficit cards — any calorie below TDEE is unsafe. */
+    pregnancyOrBreastfeeding?: boolean;
+    /** S19: ACOG daily bonus so maintenance/gain cards display the same
+        calories the engine will deliver. */
+    pregnancyBonusPerDay?: number;
+  },
 ): SmartAlternativesResult {
   const isWeightGain = currentWeight < targetWeight;
   const minimumCalorieFloor =
@@ -35,6 +51,15 @@ export function calculateSmartAlternatives(
 
   const bmrDeficit = tdee - bmr;
   const rateAtBMR = (bmrDeficit * 7) / CALORIE_PER_KG;
+
+  // S05/S12: the engine hard-blocks any loss rate above 1.5% bodyweight/week
+  // (validateTimeline). Cards must never offer what the engine will block —
+  // gate every card against the SAME limit.
+  const hardRateLimit = currentWeight * 0.015;
+  const isPregnantOrBreastfeeding = opts?.pregnancyOrBreastfeeding === true;
+  const pregnancyBonusPerDay = isPregnantOrBreastfeeding
+    ? (opts?.pregnancyBonusPerDay ?? 0)
+    : 0;
 
   const rateTiers: Array<{
     id: string;
@@ -62,7 +87,14 @@ export function calculateSmartAlternatives(
     },
     {
       id: "comfortable",
-      rate: Math.max(0.3, Math.round((rateAtBMR - 0.15) * 100) / 100),
+      // S05: COMFORTABLE must never exceed AT YOUR BMR (the old max(0.3, …)
+      // formula inverted the ladder when TDEE−BMR < 330 kcal) and never exceed
+      // the hard safety limit (huge TDEE−BMR gap users had NO selectable card).
+      rate: Math.min(
+        Math.max(0.3, Math.round((rateAtBMR - 0.15) * 100) / 100),
+        Math.max(0.1, Math.round(rateAtBMR * 100) / 100),
+        Math.floor(hardRateLimit * 100) / 100,
+      ),
       label: "COMFORTABLE",
       icon: "leaf",
     },
@@ -89,10 +121,18 @@ export function calculateSmartAlternatives(
     }
   };
 
+  // S05: after clamping, COMFORTABLE can collapse onto AT YOUR BMR (or SAFE MAX)
+  // — never render two cards at the same rate.
+  const seenTierRates = new Set<number>();
   for (const tier of rateTiers) {
+    // S19: pregnancy/breastfeeding → every deficit route is unsafe; no diet cards.
+    if (isPregnantOrBreastfeeding) continue;
     if (!tier.isUserOriginal && Math.abs(tier.rate - userRequestedRate) < 0.05)
       continue;
     if (tier.rate <= 0) continue;
+    const tierRateKey = Math.round(tier.rate * 100);
+    if (!tier.isUserOriginal && seenTierRates.has(tierRateKey)) continue;
+    seenTierRates.add(tierRateKey);
 
     const dailyDeficit = (tier.rate * CALORIE_PER_KG) / 7;
     // TRUE required calories — no BMR floor on the card.
@@ -109,8 +149,17 @@ export function calculateSmartAlternatives(
 
     let riskLevel: RiskLevel;
     let badge: string;
+    // S05/S12: over-limit rate cards are blocked at the ENGINE level the moment
+    // they are selected (validateTimeline) — mark them unselectable here instead
+    // of letting the user tap into an instant error + wizard loop.
+    const overRateLimit = tier.rate > hardRateLimit;
 
-    if (dailyCalories < minimumCalorieFloor) {
+    if (overRateLimit) {
+      // Rate limit is the primary physiological constraint — surface it even when
+      // the calorie floor also fails, so the user knows to extend the timeline.
+      riskLevel = "blocked";
+      badge = "Too fast";
+    } else if (dailyCalories < minimumCalorieFloor) {
       riskLevel = "blocked";
       badge = "Blocked";
     } else if (isBelowBMR) {
@@ -151,7 +200,9 @@ export function calculateSmartAlternatives(
       isBlocked: riskLevel === "blocked",
       blockReason:
         riskLevel === "blocked"
-          ? `Below minimum ${minimumCalorieFloor} cal/day`
+          ? overRateLimit
+            ? `Rate above safe limit (${hardRateLimit.toFixed(2)} kg/wk)`
+            : `Below minimum ${minimumCalorieFloor} cal/day`
           : undefined,
       requiresExercise: false,
       isBelowBMR,
@@ -160,7 +211,8 @@ export function calculateSmartAlternatives(
   }
 
   // ─ WEIGHT LOSS MODE: Dynamic cardio boost options (+20/+30/+40 min per session)
-  if (goalMode === "loss") {
+  // S19: pregnant/breastfeeding users get no deficit routes at all.
+  if (goalMode === "loss" && !isPregnantOrBreastfeeding) {
     const boosts = [
       { id: "boost_light",  extraMin: 20, label: "LIGHT BOOST",  icon: "walk",    badge: "Easy Extra",  riskLevel: "easy" as RiskLevel,     isRecommended: false },
       { id: "boost_cardio", extraMin: 30, label: "CARDIO BOOST", icon: "bicycle", badge: "Smart Pick",  riskLevel: "safe" as RiskLevel,     isRecommended: true  },
@@ -181,6 +233,13 @@ export function calculateSmartAlternatives(
       const weeklyRate = (combinedDeficit * 7) / CALORIE_PER_KG;
       if (weeklyRate <= 0) continue;
 
+      // S05: boost rate can exceed the hard limit (BMR deficit + exercise burn).
+      // S15: "Eat at BMR" must respect the same absolute floor as diet cards —
+      // a 1108-cal BMR user was previously offered 1108-cal boost cards.
+      const boostOverLimit = weeklyRate > hardRateLimit;
+      const boostBelowFloor = Math.round(bmr) < minimumCalorieFloor;
+      const boostBlocked = boostOverLimit || boostBelowFloor;
+
       const exerciseDescription = workoutFrequency > 0
         ? `+${boost.extraMin} min cardio/session (${workoutFrequency}×/wk)`
         : `Start ${boost.extraMin} min cardio sessions (${DEFAULT_EXERCISE_SESSIONS_PER_WEEK}×/wk)`;
@@ -192,13 +251,18 @@ export function calculateSmartAlternatives(
         dailyCalories: Math.round(bmr),
         bmrDifference: 0,
         timelineWeeks: Math.ceil(weightToLose / weeklyRate),
-        riskLevel: boost.riskLevel,
+        riskLevel: boostBlocked ? "blocked" : boost.riskLevel,
         icon: boost.icon,
-        badge: boost.badge,
+        badge: boostBlocked ? "Blocked" : boost.badge,
+        blockReason: boostOverLimit
+          ? `Rate above safe limit (${hardRateLimit.toFixed(2)} kg/wk)`
+          : boostBelowFloor
+            ? `Below minimum ${minimumCalorieFloor} cal/day`
+            : undefined,
         description: `Eat at BMR (${Math.round(bmr)} cal) + ${exerciseDescription}. Your existing workout plan continues unchanged.`,
         isUserOriginal: false,
         isRecommended: boost.isRecommended,
-        isBlocked: false,
+        isBlocked: boostBlocked,
         requiresExercise: true,
         exerciseType: boost.id as SmartAlternative["exerciseType"],
         exerciseMinutes: boost.extraMin,
@@ -212,24 +276,31 @@ export function calculateSmartAlternatives(
 
   // ─ MAINTENANCE MODE: 2 simple options (eat at TDEE or slight deficit for body recomp)
   if (goalMode === "maintenance") {
+    // S19: pregnant/breastfeeding maintenance delivers TDEE + ACOG bonus — the
+    // card must show the same calories the engine will persist.
+    const maintainCalories = Math.round(tdee + pregnancyBonusPerDay);
     alternatives.push({
       id: "maintain",
       label: "MAINTAIN WEIGHT",
-      weeklyRate: 0,
-      dailyCalories: Math.round(tdee),
-      bmrDifference: Math.round(tdee - bmr),
+      weeklyRate: Math.round((pregnancyBonusPerDay * 7) / CALORIE_PER_KG * 100) / 100,
+      dailyCalories: maintainCalories,
+      bmrDifference: Math.round(maintainCalories - bmr),
       timelineWeeks: 0,
       riskLevel: "safe",
       icon: "scale",
       badge: "Balanced",
-      description: `Eat at your TDEE (${Math.round(tdee)} cal/day) — maintain current weight.`,
+      description: isPregnantOrBreastfeeding
+        ? `Eat ${maintainCalories} cal/day — includes your pregnancy/breastfeeding energy needs.`
+        : `Eat at your TDEE (${Math.round(tdee)} cal/day) — maintain current weight.`,
       isUserOriginal: false,
-      isRecommended: false,
+      isRecommended: isPregnantOrBreastfeeding,
       isBlocked: false,
       requiresExercise: false,
       workoutPlanInclusive: workoutFrequency > 0,
     });
     const recompCals = Math.round(tdee - 200);
+    // S19: recomp is a deficit card — suppress for pregnancy/breastfeeding.
+    if (!isPregnantOrBreastfeeding) {
     alternatives.push({
       id: "recomp",
       label: "BODY RECOMP",
@@ -247,6 +318,7 @@ export function calculateSmartAlternatives(
       requiresExercise: false,
       workoutPlanInclusive: workoutFrequency > 0,
     });
+    }
   }
 
   alternatives.sort((a, b) => {
@@ -318,23 +390,34 @@ export function calculateSmartAlternatives(
         continue;
       if (tier.rate <= 0) continue;
 
-      const dailySurplus = (tier.rate * CALORIE_PER_KG) / 7;
+      // S11/S12: apply the SAME MAX_SURPLUS_FRACTION cap the engine applies —
+      // the card previously promised 1.0 kg/wk while the plan silently delivered
+      // 0.25. Also floor at the pregnancy bonus so pregnant gainers see the
+      // calories the engine will actually persist.
+      const requestedSurplus = (tier.rate * CALORIE_PER_KG) / 7;
+      const dailySurplus = Math.max(
+        Math.min(requestedSurplus, tdee * MAX_SURPLUS_FRACTION),
+        pregnancyBonusPerDay,
+      );
+      const wasRateCapped = dailySurplus < requestedSurplus - 1e-9;
+      const deliveredRate = (dailySurplus * 7) / CALORIE_PER_KG;
       const dailyCalories = Math.round(tdee + dailySurplus);
       const timelineWeeks =
-        weightToGain > 0 ? Math.ceil(weightToGain / tier.rate) : 0;
+        weightToGain > 0 ? Math.ceil(weightToGain / deliveredRate) : 0;
       const bmrDifference = dailyCalories - bmr;
 
-      // For weight gain, risk level reflects fat gain speed, not calorie restriction
+      // For weight gain, risk level reflects fat gain speed, not calorie restriction.
+      // S12: badge on the DELIVERED rate (post-cap), not the requested one.
       let riskLevel: RiskLevel;
       let badge: string;
       // D4a-FIX: Badge thresholds aligned with new tier multipliers (0.2% / 0.35% / 0.5%)
       if (tier.isRecommended) {
         riskLevel = "safe";
         badge = "Recommended";
-      } else if (tier.rate <= currentWeight * 0.0035) {
+      } else if (deliveredRate <= currentWeight * 0.0035) {
         riskLevel = "easy";
         badge = "Easy";
-      } else if (tier.rate <= currentWeight * 0.005) {
+      } else if (deliveredRate <= currentWeight * 0.005) {
         riskLevel = "moderate";
         badge = "Moderate";
       } else {
@@ -345,14 +428,15 @@ export function calculateSmartAlternatives(
       gainAlternatives.push({
         id: tier.id,
         label: tier.label,
-        weeklyRate: Math.round(tier.rate * 100) / 100,
+        weeklyRate: Math.round(deliveredRate * 100) / 100,
         dailyCalories,
         bmrDifference: Math.round(bmrDifference),
         timelineWeeks,
         riskLevel,
         icon: tier.icon as string,
-        badge,
-        description: `+${Math.round(dailySurplus)} cal/day surplus — ${timelineWeeks} weeks to goal`,
+        badge: wasRateCapped && tier.isUserOriginal ? "Capped for safety" : badge,
+        // S11: human timeline ("≈ 2.9 years"), not raw "150 weeks".
+        description: `+${Math.round(dailySurplus)} cal/day surplus — ${formatTimeline(timelineWeeks)} to goal${wasRateCapped ? " (rate capped for lean gain)" : ""}`,
         isUserOriginal: tier.isUserOriginal || false,
         isRecommended: tier.isRecommended || false,
         isBlocked: false,
@@ -376,8 +460,14 @@ export function calculateSmartAlternatives(
       const currentExerciseBurn = MetabolicCalculations.calculateDailyExerciseBurn(
         workoutFrequency, workoutTimeMinutes, workoutIntensity as "beginner" | "intermediate" | "advanced", currentWeight, ["strength", "mixed"]
       );
-      // Current daily calories at user's requested gain rate
-      const currentDailyCalories = Math.round(tdee + (userRequestedRate * CALORIE_PER_KG) / 7);
+      // Current daily calories at user's requested gain rate — with the SAME
+      // surplus cap the engine applies (S12 parity for freq-upgrade cards).
+      const cappedUserSurplus = Math.max(
+        Math.min((userRequestedRate * CALORIE_PER_KG) / 7, tdee * MAX_SURPLUS_FRACTION),
+        pregnancyBonusPerDay,
+      );
+      const deliveredUserRate = (cappedUserSurplus * 7) / CALORIE_PER_KG;
+      const currentDailyCalories = Math.round(tdee + cappedUserSurplus);
       const currentSurplus = currentDailyCalories - tdee;
 
       for (const targetFreq of upgradeTargets) {
@@ -388,12 +478,12 @@ export function calculateSmartAlternatives(
         const requiredNewCalories = newTDEE + currentSurplus;
         const extraFoodNeeded = requiredNewCalories - currentDailyCalories;
         const targetFreqGainTimeline =
-          weightToGain > 0 ? Math.ceil(weightToGain / userRequestedRate) : 0;
+          weightToGain > 0 ? Math.ceil(weightToGain / deliveredUserRate) : 0;
 
         gainAlternatives.push({
           id: `freq_${targetFreq}`,
           label: `TRAIN ${targetFreq}×/WEEK`,
-          weeklyRate: Math.round(userRequestedRate * 100) / 100,
+          weeklyRate: Math.round(deliveredUserRate * 100) / 100,
           dailyCalories: Math.round(requiredNewCalories),
           bmrDifference: Math.round(requiredNewCalories - bmr),
           timelineWeeks: targetFreqGainTimeline,

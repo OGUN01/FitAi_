@@ -1,5 +1,5 @@
 import { ValidationResult } from "./types";
-import { CALORIE_PER_KG } from "./constants";
+import { CALORIE_PER_KG, MAX_SURPLUS_FRACTION } from "./constants";
 
 export function warnAggressiveTimeline(
   requiredRate: number,
@@ -17,9 +17,16 @@ export function warnAggressiveTimeline(
   if (requiredRate > optimal) {
     const optimalWeeks = Math.ceil(weightDifference / optimal);
     const conservativeWeeks = Math.ceil(weightDifference / conservative);
-    const aggressiveDeficit = (requiredRate * CALORIE_PER_KG) / 7;
-    const optimalDeficit = (optimal * CALORIE_PER_KG) / 7;
-    const conservativeDeficit = (conservative * CALORIE_PER_KG) / 7;
+    // Gain-aware daily calories (S10): alternatives previously always subtracted
+    // the deficit — wrong direction for weight-gain goals. Gain targets add a
+    // surplus capped at MAX_SURPLUS_FRACTION of TDEE (same cap the engine applies).
+    const isGainGoal = targetWeight > currentWeight;
+    const toDailyCalories = (rate: number): number => {
+      const daily = (rate * CALORIE_PER_KG) / 7;
+      return Math.round(
+        isGainGoal ? tdee + Math.min(daily, tdee * MAX_SURPLUS_FRACTION) : tdee - daily,
+      );
+    };
     const isVeryAggressive = requiredRate > moderateAggressive;
     // BUG-22: extremeLimit was defined but never used — rates above it now get ERROR severity
     const isExtreme = requiredRate > extremeLimit;
@@ -52,7 +59,7 @@ export function warnAggressiveTimeline(
           description: `${requiredRate.toFixed(2)} kg/week • ${currentTimeline} weeks`,
           weeklyRate: requiredRate,
           newTimeline: currentTimeline,
-          dailyCalories: Math.round(tdee - aggressiveDeficit),
+          dailyCalories: toDailyCalories(requiredRate),
           icon: isVeryAggressive ? "flame" : "flash",
           iconColor: isVeryAggressive ? "#EF4444" : "#F59E0B",
           approach: isVeryAggressive
@@ -73,7 +80,7 @@ export function warnAggressiveTimeline(
           description: `${optimal.toFixed(2)} kg/week • ${optimalWeeks} weeks`,
           weeklyRate: optimal,
           newTimeline: optimalWeeks,
-          dailyCalories: Math.round(tdee - optimalDeficit),
+          dailyCalories: toDailyCalories(optimal),
           icon: "shield-checkmark",
           iconColor: "#10B981",
           approach: "Balanced for muscle retention",
@@ -87,7 +94,7 @@ export function warnAggressiveTimeline(
           description: `${conservative.toFixed(2)} kg/week • ${conservativeWeeks} weeks`,
           weeklyRate: conservative,
           newTimeline: conservativeWeeks,
-          dailyCalories: Math.round(tdee - conservativeDeficit),
+          dailyCalories: toDailyCalories(conservative),
           icon: "leaf",
           iconColor: "#06B6D4",
           approach: "Maximum muscle preservation",
@@ -100,6 +107,52 @@ export function warnAggressiveTimeline(
         },
       ],
       canProceed: !isExtreme,
+    };
+  }
+  return { status: "OK" };
+}
+
+/**
+ * S21: Targets in the 17.5–18.5 BMI band pass the hard block (17.5) but are
+ * still clinically underweight. Surface a warning instead of silent approval.
+ */
+export function warnUnderweightTargetBand(
+  targetWeightKg: number,
+  heightCm: number,
+): ValidationResult {
+  const heightM = heightCm / 100;
+  const targetBMI = targetWeightKg / (heightM * heightM);
+  if (targetBMI >= 17.5 && targetBMI < 18.5) {
+    return {
+      status: "WARNING",
+      code: "TARGET_BMI_UNDERWEIGHT_BAND",
+      message: `Target BMI (${targetBMI.toFixed(1)}) is below the healthy range (18.5–24.9)`,
+      recommendations: [
+        "A BMI below 18.5 can mean low energy, hormonal disruption, and muscle loss",
+        `A target of ${Math.round(18.5 * heightM * heightM)}kg would reach BMI 18.5`,
+        "Consider a slightly higher target — you can always adjust later",
+      ],
+      canProceed: true,
+    };
+  }
+  return { status: "OK" };
+}
+
+/**
+ * S22: Exactly one meal enabled passes validateMealsEnabled but concentrates
+ * the entire day's calories into one sitting. Info-level nudge.
+ */
+export function warnSingleMeal(enabledMealCount: number): ValidationResult {
+  if (enabledMealCount === 1) {
+    return {
+      status: "WARNING",
+      code: "SINGLE_MEAL_PLAN",
+      message: "Only one meal enabled — your whole day's calories in one sitting",
+      recommendations: [
+        "Single-meal plans are hard to adhere to and absorb",
+        "Enable at least two meals for steadier energy",
+      ],
+      canProceed: true,
     };
   }
   return { status: "OK" };

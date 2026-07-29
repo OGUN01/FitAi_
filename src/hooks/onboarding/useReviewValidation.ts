@@ -460,6 +460,12 @@ export const useReviewValidation = ({
         const frozenRate = originalRateRef.current ?? userRequestedRate;
 
         try {
+          // S19: give the card engine the same pregnancy context the validation
+          // engine has, so deficit cards are suppressed and displayed calories
+          // match what the engine will persist.
+          const pregnancyOrBreastfeeding =
+            (bodyAnalysis.pregnancy_status ?? false) ||
+            (bodyAnalysis.breastfeeding_status ?? false);
           const alternativesResult =
             ValidationEngine.calculateSmartAlternatives(
               frozenRate,  // D2: always use frozen original goal; not the derived rate
@@ -471,6 +477,17 @@ export const useReviewValidation = ({
               workoutPreferences?.workout_frequency_per_week ?? DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
               workoutPreferences?.intensity ?? "beginner",
               workoutPreferences?.time_preference ?? 60,
+              {
+                pregnancyOrBreastfeeding,
+                pregnancyBonusPerDay: pregnancyOrBreastfeeding
+                  ? MetabolicCalculations.calculatePregnancyCalories(
+                      validationResultsData.calculatedMetrics.tdee,
+                      bodyAnalysis.pregnancy_status ?? false,
+                      bodyAnalysis.pregnancy_trimester ?? undefined,
+                      bodyAnalysis.breastfeeding_status ?? false,
+                    ) - validationResultsData.calculatedMetrics.tdee
+                  : 0,
+              },
             );
 
           setSmartAlternatives(alternativesResult);

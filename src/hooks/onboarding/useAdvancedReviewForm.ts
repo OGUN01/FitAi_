@@ -91,10 +91,40 @@ export const useAdvancedReviewForm = ({
     performCalculations,
   ]);
 
-  // Reset acknowledgment when warnings change
+  // Acknowledgment ownership (S03): decided HERE, not split with WarningCard.
+  // When every current warning carries alternatives (pace-picker style) there is
+  // no checkbox to tap — acknowledgment is automatic. When any info-only warning
+  // exists, the manual "I understand" tap is required. Keyed on the warning-code
+  // set; previously the child's auto-ack effect fired first and this reset effect
+  // stomped it, leaving aggressive-zone users with a permanently disabled
+  // Complete Setup and no visible way to enable it.
   useEffect(() => {
-    setWarningsAcknowledged(false);
-  }, [validationResults?.warnings?.map(w => w.code).sort().join(',')]);
+    const currentWarnings = validationResults?.warnings ?? [];
+    const needsManualAck = currentWarnings.some(
+      (w) => !w.alternatives || w.alternatives.length === 0,
+    );
+    setWarningsAcknowledged(currentWarnings.length > 0 && !needsManualAck);
+  }, [validationResults?.warnings?.map((w) => w.code).sort().join(",")]);
+
+  // S13/S14: the stored pace goal is scoped to a goal MODE (loss / gain /
+  // maintenance). Editing weights across a mode boundary makes the old stored
+  // goal meaningless — a stale 0.8 loss goal survived into exact maintenance and
+  // false-flagged aggressive checks (isAggressive, sleep-combo block). Reset it
+  // and re-arm auto-selection so the new mode picks its own default card.
+  const prevGoalModeRef = useRef<string | null>(null);
+  useEffect(() => {
+    const mode = smartAlternatives?.goalMode ?? null;
+    if (!mode) return;
+    if (prevGoalModeRef.current && prevGoalModeRef.current !== mode) {
+      onUpdateWorkoutPreferences?.({
+        weekly_weight_loss_goal: undefined,
+        boost_extra_cardio_minutes: 0,
+      });
+      hasAutoSelectedRef.current = false;
+    }
+    prevGoalModeRef.current = mode;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [smartAlternatives?.goalMode]);
 
   // Auto-select best option on first Tab 5 load:
   // - Weight loss + KEEP MY GOAL blocked → select bestBoostOptionId (or AT YOUR BMR fallback)
@@ -137,9 +167,25 @@ export const useAdvancedReviewForm = ({
     }
 
     if (targetId) {
-      const target = smartAlternatives.alternatives.find(a => a.id === targetId);
+      // S05/S15/S19: never auto-select a blocked or missing card — that commits
+      // the user to a rate the engine instantly blocks (wizard loop). Walk the
+      // fallback chain to the first selectable option.
+      const candidateIds = [
+        targetId,
+        smartAlternatives.bestBoostOptionId,
+        "at_bmr",
+        "comfortable",
+        "recomp",
+        "maintain",
+      ].filter((id): id is string => !!id);
+      const target =
+        candidateIds
+          .map((id) => smartAlternatives.alternatives.find((a) => a.id === id))
+          .find((a) => !!a && !a.isBlocked) ?? null;
+      // Mark as done either way: when zero selectable cards exist the UI shows
+      // the infeasible-goal guidance, and re-firing would loop on every recalc.
+      hasAutoSelectedRef.current = true;
       if (target) {
-        hasAutoSelectedRef.current = true;
         handleRateSelection(target);
       }
     }

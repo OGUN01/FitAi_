@@ -420,20 +420,18 @@ export class MetabolicCalculations {
     gender: string,
   ): number {
     // Get expected BMR for chronological age
-    // BMR declines non-linearly with age (faster decline in younger years)
     const expectedBMR = MetabolicCalculations.getExpectedBMRForAge(
       chronologicalAge,
       gender,
     );
 
-    // Calculate BMR difference
-    const bmrDifference = expectedBMR - bmr;
-
-    // Convert BMR difference to age equivalent (approximately 8-10 cal/year decline)
-    // Higher BMR than expected = younger metabolic age
-    // Lower BMR than expected = older metabolic age
-    const calPerYear = 10;
-    const metabolicAgeAdjustment = bmrDifference / calPerYear;
+    // S18 parity: percentage-based comparison (mirrors
+    // healthCalculations/metabolic.ts — the review-tab SSOT). The old absolute
+    // calPerYear=10 formula biased large-framed users to the floor, and ages
+    // 13–17 hit no bracket → −Infinity → masked to exactly 18 for every teen.
+    // Each 10% BMR deviation from the age-group reference = ~5 metabolic years.
+    const bmrDifferencePercent = (expectedBMR - bmr) / expectedBMR;
+    const metabolicAgeAdjustment = bmrDifferencePercent * 50;
 
     const metabolicAge = chronologicalAge + metabolicAgeAdjustment;
 
@@ -446,8 +444,11 @@ export class MetabolicCalculations {
    * Uses age-adjusted reference values based on population norms
    */
   private static getExpectedBMRForAge(age: number, gender: string): number {
-    // Reference BMR values by age ranges (calibrated to 70kg for both sexes)
+    // Reference BMR values by age ranges (calibrated to 70kg for both sexes).
+    // S18: teen brackets (onboarding floor is 13) — previously ages 13–17
+    // matched nothing and every teen got metabolic age exactly 18.
     const maleReferences = [
+      { ageRange: [13, 17], bmr: 1750 },
       { ageRange: [18, 24], bmr: 1750 },
       { ageRange: [25, 34], bmr: 1700 },
       { ageRange: [35, 44], bmr: 1650 },
@@ -457,6 +458,7 @@ export class MetabolicCalculations {
     ];
 
     const femaleReferences = [
+      { ageRange: [13, 17], bmr: 1500 },
       { ageRange: [18, 24], bmr: 1500 },
       { ageRange: [25, 34], bmr: 1450 },
       { ageRange: [35, 44], bmr: 1400 },

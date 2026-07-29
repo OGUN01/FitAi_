@@ -39,6 +39,9 @@ interface AdjustmentWizardProps {
     currentProtein?: number;
     currentCardioMinutes?: number;
     currentStrengthSessions?: number;
+    /** S15: sex-based calorie floor + healthy-BMI target clamp in wizard options. */
+    gender?: string;
+    heightCm?: number;
   };
   primaryGoals?: string[];
   onSelectAlternative: (alternative: Alternative) => void;

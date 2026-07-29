@@ -1,5 +1,9 @@
 import { Alternative, CurrentData } from "./types";
-import { CALORIE_PER_KG } from "../../services/validation/constants";
+import {
+  CALORIE_PER_KG,
+  MIN_CALORIES_FEMALE,
+  MIN_CALORIES_MALE,
+} from "../../services/validation/constants";
 
 export const calculateWeightRateAlternatives = (
   data: CurrentData,
@@ -21,10 +25,19 @@ export const calculateWeightRateAlternatives = (
   const weightDiff = Math.abs(targetWeight - currentWeight);
   const alternatives: Alternative[] = [];
 
+  // S15: wizard options floored only at BMR proposed sub-floor intakes (e.g.
+  // 1108 cal for a 1200-floor user) — every option re-triggered the very block
+  // it claimed to fix (BELOW_ABSOLUTE_MINIMUM → wizard loop). Floor at the
+  // GREATER of BMR and the sex-based absolute minimum. Unknown gender defaults
+  // to the male floor — over-restriction is slower but always safe.
+  const minCalories =
+    data.gender === "female" ? MIN_CALORIES_FEMALE : MIN_CALORIES_MALE;
+  const calorieFloor = Math.max(bmr, minCalories);
+
   const optimalWeeks = Math.ceil(weightDiff / safeOptimalRate);
   const optimalDeficit = (safeOptimalRate * CALORIE_PER_KG) / 7;
   const optimalCalories = isWeightLoss
-    ? Math.max(Math.round(tdee - optimalDeficit), bmr)
+    ? Math.max(Math.round(tdee - optimalDeficit), calorieFloor)
     : Math.round(tdee + optimalDeficit);
 
   alternatives.push({
@@ -65,7 +78,7 @@ export const calculateWeightRateAlternatives = (
   const newFrequency = Math.min(currentFrequency + additionalSessionsNeeded, 7);
 
   const exerciseCalories = isWeightLoss
-    ? Math.max(Math.round(tdee - aggressiveDeficit * 0.6), bmr)
+    ? Math.max(Math.round(tdee - aggressiveDeficit * 0.6), calorieFloor)
     : Math.round(tdee + aggressiveDeficit * 0.6);
 
   alternatives.push({
@@ -107,7 +120,7 @@ export const calculateWeightRateAlternatives = (
   const balancedDeficit = (balancedRate * CALORIE_PER_KG) / 7;
 
   const balancedCalories = isWeightLoss
-    ? Math.max(Math.round(tdee - balancedDeficit), bmr)
+    ? Math.max(Math.round(tdee - balancedDeficit), calorieFloor)
     : Math.round(tdee + balancedDeficit);
 
   alternatives.push({
@@ -133,12 +146,18 @@ export const calculateWeightRateAlternatives = (
   });
 
   const achievableWeightChange = safeOptimalRate * currentTimeline;
+  // S15: never propose a clinically underweight target. Adjust Goal suggested
+  // 39.9kg (BMI 16.6) to an already-underweight user — re-triggering
+  // TARGET_BMI_UNDERWEIGHT and looping the wizard forever.
+  const minSafeWeight = data.heightCm
+    ? 18.5 * Math.pow(data.heightCm / 100, 2)
+    : 0;
   const newTargetWeight = isWeightLoss
-    ? currentWeight - achievableWeightChange
+    ? Math.max(currentWeight - achievableWeightChange, minSafeWeight)
     : currentWeight + achievableWeightChange;
 
   const targetCalories = isWeightLoss
-    ? Math.max(Math.round(tdee - (safeOptimalRate * CALORIE_PER_KG) / 7), bmr)
+    ? Math.max(Math.round(tdee - (safeOptimalRate * CALORIE_PER_KG) / 7), calorieFloor)
     : Math.round(tdee + (safeOptimalRate * CALORIE_PER_KG) / 7);
 
   alternatives.push({

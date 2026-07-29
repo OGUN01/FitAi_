@@ -45,6 +45,8 @@ export interface UseAdjustmentWizardProps {
     currentCardioMinutes?: number;
     currentStrengthSessions?: number;
     weeklyWeightLossGoal?: number;
+    gender?: string;
+    heightCm?: number;
   };
   primaryGoals?: string[];
   onSelectAlternative: (alternative: Alternative) => void;
@@ -65,4 +67,8 @@ export interface CurrentData {
   currentStrengthSessions?: number;
   /** SSOT: weekly_weight_loss_goal from onboarding. When present, used instead of derived currentWeight*0.0075/0.01. */
   weeklyWeightLossGoal?: number;
+  /** Needed for the sex-based calorie floor (1500 male / 1200 female). */
+  gender?: string;
+  /** Needed to clamp proposed target weights to the healthy-BMI floor. */
+  heightCm?: number;
 }

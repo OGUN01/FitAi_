@@ -373,7 +373,11 @@ export class MetabolicCalculations {
   }
 
   private static getExpectedBMRForAge(age: number, gender: string): number {
+    // S18: teens (13–17 — the onboarding floor is 13) previously matched NO
+    // bracket and got 0 → (0−BMR)/0 = −Infinity → masked to exactly 18 for every
+    // teen. Teen BMR per kg is comparable to the 18–24 reference band.
     const maleReferences = [
+      { ageRange: [13, 17], bmr: 1750 },
       { ageRange: [18, 24], bmr: 1750 },
       { ageRange: [25, 34], bmr: 1700 },
       { ageRange: [35, 44], bmr: 1650 },
@@ -383,6 +387,7 @@ export class MetabolicCalculations {
     ];
 
     const femaleReferences = [
+      { ageRange: [13, 17], bmr: 1500 },
       { ageRange: [18, 24], bmr: 1500 },
       { ageRange: [25, 34], bmr: 1450 },
       { ageRange: [35, 44], bmr: 1400 },

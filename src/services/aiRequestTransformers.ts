@@ -523,14 +523,22 @@ export function transformForWorkoutRequest(
     workoutPreferences?.preferred_workout_times?.[0] || "morning";
 
   // ✅ NEW: Build weekly plan object (ALWAYS REQUIRED - NO FALLBACK)
-  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week ?? undefined;
+  // S09: a 0-frequency selection (sedentary user, or boost-cardio pace card which
+  // intentionally leaves workout_frequency_per_week at 0) reaches the worker as
+  // literal 0 and fails its Zod .min(1) — generation 400s for the whole cohort.
+  // Clamp to one weekly session so every user gets a deliverable plan; boost
+  // cardio is handled on top of the plan separately.
+  const workoutsPerWeek = Math.max(
+    1,
+    workoutPreferences?.workout_frequency_per_week ?? 3,
+  );
   const preferredDays = getWorkoutDaysFromPreferences(
     workoutPreferences,
     workoutsPerWeek,
   );
 
   const weeklyPlan = {
-    workoutsPerWeek: workoutsPerWeek ?? 3,
+    workoutsPerWeek,
     preferredDays,
     workoutTypes: workoutPreferences?.workout_types || [],
     prefersVariety: workoutPreferences?.prefers_variety || false,

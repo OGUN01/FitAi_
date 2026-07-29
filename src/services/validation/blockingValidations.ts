@@ -49,6 +49,37 @@ export function validateMinimumBMI(
   return { status: "OK" };
 }
 
+/**
+ * Gain-side ceiling mirror of validateMinimumBMI (S21).
+ * Loss targets below BMI 17.5 are blocked; gain targets must also have a sane
+ * ceiling — a 60kg user targeting 150kg (BMI 49) was previously allowed with
+ * only a soft warning. BMI ≥ 40 is class-III (morbid) obesity: no plan should
+ * actively target it. Block and redirect to an intermediate milestone.
+ */
+export function validateMaximumBMI(
+  targetWeight: number,
+  height: number,
+): ValidationResult {
+  const heightM = height / 100;
+  const targetBMI = targetWeight / (heightM * heightM);
+  const EXTREME_CEILING = 40;
+
+  if (targetBMI >= EXTREME_CEILING) {
+    const milestoneWeight = Math.round(30 * heightM * heightM);
+    return {
+      status: "BLOCKED",
+      code: "TARGET_BMI_EXTREME",
+      message: `Target BMI (${targetBMI.toFixed(1)}) is in the clinically dangerous range`,
+      recommendations: [
+        "Set an intermediate milestone first — large goals succeed in stages",
+        `Suggested first milestone: ~${milestoneWeight}kg (BMI 30)`,
+        "You can set the next milestone after reaching this one",
+      ],
+    };
+  }
+  return { status: "OK" };
+}
+
 export function validateBMRSafety(
   targetCalories: number,
   bmr: number,

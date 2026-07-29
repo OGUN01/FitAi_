@@ -330,6 +330,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               currentTimeline: bodyAnalysis?.target_timeline_weeks || 0,
               currentFrequency:
                 workoutPreferences?.workout_frequency_per_week || 0,
+              // S15: let wizard options floor calories at the sex-based absolute
+              // minimum and clamp target weights to the healthy-BMI floor.
+              gender: personalInfo?.gender ?? undefined,
+              heightCm: bodyAnalysis?.height_cm ?? undefined,
             }}
             primaryGoals={workoutPreferences?.primary_goals || []}
             onSelectAlternative={(alt) => {
