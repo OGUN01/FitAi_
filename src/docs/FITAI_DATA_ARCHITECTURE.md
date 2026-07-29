@@ -727,6 +727,30 @@ useReviewValidation
       → no transient state for selection
 ```
 
+#### C.10.1 Feasibility Audit Contract (2026-07-29, commit b5e05fc7)
+
+A 23-scenario audit locked these invariants. `src/__tests__/validation/reviewFeasibility.test.ts` pins them.
+
+**Card/engine parity — a pace card never promises what the engine blocks:**
+- Loss cards with rate > `currentWeight × 0.015` are `isBlocked` ("Too fast"), including KEEP MY GOAL and boost cards.
+- Diet cards with `dailyCalories < floor (1500M / 1200F)` are `isBlocked`; boost cards when `BMR < floor`.
+- COMFORTABLE rate ≤ AT YOUR BMR rate and ≤ the hard limit; duplicate card rates are deduped.
+- Gain cards apply the same `MAX_SURPLUS_FRACTION` (10% TDEE) cap as the engine — displayed rate/calories/timeline are the POST-cap values.
+
+**Engine honesty — the delivered plan is what's validated and reported:**
+- Gain surplus cap emits `SURPLUS_LIMITED_FOR_SAFETY`; `wasRateCapped` covers gain caps AND bypass BMR-floors; `timeline` recomputes from the delivered rate in every capped path.
+- `isAggressive` / `SEVERE_SLEEP_DEPRIVATION` use the DELIVERED weeklyRate, not the requested stored goal.
+- Maintenance branch honors the BODY RECOMP card (`weekly_weight_loss_goal > 0` → mild deficit, floored at max(BMR, sex-based minimum)); stored goal `0` → exact TDEE.
+- `validateMinimumBodyFat` receives the RESOLVED body-fat value (manual → AI-estimate → BMI-derived → sex default).
+- Warnings compute even when blocking errors exist (no warning avalanche after the wizard).
+- `applyDeficitLimit` reports the really-enforced deficit % (BMR floor can bind below the nominal cap). Teens (<18) always get the conservative 15% cap.
+
+**Pregnancy/breastfeeding:** ACOG bonus (+0/+340/+450 T1/T2/T3, +500 lactation) is delivered in maintenance/gain branches and reflected on cards; all deficit cards are suppressed; the deficit guard re-checks post-medical-adjustment values.
+
+**Boundaries:** gain targets with BMI ≥ 40 are BLOCKED (`TARGET_BMI_EXTREME`); loss targets in BMI 17.5–18.5 warn (`TARGET_BMI_UNDERWEIGHT_BAND`); `workoutsPerWeek` is clamped ≥ 1 before the worker (freq-0 bootstrapping fails its Zod `.min(1)` otherwise); metabolic age has teen (13–17) reference brackets in both engine copies.
+
+**Hook/UI:** stored pace goals reset when the goal mode (loss/gain/maintenance) changes; acknowledgment is owned by `useAdvancedReviewForm` (auto-ack when every warning carries alternatives); auto-select never picks a blocked/missing card; when zero safe cards exist the UI shows the infeasible-goal guidance instead of a dead picker.
+
 ---
 
 ## D. Naming Conventions & Type Mapping
