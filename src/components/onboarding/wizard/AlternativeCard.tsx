@@ -7,8 +7,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { Alternative } from "../../../hooks/adjustment-wizard";
@@ -24,7 +22,7 @@ interface AlternativeCardProps {
 
 export const AlternativeCard: React.FC<AlternativeCardProps> = ({
   alternative,
-  index,
+  index: _index,
   isSelected,
   isRecommended,
   onSelect,
@@ -58,23 +56,20 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
       onPress={onSelect}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityLabel={`${alternative.name} alternative`}
+      accessibilityState={{ selected: isSelected }}
     >
       <Animated.View style={[styles.alternativeCard, animatedCardStyle]}>
-        {/* Selection Border Glow */}
-        <Animated.View style={[styles.selectionBorder, animatedBorderStyle]}>
-          <LinearGradient
-            colors={[
-              colors.primary,
-              colors.secondary,
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.selectionGradient}
-          />
-        </Animated.View>
+        {/* Selection ring — flat 2px accent hairline (Editorial Dark), replaces
+            the old gradient glow border. Fades in/out with selection state. */}
+        <Animated.View
+          style={[styles.selectionBorder, animatedBorderStyle]}
+          pointerEvents="none"
+        />
 
-        {/* Card Content */}
-        <BlurView intensity={20} tint="dark" style={styles.cardBlur}>
+        {/* Card Content — flat surface + hairline border, no blur/frosted glass. */}
+        <View style={styles.cardSurface}>
           <View style={styles.cardInner}>
             {/* Header Row */}
             <View style={styles.cardHeader}>
@@ -203,7 +198,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
               </View>
             </View>
           </View>
-        </BlurView>
+        </View>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -216,6 +211,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
+  // Flat accent selection ring — 2px hairline, no gradient glow.
   selectionBorder: {
     position: "absolute",
     top: 0,
@@ -223,21 +219,19 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: borderRadius.lg,
-    padding: rp(2),
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
-  selectionGradient: {
-    flex: 1,
-    borderRadius: borderRadius.lg - 2,
-  },
-  cardBlur: {
+  // Flat surface + hairline border replaces the BlurView glass wrapper.
+  cardSurface: {
     borderRadius: borderRadius.lg,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.border,
   },
   cardInner: {
     padding: spacing.md,
-    backgroundColor: "rgba(30, 30, 45, 0.85)",
+    backgroundColor: colors.backgroundSecondary,
   },
   cardHeader: {
     flexDirection: "row",
@@ -257,7 +251,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: rf(15),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text,
     marginBottom: rp(2),
   },
@@ -267,7 +261,7 @@ const styles = StyleSheet.create({
   recommendedBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    backgroundColor: colors.warningTint,
     paddingVertical: rp(2),
     paddingHorizontal: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -275,7 +269,7 @@ const styles = StyleSheet.create({
   },
   recommendedText: {
     fontSize: rf(9),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.warningAlt,
     marginLeft: rp(3),
     textTransform: "uppercase",
@@ -286,7 +280,7 @@ const styles = StyleSheet.create({
     height: rw(24),
     borderRadius: rw(12),
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: colors.borderLight,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -308,7 +302,7 @@ const styles = StyleSheet.create({
   },
   prosConsRow: {
     flexDirection: "row",
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: borderRadius.sm,
     padding: spacing.sm,
   },
@@ -320,7 +314,7 @@ const styles = StyleSheet.create({
   },
   prosConsDivider: {
     width: 1,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.border,
     marginHorizontal: spacing.sm,
   },
   prosHeader: {
@@ -335,14 +329,14 @@ const styles = StyleSheet.create({
   },
   prosTitle: {
     fontSize: rf(10),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.successAlt,
     marginLeft: rp(4),
     textTransform: "uppercase",
   },
   consTitle: {
     fontSize: rf(10),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.warningAlt,
     marginLeft: rp(4),
     textTransform: "uppercase",

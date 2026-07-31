@@ -4,12 +4,13 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   Pressable,
+  ScrollView,
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../../utils/responsive";
+import { BottomSheet } from "../../ui/aurora/BottomSheet";
+import { rf, rh } from "../../../utils/responsive";
 interface InfoTooltipModalProps {
   visible: boolean;
   title: string;
@@ -18,6 +19,15 @@ interface InfoTooltipModalProps {
   onClose: () => void;
 }
 
+/**
+ * InfoTooltipModal — informational bottom sheet (blueprint §7.10).
+ *
+ * Editorial Dark migration: was a centered RN `Modal` overlay (D7) with a
+ * frosted-glass card. Now a flat-surface bottom sheet — thumb-reachable,
+ * swipe-dismissible, hairline-separated. Props contract and accessibility
+ * labels are unchanged so the two onboarding tab consumers (DietPreferences,
+ * WorkoutPreferences) keep their `showInfoTooltip` hook wiring untouched.
+ */
 export const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
   visible,
   title,
@@ -26,113 +36,139 @@ export const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
   onClose,
 }) => {
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      onClose={onClose}
+      showCloseButton={false}
+      closeOnOverlayPress
+      dismissOnDrag
+      contentStyle={styles.content}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={styles.modalCloseButton}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Close ${title}`}
-            >
-              <Ionicons
-                name="close-circle"
-                size={rf(24)}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
+      {/* Header — flat, hairline-separated; preserves the per-title close
+          affordance label the onboarding tests rely on. */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{title}</Text>
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.closeButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={`Close ${title}`}
+        >
+          <Ionicons
+            name="close-circle"
+            size={rf(24)}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.description}>{description}</Text>
+        {benefits && benefits.length > 0 && (
+          <View style={styles.benefits}>
+            <Text style={styles.benefitsTitle}>Benefits:</Text>
+            {benefits.map((benefit, index) => (
+              <View key={index} style={styles.benefitItem}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={rf(16)}
+                  color={colors.success}
+                />
+                <Text style={styles.benefitText}>{benefit}</Text>
+              </View>
+            ))}
           </View>
-          <Text style={styles.modalDescription}>{description}</Text>
-          {benefits && benefits.length > 0 && (
-            <View style={styles.modalBenefits}>
-              <Text style={styles.modalBenefitsTitle}>Benefits:</Text>
-              {benefits.map((benefit, index) => (
-                <View key={index} style={styles.modalBenefitItem}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={rf(16)}
-                    color={colors.success}
-                  />
-                  <Text style={styles.modalBenefitText}>{benefit}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
+        )}
+      </ScrollView>
+
+      {/* Footer action — closes the sheet. Kept as an explicit "Got it" CTA so
+          the sheet has one clear primary action (matches the previous modal's
+          tap-to-dismiss affordance) and stays reachable above the keyboard. */}
+      <Pressable
+        onPress={onClose}
+        style={styles.gotItButton}
+        accessibilityRole="button"
+        accessibilityLabel={`Dismiss ${title} dialog`}
+      >
+        <Text style={styles.gotItText}>Got it</Text>
       </Pressable>
-    </Modal>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    alignItems: "center",
+  content: {
     paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  modalContent: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.xl,
-    padding: spacing.xl,
-    width: "100%",
-    maxWidth: 360,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  modalHeader: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: spacing.md,
   },
-  modalTitle: {
+  title: {
     fontSize: fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
     flex: 1,
   },
-  modalCloseButton: {
+  closeButton: {
     minWidth: 44,
     minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
   },
-  modalDescription: {
+  scroll: {
+    maxHeight: rh(360),
+  },
+  description: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
     lineHeight: rf(22),
     marginBottom: spacing.md,
   },
-  modalBenefits: {
-    backgroundColor: `${colors.success}10`,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  benefits: {
+    // Flat surface separated by a hairline, not a tinted card.
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    paddingTop: spacing.md,
+    marginTop: spacing.xs,
   },
-  modalBenefitsTitle: {
+  benefitsTitle: {
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
-    color: colors.success,
+    color: colors.text,
     marginBottom: spacing.sm,
   },
-  modalBenefitItem: {
+  benefitItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
     marginBottom: spacing.xs,
   },
-  modalBenefitText: {
+  benefitText: {
     fontSize: fontSize.sm,
     color: colors.text,
     flex: 1,
+  },
+  gotItButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  gotItText: {
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
 });

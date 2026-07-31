@@ -3,9 +3,11 @@
  *
  * The payoff screen, re-skinned to the "Editorial Dark" language (no cards):
  * metric rows (micro-label left, big Manrope value right) separated by
- * hairlines under SectionLabels; the pace picker renders as OptionRow-style
- * selectable rows with hairline-separated warning callouts; Complete Setup
- * is the single solid-accent CTA (via ScreenScaffold).
+ * hairlines under SectionLabels; the pace picker renders as the screen's
+ * single contrasting block — a low-alpha volt panel holding the named pace
+ * tiers (Relaxed / Comfortable / Recommended / Your goal), each selection
+ * re-deriving calories, deficit and timeline from the ValidationEngine SSOT;
+ * Complete Setup is the single solid-accent CTA (via ScreenScaffold).
  *
  * On "Complete Setup": a volt-glow reveal washes over the screen + a larger
  * SkiaBloom (24 particles) fires, then the flow bridges into Home.
@@ -248,6 +250,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           calculatedData={calculatedData}
           bodyAnalysis={bodyAnalysis}
           onNavigateToTab={onNavigateToTab}
+          units={personalInfo?.units ?? null}
           enterDelay={140}
         />
 
@@ -281,6 +284,9 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               }}
               smartAlternatives={smartAlternatives}
               selectedAlternativeId={selectedAlternativeId}
+              selectedWeeklyRate={
+                workoutPreferences?.weekly_weight_loss_goal ?? null
+              }
               onSelectAlternative={handleSelectAlternative}
             />
           </Animated.View>

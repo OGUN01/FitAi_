@@ -21,7 +21,9 @@ import { InfoTooltipModal } from "../../../components/onboarding/shared/InfoTool
 import { GoalsSection } from "../../../components/onboarding/workout/GoalsSection";
 import { FitnessLevelSection } from "../../../components/onboarding/workout/FitnessLevelSection";
 import { PreferencesSection } from "../../../components/onboarding/workout/PreferencesSection";
-import { StyleSection } from "../../../components/onboarding/workout/StyleSection";
+// NOTE: StyleSection ("What you enjoy") was removed from the UI per user
+// feedback (Image #14) — the enjoyment booleans are now derived from
+// primary_goals inside useWorkoutPreferences, so AI generation is unchanged.
 import { WeightGoalsSection } from "../../../components/onboarding/workout/WeightGoalsSection";
 import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
 import {
@@ -77,7 +79,6 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   const [assessCollapsed, setAssessCollapsed] = useState(true);
   const [equipmentCollapsed, setEquipmentCollapsed] = useState(true);
   const [typesCollapsed, setTypesCollapsed] = useState(true);
-  const [enjoyCollapsed, setEnjoyCollapsed] = useState(true);
 
   const {
     formData,
@@ -86,6 +87,8 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     updateField,
     toggleGoal,
     toggleWorkoutTime,
+    setWorkoutFrequency,
+    toggleWorkoutDay,
     showInfoTooltip,
     hideInfoTooltip,
     calculateRecommendedWorkoutTypes,
@@ -136,9 +139,17 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
 
   // Live collapsed summaries — headers reflect what's already chosen, so the
   // eye always lands on state, not static helper copy.
+  //
+  // Smart equipment logic (user feedback, Image #14): the equipment picker is
+  // only shown when it adds information — location "gym" hides it entirely
+  // (full gym access is assumed internally), "home" shows a home-gear picker,
+  // "both" shows gym staples as assumed + the user's home gear on top.
+  const isGymOnly = formData.location === "gym";
+  const isBoth = formData.location === "both";
   const equipmentLabels = EQUIPMENT_OPTIONS.filter((o) =>
     formData.equipment.includes(o.value),
   ).map((o) => o.label);
+  const equipmentTitle = isBoth ? "Home + gym gear" : "Home equipment";
   const equipmentSubtitle =
     equipmentLabels.length > 0
       ? `${equipmentLabels.length} selected — ${equipmentLabels
@@ -146,7 +157,9 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           .join(", ")}${
           equipmentLabels.length > 3 ? ` +${equipmentLabels.length - 3}` : ""
         }`
-      : "Gear you have access to";
+      : isBoth
+        ? "Gym staples included — add your home gear"
+        : "Gear you have at home";
 
   const typeLabels = WORKOUT_TYPE_OPTIONS.filter((t) =>
     formData.workout_types.includes(t.value),
@@ -199,12 +212,14 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           />
         </Mount>
 
-        {/* Visible — training setup (location / intensity / duration / frequency / times) */}
+        {/* Visible — training setup (location / intensity / duration / frequency + days / times) */}
         <Mount index={1}>
           <PreferencesSection
             formData={formData}
             updateField={updateField}
             toggleWorkoutTime={toggleWorkoutTime}
+            setWorkoutFrequency={setWorkoutFrequency}
+            toggleWorkoutDay={toggleWorkoutDay}
             showInfoTooltip={showInfoTooltip}
             intensityRecommendation={intensityRecommendation}
           />
@@ -220,50 +235,56 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           />
         </Mount>
 
-        {/* Collapsed — "Equipment" */}
-        <Mount index={3}>
-          <CollapsibleSection
-            title="Equipment"
-            subtitle={equipmentSubtitle}
-            expanded={!equipmentCollapsed}
-            onToggle={() => setEquipmentCollapsed((v) => !v)}
-            testID="equipment-section"
-          >
-            <View style={styles.helpRow}>
-              <Text style={styles.caption}>
-                Tap to toggle what you have access to
-              </Text>
-              <Pressable
-                onPress={() =>
-                  showInfoTooltip(
-                    "Equipment",
-                    "The gear you can use. Gym selection auto-fills standard equipment.",
-                  )
-                }
-                hitSlop={8}
-                accessibilityLabel="About equipment"
-              >
-                <Ionicons
-                  name="information-circle-outline"
-                  size={16}
-                  color={tokens.ink3}
-                />
-              </Pressable>
-            </View>
-            <View style={styles.pillGrid} testID="equipment-chip-picker">
-              {EQUIPMENT_OPTIONS.map((option) => (
-                <Pill
-                  key={option.value}
-                  label={option.label}
-                  icon={option.iconName as keyof typeof Ionicons.glyphMap}
-                  selected={formData.equipment.includes(option.value)}
-                  onPress={() => toggleArrayField("equipment", option.value)}
-                  testID={`equipment-pill-${option.value}`}
-                />
-              ))}
-            </View>
-          </CollapsibleSection>
-        </Mount>
+        {/* Collapsed — "Equipment" (hidden for gym-only: full access assumed) */}
+        {!isGymOnly && (
+          <Mount index={3}>
+            <CollapsibleSection
+              title={equipmentTitle}
+              subtitle={equipmentSubtitle}
+              expanded={!equipmentCollapsed}
+              onToggle={() => setEquipmentCollapsed((v) => !v)}
+              testID="equipment-section"
+            >
+              <View style={styles.helpRow}>
+                <Text style={styles.caption}>
+                  {isBoth
+                    ? "Standard gym equipment is assumed — tap to add your home gear"
+                    : "Tap to toggle the gear you have at home"}
+                </Text>
+                <Pressable
+                  onPress={() =>
+                    showInfoTooltip(
+                      "Equipment",
+                      isBoth
+                        ? "You train at the gym and at home. Standard gym equipment is already included — add anything you also have at home."
+                        : "The gear you can use at home. Your plan only uses equipment you select.",
+                    )
+                  }
+                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                  accessibilityLabel="About equipment"
+                >
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={16}
+                    color={tokens.ink3}
+                  />
+                </Pressable>
+              </View>
+              <View style={styles.pillGrid} testID="equipment-chip-picker">
+                {EQUIPMENT_OPTIONS.map((option) => (
+                  <Pill
+                    key={option.value}
+                    label={option.label}
+                    icon={option.iconName as keyof typeof Ionicons.glyphMap}
+                    selected={formData.equipment.includes(option.value)}
+                    onPress={() => toggleArrayField("equipment", option.value)}
+                    testID={`equipment-pill-${option.value}`}
+                  />
+                ))}
+              </View>
+            </CollapsibleSection>
+          </Mount>
+        )}
 
         {/* Collapsed — "Workout types" */}
         <Mount index={4}>
@@ -297,7 +318,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                     "Training styles. Recommended types are listed above the grid.",
                   )
                 }
-                hitSlop={8}
+                hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 accessibilityLabel="About workout types"
               >
                 <Ionicons
@@ -322,16 +343,9 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           </CollapsibleSection>
         </Mount>
 
-        {/* Collapsed — "What you enjoy" */}
-        <Mount index={5}>
-          <StyleSection
-            formData={formData}
-            updateField={updateField}
-            showInfoTooltip={showInfoTooltip}
-            collapsed={enjoyCollapsed}
-            onToggleCollapse={() => setEnjoyCollapsed((v) => !v)}
-          />
-        </Mount>
+        {/* "What you enjoy" removed (user feedback, Image #14) — enjoyment
+            booleans are derived from primary_goals in useWorkoutPreferences so
+            AI generation keeps working unchanged. */}
 
         {/* Read-only weight goal summary (from Body tab) */}
         <Mount index={6}>

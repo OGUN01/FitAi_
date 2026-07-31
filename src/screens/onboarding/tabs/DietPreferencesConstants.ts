@@ -102,27 +102,30 @@ export const COOKING_SKILL_LEVELS = [
   },
 ];
 
+/**
+ * Budget tiers. Only the tier ("low" | "medium" | "high") is ever persisted —
+ * the localized weekly range shown next to each tier is derived at display
+ * time from the user's country via getBudgetRanges() in src/utils/currency.ts
+ * (single source of truth for budget display strings).
+ */
 export const BUDGET_LEVELS = [
   {
     level: "low",
     title: "Budget-Friendly",
     iconName: "cash-outline",
     description: "Cost-effective ingredients and meals",
-    range: "$50-100/week",
   },
   {
     level: "medium",
     title: "Moderate",
     iconName: "wallet-outline",
     description: "Balance of quality and affordability",
-    range: "$100-200/week",
   },
   {
     level: "high",
     title: "Premium",
     iconName: "diamond-outline",
     description: "High-quality, organic ingredients",
-    range: "$200+/week",
   },
 ];
 

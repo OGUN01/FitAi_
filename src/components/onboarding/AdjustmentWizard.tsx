@@ -6,6 +6,13 @@
  * solid accent element is the "Apply Changes" primary CTA (the allowed CTA
  * fill). No gradients, no glass surfaces, no elevation, no fontWeight hacks.
  *
+ * DOM structure (web-safe): the backdrop Pressable is an absolute-fill SIBLING
+ * rendered BEHIND the sheet — never an ancestor of sheet content. Nesting it
+ * around the sheet produced <button> inside <button> on react-native-web
+ * ("Dismiss goal adjustment" wrapping "Close goal adjustment"), which broke
+ * HTML hydration. Sheet taps can't hit the backdrop because the sheet paints
+ * above it in z-order, so no stopPropagation wrapper is needed either.
+ *
  * Selection / save / close logic — UNCHANGED.
  */
 
@@ -69,120 +76,122 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      {/* Dim backdrop — fills screen, tap to dismiss (plain dim, no blur) */}
-      <Pressable
-        style={[StyleSheet.absoluteFill, styles.backdrop]}
-        onPress={onClose}
-        accessibilityRole="button"
-        accessibilityLabel="Dismiss goal adjustment"
-        accessibilityHint="Closes the adjustment wizard without saving"
-      >
-        {/* Inner — stops propagation so taps inside don't dismiss */}
-        <Pressable onPress={(e) => e.stopPropagation()}>
-          <View style={styles.modalContainer}>
-            {/* ── Header ── */}
-            <View style={styles.header}>
-              <Pressable
-                style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
-                onPress={onClose}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Close goal adjustment"
-              >
-                <Ionicons name="close" size={20} color={tokens.ink2} />
-              </Pressable>
-
-              <SectionLabel>Goal adjustment</SectionLabel>
-              <Text style={styles.subtitle}>
-                Your current plan needs optimization for safe, sustainable
-                results
-              </Text>
-
-              {/* Error — hairline callout, not a tinted alert box */}
-              <View style={styles.errorCallout}>
-                <Ionicons name="warning" size={16} color={tokens.danger} />
-                <Text style={styles.errorMessage} numberOfLines={2}>
-                  {error.message}
-                </Text>
-              </View>
-            </View>
-
-            {/* ── Alternatives List ── */}
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
+      {/* Root lays the sheet at the bottom; the backdrop is a sibling BEHIND
+          it (absolute-fill), never an ancestor — see header note. */}
+      <View style={styles.root}>
+        {/* Dim backdrop — fills screen, tap to dismiss (plain dim, no blur) */}
+        <Pressable
+          style={[StyleSheet.absoluteFill, styles.backdrop]}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss goal adjustment"
+          accessibilityHint="Closes the adjustment wizard without saving"
+        />
+        <View style={styles.modalContainer}>
+          {/* ── Header ── */}
+          <View style={styles.header}>
+            <Pressable
+              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+              onPress={onClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close goal adjustment"
             >
-              <SectionLabel style={styles.sectionLabel}>
-                Choose a safe alternative
-              </SectionLabel>
+              <Ionicons name="close" size={20} color={tokens.ink2} />
+            </Pressable>
 
-              {alternatives.map((alt, index) => (
-                <AlternativeCard
-                  key={index}
-                  alternative={alt}
-                  index={index}
-                  isSelected={selectedIndex === index}
-                  isRecommended={index === 0}
-                  onSelect={() => setSelectedIndex(index)}
-                />
-              ))}
+            <SectionLabel>Goal adjustment</SectionLabel>
+            <Text style={styles.subtitle}>
+              Your current plan needs optimization for safe, sustainable
+              results
+            </Text>
 
-              <View style={styles.scrollPadding} />
-            </ScrollView>
-
-            {/* ── Footer ── */}
-            <View style={styles.footer}>
-              <Pressable
-                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel goal adjustment"
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.applyButton,
-                  applyEnabled
-                    ? styles.applyButtonEnabled
-                    : styles.applyButtonDisabled,
-                  pressed && applyEnabled && styles.pressed,
-                ]}
-                onPress={handleSelectAlternative}
-                disabled={!applyEnabled}
-                accessibilityRole="button"
-                accessibilityLabel="Apply goal adjustment"
-              >
-                <Text
-                  style={[
-                    styles.applyButtonText,
-                    !applyEnabled && styles.applyButtonTextDisabled,
-                  ]}
-                >
-                  {isSaving ? "Saving..." : "Apply Changes"}
-                </Text>
-                {!isSaving && applyEnabled && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={tokens.bg}
-                  />
-                )}
-              </Pressable>
+            {/* Error — hairline callout, not a tinted alert box */}
+            <View style={styles.errorCallout}>
+              <Ionicons name="warning" size={16} color={tokens.danger} />
+              <Text style={styles.errorMessage} numberOfLines={2}>
+                {error.message}
+              </Text>
             </View>
           </View>
-        </Pressable>
-      </Pressable>
+
+          {/* ── Alternatives List ── */}
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <SectionLabel style={styles.sectionLabel}>
+              Choose a safe alternative
+            </SectionLabel>
+
+            {alternatives.map((alt, index) => (
+              <AlternativeCard
+                key={index}
+                alternative={alt}
+                index={index}
+                isSelected={selectedIndex === index}
+                isRecommended={index === 0}
+                onSelect={() => setSelectedIndex(index)}
+              />
+            ))}
+
+            <View style={styles.scrollPadding} />
+          </ScrollView>
+
+          {/* ── Footer ── */}
+          <View style={styles.footer}>
+            <Pressable
+              style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel goal adjustment"
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.applyButton,
+                applyEnabled
+                  ? styles.applyButtonEnabled
+                  : styles.applyButtonDisabled,
+                pressed && applyEnabled && styles.pressed,
+              ]}
+              onPress={handleSelectAlternative}
+              disabled={!applyEnabled}
+              accessibilityRole="button"
+              accessibilityLabel="Apply goal adjustment"
+            >
+              <Text
+                style={[
+                  styles.applyButtonText,
+                  !applyEnabled && styles.applyButtonTextDisabled,
+                ]}
+              >
+                {isSaving ? "Saving..." : "Apply Changes"}
+              </Text>
+              {!isSaving && applyEnabled && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color={tokens.bg}
+                />
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: {
+  root: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  backdrop: {
     backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   pressed: {

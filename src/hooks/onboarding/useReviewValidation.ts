@@ -277,11 +277,14 @@ export const useReviewValidation = ({
         calculated_bmr: validationResultsData.calculatedMetrics.bmr,
         // BUG-17: Use new percentage-based formula (from healthCalculations/metabolic.ts).
         // Old formula (calPerYear=10) produces floor=18 for large-framed users.
+        // Pass body weight so the reference BMR scales to the user's frame —
+        // without it, heavier users (higher absolute BMR) still collapsed to 18.
         metabolic_age: hasBodyData && bodyAnalysis
           ? NewMetabolicCalc.calculateMetabolicAge(
               validationResultsData.calculatedMetrics.bmr,
               personalInfo.age,
               personalInfo.gender,
+              bodyAnalysis.current_weight_kg,
             )
           : undefined,
         calculated_tdee: validationResultsData.calculatedMetrics.tdee,
@@ -315,6 +318,10 @@ export const useReviewValidation = ({
         medical_adjustments: validationResultsData.adjustments?.medicalNotes,
         // BUG-35: expose rate cap flag so UI can warn the user
         was_rate_capped: validationResultsData.calculatedMetrics.wasRateCapped,
+        // True when population-average fallbacks are in play because the user
+        // skipped body measurements; false when the engine ran on real
+        // height/weight (master-engine also reports false via the spread).
+        usedFallbackDefaults: !hasBodyData,
       } as AdvancedReviewData;
 
       setCalculatedData(finalCalculations);

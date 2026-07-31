@@ -4,11 +4,12 @@
  *
  * Location (single-select OptionRows), intensity (single-select OptionRows +
  * soft accent recommendation note), session duration (RangeSlider, volt
- * accent), sessions/week (WeekRhythm ruler 0–7 + live Mon–Sun map), preferred
- * times (multi-select OptionRows). No cards — SectionLabel + hairlines only.
+ * accent), sessions/week (WeekRhythm ruler 0–7 + TAPPABLE Mon–Sun day chips —
+ * user picks WHICH days they train), preferred times (multi-select
+ * OptionRows). No cards — SectionLabel + hairlines only.
  *
- * Data wiring unchanged: `updateField`, `toggleWorkoutTime`, and
- * `intensityRecommendation` from useWorkoutPreferences.
+ * Data wiring: `updateField`, `toggleWorkoutTime`, `setWorkoutFrequency`,
+ * `toggleWorkoutDay`, and `intensityRecommendation` from useWorkoutPreferences.
  */
 
 import React from "react";
@@ -31,6 +32,10 @@ interface PreferencesSectionProps {
     value: WorkoutPreferencesData[K],
   ) => void;
   toggleWorkoutTime: (timeId: string) => void;
+  /** Ruler control — session count; re-spreads days when the size changes. */
+  setWorkoutFrequency: (n: number) => void;
+  /** Day-chip control — toggles WHICH day; the count follows the selection. */
+  toggleWorkoutDay: (dayId: string) => void;
   showInfoTooltip: (title: string, description: string) => void;
   intensityRecommendation?: {
     level: "beginner" | "intermediate" | "advanced";
@@ -50,6 +55,8 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
   formData,
   updateField,
   toggleWorkoutTime,
+  setWorkoutFrequency,
+  toggleWorkoutDay,
   showInfoTooltip,
   intensityRecommendation,
 }) => {
@@ -164,7 +171,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
         testID="time-preference-slider"
       />
 
-      {/* Sessions per week — ruler + live week map */}
+      {/* Sessions per week — ruler + tappable day chips (WHICH days) */}
       <View style={[styles.headerRow, styles.fieldGap]}>
         <SectionLabel>Sessions per week</SectionLabel>
         <Text style={styles.valueMd}>
@@ -173,7 +180,9 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
       </View>
       <WeekRhythm
         value={formData.workout_frequency_per_week}
-        onChange={(n) => updateField("workout_frequency_per_week", n)}
+        onChange={setWorkoutFrequency}
+        days={formData.preferred_workout_days}
+        onToggleDay={toggleWorkoutDay}
         style={styles.stepper}
         testID="frequency-stepper"
       />

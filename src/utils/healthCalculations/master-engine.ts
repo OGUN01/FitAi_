@@ -17,6 +17,8 @@ import { CALORIE_PER_KG } from "../../services/validation/constants";
 import type { Goal } from "./types";
 import { mapActivityLevelForHealthCalc } from "../typeTransformers";
 import { detectEthnicity } from "./autoDetection";
+import { HealthScoreCalculatorService } from "./fitnessCalculators";
+import { calculateCompletionMetrics } from "../onboardingMetrics";
 
 
 export class HealthCalculationEngine {
@@ -64,6 +66,7 @@ export class HealthCalculationEngine {
       bmr,
       personalInfo.age,
       personalInfo.gender,
+      weightKg,
     );
 
     const idealWeightRange =
@@ -109,12 +112,23 @@ export class HealthCalculationEngine {
       personalInfo.age,
       personalInfo.gender,
     );
-    const bodyComposition = bodyAnalysis.body_fat_percentage
-      ? BodyCompositionCalculations.calculateBodyComposition(
-          weightKg,
-          bodyAnalysis.body_fat_percentage,
-        )
-      : { leanMass: 0, fatMass: 0 };
+    // Resolve body fat through the same SSOT chain the ValidationEngine uses
+    // (manual entry → AI photo estimate → BMI-derived estimate → sex default).
+    // Previously a missing manual entry produced lean_body_mass=0 / fat_mass=0 —
+    // bare zeros presented as real measurements. BMI-derived estimates are honest
+    // approximations (marked low-confidence upstream) and never fabricate a zero.
+    const resolvedBodyFat = MetabolicCalculations.getFinalBodyFatPercentage(
+      bodyAnalysis.body_fat_percentage,
+      bodyAnalysis.ai_estimated_body_fat,
+      bodyAnalysis.ai_confidence_score,
+      bmi,
+      personalInfo.gender,
+      personalInfo.age,
+    );
+    const bodyComposition = BodyCompositionCalculations.calculateBodyComposition(
+      weightKg,
+      resolvedBodyFat.value,
+    );
 
     const maxHeartRate = CardiovascularCalculations.calculateMaxHeartRate(
       personalInfo.age,
@@ -186,43 +200,27 @@ export class HealthCalculationEngine {
     // H17: Ethnicity detection from country (used for BMI risk thresholds per WHO guidelines)
     const ethnicityResult = detectEthnicity(personalInfo.country, personalInfo.state);
 
+    // health_grade: letter-grade rollup of the overall health score. The DB column
+    // exists (migration 20260402000000) and save() persists it, but nothing ever
+    // computed it — it round-tripped as NULL. Grade bands come from the shared
+    // HealthScoreCalculatorService.getGrade SSOT.
+    const healthGrade = HealthScoreCalculatorService.getGrade(overallHealthScore);
+
     // ── Quality / Completeness scores ──────────────────────────────────────
-    // data_completeness_percentage: fraction of optional precision fields provided.
-    // Optional fields that improve calculation accuracy:
-    const optionalPrecisionFields = [
-      bodyAnalysis.body_fat_percentage != null,              // body composition path
-      (bodyAnalysis.photos && Object.keys(bodyAnalysis.photos).length > 0), // AI photo analysis
-      bodyAnalysis.stress_level != null,                     // conservative deficit adjustment
-      bodyAnalysis.medical_conditions && bodyAnalysis.medical_conditions.length > 0, // safety guards
-      workoutPreferences.workout_experience_years > 0,       // volume recommendations
-      workoutPreferences.can_run_minutes > 0,                // VO2 max calculation
-      personalInfo.country?.length > 0,                      // ethnicity-aware BMI thresholds
-      dietPreferences.cooking_methods && dietPreferences.cooking_methods.length > 0, // recipe filtering
-    ];
-    const providedCount = optionalPrecisionFields.filter(Boolean).length;
-    const dataCompletenessPercentage = Math.round(
-      // 40 base (required fields always present) + up to 60 from optional fields
-      40 + (providedCount / optionalPrecisionFields.length) * 60
+    // SSOT: calculateCompletionMetrics (src/utils/onboardingMetrics.ts) — the same
+    // function useReviewValidation spreads into the live result. Previously the
+    // engine kept its own divergent formula, so the values persisted via
+    // AdvancedReviewService.calculateAndSave disagreed with the live UI path.
+    const {
+      data_completeness_percentage: dataCompletenessPercentage,
+      reliability_score: reliabilityScore,
+      personalization_level: personalizationLevel,
+    } = calculateCompletionMetrics(
+      personalInfo,
+      dietPreferences,
+      bodyAnalysis,
+      workoutPreferences,
     );
-
-    // reliability_score: how confident are the metabolic calculations.
-    // Penalised when key inputs are estimated rather than measured.
-    let reliabilityScore = 100;
-    if (!bodyAnalysis.body_fat_percentage) reliabilityScore -= 15; // BMR uses population formula, not lean mass
-    if (!workoutPreferences.can_run_minutes || workoutPreferences.can_run_minutes === 0) reliabilityScore -= 10; // VO2 max is an estimate
-    if (!bodyAnalysis.stress_level) reliabilityScore -= 5;  // stress correction not applied
-    if (bodyAnalysis.medical_conditions && bodyAnalysis.medical_conditions.length > 0 && !bodyAnalysis.body_fat_percentage) reliabilityScore -= 10;
-    reliabilityScore = Math.max(50, reliabilityScore); // floor at 50 — always somewhat reliable
-
-    // personalization_level: how tailored the output is to this specific user.
-    // Combines completeness + goal specificity + preference richness.
-    const hasSpecificGoal = workoutPreferences.primary_goals && workoutPreferences.primary_goals.length > 0;
-    const hasDietPreferences = dietPreferences.diet_type && dietPreferences.diet_type !== "balanced";
-    const hasHealthHabits = dietPreferences.drinks_enough_water !== undefined || dietPreferences.limits_sugary_drinks !== undefined;
-    const hasLocationData = !!(personalInfo.country && personalInfo.state);
-    const personalizationBonus = [hasSpecificGoal, hasDietPreferences, hasHealthHabits, hasLocationData]
-      .filter(Boolean).length * 5;
-    const personalizationLevel = Math.min(100, Math.round(dataCompletenessPercentage * 0.7 + reliabilityScore * 0.2 + personalizationBonus));
 
     return {
       calculated_bmi: Math.round(bmi * 100) / 100,
@@ -249,7 +247,13 @@ export class HealthCalculationEngine {
       fat_mass: bodyComposition.fatMass,
 
       estimated_vo2_max: Math.round(estimatedVO2Max * 10) / 10,
+      // @ui-only alias consumed by userMetricsService / SyncEngine — previously
+      // never populated even though estimated_vo2_max was (naming mismatch).
+      vo2_max_estimate: Math.round(estimatedVO2Max * 10) / 10,
       max_heart_rate: maxHeartRate,
+      // @ui-only aggregate zone object for chart rendering — the 6 target_hr_*
+      // columns were written but the aggregate object was never built.
+      heart_rate_zones: { ...heartRateZones },
       target_hr_fat_burn_min: heartRateZones.fatBurn.min,
       target_hr_fat_burn_max: heartRateZones.fatBurn.max,
       target_hr_cardio_min: heartRateZones.cardio.min,
@@ -273,8 +277,13 @@ export class HealthCalculationEngine {
       bmi_category: bmiClassification.category,
       bmi_health_risk: bmiClassification.risk,
       bmr_formula_used: "mifflin_st_jeor",
+      health_grade: healthGrade,
       vo2_max_classification: vo2MaxClassification,
       detected_ethnicity: ethnicityResult.ethnicity,
+      // This engine only runs when valid height/weight were entered, so population
+      // fallback defaults were NOT used. (The no-body-data path is handled by the
+      // caller, which sets usedFallbackDefaults=true.)
+      usedFallbackDefaults: false,
 
       data_completeness_percentage: dataCompletenessPercentage,
       reliability_score: reliabilityScore,

@@ -12,34 +12,30 @@
  *  - The collapsed subtitle names the picks, not just the total count —
  *    closing the section never hides what's inside.
  *
- * Custom free-text entry is RESTORED, quietly: each grid ends in a dashed
- * ghost "+ Add" pill. Tapping it swaps the pill for a full-width inline
- * editor — a borderless TextInput with a hairline underline that turns accent
- * on focus (the allowed "focused underline"), an "Add" confirm (accent only
- * when there's text) and a quiet close glyph. Values are normalized
- * (trim/lowercase/dasherized), deduped case-insensitively, and appended to
- * the SAME arrays via updateField("allergies" | "restrictions", values) —
- * identical to every other pill in the grid. Custom values render as
- * selected pills and remain removable with one tap.
+ * Custom free-text entry ("enter what's missing"): each grid ends in a dashed
+ * ghost "+ Add your own" pill. Tapping it swaps the pill for a full-width
+ * inline editor — the shared aurora UnderlineInput (borderless, hairline
+ * underline that turns accent on focus — the allowed "focused underline"), an
+ * "Add" confirm (accent only when there's text) and a quiet close glyph. All
+ * targets are ≥44pt. Values are normalized (trim/lowercase/dasherized),
+ * deduped case-insensitively, and appended to the SAME arrays via
+ * updateField("allergies" | "restrictions", values) — identical to every
+ * other pill in the grid. Custom values render as selected pills and remain
+ * removable with one tap.
  *
  * Presentation-only redesign — props contract (formData, updateField)
  * unchanged.
  */
 
 import React, { useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ALLERGY_OPTIONS,
   RESTRICTION_OPTIONS,
 } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
 import { DietPreferencesData } from "../../../types/onboarding";
+import { UnderlineInput } from "../aurora/UnderlineInput";
 import {
   CollapsibleSection,
   Pill,
@@ -90,9 +86,9 @@ interface CustomEntryInputProps {
 }
 
 /**
- * The inline custom-entry editor — a borderless input + hairline underline
- * (accent when focused) + Add / close. Owns its own text state; empty submit
- * behaves as cancel.
+ * The inline custom-entry editor — the shared aurora UnderlineInput
+ * (borderless; hairline underline turns accent on focus) + Add / close, all
+ * at ≥44pt targets. Owns its own text state; empty submit behaves as cancel.
  */
 const CustomEntryInput: React.FC<CustomEntryInputProps> = ({
   placeholder,
@@ -101,7 +97,6 @@ const CustomEntryInput: React.FC<CustomEntryInputProps> = ({
   testIDPrefix,
 }) => {
   const [text, setText] = useState("");
-  const [focused, setFocused] = useState(false);
   const value = normalize(text);
   const canAdd = value.length > 0;
 
@@ -116,32 +111,27 @@ const CustomEntryInput: React.FC<CustomEntryInputProps> = ({
   return (
     <View style={styles.entryRow}>
       <View style={styles.entryField}>
-        <TextInput
+        <UnderlineInput
           autoFocus
           value={text}
           onChangeText={setText}
           placeholder={placeholder}
-          placeholderTextColor={tokens.ink3}
-          style={styles.entryInput}
           returnKeyType="done"
           onSubmitEditing={submit}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
           autoCapitalize="none"
           autoCorrect={false}
+          accentColor={tokens.accent}
+          containerStyle={styles.entryInputContainer}
           testID={`${testIDPrefix}-input`}
-        />
-        <View
-          style={[styles.entryUnderline, focused && styles.entryUnderlineOn]}
         />
       </View>
       <Pressable
         onPress={submit}
         disabled={!canAdd}
-        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel="Add custom item"
         testID={`${testIDPrefix}-confirm`}
+        style={styles.entryAction}
       >
         <Text style={[styles.entryAdd, !canAdd && styles.entryAddDisabled]}>
           Add
@@ -149,11 +139,10 @@ const CustomEntryInput: React.FC<CustomEntryInputProps> = ({
       </Pressable>
       <Pressable
         onPress={onCancel}
-        hitSlop={8}
         accessibilityRole="button"
         accessibilityLabel="Cancel custom entry"
         testID={`${testIDPrefix}-cancel`}
-        style={styles.entryCancel}
+        style={[styles.entryAction, styles.entryCancel]}
       >
         <Ionicons name="close" size={20} color={tokens.ink3} />
       </Pressable>
@@ -166,7 +155,7 @@ interface AddPillProps {
   testID: string;
 }
 
-/** The quiet dashed ghost pill that opens the inline editor. */
+/** The quiet dashed ghost pill that opens the inline editor (≥44pt target). */
 const AddPill: React.FC<AddPillProps> = ({ onPress, testID }) => (
   <Pressable
     onPress={onPress}
@@ -181,7 +170,7 @@ const AddPill: React.FC<AddPillProps> = ({ onPress, testID }) => (
         color={tokens.ink3}
         style={styles.addPillIcon}
       />
-      <Text style={styles.addPillLabel}>Add</Text>
+      <Text style={styles.addPillLabel}>Add your own</Text>
     </View>
   </Pressable>
 );
@@ -383,12 +372,14 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  // Dashed ghost "+ Add" pill — quieter than a selectable Pill on purpose.
+  // Dashed ghost "+ Add your own" pill — quieter than a selectable Pill on
+  // purpose, but still a full 44pt target.
   addPill: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    minHeight: 44,
     borderRadius: 999,
     borderWidth: 1,
     borderStyle: "dashed",
@@ -402,29 +393,25 @@ const styles = StyleSheet.create({
     ...typeScale.body,
     color: tokens.ink3,
   },
-  // Inline editor — borderless input, hairline underline (accent on focus).
+  // Inline editor — shared aurora UnderlineInput + 44pt Add / close targets.
   entryRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
+    marginTop: 4,
     minHeight: 44,
   },
   entryField: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 8,
   },
-  entryInput: {
-    ...typeScale.value,
-    padding: 0,
-    paddingVertical: 8,
+  entryInputContainer: {
+    paddingTop: 0,
   },
-  entryUnderline: {
-    height: 1,
-    backgroundColor: tokens.hairline,
-  },
-  entryUnderlineOn: {
-    height: 1.5,
-    backgroundColor: tokens.accent,
+  entryAction: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   entryAdd: {
     fontFamily: "Manrope_600SemiBold",
@@ -435,7 +422,7 @@ const styles = StyleSheet.create({
     color: tokens.ink3,
   },
   entryCancel: {
-    marginLeft: 12,
+    marginLeft: 4,
   },
 });
 

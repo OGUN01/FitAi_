@@ -25,6 +25,12 @@ export interface WorkoutPreferencesData {
   // NEW: Current fitness assessment
   workout_experience_years: number; // INTEGER, 0-50
   workout_frequency_per_week: number; // INTEGER, 0-7
+  // WHICH days the user trains, 'monday'..'sunday', monday-first order.
+  // Invariant: preferred_workout_days.length === workout_frequency_per_week.
+  // The count stays the source for "how many"; this array is the source for
+  // "which ones" (day chips in WeekRhythm). undefined → derive an even spread
+  // from the count (see useWorkoutPreferences / aiRequestTransformers).
+  preferred_workout_days?: string[]; // TEXT[]
   can_do_pushups: number; // INTEGER, 0-200
   can_run_minutes: number; // INTEGER, 0-300
   flexibility_level: "poor" | "fair" | "good" | "excellent";
@@ -70,6 +76,7 @@ export interface WorkoutPreferencesRow {
     | null;
   workout_experience_years?: number | null;
   workout_frequency_per_week?: number | null;
+  preferred_workout_days?: string[] | null;
   can_do_pushups?: number | null;
   can_run_minutes?: number | null;
   flexibility_level?: "poor" | "fair" | "good" | "excellent" | null;

@@ -11,7 +11,9 @@
  *  2. Max cooking time: accent key number + the existing aurora RangeSlider;
  *     replaced by a note when cooking_skill_level === "not_applicable"
  *     (logic unchanged).
- *  3. Food budget: same rail + live caption treatment.
+ *  3. Food budget: same rail + live caption treatment. The caption's weekly
+ *     range is localized from the S1 country via getBudgetRanges() (display-
+ *     only — only budget_level is ever persisted).
  *  4. Cooking methods (10, multi): icon Pill grid inside a CollapsibleSection
  *     (default collapsed); the collapsed subtitle names the selection, not
  *     just the count. Hidden entirely when not_applicable (unchanged).
@@ -30,6 +32,7 @@ import {
   COOKING_SKILL_LEVELS,
   BUDGET_LEVELS,
 } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
+import { getBudgetRanges, type BudgetTier } from "../../../utils/currency";
 import { RangeSlider } from "../aurora/RangeSlider";
 import {
   SectionLabel,
@@ -62,11 +65,16 @@ interface CookingPreferencesSectionProps {
     field: K,
     value: DietPreferencesData[K],
   ) => void;
+  /**
+   * S1 country selection (display-only) — localizes the food-budget range
+   * strings via getBudgetRanges(). Optional: null/undefined → USD defaults.
+   */
+  country?: string | null;
 }
 
 export const CookingPreferencesSection: React.FC<
   CookingPreferencesSectionProps
-> = ({ formData, updateField }) => {
+> = ({ formData, updateField, country }) => {
   const [methodsOpen, setMethodsOpen] = useState(false);
   const isNotApplicable = formData.cooking_skill_level === "not_applicable";
   const methodsCount = (formData.cooking_methods || []).length;
@@ -77,6 +85,8 @@ export const CookingPreferencesSection: React.FC<
   const selectedBudget = BUDGET_LEVELS.find(
     (b) => b.level === formData.budget_level,
   );
+  // Display-only localization — what gets stored stays budget_level only.
+  const budgetRanges = getBudgetRanges(country);
   const selectedMethodNames = COOKING_METHODS.filter((m) =>
     (formData.cooking_methods || []).includes(m.id),
   ).map((m) => m.label);
@@ -155,6 +165,7 @@ export const CookingPreferencesSection: React.FC<
             unit="min"
             accentColor={tokens.accent}
             onChange={(value) => updateField("max_prep_time_minutes", value)}
+            showValue={false}
           />
         )}
       </View>
@@ -191,7 +202,8 @@ export const CookingPreferencesSection: React.FC<
             style={styles.selectionCaption}
             numberOfLines={1}
           >
-            {selectedBudget.description} · {selectedBudget.range}
+            {selectedBudget.description} ·{" "}
+            {budgetRanges[selectedBudget.level as BudgetTier]}
           </Animated.Text>
         )}
       </View>

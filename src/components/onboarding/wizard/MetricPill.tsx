@@ -1,4 +1,4 @@
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   metricPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: colors.backgroundTertiary,
     paddingVertical: rp(4),
     paddingHorizontal: spacing.xs,
     borderRadius: borderRadius.sm,
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: typography.fontWeight.semibold,
+    fontVariant: ["tabular-nums"],
   },
 });

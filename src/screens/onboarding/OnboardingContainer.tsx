@@ -101,6 +101,10 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
             data={logic.dietPreferences}
             validationResult={logic.tabValidationStatus[2]}
             onUpdate={logic.updateDietPreferences}
+            // S1 country prop-threaded from the store (runtime SSOT) for
+            // budget-range localization — replaces the old AsyncStorage
+            // auto-save side-channel with its 700ms retry race.
+            country={logic.personalInfo?.country ?? null}
           />
         );
 

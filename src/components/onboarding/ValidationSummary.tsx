@@ -1,9 +1,9 @@
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { GlassCard } from "../../components/ui/aurora";
 import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../utils/responsive";import { TabValidationResult } from "../../types/onboarding";
+import { rf } from "../../utils/responsive";
+import { TabValidationResult } from "../../types/onboarding";
 
 interface ValidationSummaryProps {
   validationResult: TabValidationResult;
@@ -14,13 +14,9 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({
 }) => {
   return (
     <View style={styles.validationSummary}>
-      <GlassCard
-        elevation={3}
-        blurIntensity="default"
-        padding="md"
-        borderRadius="lg"
-        style={styles.validationCard}
-      >
+      {/* Editorial Dark flat surface: depth from hairline + type hierarchy,
+          never from blur/elevation. Replaces the old GlassCard shell. */}
+      <View style={styles.validationCard}>
         <View style={styles.validationTitleRow}>
           <Ionicons
             name={
@@ -72,7 +68,7 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({
             ))}
           </View>
         )}
-      </GlassCard>
+      </View>
     </View>
   );
 };
@@ -82,8 +78,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
   },
+  // Flat surface + 1px hairline border — the only "chrome" in Editorial Dark.
   validationCard: {
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
   },
   validationTitleRow: {
     flexDirection: "row",
@@ -99,10 +100,12 @@ const styles = StyleSheet.create({
   validationTitleSuccess: {
     color: colors.secondary,
   },
+  // Metric readout — tabular-nums for stable digit width.
   validationPercentage: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginBottom: spacing.md,
+    fontVariant: ["tabular-nums"],
   },
   validationErrors: {
     marginTop: spacing.sm,

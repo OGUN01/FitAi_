@@ -247,24 +247,34 @@ export class MetabolicCalculations {
   }
 
   static calculateDietReadinessScore(dietPreferences: any): number {
-    let score = 0;
+    // Neutral-baseline rubric: unanswered habits must map to a NEUTRAL 50, not a
+    // failing grade. The old offset formula ((score+45)/200) pinned an untouched
+    // habits section at ~23 (or 13 with one negative toggle defaulting on), which
+    // false-triggered LOW_DIET_READINESS for users who simply never expanded the
+    // collapsed Lifestyle-habits section.
+    // Positives lift toward 100, negatives sink toward 0; both scales preserve the
+    // original relative weights (portion control 30 and regular meals 25 remain
+    // the most predictive positives).
+    let positive = 0;
+    if (dietPreferences.drinks_enough_water) positive += 10;
+    if (dietPreferences.limits_sugary_drinks) positive += 15;
+    if (dietPreferences.eats_regular_meals) positive += 25;
+    if (dietPreferences.avoids_late_night_eating) positive += 10;
+    if (dietPreferences.controls_portion_sizes) positive += 30;
+    if (dietPreferences.reads_nutrition_labels) positive += 20;
+    if (dietPreferences.eats_5_servings_fruits_veggies) positive += 20;
+    if (dietPreferences.limits_refined_sugar) positive += 15;
+    if (dietPreferences.includes_healthy_fats) positive += 10;
 
-    if (dietPreferences.drinks_enough_water) score += 10;
-    if (dietPreferences.limits_sugary_drinks) score += 15;
-    if (dietPreferences.eats_regular_meals) score += 25;
-    if (dietPreferences.avoids_late_night_eating) score += 10;
-    if (dietPreferences.controls_portion_sizes) score += 30;
-    if (dietPreferences.reads_nutrition_labels) score += 20;
-    if (dietPreferences.eats_5_servings_fruits_veggies) score += 20;
-    if (dietPreferences.limits_refined_sugar) score += 15;
-    if (dietPreferences.includes_healthy_fats) score += 10;
+    let negative = 0;
+    if (dietPreferences.eats_processed_foods) negative += 20;
+    if (dietPreferences.drinks_alcohol) negative += 10;
+    if (dietPreferences.smokes_tobacco) negative += 15;
 
-    if (dietPreferences.eats_processed_foods) score -= 20;
-    if (dietPreferences.drinks_alcohol) score -= 10;
-    if (dietPreferences.smokes_tobacco) score -= 15;
-
-    const normalized = Math.round(((score + 45) / 200) * 100);
-    return Math.max(0, Math.min(100, normalized));
+    const POSITIVE_MAX = 155; // sum of positive weights
+    const NEGATIVE_MAX = 45; // sum of negative weights
+    const score = 50 + (positive / POSITIVE_MAX) * 50 - (negative / NEGATIVE_MAX) * 50;
+    return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   /**
@@ -353,11 +363,22 @@ export class MetabolicCalculations {
     bmr: number,
     chronologicalAge: number,
     gender: string,
+    weightKg?: number,
   ): number {
-    const expectedBMR = MetabolicCalculations.getExpectedBMRForAge(
+    const referenceBMR = MetabolicCalculations.getExpectedBMRForAge(
       chronologicalAge,
       gender,
     );
+
+    // The age-band reference BMRs are calibrated to a 70 kg person (see
+    // getExpectedBMRForAge). Comparing a heavier/lighter user's ABSOLUTE BMR
+    // against the 70 kg reference re-introduces the body-size bias BUG-17 tried
+    // to remove: e.g. a 90 kg woman (BMR 1850) always beats the 1450 reference
+    // and collapses to the floor of 18 regardless of her actual metabolic
+    // health. When the caller can supply body weight, scale the reference to
+    // the user's frame so the comparison is weight-normalised.
+    const expectedBMR =
+      weightKg && weightKg > 0 ? referenceBMR * (weightKg / 70) : referenceBMR;
 
     // BUG-17: Use percentage-based comparison to avoid body-size bias.
     // Absolute cal/year (10) caused large-framed users with high BMR to always

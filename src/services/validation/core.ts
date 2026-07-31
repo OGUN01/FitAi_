@@ -742,15 +742,48 @@ export class ValidationEngine {
     // lower than requested — the UI "pace reduced for safety" callout and the
     // timeline recompute both read this. Previously only the loss deficit-cap
     // path set it; capped gains and bypass BMR-floors sailed through silently.
-    const wasRateCapped =
+    const capApplied =
       (isWeightLoss && deficitLimitResult?.wasLimited === true) ||
       wasBMRFlooredInBypass ||
       gainSurplusWasCapped;
+
+    // FLAG/ROUNDING CONSISTENCY: weeklyRate and originalWeeklyRate are rounded to
+    // 2 decimals before storage, so a sub-0.005 kg/wk cap (e.g. a boost card whose
+    // eat-at-BMR design lands within rounding of the requested rate) surfaced
+    // was_rate_capped=true next to identical displayed numbers (0.69 vs 0.69).
+    // Only flag when the rounded delivered rate is actually below the rounded
+    // requested rate — the callout must always agree with what the user sees.
+    const roundedWeeklyRate = Math.round(weeklyRate * 100) / 100;
+    const roundedRequiredRate = Math.round(requiredWeeklyRate * 100) / 100;
+    const wasRateCapped = capApplied && roundedWeeklyRate < roundedRequiredRate;
 
     const computedTimeline =
       wasRateCapped && weeklyRate > 0
         ? Math.ceil(weightDifference / weeklyRate)
         : bodyAnalysis.target_timeline_weeks;
+
+    // BMR-FLOOR VISIBILITY: a weight-loss plan can land exactly on the BMR floor
+    // via silent paths (bypass "KEEP MY GOAL" floor, or the ≤5 kcal BMR snap).
+    // Previously daily_calories === calculated_bmr with no explanation — it read
+    // as a calculation bug. Surface the floor explicitly unless the deficit-limit
+    // warning already covered it.
+    if (
+      isWeightLoss &&
+      Math.round(medicallyAdjustedTargetCalories) === Math.round(bmr) &&
+      deficitLimitResult?.wasLimited !== true
+    ) {
+      warnings.push({
+        status: "WARNING",
+        code: "EATING_AT_BMR_FLOOR",
+        message: `Your calorie target sits at your BMR (${Math.round(bmr)} kcal) — the metabolic floor, the safest effective intake for your goal`,
+        recommendations: [
+          "🛡️ Eating below BMR risks muscle loss, hormonal disruption and rebound gain",
+          "Your plan reaches the goal through activity on top of this intake, not by eating less",
+          "💡 Adding exercise increases weekly progress without lowering calories further",
+        ],
+        canProceed: true,
+      });
+    }
 
     return {
       hasErrors: errors.length > 0,
@@ -850,6 +883,17 @@ export class ValidationEngine {
       medicalConditions.includes("heart-disease")
     ) {
       notes.push("⚠️ Limit high-intensity exercise without medical clearance");
+    }
+
+    // Coverage for conditions that don't change calorie/macro math (arthritis,
+    // asthma, depression, anxiety, sleep-apnea, high-cholesterol): previously
+    // they produced ZERO notes, so medical_adjustments came back undefined even
+    // for diagnosed users. Acknowledge them so the review tab can show the plan
+    // accounted for the condition.
+    if (medicalConditions.length > 0 && notes.length === 0) {
+      notes.push(
+        `ℹ️ Plan reviewed with your medical conditions in mind: ${medicalConditions.join(", ")}`,
+      );
     }
 
     adjustedTDEE = Math.max(adjustedTDEE, tdee * 0.85);

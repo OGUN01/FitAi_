@@ -1,10 +1,12 @@
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rh, rw } from "../../utils/responsive";import {
   TabValidationResult,
 } from "../../types/onboarding";
+import { ONBOARDING_TABS } from "./OnboardingTabBar";
+import { AuroraStepRail } from "./AuroraStepRail";
 
 // ============================================================================
 // TYPES
@@ -170,37 +172,34 @@ export const OnboardingProgressIndicator: React.FC<
     return completedTabs.includes(tabNumber - 1) || tabNumber === currentTab;
   };
 
-  const calculateTabCompletion = (tabNumber: number) => {
-    if (completedTabs.includes(tabNumber)) return 100;
-    if (tabNumber === currentTab) {
-      return tabValidationStatus[tabNumber]?.completion_percentage || 0;
-    }
-    return 0;
-  };
+  const railTabs = ONBOARDING_TABS.slice(0, totalTabs).map((t) => ({
+    id: t.id,
+    title: t.title,
+    isCompleted: completedTabs.includes(t.id),
+    isAccessible: getTabAccessibility(t.id),
+  }));
 
   return (
     <View style={styles.container}>
-      {/* Overall Progress Header */}
+      {/* Header — shares the AuroraStepRail language of the main tab bar:
+          micro-caps eyebrow, editorial hero stat, then the same capsule rail
+          (read-only) so the detail view reads as one system. */}
       <View style={styles.headerSection}>
-        <Text style={styles.headerTitle}>Onboarding Progress</Text>
+        <Text style={styles.headerEyebrow}>ONBOARDING PROGRESS</Text>
+        <Text style={styles.headerHeroStat}>
+          {overallCompletion}
+          <Text style={styles.headerHeroPct}>%</Text>
+        </Text>
         <Text style={styles.headerSubtitle}>
-          Step {currentTab} of {totalTabs} • {overallCompletion}% Complete
+          Step {currentTab} of {totalTabs}
         </Text>
       </View>
 
-      {/* Overall Progress Bar */}
+      {/* Rail (read-only) — replaces the legacy plain progress bar. The
+          redundant "N of M steps completed" caption was dropped: the hero %
+          above and the Completed/Remaining stats row below already carry it. */}
       <View style={styles.overallProgressSection}>
-        <View style={styles.overallProgressBar}>
-          <View
-            style={[
-              styles.overallProgressFill,
-              { width: `${overallCompletion}%` },
-            ]}
-          />
-        </View>
-        <Text style={styles.overallProgressText}>
-          {completedTabs.length} of {totalTabs} steps completed
-        </Text>
+        <AuroraStepRail tabs={railTabs} activeTab={currentTab} />
       </View>
 
       {/* Detailed Steps */}
@@ -278,49 +277,43 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
 
-  // Header Section
+  // Header Section — editorial aurora language (micro-caps eyebrow + hero stat)
   headerSection: {
     alignItems: "center",
     marginBottom: spacing.lg,
   },
 
-  headerTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+  headerEyebrow: {
+    fontSize: fontSize.micro,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 2,
+    color: colors.textTertiary,
     marginBottom: spacing.xs,
   },
 
+  headerHeroStat: {
+    fontSize: fontSize.display,
+    fontWeight: typography.fontWeight.extrabold,
+    color: colors.text,
+    lineHeight: fontSize.display * 1.05,
+  },
+
+  headerHeroPct: {
+    fontSize: fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+  },
+
   headerSubtitle: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textAlign: "center",
-  },
-
-  // Overall Progress Section
-  overallProgressSection: {
-    marginBottom: spacing.xl,
-  },
-
-  overallProgressBar: {
-    width: "100%",
-    height: rh(8),
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.full,
-    overflow: "hidden",
-    marginBottom: spacing.sm,
-  },
-
-  overallProgressFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.full,
-  },
-
-  overallProgressText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     textAlign: "center",
+    marginTop: spacing.xs,
+  },
+
+  // Overall Progress Section (rail)
+  overallProgressSection: {
+    marginBottom: spacing.xl,
   },
 
   // Steps Section

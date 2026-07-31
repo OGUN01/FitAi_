@@ -10,6 +10,57 @@ import {
   STANDARD_GYM_EQUIPMENT,
 } from "../../screens/onboarding/tabs/WorkoutPreferencesConstants";
 
+// ============================================================================
+// PREFERRED WORKOUT DAYS (which days of the week the user trains)
+//
+// Model (single source): `workout_frequency_per_week` is the source for HOW
+// MANY sessions; `preferred_workout_days` is the source for WHICH days. The
+// two are always written together (setWorkoutFrequency / toggleWorkoutDay) so
+// `preferred_workout_days.length === workout_frequency_per_week` holds.
+// Tapping a day chip makes the count follow the selection; moving the count
+// ruler re-spreads the days evenly (default spread per user feedback:
+// 5 → Mon,Tue,Wed,Fri,Sat style spacing).
+// ============================================================================
+export const WORKOUT_DAY_IDS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+/** Evenly spread n sessions across a Mon–Sun week (3 → mon/wed/fri, 5 → mon/tue/wed/fri/sat). */
+export const spreadDaysForCount = (n: number): string[] => {
+  const count = Math.max(0, Math.min(7, Math.round(n)));
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    out.push(WORKOUT_DAY_IDS[Math.floor((i * 7) / count)]);
+  }
+  return out;
+};
+
+/**
+ * Normalize a persisted day selection: keep only valid ids in monday-first
+ * order, then force length === count (trim extras, pad from the even spread).
+ */
+export const normalizeWorkoutDays = (
+  days: string[] | null | undefined,
+  count: number,
+): string[] => {
+  const clamped = Math.max(0, Math.min(7, Math.round(count)));
+  const valid: string[] = WORKOUT_DAY_IDS.filter((d) => days?.includes(d));
+  if (valid.length === clamped) return [...valid];
+  if (valid.length > clamped) return valid.slice(0, clamped);
+  const merged: string[] = [...valid];
+  for (const d of spreadDaysForCount(clamped)) {
+    if (merged.length >= clamped) break;
+    if (!merged.includes(d)) merged.push(d);
+  }
+  return WORKOUT_DAY_IDS.filter((d) => merged.includes(d));
+};
+
 interface UseWorkoutPreferencesProps {
   data: WorkoutPreferencesData | null;
   bodyAnalysisData?: BodyAnalysisData | null;
@@ -84,6 +135,11 @@ export const useWorkoutPreferences = ({
     workout_experience_years: data?.workout_experience_years || 0,
     // §4 default: 3 sessions/week feels achievable (hook previously 0).
     workout_frequency_per_week: data?.workout_frequency_per_week || 3,
+    // Which days — persisted choice wins; otherwise even spread for the count.
+    preferred_workout_days: normalizeWorkoutDays(
+      data?.preferred_workout_days,
+      data?.workout_frequency_per_week || 3,
+    ),
     can_do_pushups: data?.can_do_pushups || 0,
     can_run_minutes: data?.can_run_minutes || 0,
     flexibility_level: data?.flexibility_level || "fair",
@@ -149,6 +205,10 @@ export const useWorkoutPreferences = ({
         activity_level: data.activity_level || "sedentary",
         workout_experience_years: data.workout_experience_years || 0,
         workout_frequency_per_week: data.workout_frequency_per_week || 3,
+        preferred_workout_days: normalizeWorkoutDays(
+          data.preferred_workout_days,
+          data.workout_frequency_per_week || 3,
+        ),
         can_do_pushups: data.can_do_pushups || 0,
         can_run_minutes: data.can_run_minutes || 0,
         flexibility_level: data.flexibility_level || "fair",
@@ -239,6 +299,49 @@ export const useWorkoutPreferences = ({
     }
   }, [bodyAnalysisData, data?.weekly_weight_loss_goal, onUpdate]);
 
+  // "What you enjoy" section was removed from the UI (user feedback, Image #14),
+  // but the six enjoyment booleans still feed AI generation
+  // (enjoysCardio / enjoysStrength / prefersVariety etc. in
+  // transformForWorkoutRequest). They are now DERIVED from primary_goals —
+  // single writer, no user input left to clobber:
+  //   cardio   ← weight-loss / endurance / general_fitness
+  //   strength ← muscle-gain / strength / weight-gain / general_fitness
+  //   outdoor  ← endurance
+  //   group classes / needs motivation stay false (no goal signal);
+  //   prefers_variety stays true (historical default — keeps plans fresh).
+  // Empty goals → legacy defaults (cardio+strength true, variety true).
+  useEffect(() => {
+    const goals = formData.primary_goals;
+    const derived = {
+      enjoys_cardio:
+        goals.length === 0 ||
+        goals.some((g) =>
+          ["weight-loss", "endurance", "general_fitness"].includes(g),
+        ),
+      enjoys_strength_training:
+        goals.length === 0 ||
+        goals.some((g) =>
+          ["muscle-gain", "strength", "weight-gain", "general_fitness"].includes(
+            g,
+          ),
+        ),
+      enjoys_group_classes: false,
+      prefers_outdoor_activities: goals.includes("endurance"),
+      needs_motivation: false,
+      prefers_variety: true,
+    };
+    const changed = (
+      Object.keys(derived) as (keyof typeof derived)[]
+    ).some((k) => formData[k] !== derived[k]);
+    if (changed) {
+      setFormData((prev: WorkoutPreferencesData) => ({ ...prev, ...derived }));
+      if (!isSyncingFromProps.current) {
+        onUpdate(derived);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.primary_goals]);
+
   // Form Handlers
   const updateField = <K extends keyof WorkoutPreferencesData>(
     field: K,
@@ -252,16 +355,67 @@ export const useWorkoutPreferences = ({
     let updated = { ...formData, [field]: value };
 
     if (field === "location") {
+      // Smart equipment logic (user feedback, Image #14):
+      // - gym  → full gym access assumed; equipment picker hidden in the UI,
+      //          stored equipment = standard gym set.
+      // - home → only the gear the user picks in the home-equipment picker.
+      // - both → gym staples assumed PLUS whatever home gear the user has
+      //          (union; the picker stays visible for the home part).
       if (value === "gym") {
         updated.equipment = STANDARD_GYM_EQUIPMENT;
       } else if (value === "home") {
         updated.equipment = [];
       } else if (value === "both") {
-        updated.equipment =
-          formData.equipment.length > 0 ? formData.equipment : [];
+        updated.equipment = [
+          ...new Set([...STANDARD_GYM_EQUIPMENT, ...formData.equipment]),
+        ];
       }
     }
 
+    if (field === "workout_frequency_per_week") {
+      // Keep day selection consistent with the count (invariant:
+      // preferred_workout_days.length === workout_frequency_per_week).
+      const count = Math.max(0, Math.min(7, Math.round(value as number)));
+      updated.workout_frequency_per_week = count;
+      if ((updated.preferred_workout_days?.length ?? -1) !== count) {
+        updated.preferred_workout_days = spreadDaysForCount(count);
+      }
+    }
+
+    setFormData(updated);
+    onUpdate(updated);
+  };
+
+  /** Ruler control: change the session COUNT; re-spread days if size changed. */
+  const setWorkoutFrequency = (n: number) => {
+    const count = Math.max(0, Math.min(7, Math.round(n)));
+    const days =
+      formData.preferred_workout_days?.length === count
+        ? formData.preferred_workout_days
+        : spreadDaysForCount(count);
+    const updated = {
+      ...formData,
+      workout_frequency_per_week: count,
+      preferred_workout_days: days,
+    };
+    setFormData(updated);
+    onUpdate(updated);
+  };
+
+  /** Day-chip control: toggle WHICH day; the count follows the selection. */
+  const toggleWorkoutDay = (dayId: string) => {
+    const current =
+      formData.preferred_workout_days ??
+      spreadDaysForCount(formData.workout_frequency_per_week);
+    const next = current.includes(dayId)
+      ? current.filter((d) => d !== dayId)
+      : [...current, dayId];
+    const ordered = WORKOUT_DAY_IDS.filter((d) => next.includes(d));
+    const updated = {
+      ...formData,
+      workout_frequency_per_week: ordered.length,
+      preferred_workout_days: [...ordered],
+    };
     setFormData(updated);
     onUpdate(updated);
   };
@@ -436,6 +590,8 @@ export const useWorkoutPreferences = ({
     updateField,
     toggleGoal,
     toggleWorkoutTime,
+    setWorkoutFrequency,
+    toggleWorkoutDay,
     showInfoTooltip,
     hideInfoTooltip,
     calculateRecommendedWorkoutTypes,

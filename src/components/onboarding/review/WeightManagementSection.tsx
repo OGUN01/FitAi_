@@ -21,11 +21,14 @@ import {
   AdvancedReviewData,
 } from "../../../types/onboarding";
 import { isValidMetric } from "../../../utils/validationUtils";
+import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 
 interface WeightManagementSectionProps {
   calculatedData: AdvancedReviewData | null;
   bodyAnalysis: BodyAnalysisData | null;
   onNavigateToTab?: (tabNumber: number) => void;
+  /** S1 unit preference — display-only conversion; stored values stay kg. */
+  units?: "metric" | "imperial" | null;
   /** Global reveal sequencing: ms offset added to every internal stagger. */
   enterDelay?: number;
 }
@@ -79,11 +82,22 @@ export const WeightManagementSection: React.FC<
   calculatedData,
   bodyAnalysis,
   onNavigateToTab,
+  units,
   enterDelay = 0,
 }) => {
   if (!calculatedData) return null;
 
   const goToBody = () => onNavigateToTab?.(3);
+
+  // Display-only unit conversion — stored values stay kg (SSOT).
+  const weightUnit: WeightUnit = units === "imperial" ? "lbs" : "kg";
+  const unitLabel = weightUnit === "lbs" ? "lbs" : "kg";
+  const rateUnitLabel = weightUnit === "lbs" ? "lbs/wk" : "kg/wk";
+  const disp = (kg: number): number => toDisplayWeight(kg, weightUnit) ?? kg;
+  /** Whole-number rendering matching the pre-conversion hero/row style. */
+  const fmtRaw = (kg: number): string =>
+    weightUnit === "kg" ? `${kg}` : `${parseFloat(disp(kg).toFixed(1))}`;
+  const fmt1 = (kg: number): string => disp(kg).toFixed(1);
 
   const hasWeights =
     isValidMetric(bodyAnalysis?.current_weight_kg) &&
@@ -108,7 +122,7 @@ export const WeightManagementSection: React.FC<
         Date.now() + calculatedData.estimated_timeline_weeks! * 7 * 24 * 60 * 60 * 1000,
       );
       anticipation = {
-        delta: `${deltaKg.toFixed(1)} kg to ${direction}`,
+        delta: `${fmt1(deltaKg)} ${unitLabel} to ${direction}`,
         eta: `${MONTHS[eta.getMonth()]} ${eta.getFullYear()}`,
       };
     }
@@ -121,6 +135,11 @@ export const WeightManagementSection: React.FC<
         Your goal, locked in — tap a row to adjust it on the Body screen.
       </Text>
 
+      {/* NOTE: was_rate_capped can currently read true while the displayed
+          weekly rate equals the original rate (2dp rounding) — the engine
+          compares unrounded floats at src/services/validation/core.ts:735-748
+          (wasBMRFlooredInBypass). Engine-side fix is owned by the engine
+          agent; this callout simply reflects the flag as delivered. */}
       {calculatedData.was_rate_capped && (
         <View style={styles.capCallout}>
           <Ionicons name="warning-outline" size={16} color={tokens.danger} />
@@ -137,14 +156,18 @@ export const WeightManagementSection: React.FC<
             onPress={goToBody}
             style={({ pressed }) => [styles.hero, pressed && styles.pressed]}
             accessibilityRole="button"
-            accessibilityLabel={`Target weight ${targetWeight} kilograms`}
+            accessibilityLabel={`Target weight ${fmtRaw(targetWeight)} ${weightUnit === "lbs" ? "pounds" : "kilograms"}`}
             accessibilityHint="Tap to adjust on the Body screen"
             testID="goal-arc"
           >
             <Text style={styles.heroLine}>
-              <Text style={styles.heroCurrent}>{currentWeight} kg</Text>
+              <Text style={styles.heroCurrent}>
+                {fmtRaw(currentWeight)} {unitLabel}
+              </Text>
               <Text style={styles.heroArrow}>  →  </Text>
-              <Text style={styles.heroTarget}>{targetWeight} kg</Text>
+              <Text style={styles.heroTarget}>
+                {fmtRaw(targetWeight)} {unitLabel}
+              </Text>
             </Text>
             {anticipation ? (
               <Text style={styles.heroAnticipation}>
@@ -168,24 +191,24 @@ export const WeightManagementSection: React.FC<
       <View style={styles.rows}>
         <MetricRow
           label="Healthy Min"
-          value={isValidMetric(calculatedData.healthy_weight_min) ? Math.round(calculatedData.healthy_weight_min!) : "—"}
-          unit="kg"
+          value={isValidMetric(calculatedData.healthy_weight_min) ? Math.round(disp(calculatedData.healthy_weight_min!)) : "—"}
+          unit={unitLabel}
           onPress={goToBody}
           delay={enterDelay + 80}
           testID="tile-healthy-min"
         />
         <MetricRow
           label="Healthy Max"
-          value={isValidMetric(calculatedData.healthy_weight_max) ? Math.round(calculatedData.healthy_weight_max!) : "—"}
-          unit="kg"
+          value={isValidMetric(calculatedData.healthy_weight_max) ? Math.round(disp(calculatedData.healthy_weight_max!)) : "—"}
+          unit={unitLabel}
           onPress={goToBody}
           delay={enterDelay + 120}
           testID="tile-healthy-max"
         />
         <MetricRow
           label="Weekly Rate"
-          value={isValidMetric(calculatedData.weekly_weight_loss_rate) ? calculatedData.weekly_weight_loss_rate!.toFixed(2) : "—"}
-          unit="kg/wk"
+          value={isValidMetric(calculatedData.weekly_weight_loss_rate) ? disp(calculatedData.weekly_weight_loss_rate!).toFixed(2) : "—"}
+          unit={rateUnitLabel}
           onPress={() => onNavigateToTab?.(4)}
           delay={enterDelay + 160}
           testID="tile-weekly-rate"
@@ -233,7 +256,7 @@ const styles = StyleSheet.create({
   },
   hero: {
     marginTop: 16,
-    paddingVertical: 20,
+    paddingVertical: 24,
     borderBottomWidth: 1,
     borderBottomColor: tokens.hairline,
   },
@@ -244,6 +267,7 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_600SemiBold",
     fontSize: 22,
     color: tokens.ink2,
+    fontVariant: ["tabular-nums"],
   },
   heroArrow: {
     fontFamily: "Manrope_400Regular",
@@ -254,6 +278,7 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_600SemiBold",
     fontSize: 34,
     color: tokens.accent,
+    fontVariant: ["tabular-nums"],
   },
   heroCaption: {
     marginTop: 4,
@@ -289,7 +314,7 @@ const styles = StyleSheet.create({
     // Rows carry their own hairlines; they follow the hero/placeholder rule.
   },
   row: {
-    minHeight: 60,
+    minHeight: 64,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -311,6 +336,7 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_600SemiBold",
     fontSize: 22,
     color: tokens.ink,
+    fontVariant: ["tabular-nums"],
   },
   rowUnit: {
     fontFamily: "Manrope_400Regular",

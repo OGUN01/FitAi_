@@ -102,76 +102,80 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
           const hasPhoto = !!photoUrl;
 
           return (
-            <Pressable
-              key={photoType.type}
-              style={styles.photoCard}
-              onPress={() => openPhotoOptions(photoType.type)}
-              accessibilityRole="button"
-              accessibilityLabel={`${photoType.title} photo`}
-            >
-              <View
-                style={[
-                  styles.photoInner,
-                  hasPhoto && { borderColor: tokens.accent },
-                ]}
+            // Plain View wrapper — the remove badge is a SIBLING overlay, not a
+            // child of the card Pressable (no nested interactives on web).
+            <View key={photoType.type} style={styles.photoCard}>
+              <Pressable
+                onPress={() => openPhotoOptions(photoType.type)}
+                accessibilityRole="button"
+                accessibilityLabel={`${photoType.title} photo`}
               >
-                {hasPhoto ? (
-                  <>
-                    <Image source={{ uri: photoUrl }} style={styles.photoThumb} />
-                    <View style={styles.photoBadge}>
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(11)}
-                        color={tokens.bg}
+                <View
+                  style={[
+                    styles.photoInner,
+                    hasPhoto && { borderColor: tokens.accent },
+                  ]}
+                >
+                  {hasPhoto ? (
+                    <>
+                      <Image
+                        source={{ uri: photoUrl }}
+                        style={styles.photoThumb}
                       />
+                      <View style={styles.photoBadge}>
+                        <Ionicons
+                          name="checkmark"
+                          size={rf(11)}
+                          color={tokens.bg}
+                        />
+                      </View>
+                    </>
+                  ) : (
+                    <View style={styles.photoPlaceholder}>
+                      <Ionicons
+                        name={
+                          photoType.iconName as ComponentProps<
+                            typeof Ionicons
+                          >["name"]
+                        }
+                        size={rf(28)}
+                        color={tokens.ink3}
+                      />
+                      <View style={styles.addBadge}>
+                        <Ionicons
+                          name="add"
+                          size={rf(14)}
+                          color={tokens.accent}
+                        />
+                      </View>
                     </View>
-                    <Pressable
-                      style={styles.removeBtn}
-                      onPress={() => removePhoto(photoType.type)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove ${photoType.title} photo`}
-                    >
-                      <Ionicons
-                        name="close"
-                        size={rf(12)}
-                        color={tokens.ink}
-                      />
-                    </Pressable>
-                  </>
-                ) : (
-                  <View style={styles.photoPlaceholder}>
-                    <Ionicons
-                      name={
-                        photoType.iconName as ComponentProps<
-                          typeof Ionicons
-                        >["name"]
-                      }
-                      size={rf(28)}
-                      color={tokens.ink3}
-                    />
-                    <View style={styles.addBadge}>
-                      <Ionicons
-                        name="add"
-                        size={rf(14)}
-                        color={tokens.accent}
-                      />
-                    </View>
-                  </View>
-                )}
-              </View>
-              <Text
-                style={[
-                  styles.photoLabel,
-                  hasPhoto && { color: tokens.ink },
-                ]}
-                numberOfLines={1}
-              >
-                {photoType.title}
-              </Text>
-              <Text style={styles.photoHint} numberOfLines={1}>
-                {photoType.shortDesc}
-              </Text>
-            </Pressable>
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.photoLabel,
+                    hasPhoto && { color: tokens.ink },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {photoType.title}
+                </Text>
+                <Text style={styles.photoHint} numberOfLines={1}>
+                  {photoType.shortDesc}
+                </Text>
+              </Pressable>
+              {hasPhoto && (
+                <Pressable
+                  style={styles.removeBtn}
+                  onPress={() => removePhoto(photoType.type)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${photoType.title} photo`}
+                >
+                  <Ionicons name="close" size={rf(12)} color={tokens.ink} />
+                </Pressable>
+              )}
+            </View>
           );
         })}
       </ScrollView>
@@ -207,6 +211,7 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
             <Pressable
               style={styles.reanalyze}
               onPress={analyzePhotos}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
               accessibilityLabel="Re-analyze photos"
             >
@@ -293,6 +298,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: freshSpacing.s,
     left: freshSpacing.s,
+    // 20pt visual + hitSlop 12 on the Pressable = 44pt effective target.
     width: 20,
     height: 20,
     borderRadius: 9999,
@@ -301,6 +307,7 @@ const styles = StyleSheet.create({
     borderColor: tokens.hairline,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   photoPlaceholder: {
     alignItems: "center",

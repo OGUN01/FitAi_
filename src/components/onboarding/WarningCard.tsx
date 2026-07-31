@@ -1,16 +1,30 @@
 /**
- * WarningCard — S5 "Choose your pace" ("Editorial Dark", no cards)
+ * WarningCard — S5 "Choose your pace" ("Editorial Dark" + volt pace panel)
  *
- * Rebuilt on the fresh pattern: transparent background, hairline separators,
- * ink type scale (small-caps SectionLabels + 13–15px body in ink2). Accent
- * appears ONLY on the selected pace option (handled inside AlternativeOption)
- * and on the agreement check. No tinted backgrounds, no borders, no radius,
- * no fontWeight hacks, no glass checkbox.
+ * The pace decision is the ONE moment on the review screen where a single tap
+ * re-derives the whole plan — so it gets the screen's single contrasting
+ * block: a low-alpha volt panel (accent tint + accent hairline border) that
+ * sits apart from the surrounding hairline-only sections, with a why-line up
+ * top so the user understands what this choice drives ("daily calories,
+ * weekly deficit and timeline").
+ *
+ * Inside the panel (weight-loss mode) the pace ladder renders as named tiers
+ * — Relaxed (~0.5), Comfortable (~1.0), Recommended (the engine's safe capped
+ * rate) and Your goal (the user's pick, with its engine safety verdict) —
+ * each row carrying a big tabular rate number, engine-composed cal/day and
+ * weeks-to-goal. Tier derivation lives in review/goalRateTiers.ts (composed
+ * from engine outputs, never forked math); selection flows through the
+ * existing onSelectAlternative → handleRateSelection channel, which persists
+ * weekly_weight_loss_goal (SSOT) and re-runs the ValidationEngine, so every
+ * downstream number re-derives from the same source.
+ *
+ * Gain / maintenance modes keep their AlternativeOption lists, now inside the
+ * same panel so the decision block reads consistently across goal modes.
  *
  * Selection / acknowledgment / auto-ack logic — UNCHANGED.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +36,12 @@ import {
 import { AlternativeOption } from "./AlternativeOption";
 import { BMRInfoModal } from "./BMRInfoModal";
 import { SectionLabel, tokens, font, type as typeScale } from "./fresh";
+import {
+  buildLossPaceTiers,
+  hasSelectablePaceTier,
+  isPaceTierSelected,
+  type PaceTier,
+} from "./review/goalRateTiers";
 
 // ============================================================================
 // TYPES
@@ -33,8 +53,136 @@ interface WarningCardProps {
   // SmartAlternatives data (previously in RateComparisonCard)
   smartAlternatives?: SmartAlternativesResult | null;
   selectedAlternativeId?: string | null;
+  /** SSOT rate from workoutPreferences.weekly_weight_loss_goal — used to mark
+      the active tier when it is a composed tier (never an engine card id). */
+  selectedWeeklyRate?: number | null;
   onSelectAlternative?: (alternative: SmartAlternative) => void;
 }
+
+const formatCalories = (cal: number | null | undefined): string =>
+  cal != null && !isNaN(cal) ? Number(cal).toLocaleString("en-US") : "—";
+
+// ============================================================================
+// PACE TIER ROW — one rung of the pace ladder (loss mode)
+// ============================================================================
+
+interface PaceTierRowProps {
+  tier: PaceTier;
+  isSelected: boolean;
+  onSelect: (alternative: SmartAlternative) => void;
+  delay: number;
+}
+
+const PaceTierRow: React.FC<PaceTierRowProps> = ({
+  tier,
+  isSelected,
+  onSelect,
+  delay,
+}) => {
+  // Engine-blocked pick: visible for honesty, locked from selection.
+  if (tier.blocked) {
+    return (
+      <Animated.View entering={FadeInDown.duration(250).delay(delay)}>
+        <View
+          style={[styles.tierRow, styles.tierRowBlocked]}
+          accessibilityState={{ disabled: true }}
+        >
+          <Ionicons
+            name="lock-closed"
+            size={15}
+            color={tokens.ink3}
+            style={styles.tierLock}
+          />
+          <View style={styles.tierLeft}>
+            <View style={styles.tierTitleRow}>
+              <Text style={[styles.tierTitle, styles.tierTitleBlocked]} numberOfLines={1}>
+                {tier.title}
+              </Text>
+              {tier.badge && (
+                <Text style={[styles.tierBadge, styles.tierBadgeDanger]}>{tier.badge}</Text>
+              )}
+            </View>
+            <Text style={styles.tierMeta} numberOfLines={2}>
+              {tier.warning ?? "Not safely deliverable at your numbers"}
+            </Text>
+          </View>
+          <View style={styles.tierRateBlock}>
+            <Text style={[styles.tierRate, styles.tierRateBlocked]}>
+              {tier.rate.toFixed(2)}
+            </Text>
+            <Text style={styles.tierRateUnit}>kg/wk</Text>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <Animated.View entering={FadeInDown.duration(250).delay(delay)}>
+      <Pressable
+        onPress={() => onSelect(tier.alternative)}
+        style={({ pressed }) => [
+          styles.tierRow,
+          isSelected && styles.tierRowSelected,
+          pressed && styles.pressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ selected: isSelected }}
+        accessibilityLabel={`${tier.title}: ${tier.rate.toFixed(2)} kilograms per week`}
+        accessibilityHint="Updates your calories, deficit and timeline"
+      >
+        <View style={styles.tierLeft}>
+          <View style={styles.tierTitleRow}>
+            <Text
+              style={[styles.tierTitle, isSelected && styles.tierTitleSelected]}
+              numberOfLines={1}
+            >
+              {tier.title}
+            </Text>
+            {tier.badge && (
+              <Text
+                style={[
+                  styles.tierBadge,
+                  tier.tone === "accent" && styles.tierBadgeAccent,
+                  tier.tone === "danger" && styles.tierBadgeDanger,
+                ]}
+              >
+                {tier.badge}
+              </Text>
+            )}
+          </View>
+          <Text style={styles.tierNote} numberOfLines={2}>
+            {tier.note}
+          </Text>
+          <Text style={styles.tierMeta} numberOfLines={1}>
+            {formatCalories(tier.dailyCalories)} cal/day
+            {"  ·  "}
+            {tier.timelineWeeks > 0 ? `${tier.timelineWeeks} weeks to goal` : "Ongoing"}
+          </Text>
+          {tier.warning && (
+            <Text style={styles.tierWarning} numberOfLines={2}>
+              {tier.warning}
+            </Text>
+          )}
+        </View>
+        <View style={styles.tierRateBlock}>
+          <Text style={[styles.tierRate, isSelected && styles.tierRateSelected]}>
+            {tier.rate.toFixed(2)}
+          </Text>
+          <Text style={styles.tierRateUnit}>kg/wk</Text>
+        </View>
+        {isSelected && (
+          <Ionicons
+            name="checkmark-circle"
+            size={20}
+            color={tokens.accent}
+            style={styles.tierCheck}
+          />
+        )}
+      </Pressable>
+    </Animated.View>
+  );
+};
 
 // ============================================================================
 // COMPONENT
@@ -45,6 +193,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({
   onAcknowledgmentChange,
   smartAlternatives,
   selectedAlternativeId,
+  selectedWeeklyRate,
   onSelectAlternative,
 }) => {
   const [acknowledged, setAcknowledged] = useState(false);
@@ -72,17 +221,29 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 
   const goalMode = smartAlternatives?.goalMode ?? "loss";
 
+  // Loss-mode pace ladder (Relaxed / Comfortable / Recommended / Your goal),
+  // composed from engine outputs. Empty for gain/maintenance modes.
+  const paceTiers = useMemo(
+    () => buildLossPaceTiers(smartAlternatives),
+    [smartAlternatives],
+  );
+
   // S15: every pace option blocked (or none offered) — say so honestly instead
   // of rendering a dead picker the user can tap through into engine errors.
   const selectableCount =
     smartAlternatives?.alternatives.filter((a) => !a.isBlocked).length ?? 1;
-  const noSelectableOptions = !!smartAlternatives && selectableCount === 0;
+  const noSelectableOptions =
+    (!!smartAlternatives && selectableCount === 0) ||
+    (goalMode === "loss" &&
+      !!smartAlternatives &&
+      paceTiers.length > 0 &&
+      !hasSelectablePaceTier(paceTiers));
 
-  // Diet-only options (all modes)
+  // Diet-only options (gain / maintenance layouts)
   const dietOptions =
     smartAlternatives?.alternatives.filter((alt) => !alt.requiresExercise) ?? [];
 
-  // For weight loss: promoted boost card shown inline between KEEP MY GOAL and other diet cards
+  // For weight loss: promoted boost card shown inline below the tier ladder
   const goalBoostOption = goalMode === "loss"
     ? (smartAlternatives?.alternatives.find(a => a.id === smartAlternatives?.bestBoostOptionId) ?? null)
     : null;
@@ -136,12 +297,28 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     </View>
   );
 
+  const panelWhy =
+    goalMode === "gain"
+      ? "One choice — it sets your daily surplus and timeline."
+      : goalMode === "maintenance"
+        ? "One choice — it sets your daily calories from here."
+        : "One choice — it sets your daily calories, weekly deficit and timeline.";
+
+  const panelTitle =
+    goalMode === "maintenance" ? "Your balance" : "Select your rate";
+
+  const showPanel =
+    !!smartAlternatives &&
+    (paceTiers.length > 0 || dietOptions.length > 0 || !!goalBoostOption);
+
   return (
     <View style={styles.container}>
       {/* ── Section label ── */}
       <SectionLabel>Choose your pace</SectionLabel>
 
-      {/* ── Goal Summary (hairline-bounded quiet text, no box) ── */}
+      {/* ── Goal Summary (hairline-bounded quiet text, no box) ──
+          Only the requested rate is shown here — the WeightManagementSection
+          hero above already anchors target weight and kg-to-lose/gain. */}
       {smartAlternatives && (
         <Animated.View style={styles.goalSummary} entering={FadeInDown.duration(250)}>
           <Text style={styles.goalText}>
@@ -152,16 +329,6 @@ export const WarningCard: React.FC<WarningCardProps> = ({
                 : smartAlternatives.originalRequestedRate}{" "}
               kg/week
             </Text>
-            {"   ·   "}Target{"  "}
-            <Text style={styles.goalValue}>
-              {smartAlternatives.targetWeight} kg
-            </Text>
-          </Text>
-          <Text style={styles.goalCaption}>
-            {smartAlternatives.weightToLose != null
-              ? smartAlternatives.weightToLose.toFixed(1)
-              : "--"}{" "}
-            {goalMode === "gain" ? "kg to gain" : goalMode === "maintenance" ? "kg to balance" : "kg to lose"}
           </Text>
         </Animated.View>
       )}
@@ -194,194 +361,45 @@ export const WarningCard: React.FC<WarningCardProps> = ({
         </View>
       ))}
 
-      {/* ── Inline Rate Picker ── */}
-      {smartAlternatives && (dietOptions.length > 0 || goalBoostOption) && (
-        <View style={styles.rateSection}>
-          <SectionLabel>
-            {goalMode === "maintenance" ? "Your balance" : "Select your rate"}
-          </SectionLabel>
+      {/* ── Volt pace panel — the screen's single contrasting block ── */}
+      {showPanel && (
+        <Animated.View
+          style={styles.pacePanel}
+          entering={FadeInDown.duration(300).delay(80)}
+        >
+          {/* Panel header — accent mark + why-line (why this block exists) */}
+          <View style={styles.paceHeader}>
+            <Ionicons name="speedometer-outline" size={15} color={tokens.accent} />
+            <Text style={styles.paceTitle}>{panelTitle}</Text>
+          </View>
+          <Text style={styles.paceWhy}>{panelWhy}</Text>
 
-          {/* WEIGHT LOSS LAYOUT */}
+          {/* WEIGHT LOSS LAYOUT — named pace tiers */}
           {goalMode === "loss" && (
-            <View>
-              {/* 1. KEEP MY GOAL (identified by isUserOriginal flag, not position) */}
-              {(() => {
-                const keepMyGoalCard = dietOptions.find((alt) => alt.isUserOriginal === true);
-                return keepMyGoalCard ? (
-                  <Animated.View entering={FadeInDown.duration(250).delay(80)}>
-                    <AlternativeOption
-                      key={keepMyGoalCard.id}
-                      alternative={keepMyGoalCard}
-                      isSelected={selectedAlternativeId === keepMyGoalCard.id}
-                      onSelect={onSelectAlternative ?? (() => {})}
-                    />
-                  </Animated.View>
-                ) : null;
-              })()}
-
-              {/* 2. Unlock hint + promoted boost row */}
-              {goalBoostOption && (
-                <Animated.View entering={FadeInDown.duration(250).delay(140)}>
-                  <Pressable
-                    style={({ pressed }) => [styles.unlockHint, pressed && styles.pressed]}
-                    onPress={() => onSelectAlternative?.(goalBoostOption)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Unlock your goal with exercise"
-                  >
-                    <Ionicons name="lock-open-outline" size={12} color={tokens.ink3} />
-                    <Text style={styles.unlockHintText}>
-                      Closer to your goal with exercise ↓
-                    </Text>
-                  </Pressable>
-                  <AlternativeOption
-                    key={goalBoostOption.id}
-                    alternative={goalBoostOption}
-                    isSelected={selectedAlternativeId === goalBoostOption.id}
-                    onSelect={onSelectAlternative ?? (() => {})}
-                  />
-                </Animated.View>
-              )}
-
-              {/* 3. Remaining diet options (AGGRESSIVE, CHALLENGING, AT YOUR BMR, COMFORTABLE) */}
-              <View>
-                {dietOptions.filter((alt) => alt.isUserOriginal !== true).map((alternative, i) => (
-                  <Animated.View
-                    key={alternative.id}
-                    entering={FadeInDown.duration(250).delay(200 + i * 60)}
-                  >
-                    <AlternativeOption
-                      alternative={alternative}
-                      isSelected={selectedAlternativeId === alternative.id}
-                      onSelect={onSelectAlternative ?? (() => {})}
-                    />
-                  </Animated.View>
-                ))}
-              </View>
-
-              {/* 4. Other boost options in collapsible toggle (LIGHT BOOST, CARDIO BOOST) */}
-              {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).length > 0 && (
-                <View>
-                  <Pressable
-                    style={({ pressed }) => [styles.exerciseDivider, pressed && styles.pressed]}
-                    onPress={() => setShowExerciseOptions(!showExerciseOptions)}
-                    accessibilityRole="button"
-                    accessibilityLabel={showExerciseOptions ? "Hide exercise options" : "Show exercise options"}
-                  >
-                    <View style={styles.dividerLine} />
-                    <View style={styles.dividerContent}>
-                      <Ionicons name="fitness-outline" size={13} color={tokens.ink3} />
-                      <Text style={styles.dividerText}>
-                        {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
-                      </Text>
-                      <Ionicons
-                        name={showExerciseOptions ? "chevron-up" : "chevron-down"}
-                        size={13}
-                        color={tokens.ink3}
-                      />
-                    </View>
-                    <View style={styles.dividerLine} />
-                  </Pressable>
-
-                  {showExerciseOptions && (
-                    <View>
-                      {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).map((alternative, i) => (
-                        <Animated.View
-                          key={alternative.id}
-                          entering={FadeInDown.duration(200).delay(i * 50)}
-                        >
-                          <AlternativeOption
-                            alternative={alternative}
-                            isSelected={selectedAlternativeId === alternative.id}
-                            onSelect={onSelectAlternative ?? (() => {})}
-                          />
-                        </Animated.View>
-                      ))}
-                    </View>
+            <View style={styles.tierList}>
+              {paceTiers.map((tier, i) => (
+                <PaceTierRow
+                  key={tier.key}
+                  tier={tier}
+                  isSelected={isPaceTierSelected(
+                    tier,
+                    selectedAlternativeId,
+                    selectedWeeklyRate,
                   )}
-                </View>
-              )}
-
-              {/* Safe rate note — quiet caption, no box */}
-              <View style={styles.safeRateRow}>
-                <Ionicons name="shield-checkmark" size={13} color={tokens.ink3} />
-                <Text style={styles.safeRateText}>
-                  Safe rate at your BMR:{" "}
-                  <Text style={styles.safeRateValue}>{smartAlternatives.rateAtBMR} kg/week</Text>
-                </Text>
-              </View>
+                  onSelect={onSelectAlternative ?? (() => {})}
+                  delay={140 + i * 60}
+                />
+              ))}
             </View>
           )}
 
-          {/* WEIGHT GAIN LAYOUT */}
+          {/* WEIGHT GAIN LAYOUT — engine surplus cards */}
           {goalMode === "gain" && (
-            <View>
-              <View>
-                {dietOptions.map((alternative, i) => (
-                  <Animated.View
-                    key={alternative.id}
-                    entering={FadeInDown.duration(250).delay(80 + i * 60)}
-                  >
-                    <AlternativeOption
-                      alternative={alternative}
-                      isSelected={selectedAlternativeId === alternative.id}
-                      onSelect={onSelectAlternative ?? (() => {})}
-                    />
-                  </Animated.View>
-                ))}
-              </View>
-
-              {/* Frequency upgrade options */}
-              {frequencyUpgradeOptions.length > 0 && (
-                <View>
-                  <Pressable
-                    style={({ pressed }) => [styles.exerciseDivider, pressed && styles.pressed]}
-                    onPress={() => setShowExerciseOptions(!showExerciseOptions)}
-                    accessibilityRole="button"
-                    accessibilityLabel={showExerciseOptions ? "Hide training options" : "Add more training days"}
-                  >
-                    <View style={styles.dividerLine} />
-                    <View style={styles.dividerContent}>
-                      <Ionicons name="barbell-outline" size={13} color={tokens.ink3} />
-                      <Text style={styles.dividerText}>
-                        {showExerciseOptions ? "HIDE" : "OR ADD MORE"} TRAINING
-                      </Text>
-                      <Ionicons
-                        name={showExerciseOptions ? "chevron-up" : "chevron-down"}
-                        size={13}
-                        color={tokens.ink3}
-                      />
-                    </View>
-                    <View style={styles.dividerLine} />
-                  </Pressable>
-
-                  {showExerciseOptions && (
-                    <View>
-                      {frequencyUpgradeOptions.map((alternative, i) => (
-                        <Animated.View
-                          key={alternative.id}
-                          entering={FadeInDown.duration(200).delay(i * 50)}
-                        >
-                          <AlternativeOption
-                            alternative={alternative}
-                            isSelected={selectedAlternativeId === alternative.id}
-                            onSelect={onSelectAlternative ?? (() => {})}
-                          />
-                        </Animated.View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* MAINTENANCE LAYOUT */}
-          {goalMode === "maintenance" && (
             <View>
               {dietOptions.map((alternative, i) => (
                 <Animated.View
                   key={alternative.id}
-                  entering={FadeInDown.duration(250).delay(80 + i * 60)}
+                  entering={FadeInDown.duration(250).delay(140 + i * 60)}
                 >
                   <AlternativeOption
                     alternative={alternative}
@@ -392,7 +410,147 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               ))}
             </View>
           )}
-        </View>
+
+          {/* MAINTENANCE LAYOUT — maintain / recomp */}
+          {goalMode === "maintenance" && (
+            <View>
+              {dietOptions.map((alternative, i) => (
+                <Animated.View
+                  key={alternative.id}
+                  entering={FadeInDown.duration(250).delay(140 + i * 60)}
+                >
+                  <AlternativeOption
+                    alternative={alternative}
+                    isSelected={selectedAlternativeId === alternative.id}
+                    onSelect={onSelectAlternative ?? (() => {})}
+                  />
+                </Animated.View>
+              ))}
+            </View>
+          )}
+
+          {/* Unlock hint + promoted boost row (loss mode) */}
+          {goalMode === "loss" && goalBoostOption && (
+            <Animated.View entering={FadeInDown.duration(250).delay(320)}>
+              <Pressable
+                style={({ pressed }) => [styles.unlockHint, pressed && styles.pressed]}
+                onPress={() => onSelectAlternative?.(goalBoostOption)}
+                accessibilityRole="button"
+                accessibilityLabel="Unlock your goal with exercise"
+              >
+                <Ionicons name="lock-open-outline" size={12} color={tokens.ink3} />
+                <Text style={styles.unlockHintText}>
+                  Closer to your goal with exercise ↓
+                </Text>
+              </Pressable>
+              <AlternativeOption
+                key={goalBoostOption.id}
+                alternative={goalBoostOption}
+                isSelected={selectedAlternativeId === goalBoostOption.id}
+                onSelect={onSelectAlternative ?? (() => {})}
+              />
+            </Animated.View>
+          )}
+
+          {/* Other boost options in collapsible toggle (loss mode) */}
+          {goalMode === "loss" &&
+            otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).length > 0 && (
+            <View>
+              <Pressable
+                style={({ pressed }) => [styles.exerciseDivider, pressed && styles.pressed]}
+                onPress={() => setShowExerciseOptions(!showExerciseOptions)}
+                accessibilityRole="button"
+                accessibilityLabel={showExerciseOptions ? "Hide exercise options" : "Show exercise options"}
+              >
+                <View style={styles.dividerLine} />
+                <View style={styles.dividerContent}>
+                  <Ionicons name="fitness-outline" size={13} color={tokens.ink3} />
+                  <Text style={styles.dividerText}>
+                    {showExerciseOptions ? "HIDE" : "OR ADD"} EXERCISE
+                  </Text>
+                  <Ionicons
+                    name={showExerciseOptions ? "chevron-up" : "chevron-down"}
+                    size={13}
+                    color={tokens.ink3}
+                  />
+                </View>
+                <View style={styles.dividerLine} />
+              </Pressable>
+
+              {showExerciseOptions && (
+                <View>
+                  {otherExerciseOptions.filter(a => !a.isFrequencyUpgrade).map((alternative, i) => (
+                    <Animated.View
+                      key={alternative.id}
+                      entering={FadeInDown.duration(200).delay(i * 50)}
+                    >
+                      <AlternativeOption
+                        alternative={alternative}
+                        isSelected={selectedAlternativeId === alternative.id}
+                        onSelect={onSelectAlternative ?? (() => {})}
+                      />
+                    </Animated.View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Frequency upgrade options (gain mode) */}
+          {goalMode === "gain" && frequencyUpgradeOptions.length > 0 && (
+            <View>
+              <Pressable
+                style={({ pressed }) => [styles.exerciseDivider, pressed && styles.pressed]}
+                onPress={() => setShowExerciseOptions(!showExerciseOptions)}
+                accessibilityRole="button"
+                accessibilityLabel={showExerciseOptions ? "Hide training options" : "Add more training days"}
+              >
+                <View style={styles.dividerLine} />
+                <View style={styles.dividerContent}>
+                  <Ionicons name="barbell-outline" size={13} color={tokens.ink3} />
+                  <Text style={styles.dividerText}>
+                    {showExerciseOptions ? "HIDE" : "OR ADD MORE"} TRAINING
+                  </Text>
+                  <Ionicons
+                    name={showExerciseOptions ? "chevron-up" : "chevron-down"}
+                    size={13}
+                    color={tokens.ink3}
+                  />
+                </View>
+                <View style={styles.dividerLine} />
+              </Pressable>
+
+              {showExerciseOptions && (
+                <View>
+                  {frequencyUpgradeOptions.map((alternative, i) => (
+                    <Animated.View
+                      key={alternative.id}
+                      entering={FadeInDown.duration(200).delay(i * 50)}
+                    >
+                      <AlternativeOption
+                        alternative={alternative}
+                        isSelected={selectedAlternativeId === alternative.id}
+                        onSelect={onSelectAlternative ?? (() => {})}
+                      />
+                    </Animated.View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Safe rate footnote — quiet caption inside the panel */}
+          {goalMode === "loss" && (
+            <View style={styles.safeRateRow}>
+              <Ionicons name="shield-checkmark" size={13} color={tokens.ink3} />
+              <Text style={styles.safeRateText}>
+                Safe rate at your BMR:{" "}
+                <Text style={styles.safeRateValue}>{smartAlternatives.rateAtBMR} kg/week</Text>
+                {" — faster needs exercise or drops below what your body needs"}
+              </Text>
+            </View>
+          )}
+        </Animated.View>
       )}
 
       {/* ── S15: infeasible-goal guidance — no safe pace exists at these numbers ── */}
@@ -467,7 +625,8 @@ export const WarningCard: React.FC<WarningCardProps> = ({
 };
 
 // ============================================================================
-// STYLES — transparent bg, hairlines only, ink type scale, zero fontWeight
+// STYLES — hairlines + ink scale elsewhere; the pace panel is the ONE
+// volt-tinted block on the screen (accent at low alpha, never a fill).
 // ============================================================================
 
 const styles = StyleSheet.create({
@@ -495,10 +654,6 @@ const styles = StyleSheet.create({
   goalValue: {
     fontFamily: font.semibold,
     color: tokens.ink,
-  },
-  goalCaption: {
-    marginTop: 4,
-    ...typeScale.caption,
   },
 
   // BMR warning — hairline callout (not a tinted banner)
@@ -559,10 +714,146 @@ const styles = StyleSheet.create({
     color: tokens.ink2,
   },
 
-  // Rate picker
-  rateSection: {
+  // ── Volt pace panel — the distinct decision block ──
+  pacePanel: {
     marginTop: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,107,53,0.24)",
+    backgroundColor: "rgba(255,107,53,0.06)",
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
+  paceHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  paceTitle: {
+    fontFamily: font.semibold,
+    fontSize: 11,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: tokens.accent,
+  },
+  paceWhy: {
+    marginTop: 6,
+    marginBottom: 14,
+    fontFamily: font.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: tokens.ink2,
+  },
+
+  // Tier ladder
+  tierList: {
+    gap: 8,
+  },
+  tierRow: {
+    minHeight: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.03)",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  tierRowSelected: {
+    borderColor: "rgba(255,107,53,0.55)",
+    backgroundColor: tokens.accentDim,
+  },
+  tierRowBlocked: {
+    opacity: 0.55,
+  },
+  tierLock: {
+    marginRight: 2,
+  },
+  tierLeft: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  tierTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tierTitle: {
+    fontFamily: font.semibold,
+    fontSize: 15,
+    color: tokens.ink2,
+    flexShrink: 1,
+  },
+  tierTitleSelected: {
+    color: tokens.ink,
+  },
+  tierTitleBlocked: {
+    color: tokens.ink3,
+  },
+  tierBadge: {
+    fontFamily: font.semibold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: tokens.ink3,
+  },
+  tierBadgeAccent: {
+    color: tokens.accent,
+  },
+  tierBadgeDanger: {
+    color: tokens.danger,
+  },
+  tierNote: {
+    marginTop: 3,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink2,
+  },
+  tierMeta: {
+    marginTop: 3,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.ink3,
+  },
+  tierWarning: {
+    marginTop: 4,
+    fontFamily: font.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: tokens.danger,
+  },
+  tierRateBlock: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  tierRate: {
+    fontFamily: font.semibold,
+    fontSize: 24,
+    color: tokens.ink,
+    fontVariant: ["tabular-nums"],
+  },
+  tierRateSelected: {
+    color: tokens.accent,
+  },
+  tierRateBlocked: {
+    color: tokens.ink3,
+  },
+  tierRateUnit: {
+    fontFamily: font.semibold,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: tokens.ink3,
+  },
+  tierCheck: {
+    marginLeft: 2,
+  },
+
   unlockHint: {
     minHeight: 36,
     flexDirection: "row",
@@ -606,10 +897,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,107,53,0.16)",
   },
   safeRateText: {
+    flex: 1,
     fontFamily: font.regular,
     fontSize: 12,
+    lineHeight: 17,
     color: tokens.ink3,
   },
   safeRateValue: {

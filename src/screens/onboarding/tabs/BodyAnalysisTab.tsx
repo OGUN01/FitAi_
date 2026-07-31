@@ -171,6 +171,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               getBMICategory={getBMICategory}
               getFieldError={getFieldError}
               hasFieldError={hasFieldError}
+              units={personalInfoData?.units ?? null}
             />
 
             {/* Default visible: goal ring (target_weight) + timeline */}

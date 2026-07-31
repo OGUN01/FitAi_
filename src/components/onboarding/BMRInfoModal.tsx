@@ -1,15 +1,14 @@
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import React from "react";
 import {
   View,
   Text,
-  Modal,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 // ============================================================================
 // TYPES
@@ -59,136 +58,134 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
   ];
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      onClose={onClose}
+      showCloseButton={false}
+      closeOnOverlayPress
+      dismissOnDrag
+      contentStyle={styles.content}
     >
-      <View style={styles.overlay}>
-        <BlurView intensity={20} style={styles.blurContainer}>
-          <View style={styles.modalContent}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerIcon}>
-                <Ionicons name="warning" size={rf(28)} color={colors.warningAlt} />
-              </View>
-              <Text style={styles.headerTitle}>Eating Below BMR</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel="Close BMR info"
-              >
+      {/* Header — flat, hairline-separated; preserves the per-title close
+          affordance label the onboarding tests rely on. */}
+      <View style={styles.header}>
+        <View style={styles.headerIcon}>
+          <Ionicons name="warning" size={rf(28)} color={colors.warningAlt} />
+        </View>
+        <Text style={styles.headerTitle}>Eating Below BMR</Text>
+        <Pressable
+          style={styles.closeButton}
+          onPress={onClose}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Close BMR info"
+        >
+          <Ionicons
+            name="close"
+            size={rf(24)}
+            color={colors.textSecondary}
+          />
+        </Pressable>
+      </View>
+
+      {/* BMR Explanation */}
+      <ScrollView
+        style={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.bmrCard}>
+          <Text style={styles.bmrLabel}>Your BMR</Text>
+          {/* Metric readout — tabular-nums for stable digit width. */}
+          <Text style={styles.bmrValue}>{userBMR}</Text>
+          <Text style={styles.bmrUnit}>calories/day</Text>
+        </View>
+
+        <Text style={styles.explanation}>
+          Your BMR (Basal Metabolic Rate) is the minimum energy your body
+          needs to:
+        </Text>
+
+        <View style={styles.bmrFunctions}>
+          <View style={styles.functionItem}>
+            <Ionicons
+              name="heart"
+              size={rf(16)}
+              color={colors.error}
+            />
+            <Text style={styles.functionText}>
+              Keep your heart beating
+            </Text>
+          </View>
+          <View style={styles.functionItem}>
+            <Ionicons
+              name="bulb"
+              size={rf(16)}
+              color={colors.warning}
+            />
+            <Text style={styles.functionText}>
+              Maintain brain function
+            </Text>
+          </View>
+          <View style={styles.functionItem}>
+            <Ionicons
+              name="body"
+              size={rf(16)}
+              color={colors.primary}
+            />
+            <Text style={styles.functionText}>
+              Support breathing and organ function
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        <Text style={styles.risksTitle}>Risks of Eating Below BMR</Text>
+
+        <View style={styles.risksList}>
+          {risks.map((risk, index) => (
+            <View key={index} style={styles.riskItem}>
+              <View style={styles.riskIconContainer}>
                 <Ionicons
-                  name="close"
-                  size={rf(24)}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* BMR Explanation */}
-            <ScrollView
-              style={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.bmrCard}>
-                <Text style={styles.bmrLabel}>Your BMR</Text>
-                <Text style={styles.bmrValue}>{userBMR}</Text>
-                <Text style={styles.bmrUnit}>calories/day</Text>
-              </View>
-
-              <Text style={styles.explanation}>
-                Your BMR (Basal Metabolic Rate) is the minimum energy your body
-                needs to:
-              </Text>
-
-              <View style={styles.bmrFunctions}>
-                <View style={styles.functionItem}>
-                  <Ionicons
-                    name="heart"
-                    size={rf(16)}
-                    color={colors.error}
-                  />
-                  <Text style={styles.functionText}>
-                    Keep your heart beating
-                  </Text>
-                </View>
-                <View style={styles.functionItem}>
-                  <Ionicons
-                    name="bulb"
-                    size={rf(16)}
-                    color={colors.warning}
-                  />
-                  <Text style={styles.functionText}>
-                    Maintain brain function
-                  </Text>
-                </View>
-                <View style={styles.functionItem}>
-                  <Ionicons
-                    name="body"
-                    size={rf(16)}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.functionText}>
-                    Support breathing and organ function
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              <Text style={styles.risksTitle}>Risks of Eating Below BMR</Text>
-
-              <View style={styles.risksList}>
-                {risks.map((risk, index) => (
-                  <View key={index} style={styles.riskItem}>
-                    <View style={styles.riskIconContainer}>
-                      <Ionicons
-                        name={risk.icon}
-                        size={rf(18)}
-                        color={colors.errorAlt}
-                      />
-                    </View>
-                    <View style={styles.riskContent}>
-                      <Text style={styles.riskTitle}>{risk.title}</Text>
-                      <Text style={styles.riskDescription}>
-                        {risk.description}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.noteCard}>
-                <Ionicons
-                  name="information-circle"
+                  name={risk.icon}
                   size={rf(18)}
-                  color={colors.primary}
-                  style={styles.noteIcon}
+                  color={colors.errorAlt}
                 />
-                <Text style={styles.noteText}>
-                  You CAN still choose an aggressive goal - we won't stop you.
-                  But we recommend a sustainable pace for long-term success.
+              </View>
+              <View style={styles.riskContent}>
+                <Text style={styles.riskTitle}>{risk.title}</Text>
+                <Text style={styles.riskDescription}>
+                  {risk.description}
                 </Text>
               </View>
-            </ScrollView>
+            </View>
+          ))}
+        </View>
 
-            {/* Action Button */}
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="I understand"
-            >
-              <Text style={styles.actionButtonText}>I Understand</Text>
-            </TouchableOpacity>
-          </View>
-        </BlurView>
-      </View>
-    </Modal>
+        <View style={styles.noteCard}>
+          <Ionicons
+            name="information-circle"
+            size={rf(18)}
+            color={colors.primary}
+            style={styles.noteIcon}
+          />
+          <Text style={styles.noteText}>
+            You CAN still choose an aggressive goal - we won't stop you.
+            But we recommend a sustainable pace for long-term success.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Action Button — flat accent surface, no gradient fill. */}
+      <Pressable
+        style={styles.actionButton}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="I understand"
+      >
+        <Text style={styles.actionButtonText}>I Understand</Text>
+      </Pressable>
+    </BottomSheet>
   );
 };
 
@@ -197,23 +194,9 @@ export const BMRInfoModal: React.FC<BMRInfoModalProps> = ({
 // ============================================================================
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  blurContainer: {
-    width: "90%",
-    maxWidth: rw(400),
-    maxHeight: rh(724),
-    borderRadius: rbr(20),
-    overflow: "hidden",
-  },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: rbr(20),
-    padding: rp(20),
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   header: {
     flexDirection: "row",
@@ -224,15 +207,15 @@ const styles = StyleSheet.create({
     width: rf(44),
     height: rf(44),
     borderRadius: rbr(22),
-    backgroundColor: `${colors.warningAlt}26`,
+    backgroundColor: colors.warningTint,
     justifyContent: "center",
     alignItems: "center",
     marginRight: rp(12),
   },
   headerTitle: {
     flex: 1,
-    fontSize: rf(18),
-    fontWeight: "700",
+    fontSize: fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text,
   },
   closeButton: {
@@ -244,35 +227,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     maxHeight: rh(400),
   },
+  // Flat hero stat card — depth from hairline + type hierarchy, not a tinted
+  // glass fill.
   bmrCard: {
-    backgroundColor: `${colors.info}1A`,
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: rbr(12),
     padding: rp(16),
     alignItems: "center",
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: `${colors.info}33`,
+    borderColor: colors.border,
   },
   bmrLabel: {
-    fontSize: rf(12),
-    fontWeight: "600",
+    fontSize: fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: rp(4),
   },
   bmrValue: {
-    fontSize: rf(32),
-    fontWeight: "800",
+    fontSize: typography.fontSize.h1,
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.primary,
+    fontVariant: ["tabular-nums"],
   },
   bmrUnit: {
-    fontSize: rf(12),
+    fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginTop: rp(2),
   },
   explanation: {
-    fontSize: rf(14),
+    fontSize: fontSize.md,
     color: colors.textSecondary,
     lineHeight: rf(20),
     marginBottom: rp(12),
@@ -287,7 +273,7 @@ const styles = StyleSheet.create({
     gap: rp(10),
   },
   functionText: {
-    fontSize: rf(13),
+    fontSize: fontSize.xs,
     color: colors.text,
   },
   divider: {
@@ -296,8 +282,8 @@ const styles = StyleSheet.create({
     marginVertical: rp(16),
   },
   risksTitle: {
-    fontSize: rf(15),
-    fontWeight: "700",
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text,
     marginBottom: rp(12),
   },
@@ -313,7 +299,7 @@ const styles = StyleSheet.create({
     width: rf(32),
     height: rf(32),
     borderRadius: rbr(8),
-    backgroundColor: `${colors.errorAlt}1A`,
+    backgroundColor: colors.errorTint,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -321,22 +307,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   riskTitle: {
-    fontSize: rf(13),
-    fontWeight: "600",
+    fontSize: fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text,
     marginBottom: rp(2),
   },
   riskDescription: {
-    fontSize: rf(12),
+    fontSize: fontSize.micro,
     color: colors.textSecondary,
     lineHeight: rf(16),
   },
   noteCard: {
     flexDirection: "row",
-    backgroundColor: `${colors.info}14`,
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: rbr(10),
     padding: rp(12),
     marginTop: rp(8),
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   noteIcon: {
     marginRight: rp(10),
@@ -344,7 +332,7 @@ const styles = StyleSheet.create({
   },
   noteText: {
     flex: 1,
-    fontSize: rf(12),
+    fontSize: fontSize.micro,
     color: colors.textSecondary,
     lineHeight: rf(18),
   },
@@ -358,8 +346,8 @@ const styles = StyleSheet.create({
     marginTop: rp(16),
   },
   actionButtonText: {
-    fontSize: rf(15),
-    fontWeight: "600",
+    fontSize: fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.white,
   },
 });

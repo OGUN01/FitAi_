@@ -129,7 +129,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   const showActivitySection =
     activityLevel !== undefined && !!onActivityLevelChange;
 
-  const isDisabled = !!(validationResult && !validationResult.is_valid);
+  // "Somewhere else" picked but no country name typed yet — block Next so the
+  // sentinel string "Other" can never be persisted as the user's country
+  // (validatePersonalInfo only checks non-empty, and "Other" would pass it).
+  const customCountryPending = showCustomCountry && !customCountry.trim();
+  const isDisabled =
+    !!(validationResult && !validationResult.is_valid) || customCountryPending;
 
   const handleNext = () => {
     const finalData =

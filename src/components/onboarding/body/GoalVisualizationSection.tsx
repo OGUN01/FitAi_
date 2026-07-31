@@ -35,6 +35,7 @@ import {
 } from "../../onboarding/fresh/tokens";
 import { RangeSlider } from "../../onboarding/aurora/RangeSlider";
 import { BodyCompositionCalculations } from "../../../utils/healthCalculations";
+import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 import { BodyAnalysisData, PersonalInfoData } from "../../../types/onboarding";
 
 interface GoalVisualizationSectionProps {
@@ -81,6 +82,13 @@ export const GoalVisualizationSection: React.FC<
   const target = formData.target_weight_kg ?? 0;
   const timeline = formData.target_timeline_weeks ?? 12;
   const gender = personalInfoData?.gender;
+
+  // Display-only unit conversion — stored values stay kg (SSOT).
+  const weightUnit: WeightUnit =
+    personalInfoData?.units === "imperial" ? "lbs" : "kg";
+  const unitLabel = weightUnit === "lbs" ? "lbs" : "kg";
+  const disp = (kg: number): number => toDisplayWeight(kg, weightUnit) ?? kg;
+  const dispRound = (kg: number): number => Math.round(disp(kg));
 
   const delta = current > 0 && target > 0 ? target - current : 0;
   const direction = delta < -0.01 ? "loss" : delta > 0.01 ? "gain" : "maintain";
@@ -204,7 +212,7 @@ export const GoalVisualizationSection: React.FC<
             min: WEIGHT_MIN,
             max: WEIGHT_MAX,
             now: Math.round(target),
-            text: `${Math.round(target)} kg`,
+            text: `${dispRound(target)} ${unitLabel}`,
           }}
           {...ringPanResponder.panHandlers}
         >
@@ -216,10 +224,10 @@ export const GoalVisualizationSection: React.FC<
             trackColor={tokens.hairline}
           >
             <Text style={styles.goalValue} numberOfLines={1}>
-              {target > 0 ? Math.round(target) : "—"}
+              {target > 0 ? dispRound(target) : "—"}
             </Text>
             <Text style={styles.goalUnit} numberOfLines={1}>
-              Target kg
+              Target {unitLabel}
             </Text>
           </StrokeRing>
         </View>
@@ -245,7 +253,7 @@ export const GoalVisualizationSection: React.FC<
                   ? "Loss"
                   : "Maintain"
             }
-            value={hasGoal ? `${Math.round(Math.abs(delta))} kg` : "—"}
+            value={hasGoal ? `${dispRound(Math.abs(delta))} ${unitLabel}` : "—"}
             accent
           />
           <View style={styles.divider} />
@@ -257,20 +265,14 @@ export const GoalVisualizationSection: React.FC<
         <Rule />
       </View>
 
-      {/* Timeline — slider override; weeks recompute on ring drag above. */}
+      {/* Timeline — slider override; weeks recompute on ring drag above. The
+          week value lives BELOW the track (the slider's floating value bubble
+          overlapped the label row above it — the "12 wk covering the text"
+          bug), paired with the concrete milestone date so it lands
+          emotionally. */}
       <View style={styles.timelineBlock}>
         <View style={styles.timelineLabelRow}>
           <SectionLabel>Timeline</SectionLabel>
-          <View style={styles.timelineValueWrap}>
-            <Text style={styles.timelineValue} numberOfLines={1}>
-              {timeline} weeks
-            </Text>
-            {timeline > 0 ? (
-              <Text style={styles.timelineMilestone} numberOfLines={1}>
-                ·  by {milestoneLabel(timeline)}
-              </Text>
-            ) : null}
-          </View>
         </View>
         <RangeSlider
           value={timeline}
@@ -280,19 +282,31 @@ export const GoalVisualizationSection: React.FC<
           unit="wk"
           accentColor={tokens.accent}
           onChange={handleTimelineChange}
+          showValue={false}
           testID="timeline-slider"
         />
-        {/* Milestone anchor — a concrete date framing ("early Apr 2027") under
-            the slider so the weeks value lands emotionally. */}
-        {timeline > 0 && Math.abs(delta) > 0.01 ? (
-          <Text style={styles.milestoneLine} numberOfLines={1}>
-            {direction === "loss"
-              ? `You at −${Math.round(Math.abs(delta))} kg, by ${milestoneLabel(timeline)}.`
-              : direction === "gain"
-                ? `You at +${Math.round(Math.abs(delta))} kg, by ${milestoneLabel(timeline)}.`
-                : ""}
+        <View style={styles.timelineReadout}>
+          <Text style={styles.timelineBig} numberOfLines={1}>
+            {timeline}
+            <Text style={styles.timelineBigUnit}> weeks</Text>
           </Text>
-        ) : null}
+          {timeline > 0 ? (
+            <View style={styles.timelineMeta}>
+              <Text style={styles.timelineMilestone} numberOfLines={1}>
+                by {milestoneLabel(timeline)}
+              </Text>
+              {Math.abs(delta) > 0.01 ? (
+                <Text style={styles.timelineDelta} numberOfLines={1}>
+                  {direction === "loss"
+                    ? `You at −${dispRound(Math.abs(delta))} ${unitLabel}`
+                    : direction === "gain"
+                      ? `You at +${dispRound(Math.abs(delta))} ${unitLabel}`
+                      : ""}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
       </View>
 
       {/* Weekly pace — only meaningful when there is a real delta; a maintain
@@ -306,7 +320,7 @@ export const GoalVisualizationSection: React.FC<
             ]}
           />
           <Text style={styles.rateText} numberOfLines={2}>
-            {weeklyRate.toFixed(2)} kg/week —{" "}
+            {disp(weeklyRate).toFixed(2)} {unitLabel}/week —{" "}
             {isSafeRate
               ? "steady, sustainable pace"
               : "aggressive — we will tune this with your Review"}
@@ -338,12 +352,12 @@ const Readout: React.FC<{
 
 const styles = StyleSheet.create({
   stack: {
-    gap: freshSpacing.l,
+    gap: freshSpacing.screenPad,
   },
   arcWrap: {
     alignItems: "center",
     gap: freshSpacing.m,
-    paddingVertical: freshSpacing.s,
+    paddingVertical: freshSpacing.m,
   },
   goalValue: {
     fontFamily: font.light,
@@ -361,24 +375,42 @@ const styles = StyleSheet.create({
   dragHint: {
     ...freshType.caption,
   },
-  timelineValueWrap: {
+  timelineReadout: {
     flexDirection: "row",
-    alignItems: "baseline",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: freshSpacing.s,
+    marginTop: freshSpacing.xs,
+  },
+  timelineBig: {
+    fontFamily: font.light,
+    fontSize: 30,
+    lineHeight: 32,
+    letterSpacing: -0.6,
+    color: tokens.ink,
+    flexShrink: 0,
+  },
+  timelineBigUnit: {
+    ...freshType.body,
+    color: tokens.ink2,
+  },
+  timelineMeta: {
+    alignItems: "flex-end",
+    gap: 2,
   },
   timelineMilestone: {
     ...freshType.body,
     color: tokens.accent,
   },
-  milestoneLine: {
-    ...freshType.body,
+  timelineDelta: {
+    ...freshType.caption,
     color: tokens.ink2,
-    marginTop: freshSpacing.xs,
   },
   readoutRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: freshSpacing.l,
+    paddingVertical: freshSpacing.xl,
   },
   readout: {
     flex: 1,
@@ -399,16 +431,12 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.hairline,
   },
   timelineBlock: {
-    gap: freshSpacing.xs,
+    gap: freshSpacing.s,
   },
   timelineLabelRow: {
     flexDirection: "row",
     alignItems: "baseline",
     justifyContent: "space-between",
-  },
-  timelineValue: {
-    ...freshType.body,
-    color: tokens.ink,
   },
   rateRow: {
     flexDirection: "row",

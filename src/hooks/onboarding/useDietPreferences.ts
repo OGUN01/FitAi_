@@ -79,7 +79,10 @@ export const useDietPreferences = ({
     avoids_late_night_eating: data?.avoids_late_night_eating ?? false,
     controls_portion_sizes: data?.controls_portion_sizes ?? false,
     reads_nutrition_labels: data?.reads_nutrition_labels ?? false,
-    eats_processed_foods: data?.eats_processed_foods ?? true,
+    // Default false (absence of an answer), not true — assuming a negative habit
+    // is a hardcoded fallback for user data (CLAUDE.md #8) and single-handedly
+    // dragged an untouched habits section's diet_readiness_score to ~13/100.
+    eats_processed_foods: data?.eats_processed_foods ?? false,
     eats_5_servings_fruits_veggies:
       data?.eats_5_servings_fruits_veggies ?? false,
     limits_refined_sugar: data?.limits_refined_sugar ?? false,
@@ -120,7 +123,8 @@ export const useDietPreferences = ({
         avoids_late_night_eating: data.avoids_late_night_eating ?? false,
         controls_portion_sizes: data.controls_portion_sizes ?? false,
         reads_nutrition_labels: data.reads_nutrition_labels ?? false,
-        eats_processed_foods: data.eats_processed_foods ?? true,
+        // See note in initial state above — no hardcoded negative-habit default.
+        eats_processed_foods: data.eats_processed_foods ?? false,
         eats_5_servings_fruits_veggies:
           data.eats_5_servings_fruits_veggies ?? false,
         limits_refined_sugar: data.limits_refined_sugar ?? false,

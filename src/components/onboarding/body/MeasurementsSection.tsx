@@ -41,6 +41,9 @@ interface MeasurementsSectionProps {
   };
   getFieldError: (field: string) => string | undefined;
   hasFieldError: (field: string) => boolean;
+  /** S1 unit preference — display-only conversion; sliders/stored values
+   * stay metric (kg/cm), the primary readout switches to lb / ft-in. */
+  units?: "metric" | "imperial" | null;
   /** @deprecated Editorial Dark always uses tokens.accent; kept optional so
    * legacy callers (unreferenced BodyTab experiment) still typecheck. */
   accentColor?: string;
@@ -84,7 +87,9 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
   getBMICategory,
   getFieldError,
   hasFieldError,
+  units,
 }) => {
+  const isImperial = units === "imperial";
   const bmi = formData.bmi ?? 0;
   const bmiCategory = bmi > 0 ? getBMICategory(bmi) : null;
   // Map BMI 10–40 to a 0–1 fraction for the read-only ring.
@@ -112,7 +117,7 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
               </Text>
               {heightVal > 0 ? (
                 <Text style={styles.conversion} numberOfLines={1}>
-                  {cmToFtIn(heightVal)}
+                  {isImperial ? `${Math.round(heightVal)} cm` : cmToFtIn(heightVal)}
                 </Text>
               ) : null}
               {hasFieldError("height") ? (
@@ -122,10 +127,18 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
               ) : null}
             </View>
             <Text style={styles.bigValue} numberOfLines={1}>
-              <Text style={styles.bigNumber}>
-                {heightVal > 0 ? Math.round(heightVal) : "—"}
-              </Text>
-              <Text style={styles.bigUnit}> cm</Text>
+              {isImperial ? (
+                <Text style={styles.bigNumber}>
+                  {heightVal > 0 ? cmToFtIn(heightVal) : "—"}
+                </Text>
+              ) : (
+                <>
+                  <Text style={styles.bigNumber}>
+                    {heightVal > 0 ? Math.round(heightVal) : "—"}
+                  </Text>
+                  <Text style={styles.bigUnit}> cm</Text>
+                </>
+              )}
             </Text>
           </View>
           <RangeSlider
@@ -150,7 +163,9 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
               </Text>
               {weightVal > 0 ? (
                 <Text style={styles.conversion} numberOfLines={1}>
-                  {kgToLb(weightVal)}
+                  {isImperial
+                    ? `${weightVal.toFixed(1).replace(/\.0$/, "")} kg`
+                    : kgToLb(weightVal)}
                 </Text>
               ) : null}
               {hasFieldError("current weight") ? (
@@ -160,10 +175,21 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
               ) : null}
             </View>
             <Text style={styles.bigValue} numberOfLines={1}>
-              <Text style={styles.bigNumber}>
-                {weightVal > 0 ? weightVal.toFixed(1).replace(/\.0$/, "") : "—"}
-              </Text>
-              <Text style={styles.bigUnit}> kg</Text>
+              {isImperial ? (
+                <>
+                  <Text style={styles.bigNumber}>
+                    {weightVal > 0 ? Math.round(weightVal * 2.20462) : "—"}
+                  </Text>
+                  <Text style={styles.bigUnit}> lb</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.bigNumber}>
+                    {weightVal > 0 ? weightVal.toFixed(1).replace(/\.0$/, "") : "—"}
+                  </Text>
+                  <Text style={styles.bigUnit}> kg</Text>
+                </>
+              )}
             </Text>
           </View>
           <RangeSlider
@@ -260,8 +286,9 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
             formData.ideal_weight_max > 0 ? (
               <Text style={styles.idealText} numberOfLines={2}>
                 Healthy range{"\n"}
-                {Math.round(formData.ideal_weight_min)}–
-                {Math.round(formData.ideal_weight_max)} kg
+                {isImperial
+                  ? `${Math.round(formData.ideal_weight_min * 2.20462)}–${Math.round(formData.ideal_weight_max * 2.20462)} lb`
+                  : `${Math.round(formData.ideal_weight_min)}–${Math.round(formData.ideal_weight_max)} kg`}
               </Text>
             ) : (
               <Text style={styles.idealText} numberOfLines={2}>
@@ -277,17 +304,17 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
 
 const styles = StyleSheet.create({
   stack: {
-    gap: freshSpacing.xl,
+    gap: freshSpacing.xl + freshSpacing.s,
   },
   field: {
-    gap: freshSpacing.xs,
+    gap: freshSpacing.s,
   },
   readoutRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
     gap: freshSpacing.s,
-    marginBottom: freshSpacing.xs,
+    marginBottom: freshSpacing.s,
   },
   readoutLabelWrap: {
     flex: 1,
@@ -322,8 +349,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: freshSpacing.screenPad,
-    marginTop: freshSpacing.s,
-    paddingVertical: freshSpacing.s,
+    marginTop: freshSpacing.m,
+    paddingVertical: freshSpacing.m,
   },
   bmiValue: {
     fontFamily: font.light,

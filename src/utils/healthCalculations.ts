@@ -310,28 +310,32 @@ export class MetabolicCalculations {
    * Returns 0-100 score predicting adherence likelihood
    */
   static calculateDietReadinessScore(dietPreferences: any): number {
-    let score = 0;
-
+    // Neutral-baseline rubric (parity with healthCalculations/metabolic.ts — the
+    // review-tab SSOT). Unanswered habits map to a NEUTRAL 50 instead of the old
+    // offset formula's ~23/13, which false-flagged untouched habit sections as
+    // LOW_DIET_READINESS. Original relative weights preserved.
+    let positive = 0;
     // Positive habits (add points)
-    if (dietPreferences.drinks_enough_water) score += 10;
-    if (dietPreferences.limits_sugary_drinks) score += 15;
-    if (dietPreferences.eats_regular_meals) score += 25; // Most predictive
-    if (dietPreferences.avoids_late_night_eating) score += 10;
-    if (dietPreferences.controls_portion_sizes) score += 30; // Highly predictive
-    if (dietPreferences.reads_nutrition_labels) score += 20;
-    if (dietPreferences.eats_5_servings_fruits_veggies) score += 20;
-    if (dietPreferences.limits_refined_sugar) score += 15;
-    if (dietPreferences.includes_healthy_fats) score += 10;
+    if (dietPreferences.drinks_enough_water) positive += 10;
+    if (dietPreferences.limits_sugary_drinks) positive += 15;
+    if (dietPreferences.eats_regular_meals) positive += 25; // Most predictive
+    if (dietPreferences.avoids_late_night_eating) positive += 10;
+    if (dietPreferences.controls_portion_sizes) positive += 30; // Highly predictive
+    if (dietPreferences.reads_nutrition_labels) positive += 20;
+    if (dietPreferences.eats_5_servings_fruits_veggies) positive += 20;
+    if (dietPreferences.limits_refined_sugar) positive += 15;
+    if (dietPreferences.includes_healthy_fats) positive += 10;
 
+    let negative = 0;
     // Negative habits (subtract points)
-    if (dietPreferences.eats_processed_foods) score -= 20;
-    if (dietPreferences.drinks_alcohol) score -= 10;
-    if (dietPreferences.smokes_tobacco) score -= 15;
+    if (dietPreferences.eats_processed_foods) negative += 20;
+    if (dietPreferences.drinks_alcohol) negative += 10;
+    if (dietPreferences.smokes_tobacco) negative += 15;
 
-    // Normalize to 0-100 scale
-    // Max: 155, Min: -45, Range: 200
-    const normalized = Math.round(((score + 45) / 200) * 100);
-    return Math.max(0, Math.min(100, normalized));
+    // Neutral 50 baseline; positives lift toward 100, negatives sink toward 0.
+    // Max positive: 155, max negative: 45.
+    const score = 50 + (positive / 155) * 50 - (negative / 45) * 50;
+    return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   /**
@@ -418,12 +422,21 @@ export class MetabolicCalculations {
     bmr: number,
     chronologicalAge: number,
     gender: string,
+    weightKg?: number,
   ): number {
     // Get expected BMR for chronological age
-    const expectedBMR = MetabolicCalculations.getExpectedBMRForAge(
+    const referenceBMR = MetabolicCalculations.getExpectedBMRForAge(
       chronologicalAge,
       gender,
     );
+
+    // Reference BMRs are calibrated to a 70 kg person (see getExpectedBMRForAge).
+    // When body weight is available, scale the reference to the user's frame —
+    // otherwise heavier users (higher absolute BMR) always look "metabolically
+    // young" and collapse to the floor of 18 (parity with
+    // healthCalculations/metabolic.ts).
+    const expectedBMR =
+      weightKg && weightKg > 0 ? referenceBMR * (weightKg / 70) : referenceBMR;
 
     // S18 parity: percentage-based comparison (mirrors
     // healthCalculations/metabolic.ts — the review-tab SSOT). The old absolute

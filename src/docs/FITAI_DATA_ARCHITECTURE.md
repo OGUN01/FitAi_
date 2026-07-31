@@ -177,7 +177,7 @@
 | # | Field | snake_case Name | Type | Default | Storage |
 |---|-------|----------------|------|---------|---------|
 | 1 | Location | `location` | enum | `"both"` | `workout_preferences.location` |
-| 2 | Equipment | `equipment` | string[] | `[]` | `workout_preferences.equipment` |
+| 2 | Equipment | `equipment` | string[] | `[]` | `workout_preferences.equipment` — smart logic: `gym` → picker hidden, auto `STANDARD_GYM_EQUIPMENT`; `home` → user picks; `both` → gym staples ∪ home picks |
 | 3 | Time Preference (min) | `time_preference` | number | `30` | `workout_preferences.time_preference` |
 | 4 | ⚠️ Session Duration | `session_duration_minutes` | number | — | Alias for `time_preference`, NOT in DB |
 | 5 | Intensity | `intensity` | enum | `"beginner"` | `workout_preferences.intensity` |
@@ -195,6 +195,7 @@
 |---|-------|----------------|------|---------|---------|
 | 10 | Experience (years) | `workout_experience_years` | number | `0` | `workout_preferences.workout_experience_years` |
 | 11 | Frequency (per week) | `workout_frequency_per_week` | number | `0` | `workout_preferences.workout_frequency_per_week` |
+| 11a | Preferred Workout Days | `preferred_workout_days` | string[]? | `NULL` (→ even spread from #11) | `workout_preferences.preferred_workout_days` |
 | 12 | Pushups Count | `can_do_pushups` | number | `0` | `workout_preferences.can_do_pushups` |
 | 13 | Running Minutes | `can_run_minutes` | number | `0` | `workout_preferences.can_run_minutes` |
 | 14 | Flexibility Level | `flexibility_level` | enum | `"fair"` | `workout_preferences.flexibility_level` |
@@ -205,6 +206,13 @@
 | 15 | Weekly Loss Goal | `weekly_weight_loss_goal` | number? | `workout_preferences.weekly_weight_loss_goal` |
 
 #### Enhanced Preferences
+
+> Fields 17–22 ("What you enjoy") no longer have UI (removed 2026-07-30 per user
+> feedback). They are **derived from `primary_goals`** in `useWorkoutPreferences`
+> (cardio ← weight-loss/endurance/general_fitness, strength ←
+> muscle-gain/strength/weight-gain/general_fitness, outdoor ← endurance,
+> variety always true) so AI generation inputs are unchanged.
+
 | # | Field | snake_case Name | Type | Default | Storage |
 |---|-------|----------------|------|---------|---------|
 | 16 | Preferred Workout Times | `preferred_workout_times` | string[] | `[]` | `workout_preferences.preferred_workout_times` |
@@ -225,7 +233,7 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 | 1 | BMI | `calculated_bmi` | weight / (height/100)² | current_weight_kg, height_cm | `advanced_review.calculated_bmi` |
 | 2 | BMR | `calculated_bmr` | Mifflin-St Jeor (see C.2) | current_weight_kg, height_cm, age, gender | `advanced_review.calculated_bmr` |
 | 3 | TDEE | `calculated_tdee` | BMR × occupation + exercise burn + age mod (see C.3) | BMR, activity_level, workout params, age, gender | `advanced_review.calculated_tdee` |
-| 4 | Metabolic Age | `metabolic_age` | chronological + (expectedBMR − actualBMR)/expectedBMR × 50 | BMR, age, gender | `advanced_review.metabolic_age` |
+| 4 | Metabolic Age | `metabolic_age` | chronological + (expectedBMR − actualBMR)/expectedBMR × 50; expectedBMR scaled to user's frame via `bandRefBMR × (weightKg/70)` when weight is passed (band refs calibrated to 70 kg — unscaled absolute comparison collapsed heavy users to the 18 floor) | BMR, age, gender, weight | `advanced_review.metabolic_age` |
 
 #### Daily Nutritional Needs
 | # | Field | snake_case Name | Formula Summary | Storage |
@@ -251,8 +259,8 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 |---|-------|----------------|-----------------|---------|
 | 16 | Ideal Body Fat Min | `ideal_body_fat_min` | age/gender lookup table | `advanced_review.ideal_body_fat_min` |
 | 17 | Ideal Body Fat Max | `ideal_body_fat_max` | age/gender lookup table | `advanced_review.ideal_body_fat_max` |
-| 18 | Lean Body Mass | `lean_body_mass` | weight × (1 − body_fat%/100) | `advanced_review.lean_body_mass` |
-| 19 | Fat Mass | `fat_mass` | weight × body_fat%/100 | `advanced_review.fat_mass` |
+| 18 | Lean Body Mass | `lean_body_mass` | weight × (1 − bf%/100); bf% resolved via SSOT chain manual → AI estimate → BMI-derived → sex default (never bare 0 when BF% uncaptured) | `advanced_review.lean_body_mass` |
+| 19 | Fat Mass | `fat_mass` | weight × bf%/100 (same resolution chain) | `advanced_review.fat_mass` |
 
 #### Fitness Metrics
 | # | Field | snake_case Name | Formula Summary | Storage |
@@ -274,7 +282,7 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 | # | Field | snake_case Name | Formula Summary | Storage |
 |---|-------|----------------|-----------------|---------|
 | 32 | Overall Health Score | `overall_health_score` | composite: BMI, activity, habits, sleep, experience | `advanced_review.overall_health_score` |
-| 33 | Diet Readiness | `diet_readiness_score` | 14 health habit booleans normalized | `advanced_review.diet_readiness_score` |
+| 33 | Diet Readiness | `diet_readiness_score` | habit booleans on neutral-50 baseline (see C.8) | `advanced_review.diet_readiness_score` |
 | 34 | Fitness Readiness | `fitness_readiness_score` | experience, pushups, running, activity, medical | `advanced_review.fitness_readiness_score` |
 | 35 | Goal Realistic | `goal_realistic_score` | rate aggressiveness, goal/experience match | `advanced_review.goal_realistic_score` |
 
@@ -288,9 +296,9 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 #### Completion & Validation
 | # | Field | snake_case Name | Storage |
 |---|-------|----------------|---------|
-| 39 | Data Completeness % | `data_completeness_percentage` | `advanced_review.data_completeness_percentage` |
+| 39 | Data Completeness % | `data_completeness_percentage` | provided/total fields; booleans count when false (answered "no" is data), dynamic denominators from actual object keys (`calculateCompletionMetrics`) | `advanced_review.data_completeness_percentage` |
 | 40 | Reliability Score | `reliability_score` | `advanced_review.reliability_score` |
-| 41 | Personalization Level | `personalization_level` | `advanced_review.personalization_level` |
+| 41 | Personalization Level | `personalization_level` | 0.6 × completeness + 0.4 × optional-enrichment coverage (15 enrichment signals: BF%, AI estimate, waist/hip, stress, medical, medications, limitations, experience, pushups, run minutes, workout times, cooking methods, cuisines, country) | `advanced_review.personalization_level` |
 | 42 | Validation Status | `validation_status` | `advanced_review.validation_status` |
 | 43 | Validation Errors | `validation_errors` | `advanced_review.validation_errors` |
 | 44 | Validation Warnings | `validation_warnings` | `advanced_review.validation_warnings` |
@@ -303,10 +311,10 @@ All fields are **calculated/derived** — no raw user inputs (except rate select
 | 47 | BMR Formula Used | `bmr_formula_used` | `advanced_review.bmr_formula_used` | Set to "mifflin_st_jeor" (Wave 2B) |
 | 48 | Detected Climate | `detected_climate` | `advanced_review.detected_climate` | From country/state auto-detection |
 | 49 | Detected Ethnicity | `detected_ethnicity` | `advanced_review.detected_ethnicity` | 📋 Not yet computed — no consumers |
-| 50 | Health Grade | `health_grade` | `advanced_review.health_grade` | Column added in Wave 1 migration |
-| 51 | Was Rate Capped | `was_rate_capped` | `advanced_review.was_rate_capped` | Safety cap indicator |
+| 50 | Health Grade | `health_grade` | `advanced_review.health_grade` | Computed by master-engine via `HealthScoreCalculatorService.getGrade(overall_health_score)` |
+| 51 | Was Rate Capped | `was_rate_capped` | `advanced_review.was_rate_capped` | Safety cap indicator — flagged only when 2-dp rounded delivered rate < rounded requested rate (sub-0.005 kg/wk caps no longer false-flag next to identical displayed rates). Silent BMR-floor landings surface an `EATING_AT_BMR_FLOOR` warning |
 | 52 | Refeed Schedule | `refeed_schedule` | `advanced_review.refeed_schedule` | JSON schedule |
-| 53 | Medical Adjustments | `medical_adjustments` | `advanced_review.medical_adjustments` | From medical conditions |
+| 53 | Medical Adjustments | `medical_adjustments` | `advanced_review.medical_adjustments` | From medical conditions; unmapped conditions (asthma, arthritis, anxiety, depression, sleep-apnea, high-cholesterol) produce an informational note instead of undefined |
 
 #### ⚠️ Deprecated/Duplicate Fields
 | Field | Issue | Status |
@@ -648,7 +656,7 @@ base = weight × 35 ml  (EFSA recommendation)
 - Sleep efficiency
 - Workout experience and frequency
 
-**Diet Readiness Score:** Sum of 14 boolean habit multipliers, normalized to 0–100 via `((score+45)/200) × 100`
+**Diet Readiness Score:** Neutral-baseline rubric over the health-habit booleans: `50 + (positive/155)×50 − (negative/45)×50`, clamped 0–100. An unanswered habits section maps to a neutral **50** (the old `((score+45)/200)×100` offset pinned untouched sections at ~13–23 and false-triggered LOW_DIET_READINESS). Positive weights: water 10, sugary-drinks 15, regular-meals 25, late-night 10, portions 30, labels 20, 5-servings 20, refined-sugar 15, healthy-fats 10. Negative weights: processed-foods 20, alcohol 10, tobacco 15.
 
 **Fitness Readiness Score:** Starts at 50, adds:
 - experience × 3 (cap 15)
@@ -1068,6 +1076,14 @@ useFitnessLogic
   → fitaiWorkersClient.generateWorkoutPlan()
   → POST /workout/generate → Cloudflare Worker
 ```
+
+**Training days:** `weeklyPlan.preferredDays` is resolved by
+`getWorkoutDaysFromPreferences()` — the user's explicit `preferred_workout_days`
+(onboarding day chips, field 11a) wins; legacy rows without it fall back to a
+frequency-based spread. The worker's rule-based generator assigns
+`workouts[i].dayOfWeek = preferredDays[i]` (`workoutGenerationRuleBased.ts`), so
+plans land on the days the user picked. Invariant held by
+`useWorkoutPreferences`: `preferred_workout_days.length === workout_frequency_per_week`.
 
 #### Path B: Quick Local Workout (Offline)
 ```

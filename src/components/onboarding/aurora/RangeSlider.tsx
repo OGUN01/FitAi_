@@ -109,17 +109,29 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     [min, max, step, tickHapticEvery, onChange]
   );
 
+  // The PanResponder below is created ONCE (useRef initializer) so it never
+  // re-binds mid-gesture — but that means its grant/move handlers would
+  // permanently close over the FIRST-render `updateFromFraction`, which closes
+  // over the first-render `onChange` → the caller's first-render state setter
+  // (e.g. useBodyAnalysis.updateField spreads mount-time formData). The
+  // visible symptom was the "slider coupling" bug: dragging the weight slider
+  // re-wrote height back to its mount value. Route every touch through a ref
+  // so the responder always calls the LATEST callback (same pattern as
+  // GoalVisualizationSection's applyTouchRef).
+  const updateFromFractionRef = useRef(updateFromFraction);
+  updateFromFractionRef.current = updateFromFraction;
+
   const panResponder = useRef<PanResponderInstance>(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
         const w = trackWidth.value || 1;
-        updateFromFraction(g.x0 / w);
+        updateFromFractionRef.current(g.x0 / w);
       },
       onPanResponderMove: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
         const w = trackWidth.value || 1;
-        updateFromFraction((g.x0 + g.dx) / w);
+        updateFromFractionRef.current((g.x0 + g.dx) / w);
       },
       onPanResponderRelease: () => {
         runOnJS(fireImpact)();

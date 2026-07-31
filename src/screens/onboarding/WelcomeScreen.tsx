@@ -11,7 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { Button, Input, PasswordInput } from "../../components/ui";
+import { GlassButton } from "../../components/ui/aurora/GlassButton";
+import { UnderlineInput } from "../../components/onboarding/aurora/UnderlineInput";
 import { useAuth } from "../../hooks/useAuth";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
@@ -74,6 +75,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   });
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const { login, signInWithGoogle, resetPassword } = useAuth();
 
@@ -255,23 +257,55 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               </View>
 
               <View style={styles.emailFormContainer}>
-                <Input
+                <UnderlineInput
                   label="Email Address"
                   placeholder="Enter your email address"
                   value={formData.email}
                   onChangeText={(value) => updateField("email", value)}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  error={errors.email}
+                  accentColor={
+                    errors.email ? colors.error.DEFAULT : undefined
+                  }
+                  containerStyle={styles.fieldContainer}
                 />
+                {errors.email ? (
+                  <Text style={styles.fieldError}>{errors.email}</Text>
+                ) : null}
 
-                <PasswordInput
-                  label="Password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChangeText={(value) => updateField("password", value)}
-                  error={errors.password}
-                />
+                <View style={styles.passwordFieldWrap}>
+                  <UnderlineInput
+                    label="Password"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChangeText={(value) => updateField("password", value)}
+                    secureTextEntry={!passwordVisible}
+                    autoCapitalize="none"
+                    accentColor={
+                      errors.password ? colors.error.DEFAULT : undefined
+                    }
+                    containerStyle={styles.fieldContainer}
+                  />
+                  <AnimatedPressable
+                    onPress={() => setPasswordVisible((prev) => !prev)}
+                    scaleValue={0.9}
+                    style={styles.eyeToggle}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      passwordVisible ? "Hide password" : "Show password"
+                    }
+                  >
+                    <Ionicons
+                      name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                      size={rf(20)}
+                      color={colors.text.secondary}
+                    />
+                  </AnimatedPressable>
+                </View>
+                {errors.password ? (
+                  <Text style={styles.fieldError}>{errors.password}</Text>
+                ) : null}
 
                 <AnimatedPressable
                   onPress={handleForgotPassword}
@@ -281,11 +315,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                 </AnimatedPressable>
 
-                <Button
-                  title="Sign In"
+                <GlassButton
+                  label="Sign In"
                   onPress={handleEmailSignIn}
                   variant="primary"
-                  size="lg"
                   fullWidth
                   loading={isLoading}
                   style={styles.signInButton}
@@ -364,13 +397,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </ScrollView>
 
         <View style={styles.ctaSection}>
-          <Button
-            title="Get Started"
+          <GlassButton
+            label="Get Started"
             onPress={onGetStarted}
             variant="primary"
-            size="lg"
             fullWidth
-            pulse
           />
 
           <View style={styles.signInPromptRow}>
@@ -634,6 +665,33 @@ const styles = StyleSheet.create({
 
   emailFormContainer: {
     marginTop: spacing.sm,
+  },
+
+  fieldContainer: {
+    marginBottom: spacing.sm,
+  },
+
+  fieldError: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: typography.fontSize.xs,
+    color: colors.error.DEFAULT,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
+  },
+
+  passwordFieldWrap: {
+    position: "relative",
+    justifyContent: "center",
+  },
+
+  eyeToggle: {
+    position: "absolute",
+    right: 0,
+    top: spacing.sm,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   signInButton: {

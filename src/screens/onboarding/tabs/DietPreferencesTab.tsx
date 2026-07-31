@@ -124,6 +124,12 @@ interface DietPreferencesTabProps {
   isAutoSaving?: boolean;
   isEditingFromReview?: boolean;
   onReturnToReview?: () => void;
+  /**
+   * S1 country selection (display-only) — localizes the food-budget ranges
+   * via getBudgetRanges(). Prop-threaded from OnboardingContainer (the store
+   * is the runtime SSOT); null → USD default ranges.
+   */
+  country?: string | null;
 }
 
 const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
@@ -135,6 +141,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   isAutoSaving = false,
   isEditingFromReview = false,
   onReturnToReview,
+  country = null,
 }) => {
   const isSubmittingRef = useRef(false);
 
@@ -229,6 +236,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             <CookingPreferencesSection
               formData={formData}
               updateField={updateField}
+              country={country}
             />
           </Animated.View>
 
