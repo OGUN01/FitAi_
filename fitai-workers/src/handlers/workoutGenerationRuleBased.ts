@@ -386,7 +386,10 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	};
 
 	const workouts = structuredWorkouts.map((workout, index) => {
-		// Prefer user's preferred days from request, fall back to split suggestion, then index-based
+		// Prefer the user's explicit day choices from onboarding
+		// (workout_preferences.preferred_workout_days → weeklyPlan.preferredDays,
+		// sent monday-first), then split suggestion, then index-based fallback.
+		// This is what makes generated plans LAND on the days the user picked.
 		const preferredDays = request.weeklyPlan?.preferredDays || [];
 		const suggestedDay = preferredDays[index] || selectedSplit.workoutDays[index]?.suggestedDayOfWeek || dayOfWeekMap[index % 7];
 
@@ -406,7 +409,7 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	const response: WorkoutResponse = {
 		id: `rule-based-${Date.now()}-${request.userId || 'guest'}`,
 		planTitle: `${selectedSplit.name} - Week ${weekNumber}`,
-		planDescription: generatePlanDescription(selectedSplit, enrichedProfile, allWarnings, boostMinutes),
+		planDescription: generatePlanDescription(selectedSplit, enrichedProfile, allWarnings, boostMinutes, request.weeklyPlan?.preferredDays),
 		workouts,
 		restDays: computedRestDays,
 		totalEstimatedCalories,
@@ -474,7 +477,7 @@ function generateWorkoutDescription(workoutType: string, splitDescription: strin
 /**
  * Generate plan-level description
  */
-function generatePlanDescription(split: any, profile: any, warnings: string[], boostExtraCardioMinutes: number): string {
+function generatePlanDescription(split: any, profile: any, warnings: string[], boostExtraCardioMinutes: number, preferredDays?: string[]): string {
 	let description = `${split.name}: ${split.description}\n\n`;
 
 	description += `🎯 Goal: ${profile.fitnessGoal.replace('_', ' ')}\n`;
@@ -489,6 +492,11 @@ function generatePlanDescription(split: any, profile: any, warnings: string[], b
 	}
 
 	description += `📅 Frequency: ${profile.workoutsPerWeek}x per week\n`;
+	// Surface the user's chosen training days (onboarding day-of-week chips) so
+	// the plan text matches the dayOfWeek assignment above.
+	if (preferredDays && preferredDays.length > 0) {
+		description += `📆 Training days: ${preferredDays.map((d) => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}\n`;
+	}
 
 	if (warnings.length > 0) {
 		description += `\n⚠️ SAFETY WARNINGS (${warnings.length}):\n`;

@@ -206,6 +206,9 @@ export const WorkoutGenerationRequestSchema = z.object({
 	// ✅ NEW: Weekly plan parameters (REQUIRED for all workout generation)
 	weeklyPlan: z.object({
 		workoutsPerWeek: z.number().int().min(1).max(7).default(3),
+		// User-chosen training days from onboarding (workout_preferences.
+		// preferred_workout_days), sent monday-first by the app. When absent the
+		// rule-based engine falls back to split-suggested days.
 		preferredDays: z.array(z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])).optional(),
 		workoutTypes: z.array(z.string()).optional(), // User's preferred workout types from onboarding
 		prefersVariety: z.boolean().default(false),
