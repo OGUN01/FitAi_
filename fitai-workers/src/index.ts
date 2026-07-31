@@ -54,6 +54,7 @@ import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
 import { subscriptionGateMiddleware } from './middleware/subscriptionGate';
 import { getPublicAppConfig } from './utils/appConfig';
+import { handleDeleteAccount } from './handlers/deleteAccount';
 
 // ============================================================================
 // INITIALIZE HONO APP
@@ -553,6 +554,19 @@ app.post('/api/subscription/cancel', authMiddleware, rateLimitMiddleware(RATE_LI
 app.post('/api/subscription/pause', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handlePauseSubscription);
 
 app.post('/api/subscription/resume', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleResumeSubscription);
+
+// ============================================================================
+// ACCOUNT ROUTES
+// ============================================================================
+
+/**
+ * DELETE /api/account - Permanently delete the authenticated user's account.
+ * - Requires authentication (user can only delete their own account)
+ * - Rate limit: 1000 requests per hour (authenticated tier — single-use)
+ * - Wipes rows across all user-data tables via service role, then removes
+ *   the auth.users credential via auth.admin.deleteUser.
+ */
+app.delete('/api/account', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleDeleteAccount);
 
 // ============================================================================
 // ADMIN ROUTES — requireRole('admin') guard

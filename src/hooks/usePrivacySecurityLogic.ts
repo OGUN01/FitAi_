@@ -1,5 +1,11 @@
 /**
  * usePrivacySecurityLogic - Business logic for Privacy & Security Settings
+ *
+ * Account deletion: routes through the FitAI Workers DELETE /api/account
+ * endpoint, which uses the Supabase service role to wipe rows across every
+ * user-data table AND removes the auth.users credential via
+ * auth.admin.deleteUser. Client-side per-table deletion was retired — RLS
+ * blocked several tables and the auth credential was never removable.
  */
 
 import { useCallback } from "react";
@@ -7,41 +13,8 @@ import { Share } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../services/supabase";
+import { accountService } from "../services/accountService";
 import { haptics } from "../utils/haptics";
-
-/**
- * User-data tables keyed by user_id with user-scoped RLS
- * (auth.uid() = user_id). Client-side deletion is best-effort per table;
- * the profiles row (keyed by id = auth.uid()) is deleted last and its
- * ON DELETE CASCADE wipes any remaining child rows. Removing the
- * auth.users credential itself requires a server-side (service role)
- * endpoint — flagged as follow-up work.
- */
-const USER_DATA_TABLES = [
-  "diet_preferences",
-  "workout_preferences",
-  "fitness_goals",
-  "nutrition_goals",
-  "analytics_metrics",
-  "health_metrics",
-  "meal_recognition_metadata",
-  "user_food_contributions",
-  "meal_logs",
-  "water_logs",
-  "user_meal_plans",
-  "weekly_meal_plans",
-  "user_workout_plans",
-  "weekly_workout_plans",
-  "workout_sessions",
-  "body_analysis",
-  "progress_entries",
-  "progress_goals",
-  "chat_messages",
-  "device_tokens",
-  "onboarding_progress",
-  "generation_history",
-  "subscriptions",
-] as const;
 
 export const usePrivacySecurityLogic = () => {
   const handleDataExport = useCallback(async () => {
@@ -124,61 +97,67 @@ export const usePrivacySecurityLogic = () => {
           return;
         }
 
-        // Best-effort deletion of the user's rows in every user-data table.
-        // RLS limits each delete to the caller's own rows. Tables without a
-        // DELETE policy will error — logged, not swallowed.
-        const failedTables: string[] = [];
-        for (const table of USER_DATA_TABLES) {
-          const { error } = await supabase
-            .from(table)
-            .delete()
-            .eq("user_id", user.id);
-          if (error) {
-            failedTables.push(table);
-            console.error(
-              `Account deletion: failed to delete from ${table}:`,
-              error.message,
+        // Server-side wipe — service role deletes rows in every user-data
+        // table AND removes the auth.users credential. Client no longer
+        // loops per-table (RLS denied several; auth was unreachable).
+        const result = await accountService.deleteAccount();
+
+        if (!result.success) {
+          if (result.isOffline) {
+            crossPlatformAlert(
+              "You're Offline",
+              "Account deletion requires a network connection. Please try again when you're back online.",
             );
+            return;
           }
+          crossPlatformAlert(
+            "Deletion Failed",
+            result.error ||
+              "The server could not delete your account. Please try again or contact support@fitai.app.",
+          );
+          return;
         }
 
-        // profiles is keyed by id (= auth.uid()) and cascades to any
-        // remaining child rows that reference it.
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .delete()
-          .eq("id", user.id);
-        if (profileError) {
-          failedTables.push("profiles");
+        // Server confirmed deletion. Wipe local storage and sign out — the
+        // refresh token is already invalid server-side, but signOut clears
+        // the in-memory session so the auth gate routes to Welcome.
+        try {
+          const allKeys = await AsyncStorage.getAllKeys();
+          const fitaiKeys = allKeys.filter(
+            (key) =>
+              key.startsWith("@fitai") || key.startsWith("fitai"),
+          );
+          await AsyncStorage.multiRemove(fitaiKeys);
+        } catch (storageErr) {
           console.error(
-            "Account deletion: failed to delete profile:",
-            profileError.message,
+            "Account deletion: local storage wipe failed:",
+            storageErr,
           );
         }
 
-        // Clear all local data
-        const allKeys = await AsyncStorage.getAllKeys();
-        const fitaiKeys = allKeys.filter(
-          (key) =>
-            key.startsWith("@fitai") || key.startsWith("fitai"),
-        );
-        await AsyncStorage.multiRemove(fitaiKeys);
+        try {
+          await supabase.auth.signOut();
+        } catch (signOutErr) {
+          console.error(
+            "Account deletion: signOut failed (session already invalid server-side):",
+            signOutErr,
+          );
+        }
 
-        // Sign out. Removing the auth credential itself requires a
-        // server-side (service role) endpoint — surfaced honestly below.
-        await supabase.auth.signOut();
-
-        if (failedTables.length === 0) {
+        if (result.authDeletionRequired) {
           crossPlatformAlert(
             "Data Deleted",
-            "Your app data has been deleted and you have been signed out. " +
-              "Your sign-in credential still exists on our servers — contact support@fitai.app to remove it permanently.",
+            "Your FitAI data has been permanently deleted. Your sign-in credential is being removed and will be fully gone shortly.",
+          );
+        } else if (result.failedTables && result.failedTables.length > 0) {
+          crossPlatformAlert(
+            "Account Deleted",
+            "Your account has been permanently deleted. A small number of records are being cleaned up in the background.",
           );
         } else {
           crossPlatformAlert(
-            "Partial Deletion",
-            "Your local data was cleared and you have been signed out, but some server data could not be deleted. " +
-              "Contact support@fitai.app to complete deletion of your account.",
+            "Account Deleted",
+            "Your FitAI account and all associated data have been permanently deleted.",
           );
         }
       } catch (error) {
@@ -191,8 +170,8 @@ export const usePrivacySecurityLogic = () => {
     };
 
     crossPlatformAlert(
-      "Delete Account Data",
-      "This will delete your FitAI data (profile, plans, logs) and sign you out. This action cannot be undone.",
+      "Delete Account Permanently",
+      "This will permanently delete your FitAI account, all your data (profile, plans, logs, achievements), and your sign-in credential. This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -201,7 +180,7 @@ export const usePrivacySecurityLogic = () => {
           onPress: () => {
             crossPlatformAlert(
               "Final Confirmation",
-              "Are you absolutely sure? Your workout plans, meal logs, and profile data will be permanently deleted.",
+              "Are you absolutely sure? Your account, workout plans, meal logs, health data, and sign-in credential will be permanently deleted. There is no way to recover them.",
               [
                 { text: "Cancel", style: "cancel" },
                 {

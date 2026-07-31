@@ -6,8 +6,8 @@
  * aurora-tokens for spacing/colors, FadeInDown entry animations.
  */
 
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Linking, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +16,11 @@ import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { ActionItem } from "../../components/settings/ActionItem";
 import { SectionHeader } from "../../components/settings/SectionHeader";
+import {
+  isAppLockAvailable,
+  readAppLockSettings,
+  writeAppLockSettings,
+} from "../../components/auth/AppLockGate";
 
 import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
 import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
@@ -27,11 +32,127 @@ interface PrivacySecurityScreenProps {
   onBack?: () => void;
 }
 
+interface SecurityToggleRowProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  title: string;
+  description: string;
+  value: boolean;
+  disabled?: boolean;
+  unavailableHint?: string;
+  onToggle: (next: boolean) => void;
+  animationDelay: number;
+  testID?: string;
+}
+
+const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
+  icon,
+  iconColor,
+  title,
+  description,
+  value,
+  disabled = false,
+  unavailableHint,
+  onToggle,
+  animationDelay,
+  testID,
+}) => (
+  <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+    <View style={[styles.toggleCard, disabled && styles.toggleCardDisabled]}>
+      <View
+        style={[
+          styles.toggleIconWrap,
+          { backgroundColor: `${iconColor}15` },
+        ]}
+      >
+        <Ionicons name={icon} size={rf(18)} color={iconColor} />
+      </View>
+      <View style={styles.toggleTextWrap}>
+        <Text style={styles.toggleTitle}>{title}</Text>
+        <Text style={styles.toggleDescription} numberOfLines={2}>
+          {description}
+        </Text>
+        {unavailableHint ? (
+          <Text style={styles.toggleUnavailableHint}>{unavailableHint}</Text>
+        ) : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={(next) => {
+          if (disabled) return;
+          haptics.light();
+          onToggle(next);
+        }}
+        disabled={disabled}
+        trackColor={{ false: surface[2], true: `${colors.primary}50` }}
+        thumbColor={value ? colors.primary : colors.textMuted}
+        ios_backgroundColor={surface[2]}
+        accessibilityLabel={title}
+        testID={testID}
+      />
+    </View>
+  </Animated.View>
+);
+
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   onBack,
 }) => {
   const { handleDataExport, handleDeleteAccount } =
     usePrivacySecurityLogic();
+
+  const [appLockEnabled, setAppLockEnabled] = useState(false);
+  const [autoLockEnabled, setAutoLockEnabled] = useState(false);
+  const [appLockAvailable, setAppLockAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const [settings, available] = await Promise.all([
+        readAppLockSettings(),
+        isAppLockAvailable(),
+      ]);
+      if (!mounted) return;
+      setAppLockEnabled(settings.enabled);
+      setAutoLockEnabled(settings.autoLock);
+      setAppLockAvailable(available);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleAppLockToggle = useCallback(
+    (next: boolean) => {
+      if (next && appLockAvailable === false) {
+        crossPlatformAlert(
+          "Rebuild Required",
+          "Biometric app lock needs a fresh build with the native module bundled. Rebuild the app to enable it.",
+        );
+        return;
+      }
+      setAppLockEnabled(next);
+      void writeAppLockSettings({ enabled: next, autoLock: autoLockEnabled }).catch(
+        (error) => {
+          console.error("[PrivacySecurity] persist app lock failed:", error);
+          setAppLockEnabled(!next);
+        },
+      );
+    },
+    [appLockAvailable, autoLockEnabled],
+  );
+
+  const handleAutoLockToggle = useCallback(
+    (next: boolean) => {
+      setAutoLockEnabled(next);
+      void writeAppLockSettings({ enabled: appLockEnabled, autoLock: next }).catch(
+        (error) => {
+          console.error("[PrivacySecurity] persist auto-lock failed:", error);
+          setAutoLockEnabled(!next);
+        },
+      );
+    },
+    [appLockEnabled],
+  );
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -138,6 +259,48 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 )
               }
               animationDelay={425}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <SectionHeader
+              icon="lock-closed-outline"
+              iconColor={colors.primary}
+              title="App Lock"
+            />
+
+            <SecurityToggleRow
+              icon="finger-print-outline"
+              iconColor={colors.primary}
+              title="Biometric App Lock"
+              description={
+                appLockAvailable === false
+                  ? "Requires an app rebuild — native module not bundled"
+                  : "Require biometric or device credential to open FitAI"
+              }
+              value={appLockEnabled && appLockAvailable !== false}
+              disabled={appLockAvailable === false}
+              unavailableHint={
+                appLockAvailable === false ? "Requires app rebuild" : undefined
+              }
+              onToggle={handleAppLockToggle}
+              animationDelay={350}
+              testID="app-lock-toggle"
+            />
+
+            <SecurityToggleRow
+              icon="time-outline"
+              iconColor={colors.info}
+              title="Auto-Lock on Background"
+              description="Re-lock every time you return to the app"
+              value={autoLockEnabled}
+              disabled={!appLockEnabled || appLockAvailable === false}
+              unavailableHint={
+                !appLockEnabled ? "Enable App Lock first" : undefined
+              }
+              onToggle={handleAutoLockToggle}
+              animationDelay={400}
+              testID="auto-lock-toggle"
             />
           </View>
 
@@ -273,6 +436,48 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: colors.textSecondary,
     lineHeight: rf(19),
+  },
+  toggleCard: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    marginBottom: spacing.sm,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    minHeight: rp(56),
+  },
+  toggleCardDisabled: {
+    opacity: 0.55,
+  },
+  toggleIconWrap: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rbr(12),
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    marginRight: spacing.md,
+  },
+  toggleTextWrap: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  toggleTitle: {
+    fontSize: rf(15),
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: rp(2),
+  },
+  toggleDescription: {
+    fontSize: rf(12),
+    color: colors.textSecondary,
+  },
+  toggleUnavailableHint: {
+    fontSize: rf(11),
+    color: colors.warning,
+    marginTop: rp(2),
+    fontStyle: "italic" as const,
   },
   bottomSpacing: {
     height: rh(80),

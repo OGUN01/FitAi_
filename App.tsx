@@ -43,6 +43,7 @@ import { config } from "./src/theme/gluestack-ui.config";
 import { OnboardingContainer } from "./src/screens/onboarding/OnboardingContainer";
 import { WelcomeScreen } from "./src/screens/onboarding/WelcomeScreen";
 import { MainNavigation } from "./src/components/navigation/MainNavigation";
+import { AppLockGate } from "./src/components/auth/AppLockGate";
 import { PasswordResetScreen } from "./src/screens/auth/PasswordResetScreen";
 import { useAuthDeepLinks } from "./src/hooks/useAuthDeepLinks";
 import { crossPlatformAlert } from "./src/utils/crossPlatformAlert";
@@ -1259,6 +1260,7 @@ export default function App() {
         <GluestackUIProvider config={config}>
           <ThemeProvider>
           <ErrorBoundary>
+            <AppLockGate>
             <View style={styles.appColumn}>
               <StatusBar
                 style="light"
@@ -1329,6 +1331,7 @@ export default function App() {
                 />
               )}
             </View>
+            </AppLockGate>
           </ErrorBoundary>
           </ThemeProvider>
         </GluestackUIProvider>
