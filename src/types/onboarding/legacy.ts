@@ -54,6 +54,14 @@ export interface OnboardingReviewData {
     can_run_minutes?: number;
     flexibility_level?: string;
     weekly_weight_loss_goal?: number;
+    // Pace-card fields set on Tab 5 (advanced review). Must flow through this
+    // object so App.tsx's profileStore seeding carries them for GUEST users —
+    // authed users recover them via the DB round-trip, guests have no DB.
+    // transformForWorkoutRequest reads boost_extra_cardio_minutes from
+    // profileStore.workoutPreferences; useReviewValidation reads
+    // original_weekly_rate the same way on the post-onboarding Review tab.
+    original_weekly_rate?: number;
+    boost_extra_cardio_minutes?: number;
     preferred_workout_times?: string[];
     enjoys_cardio?: boolean;
     enjoys_strength_training?: boolean;

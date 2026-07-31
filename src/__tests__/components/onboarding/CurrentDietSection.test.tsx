@@ -76,6 +76,10 @@ jest.mock("react-native-reanimated", () => {
     withSpring: (toValue: any) => toValue,
     withTiming: (toValue: any) => toValue,
     runOnJS: (fn: (...args: any[]) => any) => fn,
+    Easing: {
+      out: (fn: any) => fn,
+      cubic: (t: number) => t,
+    },
     FadeIn: chainable(),
     FadeInDown: chainable(),
     FadeInUp: chainable(),

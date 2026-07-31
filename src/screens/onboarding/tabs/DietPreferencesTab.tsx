@@ -214,6 +214,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               formData={formData}
               updateField={updateField}
               showInfoTooltip={showInfoTooltip}
+              country={country}
             />
           </Animated.View>
 

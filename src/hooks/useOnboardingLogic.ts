@@ -659,6 +659,13 @@ export const useOnboardingLogic = ({
         can_run_minutes: wp?.can_run_minutes || 0,
         flexibility_level: wp?.flexibility_level || "fair",
         weekly_weight_loss_goal: wp?.weekly_weight_loss_goal,
+        // Pace-card fields: without these, a GUEST's boost cardio minutes and
+        // original (pre-cap) rate never reach profileStore via App.tsx seeding
+        // — loadAllData short-circuits on the seeded store, so the transformer
+        // and review-tab re-derivation see undefined (authed users recover
+        // both via the DB round-trip).
+        boost_extra_cardio_minutes: wp?.boost_extra_cardio_minutes,
+        original_weekly_rate: wp?.original_weekly_rate,
         preferred_workout_times: wp?.preferred_workout_times || [],
         enjoys_cardio: wp?.enjoys_cardio ?? true,
         enjoys_strength_training: wp?.enjoys_strength_training ?? true,
@@ -760,6 +767,8 @@ export const useOnboardingLogic = ({
         '\ncan_run_minutes     :', completeData.workoutPreferences.can_run_minutes,
         '\nflexibility_level   :', completeData.workoutPreferences.flexibility_level,
         '\nweekly_loss_goal    :', completeData.workoutPreferences.weekly_weight_loss_goal,
+        '\nboost_extra_cardio  :', completeData.workoutPreferences.boost_extra_cardio_minutes,
+        '\noriginal_weekly_rate:', completeData.workoutPreferences.original_weekly_rate,
         '\npreferred_times     :', completeData.workoutPreferences.preferred_workout_times,
         '\nenjoys_cardio       :', completeData.workoutPreferences.enjoys_cardio,
         '\nenjoys_strength     :', completeData.workoutPreferences.enjoys_strength_training,

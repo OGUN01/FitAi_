@@ -288,3 +288,86 @@ export const RESTRICTION_OPTIONS = [
     iconName: "heart-outline",
   },
 ];
+
+/**
+ * Cuisine preferences — compact multi-select, grouped by region for
+ * progressive disclosure inside CurrentDietSection. 12 options total
+ * (partner decision: 12–16 max). The `id` is what is persisted to
+ * `diet_preferences.cuisine_preferences` and what the diet worker prompt
+ * sees verbatim (sanitizePromptArray passes strings through), so ids are
+ * lowercase-hyphenated natural cuisine names — readable both in the DB and
+ * in the prompt (matches the `restrictions` hyphenation pattern).
+ */
+export interface CuisineOption {
+  id: string;
+  label: string;
+  /** Region grouping key for the grouped chip layout. */
+  region: "indian" | "asian" | "european" | "americas";
+}
+
+export const CUISINE_OPTIONS: CuisineOption[] = [
+  // Indian
+  { id: "north-indian", label: "North Indian", region: "indian" },
+  { id: "south-indian", label: "South Indian", region: "indian" },
+  // Asian
+  { id: "chinese", label: "Chinese", region: "asian" },
+  { id: "japanese", label: "Japanese", region: "asian" },
+  { id: "thai", label: "Thai", region: "asian" },
+  { id: "korean", label: "Korean", region: "asian" },
+  // European
+  { id: "italian", label: "Italian", region: "european" },
+  { id: "mediterranean", label: "Mediterranean", region: "european" },
+  { id: "french", label: "French", region: "european" },
+  // Americas + Middle East
+  { id: "american", label: "American", region: "americas" },
+  { id: "mexican", label: "Mexican", region: "americas" },
+  { id: "middle-eastern", label: "Middle Eastern", region: "americas" },
+];
+
+/** Display labels for the region group headers (small-caps sub-labels). */
+export const CUISINE_REGION_LABELS: Record<CuisineOption["region"], string> = {
+  indian: "Indian",
+  asian: "Asian",
+  european: "European",
+  americas: "Americas & Middle East",
+};
+
+/**
+ * Country ISO → suggested cuisine id. Used to pre-select a smart default
+ * when the S1 country is set and the user hasn't picked any cuisines yet.
+ * Mirrors the worker's CUISINE_MAP (prompts/diet/types.ts) but returns our
+ * stored ids rather than display strings. Returns null when the country has
+ * no obvious single-cuisine mapping — no suggestion is shown then.
+ */
+const COUNTRY_TO_CUISINE_ID: Record<string, string> = {
+  IN: "north-indian",
+  CN: "chinese",
+  TW: "chinese",
+  HK: "chinese",
+  SG: "chinese",
+  JP: "japanese",
+  KR: "korean",
+  TH: "thai",
+  IT: "italian",
+  FR: "french",
+  ES: "mediterranean",
+  GR: "mediterranean",
+  US: "american",
+  GB: "american",
+  AU: "american",
+  CA: "american",
+  MX: "mexican",
+  AE: "middle-eastern",
+  SA: "middle-eastern",
+  TR: "middle-eastern",
+  LB: "middle-eastern",
+  IL: "middle-eastern",
+};
+
+export function getCountryDerivedCuisine(
+  country?: string | null,
+): string | null {
+  if (!country) return null;
+  const iso = country.trim().toUpperCase();
+  return COUNTRY_TO_CUISINE_ID[iso] ?? null;
+}

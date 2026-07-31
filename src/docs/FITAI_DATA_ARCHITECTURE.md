@@ -72,7 +72,7 @@
 | 1 | Diet Type | `diet_type` | enum | `"balanced"` | `diet_preferences.diet_type` |
 | 2 | Allergies | `allergies` | string[] | `[]` | `diet_preferences.allergies` |
 | 3 | Restrictions | `restrictions` | string[] | `[]` | `diet_preferences.restrictions` |
-| 4 | Cuisine Preferences | `cuisine_preferences` | string[] | `[]` | `diet_preferences.cuisine_preferences` |
+| 4 | Cuisine Preferences | `cuisine_preferences` | string[] | `[]` (smart default: country-derived cuisine pre-selected once on mount, user-editable) | `diet_preferences.cuisine_preferences` — collected via grouped ChipPicker in `CurrentDietSection` (12 options across 4 regions); reaches the worker unchanged via `aiRequestTransformers` |
 | 5 | Snacks Count | `snacks_count` | number | `2` | `diet_preferences.snacks_count` |
 
 #### Diet Readiness Toggles
@@ -1014,7 +1014,7 @@ useMealPlanning hook
 `daily_calories`, `daily_protein_g`, `daily_carbs_g`, `daily_fat_g`,
 `daily_water_ml`, `daily_fiber_g`, `calculated_bmi`, `bmi_category`, `health_score`
 
-**Other:** `calorieTarget`, `mealsPerDay`, `daysCount`, `dietaryRestrictions[]`, `excludeIngredients[]`
+**Other:** `calorieTarget`, `mealsPerDay`, `daysCount`, `dietaryRestrictions[]`, `excludeIngredients[]`, `weeklyWeightLossGoal` (explicit pace tier, sourced from profileStore.workoutPreferences.weekly_weight_loss_goal — the Review-tab SSOT; sent only when > 0 since the worker Zod marks it `.positive().optional()`; `daily_calories` stays the primary calorie source)
 
 ### F.1.2 Diet Prompt Placeholders (DietPlaceholders)
 
@@ -1190,6 +1190,7 @@ All issues discovered during the 2026-04-02 data audit and their resolution:
 | H2 | P0 | `health_grade` written to non-existent DB column — silently lost | 1 | Migration `20260402000000` added column | 1 SQL |
 | H3 | P0 | `health_score` dead write (actual column is `overall_health_score`) | 2B | Removed dead write from `AdvancedReviewService.save()` | `onboardingService.ts` |
 | H4 | P0 | `cuisine_preferences` collected but never persisted or used in diet generation | 1+2D | Column added + wired into save/load + all 5 diet prompt templates | 14 files |
+| H4b | P0 | `cuisine_preferences` had DB column + save/load + worker prompt consumption but NO live UI wrote it — always `[]`, prompt silently fell back to country auto-detect | 2026-07-31 | Grouped ChipPicker (12 cuisines, 4 regions) added inside `CurrentDietSection` with progressive disclosure; wired through `useDietPreferences` form hook like sibling multi-selects; country-derived smart default pre-selects once on mount + surfaces as suggestion tint | `DietPreferencesConstants.ts`, `CurrentDietSection.tsx`, `useDietPreferences.ts`, `DietPreferencesTab.tsx` |
 | H5 | P0 | `snacks_count` collected but never persisted or used | 1+2D | Column added + wired into save/load + meal count logic | 14 files |
 | H6 | P1 | `activity_level: "extreme"` vs `"very_active"` enum mismatch | 2A | Mapping functions + defense-in-depth aliases in 12 calculator files | 16 files |
 | H7 | P1 | `diet_type` enum divergence (`"non-veg"/"balanced"` vs `"omnivore"`) | 2A | Mapping functions at boundaries in `typeTransformers.ts` | 16 files |

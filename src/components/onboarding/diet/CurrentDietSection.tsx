@@ -8,17 +8,42 @@
  * affordance is a quiet ink3 glyph aligned to the label row's right edge
  * (still opens the shared tooltip modal).
  *
- * Presentation-only redesign — props contract (formData, updateField,
- * showInfoTooltip) unchanged. "balanced" is the §4 default diet_type but is
- * absent from DIET_TYPE_OPTIONS, so it remains surfaced as the 5th row.
+ * Below the diet rows sits the cuisine picker (H4 drift fix): a
+ * CollapsibleSection ("Cuisines you like — optional") holding grouped
+ * ChipPickers (Indian / Asian / European / Americas & Middle East,
+ * 12 options total). Collapse ≠ hide — the subtitle reflects the current
+ * selection count. Smart default (§4): when the S1 country maps to a
+ * cuisine and the user hasn't picked any yet, that cuisine is pre-selected
+ * once on mount AND surfaced as a suggestion (ChipPicker bulb tint) so the
+ * choice stays visible + editable. Persisted to
+ * diet_preferences.cuisine_preferences; consumed by the diet worker prompt
+ * (CUISINE_PREFERENCES placeholder, prioritized over country auto-detect).
+ *
+ * Presentation + cuisine field wiring. diet_type props contract
+ * (formData, updateField, showInfoTooltip) unchanged. "balanced" is the §4
+ * default diet_type but is absent from DIET_TYPE_OPTIONS, so it remains
+ * surfaced as the 5th row.
  */
 
-import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Pressable, StyleSheet, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DietPreferencesData } from "../../../types/onboarding";
-import { DIET_TYPE_OPTIONS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
-import { OptionRow, SectionLabel, tokens } from "../fresh";
+import {
+  CUISINE_OPTIONS,
+  CUISINE_REGION_LABELS,
+  DIET_TYPE_OPTIONS,
+  getCountryDerivedCuisine,
+  type CuisineOption,
+} from "../../../screens/onboarding/tabs/DietPreferencesConstants";
+import {
+  CollapsibleSection,
+  OptionRow,
+  SectionLabel,
+  tokens,
+  type as typeScale,
+} from "../fresh";
+import { ChipPicker } from "../aurora/ChipPicker";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -42,6 +67,14 @@ const DIET_TYPE_ROWS: {
   },
 ];
 
+/** Region render order for the grouped chip layout. */
+const CUISINE_REGION_ORDER: CuisineOption["region"][] = [
+  "indian",
+  "asian",
+  "european",
+  "americas",
+];
+
 interface CurrentDietSectionProps {
   formData: DietPreferencesData;
   updateField: <K extends keyof DietPreferencesData>(
@@ -49,13 +82,48 @@ interface CurrentDietSectionProps {
     value: DietPreferencesData[K],
   ) => void;
   showInfoTooltip: (title: string, description: string) => void;
+  /**
+   * S1 country selection — drives the cuisine smart default + suggestion
+   * tint. Optional: null/undefined → no suggestion surfaced.
+   */
+  country?: string | null;
 }
 
 export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
   formData,
   updateField,
   showInfoTooltip,
+  country = null,
 }) => {
+  const selectedCuisines = formData.cuisine_preferences ?? [];
+  const suggestedCuisine = getCountryDerivedCuisine(country);
+
+  // §4 smart default: pre-select the country-derived cuisine exactly once,
+  // only when the user has no persisted/existing picks. The ref guard keeps
+  // it a true default — the user can still deselect it or clear everything
+  // afterwards without the default snapping back.
+  const appliedCuisineDefaultRef = useRef(false);
+  useEffect(() => {
+    if (appliedCuisineDefaultRef.current) return;
+    appliedCuisineDefaultRef.current = true;
+    if (selectedCuisines.length > 0) return;
+    if (!suggestedCuisine) return;
+    updateField("cuisine_preferences", [suggestedCuisine]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleCuisineSelect = (id: string) => {
+    const next = selectedCuisines.includes(id)
+      ? selectedCuisines.filter((c) => c !== id)
+      : [...selectedCuisines, id];
+    updateField("cuisine_preferences", next);
+  };
+
+  const cuisineSubtitle =
+    selectedCuisines.length === 0
+      ? "Used to shape your meal plans — skip to keep it global."
+      : `${selectedCuisines.length} selected`;
+
   return (
     <View>
       {/* Label row — small-caps left, quiet info glyph right. One edge. */}
@@ -92,6 +160,50 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
           testID={`diet-type-${o.id}`}
         />
       ))}
+
+      {/* Cuisine picker — progressive disclosure. Collapsed: one quiet
+          header line ("Cuisines you like — optional" + selection count).
+          Expanded: grouped multi-select chips. The country-derived cuisine
+          is marked as a suggestion (bulb tint) so the smart default reads
+          as "we guessed — change it", not a hidden fallback. */}
+      <View style={styles.cuisineBlock}>
+        <CollapsibleSection
+          title="Cuisines you like — optional"
+          subtitle={cuisineSubtitle}
+          testID="cuisine-preferences-section"
+        >
+          <View
+            accessibilityLabel="Cuisine preferences, multi select"
+            accessibilityRole="none"
+          >
+            {CUISINE_REGION_ORDER.map((region) => {
+              const regionOptions = CUISINE_OPTIONS.filter(
+                (o) => o.region === region,
+              );
+              return (
+                <View key={region} style={styles.regionGroup}>
+                  <Text style={styles.regionLabel}>
+                    {CUISINE_REGION_LABELS[region]}
+                  </Text>
+                  <ChipPicker
+                    multi
+                    options={regionOptions.map((o) => ({
+                      id: o.id,
+                      label: o.label,
+                    }))}
+                    value={selectedCuisines}
+                    onSelect={handleCuisineSelect}
+                    suggestions={
+                      suggestedCuisine ? [suggestedCuisine] : undefined
+                    }
+                    testID={`cuisine-picker-${region}`}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </CollapsibleSection>
+      </View>
     </View>
   );
 };
@@ -102,6 +214,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
+  },
+  cuisineBlock: {
+    marginTop: 16,
+  },
+  regionGroup: {
+    marginBottom: 16,
+  },
+  regionLabel: {
+    ...typeScale.caption,
+    color: tokens.ink3,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 8,
   },
 });
 

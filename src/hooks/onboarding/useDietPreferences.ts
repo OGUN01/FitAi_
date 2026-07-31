@@ -51,6 +51,7 @@ export const useDietPreferences = ({
     diet_type: data?.diet_type ?? "balanced",
     allergies: data?.allergies || [],
     restrictions: data?.restrictions || [],
+    cuisine_preferences: data?.cuisine_preferences || [],
 
     // Diet readiness toggles
     keto_ready: data?.keto_ready ?? false,
@@ -102,6 +103,7 @@ export const useDietPreferences = ({
         diet_type: data.diet_type ?? "balanced",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
+        cuisine_preferences: data.cuisine_preferences || [],
         keto_ready: data.keto_ready ?? false,
         intermittent_fasting_ready: data.intermittent_fasting_ready ?? false,
         paleo_ready: data.paleo_ready ?? false,

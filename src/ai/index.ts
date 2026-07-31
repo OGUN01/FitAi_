@@ -79,6 +79,7 @@ import {
   transformWorkoutResponseToWeeklyPlan,
 } from '../services/aiRequestTransformers';
 import { resolveCurrentWeightFromStores } from '../services/currentWeight';
+import { useProfileStore } from '../stores/profileStore';
 import { getLocalDateString } from '../utils/weekUtils';
 import { getCurrentUserId } from '../services/authUtils';
 
@@ -106,6 +107,25 @@ export interface AIServiceMetadata {
 
 // MAX_POLL_ATTEMPTS = 30 (at 6s interval = 3 minutes max)
 const MAX_POLL_ATTEMPTS = 30;
+
+/**
+ * Resolve the user's pace-tier selection for diet generation.
+ *
+ * SSOT: profileStore.workoutPreferences.weekly_weight_loss_goal — the same
+ * value the Review tab's ValidationEngine reads (persisted on
+ * workout_preferences.weekly_weight_loss_goal). Previously the pace signal
+ * reached the diet worker only implicitly via advancedReview.daily_calories;
+ * passing it explicitly surfaces the selected pace tier while daily_calories
+ * stays the primary calorie source (no parallel math).
+ *
+ * Returns undefined when unset or non-positive: the worker Zod schema marks
+ * weeklyWeightLossGoal .positive().optional(), and maintenance users
+ * legitimately store 0 — forwarding 0 would fail request validation.
+ */
+function resolveWeeklyWeightLossGoalFromStore(): number | undefined {
+  const goal = useProfileStore.getState().workoutPreferences?.weekly_weight_loss_goal;
+  return typeof goal === 'number' && Number.isFinite(goal) && goal > 0 ? goal : undefined;
+}
 
 class UnifiedAIService {
   private lastMetadata: AIServiceMetadata | null = null;
@@ -664,6 +684,8 @@ class UnifiedAIService {
           currentWeightKg: resolveCurrentWeightFromStores({
             bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
           }).value,
+          // Explicit pace tier (SSOT: workout_preferences.weekly_weight_loss_goal)
+          weeklyWeightLossGoal: resolveWeeklyWeightLossGoalFromStore(),
         }
       );
 
@@ -754,6 +776,8 @@ class UnifiedAIService {
           currentWeightKg: resolveCurrentWeightFromStores({
             bodyAnalysisWeight: options?.bodyMetrics?.current_weight_kg,
           }).value,
+          // Explicit pace tier (SSOT: workout_preferences.weekly_weight_loss_goal)
+          weeklyWeightLossGoal: resolveWeeklyWeightLossGoalFromStore(),
           skipCache: options?.skipCache ?? false,
         }
       );
