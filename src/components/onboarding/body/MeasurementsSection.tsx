@@ -285,14 +285,14 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
             formData.ideal_weight_min > 0 &&
             formData.ideal_weight_max > 0 ? (
               <Text style={styles.idealText} numberOfLines={2}>
-                Healthy range{"\n"}
+                Ideal weight{"\n"}
                 {isImperial
                   ? `${Math.round(formData.ideal_weight_min * 2.20462)}–${Math.round(formData.ideal_weight_max * 2.20462)} lb`
                   : `${Math.round(formData.ideal_weight_min)}–${Math.round(formData.ideal_weight_max)} kg`}
               </Text>
             ) : (
               <Text style={styles.idealText} numberOfLines={2}>
-                Set height &amp; weight{"\n"}to see your BMI
+                Set height &amp; weight{"\n"}to see your range
               </Text>
             )}
           </View>

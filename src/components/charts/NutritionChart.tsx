@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { MACRO_PILL_COLORS } from "../diet/macroColors";
 import { rs, rbr, rh, rw } from "../../utils/responsive";
 
 // REMOVED: Module-level Dimensions.get() causes crash
@@ -62,19 +63,19 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
       name: "Carbs",
       grams: data.carbs,
       percentage: carbsPercentage,
-      color: colors.secondary,
+      color: MACRO_PILL_COLORS.carbs,
     },
     {
       name: "Protein",
       grams: data.protein,
       percentage: proteinPercentage,
-      color: colors.primary,
+      color: MACRO_PILL_COLORS.protein,
     },
     {
       name: "Fat",
       grams: data.fat,
       percentage: fatPercentage,
-      color: colors.warning,
+      color: MACRO_PILL_COLORS.fat,
     },
   ];
 
