@@ -4,8 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
 import { initializeBackend } from "../../utils/integration";
 import { rf, rp } from "../../utils/responsive";
-import { THEME } from "../../utils/constants";
-import { typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, typography } from "../../theme/aurora-tokens";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -53,7 +52,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
           accessibilityRole="progressbar"
           accessibilityLabel="Initializing FitAI"
         >
-          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text
             style={styles.loadingText}
             numberOfLines={1}
@@ -88,7 +87,7 @@ const AuthenticationPlaceholder: React.FC = () => {
       accessibilityRole="header"
       accessibilityLabel="Welcome to FitAI, please sign in to continue"
     >
-      <ActivityIndicator size="large" color={THEME.colors.primary} />
+      <ActivityIndicator size="large" color={colors.primary} />
       <Text
         style={styles.authTitle}
         numberOfLines={1}
@@ -114,10 +113,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: THEME.colors.background,
+    backgroundColor: colors.background,
   },
   loadingText: {
-    color: THEME.colors.text,
+    color: colors.text,
     marginTop: rp(16),
     fontSize: rf(16),
   },
@@ -125,18 +124,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: THEME.colors.background,
+    backgroundColor: colors.background,
     padding: rp(20),
     gap: rp(8),
   },
   authTitle: {
-    color: THEME.colors.text,
+    color: colors.text,
     fontSize: rf(32),
     fontWeight: typography.fontWeight.bold,
     marginTop: rp(16),
   },
   authSubtitle: {
-    color: THEME.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: rf(16),
     textAlign: "center",
   },

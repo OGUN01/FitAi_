@@ -119,6 +119,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
           <TouchableOpacity
             onPress={onClose}
             style={styles.closeButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
@@ -149,6 +150,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
             <TouchableOpacity
               onPress={handleClear}
               style={styles.clearButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityLabel="Clear barcode"
               accessibilityRole="button"
             >

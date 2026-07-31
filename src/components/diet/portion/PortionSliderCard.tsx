@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '../../ui';
 import {
   flatColors as colors,
   spacing,
@@ -30,7 +29,7 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
   updateAdjustment,
 }) => {
   return (
-    <Card style={styles.sliderCard}>
+    <View style={styles.sliderCard}>
       <Text style={styles.sectionTitle}>Adjust Portion Size</Text>
 
       <View style={styles.currentPortionDisplay}>
@@ -85,7 +84,7 @@ export const PortionSliderCard: React.FC<PortionSliderCardProps> = ({
           <Text style={styles.manualInputUnit}>grams</Text>
         </View>
       </View>
-    </Card>
+    </View>
   );
 };
 
@@ -93,6 +92,10 @@ const styles = StyleSheet.create({
   sliderCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: fontSize.md,

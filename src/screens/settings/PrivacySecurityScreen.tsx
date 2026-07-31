@@ -1,12 +1,9 @@
 /**
  * PrivacySecurityScreen - Privacy & Security Settings
  *
- * Redesigned following UI/UX Methodology:
- * - GlassCard for all cards
- * - Ionicons instead of emojis
- * - AnimatedPressable with haptics
- * - aurora-tokens for spacing/colors
- * - FadeInDown entry animations
+ * Editorial Dark: flat surface + hairline cards (no GlassCard/gradient),
+ * Ionicons instead of emojis, AnimatedPressable with haptics,
+ * aurora-tokens for spacing/colors, FadeInDown entry animations.
  */
 
 import React from "react";
@@ -14,17 +11,14 @@ import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
-import { PrivacyToggle } from "../../components/settings/PrivacyToggle";
 import { ActionItem } from "../../components/settings/ActionItem";
 import { SectionHeader } from "../../components/settings/SectionHeader";
 
 import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -36,14 +30,8 @@ interface PrivacySecurityScreenProps {
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   onBack,
 }) => {
-  const {
-    settings,
-    hasChanges,
-    toggleSetting,
-    handleDataExport,
-    handleDeleteAccount,
-    saveSettings,
-  } = usePrivacySecurityLogic();
+  const { handleDataExport, handleDeleteAccount } =
+    usePrivacySecurityLogic();
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -80,82 +68,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         >
           <View style={styles.section}>
             <SectionHeader
-              icon="eye-outline"
-              iconColor={colors.textSecondary}
-              title="Data Privacy"
-            />
-
-            <PrivacyToggle
-              icon="share-social-outline"
-              iconColor={colors.primary}
-              title="Data Sharing"
-              description="Allow sharing anonymous usage data to improve the app"
-              value={settings.dataSharing}
-              onToggle={() => toggleSetting("dataSharing")}
-              animationDelay={100}
-            />
-
-            <PrivacyToggle
-              icon="analytics-outline"
-              iconColor={colors.success}
-              title="Analytics"
-              description="Help us improve by sharing app usage analytics"
-              value={settings.analytics}
-              onToggle={() => toggleSetting("analytics")}
-              animationDelay={150}
-            />
-
-            <PrivacyToggle
-              icon="bug-outline"
-              iconColor={colors.warning}
-              title="Crash Reports"
-              description="Automatically send crash reports to help fix issues"
-              value={settings.crashReports}
-              onToggle={() => toggleSetting("crashReports")}
-              animationDelay={200}
-            />
-
-            <PrivacyToggle
-              icon="location-outline"
-              iconColor={colors.info}
-              title="Location Tracking"
-              description="Allow location access for workout tracking"
-              value={settings.locationTracking}
-              onToggle={() => toggleSetting("locationTracking")}
-              animationDelay={250}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <SectionHeader
-              icon="lock-closed-outline"
-              iconColor={colors.textSecondary}
-              title="Security"
-            />
-
-            <PrivacyToggle
-              icon="finger-print-outline"
-              iconColor={colors.primary}
-              title="Biometric Authentication"
-              description="Use fingerprint or face recognition to secure your app"
-              value={settings.biometricAuth}
-              onToggle={() => toggleSetting("biometricAuth")}
-              animationDelay={300}
-            />
-
-            <PrivacyToggle
-              icon="lock-open-outline"
-              iconColor={colors.neutral}
-              title="Auto-Lock"
-              description="Automatically lock the app when it goes to background"
-              value={settings.autoLock}
-              onToggle={() => toggleSetting("autoLock")}
-              animationDelay={350}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <SectionHeader
               icon="fitness-outline"
               iconColor={colors.error}
               title="Health Connect Privacy"
@@ -164,13 +76,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             <Animated.View
               entering={FadeInDown.delay(375).duration(400)}
             >
-              <GlassCard
-                elevation={1}
-                padding="lg"
-                blurIntensity="light"
-                borderRadius="lg"
-                style={styles.privacyPolicyCard}
-              >
+              <View style={styles.privacyPolicyCard}>
                 <Text style={styles.privacyPolicyHeading}>
                   How FitAI uses your Health Connect data
                 </Text>
@@ -218,7 +124,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   time in Settings → Health Connect. Disconnecting FitAI in this
                   app also revokes system-level read/write access.
                 </Text>
-              </GlassCard>
+              </View>
             </Animated.View>
 
             <ActionItem
@@ -276,40 +182,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             <ActionItem
               icon="trash-outline"
               iconColor={colors.error}
-              title="Delete Account"
-              description="Permanently delete your account and all data"
+              title="Delete Account Data"
+              description="Delete your FitAI data and sign out"
               onPress={handleDeleteAccount}
               isDanger={true}
               animationDelay={550}
             />
           </View>
-
-          {hasChanges && (
-            <Animated.View
-              entering={FadeInDown.delay(100).duration(400)}
-              style={styles.saveContainer}
-            >
-              <AnimatedPressable
-                onPress={saveSettings}
-                scaleValue={0.97}
-                hapticFeedback={false}
-              >
-                <LinearGradient
-                  colors={[colors.errorLight, colors.primaryLight]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.saveButton}
-                >
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={rf(18)}
-                    color={colors.text}
-                  />
-                  <Text style={styles.saveButtonText}>Save Changes</Text>
-                </LinearGradient>
-              </AnimatedPressable>
-            </Animated.View>
-          )}
 
           <View style={styles.bottomSpacing} />
         </ScrollView>
@@ -333,7 +212,7 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: colors.glassBorder,
+    backgroundColor: surface[1],
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -363,7 +242,11 @@ const styles = StyleSheet.create({
   },
   privacyPolicyCard: {
     marginBottom: spacing.sm,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
   },
   privacyPolicyHeading: {
     fontSize: rf(16),
@@ -390,22 +273,6 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: colors.textSecondary,
     lineHeight: rf(19),
-  },
-  saveContainer: {
-    marginBottom: spacing.lg,
-  },
-  saveButton: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-  },
-  saveButtonText: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
   },
   bottomSpacing: {
     height: rh(80),

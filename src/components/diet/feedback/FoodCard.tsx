@@ -3,9 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import {
   flatColors as colors,
   spacing,
+  borderRadius,
   flatFontSize as fontSize,
 } from '../../../theme/aurora-tokens';
-import { Card } from '../../ui';
 import { rbr } from '../../../utils/responsive';
 import { RecognizedFood } from '../../../services/foodRecognitionService';
 
@@ -15,7 +15,7 @@ interface FoodCardProps {
 
 export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
   return (
-    <Card style={styles.foodCard}>
+    <View style={styles.foodCard}>
       <View style={styles.foodHeader}>
         <Text style={styles.foodName} numberOfLines={2}>
           {food.name}
@@ -51,14 +51,19 @@ export const FoodCard: React.FC<FoodCardProps> = ({ food }) => {
           </Text>
         </View>
       </View>
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
   foodCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   foodHeader: {

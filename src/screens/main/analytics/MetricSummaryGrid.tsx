@@ -19,6 +19,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
+import { type WeightUnit, toDisplayWeight } from "../../../utils/units";
 import { SectionHeader } from "../home/SectionHeader";
 
 export interface MetricData {
@@ -59,6 +60,7 @@ interface MetricSummaryGridProps {
   data: MetricData;
   period: Period;
   onMetricPress?: (metric: string) => void;
+  weightUnit?: WeightUnit;
 }
 
 // Single stat cell — lives inside the shared surface panel (depth 1).
@@ -183,11 +185,20 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
   data,
   period,
   onMetricPress,
+  weightUnit = "kg",
 }) => {
+  // Stored values are metric (kg) — convert to the user's display unit.
   const formatWeight = (weight?: number) => {
     if (weight === undefined || weight === null) return "--";
     if (weight === 0) return "--"; // 0 kg is invalid weight, treat as no data
-    return weight.toFixed(1);
+    const display = toDisplayWeight(weight, weightUnit);
+    return display != null ? display.toFixed(1) : "--";
+  };
+
+  const formatWeightChange = (change: number) => {
+    const display = toDisplayWeight(Math.abs(change), weightUnit);
+    if (display == null) return undefined;
+    return `${change > 0 ? "+" : "-"}${display.toFixed(1)} ${weightUnit}`;
   };
 
   const formatCalories = (calories?: number) => {
@@ -244,7 +255,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
               hasWeightTrendData &&
               data.weight?.change !== undefined &&
               data.weight.change !== 0
-                ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
+                ? formatWeightChange(data.weight.change)
                 : undefined
             }
             subtitle={!hasWeightTrendData ? "Log again to see trend" : undefined}

@@ -7,7 +7,6 @@ import {
   borderRadius,
   flatFontSize as fontSize,
 } from '../../../theme/aurora-tokens';
-import { Card } from '../../ui';
 import { rf } from '../../../utils/responsive';
 import { FoodFeedback } from './types';
 
@@ -21,7 +20,7 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
   onFeedbackChange,
 }) => {
   return (
-    <Card style={styles.sectionCard}>
+    <View style={styles.sectionCard}>
       <Text style={styles.sectionTitle}>Is the food name correct?</Text>
       <View style={styles.correctnessButtons}>
         <TouchableOpacity
@@ -88,14 +87,19 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
           />
         </View>
       )}
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
   sectionCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   sectionTitle: {

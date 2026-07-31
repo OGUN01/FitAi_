@@ -11,15 +11,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import {
   flatColors as colors,
   spacing,
   borderRadius,
   typography,
+  border,
 } from '../../../theme/aurora-tokens';
-import { rf, rw, rh } from '../../../utils/responsive';
+import { rf, rw, rh, rp } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 import { useBodyProgressLogic, WeightEntry } from './useBodyProgressLogic';
 import { TrendChart } from './components/TrendChart';
@@ -62,7 +62,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
 
     return (
       <View>
-        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+        <View style={styles.surface}>
           {/* Header */}
           <AnimatedPressable
             onPress={onPress}
@@ -232,13 +232,22 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
               </AnimatedPressable>
             </View>
           )}
-        </GlassCard>
+        </View>
       </View>
     );
   }
 );
 
 const styles = StyleSheet.create({
+  // Flat Editorial-Dark surface replacing the former GlassCard (no blur, no
+  // elevation). Depth comes from the 1px hairline border on a surface[1] fill.
+  surface: {
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: rp(spacing.md),
+  },
   headerPressable: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -281,6 +290,7 @@ const styles = StyleSheet.create({
     fontSize: rf(28),
     fontWeight: '800',
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
   weightUnit: {
     fontSize: rf(14),
@@ -333,6 +343,7 @@ const styles = StyleSheet.create({
   progressPercent: {
     fontSize: rf(13),
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   remainingText: {
     ...typography.variants.caption2,
@@ -344,7 +355,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
+    borderTopColor: border.subtle,
   },
   actionButton: {
     flex: 1,
@@ -363,7 +374,7 @@ const styles = StyleSheet.create({
   actionDivider: {
     width: rw(1),
     height: rh(20),
-    backgroundColor: colors.glassHighlight,
+    backgroundColor: border.subtle,
   },
   emptyState: {
     alignItems: 'center',

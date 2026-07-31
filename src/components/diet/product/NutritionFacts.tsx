@@ -85,5 +85,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.bold as '700',
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
 });

@@ -197,6 +197,8 @@ interface LegacyWorkoutPreferencesInput {
   boostExtraCardioMinutes?: number;
   preferred_workout_times?: string[];
   preferredWorkoutTimes?: string[];
+  preferred_workout_days?: string[];
+  preferredWorkoutDays?: string[];
   enjoys_cardio?: boolean;
   enjoysCardio?: boolean;
   enjoys_strength_training?: boolean;
@@ -1012,6 +1014,8 @@ class DataBridge {
         data.boost_extra_cardio_minutes ?? data.boostExtraCardioMinutes ?? 0,
       preferred_workout_times:
         data.preferredWorkoutTimes || data.preferred_workout_times || [],
+      preferred_workout_days:
+        data.preferred_workout_days ?? data.preferredWorkoutDays ?? null,
       enjoys_cardio: data.enjoys_cardio ?? data.enjoysCardio ?? true,
       enjoys_strength_training: data.enjoys_strength_training ?? data.enjoysStrengthTraining ?? true,
       enjoys_group_classes: data.enjoys_group_classes ?? data.enjoysGroupClasses ?? false,

@@ -36,7 +36,7 @@ import {
   spacing,
   flatFontSize as fontSize,
   typography,
-  shadows,
+  flatShadows as shadows,
 } from '../../theme/aurora-tokens';
 import { springConfig } from '../../theme/animations';
 import { fontFamilyForWeight } from '../../theme/fonts';
@@ -235,7 +235,7 @@ export const ConcentricRings: React.FC<ConcentricRingsProps> = ({
             strokeWidth={RINGS[0].strokeWidth}
             progress={calProgress}
             stroke={overflow ? colors.error : 'url(#caloriesGradient)'}
-            backgroundColor={colors.glassSurface}
+            backgroundColor={colors.surface}
             onComplete={handleRingComplete}
           />
 
@@ -245,7 +245,7 @@ export const ConcentricRings: React.FC<ConcentricRingsProps> = ({
             strokeWidth={RINGS[1].strokeWidth}
             progress={proProgress}
             stroke={MACRO_PILL_COLORS.protein}
-            backgroundColor={colors.glassSurface}
+            backgroundColor={colors.surface}
             onComplete={handleRingComplete}
           />
 
@@ -255,7 +255,7 @@ export const ConcentricRings: React.FC<ConcentricRingsProps> = ({
             strokeWidth={RINGS[2].strokeWidth}
             progress={carbProgress}
             stroke={MACRO_PILL_COLORS.carbs}
-            backgroundColor={colors.glassSurface}
+            backgroundColor={colors.surface}
             onComplete={handleRingComplete}
           />
         </Svg>
@@ -287,10 +287,11 @@ export const ConcentricRings: React.FC<ConcentricRingsProps> = ({
         </View>
       </View>
 
-      {/* Macro legend — Protein/Carbs are rings (round dot); Fat is tracked
-          but not a ring (rendered as a dash so it isn't mistaken for a ring).
-          Each item carries a 2px mini progress bar so the legend is a second
-          data viz, not a static table. Cascades in after the rings draw. */}
+      {/* Macro legend — Protein/Carbs are rings (round dot), so their legend
+          rows stay numeric-only (the ring already shows their progress; a
+          second 2px bar restated the same fill). Fat is tracked but not a
+          ring (dash glyph), so it keeps the 2px mini bar as its only
+          progress viz. Cascades in after the rings draw. */}
       <View style={styles.legend}>
         <Animated.View entering={FadeIn.delay(400).duration(300)}>
           <LegendItem
@@ -350,15 +351,18 @@ const LegendItem: React.FC<LegendItemProps> = ({ color, label, current, target, 
       <Text style={styles.legendValue}>
         {target > 0 ? `${Math.round(current)}/${Math.round(target)}g` : '—'}
       </Text>
-      {/* Mini progress bar — second data viz, fills as you log meals. */}
-      <View style={styles.legendBarTrack}>
-        <View
-          style={[
-            styles.legendBarFill,
-            { width: `${progress}%`, backgroundColor: color },
-          ]}
-        />
-      </View>
+      {/* Mini progress bar only for non-ring macros (Fat) — ringed macros
+          already show this exact fill on the ring above. */}
+      {glyph === 'dash' ? (
+        <View style={styles.legendBarTrack}>
+          <View
+            style={[
+              styles.legendBarFill,
+              { width: `${progress}%`, backgroundColor: color },
+            ]}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -377,8 +381,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    // Soft floating shadow so the ring group lifts off the OLED bg.
-    ...(shadows.glass as object),
+    // Lightest flat shadow — separation on Editorial Dark comes from the
+    // surface step + hairlines, not cast shadows.
+    ...(shadows.sm as object),
   },
   center: {
     position: 'absolute',
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
   },
   legendItem: {
     alignItems: 'center',
-    gap: spacing.xxs,
+    gap: spacing.xs,
     minWidth: rw(72),
   },
   legendDot: {
@@ -441,9 +446,9 @@ const styles = StyleSheet.create({
   legendBarTrack: {
     width: '100%',
     height: 2,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: 1,
-    marginTop: spacing.xxs,
+    marginTop: spacing.xs,
     overflow: 'hidden',
   },
   legendBarFill: {

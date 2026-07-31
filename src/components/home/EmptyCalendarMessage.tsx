@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/GlassCard";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, border, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 
 interface EmptyCalendarMessageProps {
@@ -16,12 +15,7 @@ export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = React.m
 }) => {
   if (!weekCalendarData || weekCalendarData.every((d) => !d.hasWorkout)) {
     return (
-      <GlassCard
-        elevation={2}
-        padding="md"
-        borderRadius="lg"
-        style={styles.card}
-      >
+      <View style={styles.card}>
         <View style={styles.container}>
           <View style={styles.iconContainer}>
             <Ionicons name="barbell-outline" size={rf(28)} color={colors.primary} />
@@ -43,7 +37,7 @@ export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = React.m
             </TouchableOpacity>
           )}
         </View>
-      </GlassCard>
+      </View>
     );
   }
   return null;
@@ -52,6 +46,11 @@ export const EmptyCalendarMessage: React.FC<EmptyCalendarMessageProps> = React.m
 const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
   container: {
     alignItems: "center",

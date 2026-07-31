@@ -63,15 +63,18 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <Pressable
-        onPress={onCancel}
-        style={styles.overlayPressable}
-        accessibilityRole="button"
-        accessibilityLabel="Cancel cache clear"
-      >
-        <BlurView intensity={80} style={styles.blurContainer}>
-          <Pressable onPress={() => {}} style={styles.dialogPressable}>
-            <View style={styles.dialogContainer} accessibilityRole="alert">
+      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
+          the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
+      <View style={styles.root}>
+        <Pressable
+          onPress={onCancel}
+          style={StyleSheet.absoluteFill}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel cache clear"
+        >
+          <BlurView intensity={80} style={styles.blurFill} />
+        </Pressable>
+        <View style={styles.dialogContainer} accessibilityRole="alert">
               {/* Icon */}
               <View style={styles.iconContainer}>
                 <View style={styles.iconSquircle}>
@@ -117,29 +120,25 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
                   )}
                 </AnimatedPressable>
               </View>
-            </View>
-          </Pressable>
-        </BlurView>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlayPressable: {
-    flex: 1,
-  },
-  blurContainer: {
+  root: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  blurFill: {
+    flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  dialogPressable: {
+  dialogContainer: {
     width: "85%",
     maxWidth: 340,
-  },
-  dialogContainer: {
     backgroundColor: surface[2],
     borderRadius: 20,
     borderWidth: 1,

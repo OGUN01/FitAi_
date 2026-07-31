@@ -3,13 +3,11 @@ import { View, Text, StyleSheet } from "react-native";
 import Svg, {
   Path,
   Circle,
-  Defs,
-  LinearGradient,
-  Stop,
   Line,
 } from "react-native-svg";
-import { flatColors as colors, borderRadius } from "../../../../theme/aurora-tokens";
+import { flatColors as colors, borderRadius, border, typography } from "../../../../theme/aurora-tokens";
 import { rf } from "../../../../utils/responsive";
+import { hexToRgba } from "../../../../utils/colors";
 
 interface TrendChartProps {
   data: number[];
@@ -91,19 +89,13 @@ export const TrendChart: React.FC<TrendChartProps> = ({
 
   return (
     <Svg width={width} height={height}>
-      <Defs>
-        <LinearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <Stop offset="0%" stopColor={color} stopOpacity={0.3} />
-          <Stop offset="100%" stopColor={color} stopOpacity={0.05} />
-        </LinearGradient>
-      </Defs>
-      {/* Grid lines */}
+      {/* Grid lines — hairline token, no rgba literals */}
       <Line
         x1={padding}
         y1={padding}
         x2={padding}
         y2={height - padding}
-        stroke="rgba(255,255,255,0.05)"
+        stroke={border.subtle}
         strokeWidth={1}
       />
       <Line
@@ -111,11 +103,11 @@ export const TrendChart: React.FC<TrendChartProps> = ({
         y1={height - padding}
         x2={width - padding}
         y2={height - padding}
-        stroke="rgba(255,255,255,0.05)"
+        stroke={border.subtle}
         strokeWidth={1}
       />
-      {/* Area fill */}
-      <Path d={areaPath} fill="url(#chartGradient)" />
+      {/* Area fill — flat low-alpha fill (Editorial Dark: no gradient filler) */}
+      <Path d={areaPath} fill={hexToRgba(color, 0.12)} />
       {/* Line */}
       <Path
         d={pathData}
@@ -141,12 +133,12 @@ const styles = StyleSheet.create({
   emptyChart: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: colors.backgroundTertiary,
     borderRadius: borderRadius.sm,
   },
   emptyChartText: {
-    fontSize: rf(10),
-    fontWeight: "500",
+    fontSize: rf(11),
+    fontWeight: typography.fontWeight.medium,
     color: colors.textSecondary,
   },
 });

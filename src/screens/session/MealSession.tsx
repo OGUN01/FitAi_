@@ -50,7 +50,7 @@ export const MealSession: React.FC<MealSessionProps> = ({
             accessibilityLabel="Go back"
             accessibilityRole="button"
           >
-            <Ionicons name="chevron-back" size={24} color={colors.primary.DEFAULT} />
+            <Ionicons name="chevron-back" size={rf(24)} color={colors.primary.DEFAULT} />
           </AnimatedPressable>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitle}>Meal Preparation</Text>
@@ -69,7 +69,7 @@ export const MealSession: React.FC<MealSessionProps> = ({
           >
             <Ionicons
               name={state.isPaused ? "play" : "pause"}
-              size={24}
+              size={rf(24)}
               color={colors.primary.DEFAULT}
             />
           </AnimatedPressable>
@@ -85,9 +85,8 @@ export const MealSession: React.FC<MealSessionProps> = ({
             />
           </View>
           <Text style={styles.progressText}>
-            {Math.round(state.progress)}% Complete (
-            {state.completedSteps.filter(Boolean).length}/{meal.items?.length ?? 0}{" "}
-            ingredients)
+            {state.completedSteps.filter(Boolean).length}/
+            {meal.items?.length ?? 0} ingredients completed
           </Text>
         </View>
 

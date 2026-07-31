@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     backgroundColor: surface[1],
     borderRadius: 12,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   statLabel: {
     ...typography.variants.caption,
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: spacing.xs,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },

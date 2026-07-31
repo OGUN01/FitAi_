@@ -807,6 +807,8 @@ class SyncEngine {
       // Enhanced preferences
       preferred_workout_times:
         data.preferred_workout_times || data.preferredWorkoutTimes || [],
+      preferred_workout_days:
+        data.preferred_workout_days ?? data.preferredWorkoutDays ?? null,
       enjoys_cardio: data.enjoys_cardio ?? data.enjoysCardio,
       enjoys_strength_training:
         data.enjoys_strength_training ?? data.enjoysStrengthTraining,

@@ -15,18 +15,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Modal,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { GlassCard } from '../ui/aurora/GlassCard';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
 import { flatColors as colors, typography } from '../../theme/aurora-tokens';
 import { MACRO_PILL_COLORS } from './macroColors';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
@@ -195,8 +190,6 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const { weeklyMealPlan, setWeeklyMealPlan, addDailyMeal } = useNutritionStore();
   const { user } = useAuth();
   const savedMealsStore = useSavedMealsStore();
-  const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
 
   // Derived totals from ingredient mode
   const totalProtein = ingredients.reduce((s, i) => s + parseNum(i.protein), 0);
@@ -626,20 +619,13 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={
-          Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined
-        }
-      >
-        <View
-          style={[
-            styles.container,
-            { maxHeight: windowHeight - insets.top - insets.bottom - rh(24) },
-          ]}
-        >
-          <GlassCard style={styles.content}>
+    <DetentBottomSheet
+      visible={visible}
+      onClose={handleClose}
+      snapPoints={[0.95]}
+      dismissOnLowestDrag={!isSubmitting}
+    >
+      <View style={styles.content}>
             {/* Header */}
             <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
               <Text style={styles.title}>Log Meal</Text>
@@ -933,7 +919,13 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 >
                   <View style={styles.ingredientsHeader}>
                     <Text style={styles.label}>Ingredients</Text>
-                    <TouchableOpacity onPress={addIngredient} style={styles.addIngredientBtn}>
+                    <TouchableOpacity
+                      onPress={addIngredient}
+                      style={styles.addIngredientBtn}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Add ingredient"
+                    >
                       <Ionicons name="add-circle" size={rf(20)} color={colors.primary} />
                       <Text style={styles.addIngredientText}>Add</Text>
                     </TouchableOpacity>
@@ -950,7 +942,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                     <View>
                       {/* Column headers */}
                       <View style={styles.ingredientColumnHeaders}>
-                        <Text style={[styles.colHeader, { width: rw(80) }]}>Ingredient</Text>
+                        <Text style={[styles.colHeader, { width: rw(72) }]}>Ingredient</Text>
                         <Text style={[styles.colHeader, styles.colFixed]}>g</Text>
                         <Text style={[styles.colHeader, styles.colFixed]}>Pro</Text>
                         <Text style={[styles.colHeader, styles.colFixed]}>Carb</Text>
@@ -965,7 +957,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                             style={[
                               styles.ingredientInput,
                               {
-                                width: rw(80),
+                                width: rw(72),
                                 textAlign: 'left' as const,
                                 paddingHorizontal: rp(8),
                               },
@@ -1018,6 +1010,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                           <TouchableOpacity
                             onPress={() => removeIngredient(ing.id)}
                             style={styles.removeBtn}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                             disabled={ingredients.length === 1}
                           >
                             <Ionicons
@@ -1198,24 +1191,12 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </AnimatedPressable>
             </Animated.View>
-          </GlassCard>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+          </View>
+    </DetentBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlayDark,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  container: {
-    width: '93%',
-    maxHeight: rh(767),
-  },
   // BUG 2 fix: content is a flex column so the ScrollView can flex-grow/shrink
   // within the available height while the footer stays pinned at the bottom,
   // always visible even with the keyboard open. Previously content had no
@@ -1226,6 +1207,8 @@ const styles = StyleSheet.create({
     borderRadius: rbr(20),
     padding: rp(20),
     backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
     flexDirection: 'column' as const,
     maxHeight: '100%' as const,
   },
@@ -1304,7 +1287,7 @@ const styles = StyleSheet.create({
   },
   typeSelector: {
     flexDirection: 'row',
-    gap: rw(6),
+    gap: rw(8),
   },
   typeChip: {
     flex: 1,
@@ -1312,7 +1295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: rw(3),
-    paddingVertical: rh(8),
+    paddingVertical: rh(12),
     paddingHorizontal: rw(4),
     borderRadius: rbr(10),
     backgroundColor: colors.surface,
@@ -1384,10 +1367,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center' as const,
     marginBottom: rh(4),
-    gap: rw(3),
+    gap: rw(6),
   },
   colHeader: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
     textAlign: 'center' as const,
@@ -1397,7 +1380,7 @@ const styles = StyleSheet.create({
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center' as const,
-    gap: rw(3),
+    gap: rw(6),
     marginBottom: rh(6),
   },
   ingredientInput: {
@@ -1434,9 +1417,10 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
+    fontVariant: ['tabular-nums'],
   },
   totalLabel: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: colors.textSecondary,
     marginTop: rh(2),
   },
@@ -1489,7 +1473,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap' as const,
   },
   scanRowLabel: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
     textTransform: 'uppercase' as const,
@@ -1499,7 +1483,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: rw(6),
-    paddingVertical: rh(5),
+    paddingVertical: rh(10),
     paddingRight: rw(12),
     paddingLeft: rw(5),
     borderRadius: rbr(20),
@@ -1588,6 +1572,7 @@ const styles = StyleSheet.create({
     gap: rw(6),
     paddingVertical: rh(8),
     marginTop: rh(4),
+    minHeight: 44, // 44pt touch-target minimum (icon+text alone were ~32px)
   },
   saveMealLinkText: {
     fontSize: rf(13),

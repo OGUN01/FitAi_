@@ -720,6 +720,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           onExit={exitWorkout}
           paddingTop={Math.max(insets.top, 12)}
           sessionVolume={sessionVolume}
+          userUnits={userUnits}
           mesocycleWeek={mesocycleWeek}
         />
 
@@ -901,7 +902,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                     ? 'Next Exercise'
                     : 'Finish Workout'
                   : completedSetsCount > 0
-                    ? `Continue — Set ${completedSetsCount + 1} of ${totalSets}`
+                    ? // Current-set info already shows in the giant numeral +
+                      // set dots above — keep the CTA to a single action word.
+                      'Continue'
                     : 'Start Exercise'
               }
               onPress={

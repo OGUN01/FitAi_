@@ -9,8 +9,6 @@ import {
   ActivityIndicator,
   TextInput,
   Keyboard,
-  StyleProp,
-  ViewStyle,
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,69 +19,11 @@ import {
   flatFontSize as fontSize,
   typography,
 } from '../../theme/aurora-tokens';
-import { Button, Card } from '../ui';
+import { GlassButton } from '../ui/aurora/GlassButton';
+import { RangeSlider } from '../onboarding/aurora/RangeSlider';
 import { RecognizedFood } from '../../services/foodRecognitionService';
 import { rf, rh, rw, rbr } from '../../utils/responsive';
 import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
-
-// Custom Slider Component
-interface CustomSliderProps {
-  minimumValue: number;
-  maximumValue: number;
-  value: number;
-  onValueChange: (value: number) => void;
-  style?: StyleProp<ViewStyle>;
-}
-
-const CustomSlider: React.FC<CustomSliderProps> = ({
-  minimumValue,
-  maximumValue,
-  value,
-  onValueChange,
-  style,
-}) => {
-  const isDragging = false;
-  const [trackWidth, setTrackWidth] = useState(0);
-
-  const handleTrackPress = (event: any) => {
-    const { locationX } = event.nativeEvent;
-    const percentage = locationX / trackWidth;
-    const newValue = minimumValue + (maximumValue - minimumValue) * percentage;
-    const clampedValue = Math.max(minimumValue, Math.min(maximumValue, newValue));
-    onValueChange(clampedValue);
-  };
-
-  const getThumbPosition = () => {
-    const percentage = (value - minimumValue) / (maximumValue - minimumValue);
-    return percentage * (trackWidth - 24); // 24 is thumb width
-  };
-
-  return (
-    <View style={[styles.customSliderContainer, style]}>
-      <View
-        style={styles.customSliderTrack}
-        onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
-        onTouchEnd={handleTrackPress}
-      >
-        <View
-          style={[
-            styles.customSliderFill,
-            {
-              width: `${((value - minimumValue) / (maximumValue - minimumValue)) * 100}%`,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.customSliderThumb,
-            { left: getThumbPosition() },
-            isDragging && styles.customSliderThumbActive,
-          ]}
-        />
-      </View>
-    </View>
-  );
-};
 
 interface PortionAdjustmentProps {
   visible: boolean;
@@ -108,6 +48,10 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   const [adjustments, setAdjustments] = useState<PortionAdjustmentData[]>([]);
   const [currentFoodIndex, setCurrentFoodIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Local text state for the manual gram input while it is being edited, so
+  // the user can clear/retype without the controlled value snapping back.
+  // null = not editing (input mirrors adjustedGrams).
+  const [gramInputText, setGramInputText] = useState<string | null>(null);
 
   // Initialize adjustments when foods change
   React.useEffect(() => {
@@ -121,8 +65,15 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
         }))
       );
       setCurrentFoodIndex(0);
+      setGramInputText(null);
     }
   }, [recognizedFoods]);
+
+  // Discard any in-progress gram text when switching foods (blur normally
+  // commits first; this covers the card swap happening without a blur event).
+  React.useEffect(() => {
+    setGramInputText(null);
+  }, [currentFoodIndex]);
 
   const updateAdjustment = (index: number, adjustedGrams: number) => {
     const originalGrams = recognizedFoods[index].userGrams ?? recognizedFoods[index].estimatedGrams;
@@ -302,7 +253,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Current Food Info */}
-          <Card style={styles.foodCard}>
+          <View style={[styles.section, styles.foodCard]}>
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.originalBadge}>
@@ -332,10 +283,10 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 </View>
               </View>
             </View>
-          </Card>
+          </View>
 
           {/* Portion Size Slider */}
-          <Card style={styles.sliderCard}>
+          <View style={[styles.section, styles.sliderCard]}>
             <Text style={styles.sectionTitle}>Adjust Portion Size</Text>
 
             <View style={styles.currentPortionDisplay}>
@@ -351,12 +302,14 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               )}
             </View>
 
-            <CustomSlider
-              style={styles.slider}
-              minimumValue={minGrams}
-              maximumValue={maxGrams}
+            <RangeSlider
+              min={minGrams}
+              max={maxGrams}
+              step={1}
               value={currentAdjustment.adjustedGrams}
-              onValueChange={(value) => updateAdjustment(currentFoodIndex, value)}
+              onChange={(value) => updateAdjustment(currentFoodIndex, value)}
+              accentColor={colors.primary}
+              showValue={false}
             />
 
             <View style={styles.sliderLabels}>
@@ -376,14 +329,29 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   keyboardType="numeric"
                   placeholder="Enter grams"
                   placeholderTextColor={colors.textMuted}
-                  value={String(currentAdjustment.adjustedGrams)}
+                  value={gramInputText ?? String(currentAdjustment.adjustedGrams)}
+                  onFocus={() => setGramInputText(String(currentAdjustment.adjustedGrams))}
                   onChangeText={(text) => {
-                    const numValue = parseInt(text.replace(/[^0-9]/g, ''), 10);
-                    if (!isNaN(numValue) && numValue >= 1 && numValue <= 2000) {
-                      updateAdjustment(currentFoodIndex, numValue);
+                    // Keep raw text locally so the field can be cleared and
+                    // retyped; only commit numerically valid values, clamped
+                    // to the same min/max as the slider above.
+                    const cleaned = text.replace(/[^0-9]/g, '');
+                    setGramInputText(cleaned);
+                    const numValue = parseInt(cleaned, 10);
+                    if (!isNaN(numValue)) {
+                      const clamped = Math.max(minGrams, Math.min(maxGrams, numValue));
+                      updateAdjustment(currentFoodIndex, clamped);
                     }
                   }}
-                  onBlur={() => Keyboard.dismiss()}
+                  onBlur={() => {
+                    const numValue = parseInt(gramInputText ?? '', 10);
+                    if (!isNaN(numValue)) {
+                      const clamped = Math.max(minGrams, Math.min(maxGrams, numValue));
+                      updateAdjustment(currentFoodIndex, clamped);
+                    }
+                    setGramInputText(null);
+                    Keyboard.dismiss();
+                  }}
                   maxLength={4}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
@@ -391,10 +359,10 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 <Text style={styles.manualInputUnit}>grams</Text>
               </View>
             </View>
-          </Card>
+          </View>
 
           {/* Quick Portion Buttons */}
-          <Card style={styles.quickPortionsCard}>
+          <View style={[styles.section, styles.quickPortionsCard]}>
             <Text style={styles.sectionTitle}>Common Portions</Text>
             <View style={styles.quickPortionsGrid}>
               {commonPortions.map((portion, index) => (
@@ -433,10 +401,10 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 </TouchableOpacity>
               ))}
             </View>
-          </Card>
+          </View>
 
           {/* Reset Button */}
-          <Card style={styles.resetCard}>
+          <View style={[styles.section, styles.resetCard]}>
             <TouchableOpacity
               style={styles.resetButton}
               onPress={() => updateAdjustment(currentFoodIndex, currentFood.estimatedGrams)}
@@ -457,30 +425,30 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 Reset to AI Estimate ({currentFood.estimatedGrams}g)
               </Text>
             </TouchableOpacity>
-          </Card>
+          </View>
         </ScrollView>
 
         {/* Navigation */}
         <View style={styles.navigationContainer}>
           <View style={styles.navigationButtons}>
             {currentFoodIndex > 0 && (
-              <Button
-                title="Previous"
+              <GlassButton
+                label="Previous"
                 onPress={() => setCurrentFoodIndex((prev) => prev - 1)}
-                variant="outline"
+                variant="secondary"
                 style={styles.navButton}
               />
             )}
 
             {currentFoodIndex < recognizedFoods.length - 1 ? (
-              <Button
-                title="Next"
+              <GlassButton
+                label="Next"
                 onPress={() => setCurrentFoodIndex((prev) => prev + 1)}
                 style={styles.navButton}
               />
             ) : (
-              <Button
-                title={isProcessing ? 'Applying...' : 'Apply Adjustments'}
+              <GlassButton
+                label={isProcessing ? 'Applying...' : 'Apply Adjustments'}
                 onPress={applyAdjustments}
                 disabled={isProcessing}
                 style={styles.navButton}
@@ -560,6 +528,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
 
+  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
+  section: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
   foodCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -625,6 +601,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
     fontWeight: String(typography.fontWeight.bold) as any,
+    fontVariant: ['tabular-nums'],
   },
 
   sliderCard: {
@@ -648,6 +625,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xxl,
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
+    fontVariant: ['tabular-nums'],
   },
 
   currentPortionLabel: {
@@ -661,12 +639,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontStyle: 'italic',
     marginTop: spacing.xs,
-  },
-
-  slider: {
-    width: '100%',
-    height: rh(40),
-    marginVertical: spacing.md,
   },
 
   sliderLabels: {
@@ -828,52 +800,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginLeft: spacing.sm,
-  },
-
-  // Custom Slider Styles
-  customSliderContainer: {
-    width: '100%',
-    height: rh(40),
-    justifyContent: 'center',
-    marginVertical: spacing.md,
-  },
-
-  customSliderTrack: {
-    height: rh(4),
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: rbr(2),
-    position: 'relative',
-  },
-
-  customSliderFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: rbr(2),
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-
-  customSliderThumb: {
-    position: 'absolute',
-    top: rh(-10),
-    width: rw(24),
-    height: rh(24),
-    backgroundColor: colors.primary,
-    borderRadius: rbr(12),
-    borderWidth: 2,
-    borderColor: colors.white,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
-    elevation: 4,
-  },
-
-  customSliderThumbActive: {
-    transform: [{ scale: 1.2 }],
-    shadowOpacity: 0.3,
   },
 });
 

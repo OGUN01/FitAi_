@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     fontSize: rf(11),
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
   },
   emptyCta: {
     fontSize: rf(15),

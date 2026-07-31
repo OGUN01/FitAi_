@@ -672,12 +672,12 @@ const SectionPills: React.FC<{
           springConfig="snappy"
           hapticType="selection"
         >
-          <Ionicons name={t.icon} size={rf(13)} color={isActive ? colors.text.primary : t.accent} />
-          <Text style={[styles.pillText, { color: isActive ? colors.text.primary : colors.text.secondary }]} numberOfLines={1}>
+          <Ionicons name={t.icon} size={rf(13)} color={isActive ? colors.background.DEFAULT : t.accent} />
+          <Text style={[styles.pillText, { color: isActive ? colors.background.DEFAULT : colors.text.secondary }]} numberOfLines={1}>
             {t.label}
           </Text>
           <View style={[styles.pillCount, isActive && styles.pillCountActive]}>
-            <Text style={[styles.pillCountText, { color: isActive ? colors.text.primary : colors.text.tertiary }]}>
+            <Text style={[styles.pillCountText, { color: isActive ? colors.background.DEFAULT : colors.text.tertiary }]}>
               {t.count}
             </Text>
           </View>
@@ -1137,7 +1137,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
     marginTop: rp(spacing.xxs),
-    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
   },
   heroMeta: {
     flexDirection: 'row',
@@ -1151,7 +1151,10 @@ const styles = StyleSheet.create({
     paddingVertical: rp(1),
   },
   intensityChipText: {
-    color: colors.text.primary,
+    // White text fails AA (4.5:1) on every intensity chip background — orange
+    // (#FF6B35: 2.84), warning (#FF9800: 2.16), grey (#8A8A8A: 3.45). Black
+    // passes on all (7.4 / 9.7 / 6.1), so use the app background black.
+    color: colors.background.DEFAULT,
     fontSize: rf(11),
     fontWeight: fw(typography.fontWeight.bold),
   },
@@ -1281,7 +1284,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: hexToRgba(colors.text.primary, 0.1),
     backgroundColor: hexToRgba(colors.text.primary, 0.04),
-    minHeight: 40,
+    minHeight: 44,
   },
   pillText: {
     fontSize: rf(typography.fontSize.caption),
@@ -1445,7 +1448,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
-    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
   },
   // Carousel dots
   dotsRow: {
@@ -1499,7 +1502,7 @@ const styles = StyleSheet.create({
     borderTopColor: hexToRgba(colors.text.primary, 0.06),
     // Sticky footer z-index + elevation so it renders above scroll content.
     zIndex: 1100,
-    elevation: 11,
+    elevation: 1100,
   },
   bottomCta: {
     width: '100%',

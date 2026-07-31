@@ -30,3 +30,26 @@ export function toDisplayWeight(
 
   return convertWeight(weightKg, 'kg', unit);
 }
+
+export type HeightUnit = 'cm' | 'in';
+
+const CM_PER_INCH = 2.54;
+
+export function convertHeight(height: number, fromUnit: HeightUnit, toUnit: HeightUnit): number {
+  if (fromUnit === toUnit) {
+    return height;
+  }
+
+  return fromUnit === 'cm' ? height / CM_PER_INCH : height * CM_PER_INCH;
+}
+
+export function toDisplayHeight(
+  heightCm: number | null | undefined,
+  unit: HeightUnit
+): number | null {
+  if (heightCm == null || !Number.isFinite(heightCm)) {
+    return null;
+  }
+
+  return convertHeight(heightCm, 'cm', unit);
+}

@@ -17,8 +17,6 @@ interface ProgressHeaderProps {
     goBack: () => void;
   };
   trackBStatus: { isConnected: boolean };
-  showAnalytics: boolean;
-  setShowAnalytics: (show: boolean) => void;
   onAddEntry: () => void;
   onShare: () => void;
 }

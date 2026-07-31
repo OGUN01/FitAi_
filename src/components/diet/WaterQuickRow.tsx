@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.lg,
     minHeight: Math.max(rh(56), 56),
     borderRadius: borderRadius.lg,

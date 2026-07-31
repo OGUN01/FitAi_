@@ -15,6 +15,7 @@ import { AnimatedPressable } from '../ui/aurora';
 import { colors, spacing, typography } from '../../theme/aurora-tokens';
 import { rf, rp, rw, rbr } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
+import { toDisplayWeight, type WeightUnit } from '../../utils/units';
 
 interface WorkoutHeaderProps {
   workoutTitle: string;
@@ -26,6 +27,8 @@ interface WorkoutHeaderProps {
   paddingTop?: number;
   /** Live session volume in kg (derived from store). Optional. */
   sessionVolume?: number;
+  /** User's weight unit — sessionVolume display converts. Default 'kg'. */
+  userUnits?: WeightUnit;
   /** Mesocycle week (1-4) from fitnessStore.getMesocycleWeek(). Optional. */
   mesocycleWeek?: number | null;
 }
@@ -60,8 +63,15 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
   onExit,
   paddingTop = 12,
   sessionVolume,
+  userUnits = 'kg',
   mesocycleWeek,
 }) => {
+  // Stored kg → display in the user's unit (imperial users see lbs, matching
+  // the warm-up/set weights elsewhere on the session screen).
+  const displayVolume =
+    sessionVolume != null
+      ? Math.round(toDisplayWeight(sessionVolume, userUnits) ?? sessionVolume)
+      : null;
   return (
     <View style={[styles.header, { paddingTop }]}>
       {/* Primary row: close · index · elapsed time */}
@@ -102,7 +112,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
           {safeString(workoutTitle, 'Workout')}
           {mesocycleWeek != null && mesocycleWeek > 0 ? `${BULLET}WK ${mesocycleWeek}` : ''}
           {`${BULLET}${safeString(calories)} KCAL`}
-          {sessionVolume != null ? `${BULLET}${Math.round(sessionVolume).toLocaleString()} KG` : ''}
+          {displayVolume != null ? `${BULLET}${displayVolume.toLocaleString()} ${userUnits.toUpperCase()}` : ''}
         </Text>
       </View>
     </View>

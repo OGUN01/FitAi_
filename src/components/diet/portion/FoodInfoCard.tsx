@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Card } from '../../ui';
 import {
   flatColors as colors,
   spacing,
+  borderRadius,
   flatFontSize as fontSize,
 } from '../../../theme/aurora-tokens';
 import { RecognizedFood } from '../../../services/foodRecognitionService';
@@ -21,7 +21,7 @@ interface FoodInfoCardProps {
 
 export const FoodInfoCard: React.FC<FoodInfoCardProps> = ({ currentFood, previewNutrition }) => {
   return (
-    <Card style={styles.foodCard}>
+    <View style={styles.foodCard}>
       <View style={styles.foodHeader}>
         <Text style={styles.foodName} numberOfLines={2}>
           {currentFood.name}
@@ -52,7 +52,7 @@ export const FoodInfoCard: React.FC<FoodInfoCardProps> = ({ currentFood, preview
           </View>
         </View>
       </View>
-    </Card>
+    </View>
   );
 };
 
@@ -60,6 +60,10 @@ const styles = StyleSheet.create({
   foodCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   foodHeader: {
     flexDirection: 'row',
@@ -112,5 +116,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
 });

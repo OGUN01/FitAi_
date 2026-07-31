@@ -9,9 +9,10 @@ import {
   spacing,
   borderRadius,
   typography,
+  flatColors,
 } from "../../theme/aurora-tokens";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
-import { Button } from "../../components/ui";
+import { GlassButton } from "../../components/ui/aurora/GlassButton";
 
 interface ProgressErrorStatesProps {
   isLoading: boolean;
@@ -53,11 +54,10 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
           <Ionicons name="warning-outline" size={rf(22)} color={colors.error.DEFAULT} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
-        <Button
-          title="Retry"
+        <GlassButton
+          label="Retry"
           onPress={onRefresh}
-          variant="outline"
-          size="sm"
+          variant="secondary"
           style={styles.actionButton}
         />
       </View>
@@ -88,11 +88,10 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
           <Text style={styles.bodyText}>No body measurements yet</Text>
         </View>
         <Text style={styles.subText}>Add your first measurement to start tracking!</Text>
-        <Button
-          title="Add Entry"
+        <GlassButton
+          label="Add Entry"
           onPress={onAddEntry}
           variant="primary"
-          size="sm"
           style={styles.actionButton}
         />
       </View>
@@ -107,7 +106,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.xl,
     zIndex: 10,
-    backgroundColor: colors.glass.backgroundDark,
+    // Flat dim veil (not a glass wash) — keeps the aurora backdrop visible
+    // while covering stale content during load.
+    backgroundColor: flatColors.overlay,
     justifyContent: "center",
   },
   loadingText: {
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     padding: spacing.lg,
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: borderTokens.subtle,
     alignItems: "center",

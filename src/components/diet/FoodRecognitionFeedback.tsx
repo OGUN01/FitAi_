@@ -18,7 +18,7 @@ import {
   flatFontSize as fontSize,
   typography,
 } from '../../theme/aurora-tokens';
-import { Button, Card } from '../ui';
+import { GlassButton } from '../ui/aurora/GlassButton';
 import { RecognizedFood } from '../../services/foodRecognitionService';
 import { rf, rh, rw, rbr } from '../../utils/responsive';
 
@@ -164,7 +164,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Card style={styles.foodCard}>
+          <View style={[styles.section, styles.foodCard]}>
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.confidenceBadge}>
@@ -190,10 +190,10 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                 <Text style={styles.detailValue}>{currentFood.category}</Text>
               </View>
             </View>
-          </Card>
+          </View>
 
           {/* Accuracy Rating */}
-          <Card style={styles.sectionCard}>
+          <View style={[styles.section, styles.sectionCard]}>
             <Text style={styles.sectionTitle}>How accurate is this recognition?</Text>
             {renderAccuracyStars(currentFeedback.accuracyRating, (rating) =>
               updateFeedback(currentFoodIndex, { accuracyRating: rating })
@@ -205,10 +205,10 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
               {currentFeedback.accuracyRating === 4 && 'Good - Mostly correct'}
               {currentFeedback.accuracyRating === 5 && 'Excellent - Perfect recognition'}
             </Text>
-          </Card>
+          </View>
 
           {/* Correctness Check */}
-          <Card style={styles.sectionCard}>
+          <View style={[styles.section, styles.sectionCard]}>
             <Text style={styles.sectionTitle}>Is the food name correct?</Text>
             <View style={styles.correctnessButtons}>
               <TouchableOpacity
@@ -281,10 +281,10 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                 />
               </View>
             )}
-          </Card>
+          </View>
 
           {/* Additional Notes */}
-          <Card style={styles.sectionCard}>
+          <View style={[styles.section, styles.sectionCard]}>
             <Text style={styles.sectionTitle}>Additional comments (optional)</Text>
             <TextInput
               style={styles.notesInput}
@@ -294,30 +294,30 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
               multiline={true}
               numberOfLines={3}
             />
-          </Card>
+          </View>
         </ScrollView>
 
         {/* Navigation */}
         <View style={styles.navigationContainer}>
           <View style={styles.navigationButtons}>
             {currentFoodIndex > 0 && (
-              <Button
-                title="Previous"
+              <GlassButton
+                label="Previous"
                 onPress={() => setCurrentFoodIndex((prev) => prev - 1)}
-                variant="outline"
+                variant="secondary"
                 style={styles.navButton}
               />
             )}
 
             {currentFoodIndex < recognizedFoods.length - 1 ? (
-              <Button
-                title="Next"
+              <GlassButton
+                label="Next"
                 onPress={() => setCurrentFoodIndex((prev) => prev + 1)}
                 style={styles.navButton}
               />
             ) : (
-              <Button
-                title={isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+              <GlassButton
+                label={isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
                 style={styles.navButton}
@@ -397,6 +397,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
 
+  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
+  section: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
   foodCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -427,6 +435,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.white,
     fontWeight: String(typography.fontWeight.semibold) as any,
+    fontVariant: ['tabular-nums'],
   },
 
   detailsGrid: {

@@ -8,7 +8,6 @@ import {
   ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../ui";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rs } from "../../utils/responsive";
@@ -116,13 +115,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   };
 
   return (
-    <Card
-      style={
-        StyleSheet.flatten(isCompleted
-          ? [styles.card, styles.cardCompleted, style]
-          : [styles.card, style])
-      }
-      variant="outlined"
+    <View
+      style={StyleSheet.flatten(
+        isCompleted
+          ? [styles.card, styles.cardOutlined, styles.cardCompleted, style]
+          : [styles.card, styles.cardOutlined, style],
+      )}
     >
       <View style={styles.cardContent}>
         <View style={styles.header}>
@@ -384,13 +382,24 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           />
         </AnimatedPressable>
       </View>
-    </Card>
+    </View>
   );
 });
 
 const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
+  },
+
+  // Flat outlined surface replicating the old ui/Card `variant="outlined"` +
+  // `padding="md"` treatment — Editorial Dark: hairline border on a flat step,
+  // no elevation/shadow. Padding lives here (was applied by Card internally).
+  cardOutlined: {
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.backgroundTertiary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
   },
 
   cardCompleted: {

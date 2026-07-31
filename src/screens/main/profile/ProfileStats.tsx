@@ -3,8 +3,8 @@
  * No individual boxed cards — one clean row on surface.0
  */
 
-import React, { useCallback } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -16,7 +16,6 @@ import {
   chart,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
-import { haptics } from "../../../utils/haptics";
 
 const { variants } = typography;
 
@@ -34,7 +33,6 @@ interface ProfileStatsProps {
   totalCaloriesBurned: number;
   longestStreak: number;
   achievements: number;
-  onStatPress?: (statId: string) => void;
 }
 
 function formatValue(value: number | string): string {
@@ -46,29 +44,21 @@ function formatValue(value: number | string): string {
   return value;
 }
 
+// Stat pills are static info — they previously fired an alert restating the
+// number already on the pill, so the pressable was removed rather than kept
+// as a dead interaction.
 const StatPill: React.FC<{
   stat: StatItem;
   index: number;
-  onPress?: () => void;
-}> = React.memo(({ stat, index, onPress }) => {
-  const handlePress = useCallback(() => {
-    haptics.light();
-    onPress?.();
-  }, [onPress]);
-
+}> = React.memo(({ stat, index }) => {
   return (
     <Animated.View
       entering={FadeInDown.delay(150 + index * 80).duration(350)}
       style={styles.pillWrapper}
     >
-      <Pressable
-        onPress={handlePress}
-        accessibilityRole="button"
+      <View
+        style={styles.pill}
         accessibilityLabel={`${stat.label}: ${formatValue(stat.value)}`}
-        style={({ pressed }) => [
-          styles.pill,
-          pressed && styles.pillPressed,
-        ]}
       >
         <View style={[styles.iconWrap, { backgroundColor: `${stat.color}18` }]}>
           <Ionicons name={stat.icon} size={rf(16)} color={stat.color} />
@@ -79,7 +69,7 @@ const StatPill: React.FC<{
         <Text style={styles.statLabel} numberOfLines={1}>
           {stat.label}
         </Text>
-      </Pressable>
+      </View>
     </Animated.View>
   );
 });
@@ -90,7 +80,6 @@ export const ProfileStats: React.FC<ProfileStatsProps> = React.memo(({
   totalCaloriesBurned,
   longestStreak,
   achievements,
-  onStatPress,
 }) => {
   const stats: StatItem[] = [
     {
@@ -116,13 +105,6 @@ export const ProfileStats: React.FC<ProfileStatsProps> = React.memo(({
     },
   ];
 
-  const handleStatPress = useCallback(
-    (id: string) => {
-      onStatPress?.(id);
-    },
-    [onStatPress],
-  );
-
   return (
     <Animated.View
       entering={FadeInDown.delay(100).duration(350)}
@@ -131,11 +113,7 @@ export const ProfileStats: React.FC<ProfileStatsProps> = React.memo(({
       <View style={styles.row}>
         {stats.map((stat, index) => (
           <React.Fragment key={stat.id}>
-            <StatPill
-              stat={stat}
-              index={index}
-              onPress={() => handleStatPress(stat.id)}
-            />
+            <StatPill stat={stat} index={index} />
             {index < stats.length - 1 && <View style={styles.divider} />}
           </React.Fragment>
         ))}
@@ -167,22 +145,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     minHeight: 44,
   },
-  pillPressed: {
-    opacity: 0.7,
-  },
   iconWrap: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(10),
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   statValue: {
     fontFamily: "Manrope_700Bold",
     fontSize: rf(20),
     letterSpacing: -0.5,
-    marginBottom: spacing.xxs,
+    marginBottom: spacing.xs,
   },
   statLabel: {
     ...variants.caption,

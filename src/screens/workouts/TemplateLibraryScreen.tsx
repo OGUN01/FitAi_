@@ -493,12 +493,9 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const handleUseInSchedule = useCallback(
     (template: WorkoutTemplate) => {
       setDetailVisible(false);
-      // TODO(Phase 9): pre-load `template` into the WeeklyBuilder draft via
-      // buildDayWorkoutFromTemplate + hydrateFromPlan so the user lands on a
-      // builder seeded with this template's exercises. For now the button is a
-      // routing affordance only — the template is intentionally unused here so
-      // its presence in the dependency array keeps the callback stable.
-      navigation.navigate("WeeklyBuilder", { sourceTemplateId: template.id });
+      // The WeeklyBuilder seeds this template into the first empty day of
+      // the draft (buildDayWorkoutFromTemplate + updateDay) on mount.
+      navigation.navigate("WeeklyBuilder", { sourceTemplate: template });
     },
     [navigation],
   );
@@ -1298,85 +1295,65 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
       )}
       style={styles.gridItem}
     >
-      <AnimatedPressable
-        onPress={handleCardPress}
-        onLongPress={() => onLongPress(template)}
-        scaleValue={0.97}
-        springConfig="snappy"
-        hapticType={multiSelect ? "selection" : "light"}
-        style={styles.gridCardWrap}
-        testID={`template-card-${template.id}`}
-        accessibilityRole="button"
-        accessibilityLabel={`${template.name}, ${exerciseCount} exercises`}
-      >
+      {/* Card shell is a plain View; the pressable wraps ONLY the
+          thumbnail + body so the Start CTA below and the bookmark overlay
+          stay interactive SIBLINGS (no Pressable ancestor of another
+          Pressable — web DOM / a11y-tree safe). */}
+      <View style={styles.gridCardWrap}>
         <View style={[styles.gridTile, selected && styles.gridTileSelected]}>
-          {/* Gradient thumbnail */}
-          <LinearGradient
-            colors={[colors.primary, colors.secondary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gridThumb}
+          <AnimatedPressable
+            onPress={handleCardPress}
+            onLongPress={() => onLongPress(template)}
+            scaleValue={0.97}
+            springConfig="snappy"
+            hapticType={multiSelect ? "selection" : "light"}
+            testID={`template-card-${template.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${template.name}, ${exerciseCount} exercises`}
           >
-            <Ionicons name="barbell" size={rf(26)} color={colors.text} />
-            {multiSelect ? (
-              <View
-                style={[
-                  styles.gridCheckbox,
-                  selected && styles.gridCheckboxSelected,
-                ]}
-              >
-                {selected ? (
-                  <Ionicons
-                    name="checkmark"
-                    size={rf(14)}
-                    color={colors.text}
-                  />
-                ) : null}
-              </View>
-            ) : null}
-            {/* Bookmark icon (Phase 10) — top-right of thumbnail. Hidden during
-                multi-select so it doesn't conflict with the selection checkbox. */}
-            {!multiSelect ? (
-              <AnimatedPressable
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onToggleBookmark(template.id);
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.gridBookmarkBtn}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  bookmarked ? "Remove bookmark" : "Bookmark template"
-                }
-                testID={`bookmark-${template.id}`}
-                scaleValue={0.9}
-                springConfig="snappy"
-                hapticType="light"
-              >
-                <Ionicons
-                  name={bookmarked ? "bookmark" : "bookmark-outline"}
-                  size={rf(18)}
-                  color={colors.text}
-                />
-              </AnimatedPressable>
-            ) : null}
-          </LinearGradient>
+            {/* Gradient thumbnail */}
+            <LinearGradient
+              colors={[colors.primary, colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.gridThumb}
+            >
+              <Ionicons name="barbell" size={rf(26)} color={colors.text} />
+              {multiSelect ? (
+                <View
+                  style={[
+                    styles.gridCheckbox,
+                    selected && styles.gridCheckboxSelected,
+                  ]}
+                >
+                  {selected ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={rf(14)}
+                      color={colors.text}
+                    />
+                  ) : null}
+                </View>
+              ) : null}
+            </LinearGradient>
 
-          {/* Body */}
-          <View style={styles.gridBody}>
-            <Text style={styles.gridName} numberOfLines={1}>
-              {template.name}
-            </Text>
-            <Text style={styles.gridMeta} numberOfLines={1}>
-              {exerciseCount} exercise{exerciseCount === 1 ? "" : "s"}
-              {duration > 0 ? ` • ${duration}m` : ""}
-            </Text>
-            <Text style={[styles.gridLevel, difficulty ? { color: DIFFICULTY_TINT[difficulty] } : { color: colors.textTertiary }]} numberOfLines={1}>
-              {difficulty ? DIFFICULTY_LABEL[difficulty] : "Any level"}
-            </Text>
-          </View>
+            {/* Body */}
+            <View style={styles.gridBody}>
+              <Text style={styles.gridName} numberOfLines={1}>
+                {template.name}
+              </Text>
+              <Text style={styles.gridMeta} numberOfLines={1}>
+                {exerciseCount} exercise{exerciseCount === 1 ? "" : "s"}
+                {duration > 0 ? ` • ${duration}m` : ""}
+              </Text>
+              <Text style={[styles.gridLevel, difficulty ? { color: DIFFICULTY_TINT[difficulty] } : { color: colors.textTertiary }]} numberOfLines={1}>
+                {difficulty ? DIFFICULTY_LABEL[difficulty] : "Any level"}
+              </Text>
+            </View>
+          </AnimatedPressable>
 
-          {/* Start CTA (non-multiselect only) */}
+          {/* Start CTA (non-multiselect only) — sibling of the card
+              pressable, never nested inside it. */}
           {!multiSelect ? (
             <View style={styles.gridCtaWrap}>
               <StartCta
@@ -1394,7 +1371,32 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
             </View>
           ) : null}
         </View>
-      </AnimatedPressable>
+      </View>
+      {/* Bookmark icon (Phase 10) — top-right corner overlay. Rendered as an
+          absolute SIBLING of the card pressable (never nested inside it) so
+          the web DOM has a single interactive ancestor. Hidden during
+          multi-select so it doesn't conflict with the selection checkbox. */}
+      {!multiSelect ? (
+        <AnimatedPressable
+          onPress={() => onToggleBookmark(template.id)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.gridBookmarkBtn}
+          accessibilityRole="button"
+          accessibilityLabel={
+            bookmarked ? "Remove bookmark" : "Bookmark template"
+          }
+          testID={`bookmark-${template.id}`}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="light"
+        >
+          <Ionicons
+            name={bookmarked ? "bookmark" : "bookmark-outline"}
+            size={rf(18)}
+            color={colors.text}
+          />
+        </AnimatedPressable>
+      ) : null}
     </Animated.View>
   );
 };
@@ -1467,18 +1469,23 @@ const TemplateListRow: React.FC<ListRowProps> = ({
       )}
       style={styles.listItem}
     >
-      <AnimatedPressable
-        onPress={handleRowPress}
-        onLongPress={() => onLongPress(template)}
-        scaleValue={0.98}
-        springConfig="smooth"
-        hapticType={multiSelect ? "selection" : "light"}
-        testID={`template-card-${template.id}`}
-        accessibilityRole="button"
-        accessibilityLabel={`${template.name}, ${exerciseCount} exercises`}
-        style={selected ? styles.listRowSelected : undefined}
-      >
-        <View style={styles.listRow}>
+      {/* Row shell is a plain View. The pressable wraps ONLY the top band
+          (icon + name/meta/muscles); the kebab menu button and bookmark are
+          absolute SIBLINGS, and the exercise-history rows / inline menu /
+          Start CTA below are flow siblings — no Pressable is ever an
+          ancestor of another Pressable (web DOM / a11y-tree safe). */}
+      <View style={selected ? styles.listRowSelected : undefined}>
+        <AnimatedPressable
+          onPress={handleRowPress}
+          onLongPress={() => onLongPress(template)}
+          scaleValue={0.98}
+          springConfig="smooth"
+          hapticType={multiSelect ? "selection" : "light"}
+          testID={`template-card-${template.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={`${template.name}, ${exerciseCount} exercises`}
+          style={styles.listRow}
+        >
           {/* Icon square — gradient tinted */}
           <LinearGradient
             colors={[colors.primary, colors.secondary]}
@@ -1489,38 +1496,23 @@ const TemplateListRow: React.FC<ListRowProps> = ({
             <Ionicons name="barbell" size={rf(18)} color={colors.text} />
           </LinearGradient>
 
-          {/* Body */}
+          {/* Header band */}
           <View style={styles.listBody}>
             <View style={styles.listHeaderRow}>
-              <Text style={styles.listName} numberOfLines={1}>
+              <Text
+                style={[
+                  styles.listName,
+                  // Reserve space for the absolutely-positioned kebab +
+                  // bookmark overlays (rendered as siblings below) so long
+                  // names don't run underneath them.
+                  !multiSelect && {
+                    paddingRight: LIST_MENU_BTN_W + LIST_BOOKMARK_W,
+                  },
+                ]}
+                numberOfLines={1}
+              >
                 {template.name}
               </Text>
-              {!multiSelect ? (
-                <AnimatedPressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onToggleBookmark(template.id);
-                  }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  style={styles.listBookmarkBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    bookmarked ? "Remove bookmark" : "Bookmark template"
-                  }
-                  testID={`bookmark-${template.id}`}
-                  scaleValue={0.9}
-                  springConfig="snappy"
-                  hapticType="light"
-                >
-                  <Ionicons
-                    name={bookmarked ? "bookmark" : "bookmark-outline"}
-                    size={rf(18)}
-                    color={
-                      bookmarked ? colors.primary : colors.textSecondary
-                    }
-                  />
-                </AnimatedPressable>
-              ) : null}
               {multiSelect ? (
                 <View
                   style={[
@@ -1536,21 +1528,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                     />
                   ) : null}
                 </View>
-              ) : (
-                <AnimatedPressable
-                  onPress={() => onToggleMenu(template.id)}
-                  testID={`menu-button-${template.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open template menu"
-                  style={styles.menuBtn}
-                >
-                  <Ionicons
-                    name="ellipsis-horizontal"
-                    size={rf(20)}
-                    color={colors.textSecondary}
-                  />
-                </AnimatedPressable>
-              )}
+              ) : null}
             </View>
 
             {/* Meta line: exercises • duration • level (muted, level tinted) */}
@@ -1572,101 +1550,147 @@ const TemplateListRow: React.FC<ListRowProps> = ({
                 {template.targetMuscleGroups.join("  ·  ")}
               </Text>
             ) : null}
+          </View>
+        </AnimatedPressable>
 
-            {/* Exercise quick list (preserves GAP-14 history tap) — flat rows with hairlines */}
-            <View style={styles.exerciseListContainer}>
-              {template.exercises.slice(0, 3).map((ex, idx) => (
-                <View key={`${ex.exerciseId}-${idx}`} style={styles.exerciseRowWrap}>
-                  <AnimatedPressable
-                    style={styles.exerciseRow}
-                    onPress={() => onExerciseHistory(ex.exerciseId, ex.name)}
-                    testID={`exercise-history-${template.id}-${idx}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`View ${ex.name} history`}
-                    scaleValue={0.97}
-                    springConfig="snappy"
-                    hapticType="light"
-                  >
-                    <Text style={styles.exerciseRowName} numberOfLines={1}>
-                      {ex.name}
-                    </Text>
-                    <Text style={styles.exerciseRowMeta}>
-                      {ex.sets}×
-                      {ex.repRange[0] === ex.repRange[1]
-                        ? ex.repRange[0]
-                        : `${ex.repRange[0]}-${ex.repRange[1]}`}
-                    </Text>
-                  </AnimatedPressable>
-                  {idx < Math.min(template.exercises.length, 3) - 1 ? (
-                    <View style={styles.exerciseSeparator} />
-                  ) : null}
-                </View>
-              ))}
-              {template.exercises.length > 3 ? (
-                <Text style={styles.moreExercises}>
-                  +{template.exercises.length - 3} more
-                </Text>
-              ) : null}
-            </View>
+        {/* Kebab — absolute SIBLING overlaying the header corner (never
+            nested inside the row pressable). Hidden during multi-select. */}
+        {!multiSelect ? (
+          <AnimatedPressable
+            onPress={() => onToggleMenu(template.id)}
+            testID={`menu-button-${template.id}`}
+            accessibilityRole="button"
+            accessibilityLabel="Open template menu"
+            style={styles.menuBtn}
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={rf(20)}
+              color={colors.textSecondary}
+            />
+          </AnimatedPressable>
+        ) : null}
 
-            {/* Inline menu (preserved from original) — flat */}
-            {menuOpen ? (
-              <Animated.View entering={FadeIn.duration(150)} style={styles.menu} testID={`menu-${template.id}`}>
+        {/* Lower band — indented to align with the header text column
+            (row padding + icon width + row gap). */}
+        <View style={styles.listLower}>
+          {/* Exercise quick list (preserves GAP-14 history tap) — flat rows with hairlines */}
+          <View style={styles.exerciseListContainer}>
+            {template.exercises.slice(0, 3).map((ex, idx) => (
+              <View key={`${ex.exerciseId}-${idx}`} style={styles.exerciseRowWrap}>
                 <AnimatedPressable
-                  style={styles.menuItem}
-                  onPress={() => onEdit(template)}
-                  testID={`edit-button-${template.id}`}
+                  style={styles.exerciseRow}
+                  onPress={() => onExerciseHistory(ex.exerciseId, ex.name)}
+                  testID={`exercise-history-${template.id}-${idx}`}
                   accessibilityRole="button"
-                  accessibilityLabel="Edit template"
+                  accessibilityLabel={`View ${ex.name} history`}
+                  scaleValue={0.97}
+                  springConfig="snappy"
+                  hapticType="light"
                 >
-                  <Ionicons name="create-outline" size={rf(16)} color={colors.text} />
-                  <Text style={styles.menuItemText}>Edit</Text>
+                  <Text style={styles.exerciseRowName} numberOfLines={1}>
+                    {ex.name}
+                  </Text>
+                  <Text style={styles.exerciseRowMeta}>
+                    {ex.sets}×
+                    {ex.repRange[0] === ex.repRange[1]
+                      ? ex.repRange[0]
+                      : `${ex.repRange[0]}-${ex.repRange[1]}`}
+                  </Text>
                 </AnimatedPressable>
-                <View style={styles.menuSeparator} />
-                <AnimatedPressable
-                  style={styles.menuItem}
-                  onPress={() => onDuplicate(template)}
-                  testID={`duplicate-button-${template.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel="Duplicate template"
-                >
-                  <Ionicons name="copy-outline" size={rf(16)} color={colors.text} />
-                  <Text style={styles.menuItemText}>Duplicate</Text>
-                </AnimatedPressable>
-                <View style={styles.menuSeparator} />
-                <AnimatedPressable
-                  style={styles.menuItem}
-                  onPress={() => onDelete(template)}
-                  testID={`delete-button-${template.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete template"
-                >
-                  <Ionicons name="trash-outline" size={rf(16)} color={colors.error} />
-                  <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
-                </AnimatedPressable>
-              </Animated.View>
-            ) : null}
-
-            {/* Start CTA */}
-            {!multiSelect ? (
-              <View style={styles.listCtaWrap}>
-                <StartCta
-                  label="Start"
-                  disabled={template.exercises.length === 0}
-                  onPress={() => onStart(template)}
-                  testID={`start-button-${template.id}`}
-                  accessibilityLabel={`Start ${template.name}`}
-                  accessibilityHint={
-                    template.exercises.length === 0
-                      ? "Template has no exercises yet"
-                      : "Begin a workout session from this template"
-                  }
-                />
+                {idx < Math.min(template.exercises.length, 3) - 1 ? (
+                  <View style={styles.exerciseSeparator} />
+                ) : null}
               </View>
+            ))}
+            {template.exercises.length > 3 ? (
+              <Text style={styles.moreExercises}>
+                +{template.exercises.length - 3} more
+              </Text>
             ) : null}
           </View>
+
+          {/* Inline menu (preserved from original) — flat */}
+          {menuOpen ? (
+            <Animated.View entering={FadeIn.duration(150)} style={styles.menu} testID={`menu-${template.id}`}>
+              <AnimatedPressable
+                style={styles.menuItem}
+                onPress={() => onEdit(template)}
+                testID={`edit-button-${template.id}`}
+                accessibilityRole="button"
+                accessibilityLabel="Edit template"
+              >
+                <Ionicons name="create-outline" size={rf(16)} color={colors.text} />
+                <Text style={styles.menuItemText}>Edit</Text>
+              </AnimatedPressable>
+              <View style={styles.menuSeparator} />
+              <AnimatedPressable
+                style={styles.menuItem}
+                onPress={() => onDuplicate(template)}
+                testID={`duplicate-button-${template.id}`}
+                accessibilityRole="button"
+                accessibilityLabel="Duplicate template"
+              >
+                <Ionicons name="copy-outline" size={rf(16)} color={colors.text} />
+                <Text style={styles.menuItemText}>Duplicate</Text>
+              </AnimatedPressable>
+              <View style={styles.menuSeparator} />
+              <AnimatedPressable
+                style={styles.menuItem}
+                onPress={() => onDelete(template)}
+                testID={`delete-button-${template.id}`}
+                accessibilityRole="button"
+                accessibilityLabel="Delete template"
+              >
+                <Ionicons name="trash-outline" size={rf(16)} color={colors.error} />
+                <Text style={[styles.menuItemText, styles.deleteText]}>Delete</Text>
+              </AnimatedPressable>
+            </Animated.View>
+          ) : null}
+
+          {/* Start CTA */}
+          {!multiSelect ? (
+            <View style={styles.listCtaWrap}>
+              <StartCta
+                label="Start"
+                disabled={template.exercises.length === 0}
+                onPress={() => onStart(template)}
+                testID={`start-button-${template.id}`}
+                accessibilityLabel={`Start ${template.name}`}
+                accessibilityHint={
+                  template.exercises.length === 0
+                    ? "Template has no exercises yet"
+                    : "Begin a workout session from this template"
+                }
+              />
+            </View>
+          ) : null}
         </View>
-      </AnimatedPressable>
+      </View>
+      {/* Bookmark — absolute SIBLING overlaying the header corner (never
+          nested inside the row pressable) so the web DOM has a single
+          interactive ancestor. Hidden during multi-select. */}
+      {!multiSelect ? (
+        <AnimatedPressable
+          onPress={() => onToggleBookmark(template.id)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.listBookmarkBtn}
+          accessibilityRole="button"
+          accessibilityLabel={
+            bookmarked ? "Remove bookmark" : "Bookmark template"
+          }
+          testID={`bookmark-${template.id}`}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="light"
+        >
+          <Ionicons
+            name={bookmarked ? "bookmark" : "bookmark-outline"}
+            size={rf(18)}
+            color={bookmarked ? colors.primary : colors.textSecondary}
+          />
+        </AnimatedPressable>
+      ) : null}
       {/* Hairline separator between rows */}
       <View style={styles.listSeparator} />
     </Animated.View>
@@ -1676,6 +1700,12 @@ const TemplateListRow: React.FC<ListRowProps> = ({
 // ============================================================================
 // STYLES
 // ============================================================================
+
+/** Header action sizes — shared by layout math for the absolute bookmark
+    overlays (grid + list), which sit as siblings outside the card pressable. */
+const GRID_BOOKMARK_W = Math.max(rw(32), 44);
+const LIST_BOOKMARK_W = Math.max(rw(36), 44);
+const LIST_MENU_BTN_W = Math.max(rw(44), 44);
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
@@ -2041,12 +2071,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: rp(spacing.xs),
     right: rp(spacing.xs),
-    width: Math.max(rw(32), 44),
-    height: Math.max(rw(32), 44),
+    width: GRID_BOOKMARK_W,
+    height: GRID_BOOKMARK_W,
     borderRadius: 999,
     backgroundColor: "rgba(0,0,0,0.35)",
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   gridBody: {
     padding: rp(spacing.sm),
@@ -2098,8 +2129,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: rp(spacing.sm),
     alignItems: "flex-start",
-    paddingVertical: rp(spacing.md),
+    // Top band only: bottom padding lives on listLower (the sibling band
+    // with exercise rows / menu / Start CTA) so spacing matches the old
+    // single-pressable layout.
+    paddingTop: rp(spacing.md),
     paddingHorizontal: rp(spacing.xs),
+  },
+  listLower: {
+    // Indent to align with the header text column: row horizontal padding
+    // + icon square width (rw(44)) + row gap.
+    paddingLeft: rp(spacing.xs) + rw(44) + rp(spacing.sm),
+    paddingRight: rp(spacing.xs),
+    paddingBottom: rp(spacing.md),
   },
   listIconSquare: {
     width: rw(44),
@@ -2147,19 +2188,32 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   listBookmarkBtn: {
-    paddingLeft: rp(spacing.sm),
-    minWidth: Math.max(rw(36), 44),
-    minHeight: Math.max(rw(36), 44),
+    // Absolute sibling overlay — sits where it used to in the header row:
+    // vertically aligned with the name line, immediately left of the menu
+    // button (row padding + menu width).
+    position: "absolute",
+    top: rp(spacing.md),
+    right: rp(spacing.xs) + LIST_MENU_BTN_W,
+    minWidth: LIST_BOOKMARK_W,
+    minHeight: LIST_BOOKMARK_W,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   menuBtn: {
+    // Absolute sibling overlay — sits where it used to in the header row:
+    // vertically aligned with the name line, at the row's right edge (the
+    // bookmark overlay sits immediately to its left).
+    position: "absolute",
+    top: rp(spacing.md),
+    right: rp(spacing.xs),
     paddingLeft: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
-    minWidth: Math.max(rw(44), 44),
+    minWidth: LIST_MENU_BTN_W,
     minHeight: Math.max(rw(44), 44),
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
   },
   // ── Exercise quick list (flat rows + hairlines) ───────────────────────────────
   exerciseListContainer: {

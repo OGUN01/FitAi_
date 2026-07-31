@@ -13,6 +13,9 @@ const openUrl = (url: string) => {
   }
 };
 
+// Matches src/services/fitaiWorkersClient.ts default base URL.
+const WORKER_API_BASE_URL = "https://fitai-workers.fitai-prod.workers.dev";
+
 export interface FAQItem {
   id: string;
   question: string;
@@ -76,7 +79,7 @@ export const useHelpSupport = () => {
   const handleContactSupport = useCallback(() => {
     crossPlatformAlert(
       "Contact Support",
-      "Choose how you'd like to contact our support team:",
+      "Reach our support team by email:",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -84,15 +87,6 @@ export const useHelpSupport = () => {
           onPress: () => {
             Linking.openURL(
               "mailto:support@fitai.app?subject=FitAI Support Request",
-            );
-          },
-        },
-        {
-          text: "Live Chat",
-          onPress: () => {
-            crossPlatformAlert(
-              "Live Chat",
-              "Live chat support will be available in the next update!",
             );
           },
         },
@@ -137,105 +131,44 @@ export const useHelpSupport = () => {
   }, []);
 
 
-  const handleTutorials = useCallback(() => {
+  const handleSystemStatus = useCallback(async () => {
     haptics.light();
-    const url = "https://fitai.app/tutorials";
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(() =>
-        crossPlatformAlert(
-          "Getting Started",
-          "Welcome to FitAI! Here's how to get started:\n\n" +
-            "1. Complete your profile in Settings\n" +
-            "2. Set your fitness goals\n" +
-            "3. Try the AI workout generator\n" +
-            "4. Scan your first meal\n" +
-            "5. Track your daily water intake\n\n" +
-            "Visit https://fitai.app/tutorials for interactive guides!",
-        ),
-      );
-    }
-  }, []);
 
-  const handleUserGuide = useCallback(() => {
-    haptics.light();
-    const url = "https://fitai.app/guide";
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(() =>
-        crossPlatformAlert(
-          "User Guide",
-          "Visit https://fitai.app/guide for the complete user guide.\n\n" +
-            "Quick Tips:\n\n" +
-            "• Tap the + button to log workouts and meals\n" +
-            "• Use the AI chat for personalized recommendations\n" +
-            "• Track progress in the Analytics tab\n" +
-            "• Customize your goals in Settings",
-        ),
-      );
-    }
-  }, []);
+    const formatService = (
+      label: string,
+      service?: { status: string; latency?: number },
+    ) => {
+      if (!service) return `${label}: unknown`;
+      const icon =
+        service.status === "up"
+          ? "[OK]"
+          : service.status === "degraded"
+            ? "[DEGRADED]"
+            : "[DOWN]";
+      return `${label}: ${icon} ${service.status}`;
+    };
 
-  const handleVideoTutorials = useCallback(() => {
-    haptics.light();
-    const url = "https://youtube.com/@fitai_app";
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(() =>
-        crossPlatformAlert(
-          "Video Tutorials",
-          "Subscribe to our YouTube channel for video tutorials:\n\n" +
-            "https://youtube.com/@fitai_app\n\n" +
-            "Topics covered:\n" +
-            "• Getting started with FitAI\n" +
-            "• Creating custom workout plans\n" +
-            "• Food scanning and meal logging\n" +
-            "• Understanding your analytics",
-        ),
-      );
-    }
-  }, []);
+    try {
+      const response = await fetch(`${WORKER_API_BASE_URL}/health`);
+      if (!response.ok && response.status !== 503) {
+        throw new Error(`Health check returned HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      const services = data?.services ?? {};
 
-  const handleCommunityForum = useCallback(() => {
-    haptics.light();
-    const url = "https://community.fitai.app";
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(() =>
-        crossPlatformAlert(
-          "Join Our Community",
-          "Connect with fellow fitness enthusiasts!\n\n" +
-            "• Share your progress and achievements\n" +
-            "• Get tips from experienced users\n" +
-            "• Participate in community challenges\n" +
-            "• Request new features\n\n" +
-            "Visit: https://community.fitai.app",
-        ),
+      crossPlatformAlert(
+        "System Status",
+        `Overall: ${String(data?.status ?? "unknown").toUpperCase()}\n\n` +
+          `${formatService("Authentication & Database", services.supabase)}\n` +
+          `${formatService("AI Generation & Sync", services.cloudflare_kv)}\n` +
+          `${formatService("Media Storage", services.cloudflare_r2)}\n\n` +
+          `Checked ${data?.timestamp ? new Date(data.timestamp).toLocaleTimeString() : "just now"}`,
       );
-    }
-  }, []);
-
-  const handleSystemStatus = useCallback(() => {
-    haptics.light();
-    const url = "https://status.fitai.app";
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(() =>
-        crossPlatformAlert(
-          "System Status",
-          "All FitAI systems are currently operational.\n\n" +
-            "✅ Authentication Services\n" +
-            "✅ AI Workout Generation\n" +
-            "✅ Food Recognition\n" +
-            "✅ Data Sync Services\n" +
-            "✅ Push Notifications\n\n" +
-            "For real-time status updates, visit:\nhttps://status.fitai.app",
-        ),
+    } catch (error) {
+      console.error("System status check failed:", error);
+      crossPlatformAlert(
+        "System Status",
+        "Could not reach the FitAI status service right now. If you are experiencing issues, please try again later or contact support@fitai.app.",
       );
     }
   }, []);
@@ -252,10 +185,6 @@ export const useHelpSupport = () => {
     handleContactSupport,
     handleReportBug,
     handleFeatureRequest,
-    handleTutorials,
-    handleUserGuide,
-    handleVideoTutorials,
-    handleCommunityForum,
     handleSystemStatus,
     handleContactEmail,
   };

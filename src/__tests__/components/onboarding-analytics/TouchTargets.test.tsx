@@ -24,10 +24,16 @@ jest.mock("react-native", () => {
     ),
     StyleSheet: {
       create: (styles: unknown) => styles,
-      flatten: (style: any) =>
-        Array.isArray(style)
-          ? Object.assign({}, ...style.filter(Boolean))
-          : (style ?? {}),
+      // Pressable function-styles (style={({pressed}) => ...}) must be invoked
+      // before flattening — components under test use them for pressed states.
+      flatten: (style: any) => {
+        const resolve = (s: any) =>
+          typeof s === "function" ? s({ pressed: false }) : s;
+        const resolved = resolve(style);
+        return Array.isArray(resolved)
+          ? Object.assign({}, ...resolved.map(resolve).filter(Boolean))
+          : (resolved ?? {});
+      },
     },
     Dimensions: {
       get: () => ({ width: 393, height: 852 }),
@@ -72,6 +78,7 @@ jest.mock("@/utils/responsive", () => ({
   rp: (value: number) => value,
   rs: (value: number) => Math.round(value * 0.75),
   rbr: (value: number) => Math.round(value * 0.75),
+  dimensions: { screenWidth: 393, screenHeight: 852 },
 }));
 
 jest.mock("@/utils/constants", () => ({
@@ -239,10 +246,10 @@ describe("onboarding and analytics touch targets", () => {
       StyleSheet.flatten(
         wizard.getByLabelText("Cancel goal adjustment").props.style,
       ),
-    ).toMatchObject({ minHeight: 44 });
+    ).toMatchObject({ minHeight: 52 }); // AdjustmentWizard sets 52 — above the 44pt floor
     expect(
       StyleSheet.flatten(wizard.getByLabelText("Apply goal adjustment").props.style),
-    ).toMatchObject({ minHeight: 44 });
+    ).toMatchObject({ minHeight: 52 });
     expect(
       StyleSheet.flatten(bmr.getByLabelText("Close BMR info").props.style),
     ).toMatchObject({ minWidth: 44, minHeight: 44 });

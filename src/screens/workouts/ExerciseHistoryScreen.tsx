@@ -52,6 +52,8 @@ import {
 } from "../../services/exerciseHistoryService";
 import { getCurrentUserId } from "../../services/authUtils";
 import { totalVolume } from "../../utils/volumeCalculator";
+import { useProfileStore } from "../../stores/profileStore";
+import { toDisplayWeight, type WeightUnit } from "../../utils/units";
 
 interface RouteParams {
   exerciseId: string;
@@ -72,17 +74,20 @@ function formatDate(iso: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-function formatSets(sets: ExerciseHistoryEntry["sets"]): string {
+function formatSets(sets: ExerciseHistoryEntry["sets"], unit: WeightUnit): string {
   if (sets.length === 0) return "No sets";
-  const weight = sets[0].weightKg ?? 0;
-  const allSameWeight = sets.every((s) => (s.weightKg ?? 0) === weight);
+  const weightKg = sets[0].weightKg ?? 0;
+  const allSameWeight = sets.every((s) => (s.weightKg ?? 0) === weightKg);
+  // Stored kg → display in the user's unit (1-decimal precision).
+  const display = toDisplayWeight(weightKg, unit);
+  const weight = display == null ? weightKg : Math.round(display * 10) / 10;
   if (allSameWeight) {
     const reps = sets.map((s) => s.reps ?? 0);
     const allSameReps = reps.every((r) => r === reps[0]);
     if (allSameReps) {
-      return `${sets.length}×${reps[0]} @ ${weight}kg`;
+      return `${sets.length}×${reps[0]} @ ${weight}${unit}`;
     }
-    return `${sets.length} sets @ ${weight}kg`;
+    return `${sets.length} sets @ ${weight}${unit}`;
   }
   return `${sets.length} sets`;
 }
@@ -113,7 +118,13 @@ function groupByDate(entries: ExerciseHistoryEntry[]): DateGroup[] {
   });
 }
 
-function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
+function VolumeChart({
+  entries,
+  unit,
+}: {
+  entries: ExerciseHistoryEntry[];
+  unit: WeightUnit;
+}) {
   if (entries.length === 0) return null;
 
   const reversed = [...entries].reverse();
@@ -132,7 +143,7 @@ function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
 
   return (
     <View style={styles.chartContainer}>
-      <Text style={styles.chartTitle}>Volume (kg)</Text>
+      <Text style={styles.chartTitle}>Volume ({unit})</Text>
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
         {volumes.map((vol, i) => {
           const barH = (vol / maxVol) * (CHART_HEIGHT - 20);
@@ -163,9 +174,20 @@ function VolumeChart({ entries }: { entries: ExerciseHistoryEntry[] }) {
   );
 }
 
-function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
+function OneRMTrend({
+  entries,
+  unit,
+}: {
+  entries: ExerciseHistoryEntry[];
+  unit: WeightUnit;
+}) {
   const withE1RM = [...entries].reverse().filter((e) => e.estimated1RM != null);
   if (withE1RM.length < 2) return null;
+
+  // Display conversion (stored kg → user unit) for the axis labels only;
+  // point geometry is unit-independent (uniform scale).
+  const toDisplay = (kg: number) =>
+    Math.round(toDisplayWeight(kg, unit) ?? kg);
 
   const values = withE1RM.map((e) => e.estimated1RM!);
   const maxVal = Math.max(...values, 1);
@@ -202,7 +224,7 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
           strokeWidth={1}
         />
         <SvgText x={0} y={CHART_HEIGHT - 4} fill={colors.textTertiary} fontSize={10}>
-          {Math.round(minVal)}
+          {toDisplay(minVal)}
         </SvgText>
         <SvgText
           x={CHART_WIDTH - 30}
@@ -210,7 +232,7 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
           fill={colors.textTertiary}
           fontSize={10}
         >
-          {Math.round(maxVal)}
+          {toDisplay(maxVal)}
         </SvgText>
       </Svg>
     </View>
@@ -221,7 +243,13 @@ function OneRMTrend({ entries }: { entries: ExerciseHistoryEntry[] }) {
 // Renders the already-fetched `prs` state (ExercisePR.value + prType +
 // achievedAt) that was previously loaded but never shown to the user. PR label +
 // value use successAlt text (green); the date stays muted. No gold pill badge.
-function PersonalRecordsSection({ prs }: { prs: ExercisePR[] }) {
+function PersonalRecordsSection({
+  prs,
+  unit,
+}: {
+  prs: ExercisePR[];
+  unit: WeightUnit;
+}) {
   if (prs.length === 0) return null;
   return (
     <View style={styles.prSection}>
@@ -240,8 +268,8 @@ function PersonalRecordsSection({ prs }: { prs: ExercisePR[] }) {
               </Text>
             </View>
             <Text style={styles.prValue}>
-              {Math.round(pr.value)}
-              {pr.prType === "weight" ? " kg" : " kg (1RM)"}
+              {Math.round(toDisplayWeight(pr.value, unit) ?? pr.value)}
+              {pr.prType === "weight" ? ` ${unit}` : ` ${unit} (1RM)`}
             </Text>
             <Text style={styles.prDate}>{formatDate(pr.achievedAt)}</Text>
           </View>
@@ -292,6 +320,11 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   const [prs, setPrs] = useState<ExercisePR[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  // Stored values are kg; display converts for imperial users (matches
+  // WorkoutSessionScreen). Two-step select → derive (jest profileStore
+  // mock ignores selectors).
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const userUnits: WeightUnit = personalInfo?.units === "imperial" ? "lbs" : "kg";
 
   useEffect(() => {
     const userId = getCurrentUserId();
@@ -401,12 +434,12 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
                     ]}
                     numberOfLines={1}
                   >
-                    {formatSets(entry.sets)}
+                    {formatSets(entry.sets, userUnits)}
                   </Text>
                 </View>
                 {entry.estimated1RM != null ? (
                   <Text style={styles.sessionE1RM} numberOfLines={1}>
-                    Est. 1RM: {Math.round(entry.estimated1RM)}kg
+                    Est. 1RM: {Math.round(toDisplayWeight(entry.estimated1RM, userUnits) ?? entry.estimated1RM)}{userUnits}
                   </Text>
                 ) : null}
                 {hasPR ? (
@@ -423,7 +456,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
         })}
       </View>
     ),
-    [prSessionIds],
+    [prSessionIds, userUnits],
   );
 
   if (loading) {
@@ -471,11 +504,11 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
           renderItem={renderGroup}
           ListHeaderComponent={
             <View>
-              <PersonalRecordsSection prs={prs} />
+              <PersonalRecordsSection prs={prs} unit={userUnits} />
               {history.length > 0 && (
                 <>
-                  <VolumeChart entries={history} />
-                  <OneRMTrend entries={history} />
+                  <VolumeChart entries={history} unit={userUnits} />
+                  <OneRMTrend entries={history} unit={userUnits} />
                 </>
               )}
             </View>

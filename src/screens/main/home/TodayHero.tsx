@@ -162,7 +162,14 @@ const TodayHero: React.FC<TodayHeroProps> = ({
         accessibilityLabel={cta.label}
         style={[styles.cta, { backgroundColor: cta.background }]}
       >
-        <Text style={[styles.ctaText, { color: cta.textColor }]}>{cta.label}</Text>
+        <Text
+          style={[styles.ctaText, { color: cta.textColor }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+        >
+          {cta.label}
+        </Text>
       </AnimatedPressable>
     </View>
   );
@@ -190,13 +197,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: typography.variants.sectionTitle.fontFamily,
     fontSize: rf(20),
-    lineHeight: 1.3,
+    lineHeight: rf(26), // RN lineHeight is absolute points, not a CSS multiplier
     color: colors.text,
   },
   metaText: {
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(typography.variants.caption.fontSize),
-    lineHeight: typography.variants.caption.lineHeight,
+    // RN lineHeight is absolute points — the token is a 1.4 multiplier, so
+    // convert to points (≈17) like coachText does above.
+    lineHeight: rf(typography.variants.caption.fontSize * typography.variants.caption.lineHeight),
     color: colors.textSecondary,
     marginBottom: spacing.md,
   },

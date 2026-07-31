@@ -1,12 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { GlassButton } from '../ui/aurora/GlassButton';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { rf, rp, rh, rw } from '../../utils/responsive';
-import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { MACRO_PILL_COLORS } from './macroColors';
 
 export interface ScanResultData {
@@ -188,21 +187,15 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
 
           {/* Action buttons */}
           <Animated.View entering={FadeInDown.delay(180).duration(400)}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              activeOpacity={0.8}
+            <GlassButton
+              label="Accept & Log"
               onPress={onAccept}
-              accessibilityRole="button"
+              variant="primary"
+              icon="checkmark-circle-outline"
+              fullWidth
+              style={styles.acceptButton}
               accessibilityLabel="Accept and log"
-            >
-              <LinearGradient
-                {...toLinearGradientProps(gradients.button.primary)}
-                style={styles.primaryButtonGradient}
-              >
-                <Ionicons name="checkmark-circle-outline" size={rf(18)} color={colors.text} />
-                <Text style={styles.primaryButtonText}>Accept & Log</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+            />
 
             <View style={styles.secondaryRow}>
               <TouchableOpacity
@@ -231,6 +224,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               style={styles.cancelButton}
               activeOpacity={0.7}
               onPress={onDismiss}
+              hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
               accessibilityRole="button"
               accessibilityLabel="Cancel"
             >
@@ -272,7 +266,7 @@ const TotalItem: React.FC<{
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: colors.overlayDark,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -405,6 +399,7 @@ const styles = StyleSheet.create({
   macroChipValue: {
     fontSize: rf(11),
     fontWeight: String(typography.fontWeight.bold) as any,
+    fontVariant: ['tabular-nums'],
   },
   totalBar: {
     flexDirection: 'row',
@@ -420,7 +415,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   totalLabel: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: colors.textSecondary,
     fontWeight: String(typography.fontWeight.semibold) as any,
     marginBottom: 2,
@@ -430,6 +425,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: rf(14),
     fontWeight: String(typography.fontWeight.bold) as any,
+    fontVariant: ['tabular-nums'],
   },
   disclaimer: {
     flexDirection: 'row',
@@ -442,23 +438,8 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     color: colors.textSecondary,
   },
-  primaryButton: {
+  acceptButton: {
     marginBottom: spacing.sm,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-  },
-  primaryButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: rp(14),
-    borderRadius: borderRadius.md,
-  },
-  primaryButtonText: {
-    fontSize: rf(15),
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.text,
   },
   secondaryRow: {
     flexDirection: 'row',
@@ -484,7 +465,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     alignItems: 'center',
-    paddingVertical: rp(8),
+    paddingVertical: rp(12),
   },
   cancelText: {
     fontSize: rf(13),

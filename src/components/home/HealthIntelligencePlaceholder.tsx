@@ -2,9 +2,9 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, border, typography } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 interface HealthIntelligencePlaceholderProps {
   onPress?: () => void;
@@ -20,12 +20,7 @@ export const HealthIntelligencePlaceholder: React.FC<
       hapticFeedback={true}
       hapticType="light"
     >
-      <GlassCard
-        elevation={2}
-        blurIntensity="light"
-        padding="md"
-        borderRadius="lg"
-      >
+      <View style={styles.card}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -39,7 +34,7 @@ export const HealthIntelligencePlaceholder: React.FC<
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: `${colors.textMuted}40` },
+              { backgroundColor: hexToRgba(colors.textMuted, 0.25) },
             ]}>
             <View
               style={[
@@ -92,12 +87,19 @@ export const HealthIntelligencePlaceholder: React.FC<
             />
           ) : null}
         </View>
-      </GlassCard>
+      </View>
     </AnimatedPressable>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -111,7 +113,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: rf(14),
-    fontWeight: "700",
+    fontWeight: typography.fontWeight.bold,
     color: colors.text,
     letterSpacing: 0.3,
   },
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: rf(11),
-    fontWeight: "600",
+    fontWeight: typography.fontWeight.semibold,
   },
   placeholderContent: {
     flexDirection: "row",
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: `${colors.primary}16`,
+    backgroundColor: hexToRgba(colors.primary, 0.09),
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -153,13 +155,13 @@ const styles = StyleSheet.create({
   },
   placeholderTitle: {
     fontSize: rf(14),
-    fontWeight: "700",
+    fontWeight: typography.fontWeight.bold,
     color: colors.text,
     marginBottom: spacing.xs,
   },
   placeholderSubtitle: {
     fontSize: rf(12),
-    fontWeight: '400',
+    fontWeight: typography.fontWeight.regular,
     color: colors.text,
     lineHeight: rf(18),
     opacity: 0.65,

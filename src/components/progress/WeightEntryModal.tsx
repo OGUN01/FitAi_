@@ -4,13 +4,14 @@
  * SINGLE SOURCE OF TRUTH: Uses progress_entries table via progressData service
  *
  * Features:
- * - Number input with validation
- * - Optional body fat and notes
+ * - DialStepper for the primary weight metric (Editorial Dark single-metric
+ *   entry — replaces the old boxed labeled-input stack)
+ * - Optional body fat (underline input) and notes
  * - Syncs to Supabase immediately
  * - Updates local stores for instant UI feedback
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { logger } from "../../utils/logger";
 import {
   View,
@@ -25,7 +26,6 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { haptics } from "../../utils/haptics";
 import {
@@ -35,8 +35,10 @@ import {
   spacing,
   borderRadius,
   typography,
+  flatColors,
 } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
+import { DialStepper } from "../onboarding/aurora/DialStepper";
 import { progressDataService } from "../../services/progressData";
 import { BodyAnalysisService } from "../../services/onboardingService";
 import type { BodyAnalysisData } from "../../types/onboarding";
@@ -57,6 +59,16 @@ interface WeightEntryModalProps {
   unit?: "kg" | "lbs";
 }
 
+// Validation floors/ceilings per unit — also drive the DialStepper range.
+const WEIGHT_RANGE: Record<"kg" | "lbs", { min: number; max: number }> = {
+  kg: { min: 20, max: 300 },
+  lbs: { min: 44, max: 660 },
+};
+const WEIGHT_STEP = 0.1;
+const BODY_FAT_MIN = 3;
+const BODY_FAT_MAX = 60;
+const BODY_FAT_STEP = 0.5;
+
 export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
   visible,
   onClose,
@@ -67,27 +79,27 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  // Form state
-  const [weight, setWeight] = useState<string>("");
+  // Form state — weight is the primary metric (DialStepper, numeric). Body fat
+  // is an OPTIONAL underline input, kept as a string so it can stay blank.
+  const range = WEIGHT_RANGE[unit];
+  const [weight, setWeight] = useState<number>(range.min);
   const [bodyFat, setBodyFat] = useState<string>("");
-  const bodyFatRef = useRef<TextInput>(null);
   const [notes, setNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-fill with current weight when modal opens
+  // Pre-fill with current weight when modal opens. No hardcoded fallback
+  // (principle #8): when the real value is missing the dial starts at the
+  // validation floor — a UI default, not substituted user data.
   useEffect(() => {
-    if (visible && currentWeight != null) {
-      const displayWeight = toDisplayWeight(currentWeight, unit);
-      if (displayWeight != null) {
-        setWeight(displayWeight.toFixed(1));
-      }
+    if (visible) {
+      const displayWeight = toDisplayWeight(currentWeight ?? null, unit);
+      setWeight(displayWeight != null ? Math.max(range.min, Math.min(range.max, displayWeight)) : range.min);
     }
-  }, [visible, currentWeight, unit]);
+  }, [visible, currentWeight, unit, range.min, range.max]);
 
   // Reset form when closing
   const handleClose = useCallback(() => {
-    setWeight("");
     setBodyFat("");
     setNotes("");
     setError(null);
@@ -96,26 +108,24 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 
   // Validate inputs
   const validateInputs = useCallback((): boolean => {
-    const weightNum = parseLocalFloat(weight);
-
-    if (!weight || isNaN(weightNum)) {
+    if (!Number.isFinite(weight)) {
       setError("Please enter a valid weight");
       return false;
     }
 
     if (unit === "lbs") {
-      if (weightNum < 44 || weightNum > 660) {
+      if (weight < 44 || weight > 660) {
         setError("Weight must be between 44 and 660 lbs");
         return false;
       }
     } else {
-      if (weightNum < 20 || weightNum > 300) {
+      if (weight < 20 || weight > 300) {
         setError("Weight must be between 20 and 300 kg");
         return false;
       }
     }
 
-    if (bodyFat) {
+    if (bodyFat.trim()) {
       const bodyFatNum = parseLocalFloat(bodyFat);
       if (isNaN(bodyFatNum) || bodyFatNum < 3 || bodyFatNum > 60) {
         setError("Body fat must be between 3% and 60%");
@@ -138,8 +148,8 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
     setError(null);
 
     try {
-      const weightKg = convertWeight(parseLocalFloat(weight), unit, "kg");
-      const bodyFatPercent = bodyFat ? parseLocalFloat(bodyFat) : undefined;
+      const weightKg = convertWeight(weight, unit, "kg");
+      const bodyFatPercent = bodyFat.trim() ? parseLocalFloat(bodyFat) : undefined;
 
       if (user?.id) {
         // Authenticated user: sync to Supabase
@@ -217,11 +227,9 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [weight, bodyFat, notes, user, validateInputs, onSuccess, handleClose]);
+  }, [weight, bodyFat, notes, user, validateInputs, onSuccess, handleClose, unit]);
 
-  // Convert display if needed
   const displayUnit = unit === "lbs" ? "lbs" : "kg";
-  const placeholder = unit === "lbs" ? "e.g., 165.0" : "e.g., 75.0";
 
   return (
     <Modal
@@ -230,20 +238,24 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
       animationType="slide"
       onRequestClose={handleClose}
     >
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={handleClose}
-      >
+      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
+          the sheet (never an ancestor) — see AdjustmentWizard.tsx. */}
+      <View style={styles.backdrop}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={handleClose}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss weight entry"
+        />
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardView}
         >
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
+          <View>
+            {/* Flat sheet surface + hairline top border (Editorial Dark) —
+                replaces the expo-blur BlurView glass wrapper. */}
+            <View style={styles.sheetContainer}>
               <View
                 style={[
                   styles.modalContent,
@@ -273,35 +285,24 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
-                  {/* Weight Input */}
+                  {/* Weight — primary metric, DialStepper (single-metric entry). */}
                   <View style={styles.inputGroup}>
                     <Text style={styles.label}>
-                      Weight ({displayUnit}){" "}
-                      <Text style={styles.required}>*</Text>
+                      Weight ({displayUnit}) <Text style={styles.required}>*</Text>
                     </Text>
-                    <View style={styles.inputContainer}>
-                      <Ionicons
-                        name="scale-outline"
-                        size={rs(20)}
-                        color={colors.primary.DEFAULT}
-                        style={styles.inputIcon}
-                      />
-                      <TextInput
-                        style={styles.input}
-                        value={weight}
-                        onChangeText={setWeight}
-                        placeholder={placeholder}
-                        placeholderTextColor={colors.text.muted}
-                        keyboardType="decimal-pad"
-                        returnKeyType="next"
-                        onSubmitEditing={() => bodyFatRef.current?.focus()}
-                        editable={!isSubmitting}
-                      />
-                      <Text style={styles.unitLabel}>{displayUnit}</Text>
-                    </View>
+                    <DialStepper
+                      value={weight}
+                      min={range.min}
+                      max={range.max}
+                      step={WEIGHT_STEP}
+                      onChange={setWeight}
+                      unit={displayUnit}
+                      format={(v) => v.toFixed(1)}
+                      testID="weight-dial"
+                    />
                   </View>
 
-                  {/* Body Fat Input (Optional) */}
+                  {/* Body Fat Input (Optional) — underline, stays blank when omitted. */}
                   <View style={styles.inputGroup}>
                     <Text style={styles.label}>Body Fat % (optional)</Text>
                     <View style={styles.inputContainer}>
@@ -312,7 +313,6 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                         style={styles.inputIcon}
                       />
                       <TextInput
-                        ref={bodyFatRef}
                         style={styles.input}
                         value={bodyFat}
                         onChangeText={setBodyFat}
@@ -393,10 +393,10 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                   Your weight is tracked in Progress → Analytics
                 </Text>
               </View>
-            </BlurView>
-          </TouchableOpacity>
+            </View>
+          </View>
         </KeyboardAvoidingView>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 };
@@ -404,13 +404,13 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: flatColors.overlay,
     justifyContent: "flex-end",
   },
   keyboardView: {
     width: "100%",
   },
-  blurContainer: {
+  sheetContainer: {
     borderTopLeftRadius: borderRadius.xxl,
     borderTopRightRadius: borderRadius.xxl,
     overflow: "hidden",
@@ -429,7 +429,6 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.variants.pageTitle,
-    fontSize: 22,
     color: colors.text.primary,
   },
   closeButton: {
@@ -453,14 +452,14 @@ const styles = StyleSheet.create({
   required: {
     color: colors.error.light,
   },
+  // Editorial underline input: no boxed border, just a hairline underline.
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: surface[2],
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: borderTokens.subtle,
-    paddingHorizontal: spacing.md,
+    backgroundColor: "transparent",
+    borderBottomWidth: 1,
+    borderBottomColor: borderTokens.DEFAULT,
+    paddingHorizontal: 0,
     height: rh(50),
   },
   inputIcon: {
@@ -488,7 +487,7 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(244, 67, 54, 0.15)",
+    backgroundColor: flatColors.errorTint,
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     marginBottom: spacing.md,

@@ -3,7 +3,7 @@
  */
 
 import { useCallback } from "react";
-import { Linking, Platform } from "react-native";
+import { Linking, Platform, Share } from "react-native";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
@@ -76,63 +76,35 @@ export const useAboutFitAILogic = () => {
     },
   ];
 
-  const handleRateApp = useCallback(() => {
-    if (Platform.OS === 'web') {
-      const confirmed = globalThis.confirm(
-        "Rate FitAI\n\nThank you for using FitAI! Your feedback helps us improve.\n\nClick OK to rate on the App Store."
-      );
-      if (confirmed) {
-        haptics.success();
+  const handleShareApp = useCallback(async () => {
+    haptics.success();
+    const shareUrl = "https://fitai.app";
+    const shareMessage =
+      "Check out FitAI — your AI-powered fitness companion! Personalized workouts, AI meal plans, and smart progress tracking. https://fitai.app";
+    try {
+      if (Platform.OS === "web") {
+        const nav = globalThis.navigator;
+        if (typeof nav?.share === "function") {
+          await nav.share({ title: "FitAI", text: shareMessage, url: shareUrl });
+        } else if (nav?.clipboard) {
+          await nav.clipboard.writeText(shareMessage);
           crossPlatformAlert(
-          "App Store",
-          "App Store link will be available after app publication.",
-        );
+            "Link Copied",
+            "Share link copied to your clipboard — paste it anywhere to invite friends.",
+          );
+        } else {
+          crossPlatformAlert(
+            "Share FitAI",
+            "Copy this link to invite friends: https://fitai.app",
+          );
+        }
+      } else {
+        await Share.share({ message: shareMessage });
       }
-    } else {
-      crossPlatformAlert(
-        "Rate FitAI",
-        "Thank you for using FitAI! Your feedback helps us improve.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Rate on App Store",
-            onPress: () => {
-              haptics.success();
-              crossPlatformAlert(
-                "App Store",
-                "App Store link will be available after app publication.",
-              );
-            },
-          },
-        ],
-      );
-    }
-  }, []);
-
-  const handleShareApp = useCallback(() => {
-    if (Platform.OS === 'web') {
-      const confirmed = globalThis.confirm(
-        "Share FitAI\n\nInvite your friends to join you on your fitness journey!\n\nClick OK to share."
-      );
-      if (confirmed) {
-        haptics.success();
-        crossPlatformAlert("Share", "Native sharing will be implemented here.");
-      }
-    } else {
-      crossPlatformAlert(
-        "Share FitAI",
-        "Invite your friends to join you on your fitness journey!",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Share",
-            onPress: () => {
-              haptics.success();
-              crossPlatformAlert("Share", "Native sharing will be implemented here.");
-            },
-          },
-        ],
-      );
+    } catch (error) {
+      // User dismissing the share sheet also rejects on some platforms — not an error.
+      if (error instanceof Error && error.name === "AbortError") return;
+      console.error("[useAboutFitAILogic] Share failed:", error);
     }
   }, []);
 
@@ -217,7 +189,6 @@ export const useAboutFitAILogic = () => {
     appVersion,
     buildNumber,
     features,
-    handleRateApp,
     handleShareApp,
     handleWebsite,
     handleSocialMedia,

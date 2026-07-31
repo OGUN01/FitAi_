@@ -5,12 +5,12 @@
  * No boxed card — sits directly on the screen background.
  *
  * DATA SOURCES (single sources of truth):
- *  - Weight goal: latest progress stats + earliest known weight history + target weight
+ *  - Weight goal: latest weightHistory entry (same SSOT as WeightJourneySection
+ *    hero and AnalyticsScreen) + target weight
  *  - Workout frequency: weeklyProgress.workoutsCompleted + calculatedMetrics.workoutFrequencyPerWeek
- *  - Calorie adherence: weeklyProgress.caloriesConsumed + calculatedMetrics.dailyCalories (7 days)
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,7 +37,6 @@ import { getWeightGoalProgress } from './goalProgressUtils';
 interface WeeklyProgress {
   workoutsCompleted: number;
   mealsCompleted: number;
-  caloriesConsumed?: number;
   streak: number;
 }
 
@@ -118,20 +117,35 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
   weightHistory = [],
   unit = 'kg',
 }) => {
-  const currentWeightKg = progressStats?.weightChange.current ?? null;
+  // SSOT: current weight comes from the latest weightHistory entry — the same
+  // source as the WeightJourneySection hero and AnalyticsScreen. progressStats
+  // (progressData service) is only a fallback when no history exists yet.
+  const currentWeightKg = useMemo(() => {
+    if (weightHistory.length > 0) {
+      const sorted = [...weightHistory].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
+      const latest = sorted[sorted.length - 1].weight;
+      if (Number.isFinite(latest)) return latest;
+    }
+    return progressStats?.weightChange.current ?? null;
+  }, [weightHistory, progressStats?.weightChange.current]);
   const targetWeightKg = calculatedMetrics?.targetWeightKg ?? null;
   const workoutsCompleted = weeklyProgress?.workoutsCompleted ?? null;
   const workoutTarget = calculatedMetrics?.workoutFrequencyPerWeek ?? null;
-  const weeklyCalories =
-    (weeklyProgress as { caloriesConsumed?: number } | null)?.caloriesConsumed ?? null;
-  const dailyCalorieTarget = calculatedMetrics?.dailyCalories ?? null;
-  const weeklyCalorieTarget = dailyCalorieTarget != null ? dailyCalorieTarget * 7 : null;
 
+  // No fake baseline: falling back to currentWeightKg pins start === current
+  // and the bar at a permanent 0%. Only a real weigh-in history establishes a
+  // start weight; without it the weight row is hidden (same contract as
+  // analytics/GoalProgressCard).
+  const hasStartWeight = weightHistory.some((entry) =>
+    Number.isFinite(entry.weight),
+  );
   const { weightProgress } = getWeightGoalProgress({
     currentWeightKg,
     targetWeightKg,
     weightHistory,
-    fallbackStartWeightKg: calculatedMetrics?.currentWeightKg ?? null,
+    fallbackStartWeightKg: null,
     weeklyRateKg: calculatedMetrics?.weeklyWeightLossRate ?? null,
     targetTimelineWeeks: calculatedMetrics?.targetTimelineWeeks ?? null,
   });
@@ -143,13 +157,9 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
     workoutsCompleted != null && workoutTarget != null && workoutTarget > 0
       ? workoutsCompleted / workoutTarget
       : null;
-  const calorieProgress =
-    weeklyCalories != null && weeklyCalorieTarget != null && weeklyCalorieTarget > 0
-      ? weeklyCalories / weeklyCalorieTarget
-      : null;
 
-  const hasAnyGoal =
-    weightProgress != null || workoutProgress != null || calorieProgress != null;
+  const showWeightRow = hasStartWeight && weightProgress != null;
+  const hasAnyGoal = showWeightRow || workoutProgress != null;
 
   return (
     <Animated.View
@@ -158,7 +168,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
     >
       <Text style={styles.sectionTitle}>Goal Progress</Text>
 
-      {weightProgress != null && (
+      {showWeightRow && (
         <GoalRow
           label="Weight Goal"
           icon="scale-outline"
@@ -179,18 +189,6 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
           leftText={`${workoutsCompleted} sessions`}
           rightText={`Goal ${workoutTarget}`}
           delay={160}
-        />
-      )}
-
-      {calorieProgress != null && (
-        <GoalRow
-          label="Calorie Adherence"
-          icon="flame-outline"
-          accent={chart[5]}
-          progress={calorieProgress}
-          leftText={`${Math.round(weeklyCalories ?? 0)} kcal`}
-          rightText={`Goal ${Math.round(weeklyCalorieTarget ?? 0)}`}
-          delay={200}
         />
       )}
 

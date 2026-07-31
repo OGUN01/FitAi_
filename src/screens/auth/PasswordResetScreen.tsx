@@ -14,8 +14,8 @@
  * than silently failing on submit.
  *
  * Visual style mirrors WelcomeScreen (AuroraBackground space + SafeAreaView
- * + ScrollView + Input/PasswordInput/Button primitives). Reuses existing
- * UI components — no new design language.
+ * + ScrollView + aurora UnderlineInput/GlassButton primitives). Editorial
+ * Dark form language — underline inputs, one restrained accent CTA.
  *
  * Ownership: this file is part of the deep-link password-reset flow. The
  * screen is rendered conditionally from App.tsx via a `passwordResetToken`
@@ -32,9 +32,10 @@ import { supabase } from "../../services/supabase";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
-import { Button, PasswordInput } from "../../components/ui";
+import { GlassButton } from "../../components/ui/aurora/GlassButton";
+import { UnderlineInput } from "../../components/onboarding/aurora/UnderlineInput";
 import { rf, rh, rw } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, border, surface } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface PasswordResetScreenProps {
@@ -93,6 +94,8 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
   }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
 
   // Ref guard: the session-check effect only needs to run once on mount.
   // Without this, a re-render triggered by a parent state change (e.g. App.tsx
@@ -265,11 +268,10 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 </Text>
               </View>
 
-              <Button
-                title="Request New Reset Link"
+              <GlassButton
+                label="Request New Reset Link"
                 onPress={onRequestNewReset}
                 variant="primary"
-                size="lg"
                 fullWidth
                 style={styles.actionButton}
               />
@@ -333,11 +335,10 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 </Text>
               </View>
 
-              <Button
-                title="Back to Login"
+              <GlassButton
+                label="Back to Login"
                 onPress={onBackToLogin}
                 variant="primary"
-                size="lg"
                 fullWidth
                 style={styles.actionButton}
               />
@@ -370,21 +371,69 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
 
           <View style={styles.form}>
             <View style={styles.emailFormContainer}>
-              <PasswordInput
-                label="New Password"
-                placeholder="Enter your new password"
-                value={password}
-                onChangeText={(value) => updateField("password", value)}
-                error={errors.password}
-              />
+              <View style={styles.passwordFieldWrap}>
+                <UnderlineInput
+                  label="New Password"
+                  placeholder="Enter your new password"
+                  value={password}
+                  onChangeText={(value) => updateField("password", value)}
+                  secureTextEntry={!passwordVisible}
+                  autoCapitalize="none"
+                  accentColor={errors.password ? colors.error : undefined}
+                  containerStyle={styles.fieldContainer}
+                />
+                <AnimatedPressable
+                  onPress={() => setPasswordVisible((prev) => !prev)}
+                  scaleValue={0.9}
+                  style={styles.eyeToggle}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    passwordVisible ? "Hide password" : "Show password"
+                  }
+                >
+                  <Ionicons
+                    name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                    size={rf(20)}
+                    color={colors.textSecondary}
+                  />
+                </AnimatedPressable>
+              </View>
+              {errors.password ? (
+                <Text style={styles.fieldError}>{errors.password}</Text>
+              ) : null}
 
-              <PasswordInput
-                label="Confirm New Password"
-                placeholder="Re-enter your new password"
-                value={confirmPassword}
-                onChangeText={(value) => updateField("confirmPassword", value)}
-                error={errors.confirmPassword}
-              />
+              <View style={styles.passwordFieldWrap}>
+                <UnderlineInput
+                  label="Confirm New Password"
+                  placeholder="Re-enter your new password"
+                  value={confirmPassword}
+                  onChangeText={(value) => updateField("confirmPassword", value)}
+                  secureTextEntry={!confirmVisible}
+                  autoCapitalize="none"
+                  accentColor={errors.confirmPassword ? colors.error : undefined}
+                  containerStyle={styles.fieldContainer}
+                />
+                <AnimatedPressable
+                  onPress={() => setConfirmVisible((prev) => !prev)}
+                  scaleValue={0.9}
+                  style={styles.eyeToggle}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    confirmVisible ? "Hide password" : "Show password"
+                  }
+                >
+                  <Ionicons
+                    name={confirmVisible ? "eye-off-outline" : "eye-outline"}
+                    size={rf(20)}
+                    color={colors.textSecondary}
+                  />
+                </AnimatedPressable>
+              </View>
+              {errors.confirmPassword ? (
+                <Text style={styles.fieldError}>{errors.confirmPassword}</Text>
+              ) : null}
 
               {submitError && (
                 <View style={styles.submitErrorContainer}>
@@ -397,11 +446,10 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 </View>
               )}
 
-              <Button
-                title="Update Password"
+              <GlassButton
+                label="Update Password"
                 onPress={handleSubmit}
                 variant="primary"
-                size="lg"
                 fullWidth
                 loading={isSubmitting}
                 disabled={isSubmitting}
@@ -526,11 +574,40 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
+  // UnderlineInput password field with absolute-positioned eye toggle.
+  passwordFieldWrap: {
+    position: "relative",
+    justifyContent: "center",
+    marginTop: spacing.md,
+  },
+
+  fieldContainer: {
+    marginBottom: spacing.xs,
+  },
+
+  fieldError: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: fontSize.xs,
+    color: colors.error,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
+  },
+
+  eyeToggle: {
+    position: "absolute",
+    right: 0,
+    bottom: spacing.sm,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   noticeCard: {
     alignItems: "center",
-    backgroundColor: hexToRgba(colors.surface, TINT_ALPHA_MEDIUM + 0.5),
+    backgroundColor: surface[1],
     borderWidth: 1,
-    borderColor: hexToRgba(colors.border, TINT_ALPHA_MEDIUM + 0.2),
+    borderColor: border.subtle,
     borderRadius: borderRadius.xl,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,

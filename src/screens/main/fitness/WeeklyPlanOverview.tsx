@@ -59,8 +59,10 @@ const DAY_KEYS: DayName[] = [
   'sunday',
 ];
 
-// rest-day violet — see note in original file; no token available.
-const REST_DAY_VIOLET = '#A78BFA';
+// Rest-day violet — sourced from the `colors.rest` token (aurora-tokens.ts).
+// Mirrors FullPlanScreen; both consumers share the single token so the
+// rest-day accent stays in sync across the weekly plan + full-plan views.
+const REST_DAY_VIOLET = colors.rest;
 
 export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   plan,

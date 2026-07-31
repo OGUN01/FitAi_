@@ -3,26 +3,20 @@
  *
  * PREMIUM FEATURES:
  * - Health Intelligence Hub (Recovery Score, HR, Sleep)
- * - Smart AI Coaching (Personalized recommendations)
- * - Hydration Tracker (Water intake with visuals)
  * - Body Progress (Weight trend & goal countdown)
  *
  * Layout Order:
- * 1. Header (greeting, streak, notifications)
- * 2. Motivation Banner (time-based quotes)
- * 3. Health Intelligence Hub (recovery, vitals)
- * 4. Daily Progress Rings (Move/Exercise/Meals)
- * 5. Smart Coaching (AI recommendations)
- * 6. Today's Workout
- * 7. Quick Actions
- * 8. Hydration Tracker
- * 9. Body Progress
- * 10. Achievements
- * 11. Weekly Calendar
+ * 1. Header (greeting, streak)
+ * 2. TodayHero (coach line + workout CTA)
+ * 3. Daily Progress Rings (Move/Exercise/Meals/Steps)
+ * 4. Health Intelligence Hub (recovery, vitals)
+ * 5. Quick Actions
+ * 6. Body Progress
+ * 7. Weekly Calendar
  */
 
 import React, { useCallback } from 'react';
-import { View, StyleSheet, RefreshControl, Platform } from 'react-native';
+import { View, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -51,7 +45,6 @@ import { useHealthIntelligenceLogic } from '../../hooks/useHealthIntelligenceLog
 import { useAppStateStore, type DayName } from '../../stores/appStateStore';
 import { getLocalDayName } from '../../utils/weekUtils';
 
-import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string, params?: Record<string, unknown>) => void;
 }
@@ -85,7 +78,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     wearableConnected,
     realCaloriesBurned,
     currentSteps,
-    currentStepsSource,
     todaysWorkoutInfo,
     todaysData,
     caloriesConsumed,
@@ -96,21 +88,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     workoutPreferences,
     handleRefresh,
     weightUnit,
-    syncHealthData,
-    syncFromHealthConnect,
   } = useHomeLogic();
-
-  // createQuickActions needs per-platform auth flags. useHomeLogic exports
-  // `wearableConnected` (= isHealthKitAuthorized || isHealthConnectAuthorized)
-  // but not the individual flags, and we must not edit the orchestrator.
-  // Per-platform this is equivalent: on iOS only HealthKit can be authorized
-  // (so wearableConnected == isHealthKitAuthorized); on Android only Health
-  // Connect (so wearableConnected == isHealthConnectAuthorized). Passing
-  // wearableConnected to both is therefore semantically correct per platform
-  // and avoids the prior derivation from healthMetrics.sources (which only
-  // reflects whether sync ever produced a snapshot, not authorization state).
-  const isHealthKitAuthorized = wearableConnected;
-  const isHealthConnectAuthorized = wearableConnected;
 
   // --- useCallback: child component prop callbacks ---
   const handleGuestBack = useCallback(() => setShowGuestSignUp(false), []);
@@ -119,6 +97,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const handleStreakPress = useCallback(() => onNavigateToTab?.('achievements'), [onNavigateToTab]);
   const handleGuestSignUpPress = useCallback(() => setShowGuestSignUp(true), []);
   const handleHealthHubPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
+  // The no-data placeholder's "Connect Health Data" CTA must land where a user
+  // can actually connect — the wearable connection settings screen — not the
+  // analytics tab (which has no connect affordance). ProfileScreen consumes
+  // route.params.settingsScreen and opens that settings screen directly.
+  const handleConnectHealthPress = useCallback(
+    () => onNavigateToTab?.('profile', { settingsScreen: 'wearables' }),
+    [onNavigateToTab]
+  );
   const handleRingsPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
   const handleLogMealPress = useCallback(
     () => onNavigateToTab?.('diet', { openLogMeal: true }),
@@ -151,37 +137,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const quickActions = React.useMemo(
     () =>
       createQuickActions({
-        isHealthKitAuthorized,
-        isHealthConnectAuthorized,
-        syncHealthData:
-          Platform.OS === 'web'
-            ? async () => {
-                crossPlatformAlert(
-                  'Health Sync',
-                  'Health sync is only available on iOS/Android. Open the app on your phone to sync.'
-                );
-              }
-            : syncHealthData,
-        syncFromHealthConnect:
-          Platform.OS === 'web'
-            ? async () => {
-                crossPlatformAlert(
-                  'Health Sync',
-                  'Health sync is only available on iOS/Android. Open the app on your phone to sync.'
-                );
-              }
-            : async (days: number) => {
-                await syncFromHealthConnect(days);
-              },
         onLogWeight: () => setShowWeightModal(true),
-        onScanFood: () => onNavigateToTab?.('diet', { openScanFood: true }),
         onLogMeal: () => onNavigateToTab?.('diet', { openLogMeal: true }),
         onLogWater: () => onNavigateToTab?.('diet', { openWaterModal: true }),
         onBarcodeScan: () => onNavigateToTab?.('diet', { openBarcodeOptions: true }),
         onScanLabel: () => onNavigateToTab?.('diet', { openLabelScanPrep: true }),
-        onRecipes: () => onNavigateToTab?.('diet', { openCreateRecipe: true }),
       }),
-    [wearableConnected, setShowWeightModal, onNavigateToTab, syncHealthData, syncFromHealthConnect]
+    [setShowWeightModal, onNavigateToTab]
   );
 
   // Reanimated entrance fade — shared value driven from useHomeLogic.
@@ -233,21 +195,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   // TodayHero coach line. When real wearable data exists, use the recovery
   // insight (it's personalized + true). When no data, the hook's fallback reads
   // as a sync chore — replace with a warm, CTA-tied welcome instead so the first
-  // impression is an invitation, not a demand.
+  // impression is an invitation, not a demand. No name prefix here — the header
+  // directly above already greets the user by name.
   const heroInsightLine = React.useMemo(() => {
-    const first = userName.split(' ')[0];
-    const name = first ? `${first}, ` : '';
     if (hasRealHealthData) return heroInsightText;
     if (!todaysWorkoutInfo.hasWeeklyPlan)
-      return `${name}your personalized plan is one tap away. Let’s make today count.`;
+      return 'Your personalized plan is one tap away. Let’s make today count.';
     if (todaysWorkoutInfo.isRestDay)
-      return `${name}rest day. Recovery is where the growth happens — take it easy today.`;
+      return 'Rest day. Recovery is where the growth happens — take it easy today.';
     if (todaysWorkoutInfo.isCompleted)
-      return `${name}workout done. Momentum is on your side — soak it in.`;
-    if (todaysWorkoutInfo.hasWorkout)
-      return `${name}today’s workout is ready. Small start, big payoff.`;
-    return `${name}let’s pick up where you left off.`;
-  }, [hasRealHealthData, heroInsightText, todaysWorkoutInfo, userName]);
+      return 'Workout done. Momentum is on your side — soak it in.';
+    if (todaysWorkoutInfo.hasWorkout) return 'Today’s workout is ready. Small start, big payoff.';
+    return 'Let’s pick up where you left off.';
+  }, [hasRealHealthData, heroInsightText, todaysWorkoutInfo]);
 
   // Insight accent dot only when the line is a real recovery insight (colored);
   // for the warm welcome fallbacks, no dot — keep it pure typography.
@@ -331,7 +291,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               )}
 
               {/* 2. Daily Progress Rings — premium hero */}
-              <View style={styles.section}>
+              <View style={styles.ringsSection}>
                 <DailyProgressRings
                   caloriesBurned={realCaloriesBurned}
                   caloriesGoal={
@@ -358,7 +318,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   mealsGoal={calculatedMetrics?.dailyCalories ?? 0} // Intake target for nutrition goal — no fallback
                   steps={currentSteps} // Only use wearable steps when the synced snapshot is from today
                   stepsGoal={healthMetrics?.stepsGoal ?? 0} // No hardcoded fallback - 0 reveals missing data
-                  stepsSource={currentStepsSource} // Hide stale source attribution with stale metrics
                   onPress={handleRingsPress}
                 />
                 <EmptyMealsMessage mealsLogged={caloriesConsumed} onLogMeal={handleLogMealPress} />
@@ -383,6 +342,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
                   activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
                   onPress={handleHealthHubPress}
+                  onConnectPress={handleConnectHealthPress}
                   // All per-metric detail taps route to the same analytics tab —
                   // omitted onDetailPress so individual metric taps don't imply
                   // distinct destinations.
@@ -459,11 +419,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.md),
     marginBottom: rp(spacing.md),
   },
-  // pairSection — tight gap so Rings + Health Intelligence read as a pair,
-  // not two strangers. Uses sm (8) instead of md (16) between them.
-  pairSection: {
+  // ringsSection — tight gap below Rings so Rings + Health Intelligence read
+  // as a pair, not two strangers. Uses sm (8) instead of md (16) between them.
+  ringsSection: {
     paddingHorizontal: rp(spacing.md),
     marginBottom: rp(spacing.sm),
+  },
+  // pairSection — standard md (16) gap below the hub so it doesn't crowd the
+  // quick-action row; the tight sm (8) pair gap lives on ringsSection above.
+  pairSection: {
+    paddingHorizontal: rp(spacing.md),
+    marginBottom: rp(spacing.md),
   },
   quickActionsSection: {
     marginBottom: rp(spacing.md),

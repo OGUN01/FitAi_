@@ -27,7 +27,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../ui/aurora/GlassCard';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import {
   flatColors as colors,
@@ -309,6 +308,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
             keyExtractor={(item) => item.key}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
             renderItem={({ item }) => (
               <AnimatedPressable
                 onPress={() => handleSelect(item)}
@@ -317,59 +317,58 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
                 hapticType="light"
                 accessibilityRole="button"
                 accessibilityLabel={`Select ${item.name}`}
+                style={styles.card}
               >
-                <GlassCard elevation={2} style={styles.card} padding="sm" borderRadius="lg">
-                  <View style={styles.row}>
-                    <View
-                      style={[
-                        styles.sourceTag,
-                        item.source === 'sqlite' ? styles.sqliteTag : styles.indianTag,
-                      ]}
-                    >
-                      <Text style={styles.sourceTagText} numberOfLines={1}>
-                        {item.source === 'sqlite' ? 'Packaged' : 'Dish'}
-                      </Text>
-                    </View>
-                    <View style={styles.nameWrap}>
-                      <Text
-                        style={styles.name}
-                        numberOfLines={2}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.85}
-                      >
-                        {item.name}
-                      </Text>
-                      {item.subtitle ? (
-                        <Text
-                          style={styles.subtitle}
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.85}
-                        >
-                          {item.subtitle}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <View style={styles.calsWrap}>
-                      <Text
-                        style={styles.cals}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.8}
-                      >
-                        {Math.round(item.per100g.calories)}
-                      </Text>
-                      <Text
-                        style={styles.calsUnit}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.85}
-                      >
-                        kcal/100g
-                      </Text>
-                    </View>
+                <View style={styles.row}>
+                  <View
+                    style={[
+                      styles.sourceTag,
+                      item.source === 'sqlite' ? styles.sqliteTag : styles.indianTag,
+                    ]}
+                  >
+                    <Text style={styles.sourceTagText} numberOfLines={1}>
+                      {item.source === 'sqlite' ? 'Packaged' : 'Dish'}
+                    </Text>
                   </View>
-                </GlassCard>
+                  <View style={styles.nameWrap}>
+                    <Text
+                      style={styles.name}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
+                    >
+                      {item.name}
+                    </Text>
+                    {item.subtitle ? (
+                      <Text
+                        style={styles.subtitle}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.85}
+                      >
+                        {item.subtitle}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.calsWrap}>
+                    <Text
+                      style={styles.cals}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
+                    >
+                      {Math.round(item.per100g.calories)}
+                    </Text>
+                    <Text
+                      style={styles.calsUnit}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
+                    >
+                      kcal/100g
+                    </Text>
+                  </View>
+                </View>
               </AnimatedPressable>
             )}
           />
@@ -383,7 +382,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.overlay,
   },
   sheet: {
     backgroundColor: colors.background,
@@ -447,7 +446,15 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   card: {
-    marginHorizontal: 0,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    minHeight: rh(56),
+    justifyContent: 'center',
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.borderLight,
+    marginHorizontal: spacing.md,
   },
   row: {
     flexDirection: 'row',
@@ -493,6 +500,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: rf(fontSize.lg),
     fontWeight: String(typography.fontWeight.bold) as any,
+    fontVariant: ['tabular-nums'],
   },
   calsUnit: {
     color: colors.textSecondary,

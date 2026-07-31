@@ -10,6 +10,7 @@ import { rh, rw } from "../../utils/responsive";
 // Hook
 import { useProgressTrendsLogic } from "../../hooks/useProgressTrendsLogic";
 import { useProfileStore } from "../../stores/profileStore";
+import { useAnalyticsStore } from "../../stores/analyticsStore";
 
 // Components
 import { PeriodSelector } from "./analytics/PeriodSelector";
@@ -45,6 +46,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
   } = useProgressTrendsLogic();
   // SSOT: read profile data directly from profileStore
   const { personalInfo: profilePersonalInfo, bodyAnalysis } = useProfileStore();
+  // SSOT: weight history from analyticsStore (same source as Analytics tab)
+  const weightHistory = useAnalyticsStore((s) => s.weightHistory);
   const weightUnit: WeightUnit =
     profilePersonalInfo?.units === "imperial" ? "lbs" : "kg";
   const displayWeightTrend = React.useMemo(() => {
@@ -135,6 +138,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
                 calculatedMetrics={calculatedMetrics}
                 profilePersonalInfo={profilePersonalInfo}
                 bodyAnalysis={bodyAnalysis}
+                weightHistory={weightHistory}
+                unit={weightUnit}
               />
             </>
           )}

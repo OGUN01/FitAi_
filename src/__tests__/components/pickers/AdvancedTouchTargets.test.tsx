@@ -25,10 +25,16 @@ jest.mock("react-native", () => {
     Platform: { OS: "ios", select: (obj: any) => obj.ios },
     StyleSheet: {
       create: (styles: unknown) => styles,
-      flatten: (style: any) =>
-        Array.isArray(style)
-          ? Object.assign({}, ...style.filter(Boolean))
-          : (style ?? {}),
+      // Pressable function-styles (style={({pressed}) => ...}) must be invoked
+      // before flattening — components under test use them for pressed states.
+      flatten: (style: any) => {
+        const resolve = (s: any) =>
+          typeof s === "function" ? s({ pressed: false }) : s;
+        const resolved = resolve(style);
+        return Array.isArray(resolved)
+          ? Object.assign({}, ...resolved.map(resolve).filter(Boolean))
+          : (resolved ?? {});
+      },
     },
   };
 });
@@ -139,8 +145,6 @@ jest.mock("@/components/onboarding/AlternativeOption", () => {
 import { DatePicker } from "@/components/advanced/DatePicker";
 import { MultiSelect } from "@/components/advanced/MultiSelect";
 import { MultiSelectWithCustom } from "@/components/advanced/MultiSelectWithCustom";
-import { TimePicker } from "@/components/onboarding/TimePicker";
-import { RateComparisonCard } from "@/components/onboarding/RateComparisonCard";
 import { OnboardingTabBar } from "@/components/onboarding/OnboardingTabBar";
 
 describe("advanced picker touch targets", () => {
@@ -200,43 +204,7 @@ describe("advanced picker touch targets", () => {
     });
   });
 
-  it("keeps time picker, rate card, and onboarding tabs at safe sizes", () => {
-    const time = render(
-      <TimePicker
-        visible
-        initialTime="06:00"
-        onTimeSelect={jest.fn()}
-        onClose={jest.fn()}
-        title="Wake Time"
-      />,
-    );
-
-    const rate = render(
-      <RateComparisonCard
-        alternativesResult={{
-          alternatives: [
-            {
-              id: "orig",
-              bmrDifference: -100,
-              isUserOriginal: true,
-              requiresExercise: false,
-            },
-            {
-              id: "ex",
-              requiresExercise: true,
-            },
-          ],
-          userBMR: 1600,
-          originalRequestedRate: 1.2,
-          weightToLose: 8,
-          targetWeight: 72,
-          rateAtBMR: 0.5,
-        } as any}
-        selectedAlternativeId={null}
-        onSelectAlternative={jest.fn()}
-      />,
-    );
-
+  it("keeps onboarding tabs at safe sizes", () => {
     const tabs = render(
       <OnboardingTabBar
         activeTab={1}
@@ -249,19 +217,6 @@ describe("advanced picker touch targets", () => {
       />,
     );
 
-    expect(StyleSheet.flatten(time.getByLabelText("6:00 AM").props.style)).toMatchObject({
-      minHeight: 44,
-    });
-    expect(StyleSheet.flatten(rate.getByLabelText("Open BMR warning details").props.style)).toMatchObject({
-      minHeight: 44,
-    });
-    expect(StyleSheet.flatten(rate.getByLabelText("More info about BMR warning").props.style)).toMatchObject({
-      minWidth: 44,
-      minHeight: 44,
-    });
-    expect(StyleSheet.flatten(rate.getByLabelText("Show exercise options").props.style)).toMatchObject({
-      minHeight: 44,
-    });
     expect(StyleSheet.flatten(tabs.getAllByLabelText(/step$/i)[0].props.style)).toMatchObject({
       width: 44,
       height: 44,

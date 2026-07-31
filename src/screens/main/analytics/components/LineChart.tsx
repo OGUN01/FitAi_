@@ -152,7 +152,10 @@ export const LineChart: React.FC<LineChartProps> = ({
           <Ionicons
             name="analytics-outline"
             size={rf(32)}
-            color={surface[2]}
+            // surface[2] (#232430) on surface[1] (#15161B) is ~1.3:1 — the
+            // empty-state icon read as an invisible dark blob. Use the muted
+            // text tier so the icon is at least distinguishable.
+            color={colors.text.muted}
           />
         </View>
         <Text style={styles.emptyTitle} numberOfLines={2}>{emptyTitle}</Text>
@@ -185,9 +188,13 @@ export const LineChart: React.FC<LineChartProps> = ({
               style={[
                 styles.trendBadge,
                 {
+                  // Tint the badge with the trend's own color so positive
+                  // (green) and negative (pink) trends read as distinct chips,
+                  // matching the InsightCard accent pattern. The prior code set
+                  // surface[2] for both branches — a no-op with no signal.
                   backgroundColor: isPositiveTrend
-                    ? surface[2]
-                    : surface[2],
+                    ? `${chartColors[4]}22`
+                    : `${chartColors[6]}22`,
                 },
               ]}
             >
@@ -319,7 +326,9 @@ const styles = StyleSheet.create({
   currentLabel: {
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(10),
-    color: surface[2],
+    // surface[2] (#232430) is a background tier — as text it was invisible
+    // against the surface[1] card. Use the muted text token instead.
+    color: colors.text.muted,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: rh(2),
@@ -347,7 +356,9 @@ const styles = StyleSheet.create({
   trendPeriod: {
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(10),
-    color: surface[2],
+    // surface[2] (#232430) is a background tier — invisible as text on
+    // the surface[1] card. Use the muted text token.
+    color: colors.text.muted,
     marginTop: rh(4),
   },
   insightStrip: {

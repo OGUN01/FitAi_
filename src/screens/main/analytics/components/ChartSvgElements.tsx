@@ -131,9 +131,16 @@ export const DataPoints: React.FC<DataPointsProps> = ({
 }) => (
   <>
     {data.map((item, index) => {
+      const isLast = index === data.length - 1;
+      // Year-period charts carry up to 365 daily points: a dot per point
+      // smears into a solid band and the rw(15) touch circles overlap into
+      // random targets. Thin the dot layer to ~30 dots when dense; the
+      // smooth path is drawn separately and stays intact.
+      if (data.length > 60 && !isLast && index % Math.ceil(data.length / 30) !== 0) {
+        return null;
+      }
       const x = getX(index);
       const y = getY(item.value);
-      const isLast = index === data.length - 1;
       const isSelected = selectedPoint === index;
 
       return (
@@ -232,11 +239,22 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
     return null;
   }
 
+  // Clamp the tooltip inside the SVG canvas: react-native-svg clips children
+  // to the Svg bounds, so the rw(60)-wide rect ran off the right edge for the
+  // last point and above the canvas for points near the chart max. The right
+  // canvas edge is getX(last) + PADDING_RIGHT (rw(15)) from the parent chart.
+  const chartWidth = getX(data.length - 1) + rw(15);
+  const rectX = Math.min(
+    Math.max(getX(selectedPoint) - rw(30), rw(4)),
+    Math.max(chartWidth - rw(64), rw(4)),
+  );
+  const rectY = Math.max(getY(point.value) - rh(35), rh(4));
+
   return (
     <G>
       <Rect
-        x={getX(selectedPoint) - rw(30)}
-        y={getY(point.value) - rh(35)}
+        x={rectX}
+        y={rectY}
         width={rw(60)}
         height={rh(26)}
         rx={rw(borderRadius.md)}
@@ -245,8 +263,8 @@ export const SelectedPointTooltip: React.FC<SelectedPointTooltipProps> = ({
         strokeWidth={1}
       />
       <SvgText
-        x={getX(selectedPoint)}
-        y={getY(point.value) - rh(18)}
+        x={rectX + rw(30)}
+        y={rectY + rh(17)}
         fill={colors.text.primary}
         fontSize={rf(11)}
         textAnchor="middle"

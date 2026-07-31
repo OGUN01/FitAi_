@@ -81,13 +81,21 @@ export const useProfileLogic = () => {
         const savedUnits = await AsyncStorage.getItem(STORAGE_KEY_UNITS);
         if (savedUnits === "metric" || savedUnits === "imperial") {
           setUnitsPreference(savedUnits);
+          // Migrate a legacy AsyncStorage-only value into the store (SSOT)
+          // once, so store-backed consumers (e.g. BodyMeasurementsEditModal)
+          // agree with the Settings subtitle. The sync effect below
+          // re-persists the key from the store going forward.
+          const storeUnits = useProfileStore.getState().personalInfo?.units;
+          if (storeUnits !== "metric" && storeUnits !== "imperial") {
+            updatePersonalInfo({ units: savedUnits });
+          }
         }
       } catch (error) {
         console.error("[useProfileLogic] Error loading preferences:", error);
       }
     };
     loadPreferences();
-  }, []);
+  }, [updatePersonalInfo]);
 
   useEffect(() => {
     const profileUnits = profileStorePersonalInfo?.units;
@@ -342,60 +350,6 @@ export const useProfileLogic = () => {
     }
   };
 
-  // Stat card press handlers
-  const handleStatPress = useCallback(
-    (statId: string) => {
-      const showAlert = (title: string, message: string) => {
-        crossPlatformAlert(title, message);
-      };
-      switch (statId) {
-        case "current-streak": {
-          const streak = userStats?.currentStreak || 0;
-          showAlert(
-            "Day Streak",
-            `You're on a ${streak} day streak! Keep it up!`,
-          );
-          break;
-        }
-        case "workouts": {
-          const workouts = userStats?.totalWorkouts || 0;
-          showAlert(
-            "Workouts",
-            `You've completed ${workouts} workout${workouts === 1 ? "" : "s"}. ${workouts === 0 ? "Start your first workout!" : "Amazing progress!"}`,
-          );
-          break;
-        }
-        case "calories": {
-          const cals = userStats?.totalCaloriesBurned || 0;
-          showAlert(
-            "Calories Burned",
-            `${cals} calories burned. Great progress!`,
-          );
-          break;
-        }
-        case "best-streak": {
-          const best = userStats?.longestStreak || 0;
-          showAlert(
-            "Best Streak",
-            `Your best streak is ${best} day${best === 1 ? "" : "s"}. Can you beat it?`,
-          );
-          break;
-        }
-        case "achievements": {
-          const count = userStats?.achievements || 0;
-          showAlert(
-            "Achievements",
-            `${count} achievement${count === 1 ? "" : "s"} earned. ${count === 0 ? "Complete workouts to unlock achievements!" : "Keep going!"}`,
-          );
-          break;
-        }
-        default:
-          break;
-      }
-    },
-    [userStats],
-  );
-
   // Check profile completion
   const isProfileIncomplete = (section: string): boolean => {
     switch (section) {
@@ -520,6 +474,8 @@ export const useProfileLogic = () => {
       subtitle: restTimerEnabled ? "On — vibrate between sets" : "Off",
       icon: "timer-outline",
       iconColor: "#9C27B0",
+      // Toggles in place (no navigation) — no chevron affordance.
+      showChevron: false,
     },
   ];
 
@@ -600,7 +556,7 @@ export const useProfileLogic = () => {
       const weeks = Math.floor(diffDays / 7);
       return `${weeks} week${weeks === 1 ? "" : "s"}`;
     }
-    return created.toLocaleDateString("en-US", {
+    return created.toLocaleDateString(undefined, {
       month: "short",
       year: "numeric",
     });
@@ -643,7 +599,6 @@ export const useProfileLogic = () => {
     confirmLogout,
     cancelLogout,
     handleSettingItemPress,
-    handleStatPress,
 
     // Settings data
     accountItems,

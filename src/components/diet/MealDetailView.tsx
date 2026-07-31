@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import type { DayMeal, MealItem } from '../../types/ai';
@@ -259,20 +259,12 @@ const StepViewer: React.FC<StepViewerProps> = ({ steps }) => {
         <Text style={styles.stepCounter}>
           Step {currentStep + 1} of {total}
         </Text>
-        <View style={styles.stepDots}>
-          {steps.map((_, i) => (
-            <View
-              key={`dot-${i}`}
-              style={[styles.stepDot, i === currentStep && styles.stepDotActive]}
-            />
-          ))}
-        </View>
       </View>
 
+      {/* Single position indicator only: the "Step X of Y" counter above.
+          (The numbered badge is kept for the single-step card, which has no
+          counter.) */}
       <View style={styles.stepCard}>
-        <View style={styles.stepBadge}>
-          <Text style={styles.stepBadgeText}>{s.step || currentStep + 1}</Text>
-        </View>
         <Text style={styles.stepText}>{s.instruction}</Text>
       </View>
 
@@ -323,6 +315,11 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
   selectedDate,
   testID = 'meal-detail-view',
 }) => {
+  // Bottom safe-area inset — the sticky action bar (Mark as Completed /
+  // Swap) sits at the screen bottom. The parent overlay's SafeAreaView only
+  // guards `edges={['top']}`, so without this the CTAs crowd the home
+  // indicator on notched devices. Apply to the sticky bar's bottom padding.
+  const insets = useSafeAreaInsets();
   const [celebrate, setCelebrate] = useState(false);
 
   // Cook-along ingredient check state — local only, never mutates meal data.
@@ -604,6 +601,8 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(300)} style={styles.headerSection}>
+          {/* The meal-type label itself lives in the screen header — this row
+              carries only new info (type icon + status pill). */}
           <View style={styles.typeRow}>
             <View style={styles.typeIconWrap}>
               <Ionicons
@@ -612,14 +611,6 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
                 color={colors.primary}
               />
             </View>
-            <Text
-              style={styles.typeLabel}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
-            >
-              {mealLabel}
-            </Text>
             <View style={styles.statusPillWrap}>
               <StatusPill status={status} size="md" />
             </View>
@@ -700,7 +691,7 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
         <View style={styles.bottomSpacing} />
       </Animated.ScrollView>
 
-      <View style={styles.stickyActions}>
+      <View style={[styles.stickyActions, { paddingBottom: Math.max(insets.bottom, rp(24)) }]}>
         {isCompleted ? (
           <View style={styles.completedBadge}>
             <Ionicons name="checkmark-circle" size={rf(20)} color={colors.success} />
@@ -883,13 +874,6 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  typeLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.primary,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
   statusPillWrap: {
     marginLeft: 'auto' as const,
   },
@@ -911,6 +895,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xxl,
     fontFamily: fontFamilyForWeight('extrabold'),
     fontWeight: String(typography.fontWeight.extrabold) as any,
+    fontVariant: ['tabular-nums'],
   },
   heroMacroUnit: {
     fontSize: fontSize.sm,
@@ -932,6 +917,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontFamily: fontFamilyForWeight('bold'),
     fontWeight: String(typography.fontWeight.bold) as any,
+    fontVariant: ['tabular-nums'],
   },
   macroBlockUnit: {
     fontSize: fontSize.xs,
@@ -1032,6 +1018,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.primary,
+    fontVariant: ['tabular-nums'],
   },
   // ── Recipe step viewer ─────────────────────────────────────────────────
   stepViewer: {
@@ -1047,19 +1034,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.textSecondary,
-  },
-  stepDots: {
-    flexDirection: 'row' as const,
-    gap: spacing.xs,
-  },
-  stepDot: {
-    width: rw(6),
-    height: rw(6),
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.border,
-  },
-  stepDotActive: {
-    backgroundColor: colors.primary,
   },
   stepCard: {
     flexDirection: 'row' as const,
@@ -1101,7 +1075,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     borderRadius: rbr(borderRadius.md),
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,

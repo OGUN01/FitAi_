@@ -1,20 +1,36 @@
+/**
+ * LogoutConfirmationModal - Aurora 2026: sign-out confirmation dialog.
+ *
+ * Flat surface.2 panel over a blur backdrop, destructive (error) CTA.
+ * No GlassCard, no LinearGradient, no heavy shadow — depth comes from the
+ * hairline border + surface step, per Editorial Dark. Mirrors the flat-dialog
+ * pattern established by ClearCacheConfirmModal/SettingsSelectionModal so the
+ * destructive confirmations share one surface treatment.
+ */
+
 import React from "react";
 import {
   View,
+  Text,
   StyleSheet,
   Modal,
-  Text,
   Pressable,
-  ActivityIndicator,
 } from "react-native";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
+import {
+  colors,
+  flatColors,
+  surface,
+  border,
+  spacing,
+  typography,
+  borderRadius,
+} from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
-import { gradients, toLinearGradientProps } from "../../theme/gradients";
+
+const { variants } = typography;
 
 interface LogoutConfirmationModalProps {
   visible: boolean;
@@ -33,68 +49,59 @@ export const LogoutConfirmationModal: React.FC<
       animationType="fade"
       onRequestClose={onCancel}
     >
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
-        <BlurView intensity={80} style={styles.blurContainer} pointerEvents="none" />
-        <View style={styles.confirmationDialog}>
-          <GlassCard
-            elevation={5}
-            blurIntensity="heavy"
-            padding="lg"
-            borderRadius="xl"
-          >
-            <View style={styles.confirmationIconContainer}>
+      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
+          the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
+      <View style={styles.root}>
+        <Pressable
+          onPress={onCancel}
+          style={styles.backdrop}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel sign out"
+        />
+        <View style={styles.dialogContainer} accessibilityRole="alert">
+          {/* Icon */}
+          <View style={styles.iconContainer}>
+            <View style={styles.iconSquircle}>
               <Ionicons
                 name="log-out-outline"
-                size={rf(48)}
-                color={colors.error}
+                size={rf(28)}
+                color={colors.error.DEFAULT}
               />
             </View>
-            <Text style={styles.confirmationTitle}>Sign Out</Text>
-            <Text style={styles.confirmationMessage}>
-              Are you sure you want to sign out? Your progress will be
-              saved.
-            </Text>
+          </View>
 
-            <View style={styles.confirmationActions}>
-              <AnimatedPressable
-                style={[
-                  styles.confirmationButton,
-                  styles.confirmationButtonCancel,
-                ]}
-                onPress={onCancel}
-                scaleValue={0.95}
-                disabled={isLoading}
-              >
-                <Text style={styles.confirmationButtonTextCancel}>
-                  Cancel
-                </Text>
-              </AnimatedPressable>
+          <Text style={styles.title}>Sign Out</Text>
+          <Text style={styles.message}>
+            Are you sure you want to sign out? Your progress will be saved.
+          </Text>
 
-              <AnimatedPressable
-                style={[
-                  styles.confirmationButton,
-                  styles.confirmationButtonConfirm,
-                ]}
-                onPress={onConfirm}
-                scaleValue={0.95}
-                disabled={isLoading}
-              >
-                <LinearGradient
-                  {...toLinearGradientProps(gradients.button.error)}
-                  style={styles.confirmationButtonGradient}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color={colors.white} />
-                  ) : (
-                    <Text style={styles.confirmationButtonText}>
-                      Sign Out
-                    </Text>
-                  )}
-                </LinearGradient>
-              </AnimatedPressable>
-            </View>
-          </GlassCard>
+          <View style={styles.actions}>
+            <AnimatedPressable
+              style={[styles.button, styles.cancelButton]}
+              onPress={onCancel}
+              scaleValue={0.97}
+              disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </AnimatedPressable>
+
+            <AnimatedPressable
+              style={[styles.button, styles.confirmButton]}
+              onPress={onConfirm}
+              scaleValue={0.97}
+              disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+            >
+              {isLoading ? (
+                <AuroraSpinner customSize={rf(16)} theme="white" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Sign Out</Text>
+              )}
+            </AnimatedPressable>
+          </View>
         </View>
       </View>
     </Modal>
@@ -102,66 +109,79 @@ export const LogoutConfirmationModal: React.FC<
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  root: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  blurContainer: {
+  // Flat scrim (no blur) — Editorial Dark uses an opaque overlay, not frosted glass.
+  backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlay,
+    backgroundColor: flatColors.overlay,
   },
-  confirmationDialog: {
+  dialogContainer: {
     width: "85%",
     maxWidth: 340,
-  },
-  confirmationIconContainer: {
+    backgroundColor: surface[2],
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.lg,
     alignItems: "center",
+  },
+  iconContainer: {
     marginBottom: spacing.md,
   },
-  confirmationTitle: {
-    fontSize: rf(20),
-    fontWeight: "700",
-    color: colors.white,
+  iconSquircle: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.lg,
+    backgroundColor: `${colors.error.DEFAULT}1F`,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  title: {
+    ...variants.sectionTitle,
+    color: colors.text.primary,
     textAlign: "center",
     marginBottom: spacing.sm,
   },
-  confirmationMessage: {
+  message: {
+    ...variants.body,
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
-    lineHeight: rf(20),
     marginBottom: spacing.lg,
   },
-  confirmationActions: {
+  actions: {
     flexDirection: "row",
     gap: spacing.md,
+    width: "100%",
   },
-  confirmationButton: {
+  button: {
     flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: borderRadius.md,
-    overflow: "hidden",
-  },
-  confirmationButtonCancel: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
     paddingVertical: spacing.md,
-    alignItems: "center",
   },
-  confirmationButtonConfirm: {
-    overflow: "hidden",
+  cancelButton: {
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
-  confirmationButtonGradient: {
-    paddingVertical: spacing.md,
-    alignItems: "center",
+  confirmButton: {
+    backgroundColor: colors.error.DEFAULT,
   },
-  confirmationButtonTextCancel: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.white,
+  cancelButtonText: {
+    ...variants.cardHeadline,
+    color: colors.text.primary,
   },
-  confirmationButtonText: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.white,
+  confirmButtonText: {
+    ...variants.cardHeadline,
+    color: colors.text.primary,
   },
 });
+
+export default LogoutConfirmationModal;

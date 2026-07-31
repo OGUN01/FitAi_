@@ -67,10 +67,18 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable onPress={onClose} style={styles.overlayPressable}>
-        <BlurView intensity={80} style={styles.blurContainer}>
-          <Pressable onPress={() => {}} style={styles.dialogPressable}>
-            <View style={styles.dialogContainer} accessibilityRole="alert">
+      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
+          the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
+      <View style={styles.root}>
+        <Pressable
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+          accessibilityRole="button"
+          accessibilityLabel={`Dismiss ${title} dialog`}
+        >
+          <BlurView intensity={80} style={styles.blurFill} />
+        </Pressable>
+        <View style={styles.dialogContainer} accessibilityRole="alert">
               {/* Header */}
               <View style={styles.headerRow}>
                 <View
@@ -204,28 +212,24 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                 </View>
               )}
             </View>
-          </Pressable>
-        </BlurView>
-      </Pressable>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlayPressable: {
-    flex: 1,
-  },
-  blurContainer: {
+  root: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  blurFill: {
+    flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  dialogPressable: {
+  dialogContainer: {
     width: "88%",
     maxWidth: 380,
-  },
-  dialogContainer: {
     backgroundColor: surface[2],
     borderRadius: 20,
     borderWidth: 1,

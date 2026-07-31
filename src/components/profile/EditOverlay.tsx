@@ -304,15 +304,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: rbr(24),
     maxHeight: SCREEN_HEIGHT * 0.6,
     minHeight: SCREEN_HEIGHT * 0.4,
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: -4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    boxShadow: '0px -4px 12px rgba(0, 0, 0, 0.25)',
-    elevation: 20,
+    // Editorial Dark: depth from the top hairline, not a cast shadow.
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 
   modalHeader: {
@@ -409,15 +403,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: rbr(12),
     padding: spacing.xl,
-    shadowColor: colors.black,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.25)',
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   loadingSpinner: {

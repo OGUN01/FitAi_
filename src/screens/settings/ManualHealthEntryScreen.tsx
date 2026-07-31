@@ -29,11 +29,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { ManualMetricEntry } from "../../components/health/ManualMetricEntry";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -492,7 +491,7 @@ export const ManualHealthEntryScreen: React.FC<
           )}
 
           {/* Date selector — simple local-date TextInput */}
-          <GlassCard elevation={1} style={styles.dateCard}>
+          <View style={styles.dateCard}>
             <View style={styles.dateRow}>
               <Ionicons
                 name="calendar-outline"
@@ -515,7 +514,7 @@ export const ManualHealthEntryScreen: React.FC<
                 accessibilityLabel="Date for the manual entry"
               />
             </View>
-          </GlassCard>
+          </View>
 
           {METRIC_GROUPS.map((group) => {
             const standard = group.metrics.filter((m) => !m.advanced);
@@ -530,7 +529,7 @@ export const ManualHealthEntryScreen: React.FC<
                   />
                   <Text style={styles.groupTitle}>{group.title}</Text>
                 </View>
-                <GlassCard elevation={1} style={styles.groupCard}>
+                <View style={styles.groupCard}>
                   {standard.map((def) => (
                     <ManualMetricEntry
                       key={def.key}
@@ -580,7 +579,7 @@ export const ManualHealthEntryScreen: React.FC<
                         />
                       </View>
                     ))}
-                </GlassCard>
+                </View>
               </View>
             );
           })}
@@ -631,7 +630,7 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: colors.glassBorder,
+    backgroundColor: surface[1],
     justifyContent: "center",
     alignItems: "center",
   },
@@ -675,6 +674,10 @@ const styles = StyleSheet.create({
   dateCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
   },
   dateRow: {
     flexDirection: "row",
@@ -698,9 +701,9 @@ const styles = StyleSheet.create({
   dateInput: {
     color: colors.text,
     fontSize: rf(14),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: border.subtle,
     borderRadius: rbr(8),
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(8),
@@ -723,6 +726,10 @@ const styles = StyleSheet.create({
   groupCard: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
   },
   advancedToggle: {
     flexDirection: "row",
@@ -731,7 +738,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.glassHighlight,
+    borderTopColor: border.subtle,
   },
   advancedToggleText: {
     fontSize: rf(13),

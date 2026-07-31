@@ -27,8 +27,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({
 }) => {
   const getInitials = useCallback((name?: string) => {
     if (!name || !name.trim()) return "?";
+    // Filter empty parts: a trailing/double space produced ""[0] → undefined,
+    // rendering "JUNDEFINED" for a name like "John ". Drop blanks first.
     return name
-      .split(" ")
+      .trim()
+      .split(/\s+/)
+      .filter((n) => n.length > 0)
       .map((n) => n[0])
       .join("")
       .toUpperCase()
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
     fontSize: rf(22),
     color: colors.text.primary,
     textAlign: "center",
-    marginBottom: spacing.xxs,
+    marginBottom: spacing.xs,
     letterSpacing: 0.3,
   },
   memberSince: {

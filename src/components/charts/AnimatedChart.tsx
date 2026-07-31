@@ -10,7 +10,7 @@ import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
 import { rf } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hexToRgba } from "../../utils/colors";
-import { ChartTooltip } from "../ui/ChartTooltip";
+import { ChartCallout } from "./ChartCallout";
 import { hapticSelection } from "../../utils/haptics";
 
 interface DataPoint {
@@ -254,7 +254,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       {/* Chart with touch interaction */}
       <GestureDetector gesture={tapGesture}>
         <View>
-          <ChartTooltip
+          <ChartCallout
             visible={tooltipData.visible}
             x={tooltipData.x}
             y={tooltipData.y}
@@ -427,12 +427,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.secondary,
+    fontVariant: ["tabular-nums"],
   },
 
   valueTarget: {
     fontSize: fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.success,
+    fontVariant: ["tabular-nums"],
   },
 
   arrow: {

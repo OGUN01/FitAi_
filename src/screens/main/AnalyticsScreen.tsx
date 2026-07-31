@@ -18,7 +18,6 @@ import {
   RefreshControl,
   Platform,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import {
   SafeAreaView,
@@ -28,7 +27,8 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { EmptyState } from "../../components/ui/aurora/EmptyState";
-import { colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { GlassButton } from "../../components/ui/aurora/GlassButton";
+import { colors, surface, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { hexToRgba } from "../../utils/colors";
@@ -36,7 +36,6 @@ import { hexToRgba } from "../../utils/colors";
 // Subscription gate
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { usePaywall } from "../../hooks/usePaywall";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 
 // Stores
 import { useAnalyticsStore } from "../../stores/analyticsStore";
@@ -47,6 +46,7 @@ import { useProfileStore } from "../../stores/profileStore";
 import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 import { analyticsDataService } from "../../services/analyticsData";
 import { resolveCurrentWeight } from "../../services/currentWeight";
+import { type WeightUnit, toDisplayWeight } from "../../utils/units";
 import { useAchievementStore } from "../../stores/achievementStore";
 import {
   getCurrentWeekStart,
@@ -111,6 +111,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const completedSessions = useFitnessStore((state) => state.completedSessions);
   const { bodyAnalysis, personalInfo, workoutPreferences } = useProfileStore();
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
+
+  // Stored weights are metric (kg); convert to the user's unit at display time.
+  const weightUnit: WeightUnit =
+    personalInfo?.units === "imperial" ? "lbs" : "kg";
   const {
     initialize: initializeAnalytics,
     refreshAnalytics,
@@ -417,7 +421,8 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   // Generate chart data based on period
   const chartData = useMemo(() => {
-    // Weight chart: always from Supabase history
+    // Weight chart: always from Supabase history (kg) — converted once to the
+    // user's display unit so axis/tooltip/trend copy match the unit suffix.
     const weightChartData =
       weightHistory.length > 0
         ? weightHistory.map((w) => ({
@@ -425,7 +430,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               month: "short",
               day: "numeric",
             }),
-            value: w.weight,
+            value: toDisplayWeight(w.weight, weightUnit) ?? w.weight,
           }))
         : (() => {
             const fallbackWeight =
@@ -443,7 +448,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                       month: "short",
                       day: "numeric",
                     }),
-                    value: fallbackWeight,
+                    value:
+                      toDisplayWeight(fallbackWeight, weightUnit) ??
+                      fallbackWeight,
                   },
                 ]
               : undefined;
@@ -580,6 +587,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     weightHistory,
     calorieHistory,
     periodBoundaries,
+    weightUnit,
   ]);
 
   // Handlers
@@ -678,19 +686,12 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                 : "Detailed analytics and trend charts are available on Basic and Pro plans."}
             </Text>
             {!showLockedInitializing && (
-            <AnimatedPressable
+            <GlassButton
+              label="Upgrade to Unlock"
               onPress={() => triggerPaywall("Unlock detailed analytics with a premium plan")}
-              style={styles.lockedUpgradeButton}
-            >
-              <LinearGradient
-                colors={["#FF8A5C", "#A78BFA"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.lockedUpgradeGradient}
-              >
-                <Text style={styles.lockedUpgradeText}>Upgrade to Unlock</Text>
-              </LinearGradient>
-            </AnimatedPressable>
+              variant="primary"
+              fullWidth
+            />
             )}
           </View>
         </SafeAreaView>
@@ -756,6 +757,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                     data={metricsData}
                     period={selectedPeriod}
                     onMetricPress={handleMetricPress}
+                    weightUnit={weightUnit}
                   />
                 </View>
 
@@ -802,6 +804,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                     calorieData={chartData.calorieData}
                     workoutData={chartData.workoutData}
                     period={selectedPeriod}
+                    weightUnit={weightUnit}
                     onChartPress={handleChartPress}
                   />
                 </View>
@@ -849,14 +852,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxl,
   },
   calorieBreakdown: {
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: surface[1],
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    marginHorizontal: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   breakdownTitle: {
     fontSize: typography.fontSize.caption,
-    fontWeight: "600",
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -872,8 +876,9 @@ const styles = StyleSheet.create({
   },
   breakdownValue: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text.primary,
+    fontVariant: ["tabular-nums"],
   },
   breakdownExtra: {
     color: colors.success.DEFAULT,
@@ -885,16 +890,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: rw(32),
   },
   lockedIconContainer: {
-    backgroundColor: hexToRgba("#FF8A5C", 0.15),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.15),
     borderRadius: rw(40),
     padding: rw(20),
     marginBottom: rh(20),
     borderWidth: 1,
-    borderColor: hexToRgba("#FF8A5C", 0.3),
+    borderColor: hexToRgba(colors.primary.DEFAULT, 0.3),
   },
   lockedTitle: {
     fontSize: rf(22),
-    fontWeight: "800",
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.text.primary,
     marginBottom: rh(10),
     textAlign: "center",
@@ -905,22 +910,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: rf(20),
     marginBottom: rh(28),
-  },
-  lockedUpgradeButton: {
-    borderRadius: rw(16),
-    overflow: "hidden",
-    width: "100%",
-  },
-  lockedUpgradeGradient: {
-    paddingVertical: rh(14),
-    paddingHorizontal: rw(24),
-    alignItems: "center",
-    borderRadius: rw(16),
-  },
-  lockedUpgradeText: {
-    color: "#ffffff",
-    fontWeight: "700",
-    fontSize: rf(16),
   },
 });
 

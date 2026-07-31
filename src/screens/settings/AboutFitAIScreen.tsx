@@ -1,12 +1,9 @@
 /**
  * AboutFitAIScreen - About FitAI
  *
- * Redesigned following UI/UX Methodology:
- * - GlassCard for all cards
- * - Ionicons instead of emojis
- * - AnimatedPressable with haptics
- * - aurora-tokens for spacing/colors
- * - FadeInDown entry animations
+ * Editorial Dark: flat surface + hairline cards (no GlassCard/gradient),
+ * Ionicons instead of emojis, AnimatedPressable with haptics,
+ * aurora-tokens for spacing/colors, FadeInDown entry animations.
  */
 
 import React from "react";
@@ -14,9 +11,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AboutFitAIHeader } from "../../components/settings/AboutFitAIHeader";
 import { AboutFitAIActionItem } from "../../components/settings/AboutFitAIActionItem";
@@ -24,7 +19,7 @@ import { AboutFitAIFeatureCard } from "../../components/settings/AboutFitAIFeatu
 import { AboutFitAISocialButtons } from "../../components/settings/AboutFitAISocialButtons";
 import { useAboutFitAILogic } from "../../hooks/useAboutFitAILogic";
 
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 
 interface AboutFitAIScreenProps {
@@ -37,7 +32,6 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
   const {
     appVersion,
     features,
-    handleRateApp,
     handleShareApp,
     handleWebsite,
     handleSocialMedia,
@@ -59,12 +53,9 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
           {/* App Logo & Info */}
           <Animated.View entering={FadeInDown.delay(100).duration(400)}>
             <View style={styles.appSection}>
-              <LinearGradient
-                colors={[colors.primary, colors.primaryLight]}
-                style={styles.appLogo}
-              >
+              <View style={styles.appLogo}>
               <Text style={styles.appLogoText}>F</Text>
-              </LinearGradient>
+              </View>
               <Text style={styles.appName}>FitAI</Text>
               <Text style={styles.appTagline}>
                 Your AI-Powered Fitness Companion
@@ -77,34 +68,18 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
           {/* Mission Statement */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <GlassCard
-              elevation={2}
-              padding="lg"
-              blurIntensity="default"
-              borderRadius="xl"
-              style={styles.missionCard}
-            >
-              <LinearGradient
-                colors={[
-                  `rgba(255, 107, 53, 0.15)`,
-                  `rgba(229, 90, 43, 0.1)`,
-                ]}
-                style={StyleSheet.absoluteFill}
-              />
+            <View style={styles.missionCard}>
               <View style={styles.missionIconContainer}>
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryDark]}
-                  style={styles.missionIcon}
-                >
-                  <Ionicons name="heart-outline" size={rf(24)} color={colors.white} />
-                </LinearGradient>
+                <View style={styles.missionIcon}>
+                  <Ionicons name="heart-outline" size={rf(24)} color={colors.primary} />
+                </View>
               </View>
               <Text style={styles.missionTitle}>Our Mission</Text>
               <Text style={styles.missionText}>
                 To revolutionize personal fitness by making AI-powered,
                 personalized health and wellness accessible to everyone.
               </Text>
-            </GlassCard>
+            </View>
           </Animated.View>
 
           {/* Key Features */}
@@ -140,14 +115,8 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Text style={styles.sectionTitle}>Support FitAI</Text>
             </View>
 
-            <AboutFitAIActionItem
-              icon="star-outline"
-              iconColor={colors.warning}
-              title="Rate the App"
-              description="Help others discover FitAI by rating us"
-              onPress={handleRateApp}
-              animationDelay={600}
-            />
+            {/* "Rate the App" is intentionally omitted until the app is
+                published on a store and a real listing URL exists. */}
 
             <AboutFitAIActionItem
               icon="share-social-outline"
@@ -266,6 +235,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.md,
+    backgroundColor: colors.primary,
   },
   appLogoText: {
     fontSize: rf(32),
@@ -287,7 +257,7 @@ const styles = StyleSheet.create({
   versionBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: colors.glassSurface,
     borderRadius: borderRadius.full,
   },
   versionText: {
@@ -295,10 +265,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: "500",
   },
+  // Flat surface + hairline (Editorial Dark: no glass/gradient/elevation).
   missionCard: {
     alignItems: "center",
     marginBottom: spacing.lg,
     overflow: "hidden",
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
   },
   missionIconContainer: {
     marginBottom: spacing.md,
@@ -309,6 +285,9 @@ const styles = StyleSheet.create({
     borderRadius: rw(24),
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.primaryTint,
+    borderWidth: 1,
+    borderColor: colors.primaryFaded,
   },
   missionTitle: {
     fontSize: rf(18),

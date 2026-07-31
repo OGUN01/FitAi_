@@ -1,5 +1,5 @@
 /**
- * BuilderSummaryFooter — floating glass footer, sticky at the bottom of the
+ * BuilderSummaryFooter — floating flat footer, sticky at the bottom of the
  * WeeklyBuilderScreen.
  *
  * Subscribes to workoutBuilderStore `insights` + `draft` and shows:
@@ -15,21 +15,31 @@
  * absent), then navigates back.
  *
  * Loading state: AuroraSpinner while `isComputingInsights`.
+ *
+ * Design language: Editorial Dark — flat surface + 1px hairline top border,
+ * no glass blur, no cast shadows (depth comes from type hierarchy). Confirm
+ * dialogs route through DetentBottomSheet (thumb-reachable, swipe-dismissible)
+ * instead of centered CustomDialog overlays. Metric readouts use
+ * tabular-nums.
  */
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, ViewStyle, Pressable, type TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GlassCard } from "../../ui/aurora/GlassCard";
 import { GlassButton } from "../../ui/aurora/GlassButton";
 import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
+import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { ParticleBurst } from "../../ui/ParticleBurst";
-import { CustomDialog } from "../../ui/CustomDialog";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { useFitnessStore } from "../../../stores/fitnessStore";
+import { useProfileStore } from "../../../stores/profileStore";
+import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 import { haptics } from "../../../utils/haptics";
 import {
   colors,
+  surface,
+  border,
+  flatShadows,
   spacing,
   borderRadius,
   typography,
@@ -132,6 +142,15 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
   const totalVolume = insights?.totalVolume ?? 0;
   const totalCalories = insights?.calorieEstimate ?? 0;
 
+  // Volume is stored/computed in kg; display converts for imperial users.
+  // Two-step select → derive (jest profileStore mock ignores selectors).
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const userUnits: WeightUnit = personalInfo?.units === "imperial" ? "lbs" : "kg";
+  const displayVolume = useMemo(
+    () => (totalVolume > 0 ? toDisplayWeight(totalVolume, userUnits) : null),
+    [totalVolume, userUnits],
+  );
+
   // Push/pull balance → 0-100 score (1.0 = balanced = 100).
   const balanceScore = useMemo(() => {
     const ratio = insights?.pushPullRatio ?? 1;
@@ -224,14 +243,8 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
       pointerEvents="box-none"
       testID={testID}
     >
-      <GlassCard
-        blurIntensity="heavy"
-        elevation={5}
-        padding="md"
-        borderRadius="xl"
-        showBorder
-        style={styles.card}
-      >
+      {/* Flat footer surface — depth from hairline top border, not blur/shadow */}
+      <View style={styles.card}>
         {isComputingInsights && (
           <View style={styles.computingRow}>
             <AuroraSpinner customSize={rf(16)} theme="white" />
@@ -248,7 +261,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
           <Stat
             icon="scale-outline"
             label="Volume"
-            value={totalVolume > 0 ? `${Math.round(totalVolume)}kg` : "—"}
+            value={displayVolume != null ? `${Math.round(displayVolume)}${userUnits}` : "—"}
           />
           <Stat
             icon="fitness-outline"
@@ -309,7 +322,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
           />
         </View>
 
-        {/* Phase 9 — AI menu dropdown */}
+        {/* Phase 9 — AI menu dropdown (flat surface + hairline separators) */}
         {aiMenuOpen && (
           <View style={styles.aiMenu}>
             <Pressable
@@ -329,6 +342,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
                 </Text>
               )}
             </Pressable>
+            <View style={styles.aiMenuRule} />
             <Pressable
               onPress={handleApplyProgression}
               disabled={aiLoading || priorPerformance.length === 0}
@@ -340,6 +354,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
               <Ionicons name="trending-up-outline" size={rf(16)} color={colors.primary.DEFAULT} />
               <Text style={styles.aiMenuItemText}>Apply Progressive Overload</Text>
             </Pressable>
+            <View style={styles.aiMenuRule} />
             <Pressable
               onPress={() => {
                 setAiMenuOpen(false);
@@ -356,7 +371,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
             </Pressable>
           </View>
         )}
-      </GlassCard>
+      </View>
 
       {showConfetti && (
         <View style={styles.confettiWrap} pointerEvents="none">
@@ -369,47 +384,76 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
         </View>
       )}
 
-      {/* Phase 9 — Deload confirmation (destructive-ish: overwrites draft) */}
-      <CustomDialog
+      {/*
+        Phase 9 — Deload confirmation. Routed through DetentBottomSheet
+        (thumb-reachable, swipe-dismissible) instead of a centered dialog.
+        Destructive-ish: overwrites the draft.
+      */}
+      <DetentBottomSheet
         visible={deloadConfirmOpen}
-        title="Apply Deload Week?"
-        message="This reduces volume by ~40% across all days. Your current exercises stay, but set counts drop. You can undo by not saving."
-        type="warning"
-        actions={[
-          {
-            text: "Cancel",
-            onPress: () => setDeloadConfirmOpen(false),
-            style: "cancel",
-            variant: "secondary",
-          },
-          {
-            text: "Apply Deload",
-            onPress: handleDeloadConfirm,
-            style: "destructive",
-            variant: "primary",
-          },
-        ]}
-        onDismiss={() => setDeloadConfirmOpen(false)}
-      />
+        onClose={() => setDeloadConfirmOpen(false)}
+        snapPoints={[0.4, 0.6]}
+        initialSnapIndex={1}
+        testID={`${testID ?? "footer"}-deload-sheet`}
+      >
+        <View style={styles.sheetBody}>
+          <View style={[styles.sheetIcon, { backgroundColor: hexToRgba(colors.warning.DEFAULT, 0.12) }]}>
+            <Ionicons name="warning" size={rf(28)} color={colors.warning.DEFAULT} />
+          </View>
+          <Text style={styles.sheetTitle}>Apply Deload Week?</Text>
+          <Text style={styles.sheetMessage}>
+            This reduces volume by ~40% across all days. Your current exercises stay, but set counts drop. You can undo by not saving.
+          </Text>
+          <View style={styles.sheetActions}>
+            <GlassButton
+              label="Cancel"
+              onPress={() => setDeloadConfirmOpen(false)}
+              variant="secondary"
+              hapticType="light"
+              style={styles.sheetActionBtn}
+              testID={`${testID ?? "footer"}-deload-cancel`}
+            />
+            <GlassButton
+              label="Apply Deload"
+              onPress={handleDeloadConfirm}
+              variant="primary"
+              hapticType="medium"
+              style={styles.sheetActionBtn}
+              testID={`${testID ?? "footer"}-deload-confirm`}
+            />
+          </View>
+        </View>
+      </DetentBottomSheet>
 
-      {/* Phase 9 — AI error dialog */}
-      {aiActionError && (
-        <CustomDialog
-          visible={!!aiActionError}
-          title="AI Action Failed"
-          message={aiActionError}
-          type="warning"
-          actions={[
-            {
-              text: "Dismiss",
-              onPress: () => setAiActionError(null),
-              style: "default",
-              variant: "primary",
-            },
-          ]}
-          onDismiss={() => setAiActionError(null)}
-        />
-      )}
+      {/*
+        Phase 9 — AI error sheet. Single dismiss action; same bottom-sheet
+        pattern as the deload confirmation.
+      */}
+      <DetentBottomSheet
+        visible={!!aiActionError}
+        onClose={() => setAiActionError(null)}
+        snapPoints={[0.4, 0.6]}
+        initialSnapIndex={1}
+        testID={`${testID ?? "footer"}-error-sheet`}
+      >
+        <View style={styles.sheetBody}>
+          <View style={[styles.sheetIcon, { backgroundColor: hexToRgba(colors.error.DEFAULT, 0.12) }]}>
+            <Ionicons name="close-circle" size={rf(28)} color={colors.error.DEFAULT} />
+          </View>
+          <Text style={styles.sheetTitle}>AI Action Failed</Text>
+          <Text style={styles.sheetMessage}>{aiActionError}</Text>
+          <View style={styles.sheetActions}>
+            <GlassButton
+              label="Dismiss"
+              onPress={() => setAiActionError(null)}
+              variant="primary"
+              hapticType="light"
+              style={styles.sheetActionBtn}
+              testID={`${testID ?? "footer"}-error-dismiss`}
+            />
+          </View>
+        </View>
+      </DetentBottomSheet>
     </View>
   );
 };
@@ -435,6 +479,9 @@ const Stat: React.FC<{
   </View>
 );
 
+// Shared tabular-nums treatment for metric readouts (Editorial Dark standard).
+const tabularNums: TextStyle = { fontVariant: ["tabular-nums"] };
+
 // NOTE: Divider removed — statsRow now uses 3 cells without dividers per
 // audit fix (5 stats + 4 dividers overflowed on 360px screens).
 const styles = StyleSheet.create({
@@ -446,10 +493,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.md),
     paddingTop: rp(spacing.sm),
     zIndex: 1100,
-    elevation: 11,
   },
+  // Flat footer surface — pure-black step + 1px hairline top border. No blur,
+  // no cast shadow (Editorial Dark: depth from type hierarchy, not elevation).
   card: {
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: surface[1],
+    borderTopWidth: 1,
+    borderTopColor: border.subtle,
+    borderRadius: borderRadius.xl,
+    padding: rp(spacing.md),
   },
   computingRow: {
     flexDirection: "row",
@@ -461,6 +513,7 @@ const styles = StyleSheet.create({
   computingText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
+    ...tabularNums,
   },
   statsRow: {
     flexDirection: "row",
@@ -479,6 +532,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.bold) as any,
+    ...tabularNums,
   },
   statLabel: {
     color: colors.text.tertiary,
@@ -503,11 +557,12 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.body),
     fontWeight: String(typography.fontWeight.semibold) as any,
     marginTop: rp(2),
+    ...tabularNums,
   } as TextStyle,
   saveBtn: {
     flexShrink: 0,
   },
-  // Phase 9 — AI menu
+  // Phase 9 — AI menu (flat surface + hairline separators between rows)
   aiMenuBtn: {
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
@@ -523,14 +578,19 @@ const styles = StyleSheet.create({
   },
   aiMenu: {
     marginTop: rp(spacing.sm),
-    backgroundColor: colors.glass.background,
+    backgroundColor: surface[2],
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
     borderRadius: borderRadius.lg,
     padding: rp(spacing.xs),
     gap: rp(2),
     zIndex: 1200,
-    elevation: 12,
+    ...flatShadows.sm,
+  },
+  aiMenuRule: {
+    height: 1,
+    backgroundColor: border.subtle,
+    marginHorizontal: rp(spacing.sm),
   },
   aiMenuItem: {
     flexDirection: "row",
@@ -553,6 +613,7 @@ const styles = StyleSheet.create({
   aiMenuItemHint: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
+    ...tabularNums,
   },
   confettiWrap: {
     position: "absolute",
@@ -563,7 +624,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1200,
-    elevation: 12,
+  },
+  // DetentBottomSheet confirmation bodies (deload + AI error)
+  sheetBody: {
+    alignItems: "center",
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.xl),
+    gap: rp(spacing.sm),
+  },
+  sheetIcon: {
+    width: rf(56),
+    height: rf(56),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetTitle: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.h3),
+    fontWeight: String(typography.fontWeight.bold) as TextStyle["fontWeight"],
+    textAlign: "center",
+  },
+  sheetMessage: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.body),
+    textAlign: "center",
+    lineHeight: rf(22),
+  },
+  sheetActions: {
+    flexDirection: "column",
+    gap: rp(spacing.sm),
+    width: "100%",
+    marginTop: rp(spacing.sm),
+  },
+  sheetActionBtn: {
+    width: "100%",
   },
 });
 

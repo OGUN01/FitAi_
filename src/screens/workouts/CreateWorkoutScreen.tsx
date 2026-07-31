@@ -352,14 +352,9 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
         : [];
 
       if (isEditing && templateId) {
-        // Update existing template. Phase 10: the update API on the service
-        // only allows a subset of fields (name/desc/exercises/muscleGroups/
-        // duration/isPublic). Category/difficulty/tags are NOT in UpdateInput,
-        // so for public templates we surface a one-time confirmation and let
-        // the isPublic flag toggle through the existing API. Community
-        // metadata edits (category/difficulty/tags) require a service-level
-        // update addition — out of scope for Phase 10's additive save flow;
-        // the user can re-create the template to change community metadata.
+        // Update existing template. UpdateInput accepts the full community
+        // metadata (category/difficulty/tags) — pass it through when sharing
+        // so edit-mode inputs actually persist.
         if (shareToCommunity) {
           haptics.light();
         }
@@ -369,6 +364,13 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
           targetMuscleGroups: muscleGroups,
           estimatedDurationMinutes: addedExercises.length * 8,
           isPublic: shareToCommunity,
+          ...(shareToCommunity
+            ? {
+                category: shareCategory ?? undefined,
+                difficulty: shareDifficulty ?? undefined,
+                tags,
+              }
+            : {}),
         });
       } else {
         // Create new template. The CreateInput type accepts the full

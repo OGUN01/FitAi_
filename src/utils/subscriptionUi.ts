@@ -7,6 +7,54 @@ type SubscriptionStatus =
   | null
   | undefined;
 
+/**
+ * Single shared fallback map of per-tier feature copy. Used when the server's
+ * subscription_plans.features_list is unavailable. Every subscription UI
+ * (paywall, management screen) must read from here — never re-hardcode lists.
+ */
+export const TIER_FEATURES: Record<string, string[]> = {
+  free: [
+    "10 AI generations per month",
+    "10 AI food scans per day",
+    "Basic progress tracking",
+  ],
+  basic: [
+    "10 AI generations per day",
+    "Unlimited AI food scans",
+    "Basic analytics dashboard",
+  ],
+  pro: [
+    "Unlimited AI generations",
+    "Unlimited AI food scans",
+    "Advanced analytics & insights",
+    "Personalized AI coaching",
+    "Priority support",
+    "Export your data",
+  ],
+};
+
+/**
+ * Format a whole-rupee amount with Indian digit grouping (e.g. ₹4,999).
+ * Falls back to manual grouping if Intl is unavailable (older Hermes).
+ */
+export function formatINR(amount: number): string {
+  const rounded = Math.round(amount);
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(rounded);
+  } catch {
+    const digits = String(Math.abs(rounded));
+    const grouped =
+      digits.length <= 3
+        ? digits
+        : `${digits.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",")},${digits.slice(-3)}`;
+    return `${rounded < 0 ? "-" : ""}₹${grouped}`;
+  }
+}
+
 export function getSubscriptionSubtitle(
   tier: string | undefined,
   status: SubscriptionStatus,
@@ -57,8 +105,8 @@ export function getPaywallPrimaryLabel(options: {
 
   const priceLabel =
     billingCycle === "yearly"
-      ? `Subscribe - INR ${selectedPlanPrice * 12}/yr`
-      : `Subscribe - INR ${selectedPlanPrice}/mo`;
+      ? `Subscribe - ${formatINR(selectedPlanPrice * 12)}/yr`
+      : `Subscribe - ${formatINR(selectedPlanPrice)}/mo`;
 
   return priceLabel;
 }

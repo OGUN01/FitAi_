@@ -13,38 +13,47 @@ import {
 import { rf } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
 import { getWeightGoalProgress } from "../../../components/progress/goalProgressUtils";
+import { type WeightUnit, toDisplayWeight } from "../../../utils/units";
 import type { PersonalInfoData, BodyAnalysisData } from "../../../types/onboarding";
 
 interface GoalProgressCardProps {
   calculatedMetrics: CalculatedMetrics | null;
   profilePersonalInfo?: PersonalInfoData | null;
   bodyAnalysis?: BodyAnalysisData | null;
+  weightHistory?: Array<{ date: string; weight: number }>;
+  unit?: WeightUnit;
 }
 
 export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
   calculatedMetrics,
   profilePersonalInfo: _profilePersonalInfo,
   bodyAnalysis,
+  weightHistory = [],
+  unit = "kg",
 }) => {
-  const { weightProgressPercent } = useMemo(() => {
+  const { weightProgressPercent, hasStartWeight } = useMemo(() => {
     const { weightProgress } = getWeightGoalProgress({
       currentWeightKg: calculatedMetrics?.currentWeightKg ?? null,
       targetWeightKg: calculatedMetrics?.targetWeightKg ?? null,
-      fallbackStartWeightKg:
-        calculatedMetrics?.currentWeightKg ??
-        bodyAnalysis?.current_weight_kg ??
-        null,
+      weightHistory,
+      // Real onboarding start weight only — falling back to currentWeightKg
+      // pins start === current and the bar at a permanent 0%.
+      fallbackStartWeightKg: bodyAnalysis?.current_weight_kg ?? null,
       weeklyRateKg: calculatedMetrics?.weeklyWeightLossRate ?? null,
       targetTimelineWeeks: calculatedMetrics?.targetTimelineWeeks ?? null,
     });
     const percent = weightProgress != null ? Math.round(weightProgress * 100) : 0;
-    return { weightProgressPercent: percent };
+    const startKnown =
+      weightHistory.some((entry) => Number.isFinite(entry.weight)) ||
+      bodyAnalysis?.current_weight_kg != null;
+    return { weightProgressPercent: percent, hasStartWeight: startKnown };
   }, [
     calculatedMetrics?.currentWeightKg,
     calculatedMetrics?.targetWeightKg,
     calculatedMetrics?.weeklyWeightLossRate,
     calculatedMetrics?.targetTimelineWeeks,
     bodyAnalysis?.current_weight_kg,
+    weightHistory,
   ]);
 
   const hasWeightGoal =
@@ -74,26 +83,47 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
             <Text style={styles.goalLabel} numberOfLines={1}>
               Weight Goal
             </Text>
-            <Text style={styles.goalPercent} numberOfLines={1}>
-              {Math.min(100, weightProgressPercent)}%
-            </Text>
+            {hasStartWeight && (
+              <Text style={styles.goalPercent} numberOfLines={1}>
+                {Math.min(100, weightProgressPercent)}%
+              </Text>
+            )}
           </View>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${Math.min(100, weightProgressPercent)}%`,
-                  backgroundColor: chart[1],
-                },
-              ]}
-            />
-          </View>
+          {hasStartWeight && (
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${Math.min(100, weightProgressPercent)}%`,
+                    backgroundColor: chart[1],
+                  },
+                ]}
+              />
+            </View>
+          )}
           <Text style={styles.goalText} numberOfLines={1} adjustsFontSizeToFit>
-            {calculatedMetrics!.currentWeightKg! > 0
-              ? `${calculatedMetrics!.currentWeightKg!.toFixed(1)} kg → ${calculatedMetrics!.targetWeightKg!.toFixed(1)} kg`
-              : "-- kg → -- kg"}
+            {(() => {
+              const displayCurrent = toDisplayWeight(
+                calculatedMetrics!.currentWeightKg!,
+                unit,
+              );
+              const displayTarget = toDisplayWeight(
+                calculatedMetrics!.targetWeightKg!,
+                unit,
+              );
+              return displayCurrent != null &&
+                displayTarget != null &&
+                calculatedMetrics!.currentWeightKg! > 0
+                ? `${displayCurrent.toFixed(1)} ${unit} → ${displayTarget.toFixed(1)} ${unit}`
+                : `-- ${unit} → -- ${unit}`;
+            })()}
           </Text>
+          {!hasStartWeight && (
+            <Text style={styles.goalSubtext} numberOfLines={1}>
+              Log a weigh-in to start tracking progress
+            </Text>
+          )}
         </View>
       )}
 
@@ -183,6 +213,10 @@ const styles = StyleSheet.create({
   goalText: {
     ...typography.variants.body,
     color: colors.text.primary,
+  },
+  goalSubtext: {
+    ...typography.variants.caption2,
+    color: colors.text.muted,
   },
   goalValue: {
     fontFamily: "Manrope_700Bold",

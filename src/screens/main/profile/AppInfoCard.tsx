@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.xxs,
+    marginBottom: spacing.xs,
   },
   appName: {
     ...variants.cardHeadline,

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, PropsWithChildren } from "react";
-import { View, Text, StyleSheet, Modal } from "react-native";
-import { Card } from "../ui";
+import { View, Text, StyleSheet } from "react-native";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { DetentBottomSheet } from "../ui/aurora/DetentBottomSheet";
+import { ProgressRing } from "../ui/aurora/ProgressRing";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
-import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
+import { rf, rp, rs } from "../../utils/responsive";
 
 interface WorkoutTimerProps {
   isVisible: boolean;
@@ -92,10 +93,8 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
     }
   };
 
-  // Calculate progress percentage (guard against zero duration). When duration
-  // is 0 the timer has no work to do — render null instead of showing "100%
-  // Complete" misleadingly.
-  if (!isVisible) return null;
+  // Guard against zero/invalid duration. When duration is 0 the timer has no
+  // work to do — render null instead of showing a misleading full meter.
   if (!duration || duration <= 0 || !Number.isFinite(duration)) return null;
 
   const safeDuration = Math.max(1, duration);
@@ -103,181 +102,141 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
     ((safeDuration - Math.min(timeRemaining, safeDuration)) / safeDuration) *
     100;
 
+  // Editorial Dark: bottom sheet (thumb-reachable, swipe-dismissible) with a
+  // single ProgressRing meter — the old centered Card modal stacked a
+  // hand-rolled circular hack AND a thin bar + "% Complete" text (two meters).
   return (
-    <Modal
+    <DetentBottomSheet
       visible={isVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
+      onClose={onCancel}
+      snapPoints={[0.55, 0.75]}
+      initialSnapIndex={1}
+      testID="workout-timer-sheet"
     >
-        <View style={styles.overlay}>
-        <View style={styles.overlayInner}>
-          <Card style={styles.timerCard} variant="elevated">
-            <View style={styles.timerContent}>
-              {/* Optional visual (e.g., GIF) */}
-              {children}
+      <View style={styles.timerContent}>
+        {/* Optional visual (e.g., GIF) */}
+        {children}
 
-              {/* Title */}
-              <Text style={styles.timerTitle}>{title}</Text>
+        {/* Title */}
+        <Text style={styles.timerTitle}>{title}</Text>
 
-              {/* Circular Progress Indicator */}
-              <View style={styles.circularTimer}>
-                <View style={styles.progressBackground}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      // Merge baseline -90deg with the progress rotation in a
-                      // single transform array — the previous inline
-                      // `transform: [{ rotate }]` overwrote the baseline.
-                      {
-                        transform: [
-                          { rotate: "-90deg" },
-                          { rotate: `${progressPercentage * 3.6}deg` },
-                        ],
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.timerDisplay}>
-                  <Text style={styles.timeText}>{formatTime(timeRemaining)}</Text>
-                  <Text style={styles.timeLabel}>
-                    {isPaused ? "Paused" : "Remaining"}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Progress Bar */}
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      { width: `${progressPercentage}%` },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.progressText}>
-                  {Math.round(progressPercentage)}% Complete
-                </Text>
-              </View>
-
-              {/* Controls */}
-              <View style={styles.controls}>
-                <AnimatedPressable
-                  style={[styles.modernControlButton, styles.outlineButton]}
-                  onPress={handlePauseResume}
-                  accessibilityRole="button"
-                  accessibilityLabel={isPaused ? "Resume timer" : "Pause timer"}
-                  scaleValue={0.95}
-                  springConfig="snappy"
-                  hapticType="light"
-                >
-                  <Text
-                    style={[styles.modernControlText, styles.outlineButtonText]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    {isPaused ? "Resume" : "Pause"}
-                  </Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={[styles.modernControlButton, styles.primaryButton]}
-                  onPress={onComplete}
-                  accessibilityRole="button"
-                  accessibilityLabel="Skip rest"
-                  scaleValue={0.95}
-                  springConfig="snappy"
-                  hapticType="light"
-                >
-                  <Text
-                    style={[styles.modernControlText, styles.primaryButtonText]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    Skip Rest
-                  </Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={[styles.modernControlButton, styles.outlineButton]}
-                  onPress={onCancel}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel timer"
-                  scaleValue={0.95}
-                  springConfig="snappy"
-                  hapticType="light"
-                >
-                  <Text
-                    style={[styles.modernControlText, styles.outlineButtonText]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    Cancel
-                  </Text>
-                </AnimatedPressable>
-              </View>
-
-              {/* Quick Time Adjustments */}
-              <View style={styles.quickAdjustments}>
-                <AnimatedPressable
-                  style={styles.adjustButton}
-                  onPress={() =>
-                    setTimeRemaining((prev) => Math.max(0, prev - 30))
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Subtract 30 seconds"
-                  scaleValue={0.9}
-                  springConfig="snappy"
-                  hapticType="light"
-                >
-                  <Text style={styles.adjustButtonText}>-30s</Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={styles.adjustButton}
-                  onPress={() => setTimeRemaining((prev) => prev + 30)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add 30 seconds"
-                  scaleValue={0.9}
-                  springConfig="snappy"
-                  hapticType="light"
-                >
-                  <Text style={styles.adjustButtonText}>+30s</Text>
-                </AnimatedPressable>
-              </View>
+        {/* Single progress meter — ProgressRing with the countdown inside */}
+        <View style={styles.ringWrap}>
+          <ProgressRing
+            progress={progressPercentage}
+            size={rs(200)}
+            strokeWidth={8}
+            color={colors.primary}
+            backgroundColor={colors.backgroundSecondary}
+            animated={false}
+          >
+            <View style={styles.timerDisplay}>
+              <Text style={styles.timeText}>{formatTime(timeRemaining)}</Text>
+              <Text style={styles.timeLabel}>
+                {isPaused ? "Paused" : "Remaining"}
+              </Text>
             </View>
-          </Card>
+          </ProgressRing>
         </View>
+
+        {/* Controls */}
+        <View style={styles.controls}>
+          <AnimatedPressable
+            style={[styles.modernControlButton, styles.outlineButton]}
+            onPress={handlePauseResume}
+            accessibilityRole="button"
+            accessibilityLabel={isPaused ? "Resume timer" : "Pause timer"}
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Text
+              style={[styles.modernControlText, styles.outlineButtonText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {isPaused ? "Resume" : "Pause"}
+            </Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            style={[styles.modernControlButton, styles.primaryButton]}
+            onPress={onComplete}
+            accessibilityRole="button"
+            accessibilityLabel="Skip rest"
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Text
+              style={[styles.modernControlText, styles.primaryButtonText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              Skip Rest
+            </Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            style={[styles.modernControlButton, styles.outlineButton]}
+            onPress={onCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel timer"
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Text
+              style={[styles.modernControlText, styles.outlineButtonText]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              Cancel
+            </Text>
+          </AnimatedPressable>
         </View>
-    </Modal>
+
+        {/* Quick Time Adjustments */}
+        <View style={styles.quickAdjustments}>
+          <AnimatedPressable
+            style={styles.adjustButton}
+            onPress={() =>
+              setTimeRemaining((prev) => Math.max(0, prev - 30))
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Subtract 30 seconds"
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Text style={styles.adjustButtonText}>-30s</Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            style={styles.adjustButton}
+            onPress={() => setTimeRemaining((prev) => prev + 30)}
+            accessibilityRole="button"
+            accessibilityLabel="Add 30 seconds"
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Text style={styles.adjustButtonText}>+30s</Text>
+          </AnimatedPressable>
+        </View>
+      </View>
+    </DetentBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.8)",
-  },
-  overlayInner: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  timerCard: {
-    width: "90%",
-    maxWidth: 400,
-    padding: spacing.xl,
-    alignItems: "center",
-  },
-
   timerContent: {
     alignItems: "center",
     width: "100%",
+    paddingBottom: spacing.lg,
   },
 
   timerTitle: {
@@ -288,35 +247,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  circularTimer: {
-    width: rs(200),
-    height: rs(200),
+  ringWrap: {
     marginBottom: spacing.lg,
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  progressBackground: {
-    position: "absolute",
-    width: rs(200),
-    height: rs(200),
-    borderRadius: rbr(100),
-    borderWidth: 8,
-    borderColor: colors.backgroundSecondary,
-  },
-
-  progressFill: {
-    position: "absolute",
-    width: rs(200),
-    height: rs(200),
-    borderRadius: rbr(100),
-    borderWidth: 8,
-    borderColor: colors.primary,
-    borderRightColor: "transparent",
-    borderBottomColor: "transparent",
-    // Rotation is applied inline (merged with the baseline -90deg rotation
-    // in a single transform array) — leaving it here would be overwritten.
   },
 
   timerDisplay: {
@@ -336,30 +268,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginTop: rp(4),
-  },
-
-  progressBarContainer: {
-    width: "100%",
-    marginBottom: spacing.lg,
-  },
-
-  progressBar: {
-    height: rh(8),
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: rbr(4),
-    marginBottom: spacing.sm,
-  },
-
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: colors.primary,
-    borderRadius: rbr(4),
-  },
-
-  progressText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: "center",
   },
 
   controls: {

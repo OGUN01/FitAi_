@@ -3,21 +3,12 @@
  * Premium header with greeting, date, weather-style summary
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { flatColors as colors, spacing, typography } from '../../../theme/aurora-tokens';
 import { rf, rw, rp, rs } from '../../../utils/responsive';
-
-const avatarGradientShadow = {
-  shadowColor: colors.black,
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.2,
-  shadowRadius: 8,
-  boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
-};
 
 interface HomeHeaderProps {
   userName: string;
@@ -32,39 +23,54 @@ interface HomeHeaderProps {
 
 export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
   ({ userName, userInitial, streak, onProfilePress, onStreakPress, dayLabel }) => {
-    const hour = new Date().getHours();
-    const { greeting, icon, gradientColors } = useMemo(() => {
+    // Tab screens stay mounted for the whole session, so time-of-day must be
+    // live state, not a mount-time memo — otherwise a session crossing noon
+    // keeps saying "Good morning". Refresh on app foregrounding and on a slow
+    // interval so the greeting/date roll over while the tab sits mounted.
+    const [now, setNow] = useState(() => new Date());
+    useEffect(() => {
+      const refresh = () => setNow(new Date());
+      const subscription = AppState.addEventListener('change', (state) => {
+        if (state === 'active') refresh();
+      });
+      const interval = setInterval(refresh, 60_000);
+      return () => {
+        subscription.remove();
+        clearInterval(interval);
+      };
+    }, []);
+
+    const { greeting, icon, accentColor } = useMemo(() => {
+      const hour = now.getHours();
       if (hour >= 5 && hour < 12) {
         return {
           greeting: 'Good morning',
           icon: 'sunny' as const,
-          gradientColors: ['#FF9500', '#FF6B00'] as [string, string],
+          accentColor: colors.warning,
         };
       }
       if (hour >= 12 && hour < 18) {
         return {
           greeting: 'Good afternoon',
           icon: 'partly-sunny' as const,
-          gradientColors: [colors.errorLight, colors.accent] as [string, string],
+          accentColor: colors.accent,
         };
       }
       return {
         greeting: 'Good evening',
         icon: 'moon' as const,
-        gradientColors: [colors.primary, colors.primaryDark] as [string, string],
+        accentColor: colors.primary,
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [now]);
 
     const todayDate = useMemo(
       () =>
-        new Date().toLocaleDateString('en-US', {
+        now.toLocaleDateString('en-US', {
           weekday: 'long',
           month: 'short',
           day: 'numeric',
         }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      []
+      [now]
     );
 
     return (
@@ -81,14 +87,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             accessibilityLabel="Profile"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <LinearGradient
-              colors={gradientColors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.avatarGradient, Platform.OS !== 'web' && avatarGradientShadow]}
-            >
+            <View style={[styles.avatar, { backgroundColor: accentColor }]}>
               <Text style={styles.avatarText}>{(userInitial || '').toUpperCase()}</Text>
-            </LinearGradient>
+            </View>
           </AnimatedPressable>
 
           {/* Center: Greeting + Name */}
@@ -100,7 +101,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               <Ionicons
                 name={icon}
                 size={rf(14)}
-                color={gradientColors[0]}
+                color={accentColor}
                 style={styles.greetingIcon}
               />
             </View>
@@ -135,6 +136,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
                 style={styles.streakBadge}
                 accessibilityRole="button"
                 accessibilityLabel={`${streak} day streak`}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="flame" size={rf(16)} color={colors.errorLight} />
                 <Text style={styles.streakNumber} numberOfLines={1}>
@@ -160,17 +162,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  avatarGradient: {
+  avatar: {
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),
     borderRadius: Math.max(rs(20), 22),
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
   },
   avatarText: {
     fontSize: rf(16),
-    fontWeight: '800',
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.white,
   },
   greetingSection: {
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: rf(13),
-    fontWeight: '500',
+    fontWeight: typography.fontWeight.medium,
     color: colors.textSecondary,
   },
   greetingIcon: {
@@ -191,21 +192,21 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: rf(22),
-    fontWeight: '800',
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.text,
     letterSpacing: -0.5,
     marginTop: rp(2),
   },
   dateText: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontWeight: typography.fontWeight.medium,
     color: colors.text,
     marginTop: rp(2),
     opacity: 0.75,
   },
   dayLabel: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontWeight: typography.fontWeight.semibold,
     color: colors.primary,
   },
   rightSection: {
@@ -226,8 +227,9 @@ const styles = StyleSheet.create({
   },
   streakNumber: {
     fontSize: rf(15),
-    fontWeight: '800',
+    fontWeight: typography.fontWeight.extrabold,
     color: colors.errorLight,
+    fontVariant: ['tabular-nums'],
   },
 });
 

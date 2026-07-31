@@ -87,11 +87,10 @@ const styles = StyleSheet.create({
     borderRadius: rbr(12),
     borderWidth: 2,
     borderColor: colors.white,
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.2)',
-    elevation: 4,
+    boxShadow: '0px 1px 2px rgba(0,0,0,0.1)',
+    elevation: 2,
   },
   thumbActive: {
     transform: [{ scale: 1.2 }],
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.3)',
   },
 });

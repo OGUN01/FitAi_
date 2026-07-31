@@ -635,14 +635,48 @@ export function transformForWorkoutRequest(
 }
 
 /**
- * Transform AI daily meal plan response to database format
+ * Resolve WHICH days the weekly plan lands on.
+ *
+ * Priority (single source = the user's explicit choice):
+ *  1. `preferred_workout_days` picked in onboarding (WorkoutPreferencesTab
+ *     day chips, persisted on workout_preferences) — validated to canonical
+ *     day ids, monday-first order, length clamped to workoutsPerWeek and
+ *     padded from the even spread if the stored array is short/stale.
+ *  2. Frequency-based defaults (legacy rows without the new column).
+ *
+ * The runtime profile object carries the field from the onboarding
+ * WorkoutPreferencesData/profileStore even though the legacy
+ * types/user.WorkoutPreferences interface doesn't declare it yet — read it
+ * structurally so this transformer stays the boundary.
  */
 function getWorkoutDaysFromPreferences(
-  workoutPreferences?: WorkoutPreferences,
+  workoutPreferences?: WorkoutPreferences & {
+    preferred_workout_days?: string[] | null;
+  },
   workoutsPerWeek: number = 3,
 ): string[] {
-  // preferred_workout_times stores time-of-day values ('morning', 'evening'), not day names.
-  // Use frequency-based defaults to determine training days.
+  const allDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  const count = Math.max(1, Math.min(7, Math.round(workoutsPerWeek)));
+
+  const stored = workoutPreferences?.preferred_workout_days;
+  if (stored?.length) {
+    // Monday-first, valid ids only, deduped.
+    const valid = allDays.filter((d) => stored.includes(d));
+    if (valid.length >= count) return valid.slice(0, count);
+    // Short/stale array — pad from the spread without duplicating picks.
+    const padded = [...valid];
+    for (const d of spreadForCount(count)) {
+      if (padded.length >= count) break;
+      if (!padded.includes(d)) padded.push(d);
+    }
+    return allDays.filter((d) => padded.includes(d));
+  }
+
+  return spreadForCount(count);
+}
+
+/** Frequency-based default day spread (used when no explicit choice exists). */
+function spreadForCount(workoutsPerWeek: number): string[] {
   const allDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
   if (workoutsPerWeek === 1) return ['wednesday'];
   if (workoutsPerWeek === 2) return ['tuesday', 'friday'];

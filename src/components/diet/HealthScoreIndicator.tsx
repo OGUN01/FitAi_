@@ -16,20 +16,22 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
   size = 'medium',
   showLabel = true,
 }) => {
+  // Tokenized health-score scale — same successAlt→errorAlt ramp used by
+  // ProductDetailsModal's getBreakdownColor so both read as one system.
   const getColorForCategory = (category: string) => {
     switch (category) {
       case 'excellent':
-        return '#22c55e'; // Green
+        return colors.successAlt;
       case 'good':
-        return '#84cc16'; // Light green
+        return colors.lime;
       case 'moderate':
-        return '#eab308'; // Yellow
+        return colors.yellow;
       case 'poor':
-        return '#f97316'; // Orange
+        return colors.orange;
       case 'unhealthy':
-        return '#ef4444'; // Red
+        return colors.errorAlt;
       default:
-        return '#6b7280'; // Gray
+        return colors.textMuted;
     }
   };
 
@@ -55,19 +57,19 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
       case 'small':
         return {
           container: { width: rw(60), height: rh(60) },
-          scoreText: { fontSize: rf(14) },
-          labelText: { fontSize: rf(10) },
+          scoreText: { fontSize: rf(14), lineHeight: rf(17) },
+          labelText: { fontSize: rf(12) },
         };
       case 'large':
         return {
           container: { width: rw(100), height: rh(100) },
-          scoreText: { fontSize: rf(24) },
+          scoreText: { fontSize: rf(24), lineHeight: rf(28) },
           labelText: { fontSize: rf(14) },
         };
       default:
         return {
           container: { width: rw(80), height: rh(80) },
-          scoreText: { fontSize: rf(18) },
+          scoreText: { fontSize: rf(18), lineHeight: rf(21) },
           labelText: { fontSize: rf(12) },
         };
     }
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
 
   scoreText: {
     fontWeight: typography.fontWeight.bold as '700',
-    lineHeight: rf(20),
+    fontVariant: ['tabular-nums'],
   },
 
   scoreUnit: {

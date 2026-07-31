@@ -12,8 +12,9 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
-import { WorkoutStartDialog } from '../../components/ui/CustomDialog';
-import { SegmentedControl } from '../../components/ui/SegmentedControl';
+import { DetentBottomSheet } from '../../components/ui/aurora/DetentBottomSheet';
+import { GlassButton } from '../../components/ui/aurora/GlassButton';
+import { Pill } from '../../components/onboarding/fresh/Pill';
 import { colors, spacing, shadows } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rh, rf, rp, rbr } from '../../utils/responsive';
@@ -244,13 +245,18 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </View>
             )}
 
-            {/* 1.6 Plan Source Toggle — no subtitle per spec §6.4 */}
+            {/* 1.6 Plan Source Toggle — no subtitle per spec §6.4.
+                Editorial Dark: option sets of 4 or fewer use fresh/Pill. */}
             <View style={styles.planToggleContainer}>
-              <SegmentedControl
-                options={PLAN_TOGGLE_OPTIONS}
-                selectedId={activePlanSource}
-                onSelect={(id) => setActivePlanSource(id as 'ai' | 'custom')}
-              />
+              {PLAN_TOGGLE_OPTIONS.map((opt) => (
+                <Pill
+                  key={opt.id}
+                  label={opt.label}
+                  selected={activePlanSource === opt.id}
+                  onPress={() => setActivePlanSource(opt.id as 'ai' | 'custom')}
+                  testID={`plan-toggle-${opt.id}`}
+                />
+              ))}
             </View>
 
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
@@ -436,19 +442,64 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
           </Animated.ScrollView>
         </Animated.View>
 
-        <WorkoutStartDialog
+        {/* Workout start confirmation — bottom sheet per Editorial Dark
+            (thumb-reachable, swipe-dismissible) instead of a centered dialog. */}
+        <DetentBottomSheet
           visible={state.showWorkoutStartDialog}
-          workoutTitle={state.selectedWorkout?.title || ''}
-          isResuming={
-            state.selectedWorkout?.isResuming ??
-            (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
-          }
-          onCancel={actions.handleWorkoutStartCancel}
-          onConfirm={actions.handleWorkoutStartConfirm}
-        />
+          onClose={actions.handleWorkoutStartCancel}
+          snapPoints={[0.35, 0.5]}
+          initialSnapIndex={1}
+          testID="workout-start-sheet"
+        >
+          <View style={styles.startSheetBody}>
+            <View
+              style={[
+                styles.startSheetIcon,
+                { backgroundColor: hexToRgba(colors.primary.DEFAULT, 0.12) },
+              ]}
+            >
+              <Ionicons name="barbell" size={rf(28)} color={colors.primary.DEFAULT} />
+            </View>
+            <Text style={styles.startSheetTitle}>
+              {state.selectedWorkout?.isResuming ??
+              (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
+                ? 'Resume Workout?'
+                : 'Start Workout'}
+            </Text>
+            <Text style={styles.startSheetMessage}>
+              {state.selectedWorkout?.isResuming ??
+              (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
+                ? `Pick up "${state.selectedWorkout?.title || ''}" where you left off?`
+                : `"${state.selectedWorkout?.title || ''}" — ready when you are.`}
+            </Text>
+            <View style={styles.startSheetActions}>
+              <GlassButton
+                label="Cancel"
+                onPress={actions.handleWorkoutStartCancel}
+                variant="secondary"
+                hapticType="light"
+                style={styles.startSheetBtn}
+                testID="workout-start-cancel"
+              />
+              <GlassButton
+                label={
+                  state.selectedWorkout?.isResuming ??
+                  (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
+                    ? 'Resume'
+                    : 'Begin Workout'
+                }
+                onPress={actions.handleWorkoutStartConfirm}
+                variant="primary"
+                hapticType="medium"
+                style={styles.startSheetBtn}
+                testID="workout-start-confirm"
+              />
+            </View>
+          </View>
+        </DetentBottomSheet>
 
         {/* Guest Sign Up Overlay — rendered last so it sits above all other
-            overlays (incl. WorkoutStartDialog) without relying on zIndex
+            overlays (incl. the workout-start sheet) without relying on zIndex
             stacking alone. */}
         {state.showGuestSignUp && (
           <View style={styles.guestSignUpOverlay}>
@@ -563,9 +614,47 @@ const styles = StyleSheet.create({
     elevation: 100,
   },
   planToggleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: rp(spacing.sm),
     paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.xs),
     marginBottom: rp(spacing.lg),
+  },
+  startSheetBody: {
+    alignItems: 'center',
+    paddingHorizontal: rp(spacing.lg),
+    paddingBottom: rp(spacing.lg),
+  },
+  startSheetIcon: {
+    width: rp(56),
+    height: rp(56),
+    borderRadius: rbr(28),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: rp(spacing.md),
+  },
+  startSheetTitle: {
+    fontSize: rf(18),
+    fontWeight: '700',
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: rp(spacing.xs),
+  },
+  startSheetMessage: {
+    fontSize: rf(14),
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: rf(20),
+    marginBottom: rp(spacing.lg),
+  },
+  startSheetActions: {
+    flexDirection: 'row',
+    gap: rp(spacing.sm),
+    width: '100%',
+  },
+  startSheetBtn: {
+    flex: 1,
   },
   editScheduleButton: {
     flexDirection: 'row',

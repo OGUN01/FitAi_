@@ -1,12 +1,11 @@
 import React from 'react';
-import { Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import {
   flatColors as colors,
   spacing,
   borderRadius,
   flatFontSize as fontSize,
 } from '../../../theme/aurora-tokens';
-import { Card } from '../../ui';
 import { FoodFeedback } from './types';
 import { rh } from '../../../utils/responsive';
 
@@ -17,7 +16,7 @@ interface FeedbackNotesProps {
 
 export const FeedbackNotes: React.FC<FeedbackNotesProps> = ({ feedback, onFeedbackChange }) => {
   return (
-    <Card style={styles.sectionCard}>
+    <View style={styles.sectionCard}>
       <Text style={styles.sectionTitle}>Additional comments (optional)</Text>
       <TextInput
         style={styles.notesInput}
@@ -27,14 +26,19 @@ export const FeedbackNotes: React.FC<FeedbackNotesProps> = ({ feedback, onFeedba
         multiline={true}
         numberOfLines={3}
       />
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
   sectionCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   sectionTitle: {

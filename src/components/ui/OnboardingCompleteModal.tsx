@@ -1,7 +1,9 @@
 /**
  * OnboardingCompleteModal - World-Class Completion Experience
  *
- * Premium glassmorphic modal shown after completing onboarding.
+ * Full-screen Editorial Dark payoff shown after completing onboarding:
+ * flat surface + hairline, one accent CTA (GlassButton), celebration
+ * particles as the purposeful brand moment. No glass, no filler gradients.
  * Follows UIUX methodology: No emojis, proper icons, animations, haptics.
  */
 
@@ -15,18 +17,18 @@ import {
   Easing,
   useWindowDimensions,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import AnimatedRN, { FadeInUp, ZoomIn } from "react-native-reanimated";
-import { GlassCard } from "./aurora/GlassCard";
-import { AnimatedPressable } from "./aurora/AnimatedPressable";
+import { GlassButton } from "./aurora/GlassButton";
 import { flatColors as colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
 interface OnboardingCompleteModalProps {
   visible: boolean;
-  userName: string;
+  /** Real first name only — omitted (never placeholder-substituted) when the
+   * profile value is unavailable. */
+  userName?: string;
   onGetStarted: () => void;
   stats?: {
     workoutsPerWeek?: number;
@@ -79,14 +81,9 @@ const AnimatedCheckmark: React.FC = () => {
         },
       ]}
     >
-      <LinearGradient
-        colors={[colors.successAlt, colors.successAltDark]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.checkmarkGradient}
-      >
+      <View style={styles.checkmarkDisc}>
         <Ionicons name="checkmark" size={rf(48)} color={colors.white} />
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 };
@@ -211,14 +208,9 @@ export const OnboardingCompleteModal: React.FC<
             ))}
           </View>
 
-          {/* Modal content - centered */}
+          {/* Modal content - centered flat surface with hairline edge */}
           <View style={[styles.modalContainer, { width: modalWidth }]}>
-            <GlassCard
-              elevation={5}
-              blurIntensity="heavy"
-              padding="lg"
-              borderRadius="xl"
-            >
+            <View style={styles.surface}>
               {/* Success Icon with Animation */}
               <AnimatedRN.View entering={ZoomIn.delay(200).duration(400)}>
                 <AnimatedCheckmark />
@@ -232,8 +224,12 @@ export const OnboardingCompleteModal: React.FC<
               {/* Subtitle */}
               <AnimatedRN.View entering={FadeInUp.delay(500).duration(400)}>
                 <Text style={styles.subtitle}>
-                  Welcome to FitAI,{" "}
-                  <Text style={styles.userName}>{userName}</Text>
+                  Welcome to FitAI
+                  {userName ? (
+                    <>
+                      , <Text style={styles.userName}>{userName}</Text>
+                    </>
+                  ) : null}
                 </Text>
                 <Text style={styles.description}>
                   Your personalized fitness journey begins now. We've crafted a
@@ -346,25 +342,16 @@ export const OnboardingCompleteModal: React.FC<
                 entering={FadeInUp.delay(800).duration(400)}
                 style={styles.buttonContainer}
               >
-                <AnimatedPressable
+                <GlassButton
+                  label="Start Your Journey"
                   onPress={handleGetStarted}
-                  scaleValue={0.96}
-                  hapticFeedback={true}
+                  icon="arrow-forward"
+                  fullWidth
                   hapticType="medium"
-                  style={styles.button}
-                >
-                  <LinearGradient
-                    colors={[colors.primary, colors.primaryDark]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.buttonGradient}
-                  >
-                    <Text style={styles.buttonText}>Start Your Journey</Text>
-                    <Ionicons name="arrow-forward" size={rf(20)} color={colors.white} />
-                  </LinearGradient>
-                </AnimatedPressable>
+                  accessibilityLabel="Start Your Journey"
+                />
               </AnimatedRN.View>
-            </GlassCard>
+            </View>
           </View>
         </View>
       </View>
@@ -404,22 +391,26 @@ const styles = StyleSheet.create({
   modalContainer: {
     alignSelf: "center",
   },
+  // Editorial Dark flat surface: depth from hairline + type hierarchy, never
+  // from blur or cast shadows.
+  surface: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+  },
   checkmarkContainer: {
     alignSelf: "center",
     marginBottom: spacing.lg,
   },
-  checkmarkGradient: {
+  checkmarkDisc: {
     width: rp(80),
     height: rp(80),
     borderRadius: rbr(40),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: colors.successAlt,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 10,
-    boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.4)',
+    backgroundColor: colors.successAlt,
   },
   title: {
     fontSize: rf(26),
@@ -458,7 +449,7 @@ const styles = StyleSheet.create({
     minWidth: rp(70),
     maxWidth: rp(100),
     alignItems: "center",
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.backgroundTertiary,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
     borderRadius: borderRadius.md,
@@ -481,6 +472,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
     textAlign: "center",
+    fontVariant: ["tabular-nums"],
   },
   featuresContainer: {
     marginBottom: spacing.xl,
@@ -500,26 +492,6 @@ const styles = StyleSheet.create({
     width: "100%",
     flexShrink: 0,
     marginTop: spacing.sm,
-  },
-  button: {
-    width: "100%",
-    borderRadius: rbr(12),
-    overflow: "hidden",
-  },
-  buttonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: rp(8),
-    paddingVertical: rp(16),
-    paddingHorizontal: rp(24),
-    minHeight: rp(56),
-  },
-  buttonText: {
-    fontSize: rf(16),
-    fontWeight: typography.fontWeight.bold,
-    color: colors.white,
-    letterSpacing: 0.3,
   },
 });
 

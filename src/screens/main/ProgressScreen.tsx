@@ -95,8 +95,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
               <ProgressHeader
                 navigation={navigation}
                 trackBStatus={trackBStatus}
-                showAnalytics={false}
-                setShowAnalytics={() => {}}
                 onAddEntry={() => setShowWeightModal(true)}
                 onShare={handleShareProgress}
               />
@@ -119,7 +117,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
                   <WeightJourneySection
                     weightHistory={weightHistory}
                     progressEntries={progressEntries}
-                    calculatedMetrics={calculatedMetrics}
                     onLogWeight={() => setShowWeightModal(true)}
                     unit={weightUnit}
                   />

@@ -74,7 +74,7 @@ const progressColorFor = (status: MealPlanStatus): string =>
     ? colors.success
     : status === 'in_progress'
       ? colors.info
-      : colors.glassSurface;
+      : colors.surface;
 
 const macroSplit = (meal: DayMeal): string => {
   const m = meal.totalMacros;
@@ -82,24 +82,21 @@ const macroSplit = (meal: DayMeal): string => {
   const p = Math.round(m.protein || 0);
   const c = Math.round(m.carbohydrates || 0);
   const f = Math.round(m.fat || 0);
-  return ` · ${p}P · ${c}C · ${f}F`;
+  return `${p}P ${c}C ${f}F`;
 };
 
 const TimelineRow = React.memo(
   ({ meal, mealSchedule, status, progress, isLast, index, onPress }: RowProps) => {
     const time = getMealTime(meal.type, mealSchedule);
-    // Align the timeline status dot with StatusPill's STATUS_CONFIG colors:
-    // completed → success, in_progress → info, upcoming → textMuted (hollow).
-    const dotStyle =
-      status === 'completed'
-        ? { backgroundColor: colors.success }
-        : status === 'in_progress'
-          ? { backgroundColor: colors.info }
-          : {
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              borderColor: colors.textMuted,
-            };
+    // The timeline dot is structural (timeline spine), not a status signal —
+    // the StatusPill carries status (primary) and the progress micro-bar's
+    // fill is the ambient cue. Encoding status in the dot's color too was a
+    // third, redundant signal in one row.
+    const dotStyle = {
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderColor: colors.textMuted,
+    };
 
     // Animated 2px progress micro-bar flush to the card's bottom edge.
     // Spring-driven so progress changes settle smoothly (springConfig.smooth).
@@ -343,7 +340,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   countPill: {
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
@@ -351,6 +348,7 @@ const styles = StyleSheet.create({
   count: {
     fontSize: rf(fontSize.xs),
     color: colors.textMuted,
+    fontVariant: ['tabular-nums'],
   },
   timeline: {
     position: 'relative' as const,
@@ -372,7 +370,7 @@ const styles = StyleSheet.create({
   timelineConnector: {
     width: 1,
     flex: 1,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
   },
@@ -386,24 +384,24 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     overflow: 'hidden' as const,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   rowPressable: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: spacing.sm,
-    padding: spacing.sm,
+    padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
     overflow: 'hidden' as const,
     ...shadows.level3,
   },
   mealInfo: {
     flex: 1,
     minWidth: 0,
-    gap: spacing.xxs,
+    gap: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row' as const,
@@ -436,12 +434,13 @@ const styles = StyleSheet.create({
   calorieRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   calorieText: {
     fontSize: rf(fontSize.sm),
     color: colors.primary,
     fontWeight: '700' as const,
+    fontVariant: ['tabular-nums'],
   },
   macroText: {
     fontSize: rf(fontSize.xs),
@@ -488,7 +487,7 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
   },
   shimmerLines: {
     flex: 1,
@@ -498,13 +497,13 @@ const styles = StyleSheet.create({
     width: '55%' as const,
     height: rf(fontSize.sm),
     borderRadius: 4,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
   },
   shimmerLineSub: {
     width: '35%' as const,
     height: rf(fontSize.xs),
     borderRadius: 4,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surface,
   },
   // Secondary action under the primary CTA — quieter text link.
   secondaryLink: {

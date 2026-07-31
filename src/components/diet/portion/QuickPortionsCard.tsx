@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Card } from '../../ui';
 import {
   flatColors as colors,
   spacing,
@@ -22,7 +21,7 @@ export const QuickPortionsCard: React.FC<QuickPortionsCardProps> = ({
   updateAdjustment,
 }) => {
   return (
-    <Card style={styles.quickPortionsCard}>
+    <View style={styles.quickPortionsCard}>
       <Text style={styles.sectionTitle}>Common Portions</Text>
       <View style={styles.quickPortionsGrid}>
         {commonPortions.map((portion, index) => (
@@ -53,7 +52,7 @@ export const QuickPortionsCard: React.FC<QuickPortionsCardProps> = ({
           </TouchableOpacity>
         ))}
       </View>
-    </Card>
+    </View>
   );
 };
 
@@ -61,6 +60,10 @@ const styles = StyleSheet.create({
   quickPortionsCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: fontSize.md,

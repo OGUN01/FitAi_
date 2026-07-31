@@ -39,6 +39,7 @@ jest.mock("react-native", () => {
 
 jest.mock("react-native-safe-area-context", () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
 jest.mock("expo-linear-gradient", () => ({
@@ -121,6 +122,7 @@ jest.mock("@/utils/responsive", () => ({
   rp: (value: number) => value,
   rs: (value: number) => Math.round(value * 0.75),
   rbr: (value: number) => Math.round(value * 0.75),
+  dimensions: { screenHeight: 800, screenWidth: 400 },
 }));
 
 jest.mock("@/utils/constants", () => ({
@@ -193,7 +195,6 @@ import { ProgressTrendsHeader } from "@/screens/main/analytics/ProgressTrendsHea
 import { RecoveryTipsModal } from "@/screens/main/fitness/RecoveryTipsModal";
 import { ExerciseGifPlayer } from "@/components/fitness/ExerciseGifPlayer";
 import { WeightJourneySection } from "@/components/progress/WeightJourneySection";
-import { ProgressInsights } from "@/components/progress/ProgressInsights";
 
 describe("analytics and fitness touch targets", () => {
   it("keeps trend and recovery modal controls at a 44pt floor", () => {
@@ -228,23 +229,6 @@ describe("analytics and fitness touch targets", () => {
       />,
     );
 
-    const insights = render(
-      <ProgressInsights
-        insights={[
-          {
-            id: "tip-1",
-            type: "tip",
-            title: "Keep Going",
-            message: "Stay consistent",
-            icon: "💡",
-            actionText: "View Details",
-            priority: "high",
-          },
-        ]}
-        onInsightAction={jest.fn()}
-      />,
-    );
-
     expect(
       StyleSheet.flatten(
         player.getByLabelText("View Push Up instructions").props.style,
@@ -255,9 +239,6 @@ describe("analytics and fitness touch targets", () => {
     ).toMatchObject({ minHeight: 44 });
     expect(
       StyleSheet.flatten(journey.getByLabelText("1W period").props.style),
-    ).toMatchObject({ minHeight: 44 });
-    expect(
-      StyleSheet.flatten(insights.getByLabelText("View Details").props.style),
     ).toMatchObject({ minHeight: 44 });
   });
 });

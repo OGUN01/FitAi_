@@ -8,6 +8,7 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
@@ -152,7 +153,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.description} numberOfLines={1}>
+                    <Text style={styles.description} numberOfLines={2}>
                       {item.description}
                     </Text>
                     {hasProgress && (
@@ -215,14 +216,15 @@ const styles = StyleSheet.create({
   countBadge: {
     ...typography.variants.caption,
     color: colors.text.muted,
-    backgroundColor: hexToRgba("#FFFFFF", 0.07),
+    backgroundColor: border.subtle,
     paddingHorizontal: rp(8),
     paddingVertical: rp(3),
     borderRadius: rp(10),
+    fontVariant: ["tabular-nums"],
   },
   panel: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: border.subtle,
     overflow: "hidden",

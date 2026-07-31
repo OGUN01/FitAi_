@@ -74,7 +74,7 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
   },

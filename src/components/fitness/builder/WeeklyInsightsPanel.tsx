@@ -1,5 +1,5 @@
 /**
- * WeeklyInsightsPanel — collapsible glass panel showing live weekly plan
+ * WeeklyInsightsPanel — collapsible flat panel showing live weekly plan
  * analytics (Phase 6.3).
  *
  * Composes:
@@ -7,8 +7,8 @@
  *     insights.muscleCoverage. Tap axis → tooltip with set count.
  *   - Stat grid (3×2): Push/Pull Ratio, Volume Score, Recovery Score (ring),
  *     Time Commitment, Weekly Calories, Total Volume.
- *   - Muscle Coverage list: per-muscle-group horizontal bars
- *     (GradientBarChart). Under-hit groups (<2 sets) highlighted amber.
+ *   - Muscle Coverage list: per-muscle-group horizontal bars (flat fills).
+ *     Under-hit groups (<2 sets) highlighted amber.
  *
  * Subscribes to `workoutBuilderStore.insights` + `isComputingInsights`.
  * Loading state: AuroraSpinner + "Computing insights…". Empty state (no
@@ -18,25 +18,32 @@
  * All colors / spacing / radii from aurora-tokens. Spring presets from
  * src/theme/animations.ts. Haptics from src/utils/haptics.ts.
  */
-import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import type { TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { GlassCard } from "../../ui/aurora/GlassCard";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+} from "react-native-reanimated";
 import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 import { ProgressRing } from "../../ui/aurora/ProgressRing";
-import { GradientBarChart, BarData } from "../../ui/GradientBarChart";
 import { MuscleBalanceRadar } from "../../charts/MuscleBalanceRadar";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { haptics } from "../../../utils/haptics";
 import {
   colors,
+  surface,
+  border,
   spacing,
   borderRadius,
   typography,
 } from "../../../theme/aurora-tokens";
-import { rp, rf, rw, rs } from "../../../utils/responsive";
+import { rp, rf, rs } from "../../../utils/responsive";
 import type { WeeklyInsights } from "../../../types/workout";
 import { MAJOR_MUSCLE_GROUPS } from "../../../services/workoutInsightsService";
 
@@ -159,14 +166,7 @@ export const WeeklyInsightsPanel: React.FC = () => {
         entering={FadeInDown.springify()}
         style={styles.container}
       >
-        <GlassCard
-          blurIntensity="default"
-          elevation={2}
-          padding="lg"
-          borderRadius="lg"
-          showBorder
-          style={styles.card}
-        >
+        <View style={[styles.card, styles.cardEmpty]}>
           <View style={styles.emptyState}>
             <Ionicons
               name="analytics-outline"
@@ -179,7 +179,7 @@ export const WeeklyInsightsPanel: React.FC = () => {
               here as you build.
             </Text>
           </View>
-        </GlassCard>
+        </View>
       </Animated.View>
     );
   }
@@ -192,14 +192,7 @@ export const WeeklyInsightsPanel: React.FC = () => {
       entering={FadeInDown.springify()}
       style={styles.container}
     >
-      <GlassCard
-        blurIntensity="default"
-        elevation={3}
-        padding="md"
-        borderRadius="lg"
-        showBorder
-        style={styles.card}
-      >
+      <View style={styles.card}>
         {/* Header */}
         <Pressable
           onPress={handleToggle}
@@ -284,31 +277,21 @@ export const WeeklyInsightsPanel: React.FC = () => {
                     : "—"
                 }
               />
-              <StatTile
-                icon="scale-outline"
-                label="Volume"
-                value={
-                  insights.totalVolume > 0
-                    ? String(Math.round(insights.totalVolume))
-                    : "0"
-                }
-                suffix=" kg"
-              />
+              {/* No raw Volume tile here: the sticky BuilderSummaryFooter
+                  already shows total volume on this screen — one authoritative
+                  readout per metric per screen. */}
             </View>
 
-            {/* (c) Muscle coverage bars */}
+            {/* (c) Muscle coverage bars — flat fills (GradientBarChart retired) */}
             <View style={styles.coverageSection}>
               <Text style={styles.sectionLabel}>Muscle Coverage</Text>
-              <GradientBarChart
-                data={buildCoverageBars(insights)}
-                height={rp(coverageBarHeight())}
-                animated
-                showValues
-              />
+              {buildCoverageBars(insights).map((bar, index) => (
+                <CoverageBar key={bar.label} bar={bar} index={index} />
+              ))}
             </View>
           </View>
         )}
-      </GlassCard>
+      </View>
     </Animated.View>
   );
 };
@@ -385,12 +368,20 @@ const RecoveryTile: React.FC<RecoveryTileProps> = ({ score, band }) => {
 };
 
 // ----------------------------------------------------------------------------
-// COVERAGE BARS — one per MAJOR_MUSCLE_GROUP
+// COVERAGE BARS — one per MAJOR_MUSCLE_GROUP (flat fills, no gradient)
 // ----------------------------------------------------------------------------
 
-/** Build GradientBarChart data for the muscle coverage list. */
-function buildCoverageBars(insights: WeeklyInsights): BarData[] {
-  const bars: BarData[] = [];
+interface CoverageBarData {
+  label: string;
+  value: number;
+  maxValue: number;
+  underHit: boolean;
+  unit: string;
+}
+
+/** Build flat bar data for the muscle coverage list. */
+function buildCoverageBars(insights: WeeklyInsights): CoverageBarData[] {
+  const bars: CoverageBarData[] = [];
   // Dynamic max so high-volume muscle groups (>20 sets) don't clip at the old
   // hardcoded ceiling. We floor at 20 so low-volume weeks still render bars at
   // a readable scale rather than all-maxing against a tiny ceiling.
@@ -400,26 +391,58 @@ function buildCoverageBars(insights: WeeklyInsights): BarData[] {
   );
   for (const muscle of MAJOR_MUSCLE_GROUPS) {
     const sets = insights.muscleCoverage[muscle] ?? 0;
-    const underHit = sets > 0 && sets < 2;
     bars.push({
       label: capitalize(muscle),
       value: sets,
       maxValue: maxSets,
-      gradient: underHit
-        ? [colors.warning.light, colors.warning.DEFAULT]
-        : [colors.primary[400], colors.primary[700]],
+      underHit: sets > 0 && sets < 2,
       unit: " sets",
     });
   }
   return bars;
 }
 
-/** Bar chart height grows with the number of muscle groups rendered. */
-function coverageBarHeight(): number {
-  // 10 major groups × (bar height + gap). GradientBarChart handles internal
-  // distribution; we just give it a tall enough canvas.
-  return MAJOR_MUSCLE_GROUPS.length * 36;
-}
+/** Single coverage row: label + hairline track + flat accent fill + value. */
+const CoverageBar: React.FC<{ bar: CoverageBarData; index: number }> = ({
+  bar,
+  index,
+}) => {
+  const progress = useSharedValue(0);
+  const percentage =
+    bar.maxValue > 0 ? Math.min(100, (bar.value / bar.maxValue) * 100) : 0;
+
+  useEffect(() => {
+    progress.value = withDelay(
+      index * 150,
+      withTiming(percentage, { duration: 1000, easing: Easing.out(Easing.cubic) }),
+    );
+  }, [percentage, index, progress]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${progress.value}%`,
+  }));
+
+  const fillColor = bar.underHit
+    ? colors.warning.DEFAULT
+    : colors.primary.DEFAULT;
+
+  return (
+    <View style={styles.coverageRow}>
+      <View style={styles.coverageHeader}>
+        <Text style={styles.coverageLabel}>{bar.label}</Text>
+        <Text style={styles.coverageValue}>
+          {bar.value}
+          {bar.unit}
+        </Text>
+      </View>
+      <View style={styles.coverageTrack}>
+        <Animated.View
+          style={[styles.coverageFill, fillStyle, { backgroundColor: fillColor }]}
+        />
+      </View>
+    </View>
+  );
+};
 
 // ----------------------------------------------------------------------------
 // HELPERS
@@ -438,8 +461,17 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: rp(spacing.sm),
   },
+  // Flat surface + hairline (was GlassCard elevation 2-3 — glass/elevation
+  // replaced by a flat step + 1px border per Editorial Dark).
   card: {
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: rp(spacing.md),
+  },
+  cardEmpty: {
+    padding: rp(spacing.lg),
   },
   header: {
     flexDirection: "row",
@@ -488,12 +520,12 @@ const styles = StyleSheet.create({
   statTile: {
     flexBasis: "47%",
     flexGrow: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: surface[1],
     borderRadius: borderRadius.md,
     padding: rp(spacing.sm),
     gap: rp(spacing.xs),
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
     minHeight: Math.max(rp(72), 72),
   },
   statIconRow: {
@@ -515,6 +547,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.h3),
     fontWeight: fw(typography.fontWeight.bold),
+    fontVariant: ["tabular-nums"],
   },
   statSuffix: {
     color: colors.text.secondary,
@@ -526,9 +559,40 @@ const styles = StyleSheet.create({
   },
   coverageSection: {
     gap: rp(spacing.xs),
-    // No maxHeight: the chart height is computed from the muscle-group count
-    // (coverageBarHeight). A fixed maxHeight of rp(280) clipped the last ~2
-    // muscle groups on screens with 10 major groups (360px of bars).
+    // No maxHeight: the row list grows with the muscle-group count. A fixed
+    // maxHeight of rp(280) clipped the last ~2 muscle groups on screens with
+    // 10 major groups.
+  },
+  coverageRow: {
+    marginBottom: rp(spacing.sm),
+  },
+  coverageHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: rp(spacing.xs),
+  },
+  coverageLabel: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: fw(typography.fontWeight.semibold),
+  },
+  coverageValue: {
+    color: colors.primary.DEFAULT,
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: fw(typography.fontWeight.bold),
+    fontVariant: ["tabular-nums"],
+  },
+  coverageTrack: {
+    width: "100%",
+    height: rp(8),
+    backgroundColor: surface[2],
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+  },
+  coverageFill: {
+    height: "100%",
+    borderRadius: borderRadius.full,
   },
   sectionLabel: {
     color: colors.text.secondary,

@@ -14,6 +14,7 @@ import {
   spacing,
 } from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
+import type { WeightUnit } from "../../../utils/units";
 import { SectionHeader } from "../home/SectionHeader";
 import { Period } from "./PeriodSelector";
 import { BarChart, ChartData } from "./components/BarChart";
@@ -26,6 +27,7 @@ interface TrendChartsProps {
   workoutData?: ChartData[];
   period: Period;
   onChartPress?: (chartType: string) => void;
+  weightUnit?: WeightUnit;
 }
 
 export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
@@ -34,6 +36,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
   workoutData,
   period,
   onChartPress,
+  weightUnit = "kg",
 }) => {
   const hasWeightData = Boolean(weightData && weightData.length > 0);
   const hasCalorieData = Boolean(calorieData && calorieData.length > 0);
@@ -72,7 +75,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
           delay={0}
           onPress={hasWeightData ? handleWeightPress : undefined}
         >
-          <LineChart data={weightData || []} color={chart[1]} unit="kg" />
+          <LineChart data={weightData || []} color={chart[1]} unit={weightUnit} />
         </ChartCard>
 
         <ChartCard
@@ -143,7 +146,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
     marginBottom: spacing.lg,
     zIndex: 1,
   },

@@ -63,6 +63,9 @@ type UpdateInput = Partial<
     | "targetMuscleGroups"
     | "estimatedDurationMinutes"
     | "isPublic"
+    | "category"
+    | "difficulty"
+    | "tags"
   >
 >;
 
@@ -110,6 +113,9 @@ class WorkoutTemplateService {
         target_muscle_groups: template.targetMuscleGroups,
         estimated_duration_minutes: template.estimatedDurationMinutes ?? null,
         is_public: template.isPublic,
+        category: template.category ?? null,
+        difficulty: template.difficulty ?? null,
+        tags: template.tags ?? [],
         usage_count: 0,
         created_at: now,
         updated_at: now,
@@ -158,6 +164,10 @@ class WorkoutTemplateService {
     if (updates.estimatedDurationMinutes !== undefined)
       dbUpdates.estimated_duration_minutes = updates.estimatedDurationMinutes;
     if (updates.isPublic !== undefined) dbUpdates.is_public = updates.isPublic;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.difficulty !== undefined)
+      dbUpdates.difficulty = updates.difficulty;
+    if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
 
     const { data, error } = await supabase
       .from("workout_templates")

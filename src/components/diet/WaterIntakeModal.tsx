@@ -22,9 +22,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   FadeInDown,
   useSharedValue,
@@ -37,6 +35,7 @@ import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ProgressRing } from '../ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { GlassButton } from '../ui/aurora/GlassButton';
 
 interface WaterIntakeModalProps {
   visible: boolean;
@@ -80,13 +79,12 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
     }
   }, [isGoalReached, ringGlow]);
 
-  // Success glow animated style — soft green bloom around the ring when goal reached.
+  // Success accent — a soft green ring border that fades in around the progress
+  // ring when the goal is reached. Editorial Dark depth comes from hairline
+  // accents, not cast shadows (which read as dated glow on pure black).
   const glowStyle = useAnimatedStyle(() => ({
-    shadowColor: colors.successAlt,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35 * ringGlow.value,
-    shadowRadius: 25,
-    elevation: 10 * ringGlow.value,
+    borderColor: hexToRgba(colors.successAlt, 0.3 + 0.5 * ringGlow.value),
+    borderWidth: 2 * ringGlow.value,
   }));
 
   // Reset state when closing
@@ -147,8 +145,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
-            <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
+          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
               {/* Header */}
               <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
                 <View style={styles.headerLeft}>
@@ -265,26 +262,15 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
 
               {/* Add Water Button */}
               <Animated.View entering={FadeInDown.delay(240).duration(400)}>
-                <TouchableOpacity
-                  style={styles.submitButton}
+                <GlassButton
+                  label="Add Water"
                   onPress={handleCustomSubmit}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
+                  icon="add"
+                  fullWidth
                   accessibilityLabel="Add water"
-                >
-                  <LinearGradient
-                    colors={[colors.secondary, colors.secondaryLight]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.submitButtonGradient}
-                  >
-                    <Ionicons name="add" size={20} color={colors.white} />
-                    <Text style={styles.submitButtonText}>Add Water</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                />
               </Animated.View>
             </View>
-          </BlurView>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -300,13 +286,10 @@ const styles = StyleSheet.create({
   keyboardView: {
     justifyContent: 'flex-end',
   },
-  blurContainer: {
-    borderTopLeftRadius: borderRadius.xxl,
-    borderTopRightRadius: borderRadius.xxl,
-    overflow: 'hidden',
-  },
   modalContent: {
     backgroundColor: colors.backgroundSecondary,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
     paddingHorizontal: rp(24),
     paddingTop: rp(20),
   },
@@ -360,12 +343,10 @@ const styles = StyleSheet.create({
   ringWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    // Subtle drop shadow under the ring for depth
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: rh(4) },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
+    // Editorial Dark: depth from the ring stroke + hairline border accent,
+    // not a cast shadow (which reads as dated glow on pure black).
+    borderRadius: rw(150) / 2,
+    padding: rw(8),
   },
   ringCenter: {
     alignItems: 'center',
@@ -383,17 +364,20 @@ const styles = StyleSheet.create({
     fontSize: rf(34),
     fontWeight: String(typography.fontWeight.extrabold) as any,
     color: colors.white,
+    fontVariant: ['tabular-nums'],
   },
   ringUnit: {
     fontSize: rf(12),
     color: colors.textTertiary,
     marginTop: rh(2),
+    fontVariant: ['tabular-nums'],
   },
   ringPercent: {
     fontSize: rf(12),
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.secondary,
     marginTop: rh(4),
+    fontVariant: ['tabular-nums'],
   },
   goalReachedBadge: {
     flexDirection: 'row',
@@ -489,23 +473,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(13),
     color: colors.errorLight,
-  },
-  submitButton: {
-    overflow: 'hidden',
-    borderRadius: borderRadius.lg,
-    marginTop: rp(8),
-  },
-  submitButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: rp(8),
-    paddingVertical: rp(14),
-  },
-  submitButtonText: {
-    fontSize: rf(15),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.white,
   },
 });
 

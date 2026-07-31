@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { radioA11yProps } from "../../../utils/accessibility/props";
+import { formatINR } from "../../../utils/subscriptionUi";
 import { rf, rp, rbr } from "../../../utils/responsive";
 
 export interface PlanCardProps {
@@ -38,8 +39,8 @@ const PlanCard: React.FC<PlanCardProps> = ({
   isStatic = false,
 }) => {
   const a11yLabel =
-    `${name}, ₹${pricePerMonth} per month` +
-    (billingCycle === "yearly" ? `, billed ₹${pricePerMonth * 12} yearly` : "") +
+    `${name}, ${formatINR(pricePerMonth)} per month` +
+    (billingCycle === "yearly" ? `, billed ${formatINR(pricePerMonth * 12)} yearly` : "") +
     (isCurrent ? ", current plan" : "") +
     (recommended ? ", recommended" : "");
 
@@ -73,13 +74,13 @@ const PlanCard: React.FC<PlanCardProps> = ({
         </Text>
         {billingCycle === "yearly" && (
           <View style={styles.billedPill}>
-            <Text style={styles.billedPillText}>₹{pricePerMonth * 12}/yr billed</Text>
+            <Text style={styles.billedPillText}>{formatINR(pricePerMonth * 12)}/yr billed</Text>
           </View>
         )}
       </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.priceAmount}>₹{pricePerMonth}</Text>
+        <Text style={styles.priceAmount}>{formatINR(pricePerMonth)}</Text>
         <Text style={styles.pricePeriod}>/month</Text>
       </View>
 

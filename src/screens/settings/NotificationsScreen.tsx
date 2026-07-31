@@ -10,9 +10,8 @@ import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -83,13 +82,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 }) => {
   return (
     <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-      <GlassCard
-        elevation={1}
-        padding="md"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.notificationCard}
-      >
+      <View style={styles.notificationCard}>
         <View style={styles.notificationContent}>
           {/* Icon */}
           <View
@@ -108,14 +101,27 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
               {description}
             </Text>
             {enabled && timeInfo && (
-              <AnimatedPressable
-                onPress={() => {
-                  haptics.light();
-                  onEdit?.();
-                }}
-                scaleValue={0.95}
-                hapticFeedback={false}
-              >
+              onEdit ? (
+                <AnimatedPressable
+                  onPress={() => {
+                    haptics.light();
+                    onEdit();
+                  }}
+                  scaleValue={0.95}
+                  hapticFeedback={false}
+                >
+                  <View style={styles.timeInfoBadge}>
+                    <Ionicons
+                      name="time-outline"
+                      size={rf(10)}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.timeInfoText}>{timeInfo}</Text>
+                  </View>
+                </AnimatedPressable>
+              ) : (
+                // No edit action for this item — render the badge as static
+                // info instead of a pressable that does nothing.
                 <View style={styles.timeInfoBadge}>
                   <Ionicons
                     name="time-outline"
@@ -124,7 +130,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   />
                   <Text style={styles.timeInfoText}>{timeInfo}</Text>
                 </View>
-              </AnimatedPressable>
+              )
             )}
           </View>
 
@@ -156,19 +162,19 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                 onToggle();
               }}
               trackColor={{
-                false: colors.glassHighlight,
+                false: surface[2],
                 true: `${colors.primary}50`,
               }}
               thumbColor={
                 enabled
                   ? colors.primary
-                  : colors.glassHighlight
+                  : colors.textMuted
               }
-              ios_backgroundColor={colors.glassHighlight}
+              ios_backgroundColor={surface[2]}
             />
           </View>
         </View>
-      </GlassCard>
+      </View>
     </Animated.View>
   );
 };
@@ -191,7 +197,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
             <ExpoGoMessage />
           ) : (
             <View style={styles.unavailableContainer}>
-              <GlassCard elevation={1} padding="lg" blurIntensity="light">
+              <View style={styles.unavailableCard}>
                 <Text style={styles.unavailableTitle}>
                   Notifications Unavailable
                 </Text>
@@ -199,7 +205,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                   Reminder settings could not be loaded on this build, so the
                   controls are hidden instead of showing broken toggles.
                 </Text>
-              </GlassCard>
+              </View>
             </View>
           )}
         </SafeAreaView>
@@ -363,6 +369,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
   },
+  unavailableCard: {
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+  },
   unavailableTitle: {
     fontSize: rf(16),
     fontWeight: "700",
@@ -381,7 +394,11 @@ const styles = StyleSheet.create({
   },
   notificationCard: {
     marginBottom: spacing.sm,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
   notificationContent: {
     flexDirection: "row",
@@ -436,7 +453,7 @@ const styles = StyleSheet.create({
     width: rw(30),
     height: rw(30),
     borderRadius: rbr(8),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -444,7 +461,7 @@ const styles = StyleSheet.create({
     height: rh(80),
   },
   permissionWarning: {
-    color: "orange",
+    color: colors.warning,
     fontSize: rf(13),
     textAlign: "center" as const,
     marginBottom: spacing.sm,

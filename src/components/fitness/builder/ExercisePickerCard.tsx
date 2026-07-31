@@ -18,37 +18,40 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable, type TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { GlassButton } from "../../ui/aurora/GlassButton";
 import { haptics } from "../../../utils/haptics";
 import {
   colors,
+  flatColors,
+  surface,
+  border,
   spacing,
   borderRadius,
   typography,
 } from "../../../theme/aurora-tokens";
+import { hexToRgba } from "../../../utils/colors";
 import { rp, rf, rw } from "../../../utils/responsive";
 import type { CuratedExercise } from "../../../data/curatedExercises";
 
 // ----------------------------------------------------------------------------
-// CATEGORY → GRADIENT MAP (per Phase 4 brief)
+// CATEGORY → ACCENT COLOR MAP (flat tint per category — gradient discs retired)
 // ----------------------------------------------------------------------------
 
 interface CategoryStyle {
-  gradient: [string, string];
+  color: string;
   icon: keyof typeof Ionicons.glyphMap;
 }
 
 const CATEGORY_STYLE: Record<CuratedExercise["category"], CategoryStyle> = {
-  chest: { gradient: [colors.primary.DEFAULT, colors.primary.dark], icon: "barbell-outline" },
-  back: { gradient: [colors.secondary.DEFAULT, colors.secondary.dark], icon: "body-outline" },
-  legs: { gradient: ["#9333EA", "#6B21A8"], icon: "walk-outline" },
-  shoulders: { gradient: [colors.warning.DEFAULT, colors.warning.dark], icon: "fitness-outline" },
-  arms: { gradient: [colors.error.DEFAULT, colors.error.dark], icon: "hand-right-outline" },
-  core: { gradient: ["#10B981", "#047857"], icon: "shield-outline" },
-  cardio: { gradient: [colors.error.light, colors.error.DEFAULT], icon: "flash-outline" },
-  full_body: { gradient: [colors.primary.light, colors.secondary.DEFAULT], icon: "pulse-outline" },
+  chest: { color: colors.primary.DEFAULT, icon: "barbell-outline" },
+  back: { color: colors.secondary.DEFAULT, icon: "body-outline" },
+  legs: { color: flatColors.purple, icon: "walk-outline" },
+  shoulders: { color: colors.warning.DEFAULT, icon: "fitness-outline" },
+  arms: { color: colors.error.DEFAULT, icon: "hand-right-outline" },
+  core: { color: flatColors.successAlt, icon: "shield-outline" },
+  cardio: { color: colors.error.light, icon: "flash-outline" },
+  full_body: { color: colors.primary.light, icon: "pulse-outline" },
 };
 
 function categoryStyle(category: CuratedExercise["category"]): CategoryStyle {
@@ -114,15 +117,15 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
       style={styles.container}
       testID={testID}
     >
-      {/* Icon disc with category gradient */}
-      <LinearGradient
-        colors={catStyle.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.iconDisc}
+      {/* Flat accent icon chip (was category gradient disc) */}
+      <View
+        style={[
+          styles.iconDisc,
+          { backgroundColor: hexToRgba(catStyle.color, 0.15) },
+        ]}
       >
-        <Ionicons name={catStyle.icon} size={rf(20)} color={colors.text.primary} />
-      </LinearGradient>
+        <Ionicons name={catStyle.icon} size={rf(20)} color={catStyle.color} />
+      </View>
 
       {/* Name + muscles + meta */}
       <View style={styles.info}>
@@ -210,9 +213,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glass.background,
+    backgroundColor: colors.background.secondary,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
     borderRadius: borderRadius.lg,
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.sm),
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   muscleChip: {
-    backgroundColor: colors.glass.backgroundLight,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.sm,
     paddingHorizontal: rp(spacing.xs),
     paddingVertical: rp(1),

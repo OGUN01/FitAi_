@@ -1,8 +1,10 @@
 /**
  * DietActionDock — horizontally-scrolling "dial" of quick actions pinned above
  * the tab bar. Restores the full action set the old DietQuickActions carried
- * (Scan Dish, Barcode, Label, Log Meal, Water, Recipes) so no capability is
+ * (Scan Dish, Barcode, Label, Log Meal, Water) so no capability is
  * hidden behind a modal — every entry point is one tap away from the tab.
+ * (The old "Recipes" action was removed: AI recipe generation has no backend
+ * endpoint and its modal could never succeed.)
  *
  * Design: a single accent (colors.primary) so the row reads as one cohesive
  * control, not a christmas tree of per-action hues (the old multi-color row
@@ -14,6 +16,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -26,10 +29,11 @@ import {
   spacing,
   borderRadius,
   flatFontSize as fontSize,
+  flatShadows,
 } from '../../theme/aurora-tokens';
 import { springConfig } from '../../theme/animations';
 import { rf, rh, rw } from '../../utils/responsive';
-import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
+import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { fontFamilyForWeight } from '../../theme/fonts';
 
 export interface DietActionDockProps {
@@ -38,7 +42,6 @@ export interface DietActionDockProps {
   onLabel: () => void;
   onLog: () => void;
   onWater: () => void;
-  onRecipes: () => void;
   testID?: string;
   /**
    * Reanimated shared value carrying a boolean (0 = visible, 1 = hidden).
@@ -61,12 +64,15 @@ interface DockAction {
 const DockButton: React.FC<{ action: DockAction }> = React.memo(({ action }) => {
   const glow = useSharedValue(0);
 
+  // Press feedback is a flat accent tint ramp on the icon disc (plus the
+  // AnimatedPressable spring scale + haptic) — no cast glow shadows on
+  // Editorial Dark.
   const glowStyle = useAnimatedStyle(() => ({
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4 * glow.value,
-    shadowRadius: 14,
-    elevation: 5 * glow.value,
+    backgroundColor: interpolateColor(
+      glow.value,
+      [0, 1],
+      [hexToRgba(colors.primary, TINT_ALPHA_LOW), hexToRgba(colors.primary, TINT_ALPHA_MEDIUM)],
+    ),
   }));
 
   return (
@@ -106,7 +112,6 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
   onLabel,
   onLog,
   onWater,
-  onRecipes,
   testID,
   hide,
 }) => {
@@ -136,7 +141,6 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
     { id: 'label', icon: 'document-text-outline', label: 'Label', ariaLabel: 'Scan nutrition label', onPress: onLabel, testID: 'diet-dock-label' },
     { id: 'log', icon: 'restaurant-outline', label: 'Log', ariaLabel: 'Log meal', onPress: onLog, testID: 'diet-dock-log' },
     { id: 'water', icon: 'water-outline', label: 'Water', ariaLabel: 'Log water', onPress: onWater, testID: 'diet-dock-water' },
-    { id: 'recipes', icon: 'book-outline', label: 'Recipes', ariaLabel: 'Recipes', onPress: onRecipes, testID: 'diet-dock-recipes' },
   ];
 
   return (
@@ -168,12 +172,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.xs,
-    // Subtle elevation so the dock floats above the feed, not flush with it.
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: rh(3) },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
+    // Lightest flat shadow — the hairline border + surface step do the real
+    // separation work on Editorial Dark.
+    ...flatShadows.sm,
   },
   scrollContent: {
     flexDirection: 'row' as const,

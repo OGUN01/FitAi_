@@ -485,6 +485,9 @@ export class WorkoutPreferencesService {
         activity_level: data.activity_level,
         workout_experience_years: data.workout_experience_years,
         workout_frequency_per_week: data.workout_frequency_per_week,
+        // Which days the user trains ('monday'..'sunday'); NULL → generator
+        // derives an even spread from workout_frequency_per_week.
+        preferred_workout_days: data.preferred_workout_days ?? null,
         can_do_pushups: data.can_do_pushups,
         can_run_minutes: data.can_run_minutes,
         flexibility_level: data.flexibility_level,
@@ -556,6 +559,7 @@ export class WorkoutPreferencesService {
         activity_level: data.activity_level || "sedentary",
         workout_experience_years: data.workout_experience_years || 0,
         workout_frequency_per_week: data.workout_frequency_per_week || 0,
+        preferred_workout_days: data.preferred_workout_days ?? undefined,
         can_do_pushups: data.can_do_pushups || 0,
         can_run_minutes: data.can_run_minutes || 0,
         flexibility_level: data.flexibility_level || "fair",
@@ -729,6 +733,7 @@ export class AdvancedReviewService {
         bmi_health_risk: extended.bmi_health_risk,
         bmr_formula_used: extended.bmr_formula_used,
         vo2_max_classification: extended.vo2_max_classification,
+        health_grade: extended.health_grade,
 
         // Flags
         was_rate_capped: m.wasRateCapped,

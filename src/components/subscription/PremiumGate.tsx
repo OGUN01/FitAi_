@@ -1,14 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { usePaywall } from "../../hooks/usePaywall";
-import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { GlassButton } from "../ui/aurora/GlassButton";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { UsageCounter } from "./UsageCounter";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import { flatColors as colors, surface, border, typography } from "../../theme/aurora-tokens";
 
 type FeatureKey = "ai_generation" | "barcode_scan";
 
@@ -66,15 +65,10 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   if (showUpgrade) {
     return (
       <View style={styles.container}>
-        <View style={styles.blurOverlay}>
-          <LinearGradient
-            colors={[colors.primaryLight, colors.primary, colors.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.iconContainer}
-          >
-            <Ionicons name="diamond" size={rf(28)} color={colors.white} />
-          </LinearGradient>
+        <View style={styles.gatePanel}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="diamond" size={rf(28)} color={colors.primaryLight} />
+          </View>
 
           <Text style={styles.title} accessibilityRole="header">{upgradeText}</Text>
 
@@ -88,23 +82,17 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
             showLabel={false}
           />
 
-          <AnimatedPressable
+          <GlassButton
+            label="Upgrade to Premium"
             onPress={() => {
               haptics.light();
               triggerPaywall(FEATURE_MESSAGES[featureKey]);
             }}
+            variant="primary"
+            fullWidth
             accessibilityLabel="Upgrade to premium"
             style={styles.upgradeButton}
-          >
-            <LinearGradient
-              colors={[colors.primaryLight, colors.primary, colors.primaryDark]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.upgradeGradient}
-            >
-              <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
-            </LinearGradient>
-          </AnimatedPressable>
+          />
         </View>
       </View>
     );
@@ -119,13 +107,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     margin: rw(16),
   },
-  blurOverlay: {
-    backgroundColor: "rgba(26, 31, 46, 0.95)",
+  gatePanel: {
+    backgroundColor: surface[1],
     borderRadius: rw(16),
     padding: rw(24),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: border.subtle,
   },
   iconContainer: {
     width: rw(64),
@@ -134,16 +122,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: rh(16),
+    // Accent-tinted chip with hairline — flat, not a gradient disc.
+    backgroundColor: colors.primaryTint,
+    borderWidth: 1,
+    borderColor: colors.primaryFaded,
   },
   title: {
-    fontSize: rf(18),
-    fontWeight: "700",
+    ...typography.variants.sectionTitle,
     color: colors.text,
     marginBottom: rh(8),
     textAlign: "center",
   },
   description: {
-    fontSize: rf(14),
+    ...typography.variants.body,
     color: colors.textSecondary,
     textAlign: "center",
     marginBottom: rh(16),
@@ -151,20 +142,6 @@ const styles = StyleSheet.create({
   },
   upgradeButton: {
     marginTop: rh(16),
-    borderRadius: rw(16),
-    overflow: "hidden",
-    width: "100%",
-  },
-  upgradeGradient: {
-    paddingVertical: rh(14),
-    paddingHorizontal: rw(24),
-    alignItems: "center",
-    borderRadius: rw(16),
-  },
-  upgradeButtonText: {
-    color: colors.text,
-    fontWeight: "700",
-    fontSize: rf(16),
   },
   usageCounterRow: {
     paddingHorizontal: rw(16),

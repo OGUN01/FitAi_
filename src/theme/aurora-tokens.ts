@@ -76,11 +76,13 @@ export const colors = {
   },
 
   // Text color system
+  // tertiary/muted are #999999 (~5.2:1 on #000) — WCAG AA pass for body text.
+  // Previously #8A8A8A (~4.0:1) which failed AA for small caption text.
   text: {
     primary: '#FFFFFF',
     secondary: '#B0B0B0',
-    tertiary: '#8A8A8A',
-    muted: '#8A8A8A',
+    tertiary: '#999999',
+    muted: '#999999',
     disabled: '#5A5A5A',
   },
 
@@ -113,6 +115,15 @@ export const colors = {
     backgroundDark: 'rgba(255, 255, 255, 0.05)',
     border: 'rgba(255, 255, 255, 0.18)',
     surface: 'rgba(255, 255, 255, 0.1)', // Default glass surface
+  },
+
+  // Rest-day accent — violet used by WeeklyPlanOverview + FullPlanScreen for
+  // rest-day status (moon icon + "Rest" label). Single source of truth so both
+  // consumers stay in sync; previously a duplicated hardcoded #A78BFA literal.
+  rest: {
+    DEFAULT: '#A78BFA',
+    light: '#C4B5FD',
+    dark: '#8B5CF6',
   },
 } as const;
 
@@ -391,6 +402,8 @@ export const flatColors = {
   warning: colors.warning.DEFAULT,
   error: colors.error.DEFAULT,
   info: colors.info.DEFAULT,
+  rest: colors.rest.DEFAULT,
+  restLight: colors.rest.light,
   accent: colors.primary.light,
 
   // Extended status
@@ -413,7 +426,18 @@ export const flatColors = {
   blue: '#3B82F6',
   amberBright: '#FBBF24',
   successBright: '#4ADE80',
+  lime: '#84CC16',
+  yellow: '#EAB308',
   muted: '#9CA3AF',
+
+  // Nutri-Score — standardized food-grading grades (A–E). These are the
+  // official Nutri-Score colors (dark green → red), not app-palette colors,
+  // but centralized here so the literal lives in exactly one place.
+  nutriScoreA: '#038141',
+  nutriScoreB: '#85BB2F',
+  nutriScoreC: '#FECB02',
+  nutriScoreD: '#EE8100',
+  nutriScoreE: '#E63E11',
 
   // Glass
   glassSurface: colors.glass.backgroundDark,

@@ -51,16 +51,17 @@ import Animated, {
   Layout,
 } from "react-native-reanimated";
 import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
-import { GlassCard } from "../../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
-import { Slider } from "../../ui/Slider";
-import { SegmentedControl, SegmentOption } from "../../ui/SegmentedControl";
+import { RangeSlider } from "../../onboarding/aurora/RangeSlider";
+import { OptionRow } from "../../onboarding/fresh/OptionRow";
 import { RestTimerRadial } from "../../ui/aurora/RestTimerRadial";
 import { Confetti } from "../../ui/aurora/Confetti";
 import { AnimatedChart } from "../../charts/AnimatedChart";
 import { SetRow } from "./SetRow";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { useAnalyticsStore } from "../../../stores/analyticsStore";
+import { useProfileStore } from "../../../stores/profileStore";
+import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 import { CURATED_EXERCISES } from "../../../data/curatedExercises";
 import { duration } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
@@ -68,6 +69,9 @@ import { useReducedMotion } from "../../../utils/accessibility/hooks";
 import {
   colors,
   flatColors,
+  flatShadows,
+  surface,
+  border,
   spacing,
   borderRadius,
   typography,
@@ -87,17 +91,22 @@ const RPE_MAX = 10;
 const DEFAULT_TEMPO = "2-0-2-0";
 const DEFAULT_REST = 60;
 
-const DEFAULT_SET_TYPE_OPTIONS: SegmentOption[] = [
-  { id: "normal", label: "Normal", value: "normal" },
-  { id: "warmup", label: "Warmup", value: "warmup" },
-  { id: "failure", label: "Failure", value: "failure" },
-  { id: "drop", label: "Drop", value: "drop" },
+interface SelectOption {
+  id: string;
+  label: string;
+}
+
+const DEFAULT_SET_TYPE_OPTIONS: SelectOption[] = [
+  { id: "normal", label: "Normal" },
+  { id: "warmup", label: "Warmup" },
+  { id: "failure", label: "Failure" },
+  { id: "drop", label: "Drop" },
 ];
 
-const SUPERSET_MODE_OPTIONS: SegmentOption[] = [
-  { id: "none", label: "None", value: "none" },
-  { id: "superset", label: "Superset", value: "superset" },
-  { id: "circuit", label: "Circuit", value: "circuit" },
+const SUPERSET_MODE_OPTIONS: SelectOption[] = [
+  { id: "none", label: "None" },
+  { id: "superset", label: "Superset" },
+  { id: "circuit", label: "Circuit" },
 ];
 
 const RPE_LABELS: Record<number, string> = {
@@ -154,6 +163,18 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
       ) ?? null
     );
   }, [personalRecords, exercise]);
+
+  // ── Weight units ──
+  // Stored values are kg; display converts for imperial users (matches
+  // WorkoutSessionScreen + SetRow behavior). Two-step select → derive
+  // (jest profileStore mock ignores selectors).
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const userUnits: WeightUnit = personalInfo?.units === "imperial" ? "lbs" : "kg";
+  const prDisplayWeight = useMemo(() => {
+    if (!pr) return null;
+    const v = toDisplayWeight(pr.weightKg, userUnits);
+    return v == null ? null : Math.round(v * 10) / 10;
+  }, [pr, userUnits]);
 
   // ── History mini-chart: last 10 sessions total volume for this exercise ──
   const historyPoints = useMemo(() => {
@@ -581,14 +602,14 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
           {!collapsed.rest && (
             <View style={styles.restRow}>
               <View style={styles.restSliderWrap}>
-                <Slider
+                <RangeSlider
                   value={restSeconds}
-                  onValueChange={handleRestChange}
-                  minimumValue={REST_MIN}
-                  maximumValue={REST_MAX}
+                  onChange={handleRestChange}
+                  min={REST_MIN}
+                  max={REST_MAX}
                   step={5}
-                  label="Rest (seconds)"
-                  formatValue={(v) => `${Math.round(v)}s`}
+                  unit="s"
+                  testID="editor-rest-slider"
                 />
               </View>
               <View style={styles.restPreviewWrap}>
@@ -616,14 +637,14 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
               <Text style={styles.rpeValueLabel}>
                 {targetRpe} — {RPE_LABELS[targetRpe] ?? "Moderate"}
               </Text>
-              <Slider
+              <RangeSlider
                 value={targetRpe}
-                onValueChange={handleRpeChange}
-                minimumValue={RPE_MIN}
-                maximumValue={RPE_MAX}
+                onChange={handleRpeChange}
+                min={RPE_MIN}
+                max={RPE_MAX}
                 step={1}
-                label="Target RPE"
-                formatValue={(v) => String(Math.round(v))}
+                showValue={false}
+                testID="editor-rpe-slider"
               />
             </View>
           )}
@@ -669,11 +690,15 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
         >
           {!collapsed.intensity && (
             <View style={styles.segmentWrap}>
-              <SegmentedControl
-                options={DEFAULT_SET_TYPE_OPTIONS}
-                selectedId={defaultSetTypeId}
-                onSelect={handleDefaultSetType}
-              />
+              {DEFAULT_SET_TYPE_OPTIONS.map((o) => (
+                <OptionRow
+                  key={o.id}
+                  label={o.label}
+                  selected={defaultSetTypeId === o.id}
+                  onPress={() => handleDefaultSetType(o.id)}
+                  testID={`editor-set-type-${o.id}`}
+                />
+              ))}
             </View>
           )}
         </Section>
@@ -687,11 +712,15 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
         >
           {!collapsed.group && (
             <View style={styles.segmentWrap}>
-              <SegmentedControl
-                options={SUPERSET_MODE_OPTIONS}
-                selectedId={groupMode}
-                onSelect={handleGroupMode}
-              />
+              {SUPERSET_MODE_OPTIONS.map((o) => (
+                <OptionRow
+                  key={o.id}
+                  label={o.label}
+                  selected={groupMode === o.id}
+                  onPress={() => handleGroupMode(o.id)}
+                  testID={`editor-group-mode-${o.id}`}
+                />
+              ))}
               {groupMode !== "none" && (
                 <View style={styles.siblingPickerWrap}>
                   <Text style={styles.siblingPickerLabel}>
@@ -775,7 +804,7 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                     color={flatColors.gold}
                   />
                   <Text style={styles.prText}>
-                    PR: {pr.weightKg}kg × {pr.reps}
+                    PR: {prDisplayWeight ?? pr.weightKg}{userUnits} × {pr.reps}
                   </Text>
                 </>
               ) : (
@@ -798,11 +827,11 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                 <Text style={styles.historyEmpty}>No history yet</Text>
               ) : (
                 <AnimatedChart
-                  currentValue={historyCurrent}
-                  targetValue={historyTarget}
+                  currentValue={toDisplayWeight(historyCurrent, userUnits) ?? 0}
+                  targetValue={toDisplayWeight(historyTarget, userUnits) ?? 0}
                   currentLabel="Latest"
                   targetLabel="Target"
-                  unit="kg"
+                  unit={userUnits}
                   width={Math.min(rw(280), rp(280))}
                   height={Math.min(rw(160), rp(160))}
                 />
@@ -861,27 +890,18 @@ const Section: React.FC<SectionProps> = ({
 
   if (!collapsible) {
     return (
-      <GlassCard
-        elevation={2}
-        padding="md"
-        borderRadius="lg"
-        style={styles.sectionCard}
-        contentStyle={styles.sectionContent}
-      >
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {children}
-      </GlassCard>
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionContent}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          {children}
+        </View>
+      </View>
     );
   }
 
   return (
-    <GlassCard
-      elevation={2}
-      padding="md"
-      borderRadius="lg"
-      style={styles.sectionCard}
-      contentStyle={styles.sectionContent}
-    >
+    <View style={styles.sectionCard}>
+      <View style={styles.sectionContent}>
       <AnimatedPressable
         onPress={onToggle}
         springConfig="snappy"
@@ -909,7 +929,8 @@ const Section: React.FC<SectionProps> = ({
           {children}
         </Animated.View>
       )}
-    </GlassCard>
+      </View>
+    </View>
   );
 };
 
@@ -1013,9 +1034,14 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     marginBottom: 0,
+    backgroundColor: surface[1],
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
   sectionContent: {
     gap: rp(spacing.xs),
+    padding: rp(spacing.md),
   },
   sectionHeader: {
     flexDirection: "row",
@@ -1042,10 +1068,10 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.sm),
     minHeight: Math.max(rp(44), 44),
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
   },
   chipRow: {
     flexDirection: "row",
@@ -1054,7 +1080,7 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xxs),
   },
   muscleChip: {
-    backgroundColor: colors.glass.backgroundLight,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.xs),
     paddingVertical: rp(2),
@@ -1065,12 +1091,12 @@ const styles = StyleSheet.create({
     fontWeight: String(typography.fontWeight.medium) as TextStyleWeight,
   },
   equipChip: {
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.full,
     paddingHorizontal: rp(spacing.xs),
     paddingVertical: rp(2),
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
   },
   equipChipText: {
     color: colors.text.tertiary,
@@ -1152,10 +1178,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingVertical: rp(spacing.xs),
     paddingHorizontal: rp(spacing.md),
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
     letterSpacing: 2,
   },
   tempoCaption: {
@@ -1190,9 +1216,11 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.xs),
     marginRight: rp(spacing.xs),
     borderRadius: borderRadius.full,
-    backgroundColor: colors.glass.backgroundLight,
+    backgroundColor: surface[2],
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: "center",
   },
   siblingChipPressed: {
     backgroundColor: colors.primary.DEFAULT,
@@ -1214,10 +1242,10 @@ const styles = StyleSheet.create({
     minHeight: rp(80),
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
     textAlignVertical: "top",
   },
   // PR
@@ -1261,14 +1289,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.DEFAULT,
     padding: rp(spacing.sm),
     zIndex: 1000,
-    elevation: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    ...flatShadows.sm,
   },
   tooltipTitle: {
     color: colors.text.primary,

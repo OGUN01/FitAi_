@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/GlassCard";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, border, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 
 interface EmptyMealsMessageProps {
@@ -17,7 +16,7 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
   if (mealsLogged !== 0) return null;
 
   return (
-    <GlassCard elevation={2} padding="md" borderRadius="lg" style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
           <Ionicons
@@ -43,13 +42,18 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
           </TouchableOpacity>
         )}
       </View>
-    </GlassCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
     marginTop: spacing.sm,
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
   },
   container: {
     alignItems: "center",
@@ -59,7 +63,7 @@ const styles = StyleSheet.create({
     width: rw(52),
     height: rw(52),
     borderRadius: rbr(26),
-    backgroundColor: `${colors.primary}18`,
+    backgroundColor: colors.primaryTint,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.sm,

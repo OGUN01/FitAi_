@@ -7,7 +7,6 @@ import Animated, {
   withDelay,
   Easing,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 import { rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 
@@ -15,6 +14,11 @@ export interface BarData {
   label: string;
   value: number;
   maxValue: number;
+  /**
+   * @deprecated Bars render with a flat fill (de-gradient initiative) — only
+   * the first color is used. Kept in the contract so existing callers compile
+   * unchanged.
+   */
   gradient: string[];
   unit?: string;
 }
@@ -101,14 +105,14 @@ const BarItem: React.FC<BarItemProps> = ({
         )}
       </View>
       <View style={styles.barTrack}>
-        <Animated.View style={[styles.barFill, animatedBarStyle]}>
-          <LinearGradient
-            colors={data.gradient as unknown as readonly [string, string, ...string[]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.barGradient}
-          />
-        </Animated.View>
+        {/* Flat token fill — gradient-as-filler retired (de-gradient). */}
+        <Animated.View
+          style={[
+            styles.barFill,
+            { backgroundColor: data.gradient[0] ?? colors.primary },
+            animatedBarStyle,
+          ]}
+        />
       </View>
     </View>
   );
@@ -141,6 +145,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
+    fontVariant: ["tabular-nums"],
   },
 
   barTrack: {
@@ -153,10 +158,6 @@ const styles = StyleSheet.create({
 
   barFill: {
     height: "100%",
-  },
-
-  barGradient: {
-    flex: 1,
     borderRadius: borderRadius.full,
   },
 });

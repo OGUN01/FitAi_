@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { rf, rp, rbr } from "../../utils/responsive";
 import { flatColors as colors } from "../../theme/aurora-tokens";
@@ -21,10 +21,13 @@ interface PremiumBadgeProps {
 // Constants
 // ============================================================================
 
-const TIER_GRADIENTS: Record<string, readonly [string, string, ...string[]]> = {
-  pro: [colors.primaryLight, colors.pink],
-  basic: [colors.successBright, colors.blue],
-  free: [colors.amberBright, colors.orange],
+// Editorial Dark: one flat accent fill per tier (no gradient filler). Each
+// tier maps to a single token color — the badge is a hairline-bordered chip,
+// not a gradient pill.
+const TIER_COLOR: Record<string, string> = {
+  pro: colors.primaryLight,
+  basic: colors.successAlt,
+  free: colors.warningAlt,
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -33,10 +36,12 @@ const TIER_LABELS: Record<string, string> = {
   free: "FREE",
 };
 
-const TIER_ICONS: Record<string, string> = {
-  pro: "👑",
-  basic: "⭐",
-  free: "⭐",
+// Tier iconography uses the Ionicons system (diamond/tier badges) instead of
+// emoji, per the 2026 icon-system standard.
+const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  pro: "diamond",
+  basic: "star",
+  free: "star",
 };
 
 // ============================================================================
@@ -53,9 +58,9 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
 
   const tier = currentPlan?.tier ?? "free";
   const isActive = isPremium();
-  const gradientColors = TIER_GRADIENTS[tier] ?? TIER_GRADIENTS.free;
+  const tierColor = TIER_COLOR[tier] ?? TIER_COLOR.free;
   const tierLabel = TIER_LABELS[tier] ?? "FREE";
-  const tierIcon = TIER_ICONS[tier] ?? "⭐";
+  const tierIcon = TIER_ICONS[tier] ?? "star";
 
   const getSizeStyles = () => {
     switch (size) {
@@ -63,19 +68,19 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
         return {
           containerPadding: { paddingHorizontal: rp(8), paddingVertical: rp(4) },
           textStyle: { fontSize: rf(12) },
-          iconStyle: { fontSize: rf(14) },
+          iconSize: rf(12),
         };
       case "large":
         return {
           containerPadding: { paddingHorizontal: rp(16), paddingVertical: rp(8) },
           textStyle: { fontSize: rf(16), fontWeight: "700" as const },
-          iconStyle: { fontSize: rf(18) },
+          iconSize: rf(16),
         };
       default:
         return {
           containerPadding: { paddingHorizontal: rp(12), paddingVertical: rp(6) },
           textStyle: { fontSize: rf(14), fontWeight: "600" as const },
-          iconStyle: { fontSize: rf(16) },
+          iconSize: rf(14),
         };
     }
   };
@@ -85,35 +90,47 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   if (variant === "badge") {
     if (!isActive && tier === "free") {
       return (
-        <Pressable onPress={onPress}>
-          <LinearGradient
-            colors={gradientColors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.badgeContainer, sizeStyles.containerPadding]}
+        <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Upgrade to premium">
+          <View
+            style={[
+              styles.badgeContainer,
+              styles.badgeAccentBorder,
+              sizeStyles.containerPadding,
+            ]}
           >
-            <Text style={[styles.icon, sizeStyles.iconStyle]}>⭐</Text>
-            <Text style={[styles.badgeText, sizeStyles.textStyle]}>
+            <Ionicons
+              name="star"
+              size={sizeStyles.iconSize}
+              color={tierColor}
+              style={styles.icon}
+            />
+            <Text style={[styles.badgeText, { color: tierColor }, sizeStyles.textStyle]}>
               Upgrade
             </Text>
-          </LinearGradient>
+          </View>
         </Pressable>
       );
     }
 
     return (
       <View style={styles.badgeWithUsage}>
-        <LinearGradient
-          colors={gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.badgeContainer, sizeStyles.containerPadding]}
+        <View
+          style={[
+            styles.badgeContainer,
+            styles.badgeAccentBorder,
+            sizeStyles.containerPadding,
+          ]}
         >
-          <Text style={[styles.icon, sizeStyles.iconStyle]}>{tierIcon}</Text>
-          <Text style={[styles.badgeText, sizeStyles.textStyle]}>
+          <Ionicons
+            name={tierIcon}
+            size={sizeStyles.iconSize}
+            color={tierColor}
+            style={styles.icon}
+          />
+          <Text style={[styles.badgeText, { color: tierColor }, sizeStyles.textStyle]}>
             {tierLabel}
           </Text>
-        </LinearGradient>
+        </View>
         {showUsage && (
           <UsageCounter
             featureKey="ai_generation"
@@ -133,43 +150,33 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Upgrade to premium"
         >
-          <LinearGradient
-            colors={TIER_GRADIENTS.free}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.banner}
-          >
+          <View style={[styles.banner, { borderColor: tierColor }]}>
             <View style={styles.bannerContent}>
               <View style={styles.bannerTextContainer}>
                 <View style={styles.bannerHeader}>
-                  <Text style={styles.bannerIcon}>⭐</Text>
-                  <Text style={styles.bannerTitle}>Upgrade to Premium</Text>
+                  <Ionicons name="star" size={rf(22)} color={tierColor} style={styles.bannerIconGlyph} />
+                  <Text style={[styles.bannerTitle, { color: tierColor }]}>Upgrade to Premium</Text>
                 </View>
                 <Text style={styles.bannerSubtitle}>
                   Unlock unlimited AI workouts, advanced analytics, and more!
                 </Text>
               </View>
-              <View style={styles.bannerButton}>
+              <View style={[styles.bannerButton, { backgroundColor: tierColor }]}>
                 <Text style={styles.bannerButtonText}>Upgrade</Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </Pressable>
       );
     }
 
     return (
-      <LinearGradient
-        colors={gradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.banner}
-      >
+      <View style={[styles.banner, { borderColor: tierColor }]}>
         <View style={styles.bannerContent}>
           <View style={styles.bannerTextContainer}>
             <View style={styles.bannerHeader}>
-              <Text style={styles.bannerIcon}>{tierIcon}</Text>
-              <Text style={styles.bannerTitle}>{tierLabel} Plan Active</Text>
+              <Ionicons name={tierIcon} size={rf(22)} color={tierColor} style={styles.bannerIconGlyph} />
+              <Text style={[styles.bannerTitle, { color: tierColor }]}>{tierLabel} Plan Active</Text>
             </View>
             <Text style={styles.bannerSubtitle}>
               You have access to all {tier} features
@@ -178,7 +185,7 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
                 ` until ${new Date(currentPeriodEnd).toLocaleDateString()}`}
             </Text>
           </View>
-          <View style={styles.bannerButton}>
+          <View style={[styles.bannerButton, { backgroundColor: tierColor }]}>
             <Text style={styles.bannerButtonText}>{tierLabel}</Text>
           </View>
         </View>
@@ -188,7 +195,7 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
             <UsageCounter featureKey="barcode_scan" variant="compact" />
           </View>
         )}
-      </LinearGradient>
+      </View>
     );
   }
 
@@ -201,21 +208,16 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
           accessibilityRole="button"
           accessibilityLabel="Upgrade to premium"
         >
-          <Text style={styles.inlineIconYellow}>⭐</Text>
-          <Text style={styles.inlineTextYellow}>Upgrade to Premium</Text>
+          <Ionicons name="star" size={rf(16)} color={tierColor} style={styles.inlineIcon} />
+          <Text style={[styles.inlineText, { color: tierColor }]}>Upgrade to Premium</Text>
         </Pressable>
       );
     }
 
-    const colorMap: Record<string, typeof styles.inlineTextPurple> = {
-      pro: styles.inlineTextPurple,
-      basic: styles.inlineTextGreen,
-    };
-
     return (
       <View style={styles.inlineContainer}>
-        <Text style={styles.inlineIconYellow}>{tierIcon}</Text>
-        <Text style={[colorMap[tier] ?? styles.inlineTextGreen]}>
+        <Ionicons name={tierIcon} size={rf(16)} color={tierColor} style={styles.inlineIcon} />
+        <Text style={[styles.inlineText, { color: tierColor }]}>
           {tierLabel}
         </Text>
         {showUsage && (
@@ -244,7 +246,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: rbr(9999),
   },
-  badgeText: { color: colors.white },
+  // Hairline-bordered chip with accent text — flat, no gradient fill.
+  badgeAccentBorder: {
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
+    backgroundColor: colors.glassSurface,
+  },
+  badgeText: { fontWeight: "600" },
   badgeWithUsage: {
     flexDirection: "row",
     alignItems: "center",
@@ -256,6 +264,8 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     marginHorizontal: rp(16),
     marginVertical: rp(8),
+    borderWidth: 1,
+    backgroundColor: colors.backgroundSecondary,
   },
   bannerContent: {
     flexDirection: "row",
@@ -264,33 +274,30 @@ const styles = StyleSheet.create({
   },
   bannerTextContainer: { flex: 1 },
   bannerHeader: { flexDirection: "row", alignItems: "center" },
-  bannerIcon: { fontSize: rf(24), marginRight: rp(8) },
-  bannerTitle: { color: colors.white, fontWeight: "700", fontSize: rf(18) },
+  bannerIconGlyph: { marginRight: rp(8) },
+  bannerTitle: { fontWeight: "700", fontSize: rf(18) },
   bannerSubtitle: {
-    color: "rgba(255, 255, 255, 0.9)",
+    color: colors.textSecondary,
     fontSize: rf(14),
     marginTop: rp(4),
   },
   bannerButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: rbr(9999),
     paddingHorizontal: rp(16),
     paddingVertical: rp(8),
   },
-  bannerButtonText: { color: colors.white, fontWeight: "700", fontSize: rf(14) },
+  bannerButtonText: { color: colors.background, fontWeight: "700", fontSize: rf(14) },
   bannerUsageRow: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: rp(12),
     paddingTop: rp(12),
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.2)",
+    borderTopColor: colors.glassBorder,
   },
   inlineContainer: { flexDirection: "row", alignItems: "center" },
-  inlineIconYellow: { fontSize: rf(16), marginRight: rp(4) },
-  inlineTextYellow: { color: colors.warningAlt, fontSize: rf(14), fontWeight: "500" },
-  inlineTextPurple: { color: colors.purple, fontSize: rf(14), fontWeight: "500" },
-  inlineTextGreen: { color: colors.successAlt, fontSize: rf(14), fontWeight: "500" },
+  inlineIcon: { marginRight: rp(4) },
+  inlineText: { fontSize: rf(14), fontWeight: "500" },
   inlineUsageSpacer: { marginLeft: rp(8) },
 });
 

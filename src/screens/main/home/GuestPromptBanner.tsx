@@ -6,7 +6,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
@@ -28,13 +27,9 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
       accessibilityRole="button"
       accessibilityLabel="Sign up"
     >
-      <GlassCard
-        elevation={1}
-        blurIntensity="light"
-        padding="sm"
-        borderRadius="lg"
-        style={styles.card}
-      >
+      {/* Flat Editorial-Dark surface replacing the former GlassCard (no blur,
+          no elevation) — same primary-tinted fill + hairline accent border. */}
+      <View style={styles.card}>
         <View style={styles.row}>
           <View style={styles.iconCircle}>
             <Ionicons
@@ -48,7 +43,7 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
             <Text style={styles.buttonText} numberOfLines={1}>Sign Up</Text>
           </View>
         </View>
-      </GlassCard>
+      </View>
     </AnimatedPressable>
   );
 };
@@ -58,6 +53,8 @@ const styles = StyleSheet.create({
     backgroundColor: hexToRgba(colors.primary, 0.05),
     borderColor: hexToRgba(colors.primary, 0.12),
     borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
   },
   row: {
     flexDirection: "row",

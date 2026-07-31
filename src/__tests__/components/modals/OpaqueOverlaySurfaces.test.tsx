@@ -114,7 +114,9 @@ describe("opaque overlay surfaces", () => {
       />,
     );
 
-    expectGlassOpaqueSurface(view);
+    // LogoutConfirmationModal migrated to a flat surface[2] dialog (matching
+    // the ClearCacheConfirmModal/SettingsSelectionModal pattern) — no GlassCard.
+    expectFlatOpaqueSurface(view);
   });
 
   it("makes the settings-selection surface opaque", () => {

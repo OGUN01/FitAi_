@@ -1,36 +1,49 @@
 /**
  * RecoveryTipsModal Component
- * Displays recovery tips and recommendations for rest days
+ * Displays recovery tips and recommendations for rest days.
+ *
+ * 2026 Editorial Dark migration:
+ *  - Centered RN Modal overlay → BottomSheet (thumb-reachable, swipe-dismiss).
+ *  - Gradient icon tiles → flat accent chips (icon on a tinted surface).
+ *  - Gradient "Got It" CTA → GlassButton (the kit CTA standard).
+ *  - glass/rgba literals → aurora tokens / hexToRgba(token).
  */
 
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, Modal, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { BottomSheet } from "../../../components/ui/aurora/BottomSheet";
+import { GlassButton } from "../../../components/ui/aurora/GlassButton";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+  surface,
+  border,
+} from "../../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { useProfileStore } from "../../../stores/profileStore";
 
-// Semantic gradient pairs sourced from theme tokens (avoids fragile inline
-// hex literals scattered across tip definitions). Each pair maps to a
-// recovery-tip category so the visual language stays consistent and tokenized.
-const GRADIENTS = {
-  primary: [colors.primary, colors.primaryLight] as [string, string],
-  blue: [colors.blue, colors.cyan] as [string, string],
-  teal: [colors.teal, colors.successBright] as [string, string],
-  coral: [colors.errorLight, colors.orange] as [string, string],
-  pink: [colors.pink, colors.purple] as [string, string],
-  cyan: [colors.cyan, colors.secondaryLight] as [string, string],
-};
+// Semantic accent per recovery-tip category, sourced from theme tokens (no
+// fragile inline hex literals). Each accent drives the flat icon-chip tint.
+const ACCENTS = {
+  primary: colors.primary,
+  blue: colors.blue,
+  teal: colors.teal,
+  coral: colors.orange,
+  pink: colors.pink,
+  cyan: colors.cyan,
+} as const;
+
+type AccentKey = keyof typeof ACCENTS;
 
 interface RecoveryTipsModalProps {
   visible: boolean;
@@ -42,7 +55,7 @@ interface RecoveryTip {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   description: string;
-  gradient: [string, string];
+  accent: string;
   duration?: string;
 }
 
@@ -53,7 +66,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Prioritize Sleep",
     description:
       "Aim for 7-9 hours of quality sleep. Your muscles repair and grow during deep sleep cycles.",
-    gradient: GRADIENTS.primary,
+    accent: ACCENTS.primary,
     duration: "7-9 hours",
   },
   {
@@ -62,7 +75,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Stay Hydrated",
     description:
       "Drink plenty of water throughout the day. Proper hydration aids muscle recovery and reduces soreness.",
-    gradient: GRADIENTS.blue,
+    accent: ACCENTS.blue,
     duration: "8+ glasses",
   },
   {
@@ -71,7 +84,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Light Stretching",
     description:
       "Gentle stretching improves blood flow and flexibility. Focus on areas that feel tight or sore.",
-    gradient: GRADIENTS.teal,
+    accent: ACCENTS.teal,
     duration: "10-15 min",
   },
   {
@@ -80,7 +93,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Protein & Nutrients",
     description:
       "Eat protein-rich foods to support muscle repair. Include anti-inflammatory foods like berries and leafy greens.",
-    gradient: GRADIENTS.coral,
+    accent: ACCENTS.coral,
   },
   {
     id: "walking",
@@ -88,7 +101,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Active Recovery",
     description:
       "A light 20-30 minute walk promotes blood circulation without stressing your muscles.",
-    gradient: GRADIENTS.pink,
+    accent: ACCENTS.pink,
     duration: "20-30 min",
   },
   {
@@ -97,7 +110,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Foam Rolling",
     description:
       "Self-myofascial release helps reduce muscle tension and can speed up recovery time.",
-    gradient: GRADIENTS.cyan,
+    accent: ACCENTS.cyan,
     duration: "5-10 min",
   },
 ];
@@ -168,14 +181,15 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
       style={styles.tipCard}
     >
       <View style={styles.tipContent}>
-        <LinearGradient
-          colors={tip.gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.tipIconContainer}
+        {/* Flat accent chip (was gradient-filled disc). */}
+        <View
+          style={[
+            styles.tipIconContainer,
+            { backgroundColor: hexToRgba(tip.accent, 0.18) },
+          ]}
         >
-          <Ionicons name={tip.icon} size={rf(20)} color={colors.white} />
-        </LinearGradient>
+          <Ionicons name={tip.icon} size={rf(20)} color={tip.accent} />
+        </View>
         <View style={styles.tipTextContainer}>
           <View style={styles.tipHeader}>
             <Text style={styles.tipTitle} numberOfLines={2}>{tip.title}</Text>
@@ -212,165 +226,123 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
     );
   }, [workoutPreferences]);
 
-  if (!visible) return null;
-
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
+      onClose={onClose}
+      showCloseButton={false}
+      maxHeightFraction={0.9}
+      testID="recovery-tips-sheet"
+      contentStyle={styles.sheetContent}
     >
-      <View style={styles.overlay}>
-        <SafeAreaView style={styles.safeArea} edges={["top"]}>
-            <Animated.View
-              entering={FadeInUp.springify()}
-              style={styles.modalContent}
-            >
-              {/* Header */}
-              <View style={styles.header}>
-                <LinearGradient
-                  colors={[colors.primary, colors.primaryLight]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.headerIconContainer}
-                >
-                  <Ionicons name="leaf" size={rf(24)} color={colors.white} />
-                </LinearGradient>
-                <View style={styles.headerText}>
-                  <Text style={styles.headerTitle} numberOfLines={1}>Recovery Tips</Text>
-                  <Text style={styles.headerSubtitle} numberOfLines={1}>
-                    Rest Day Recommendations
-                  </Text>
-                </View>
-                <AnimatedPressable
-                  onPress={onClose}
-                  scaleValue={0.9}
-                  hapticFeedback={true}
-                  hapticType="light"
-                  style={styles.closeButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close recovery tips"
-                >
-                  <Ionicons
-                    name="close"
-                    size={rf(24)}
-                    color={colors.textSecondary}
-                  />
-                </AnimatedPressable>
-              </View>
-
-              {/* Content */}
-              <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {/* Intro Card */}
-                <Animated.View entering={FadeIn.delay(50).duration(300)}>
-                  <View style={styles.introCard}>
-                    <Ionicons name="sparkles" size={rf(18)} color={colors.gold} />
-                    <Text style={styles.introText}>
-                      Rest days are crucial for muscle recovery, preventing
-                      overtraining, and achieving your fitness goals. Here's how
-                      to make the most of your recovery:
-                    </Text>
-                  </View>
-                </Animated.View>
-
-                {/* Tips List */}
-                {sortedTips.map((tip, index) => (
-                  <RecoveryTipCard key={tip.id} tip={tip} index={index} />
-                ))}
-
-                {/* Bottom Quote */}
-                <Animated.View entering={FadeInDown.delay(600).duration(400)}>
-                  <View style={styles.quoteContainer}>
-                    <Text style={styles.quoteText}>
-                      "Recovery is not a sign of weakness, it's a sign of
-                      wisdom."
-                    </Text>
-                    <Text style={styles.quoteAuthor}>
-                      — Smart Training Philosophy
-                    </Text>
-                  </View>
-                </Animated.View>
-              </ScrollView>
-
-              {/* Footer Button */}
-              <View style={styles.footer}>
-                <AnimatedPressable
-                  onPress={onClose}
-                  scaleValue={0.96}
-                  hapticFeedback={true}
-                  hapticType="medium"
-                  style={styles.gotItButton}
-                >
-                  <LinearGradient
-                    colors={[colors.primary, colors.primaryLight]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.gotItButtonGradient}
-                  >
-                    <Text style={styles.gotItButtonText}>Got It!</Text>
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={rf(18)}
-                      color={colors.white}
-                    />
-                  </LinearGradient>
-                </AnimatedPressable>
-              </View>
-            </Animated.View>
-        </SafeAreaView>
+      {/* Header — flat accent chip + title + 44pt close affordance. */}
+      <View style={styles.header}>
+        <View
+          style={[
+            styles.headerIconContainer,
+            { backgroundColor: hexToRgba(colors.primary, 0.18) },
+          ]}
+        >
+          <Ionicons name="leaf" size={rf(24)} color={colors.primary} />
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.headerTitle} numberOfLines={1}>Recovery Tips</Text>
+          <Text style={styles.headerSubtitle} numberOfLines={1}>
+            Rest Day Recommendations
+          </Text>
+        </View>
+        <AnimatedPressable
+          onPress={onClose}
+          scaleValue={0.9}
+          hapticFeedback={true}
+          hapticType="light"
+          style={styles.closeButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Close recovery tips"
+        >
+          <Ionicons
+            name="close"
+            size={rf(24)}
+            color={colors.textSecondary}
+          />
+        </AnimatedPressable>
       </View>
-    </Modal>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Intro Card */}
+        <Animated.View entering={FadeIn.delay(50).duration(300)}>
+          <View style={styles.introCard}>
+            <Ionicons name="sparkles" size={rf(18)} color={colors.gold} />
+            <Text style={styles.introText}>
+              Rest days are crucial for muscle recovery, preventing
+              overtraining, and achieving your fitness goals. Here's how
+              to make the most of your recovery:
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/* Tips List */}
+        {sortedTips.map((tip, index) => (
+          <RecoveryTipCard key={tip.id} tip={tip} index={index} />
+        ))}
+
+        {/* Bottom Quote */}
+        <Animated.View entering={FadeInDown.delay(600).duration(400)}>
+          <View style={styles.quoteContainer}>
+            <Text style={styles.quoteText}>
+              "Recovery is not a sign of weakness, it's a sign of
+              wisdom."
+            </Text>
+            <Text style={styles.quoteAuthor}>
+              — Smart Training Philosophy
+            </Text>
+          </View>
+        </Animated.View>
+      </ScrollView>
+
+      {/* Footer CTA — GlassButton (was gradient-filled button). */}
+      <View style={styles.footer}>
+        <GlassButton
+          label="Got It!"
+          icon="checkmark-circle"
+          onPress={onClose}
+          fullWidth
+          testID="recovery-tips-got-it"
+          accessibilityLabel="Got it"
+        />
+      </View>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  sheetContent: {
     flex: 1,
-    backgroundColor: colors.overlayDark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  safeArea: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    paddingHorizontal: spacing.lg,
-  },
-  modalContent: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.xl,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.white, 0.1),
-    width: "100%",
-    maxWidth: rw(400),
-    maxHeight: "85%",
+    paddingTop: rp(spacing.xs),
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.lg,
+    paddingBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: hexToRgba(colors.white, 0.1),
+    borderBottomColor: border.subtle,
+    gap: spacing.md,
   },
   headerIconContainer: {
-    width: rw(48),
-    height: rw(48),
-    borderRadius: rw(14),
+    width: Math.max(rw(48), 44),
+    height: Math.max(rw(48), 44),
+    borderRadius: borderRadius.lg,
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   headerText: {
     flex: 1,
-    marginLeft: spacing.md,
     minWidth: 0,
   },
   headerTitle: {
@@ -385,10 +357,10 @@ const styles = StyleSheet.create({
     marginTop: rp(2),
   },
   closeButton: {
-    width: Math.max(rw(36), 44),
-    height: Math.max(rw(36), 44),
-    borderRadius: Math.max(rw(18), 22),
-    backgroundColor: hexToRgba(colors.white, 0.12),
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: surface[2],
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -397,8 +369,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.lg,
-    paddingTop: spacing.md,
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
   },
   introCard: {
     flexDirection: "row",
@@ -406,7 +378,6 @@ const styles = StyleSheet.create({
     backgroundColor: hexToRgba(colors.gold, 0.18),
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    marginBottom: spacing.lg,
     gap: spacing.sm,
   },
   introText: {
@@ -416,9 +387,10 @@ const styles = StyleSheet.create({
     lineHeight: rf(20),
   },
   tipCard: {
-    marginBottom: spacing.md,
-    backgroundColor: hexToRgba(colors.white, 0.12),
+    backgroundColor: surface[1],
     borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: border.subtle,
     overflow: "hidden",
   },
   tipContent: {
@@ -428,11 +400,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   tipIconContainer: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(12),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
+    borderRadius: borderRadius.md,
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   tipTextContainer: {
     flex: 1,
@@ -458,15 +431,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(3),
-    backgroundColor: hexToRgba(colors.white, 0.12),
+    backgroundColor: surface[2],
     paddingHorizontal: spacing.xs,
-    paddingVertical: rp(2),
+    paddingVertical: rp(spacing.xs),
     borderRadius: borderRadius.sm,
     flexShrink: 0,
   },
   durationText: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     color: colors.textSecondary,
+    fontVariant: ["tabular-nums"],
   },
   tipDescription: {
     fontSize: rf(12),
@@ -474,7 +448,6 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
   },
   quoteContainer: {
-    marginTop: spacing.md,
     padding: spacing.md,
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
@@ -493,29 +466,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   footer: {
-    padding: spacing.lg,
+    paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: hexToRgba(colors.white, 0.1),
-  },
-  gotItButton: {
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    minHeight: 48,
-  },
-  gotItButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  gotItButtonText: {
-    fontSize: rf(15),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.white,
-    letterSpacing: 0.5,
+    borderTopColor: border.subtle,
   },
 });
 

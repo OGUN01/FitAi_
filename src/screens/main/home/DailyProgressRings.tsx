@@ -20,34 +20,29 @@ import Animated, {
   useReducedMotion,
   cancelAnimation,
 } from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing, typography } from '../../../theme/aurora-tokens';
-import { rf, rw } from '../../../utils/responsive';
+import { flatColors as colors, spacing, typography, borderRadius, border } from '../../../theme/aurora-tokens';
+import { rf, rw, rp } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
-import type { MetricSource } from '../../../stores/healthDataStore';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
-// Ring configuration — the four Aurora gradient ring colors
+// Ring configuration — the four Aurora ring colors (flat token strokes)
 const RINGS = {
-  move: { color: colors.errorLight, gradientEnd: colors.accent, icon: 'flame' as const },
+  move: { color: colors.errorLight, icon: 'flame' as const },
   exercise: {
     color: colors.success,
-    gradientEnd: colors.successLight,
     icon: 'barbell' as const,
   },
   nutrition: {
     color: colors.info,
-    gradientEnd: '#03A9F4',
     icon: 'restaurant' as const,
   },
   steps: {
     color: colors.primary,
-    gradientEnd: '#E040FB',
     icon: 'footsteps' as const,
   },
 };
@@ -63,8 +58,6 @@ interface DailyProgressRingsProps {
   // Steps (from Health Connect/HealthKit)
   steps?: number;
   stepsGoal?: number;
-  // Data source attribution (for transparency)
-  stepsSource?: MetricSource;
   onPress?: () => void;
 }
 
@@ -74,10 +67,8 @@ const Ring: React.FC<{
   size: number;
   strokeWidth: number;
   color: string;
-  gradientEnd: string;
-  gradientId: string;
   delay?: number;
-}> = ({ progress, size, strokeWidth, color, gradientEnd, gradientId, delay = 0 }) => {
+}> = ({ progress, size, strokeWidth, color, delay = 0 }) => {
   const animatedProgress = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -96,12 +87,6 @@ const Ring: React.FC<{
 
   return (
     <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-      <Defs>
-        <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor={color} />
-          <Stop offset="100%" stopColor={gradientEnd} />
-        </LinearGradient>
-      </Defs>
       <Circle
         cx={center}
         cy={center}
@@ -114,7 +99,7 @@ const Ring: React.FC<{
         cx={center}
         cy={center}
         r={radius}
-        stroke={`url(#${gradientId})`}
+        stroke={color}
         strokeWidth={strokeWidth}
         fill="transparent"
         strokeDasharray={circumference}
@@ -123,39 +108,6 @@ const Ring: React.FC<{
         origin={`${center}, ${center}`}
         animatedProps={animatedProps}
       />
-    </Svg>
-  );
-};
-
-// Signature glow — a soft radial-gradient halo sitting behind the ring cluster,
-// colored by the dominant active ring and faded by overall progress. Renders
-// identically on iOS/Android/web (SVG, no platform shadow needed). Slightly
-// larger than the rings so the halo bleeds beyond them = "emitted light".
-const Glow: React.FC<{ color: string; opacity: number; size: number }> = ({
-  color,
-  opacity,
-  size,
-}) => {
-  const id = 'ringGlow';
-  const glowSize = size * 1.25;
-  return (
-    <Svg
-      width={glowSize}
-      height={glowSize}
-      style={[
-        StyleSheet.absoluteFill,
-        { left: -(glowSize - size) / 2, top: -(glowSize - size) / 2 },
-      ]}
-      pointerEvents="none"
-    >
-      <Defs>
-        <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-          <Stop offset="0%" stopColor={color} stopOpacity={opacity} />
-          <Stop offset="55%" stopColor={color} stopOpacity={opacity * 0.45} />
-          <Stop offset="100%" stopColor={color} stopOpacity={0} />
-        </RadialGradient>
-      </Defs>
-      <Rect x={0} y={0} width={glowSize} height={glowSize} fill={`url(#${id})`} />
     </Svg>
   );
 };
@@ -169,7 +121,6 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   mealsGoal,
   steps = 0,
   stepsGoal = 0,
-  stepsSource: _stepsSource,
   onPress,
 }) => {
   // Check for empty/unset goals state
@@ -254,7 +205,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
         accessibilityRole="button"
         accessibilityLabel="Set your goals"
       >
-        <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+        <View style={styles.surface}>
           <View style={styles.emptyStateContainer}>
             <Ionicons name="fitness-outline" size={rf(48)} color={colors.textSecondary} />
             <Text style={styles.emptyStateTitle} numberOfLines={1}>
@@ -264,7 +215,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               Complete your profile to track daily progress
             </Text>
           </View>
-        </GlassCard>
+        </View>
       </AnimatedPressable>
     );
   }
@@ -277,31 +228,6 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   const strokeWidth = rw(12); // Bold, confident rings
   const innerStrokeWidth = rw(8); // Slightly thinner for the innermost ring
 
-  // Signature glow: a soft radial halo behind the rings, colored by the metric
-  // the user is closest to completing (the dominant active ring). This makes the
-  // rings feel alive and "emitting light" tied to today's win — honest (glow =
-  // your real progress), premium, and not seen in any other fitness app (rings
-  // everywhere glow nothing; they don't react to which goal you're crushing).
-  const dominantRing = (() => {
-    const candidates: Array<{
-      key: 'move' | 'exercise' | 'nutrition' | 'steps';
-      color: string;
-      progress: number;
-    }> = [
-      { key: 'move', color: RINGS.move.color, progress: moveProgress },
-      { key: 'exercise', color: RINGS.exercise.color, progress: exerciseProgress },
-      { key: 'nutrition', color: RINGS.nutrition.color, progress: nutritionProgress },
-    ];
-    if (hasStepsData)
-      candidates.push({ key: 'steps', color: RINGS.steps.color, progress: stepsProgress });
-    // Glow the ring that's most progressed (closest to done) — celebrates the
-    // current win. Fallback to Move when nothing has progress yet.
-    return candidates.reduce((best, c) => (c.progress > best.progress ? c : best), candidates[0]);
-  })();
-  // Glow opacity scales with overall progress so an empty day doesn't blast
-  // a full halo — it glows softly, building as the day fills.
-  const glowOpacity = Math.max(0.12, Math.min(overallScore / 100, 0.45));
-
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -312,19 +238,16 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       accessibilityLabel={`Daily progress ${overallScore}%`}
       testID="daily-progress-rings"
     >
-      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+      <View style={styles.surface}>
         <View style={styles.container}>
           {/* Rings — the single centered focal point */}
           <View style={styles.ringsHero}>
             <View style={[styles.ringsContainer, { width: outerSize, height: outerSize }]}>
-              <Glow color={dominantRing.color} opacity={glowOpacity} size={outerSize} />
               <Ring
                 progress={moveProgress}
                 size={outerSize}
                 strokeWidth={strokeWidth}
                 color={RINGS.move.color}
-                gradientEnd={RINGS.move.gradientEnd}
-                gradientId="moveGrad"
                 delay={0}
               />
               <View
@@ -343,8 +266,6 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                   size={middleSize}
                   strokeWidth={strokeWidth}
                   color={RINGS.exercise.color}
-                  gradientEnd={RINGS.exercise.gradientEnd}
-                  gradientId="exerciseGrad"
                   delay={80}
                 />
               </View>
@@ -364,8 +285,6 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                   size={innerSize}
                   strokeWidth={innerStrokeWidth}
                   color={RINGS.nutrition.color}
-                  gradientEnd={RINGS.nutrition.gradientEnd}
-                  gradientId="nutritionGrad"
                   delay={160}
                 />
               </View>
@@ -385,8 +304,6 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                   size={innermostSize}
                   strokeWidth={innerStrokeWidth}
                   color={RINGS.steps.color}
-                  gradientEnd={RINGS.steps.gradientEnd}
-                  gradientId="stepsGrad"
                   delay={240}
                 />
               </View>
@@ -464,7 +381,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                     style={styles.chipValue}
                     numberOfLines={1}
                     adjustsFontSizeToFit
-                    minimumFontScale={0.7}
+                    minimumFontScale={0.8}
                   >
                     {steps.toLocaleString()}
                     <Text style={styles.chipUnit}>/{stepsGoal.toLocaleString()}</Text>
@@ -477,12 +394,21 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
             ) : null}
           </View>
         </View>
-      </GlassCard>
+      </View>
     </AnimatedPressable>
   );
 };
 
 const styles = StyleSheet.create({
+  // Flat Editorial-Dark surface replacing the former GlassCard (no blur, no
+  // elevation). Depth comes from the 1px hairline border on a surface[1] fill.
+  surface: {
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: rp(spacing.md),
+  },
   container: {
     flexDirection: 'column',
     alignItems: 'center',
@@ -526,6 +452,7 @@ const styles = StyleSheet.create({
     ...typography.variants.heroStat,
     color: colors.text,
     fontSize: rf(38),
+    fontVariant: ['tabular-nums'],
   },
   scoreLabel: {
     ...typography.variants.caption,
@@ -538,7 +465,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
+    borderTopColor: border.subtle,
   },
   chip: {
     flex: 1,
@@ -549,7 +476,7 @@ const styles = StyleSheet.create({
   },
   chipDivider: {
     width: 1,
-    backgroundColor: colors.glassBorder,
+    backgroundColor: border.subtle,
     marginVertical: spacing.xs,
   },
   chipValue: {
@@ -557,6 +484,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     fontSize: rf(14),
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
   chipUnit: {
     fontFamily: 'Manrope_500Medium',

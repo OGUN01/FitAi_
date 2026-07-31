@@ -12,16 +12,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import {
-  flatColors as colors,
-  spacing,
-  borderRadius,
-  typography,
-} from '../../../theme/aurora-tokens';
-import { rf, rw } from '../../../utils/responsive';
-import { hexToRgba } from '../../../utils/colors';
+import { flatColors as colors, spacing, typography, borderRadius, border } from '../../../theme/aurora-tokens';
+import { rf, rp } from '../../../utils/responsive';
 import { useHealthIntelligenceLogic } from '../../../hooks/useHealthIntelligenceLogic';
 import { HealthIntelligencePlaceholder } from '../../../components/home/HealthIntelligencePlaceholder';
 
@@ -37,6 +30,11 @@ interface HealthIntelligenceHubProps {
 
   onPress?: () => void;
 
+  // Separate CTA for the no-data placeholder ("Connect Health Data") — it must
+  // route to the wearable connection flow, not the same destination as the
+  // populated card. Falls back to onPress when not provided.
+  onConnectPress?: () => void;
+
   onDetailPress?: (..._args: ['heart' | 'sleep' | 'quality']) => void;
 }
 
@@ -50,29 +48,28 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
     stepsGoal,
     activeCalories,
     onPress,
+    onConnectPress,
     onDetailPress: _onDetailPress,
   }) => {
-    const {
-      hasRealData,
-      recoveryScore,
-      recoveryLabel,
-      recoveryColor,
-      sleepColor,
-      formatSleepQuality,
-    } = useHealthIntelligenceLogic({
-      sleepHours,
-      sleepQuality,
-      restingHeartRate,
-      steps,
-      stepsGoal,
-      activeCalories,
-    });
+    const { hasRealData, recoveryScore, recoveryColor, sleepColor, formatSleepQuality } =
+      useHealthIntelligenceLogic({
+        sleepHours,
+        sleepQuality,
+        restingHeartRate,
+        steps,
+        stepsGoal,
+        activeCalories,
+      });
 
     if (!hasRealData) {
-      return <HealthIntelligencePlaceholder onPress={onPress} />;
+      return <HealthIntelligencePlaceholder onPress={onConnectPress ?? onPress} />;
     }
 
-    const displayScore = recoveryScore ?? 0;
+    // recoveryScore is null when there's no sufficient recovery data (sleep or
+    // HR) — the hook documents null as "show '--'". Rendering 0 here instead
+    // showed a misleading "0 RECOVERY" for steps-only users (hasRealData=true
+    // but no recovery inputs). Mirror the other "--" placeholders in this card.
+    const displayScore = recoveryScore == null ? '--' : recoveryScore;
 
     return (
       <AnimatedPressable
@@ -83,7 +80,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
         accessibilityRole="button"
         accessibilityLabel="Health Intelligence"
       >
-        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+        <View style={styles.surface}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -96,10 +93,9 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
                 Health Intelligence
               </Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: hexToRgba(recoveryColor, 0.18) }]}>
-              <View style={[styles.statusDot, { backgroundColor: recoveryColor }]} />
-              <Text style={[styles.statusText, { color: recoveryColor }]}>{recoveryLabel}</Text>
-            </View>
+            {/* No recovery status badge here — the TodayHero coach line directly
+                above already conveys the same recovery state (same hook, same
+                label/color). Repeating it stacked the indicator twice. */}
           </View>
 
           {/* Recovery hero — one big number, no ring. Complements the activity rings above. */}
@@ -164,13 +160,22 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
               </Text>
             </View>
           </View>
-        </GlassCard>
+        </View>
       </AnimatedPressable>
     );
   }
 );
 
 const styles = StyleSheet.create({
+  // Flat Editorial-Dark surface replacing the former GlassCard (no blur, no
+  // elevation). Depth comes from the 1px hairline border on a surface[1] fill.
+  surface: {
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: rp(spacing.md),
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -190,23 +195,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     flexShrink: 1,
   },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  statusDot: {
-    width: rw(6),
-    height: rw(6),
-    borderRadius: rw(3),
-  },
-  statusText: {
-    ...typography.variants.caption,
-    fontWeight: '600',
-  },
   recoveryHero: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -217,6 +205,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_800ExtraBold',
     fontSize: rf(48),
     lineHeight: rf(52),
+    fontVariant: ['tabular-nums'],
   },
   recoveryCaption: {
     ...typography.variants.caption,
@@ -230,7 +219,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
+    borderTopColor: border.subtle,
   },
   vital: {
     flex: 1,
@@ -241,7 +230,7 @@ const styles = StyleSheet.create({
   },
   vitalDivider: {
     width: 1,
-    backgroundColor: colors.glassBorder,
+    backgroundColor: border.subtle,
     marginVertical: spacing.xs,
   },
   vitalValue: {
@@ -249,6 +238,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     fontSize: rf(14),
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
   vitalLabel: {
     ...typography.variants.caption,

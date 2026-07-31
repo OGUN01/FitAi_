@@ -33,6 +33,8 @@ import {
 import { rp, rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
+import { useProfileStore } from "../../../stores/profileStore";
+import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 
 // ----------------------------------------------------------------------------
 // TYPES
@@ -78,11 +80,17 @@ function isLightCell(color: string): boolean {
   );
 }
 
-/** Human-readable volume label. */
-function formatVolume(volume: number): string {
-  if (volume <= 0) return "—";
-  if (volume >= 1000) return `${(volume / 1000).toFixed(1)}t`;
-  return `${Math.round(volume)}kg`;
+/** Human-readable volume label. Input is kg; display converts per user unit. */
+function formatVolume(volumeKg: number, unit: WeightUnit): string {
+  if (volumeKg <= 0) return "—";
+  const display = toDisplayWeight(volumeKg, unit) ?? 0;
+  if (display >= 1000) {
+    // kg condenses to metric tonnes ("1.2t"); lbs to thousands ("2.6k").
+    return unit === "kg"
+      ? `${(display / 1000).toFixed(1)}t`
+      : `${(display / 1000).toFixed(1)}k`;
+  }
+  return `${Math.round(display)}${unit}`;
 }
 
 // ----------------------------------------------------------------------------
@@ -97,6 +105,9 @@ export const MuscleHeatmap: React.FC<MuscleHeatmapProps> = ({
   testID,
 }) => {
   const reduceMotion = useReducedMotion();
+  // Two-step select → derive (jest profileStore mock ignores selectors).
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const userUnits: WeightUnit = personalInfo?.units === "imperial" ? "lbs" : "kg";
   const [activeCell, setActiveCell] = useState<{
     muscleIndex: number;
     weekIndex: number;
@@ -168,7 +179,7 @@ export const MuscleHeatmap: React.FC<MuscleHeatmapProps> = ({
                   key={`cell_${muscleIndex}_${weekIndex}`}
                   onPress={() => handleCellPress(muscleIndex, weekIndex)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${capitalize(entry.muscle)} week ${weekLabels[weekIndex] ?? weekIndex + 1}: ${formatVolume(volume)}`}
+                  accessibilityLabel={`${capitalize(entry.muscle)} week ${weekLabels[weekIndex] ?? weekIndex + 1}: ${formatVolume(volume, userUnits)}`}
                   accessibilityHint="Double tap to see exact volume"
                   style={[
                     styles.cell,
@@ -186,7 +197,7 @@ export const MuscleHeatmap: React.FC<MuscleHeatmapProps> = ({
                         isLightCell(cellColor) && styles.cellValueTextDark,
                       ]}
                     >
-                      {formatVolume(volume)}
+                      {formatVolume(volume, userUnits)}
                     </Text>
                   )}
                 </Pressable>

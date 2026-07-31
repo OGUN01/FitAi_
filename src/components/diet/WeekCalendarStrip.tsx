@@ -119,10 +119,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   dayPill: {
-    width: rw(44),
-    height: rh(68),
+    // rw-scaled but never below the 44pt minimum touch-target width (on
+    // 320pt-class phones bare rw(44) shrinks to ~37pt).
+    width: Math.max(rw(44), 44),
+    height: Math.max(rh(68), 44),
     borderRadius: rbr(borderRadius.lg),
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: 'transparent',
     alignItems: 'center' as const,

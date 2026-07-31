@@ -24,7 +24,6 @@ import Svg, {
 } from 'react-native-svg';
 import Animated, { FadeInDown, useAnimatedProps, useSharedValue, withTiming, useAnimatedReaction, runOnJS } from 'react-native-reanimated';
 import type { ProgressEntry } from '../../services/progressData';
-import type { CalculatedMetrics } from '../../hooks/useCalculatedMetrics';
 import {
   surface,
   border as borderTokens,
@@ -58,7 +57,6 @@ const LINE_COLOR = chart[1];
 interface WeightJourneySectionProps {
   weightHistory?: Array<{ date: string; weight: number }>;
   progressEntries: ProgressEntry[];
-  calculatedMetrics: CalculatedMetrics | null;
   onLogWeight: () => void;
   unit?: WeightUnit;
 }
@@ -109,7 +107,6 @@ const buildSmoothPath = (
 export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.memo(({
   weightHistory,
   progressEntries,
-  calculatedMetrics,
   onLogWeight,
   unit = 'kg',
 }) => {
@@ -146,10 +143,31 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
     [rawChartData, unit],
   );
 
-  const currentWeightKg =
-    rawChartData.length > 0 ? rawChartData[rawChartData.length - 1].valueKg : null;
+  // Hero current weight comes from the UNFILTERED latest entry (SSOT) — the
+  // period-filtered chart data can be empty for 1W/1M even when older
+  // weightHistory exists, and the hero must not blank out in that case.
+  const latestWeightKg = useMemo((): number | null => {
+    if (weightHistory && weightHistory.length > 0) {
+      const sorted = [...weightHistory].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
+      return sorted[sorted.length - 1].weight;
+    }
+    const withWeight = progressEntries
+      .filter((entry) => entry.weight_kg != null)
+      .sort(
+        (a, b) =>
+          new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime(),
+      );
+    return withWeight.length > 0
+      ? withWeight[withWeight.length - 1].weight_kg
+      : null;
+  }, [weightHistory, progressEntries]);
+
+  const hasAnyWeightData = latestWeightKg != null;
+
+  const currentWeightKg = latestWeightKg;
   const startWeightKg = rawChartData.length > 0 ? rawChartData[0].valueKg : null;
-  const targetWeightKg = calculatedMetrics?.targetWeightKg ?? null;
 
   const totalChangeKg =
     currentWeightKg != null && startWeightKg != null ? currentWeightKg - startWeightKg : null;
@@ -158,25 +176,13 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
       ? (totalChangeKg / startWeightKg) * 100
       : null;
 
-  const goalToGoKg =
-    currentWeightKg != null && targetWeightKg != null
-      ? Math.abs(currentWeightKg - targetWeightKg)
-      : null;
-  const goalDirection =
-    currentWeightKg != null && targetWeightKg != null
-      ? currentWeightKg > targetWeightKg
-        ? 'to lose'
-        : 'to gain'
-      : null;
-
   const displayCurrentWeight = toDisplayWeight(currentWeightKg, unit);
-  const displayTargetWeight = toDisplayWeight(targetWeightKg, unit);
-  const displayGoalToGo = toDisplayWeight(goalToGoKg, unit);
 
   const drawProgress = useSharedValue(0);
   const [drawn, setDrawn] = useState(false);
 
   React.useEffect(() => {
+    setDrawn(false);
     drawProgress.value = 0;
     drawProgress.value = withTiming(1, { duration: 900 });
   }, [period, chartValues.length, drawProgress]);
@@ -265,13 +271,8 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
         )}
       </View>
 
-      {/* Goal hint */}
-      {displayTargetWeight != null && displayGoalToGo != null && goalDirection != null && (
-        <Text style={styles.goalHint}>
-          Goal {displayTargetWeight.toFixed(1)} {unit} · {displayGoalToGo.toFixed(1)} {unit}{' '}
-          {goalDirection}
-        </Text>
-      )}
+      {/* Goal/target readout lives in GoalProgressSection below — the hero
+          intentionally shows current status only (no duplicate goal line). */}
 
       {/* Full-bleed chart */}
       <View style={styles.chartWrap}>
@@ -301,7 +302,11 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
         ) : (
           <View style={styles.emptyChart}>
             <Ionicons name="stats-chart-outline" size={28} color={colors.text.muted} />
-            <Text style={styles.emptyChartText}>Log at least 2 entries to see your journey</Text>
+            <Text style={styles.emptyChartText}>
+              {rawChartData.length === 0 && hasAnyWeightData
+                ? 'No entries in this period'
+                : 'Log at least 2 entries to see your journey'}
+            </Text>
           </View>
         )}
       </View>
@@ -407,11 +412,6 @@ const styles = StyleSheet.create({
   deltaChipText: {
     ...typography.variants.caption2,
     fontFamily: 'Manrope_700Bold',
-  },
-  goalHint: {
-    ...typography.variants.caption,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
   },
   chartWrap: {
     marginTop: spacing.md,

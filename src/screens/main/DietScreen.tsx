@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, RefreshControl, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
-import { GlassCard } from '../../components/ui/aurora/GlassCard';
 import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
 import { DashboardSkeleton } from '../../components/ui/aurora/DashboardSkeleton';
 import { rf, rw, rp, rh } from '../../utils/responsive';
@@ -15,7 +14,7 @@ import {
   flatFontSize as fontSize,
 } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
-import { Button } from '../../components/ui';
+import { GlassButton } from '../../components/ui/aurora/GlassButton';
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionStore, useAppStateStore, useProfileStore } from '../../stores';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -67,10 +66,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   isActive: _isActive = true,
 }) => {
   const { isAuthenticated } = useAuth();
+  // Bottom safe-area inset — applied to the bottom sheets (Barcode/Label/Weight
+  // options) so their Cancel button clears the gesture/home-indicator area on
+  // notched devices. Without it the sheets' bottom padding is a fixed rp(32)
+  // that sits under the home indicator on iPhone, making Cancel hard to tap.
+  const insets = useSafeAreaInsets();
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [showCreateRecipe, setShowCreateRecipe] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [showLogMealModal, setShowLogMealModal] = useState(false);
   const [logMealScanResult, setLogMealScanResult] = useState<LogMealScanResult | null>(null);
@@ -290,11 +293,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       navigation.setParams({ openLabelScanPrep: undefined });
     }
 
-    if (route.params.openCreateRecipe) {
-      setShowCreateRecipe(true);
-      navigation.setParams({ openCreateRecipe: undefined });
-    }
-
     if (route.params.openScanFood) {
       handleScanFood();
       navigation.setParams({ openScanFood: undefined });
@@ -315,10 +313,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
   const handleSearchFood = useCallback(() => {
     setShowLogMealModal(true);
-  }, []);
-
-  const handleRecipeCreated = useCallback((_recipe: any) => {
-    setShowCreateRecipe(false);
   }, []);
 
   const handleManualProductFound = useCallback(
@@ -630,7 +624,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 >
                   Diet
                 </Text>
-                <Text style={styles.dateSubtitle}>{dateSubtitle}</Text>
+                <Text
+                  style={styles.dateSubtitle}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  {dateSubtitle}
+                </Text>
               </View>
               <View style={styles.topBarRight}>
                 <StreakPill />
@@ -665,29 +666,28 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             {foodsLoading ? (
               <DashboardSkeleton showHeader={false} cardCount={3} listItemCount={3} />
             ) : foodsError ? (
-              <GlassCard style={styles.errorCard} elevation={1} padding="md">
+              <View style={styles.errorCard}>
                 <Text style={styles.errorText}>
                   {typeof foodsError === 'string'
                     ? foodsError
                     : ((foodsError as any)?.message ?? 'Failed to load nutrition data')}
                 </Text>
-                <Button
-                  title="Retry"
+                <GlassButton
+                  label="Retry"
                   onPress={() => {
                     refreshAll().catch(console.error);
                   }}
-                  size="sm"
                 />
-              </GlassCard>
+              </View>
             ) : null}
             {!canAccessMealFeatures && (
-              <GlassCard style={styles.errorCard} elevation={1} padding="md">
+              <View style={styles.errorCard}>
                 <Text style={styles.errorText}>Please sign in to track your nutrition</Text>
-              </GlassCard>
+              </View>
             )}
 
             {aiError && !isGeneratingPlan ? (
-              <GlassCard style={styles.errorCard} elevation={1} padding="md">
+              <View style={styles.errorCard}>
                 <View style={styles.errorBannerRow}>
                   <Ionicons
                     name="alert-circle-outline"
@@ -701,13 +701,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       : 'Failed to generate meal plan. Please try again.'}
                   </Text>
                 </View>
-                <Button
-                  title="Retry Generation"
+                <GlassButton
+                  label="Retry Generation"
                   onPress={() => onGenerateWeeklyPlan()}
                   variant="primary"
-                  size="sm"
                 />
-              </GlassCard>
+              </View>
             ) : null}
 
             <ConcentricRings
@@ -746,8 +745,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           showPortionAdjustment ||
           showFeedbackModal ||
           showMealTypeSelector ||
-          Boolean(asyncJob) ||
-          showCreateRecipe) && (
+          Boolean(asyncJob)) && (
           <DietModals
             showCamera={showCamera}
             cameraMode={cameraMode}
@@ -774,12 +772,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             showMealTypeSelector={showMealTypeSelector}
             handleMealTypeSelected={handleMealTypeSelected}
             setShowMealTypeSelector={setShowMealTypeSelector}
-            userProfile={userProfile}
             asyncJob={asyncJob}
             cancelAsyncGeneration={cancelAsyncGeneration}
-            showCreateRecipe={showCreateRecipe}
-            setShowCreateRecipe={setShowCreateRecipe}
-            handleRecipeCreated={handleRecipeCreated}
             portionGrams={portionGrams}
             setPortionGrams={setPortionGrams}
           />
@@ -865,7 +859,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             onRequestClose={() => setShowBarcodeOptions(false)}
           >
             <View style={styles.optionsOverlay}>
-              <View style={styles.optionsSheet}>
+              <View style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}>
                 <Text style={styles.optionsTitle}>Barcode</Text>
                 <AnimatedPressable
                   style={styles.optionButton}
@@ -919,7 +913,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             }}
           >
             <View style={styles.optionsOverlay}>
-              <View style={styles.optionsSheet}>
+              <View style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}>
                 <Text style={styles.optionsTitle}>Scan Nutrition Label</Text>
                 <Text style={styles.optionsSubtitle}>
                   Enter the serving size you are eating for exact nutrient calculation
@@ -989,7 +983,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             }}
           >
             <View style={styles.optionsOverlay}>
-              <View style={styles.optionsSheet}>
+              <View style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}>
                 <Text style={styles.optionsTitle}>Scan Food</Text>
                 <Text style={styles.optionsSubtitle}>
                   Enter the weight of your portion for more accurate calorie tracking
@@ -1095,7 +1089,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         onLabel={() => setShowLabelScanPrep(true)}
         onLog={handleSearchFood}
         onWater={handleShowWaterIntake}
-        onRecipes={() => setShowCreateRecipe(true)}
         hide={dockHide}
       />
     </AuroraBackground>
@@ -1139,8 +1132,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   refreshButton: {
-    width: Math.max(rw(36), 36),
-    height: Math.max(rw(36), 36),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
     borderRadius: borderRadius.full,
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     alignItems: 'center' as const,
@@ -1150,6 +1143,10 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.md,
     alignItems: 'center',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   errorText: {
     fontSize: fontSize.md,

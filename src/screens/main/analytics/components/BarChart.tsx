@@ -8,16 +8,13 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import Svg, {
-  Defs,
-  LinearGradient as SvgLinearGradient,
-  Stop,
   Line,
   Rect,
   Text as SvgText,
 } from "react-native-svg";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
-import { ChartTooltip } from "../../../../components/ui/ChartTooltip";
+import { ChartCallout } from "../../../../components/charts/ChartCallout";
 import {
   border,
   surface,
@@ -37,6 +34,10 @@ export interface ChartData {
 interface BarChartProps {
   data: ChartData[];
   color: string;
+  /**
+   * @deprecated Bars render with a flat token fill (de-gradient initiative);
+   * kept in the contract so existing callers compile unchanged.
+   */
   gradientColors: [string, string];
   maxValue?: number;
 }
@@ -75,7 +76,7 @@ const AnimatedBar: React.FC<{
       x={x}
       width={width}
       rx={rw(borderRadius.md)}
-      fill={isSelected ? color : "url(#barGradient)"}
+      fill={color}
       opacity={isSelected ? 1 : 0.9}
       animatedProps={animatedProps}
     />
@@ -85,7 +86,6 @@ const AnimatedBar: React.FC<{
 export const BarChart: React.FC<BarChartProps> = React.memo(({
   data,
   color,
-  gradientColors,
   maxValue,
 }) => {
   const [containerWidth, setContainerWidth] = useState(0);
@@ -108,13 +108,17 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
     setSelectedIndex(null);
   }, [data]);
 
-  const barGap = data.length > 7 ? rw(4) : rw(8);
+  // Month/quarter/year periods feed 30-365 daily entries into a fixed-width
+  // SVG — scale gap/width density down instead of clamping to a min width
+  // that pushes the rightmost bars off the canvas.
+  const dense = data.length > 14;
+  const barGap = dense ? rw(2) : data.length > 7 ? rw(4) : rw(8);
 
   const barWidth = useMemo(() => {
     if (containerWidth <= 0 || data.length === 0) return 0;
     const totalGap = barGap * (data.length + 1);
-    return Math.max((containerWidth - totalGap) / data.length, rw(8));
-  }, [containerWidth, data.length, barGap]);
+    return Math.max((containerWidth - totalGap) / data.length, dense ? rw(2) : rw(8));
+  }, [containerWidth, data.length, barGap, dense]);
 
   const barTopY = useMemo(() => {
     if (selectedIndex === null || !data[selectedIndex]) return 0;
@@ -179,13 +183,6 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
         <View style={styles.chartWrap}>
           <GestureDetector gesture={composedGesture}>
             <Svg width={containerWidth} height={CHART_HEIGHT}>
-              <Defs>
-                <SvgLinearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <Stop offset="0%" stopColor={gradientColors[0]} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={gradientColors[1]} stopOpacity="0.5" />
-                </SvgLinearGradient>
-              </Defs>
-
               <Line
                 x1={0}
                 y1={BAR_AREA_HEIGHT}
@@ -234,7 +231,7 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
           </GestureDetector>
 
           {selectedData && (
-            <ChartTooltip
+            <ChartCallout
               visible={true}
               x={tooltipX}
               y={barTopY - rh(TOOLTIP_OFFSET)}

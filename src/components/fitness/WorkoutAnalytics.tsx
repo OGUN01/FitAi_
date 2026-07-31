@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../ui";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
@@ -55,18 +54,18 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
 
   if (statsLoading) {
     return (
-      <Card style={styles.container} variant="elevated">
+      <View style={styles.container}>
         <View style={styles.stateWrap}>
           <AuroraSpinner size="md" />
           <Text style={styles.loadingText}>Loading analytics...</Text>
         </View>
-      </Card>
+      </View>
     );
   }
 
   if (statsError) {
     return (
-      <Card style={styles.container} variant="elevated">
+      <View style={styles.container}>
         <View style={styles.stateWrap}>
           <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
           <Text style={styles.errorText}>Couldn't load analytics</Text>
@@ -82,12 +81,12 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
             <Text style={styles.retryButtonText}>Try Again</Text>
           </AnimatedPressable>
         </View>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card style={styles.container} variant="elevated">
+    <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Workout Analytics</Text>
 
@@ -227,14 +226,20 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
           </View>
         </View>
       </ScrollView>
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Flat surface + hairline (was old ui/Card variant="elevated" — elevation
+  // shadow replaced by border per Editorial Dark).
   container: {
     padding: spacing.lg,
     margin: spacing.md,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   header: {
@@ -313,6 +318,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
     marginBottom: spacing.xs,
+    fontVariant: ["tabular-nums"],
   },
 
   statLabel: {
@@ -361,6 +367,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.primary,
     fontWeight: typography.fontWeight.bold,
+    fontVariant: ["tabular-nums"],
   },
 
   insightsContainer: {

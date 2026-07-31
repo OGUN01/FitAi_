@@ -13,11 +13,11 @@ import {
 } from "react-native";
 import AnimatedRN, { FadeInDown, FadeInRight } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 import { haptics } from "../../utils/haptics";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -224,12 +224,8 @@ const WorkoutHistoryCard: React.FC<{
           hapticFeedback={true}
           hapticType="light"
         >
-          <GlassCard
-            elevation={1}
-            blurIntensity="light"
-            padding="md"
-            borderRadius="lg"
-          >
+          {/* Flat surface + hairline (was GlassCard elevation 1) */}
+          <View style={styles.card}>
             <View style={styles.cardContent}>
               {/* Icon */}
               <View
@@ -237,8 +233,8 @@ const WorkoutHistoryCard: React.FC<{
                   styles.iconContainer,
                   {
                     backgroundColor: isCompleted
-                      ? "rgba(16, 185, 129, 0.15)"
-                      : "rgba(255, 107, 107, 0.15)",
+                      ? hexToRgba(colors.successAlt, 0.15)
+                      : hexToRgba(colors.errorLight, 0.15),
                   },
                 ]}
               >
@@ -286,7 +282,7 @@ const WorkoutHistoryCard: React.FC<{
                 )}
               </View>
             </View>
-          </GlassCard>
+          </View>
         </AnimatedPressable>
       </Animated.View>
     </AnimatedRN.View>
@@ -302,12 +298,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
   if (workouts.length === 0) {
     return (
       <AnimatedRN.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard
-          elevation={1}
-          blurIntensity="light"
-          padding="lg"
-          borderRadius="lg"
-        >
+        <View style={[styles.card, styles.emptyCard]}>
           <View style={styles.emptyState}>
             <Ionicons
               name="time-outline"
@@ -319,7 +310,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
               Complete your first workout to see it here
             </Text>
           </View>
-        </GlassCard>
+        </View>
       </AnimatedRN.View>
     );
   }
@@ -454,6 +445,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
   },
+  // Flat surface + hairline (replaces the retired GlassCard elevation 1).
+  card: {
+    backgroundColor: surface[1],
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.md,
+  },
+  emptyCard: {
+    paddingVertical: spacing.xl,
+    alignItems: "center",
+  },
   iconContainer: {
     width: rw(44),
     height: rw(44),
@@ -479,17 +482,18 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     color: colors.textSecondary,
     marginTop: rp(2),
+    fontVariant: ["tabular-nums"],
   },
   statusContainer: {
     alignItems: "flex-end",
   },
   completedBadge: {
-    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    backgroundColor: hexToRgba(colors.successAlt, 0.15),
     padding: spacing.xs,
     borderRadius: borderRadius.full,
   },
   progressBadge: {
-    backgroundColor: "rgba(255, 142, 83, 0.25)",
+    backgroundColor: hexToRgba(colors.primaryLight, 0.25),
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
     borderRadius: borderRadius.full,
@@ -499,6 +503,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
     color: colors.accent,
+    fontVariant: ["tabular-nums"],
   },
   emptyState: {
     alignItems: "center",

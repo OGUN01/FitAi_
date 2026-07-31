@@ -671,6 +671,16 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({ exercise, isLast }) => {
     exercise.repRange[0] === exercise.repRange[1]
       ? String(exercise.repRange[0])
       : `${exercise.repRange[0]}-${exercise.repRange[1]}`;
+
+  // Rest time: seconds when sub-minute, "Xm Ys" when longer. The previous
+  // Math.round(restSeconds / 60) showed "1m" for 30s and "2m" for 90s.
+  const restLabel =
+    exercise.restSeconds < 60
+      ? `${exercise.restSeconds}s`
+      : `${Math.floor(exercise.restSeconds / 60)}m${
+          exercise.restSeconds % 60 > 0 ? ` ${exercise.restSeconds % 60}s` : ""
+        }`;
+
   return (
     <View style={[styles.exerciseRow, isLast && styles.exerciseRowLast]}>
       <Text style={styles.exerciseName} numberOfLines={1}>
@@ -682,7 +692,7 @@ const ExerciseRow: React.FC<ExerciseRowProps> = ({ exercise, isLast }) => {
         </Text>
         {exercise.restSeconds > 0 ? (
           <Text style={styles.exerciseMetaText}>
-            {" · "}{Math.round(exercise.restSeconds / 60)}m rest
+            {" · "}{restLabel} rest
           </Text>
         ) : null}
         {exercise.targetWeightKg ? (
@@ -800,7 +810,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
   },
   authorBadgeText: {
-    color: colors.textTertiary,
+    color: colors.textSecondary,
     fontSize: rf(typography.fontSize.micro),
     fontStyle: "italic",
   },

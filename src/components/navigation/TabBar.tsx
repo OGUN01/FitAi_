@@ -1,9 +1,14 @@
 import React from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { rp, rh, rw } from '../../utils/responsive';
-import { spacing } from '../../theme/aurora-tokens';
-import { useResponsiveTheme } from '../../hooks/useResponsiveTheme';
+import { rp, rh, rw, rf } from '../../utils/responsive';
+import {
+  flatColors as colors,
+  flatFontSize,
+  spacing,
+  typography,
+  borderRadius,
+} from '../../theme/aurora-tokens';
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -22,7 +27,6 @@ interface TabBarProps {
 }
 
 export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) => {
-  const responsiveTheme = useResponsiveTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -30,10 +34,10 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
       style={[
         styles.container,
         {
-          backgroundColor: responsiveTheme.colors.backgroundSecondary,
+          backgroundColor: colors.backgroundSecondary,
           paddingBottom: Math.max(insets.bottom, rp(spacing.sm)),
           borderTopWidth: 1,
-          borderTopColor: responsiveTheme.colors.border,
+          borderTopColor: colors.border,
         },
       ]}
     >
@@ -42,7 +46,7 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
           styles.tabBar,
           {
             height: rh(60),
-            paddingHorizontal: responsiveTheme.spacing.sm,
+            paddingHorizontal: rp(spacing.sm),
           },
         ]}
       >
@@ -55,7 +59,7 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
               style={({ pressed }) => [
                 styles.tab,
                 {
-                  paddingVertical: responsiveTheme.spacing.sm,
+                  paddingVertical: rp(spacing.sm),
                   opacity: pressed ? 0.7 : 1,
                 },
               ]}
@@ -80,13 +84,13 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
                 style={[
                   styles.tabText,
                   {
-                    fontSize: responsiveTheme.fontSize.xs,
+                    fontSize: rf(flatFontSize.xs),
                     fontWeight: isActive
-                      ? responsiveTheme.fontWeight.semibold
-                      : responsiveTheme.fontWeight.medium,
+                      ? typography.fontWeight.semibold
+                      : typography.fontWeight.medium,
                     color: isActive
-                      ? responsiveTheme.colors.primary
-                      : responsiveTheme.colors.textMuted,
+                      ? colors.primary
+                      : colors.textMuted,
                   },
                 ]}
                 numberOfLines={1}
@@ -96,17 +100,21 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
                 {tab.title}
               </Text>
 
-              {isActive && (
-                <View
-                  style={{
-                    width: rw(24),
-                    height: rh(3),
-                    backgroundColor: responsiveTheme.colors.primary,
-                    borderRadius: responsiveTheme.borderRadius.full,
-                    marginTop: rp(2),
-                  }}
-                />
-              )}
+              {/* Active indicator — always rendered (opacity-toggled) so toggling
+                  tabs doesn't reflow the icon/text block vertically. The prior
+                  conditional mount added marginTop+height only when active,
+                  causing the icon+text to jump up/down on tab switch. */}
+              <View
+                style={{
+                  width: rw(24),
+                  height: rh(3),
+                  backgroundColor: colors.primary,
+                  borderRadius: borderRadius.full,
+                  marginTop: rp(2),
+                  opacity: isActive ? 1 : 0,
+                }}
+              />
+
             </Pressable>
           );
         })}

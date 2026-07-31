@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
-import { spacing } from "../../../../theme/aurora-tokens";
+import { spacing, border } from "../../../../theme/aurora-tokens";
 import { rh } from "../../../../utils/responsive";
 
 interface GoalProgressBarProps {
@@ -36,9 +36,11 @@ const styles = StyleSheet.create({
   progressBarContainer: {
     marginBottom: spacing.xs,
   },
+  // Hairline track on a surface fill — the Editorial-Dark inline meter (no
+  // cast shadow, no rgba literal). Uses border.subtle for the unfilled track.
   progressBarBg: {
     height: rh(6),
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: border.subtle,
     borderRadius: rh(3),
     overflow: "hidden",
   },

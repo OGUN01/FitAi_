@@ -241,7 +241,7 @@ const WorkoutHistoryRow: React.FC<{
               <Text style={styles.title} numberOfLines={1}>
                 {workout.title}
               </Text>
-              <Text style={styles.meta} numberOfLines={1}>
+              <Text style={styles.meta} numberOfLines={2}>
                 {getRelativeDate(workout.completedAt)} • {workout.duration || 0} min •{' '}
                 {workout.caloriesBurned || 0} kcal
               </Text>
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     fontSize: rf(12),

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,9 @@ import {
   ViewStyle,
   LayoutChangeEvent,
 } from "react-native";
-import { PieChart } from "react-native-chart-kit";
+import Svg, { Circle, G } from "react-native-svg";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rs, rbr, rh, rw } from "../../utils/responsive";
+import { rs, rbr, rh, rw } from "../../utils/responsive";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -35,7 +35,7 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
   // Calculate percentages and prepare chart data
   const totalMacros = data.carbs + data.protein + data.fat;
 
-  // Measure container width so the PieChart is responsive (hardcoded 300
+  // Measure container width so the donut is responsive (hardcoded 300
   // overflowed 320px screens).
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const handleLayout = (e: LayoutChangeEvent) => {
@@ -44,38 +44,6 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
   };
   const chartWidth = containerWidth > 0 ? containerWidth : rw(300);
   const chartHeight = rh(180);
-
-  const chartData = [
-    {
-      name: "Carbs",
-      population: data.carbs,
-      color: colors.secondary,
-      legendFontColor: colors.textSecondary,
-      legendFontSize: rf(12),
-    },
-    {
-      name: "Protein",
-      population: data.protein,
-      color: colors.primary,
-      legendFontColor: colors.textSecondary,
-      legendFontSize: rf(12),
-    },
-    {
-      name: "Fat",
-      population: data.fat,
-      color: colors.warning,
-      legendFontColor: colors.textSecondary,
-      legendFontSize: rf(12),
-    },
-  ];
-
-  const chartConfig = {
-    backgroundColor: colors.backgroundTertiary,
-    backgroundGradientFrom: colors.backgroundTertiary,
-    backgroundGradientTo: colors.backgroundTertiary,
-    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(176, 176, 176, ${opacity})`,
-  };
 
   // Calculate macro percentages
   const carbsPercentage =
@@ -109,6 +77,31 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
       color: colors.warning,
     },
   ];
+
+  // Custom SVG donut (replaces react-native-chart-kit PieChart): flat token
+  // strokes on a hairline track, matching the custom SVG/Skia chart language
+  // used across Progress/Analytics.
+  const donutSize = Math.min(chartWidth, chartHeight);
+  const donutStroke = rs(24);
+  const donutRadius = Math.max((donutSize - donutStroke) / 2, 1);
+  const donutCenter = donutSize / 2;
+  const circumference = 2 * Math.PI * donutRadius;
+
+  const donutSegments = useMemo(() => {
+    let acc = 0;
+    return macroStats.map((macro) => {
+      const fraction = totalMacros > 0 ? macro.grams / totalMacros : 0;
+      const length = fraction * circumference;
+      const segment = { color: macro.color, offset: -acc, length };
+      acc += length;
+      return segment;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.carbs, data.protein, data.fat, totalMacros, circumference]);
+
+  const donutA11y = macroStats
+    .map((macro) => `${macro.name} ${macro.percentage.toFixed(0)}%`)
+    .join(", ");
 
   return (
     <View style={[styles.container, style]} onLayout={handleLayout}>
@@ -147,20 +140,40 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
         </View>
       )}
 
-      {/* Pie Chart */}
+      {/* Macro donut */}
       {totalMacros > 0 ? (
-        <View style={styles.chartContainer}>
-          <PieChart
-            data={chartData}
-            width={chartWidth}
-            height={chartHeight}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            center={[10, 0]}
-            absolute={false}
-          />
+        <View
+          style={styles.chartContainer}
+          accessibilityRole="image"
+          accessibilityLabel={`Macro breakdown: ${donutA11y}`}
+        >
+          <Svg width={donutSize} height={donutSize}>
+            <G rotation={-90} origin={`${donutCenter}, ${donutCenter}`}>
+              {/* Track ring */}
+              <Circle
+                cx={donutCenter}
+                cy={donutCenter}
+                r={donutRadius}
+                stroke={colors.surface}
+                strokeWidth={donutStroke}
+                fill="none"
+              />
+              {donutSegments.map((segment, index) => (
+                <Circle
+                  key={index}
+                  cx={donutCenter}
+                  cy={donutCenter}
+                  r={donutRadius}
+                  stroke={segment.color}
+                  strokeWidth={donutStroke}
+                  fill="none"
+                  strokeDasharray={`${segment.length} ${circumference - segment.length}`}
+                  strokeDashoffset={segment.offset}
+                  strokeLinecap="butt"
+                />
+              ))}
+            </G>
+          </Svg>
         </View>
       ) : (
         <View style={styles.noDataContainer}>
@@ -221,6 +234,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
+    fontVariant: ["tabular-nums"],
   },
 
   caloriesLabel: {
@@ -249,6 +263,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     textAlign: "center",
+    fontVariant: ["tabular-nums"],
   },
 
   chartContainer: {
@@ -308,10 +323,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
     marginBottom: spacing.xs,
+    fontVariant: ["tabular-nums"],
   },
 
   macroPercentage: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontVariant: ["tabular-nums"],
   },
 });

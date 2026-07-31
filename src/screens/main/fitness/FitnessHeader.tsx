@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     marginTop: rp(spacing.xs),
   },
   calendarButton: {
-    marginLeft: spacing.md,
+    marginLeft: rp(spacing.md),
   },
   calendarIconContainer: {
     width: rw(44),

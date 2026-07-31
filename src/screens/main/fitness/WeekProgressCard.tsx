@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   statsColumn: {
     flex: 1,
     minWidth: 0,
-    gap: rp(2),
+    gap: rp(spacing.xs),
   },
   weekEyebrow: {
     fontSize: rf(11),

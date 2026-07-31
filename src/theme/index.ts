@@ -8,10 +8,9 @@ export * from './aurora-tokens';
 export * from './gradients';
 export * from './animations';
 
-// Export ThemeProvider and useTheme
+// Export ThemeProvider (useTheme retired — consumers use aurora-tokens directly)
 export { ThemeProvider, ThemeContext } from './ThemeProvider';
 export type { AuroraThemeContextValue } from './ThemeProvider';
-export { useTheme } from './useTheme';
 
 // Re-export as named exports for convenience
 export { auroraTokens as tokens } from './aurora-tokens';

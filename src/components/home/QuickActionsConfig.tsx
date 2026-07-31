@@ -10,17 +10,11 @@ interface QuickAction {
 }
 
 interface QuickActionsConfigProps {
-  isHealthKitAuthorized: boolean;
-  isHealthConnectAuthorized: boolean;
-  syncHealthData: (force?: boolean) => Promise<void>;
-  syncFromHealthConnect: (days: number) => Promise<void>;
   onLogWeight: () => void;
-  onScanFood?: () => void;
   onLogMeal?: () => void;
   onLogWater?: () => void;
   onBarcodeScan?: () => void;
   onScanLabel?: () => void;
-  onRecipes?: () => void;
 }
 
 export const createQuickActions = ({

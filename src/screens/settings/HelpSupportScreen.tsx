@@ -41,10 +41,6 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
     handleContactSupport,
     handleReportBug,
     handleFeatureRequest,
-    handleTutorials,
-    handleUserGuide,
-    handleVideoTutorials,
-    handleCommunityForum,
     handleSystemStatus,
     handleContactEmail,
   } = useHelpSupport();
@@ -117,14 +113,6 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
                 onPress={handleFeatureRequest}
                 animationDelay={200}
               />
-              <QuickAction
-                icon="school-outline"
-                iconColor={colors.text}
-                gradientColors={[colors.info, colors.cyan]}
-                title="Tutorials"
-                onPress={handleTutorials}
-                animationDelay={250}
-              />
             </View>
           </View>
 
@@ -156,33 +144,6 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               />
               <Text style={styles.sectionTitle}>Resources</Text>
             </View>
-
-            <ResourceItem
-              icon="document-text-outline"
-              iconColor={colors.success}
-              title="User Guide"
-              description="Complete guide to using all FitAI features"
-              onPress={handleUserGuide}
-              animationDelay={600}
-            />
-
-            <ResourceItem
-              icon="videocam-outline"
-              iconColor={colors.errorLight}
-              title="Video Tutorials"
-              description="Step-by-step video guides for beginners"
-              onPress={handleVideoTutorials}
-              animationDelay={650}
-            />
-
-            <ResourceItem
-              icon="people-outline"
-              iconColor={colors.primary}
-              title="Community Forum"
-              description="Connect with other FitAI users"
-              onPress={handleCommunityForum}
-              animationDelay={700}
-            />
 
             <ResourceItem
               icon="pulse-outline"

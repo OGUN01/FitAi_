@@ -586,7 +586,10 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity
+            onPress={onClose}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
             <Text style={styles.cancelButton}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.title}>{title}</Text>
@@ -713,6 +716,8 @@ const styles = StyleSheet.create({
 
   presetButton: {
     flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,

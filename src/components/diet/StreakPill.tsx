@@ -35,7 +35,7 @@ export const StreakPill: React.FC<StreakPillProps> = ({ onPress, testID }) => {
   const hasStreak = streak > 0;
   const flameColor = hasStreak ? colors.warning : colors.textMuted;
   const textColor = hasStreak ? colors.warning : colors.textSecondary;
-  const bgColor = hasStreak ? hexToRgba(colors.warning, TINT_ALPHA_LOW) : colors.glassSurface;
+  const bgColor = hasStreak ? hexToRgba(colors.warning, TINT_ALPHA_LOW) : colors.surface;
   const label = hasStreak ? `${streak} day streak` : 'Start your streak';
   const a11yLabel = hasStreak ? `${streak} day nutrition streak` : 'Start your nutrition streak';
 
@@ -91,6 +91,7 @@ export const StreakPill: React.FC<StreakPillProps> = ({ onPress, testID }) => {
         accessibilityRole="button"
         accessibilityLabel={a11yLabel}
         testID={testID}
+        hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
         style={pillStyle}
       >
         <Animated.View entering={entering} style={styles.inner} collapsable={false}>
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
   },
   // Inner row carries the entrance animation without colliding with the

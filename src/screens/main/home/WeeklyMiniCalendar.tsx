@@ -6,9 +6,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing, typography } from '../../../theme/aurora-tokens';
+import { flatColors as colors, spacing, typography, borderRadius, border } from '../../../theme/aurora-tokens';
 import { rf, rw, rp } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 
@@ -50,7 +49,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
 
   return (
     <View>
-      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+      <View style={styles.card}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -67,6 +66,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             hapticFeedback={true}
             hapticType="light"
             style={styles.statsRow}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text style={styles.statsText} numberOfLines={1}>
               {stats.completed}/{stats.total}
@@ -105,7 +105,7 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.dayWrapper}
-                hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
+                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               >
                 <Text style={[styles.dayLabel, isToday && styles.todayLabel]} numberOfLines={1}>
                   {DAY_LABELS[index]}
@@ -123,12 +123,19 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             );
           })}
         </View>
-      </GlassCard>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

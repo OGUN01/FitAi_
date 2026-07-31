@@ -6,7 +6,6 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../ui";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
@@ -295,18 +294,18 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
 
   if (loading) {
     return (
-      <Card style={styles.container} variant="elevated">
+      <View style={styles.container}>
         <View style={styles.stateWrap}>
           <AuroraSpinner size="md" />
           <Text style={styles.loadingText}>Loading achievements...</Text>
         </View>
-      </Card>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <Card style={styles.container} variant="elevated">
+      <View style={styles.container}>
         <View style={styles.stateWrap}>
           <Ionicons name="alert-circle-outline" size={rf(32)} color={colors.error} />
           <Text style={styles.errorText}>Couldn't load achievements</Text>
@@ -322,12 +321,12 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
             <Text style={styles.retryButtonText}>Try Again</Text>
           </AnimatedPressable>
         </View>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card style={styles.container} variant="elevated">
+    <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Achievements</Text>
         <View style={styles.pointsBadge} accessibilityRole="text">
@@ -381,15 +380,21 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({
           </View>
         </ScrollView>
       )}
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Flat surface + hairline (was old ui/Card variant="elevated" — elevation
+  // shadow replaced by border per Editorial Dark).
   container: {
     padding: spacing.lg,
     margin: spacing.md,
     maxHeight: rs(560),
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   header: {
@@ -418,6 +423,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontVariant: ["tabular-nums"],
   },
 
   emptyState: {
@@ -498,6 +504,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
+    fontVariant: ["tabular-nums"],
   },
 
   stateWrap: {

@@ -215,13 +215,13 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   status: {
-    fontSize: rf(10),
+    fontSize: rf(11),
     fontWeight: "500",
   },
   retryHint: {
-    fontSize: rf(9),
+    fontSize: rf(11),
     fontWeight: "700",
-    marginTop: 1,
+    marginTop: spacing.xxs,
     textTransform: "uppercase",
   },
 });

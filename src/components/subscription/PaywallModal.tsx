@@ -7,16 +7,14 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { usePaywall } from "../../hooks/usePaywall";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import { flatColors as colors, border } from "../../theme/aurora-tokens";
 import { rf, rp, rh, rbr } from "../../utils/responsive";
-import { getPaywallPrimaryLabel } from "../../utils/subscriptionUi";
+import { getPaywallPrimaryLabel, TIER_FEATURES } from "../../utils/subscriptionUi";
 import { useAuthStore } from "../../stores/authStore";
-import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import AuroraSpinner from "../ui/aurora/AuroraSpinner";
+import { GlassButton } from "../ui/aurora/GlassButton";
 import PlanCard from "./paywall/PlanCard";
 import TrustRow from "./paywall/TrustRow";
 import haptics from "../../utils/haptics";
@@ -26,27 +24,6 @@ interface PaywallModalProps {
   onClose: () => void;
   reason?: string;
 }
-
-const TIER_FEATURES: Record<string, string[]> = {
-  free: [
-    "10 AI generations per month",
-    "10 AI food scans per day",
-    "Basic progress tracking",
-  ],
-  basic: [
-    "10 AI generations per day",
-    "Unlimited AI food scans",
-    "Basic analytics dashboard",
-  ],
-  pro: [
-    "Unlimited AI generations",
-    "Unlimited AI food scans",
-    "Advanced analytics & insights",
-    "Personalized AI coaching",
-    "Priority support",
-    "Export your data",
-  ],
-};
 
 const PaywallModal: React.FC<PaywallModalProps> = ({
   visible,
@@ -63,6 +40,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     plansSource,
     planLoadError,
     planFeaturesByTier,
+    reloadPlans,
   } = usePaywall();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
@@ -83,10 +61,13 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   }, [visible]);
 
   useEffect(() => {
-    if (visible && plans.length > 0) {
+    // Mark the load as attempted when plans arrive OR when the fetch failed
+    // (planLoadError set, plans empty) — otherwise the skeleton would spin
+    // forever and the "Plans unavailable" banner would never show.
+    if (visible && (plans.length > 0 || planLoadError != null)) {
       setDidAttemptLoad(true);
     }
-  }, [visible, plans]);
+  }, [visible, plans, planLoadError]);
 
   const displayPlans = useMemo(() => {
     const basicPlan = plans.find(
@@ -143,7 +124,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     isAuthenticated,
     selectedPlanPrice: selectedPlanData?.price_monthly,
     billingCycle: selectedPlanData?.billing_cycle,
-  }).replace("INR ", "₹");
+  });
 
   if (!visible) return null;
 
@@ -158,51 +139,37 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* ── Aurora Header ─────────────────────────────── */}
-          <LinearGradient
-            colors={[
-              colors.primaryTint,
-              colors.backgroundSecondary,
-            ]}
-            locations={[0, 1]}
-            style={styles.headerGradient}
-          >
-            <View style={styles.header}>
-              <View style={styles.heroRow}>
-                <LinearGradient
-                  colors={[colors.primaryLight, colors.primary, colors.primaryDark]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.crownBadge}
-                >
-                  <Ionicons name="diamond" size={rf(26)} color={colors.white} />
-                </LinearGradient>
-
-                <View style={styles.headerTextWrap}>
-                  <Text style={styles.headerTitle}>Go Premium</Text>
-                  <Text style={styles.headerSubtitle}>
-                    Unlock the full FitAI experience
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={handleDismiss}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close paywall"
-                  accessibilityHint="Dismisses the subscription screen"
-                  style={styles.closeBtn}
-                >
-                  <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
-                </Pressable>
+          <View style={styles.header}>
+            <View style={styles.heroRow}>
+              <View style={styles.crownBadge}>
+                <Ionicons name="diamond" size={rf(26)} color={colors.primaryLight} />
               </View>
 
-              {displayReason ? (
-                <Animated.View entering={FadeIn.duration(200)} style={styles.reasonRow}>
-                  <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primaryLight} />
-                  <Text style={styles.headerReason}>{displayReason}</Text>
-                </Animated.View>
-              ) : null}
+              <View style={styles.headerTextWrap}>
+                <Text style={styles.headerTitle}>Go Premium</Text>
+                <Text style={styles.headerSubtitle}>
+                  Unlock the full FitAI experience
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={handleDismiss}
+                accessibilityRole="button"
+                accessibilityLabel="Close paywall"
+                accessibilityHint="Dismisses the subscription screen"
+                style={styles.closeBtn}
+              >
+                <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
+              </Pressable>
             </View>
-          </LinearGradient>
+
+            {displayReason ? (
+              <Animated.View entering={FadeIn.duration(200)} style={styles.reasonRow}>
+                <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primaryLight} />
+                <Text style={styles.headerReason}>{displayReason}</Text>
+              </Animated.View>
+            ) : null}
+          </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -219,6 +186,15 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                     {planLoadError ??
                       "We couldn't load live pricing right now. Please try again in a moment."}
                   </Text>
+                  <Pressable
+                    onPress={() => { haptics.light(); reloadPlans(); }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Retry loading plans"
+                    style={styles.bannerRetryBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.bannerRetryText}>Retry</Text>
+                  </Pressable>
                 </View>
               </Animated.View>
             )}
@@ -350,52 +326,22 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
           {/* ── Bottom Actions ────────────────────────────── */}
           <View style={styles.actions}>
-            <AnimatedPressable
+            <GlassButton
+              label={subscribeLabel}
               onPress={handleSubscribe}
-              disabled={
-                isLoading || !effectiveSelectedId || plansUnavailable || isInitialLoading
-              }
-              accessibilityRole="button"
+              variant="primary"
+              fullWidth
+              loading={isLoading}
+              disabled={!effectiveSelectedId || plansUnavailable || isInitialLoading}
               accessibilityLabel={subscribeLabel}
-              accessibilityState={{
-                disabled:
-                  isLoading || !effectiveSelectedId || plansUnavailable || isInitialLoading,
-                busy: isLoading,
-              }}
-              hapticType="medium"
-              style={styles.subscribeShadowWrap}
-            >
-              <LinearGradient
-                colors={
-                  isLoading || !effectiveSelectedId || plansUnavailable || isInitialLoading
-                    ? [colors.backgroundTertiary, colors.backgroundTertiary]
-                    : [colors.primaryLight, colors.primary, colors.primaryDark]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.subscribeBtn}
-              >
-                {isLoading ? (
-                  <View style={styles.subscribeLoadingRow}>
-                    <AuroraSpinner size="sm" theme="white" customSize={rf(20)} />
-                    <Text style={styles.subscribeBtnText}>Processing…</Text>
-                  </View>
-                ) : (
-                  <Text
-                    style={[
-                      styles.subscribeBtnText,
-                      (plansUnavailable || isInitialLoading) && styles.subscribeBtnTextMuted,
-                    ]}
-                  >
-                    {subscribeLabel}
-                  </Text>
-                )}
-              </LinearGradient>
-            </AnimatedPressable>
+              style={styles.subscribeBtn}
+            />
 
+            {/* Legal auto-renew disclosure only — the trust phrases
+                (secure/cancel/auto-renew) are already shown by TrustRow. */}
             <Text style={styles.termsText}>
-              Subscription auto-renews. Cancel anytime from account settings.{" "}
-              Secure payments via Razorpay.
+              Recurring billing: your subscription renews automatically each
+              period until you cancel it from Profile → Subscription.
             </Text>
           </View>
         </View>
@@ -419,28 +365,25 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: border.subtle,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
   },
 
   /* Header */
-  headerGradient: {
-    borderTopLeftRadius: rbr(24),
-    borderTopRightRadius: rbr(24),
-  },
   header: {
     paddingHorizontal: rp(16),
     paddingTop: rp(18),
     paddingBottom: rp(14),
     borderBottomWidth: 1,
-    borderBottomColor: colors.glassBorder,
+    borderBottomColor: border.subtle,
   },
   heroRow: {
     flexDirection: "row",
     alignItems: "center",
   },
+  // Flat accent chip with hairline — replaces the gradient crown disc.
   crownBadge: {
     width: rp(52),
     height: rp(52),
@@ -448,6 +391,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: rp(12),
+    backgroundColor: colors.primaryTint,
+    borderWidth: 1,
+    borderColor: colors.primaryFaded,
   },
   headerTextWrap: {
     flex: 1,
@@ -529,6 +475,17 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
     color: colors.textSecondary,
   },
+  bannerRetryBtn: {
+    marginTop: rp(8),
+    alignSelf: "flex-start",
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  bannerRetryText: {
+    fontSize: rf(13),
+    fontWeight: "700",
+    color: colors.primaryLight,
+  },
   authBanner: {
     flexDirection: "row",
     marginTop: rp(14),
@@ -604,9 +561,9 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     borderRadius: rbr(16),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: border.subtle,
   },
 
   /* Trust */
@@ -620,33 +577,11 @@ const styles = StyleSheet.create({
     paddingTop: rp(14),
     paddingBottom: rp(20),
     borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
+    borderTopColor: border.subtle,
     backgroundColor: colors.backgroundSecondary,
   },
-  subscribeShadowWrap: {
-    borderRadius: rbr(14),
-    overflow: "hidden",
-    marginBottom: rp(10),
-  },
   subscribeBtn: {
-    borderRadius: rbr(14),
-    paddingVertical: rp(16),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  subscribeLoadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: rp(10),
-  },
-  subscribeBtnText: {
-    color: colors.white,
-    fontSize: rf(16),
-    fontWeight: "800",
-    letterSpacing: 0.2,
-  },
-  subscribeBtnTextMuted: {
-    color: colors.textMuted,
+    marginBottom: rp(10),
   },
   termsText: {
     fontSize: rf(11),

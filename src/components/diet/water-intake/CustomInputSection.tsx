@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassButton } from '../../ui/aurora/GlassButton';
 import { flatColors as colors, borderRadius } from '../../../theme/aurora-tokens';
 import { rf, rp } from '../../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../../utils/colors';
@@ -56,17 +56,13 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
         <TouchableOpacity style={styles.cancelButton} onPress={onCancel} activeOpacity={0.7}>
           <Text style={styles.cancelButtonText}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.8}>
-          <LinearGradient
-            colors={[colors.primary, colors.primaryLight]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.submitButtonGradient}
-          >
-            <Ionicons name="add" size={20} color={colors.white} />
-            <Text style={styles.submitButtonText}>Add Water</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        <GlassButton
+          label="Add Water"
+          onPress={onSubmit}
+          variant="primary"
+          icon="add"
+          style={styles.submitButton}
+        />
       </View>
     </>
   );
@@ -84,7 +80,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.glassBorder,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
@@ -135,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: borderRadius.lg,
-    backgroundColor: colors.glassHighlight,
+    backgroundColor: colors.surface,
   },
   cancelButtonText: {
     fontSize: rf(15),
@@ -144,20 +140,5 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 0.6,
-    overflow: 'hidden',
-    borderRadius: borderRadius.lg,
-  },
-  submitButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: rp(8),
-    minHeight: 44,
-    paddingVertical: rp(14),
-  },
-  submitButtonText: {
-    fontSize: rf(15),
-    fontWeight: '600',
-    color: colors.white,
   },
 });

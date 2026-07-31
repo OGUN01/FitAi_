@@ -47,33 +47,13 @@ interface LoadedPlans {
 }
 
 // ============================================================================
-// Fallback plans shown when Supabase returns no data (e.g. guest users)
+// Plan loading
+//
+// NO hardcoded fallback pricing (principle 8): when the server fetch fails or
+// returns no priced rows, we return an EMPTY plan list and surface the
+// "Plans unavailable" state (with retry) instead of fabricating prices that
+// would drift from DB truth.
 // ============================================================================
-
-const FALLBACK_PLANS: PlanConfig[] = [
-  {
-    id: "fallback-basic-monthly",
-    tier: "basic",
-    name: "Basic Plan",
-    price_monthly: 299,
-    billing_cycle: "monthly",
-  },
-  {
-    id: "fallback-pro-monthly",
-    tier: "pro",
-    name: "Pro Plan (Monthly)",
-    price_monthly: 499,
-    billing_cycle: "monthly",
-  },
-  {
-    id: "fallback-pro-yearly",
-    tier: "pro",
-    name: "Pro Plan (Yearly)",
-    // ₹3999/year ÷ 12 ≈ ₹333/mo effective (~33% savings vs ₹499/mo)
-    price_monthly: 333,
-    billing_cycle: "yearly",
-  },
-];
 
 async function loadPlansFromServer(): Promise<LoadedPlans> {
   const { data, error } = await supabase
@@ -84,8 +64,12 @@ async function loadPlansFromServer(): Promise<LoadedPlans> {
     .order("price_monthly");
 
   if (error || !data || data.length === 0) {
+    console.warn(
+      "[usePaywall] subscription_plans fetch failed or empty:",
+      error?.message ?? "no rows",
+    );
     return {
-      plans: FALLBACK_PLANS,
+      plans: [],
       rows: [],
       source: "fallback",
       errorMessage:
@@ -119,8 +103,14 @@ async function loadPlansFromServer(): Promise<LoadedPlans> {
     }
   }
 
+  if (configs.length === 0) {
+    console.warn(
+      "[usePaywall] subscription_plans rows returned without prices; no plans rendered.",
+    );
+  }
+
   return {
-    plans: configs.length > 0 ? configs : FALLBACK_PLANS,
+    plans: configs,
     rows: data as SubscriptionPlanRow[],
     source: configs.length > 0 ? "server" : "fallback",
     errorMessage:
@@ -142,6 +132,9 @@ export const usePaywall = () => {
     "fallback",
   );
   const [planLoadError, setPlanLoadError] = useState<string | null>(null);
+  // Incremented by reloadPlans() to re-trigger the fetch effect after a
+  // failed load (plansSource alone can't re-fire when it stays "fallback").
+  const [retryTick, setRetryTick] = useState(0);
   const inFlightRef = useRef(false);
   const isMountedRef = useRef(true);
   // P1-19: Track whether plans were successfully loaded from the server. The
@@ -191,9 +184,9 @@ export const usePaywall = () => {
           loadedSuccessfullyRef.current = true;
         }
       } catch (err) {
-        console.warn("[usePaywall] Failed to fetch plans, using fallback:", err);
+        console.warn("[usePaywall] Failed to fetch plans:", err);
         if (!cancelled) {
-          setPlans(FALLBACK_PLANS);
+          setPlans([]);
           setPlanRows([]);
           setPlansSource("fallback");
           setPlanLoadError(
@@ -211,11 +204,19 @@ export const usePaywall = () => {
       cancelled = true;
     };
     // Deps: plansSource so a "fallback" state triggers a retry on re-mount /
-    // dep change. Empty-array `[]` would run once; we want the retry path.
-  }, [plansSource]);
+    // dep change; retryTick so an explicit user retry re-runs the fetch.
+    // Empty-array `[]` would run once; we want the retry path.
+  }, [plansSource, retryTick]);
 
   const dismiss = () => {
     dismissPaywall();
+  };
+
+  /** Retry the plan fetch after a failure (used by the "Plans unavailable"
+      banner's retry action). */
+  const reloadPlans = () => {
+    setPlanLoadError(null);
+    setRetryTick((t) => t + 1);
   };
 
   /**
@@ -252,18 +253,9 @@ export const usePaywall = () => {
       const originalPlanId = planId.replace(/_monthly$|_yearly$/, "");
       const planRow = planRows.find((row) => row.id === originalPlanId);
 
-      // Guard: fallback plan IDs (used when DB fetch failed) are not real UUIDs.
-      // The worker will reject them with a 404. Show a clear error instead.
-      if (originalPlanId.startsWith("fallback-")) {
-        crossPlatformAlert(
-          "Plans Unavailable",
-          "We couldn't load the subscription plans from the server. Please check your connection and try again.",
-          [{ text: "OK" }],
-        );
-        if (isMountedRef.current) setIsLoading(false);
-        return false;
-      }
-
+      // Guard: no plan row means the fetch failed (no fabricated fallback
+      // plans are ever rendered) — ask the user to retry instead of
+      // transacting against an unknown price.
       if (!planRow) {
         crossPlatformAlert(
           "Plans Unavailable",
@@ -418,6 +410,7 @@ export const usePaywall = () => {
     usage,
     subscribe,
     dismiss,
+    reloadPlans,
     triggerPaywall,
     // P2-11: server-owned feature copy (read from subscription_plans.features_list).
     // PaywallModal should prefer this over the hardcoded TIER_FEATURES map.

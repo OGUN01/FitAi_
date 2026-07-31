@@ -208,14 +208,17 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
         animationType="none"
         onRequestClose={hideMenu}
       >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={hideMenu}
-          accessibilityLabel="Dismiss menu"
-          accessibilityRole="button"
-          accessibilityHint="Closes the long-press menu"
-        >
+        {/* Web-safe DOM: dismiss TouchableOpacity is an absolute-fill SIBLING
+            behind the menu (never an ancestor) — see AdjustmentWizard.tsx. */}
+        <View style={styles.overlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={hideMenu}
+            accessibilityLabel="Dismiss menu"
+            accessibilityRole="button"
+            accessibilityHint="Closes the long-press menu"
+          />
           <Animated.View
             style={[
               styles.menu,
@@ -262,7 +265,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
               </TouchableOpacity>
             ))}
           </Animated.View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </>
   );

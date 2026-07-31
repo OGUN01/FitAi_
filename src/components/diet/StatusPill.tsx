@@ -47,7 +47,7 @@ const STATUS_CONFIG: Record<
     // muted — a future meal isn't a separate semantic category; the pill
     // reads as neutral until the meal is active or done.
     color: colors.textMuted,
-    bg: colors.glassSurface,
+    bg: colors.surface,
   },
 };
 

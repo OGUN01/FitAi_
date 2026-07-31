@@ -12,7 +12,7 @@
  *    (withRepeat + withSequence) so the loop runs on the UI thread.
  *  - Direct `Vibration.vibrate(...)` calls → `haptics` util (expo-haptics).
  *  - Hardcoded `#E05C2A` → colors.primary.DEFAULT (single source of truth).
- *  - Solid card → GlassCard surface.
+ *  - GlassCard surface (elevation 6) → flat surface + hairline (Editorial Dark).
  *
  * Timer logic (parseTimedExercise, per-side phase state machine, switch
  * countdown) is UNCHANGED — only presentation + animation primitives changed.
@@ -30,8 +30,8 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import { GlassCard, AnimatedPressable, ProgressRing } from '../ui/aurora';
-import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { AnimatedPressable, ProgressRing } from '../ui/aurora';
+import { colors, flatColors, surface, border, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { rf, rp, rbr, rh, rs } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
 import { haptics } from '../../utils/haptics';
@@ -102,7 +102,7 @@ function MiniArcTimer({ remaining, total, isPaused, sideLabel }: MiniArcTimerPro
         size={ARC_SIZE}
         strokeWidth={rf(5)}
         color={isPaused ? colors.text.tertiary : colors.primary.DEFAULT}
-        backgroundColor={colors.glass.backgroundDark}
+        backgroundColor={colors.background.tertiary}
         animated
         showText={false}
       >
@@ -178,7 +178,7 @@ const bannerStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(10,15,28,0.95)',
+    backgroundColor: hexToRgba(surface[0], 0.95),
     borderRadius: rbr(16),
     justifyContent: 'center',
     alignItems: 'center',
@@ -399,13 +399,9 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
     <View style={styles.overlay}>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.cardWrapper}>
-          <GlassCard
-            elevation={6}
-            padding="xl"
-            borderRadius="xxl"
-            style={styles.sessionCard}
-            contentStyle={styles.sessionContent}
-          >
+          {/* Flat surface + hairline (was GlassCard elevation 6 — deep elevated
+              glass contradicts Editorial Dark flat surfaces). */}
+          <View style={styles.sessionCard}>
             {/* Header row: spacer | "Set X of Y" | timer (or spacer) */}
             <View style={styles.headerRow}>
               <View style={styles.headerSpacer} />
@@ -538,7 +534,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
                 </View>
               </View>
             )}
-          </GlassCard>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -552,7 +548,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: hexToRgba(flatColors.black, 0.8),
     justifyContent: 'flex-start',
     alignItems: 'center',
   },
@@ -571,10 +567,11 @@ const styles = StyleSheet.create({
   sessionCard: {
     width: '100%',
     alignItems: 'center' as const,
-  },
-  sessionContent: {
-    alignItems: 'center',
-    width: '100%',
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.xxl,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: rp(spacing.xl),
   },
   headerRow: {
     flexDirection: 'row',
@@ -683,7 +680,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: 'transparent',
-    borderColor: colors.glass.border,
+    borderColor: border.DEFAULT,
   },
   completeButton: {
     backgroundColor: colors.primary.DEFAULT,
@@ -725,7 +722,7 @@ const styles = StyleSheet.create({
     width: rs(10),
     height: rs(10),
     borderRadius: rbr(5),
-    backgroundColor: colors.glass.backgroundDark,
+    backgroundColor: colors.background.tertiary,
   },
   // Completed: orange fill, no ring.
   progressDotCompleted: {

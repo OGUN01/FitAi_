@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -11,23 +10,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Modal } from '@/components/ui/Modal';
+import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { hexToRgba } from '../../utils/colors';
 import { HealthScoreIndicator } from './HealthScoreIndicator';
 import type { ScannedProduct } from '../../services/barcodeService';
-import { rf, rp, rh } from '../../utils/responsive';
+import { rf, rp } from '../../utils/responsive';
 import {
   clampPackagedFoodGrams,
   getDefaultPackagedFoodGrams,
   scaleScannedProductNutrition,
 } from '../../utils/packagedFoodNutrition';
 
+// Nutri-Score grades use the standardized official colors, centralized in
+// aurora-tokens as nutriScoreA–E so the literals live in one place.
 const NUTRI_SCORE_COLORS: Record<string, string> = {
-  a: '#038141',
-  b: '#85BB2F',
-  c: '#FECB02',
-  d: '#EE8100',
-  e: '#E63E11',
+  a: colors.nutriScoreA,
+  b: colors.nutriScoreB,
+  c: colors.nutriScoreC,
+  d: colors.nutriScoreD,
+  e: colors.nutriScoreE,
 };
 
 const NOVA_LABELS: Record<number, string> = {
@@ -87,9 +89,9 @@ const getProductSourceLabel = (product: ScannedProduct): string =>
 
 const getBreakdownColor = (score: number) => {
   if (score >= 80) return colors.successAlt;
-  if (score >= 60) return '#84cc16';
-  if (score >= 40) return '#eab308';
-  if (score >= 20) return '#f97316';
+  if (score >= 60) return colors.lime;
+  if (score >= 40) return colors.yellow;
+  if (score >= 20) return colors.orange;
   return colors.errorAlt;
 };
 
@@ -183,17 +185,12 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   };
 
   return (
-    <Modal
+    <DetentBottomSheet
       visible={visible}
-      animationType="fade"
       onClose={handleClose}
-      closeOnOverlayPress={!isSubmitting}
-      contentStyle={styles.sharedModalContent}
+      snapPoints={[0.95]}
+      dismissOnLowestDrag={!isSubmitting}
     >
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -454,22 +451,11 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
+    </DetentBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  sharedModalContent: {
-    width: '94%',
-    maxHeight: rh(750),
-    padding: 0,
-    overflow: 'hidden' as const,
-  },
-  keyboardAvoid: {
-    width: '100%',
-    maxHeight: '100%',
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -529,11 +515,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   disclaimerCard: {
-    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+    backgroundColor: hexToRgba(colors.warningAlt, 0.14),
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.24)',
+    borderColor: hexToRgba(colors.warningAlt, 0.24),
   },
   disclaimerTitle: {
     fontSize: rf(14),
@@ -635,6 +621,7 @@ const styles = StyleSheet.create({
     fontSize: rf(20),
     fontWeight: '700',
     color: colors.text,
+    fontVariant: ['tabular-nums'],
   },
   breakdownItem: {
     backgroundColor: colors.backgroundSecondary,
@@ -680,12 +667,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   warningListItem: {
-    backgroundColor: 'rgba(239, 68, 68, 0.04)',
+    backgroundColor: hexToRgba(colors.errorAlt, 0.04),
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm,
   },
   positiveListItem: {
-    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+    backgroundColor: hexToRgba(colors.successAlt, 0.05),
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.sm,
   },

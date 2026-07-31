@@ -4,8 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { Button, Input, PasswordInput } from "../../components/ui";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, border } from "../../theme/aurora-tokens";
+import { GlassButton } from "../../components/ui/aurora/GlassButton";
+import { UnderlineInput } from "../../components/onboarding/aurora/UnderlineInput";
 import { useAuth } from "../../hooks/useAuth";
 import { RegisterCredentials } from "../../types/user";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
@@ -32,6 +33,8 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
   });
   const [errors, setErrors] = useState<Partial<RegisterCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   const { register, login, signInWithGoogle, resetPassword } = useAuth();
 
@@ -265,8 +268,8 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
             <AnimatedPressable
               style={
                 isLoading
-                  ? [styles.googlePrimaryButton, ...(Platform.OS !== 'web' ? [styles.googlePrimaryButtonShadow] : []), styles.buttonDisabled]
-                  : [styles.googlePrimaryButton, ...(Platform.OS !== 'web' ? [styles.googlePrimaryButtonShadow] : [])]
+                  ? [styles.googlePrimaryButton, styles.buttonDisabled]
+                  : styles.googlePrimaryButton
               }
               onPress={handleGoogleSignUp}
               disabled={isLoading}
@@ -295,39 +298,99 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
             {/* Email form */}
             <View style={styles.emailFormContainer}>
-              <Input
+              <UnderlineInput
                 label="Email Address"
                 placeholder="Enter your email address"
                 value={formData.email}
                 onChangeText={(value) => updateField("email", value)}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                error={errors.email}
+                accentColor={errors.email ? colors.error : undefined}
+                containerStyle={styles.fieldContainer}
               />
+              {errors.email ? (
+                <Text style={styles.fieldError}>{errors.email}</Text>
+              ) : null}
 
-              <PasswordInput
-                label="Password"
-                placeholder={
-                  mode === "signup"
-                    ? "Create a password"
-                    : "Enter your password"
-                }
-                value={formData.password}
-                onChangeText={(value) => updateField("password", value)}
-                error={errors.password}
-              />
+              <View style={styles.passwordFieldWrap}>
+                <UnderlineInput
+                  label="Password"
+                  placeholder={
+                    mode === "signup"
+                      ? "Create a password"
+                      : "Enter your password"
+                  }
+                  value={formData.password}
+                  onChangeText={(value) => updateField("password", value)}
+                  secureTextEntry={!passwordVisible}
+                  autoCapitalize="none"
+                  accentColor={errors.password ? colors.error : undefined}
+                  containerStyle={styles.fieldContainer}
+                />
+                <AnimatedPressable
+                  onPress={() => setPasswordVisible((prev) => !prev)}
+                  scaleValue={0.9}
+                  style={styles.eyeToggle}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    passwordVisible ? "Hide password" : "Show password"
+                  }
+                >
+                  <Ionicons
+                    name={passwordVisible ? "eye-off-outline" : "eye-outline"}
+                    size={rf(20)}
+                    color={colors.textSecondary}
+                  />
+                </AnimatedPressable>
+              </View>
+              {errors.password ? (
+                <Text style={styles.fieldError}>{errors.password}</Text>
+              ) : null}
 
               {mode === "signup" && (
-                <PasswordInput
-                  label="Confirm Password"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChangeText={(value) =>
-                    updateField("confirmPassword", value)
-                  }
-                  error={errors.confirmPassword}
-                />
+                <View style={styles.passwordFieldWrap}>
+                  <UnderlineInput
+                    label="Confirm Password"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChangeText={(value) =>
+                      updateField("confirmPassword", value)
+                    }
+                    secureTextEntry={!confirmPasswordVisible}
+                    autoCapitalize="none"
+                    accentColor={
+                      errors.confirmPassword ? colors.error : undefined
+                    }
+                    containerStyle={styles.fieldContainer}
+                  />
+                  <AnimatedPressable
+                    onPress={() => setConfirmPasswordVisible((prev) => !prev)}
+                    scaleValue={0.9}
+                    style={styles.eyeToggle}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      confirmPasswordVisible
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        confirmPasswordVisible
+                          ? "eye-off-outline"
+                          : "eye-outline"
+                      }
+                      size={rf(20)}
+                      color={colors.textSecondary}
+                    />
+                  </AnimatedPressable>
+                </View>
               )}
+              {mode === "signup" && errors.confirmPassword ? (
+                <Text style={styles.fieldError}>{errors.confirmPassword}</Text>
+              ) : null}
 
               {mode === 'signin' && (
                 <AnimatedPressable
@@ -343,13 +406,12 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
               )}
 
 
-              <Button
-                title={mode === "signup" ? "Create Account" : "Sign In"}
+              <GlassButton
+                label={mode === "signup" ? "Create Account" : "Sign In"}
                 onPress={
                   mode === "signup" ? handleEmailSignUp : handleEmailSignIn
                 }
                 variant="primary"
-                size="lg"
                 fullWidth
                 loading={isLoading}
                 style={styles.emailSignUpButton}
@@ -440,21 +502,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
   },
 
-  // Google Primary Button Styles
+  // Google Primary Button Styles — flat brand fill + hairline (no elevation).
   googlePrimaryButton: {
     backgroundColor: "#4285F4",
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    elevation: 3,
-  },
-  googlePrimaryButtonShadow: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
 
 
@@ -489,6 +545,33 @@ const styles = StyleSheet.create({
   // Email Form Styles
   emailFormContainer: {
     marginTop: spacing.sm,
+  },
+
+  fieldContainer: {
+    marginBottom: spacing.sm,
+  },
+
+  fieldError: {
+    fontSize: fontSize.xs,
+    color: colors.error,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
+  },
+
+  // UnderlineInput password field with absolute-positioned eye toggle.
+  passwordFieldWrap: {
+    position: "relative",
+    justifyContent: "center",
+  },
+
+  eyeToggle: {
+    position: "absolute",
+    right: 0,
+    top: spacing.sm,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   emailSignUpButton: {

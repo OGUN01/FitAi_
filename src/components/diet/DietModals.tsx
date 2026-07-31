@@ -3,7 +3,6 @@ import { Modal, View, StyleSheet } from 'react-native';
 import { FoodRecognitionPanel } from './FoodRecognitionPanel';
 import MealTypeSelector from './MealTypeSelector';
 import JobStatusIndicator from './JobStatusIndicator';
-import CreateRecipeModal from './CreateRecipeModal';
 import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 
 interface DietModalsProps {
@@ -41,12 +40,8 @@ interface DietModalsProps {
   showMealTypeSelector: boolean;
   handleMealTypeSelected: (type: any) => void;
   setShowMealTypeSelector: (show: boolean) => void;
-  userProfile: any;
   asyncJob: any;
   cancelAsyncGeneration: () => void;
-  showCreateRecipe: boolean;
-  setShowCreateRecipe: (show: boolean) => void;
-  handleRecipeCreated: (recipe: any) => void;
   portionGrams?: number | null;
   setPortionGrams?: (grams: number | null) => void;
 }
@@ -91,7 +86,7 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
         <Modal
           visible={true}
           transparent={true}
-          animationType="fade"
+          animationType="slide"
           onRequestClose={props.cancelAsyncGeneration}
         >
           <View style={styles.asyncJobModalOverlay}>
@@ -110,13 +105,6 @@ export const DietModals: React.FC<DietModalsProps> = (props) => {
           </View>
         </Modal>
       )}
-
-      <CreateRecipeModal
-        visible={props.showCreateRecipe}
-        onClose={() => props.setShowCreateRecipe(false)}
-        onRecipeCreated={props.handleRecipeCreated}
-        profile={props.userProfile}
-      />
     </>
   );
 };
@@ -125,8 +113,11 @@ const styles = StyleSheet.create({
   asyncJobModalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
+    // Bottom-anchored sheet presentation (2026 pattern) — thumb-reachable,
+    // not a scrim-centered card.
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
     padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
 });

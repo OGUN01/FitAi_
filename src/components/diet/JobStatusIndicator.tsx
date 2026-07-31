@@ -19,15 +19,14 @@ import Reanimated, {
   interpolate,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   flatColors as colors,
   spacing,
   borderRadius,
   flatFontSize as fontSize,
   typography,
+  flatShadows as shadows,
 } from '../../theme/aurora-tokens';
-import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import { rf, rh, rw, rs } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
@@ -263,7 +262,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
                 </View>
               )}
 
-              {/* Indeterminate gradient progress bar while processing */}
+              {/* Indeterminate flat-fill progress bar while processing */}
               {job.status === 'processing' && (
                 <View
                   style={styles.progressBar}
@@ -271,12 +270,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
                     trackWidth.value = e.nativeEvent.layout.width;
                   }}
                 >
-                  <Reanimated.View style={[styles.progressFill, progressFillStyle]}>
-                    <LinearGradient
-                      {...toLinearGradientProps(gradients.primary)}
-                      style={styles.progressGradient}
-                    />
-                  </Reanimated.View>
+                  <Reanimated.View style={[styles.progressFill, progressFillStyle]} />
                 </View>
               )}
 
@@ -345,12 +339,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     borderWidth: 1.5,
     borderColor: colors.border,
-    // Soft shadow so the opaque card lifts off the dark overlay.
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
+    // Editorial Dark: separation comes from hairline border, not cast shadow.
+    ...(shadows.sm as object),
   },
 
   compactContainer: {
@@ -371,6 +361,7 @@ const styles = StyleSheet.create({
   compactTime: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
+    fontVariant: ['tabular-nums'],
   },
 
   header: {
@@ -404,7 +395,7 @@ const styles = StyleSheet.create({
     width: Math.max(rw(24), 44),
     height: Math.max(rh(24), 44),
     borderRadius: Math.max(rs(12), 22),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -447,6 +438,7 @@ const styles = StyleSheet.create({
   timeValue: {
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
+    fontVariant: ['tabular-nums'],
   },
 
   progressBar: {
@@ -461,10 +453,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: rs(3),
     overflow: 'hidden',
-  },
-
-  progressGradient: {
-    flex: 1,
+    backgroundColor: colors.primary,
   },
 
   cancelButton: {
@@ -496,6 +485,7 @@ const styles = StyleSheet.create({
   completionLabel: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+    fontVariant: ['tabular-nums'],
   },
 
   errorInfo: {

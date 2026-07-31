@@ -147,12 +147,11 @@ jest.mock("@/utils/constants", () => ({
 }));
 
 import { AchievementDetailModal } from "@/components/achievements/AchievementDetailModal";
-import { ActivitiesModal } from "@/components/progress/ActivitiesModal";
 import { FullscreenModal } from "@/components/fitness/gif-player/FullscreenModal";
 import { ModalHeader } from "@/components/fitness/instruction/ModalHeader";
 
 describe("modal touch targets", () => {
-  it("keeps achievement and activities close controls at accessible sizes", () => {
+  it("keeps achievement close controls at accessible sizes", () => {
     const achievement = render(
       <AchievementDetailModal
         visible
@@ -168,27 +167,11 @@ describe("modal touch targets", () => {
       />,
     );
 
-    const activities = render(
-      <ActivitiesModal
-        visible
-        onClose={jest.fn()}
-        activities={[]}
-        onLoadMore={jest.fn()}
-        loadingMore={false}
-        hasMore={false}
-      />,
-    );
-
     expect(
       StyleSheet.flatten(
         achievement.getByLabelText("Close achievement details").props.style,
       ),
     ).toMatchObject({ minWidth: 44, minHeight: 44 });
-    expect(
-      StyleSheet.flatten(
-        activities.getByLabelText("Close activities").props.style,
-      ),
-    ).toMatchObject({ width: 44, height: 44 });
   });
 
   it("keeps fitness modal close controls at accessible sizes", () => {

@@ -7,16 +7,11 @@ export { PasswordInput } from './PasswordInput';
 export { Card } from './Card';
 export { Modal } from './Modal';
 export { CustomDialog, WorkoutStartDialog, WorkoutCompleteDialog } from './CustomDialog';
-export { InfoTooltip } from './InfoTooltip';
 export { Slider } from './Slider';
 
 // Phase 3: Advanced Visual Components
-export { ColorCodedZones, HEART_RATE_ZONE_COLORS, calculateHeartRateZones } from './ColorCodedZones';
-export { AnimatedChart } from './AnimatedChart';
 export { ChartTooltip } from './ChartTooltip';
 export { GradientBarChart, type BarData } from './GradientBarChart';
-export { WeightProjectionChart, type MilestonePoint } from './WeightProjectionChart';
-export { LargeProgressRing } from './LargeProgressRing';
 export { SegmentedControl, type SegmentOption } from './SegmentedControl';
 export { ParticleBurst } from './ParticleBurst';
 

@@ -56,6 +56,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           hapticType="light"
           accessibilityLabel={actionText}
           accessibilityRole="button"
+          hitSlop={{ top: 10, bottom: 10, left: 12, right: 4 }}
         >
           <Text style={styles.actionText}>{actionText}</Text>
         </AnimatedPressable>

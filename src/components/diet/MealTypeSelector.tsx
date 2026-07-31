@@ -391,13 +391,9 @@ const styles = StyleSheet.create({
   },
 
   optionCardSuggested: {
+    // Accent hairline border is the suggested-state signal — no cast glow
+    // shadows on Editorial Dark.
     borderColor: colors.primaryLight,
-    shadowColor: colors.primaryLight,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    boxShadow: `0px 2px 6px ${hexToRgba(colors.primaryLight, 0.15)}`,
-    elevation: 3,
   },
 
   optionContent: {

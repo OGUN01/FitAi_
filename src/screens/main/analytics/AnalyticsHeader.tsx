@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   surface,
@@ -24,6 +23,7 @@ import {
   spacing,
 } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
+import { hexToRgba } from "../../../utils/colors";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
@@ -68,14 +68,11 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
         style={styles.titleRow}
       >
         <View style={styles.titleLeft}>
-          <LinearGradient
-            colors={[chart[1], chart[1]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.iconContainer}
-          >
+          {/* Flat accent tile — the old identical-stop LinearGradient was just
+              a flat fill with extra cost. */}
+          <View style={[styles.iconContainer, { backgroundColor: chart[1] }]}>
             <Ionicons name="analytics" size={rf(18)} color={colors.text.primary} />
-          </LinearGradient>
+          </View>
           <View>
             <Text style={styles.title} numberOfLines={1}>
               Analytics
@@ -185,14 +182,14 @@ const styles = StyleSheet.create({
   badge: {
     height: 30,
     borderRadius: 15,
-    backgroundColor: `${chart[5]}18`,
+    backgroundColor: hexToRgba(chart[5], 0.09),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: `${chart[5]}30`,
+    borderColor: hexToRgba(chart[5], 0.19),
   },
   badgeDot: {
     width: 6,

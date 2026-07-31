@@ -32,14 +32,12 @@ import {
   type TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   workoutTemplateService,
   type WorkoutTemplate,
   type CommunitySortOption,
 } from "../../../services/workoutTemplateService";
-import { GlassCard } from "../../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 import { EmptyState } from "../../ui/aurora/EmptyState";
 import {
@@ -382,27 +380,22 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
         animations.duration.normal,
       )}
     >
-      <GlassCard
-        elevation={2}
-        padding="none"
-        borderRadius="xl"
-        pressable
+      {/* Flat surface + hairline (was GlassCard elevation 2). Press handling
+          moved to AnimatedPressable (same spring + haptic contract). */}
+      <AnimatedPressable
         onPress={() => onPress(template)}
+        scaleValue={0.98}
+        springConfig="smooth"
+        hapticType="light"
         accessibilityLabel={template.name}
         accessibilityHint="Opens template details"
-        contentStyle={styles.cardContent}
         style={styles.card}
       >
         <View style={styles.cardRow}>
-          {/* Gradient thumbnail with icon */}
-          <LinearGradient
-            colors={[colors.primary, colors.purple]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.thumbnail}
-          >
-            <Ionicons name="barbell" size={rf(22)} color={colors.white} />
-          </LinearGradient>
+          {/* Flat accent thumbnail chip with icon (was gradient disc) */}
+          <View style={styles.thumbnail}>
+            <Ionicons name="barbell" size={rf(22)} color={colors.primary} />
+          </View>
 
           {/* Body */}
           <View style={styles.cardBody}>
@@ -470,7 +463,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
             </View>
           </View>
         </View>
-      </GlassCard>
+      </AnimatedPressable>
     </Animated.View>
   );
 };
@@ -559,7 +552,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: colors.border,
     minHeight: Math.max(rp(40), 44),
   },
   sortChipActive: {
@@ -583,23 +576,28 @@ const styles = StyleSheet.create({
   listGap: {
     gap: rp(spacing.sm),
   },
+  // Flat surface + hairline (was GlassCard elevation 2).
   card: {
-    marginBottom: 0,
-  },
-  cardContent: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: rp(spacing.sm),
+    overflow: "hidden",
   },
   cardRow: {
     flexDirection: "row",
     gap: rp(spacing.sm),
     alignItems: "center",
   },
+  // Flat accent chip (was primary→purple gradient disc).
   thumbnail: {
     width: rw(56),
     height: rw(56),
     borderRadius: borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: hexToRgba(colors.primary, 0.15),
   },
   cardBody: {
     flex: 1,
@@ -629,7 +627,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: rp(spacing.xxs),
-    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    backgroundColor: colors.surfaceLight,
     paddingHorizontal: rp(spacing.xs),
     paddingVertical: rp(spacing.xxs),
     borderRadius: borderRadius.full,
@@ -637,6 +635,7 @@ const styles = StyleSheet.create({
   statPillText: {
     fontSize: rf(typography.fontSize.micro),
     fontWeight: fw(typography.fontWeight.semibold),
+    fontVariant: ["tabular-nums"],
   },
   difficultyBadge: {
     alignSelf: "flex-start",
@@ -654,10 +653,10 @@ const styles = StyleSheet.create({
     gap: rp(spacing.sm),
     alignItems: "center",
     padding: rp(spacing.sm),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: colors.border,
   },
   skeletonBody: {
     flex: 1,
@@ -698,7 +697,7 @@ const styles = StyleSheet.create({
     marginTop: rp(spacing.md),
     paddingTop: rp(spacing.sm),
     borderTopWidth: 1,
-    borderTopColor: colors.glassBorder,
+    borderTopColor: colors.border,
   },
   featuredDividerText: {
     fontSize: rf(typography.fontSize.caption),

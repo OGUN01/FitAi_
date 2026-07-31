@@ -41,6 +41,10 @@ import { NaturalLanguageEditBar } from "../../components/fitness/builder/Natural
 import { useWorkoutBuilderStore, DAYS_OF_WEEK } from "../../stores/workoutBuilderStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { validatePlan, type ValidationProfile } from "../../services/builderValidationService";
+import type { WorkoutTemplate } from "../../services/workoutTemplateService";
+import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
+import { fromTemplateExercise } from "../../types/workout";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { usePullToRefresh } from "../../gestures/handlers";
 import { haptics } from "../../utils/haptics";
 import {
@@ -57,12 +61,17 @@ interface Props {
     goBack: () => void;
     navigate: (screen: string, params?: Record<string, unknown>) => void;
   };
+  /**
+   * Template passed by TemplateLibraryScreen's "Use in Schedule" action.
+   * Seeded into the first empty day of the draft once hydration completes.
+   */
+  sourceTemplate?: WorkoutTemplate;
 }
 
 const DAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
 const DAY_SHORT = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
-export default function WeeklyBuilderScreen({ navigation }: Props) {
+export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Props) {
   // ── Store subscriptions ──
   const draft = useWorkoutBuilderStore((s) => s.draft);
   const draftDirty = useWorkoutBuilderStore((s) => s.draftDirty);
@@ -109,13 +118,54 @@ export default function WeeklyBuilderScreen({ navigation }: Props) {
 
   // ── Mount: hydrate ──
   const hydratedRef = useRef(false);
+  // Tracks hydration COMPLETION (not just kickoff) so the sourceTemplate
+  // seed below never races hydrateFromCustomPlan's draft write.
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
-    hydrateFromCustomPlan().catch((err) => {
-      console.error("[WeeklyBuilderScreen] hydrate failed:", err);
-    });
+    hydrateFromCustomPlan()
+      .catch((err) => {
+        console.error("[WeeklyBuilderScreen] hydrate failed:", err);
+      })
+      .finally(() => setHydrated(true));
   }, [hydrateFromCustomPlan]);
+
+  // ── Seed from TemplateLibrary "Use in Schedule" ──
+  // Runs once per activation, after hydration, so the seed lands on the
+  // freshly hydrated draft (never on a stale one that hydrate then wipes).
+  const seededTemplateRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hydrated || !draft || !sourceTemplate) return;
+    if (seededTemplateRef.current === sourceTemplate.id) return;
+    seededTemplateRef.current = sourceTemplate.id;
+
+    const emptyIdx = draft.workouts.findIndex(
+      (d) => (d.plannedExercises?.length ?? d.exercises?.length ?? 0) === 0,
+    );
+    if (emptyIdx === -1) {
+      crossPlatformAlert(
+        "Week Is Full",
+        "Every day this week already has a workout. Clear a day first, then use the template again.",
+      );
+      return;
+    }
+
+    const dayWorkout = buildDayWorkoutFromTemplate(sourceTemplate, {
+      dayOfWeek: draft.workouts[emptyIdx].dayOfWeek,
+      isExtra: false,
+    });
+    // The builder's primary structure is plannedExercises — populate it too
+    // (buildDayWorkoutFromTemplate only fills the simple exercises shape).
+    dayWorkout.plannedExercises = sourceTemplate.exercises.map(fromTemplateExercise);
+    updateDay(emptyIdx, dayWorkout);
+    setSelectedDay(emptyIdx);
+    setExpandedDay(emptyIdx);
+    computeInsights(userWeightKg).catch(() => {
+      /* logged in store */
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, draft, sourceTemplate]);
 
   // Recompute insights when user weight becomes available (after hydration)
   useEffect(() => {

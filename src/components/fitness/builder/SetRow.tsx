@@ -52,6 +52,13 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw, rs } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
+import { useProfileStore } from "../../../stores/profileStore";
+import {
+  convertWeight,
+  parseLocalFloat,
+  toDisplayWeight,
+  type WeightUnit,
+} from "../../../utils/units";
 import type { PlannedSet } from "../../../types/workout";
 
 // ============================================================================
@@ -118,6 +125,40 @@ export const SetRow: React.FC<SetRowProps> = ({
 }) => {
   const reduceMotion = useReducedMotion();
 
+  // ── Weight units ──
+  // Weights are STORED as kg (PlannedSet.weightKg / dropWeightKg) and
+  // displayed in the user's preferred unit. Imperial users type pounds;
+  // we convert to kg on commit so persistence stays metric.
+  // (Two-step select → derive, matching WorkoutSessionScreen — the jest
+  // profileStore mock ignores selectors, so a one-step selector would
+  // receive the whole state object in tests.)
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const userUnits: WeightUnit = personalInfo?.units === "imperial" ? "lbs" : "kg";
+
+  /** kg → display string in the user's unit (1-decimal precision). */
+  const toDisplay = useCallback(
+    (kg: number | null | undefined): string => {
+      if (kg == null) return "";
+      const v = toDisplayWeight(kg, userUnits);
+      if (v == null) return "";
+      return String(Math.round(v * 10) / 10);
+    },
+    [userUnits],
+  );
+
+  /** Display string in the user's unit → kg for storage. */
+  const fromDisplay = useCallback(
+    (text: string): number | undefined => {
+      const trimmed = text.trim();
+      if (trimmed === "") return undefined;
+      const asNum = parseLocalFloat(trimmed);
+      if (Number.isNaN(asNum)) return undefined;
+      // Round to 2 decimals kg so lbs round-trips don't drift.
+      return Math.round(convertWeight(asNum, userUnits, "kg") * 100) / 100;
+    },
+    [userUnits],
+  );
+
   // ── Local input state ──
   // We mirror reps/weight as strings so the user can type "8-12" ranges and
   // intermediate states like "" without the parent PlannedSet coercing to a
@@ -125,11 +166,11 @@ export const SetRow: React.FC<SetRowProps> = ({
   const [repsText, setRepsText] = useState<string>(
     typeof set.reps === "string" ? set.reps : set.reps != null ? String(set.reps) : "",
   );
-  const [weightText, setWeightText] = useState<string>(
-    set.weightKg != null ? String(set.weightKg) : "",
+  const [weightText, setWeightText] = useState<string>(() =>
+    toDisplay(set.weightKg),
   );
-  const [dropWeightText, setDropWeightText] = useState<string>(
-    set.dropWeightKg != null ? String(set.dropWeightKg) : "",
+  const [dropWeightText, setDropWeightText] = useState<string>(() =>
+    toDisplay(set.dropWeightKg),
   );
   const [dropRepsText, setDropRepsText] = useState<string>(
     set.dropReps != null ? String(set.dropReps) : "",
@@ -151,21 +192,21 @@ export const SetRow: React.FC<SetRowProps> = ({
   }, [set.reps]);
 
   useEffect(() => {
-    const canonicalWeight = set.weightKg != null ? String(set.weightKg) : "";
-    if (canonicalWeight !== weightText && set.weightKg !== parseNumberOrNull(weightText)) {
+    const canonicalWeight = toDisplay(set.weightKg);
+    if (canonicalWeight !== weightText && set.weightKg !== fromDisplay(weightText)) {
       setWeightText(canonicalWeight);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [set.weightKg]);
+  }, [set.weightKg, userUnits]);
 
   useEffect(() => {
     if (set.setType !== "drop") return;
-    const canonical = set.dropWeightKg != null ? String(set.dropWeightKg) : "";
-    if (canonical !== dropWeightText && set.dropWeightKg !== parseNumberOrNull(dropWeightText)) {
+    const canonical = toDisplay(set.dropWeightKg);
+    if (canonical !== dropWeightText && set.dropWeightKg !== fromDisplay(dropWeightText)) {
       setDropWeightText(canonical);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [set.dropWeightKg, set.setType]);
+  }, [set.dropWeightKg, set.setType, userUnits]);
 
   useEffect(() => {
     if (set.setType !== "drop") return;
@@ -249,24 +290,12 @@ export const SetRow: React.FC<SetRowProps> = ({
   }, [repsText, patch]);
 
   const commitWeight = useCallback(() => {
-    const trimmed = weightText.trim();
-    if (trimmed === "") {
-      patch({ weightKg: undefined });
-      return;
-    }
-    const asNum = Number(trimmed);
-    patch({ weightKg: Number.isNaN(asNum) ? undefined : asNum });
-  }, [weightText, patch]);
+    patch({ weightKg: fromDisplay(weightText) });
+  }, [weightText, fromDisplay, patch]);
 
   const commitDropWeight = useCallback(() => {
-    const trimmed = dropWeightText.trim();
-    if (trimmed === "") {
-      patch({ dropWeightKg: undefined });
-      return;
-    }
-    const asNum = Number(trimmed);
-    patch({ dropWeightKg: Number.isNaN(asNum) ? undefined : asNum });
-  }, [dropWeightText, patch]);
+    patch({ dropWeightKg: fromDisplay(dropWeightText) });
+  }, [dropWeightText, fromDisplay, patch]);
 
   const commitDropReps = useCallback(() => {
     const trimmed = dropRepsText.trim();
@@ -312,7 +341,7 @@ export const SetRow: React.FC<SetRowProps> = ({
           style={[styles.row, dragAnimatedStyle]}
           accessibilityRole="button"
           accessibilityLabel={`Set ${setNumber}, ${typeMeta.label}, ${repsText || "—"} reps${
-            weightText ? `, ${weightText} kg` : ""
+            weightText ? `, ${weightText} ${userUnits}` : ""
           }`}
           accessibilityHint="Long-press the drag handle to reorder this set"
         >
@@ -348,13 +377,13 @@ export const SetRow: React.FC<SetRowProps> = ({
 
           {/* Weight input */}
           <LabeledInput
-            label="kg"
+            label={userUnits}
             value={weightText}
             onChangeText={setWeightText}
             onEndEditing={commitWeight}
             placeholder="—"
             keyboardType="numeric"
-            accessibilityLabel={`Weight in kilograms for set ${setNumber}`}
+            accessibilityLabel={`Weight in ${userUnits === "lbs" ? "pounds" : "kilograms"} for set ${setNumber}`}
             style={styles.weightInput}
           />
 
@@ -408,13 +437,13 @@ export const SetRow: React.FC<SetRowProps> = ({
         >
           <Text style={styles.extraLabel}>Drop to:</Text>
           <LabeledInput
-            label="kg"
+            label={userUnits}
             value={dropWeightText}
             onChangeText={setDropWeightText}
             onEndEditing={commitDropWeight}
             placeholder="—"
             keyboardType="numeric"
-            accessibilityLabel="Drop set weight in kilograms"
+            accessibilityLabel={`Drop set weight in ${userUnits === "lbs" ? "pounds" : "kilograms"}`}
             style={styles.dropWeightInput}
           />
           <LabeledInput

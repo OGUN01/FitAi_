@@ -6,13 +6,11 @@ import {
   Modal,
   StatusBar,
   Dimensions,
-  Platform,
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { Image } from "expo-image"; // ✅ Use Expo Image for GIF animation support
+import { Image } from "expo-image"; // Use Expo Image for GIF animation support
 import { Ionicons } from "@expo/vector-icons";
-import { Card } from "../ui";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
@@ -414,22 +412,26 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
   return (
     <>
-      <Card
-        style={StyleSheet.flatten([styles.container, style])}
-        variant="elevated"
-      >
+      <View style={StyleSheet.flatten([styles.container, style])}>
         {renderGifPlayer()}
         {renderExerciseInfo()}
-      </Card>
+      </View>
       {renderFullscreenModal()}
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  // Flat surface + hairline (was old ui/Card variant="elevated" — elevation
+  // shadow replaced by border per Editorial Dark).
   container: {
     padding: 0,
     alignSelf: "center",
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
   },
 
   gifContainer: {
@@ -440,20 +442,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
     alignSelf: "center",
-    // Fixed 1px border (was rw(1) — scaled with screen width).
-    borderWidth: 1,
-    // Was hardcoded "rgba(255, 107, 53, 0.2)" — hexToRgba tracks colors.primary.
-    borderColor: hexToRgba(colors.primary, 0.2),
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    // boxShadow is web-only — including it unconditionally on native logs a
-    // warning (mirrors the gating in gif-player/GifPlayerContent.tsx).
-    ...(Platform.OS === "web"
-      ? { boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)" }
-      : {}),
+    // Shadow + own border removed — the flat container now carries the single
+    // hairline (shadow discipline: separation from hairlines, not cast shadows).
   },
 
   gif: {
@@ -492,7 +482,7 @@ const styles = StyleSheet.create({
   },
 
   playbackButton: {
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: hexToRgba(colors.black, 0.6),
     borderRadius: Math.max(rbr(20), 22),
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),
@@ -648,7 +638,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: rp(8),
     right: rp(8),
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: colors.overlayDark,
     paddingHorizontal: rp(8),
     paddingVertical: rp(4),
     borderRadius: rbr(12),
@@ -662,7 +652,7 @@ const styles = StyleSheet.create({
 
   fullscreenOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
+    backgroundColor: hexToRgba(colors.black, 0.95),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -677,12 +667,11 @@ const styles = StyleSheet.create({
     top: rp(20),
     right: rp(20),
     zIndex: 10,
-    elevation: 10,
     // 0.35 alpha + border so the close button stays visible on a 95% black
     // overlay (was 0.2 alpha nearly invisible).
-    backgroundColor: "rgba(255, 255, 255, 0.35)",
+    backgroundColor: hexToRgba(colors.white, 0.35),
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.4)",
+    borderColor: hexToRgba(colors.white, 0.4),
     borderRadius: Math.max(rbr(20), 22),
     width: Math.max(rs(40), 44),
     height: Math.max(rs(40), 44),
@@ -700,14 +689,14 @@ const styles = StyleSheet.create({
   },
 
   fullscreenGif: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: hexToRgba(colors.white, 0.05),
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: hexToRgba(colors.white, 0.1),
   },
 
   fullscreenHint: {
-    color: "rgba(255, 255, 255, 0.7)",
+    color: hexToRgba(colors.white, 0.7),
     fontSize: fontSize.sm,
     textAlign: "center",
     marginTop: spacing.md,

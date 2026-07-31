@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '../../ui';
 import {
   flatColors as colors,
   spacing,
+  borderRadius,
   flatFontSize as fontSize,
   typography,
 } from '../../../theme/aurora-tokens';
@@ -12,7 +12,7 @@ import { rf } from '../../../utils/responsive';
 
 export const RecipeAIFeatures: React.FC = () => {
   return (
-    <Card style={styles.aiCard} variant="outlined">
+    <View style={styles.aiCard}>
       <View style={styles.aiTitleRow}>
         <Ionicons name="sparkles" size={rf(18)} color={colors.primary} />
         <Text style={styles.aiTitle}>AI Recipe Intelligence</Text>
@@ -23,7 +23,7 @@ export const RecipeAIFeatures: React.FC = () => {
         <Text style={styles.aiFeature}>• Step-by-step instructions</Text>
         <Text style={styles.aiFeature}>• Cooking tips and variations</Text>
       </View>
-    </Card>
+    </View>
   );
 };
 
@@ -31,6 +31,10 @@ const styles = StyleSheet.create({
   aiCard: {
     margin: spacing.lg,
     padding: spacing.lg,
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   aiTitle: {

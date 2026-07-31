@@ -32,7 +32,7 @@ import {
 import { rf, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
-import { convertWeight, toDisplayWeight, parseLocalFloat } from "../../../../utils/units";
+import { convertWeight, toDisplayWeight, convertHeight, toDisplayHeight, parseLocalFloat } from "../../../../utils/units";
 
 const { variants } = typography;
 
@@ -49,6 +49,7 @@ export const BodyMeasurementsEditModal: React.FC<
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const personalInfo = useProfileStore((s) => s.personalInfo);
   const weightUnit: "kg" | "lbs" = personalInfo?.units === "imperial" ? "lbs" : "kg";
+  const heightUnit: "cm" | "in" = personalInfo?.units === "imperial" ? "in" : "cm";
 
   // Form state
   const [height, setHeight] = useState("");
@@ -71,7 +72,9 @@ export const BodyMeasurementsEditModal: React.FC<
     if (!visible) return;
     const bodyAnalysisData = useProfileStore.getState().bodyAnalysis;
     // ✅ SSOT: profileStore.bodyAnalysis is authoritative
-    setHeight((bodyAnalysisData?.height_cm && bodyAnalysisData.height_cm > 0) ? bodyAnalysisData.height_cm.toString() : "");
+    const rawHeight = bodyAnalysisData?.height_cm;
+    const displayHeight = rawHeight && rawHeight > 0 ? toDisplayHeight(rawHeight, heightUnit) : null;
+    setHeight(displayHeight != null ? (heightUnit === "in" ? displayHeight.toFixed(1) : displayHeight.toString()) : "");
     const rawWeight = bodyAnalysisData?.current_weight_kg;
     const displayWt = rawWeight && rawWeight > 0 ? toDisplayWeight(rawWeight, weightUnit) : null;
     setWeight(displayWt != null ? displayWt.toFixed(1) : "");
@@ -86,16 +89,16 @@ export const BodyMeasurementsEditModal: React.FC<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  // Calculate BMI — weight state is in display units (lbs when imperial);
-  // convert to kg first so BMI is always kg/m^2.
+  // Calculate BMI — weight/height state are in display units (lbs/in when
+  // imperial); convert to kg and cm first so BMI is always kg/m^2.
   const bmi = useMemo(() => {
     const w = convertWeight(parseLocalFloat(weight), weightUnit, "kg");
-    const h = parseLocalFloat(height) / 100; // Convert cm to meters
+    const h = convertHeight(parseLocalFloat(height), heightUnit, "cm") / 100; // cm to meters
     if (w > 0 && h > 0) {
       return (w / (h * h)).toFixed(1);
     }
     return null;
-  }, [weight, height, weightUnit]);
+  }, [weight, height, weightUnit, heightUnit]);
 
   // Get BMI category
   const bmiCategory = useMemo(() => {
@@ -111,13 +114,15 @@ export const BodyMeasurementsEditModal: React.FC<
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
+    const hMin = heightUnit === "in" ? 39 : 100;
+    const hMax = heightUnit === "in" ? 99 : 250;
     if (
       !height ||
       isNaN(Number(height)) ||
-      Number(height) < 100 ||
-      Number(height) > 250
+      Number(height) < hMin ||
+      Number(height) > hMax
     ) {
-      newErrors.height = "Enter valid height in cm (100-250)";
+      newErrors.height = `Enter valid height in ${heightUnit} (${hMin}-${hMax})`;
     }
 
     const wMin = weightUnit === "lbs" ? 66 : 30;
@@ -175,7 +180,7 @@ export const BodyMeasurementsEditModal: React.FC<
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, weightUnit]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, weightUnit, heightUnit]);
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -211,7 +216,7 @@ export const BodyMeasurementsEditModal: React.FC<
         breastfeeding_status:
           bodyAnalysisData?.breastfeeding_status ||
           false,
-        height_cm: parseLocalFloat(height),
+        height_cm: Math.round(convertHeight(parseLocalFloat(height), heightUnit, "cm") * 10) / 10,
         current_weight_kg: canonicalCurrentWeight,
         ...(targetWeightKg != null ? { target_weight_kg: targetWeightKg } : {}),
         body_fat_percentage: bodyFat ? parseLocalFloat(bodyFat) : undefined,
@@ -264,6 +269,7 @@ export const BodyMeasurementsEditModal: React.FC<
     validate,
     updateBodyAnalysis,
     weightUnit,
+    heightUnit,
   ]);
 
   const hasChanges = useCallback(() => {
@@ -284,8 +290,10 @@ export const BodyMeasurementsEditModal: React.FC<
     const targetKg = targetWeight
       ? convertWeight(parseLocalFloat(targetWeight), weightUnit, "kg")
       : null;
+    // height is in display units (in when imperial); convert to cm before comparing.
+    const heightCm = convertHeight(parseLocalFloat(height), heightUnit, "cm");
     return (
-      floatChanged(height, bodyAnalysisData.height_cm) ||
+      floatChanged(String(heightCm), bodyAnalysisData.height_cm) ||
       floatChanged(String(weightKg), bodyAnalysisData.current_weight_kg) ||
       floatChanged(targetKg != null ? String(targetKg) : "", bodyAnalysisData.target_weight_kg) ||
       floatChanged(bodyFat, bodyAnalysisData.body_fat_percentage) ||
@@ -293,7 +301,7 @@ export const BodyMeasurementsEditModal: React.FC<
       floatChanged(waist, bodyAnalysisData.waist_cm) ||
       floatChanged(hips, bodyAnalysisData.hip_cm)
     );
-  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, bodyAnalysis, weightUnit]);
+  }, [height, weight, targetWeight, bodyFat, chest, waist, hips, bodyAnalysis, weightUnit, heightUnit]);
 
   return (
     <SettingsModalWrapper
@@ -401,12 +409,12 @@ export const BodyMeasurementsEditModal: React.FC<
         iconColor={colors.info.DEFAULT}
         value={height}
         onChangeText={setHeight}
-        placeholder="Enter your height"
-        keyboardType="numeric"
-        maxLength={3}
-        suffix="cm"
+        placeholder={heightUnit === "in" ? "e.g. 70.5" : "Enter your height"}
+        keyboardType={heightUnit === "in" ? "decimal-pad" : "numeric"}
+        maxLength={heightUnit === "in" ? 5 : 3}
+        suffix={heightUnit}
         error={errors.height}
-        hint="Height in centimeters"
+        hint={heightUnit === "in" ? "Height in inches" : "Height in centimeters"}
       />
 
       {/* Current Weight */}

@@ -67,7 +67,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     confirmLogout,
     cancelLogout,
     handleSettingItemPress,
-    handleStatPress,
     accountItems,
     preferencesItems,
     appItems,
@@ -187,7 +186,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
             totalCaloriesBurned={userStats?.totalCaloriesBurned || 0}
             longestStreak={userStats?.longestStreak || 0}
             achievements={userStats?.achievements || 0}
-            onStatPress={handleStatPress}
           />
 
           <SettingsSection

@@ -1,8 +1,11 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { Button } from "../ui";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { GlassButton } from "../ui/aurora/GlassButton";
+import {
+  flatColors as colors,
+  spacing,
+  borderRadius,
+} from "../../theme/aurora-tokens";
 
 interface ErrorBannerProps {
   error: string;
@@ -16,14 +19,15 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ error, onRetry }) => (
       marginBottom: spacing.md,
     }}
   >
-    <GlassCard
+    <View
       style={{
         padding: spacing.md,
         alignItems: "center",
+        backgroundColor: colors.backgroundSecondary,
         borderColor: colors.error,
         borderWidth: 1,
+        borderRadius: borderRadius.lg,
       }}
-      elevation={1}
     >
       <Text
         style={{
@@ -34,12 +38,12 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ error, onRetry }) => (
       >
         {error}
       </Text>
-      <Button
-        title="Tap to Retry"
+      <GlassButton
+        label="Tap to Retry"
         onPress={onRetry}
-        variant="outline"
-        size="sm"
+        variant="error"
+        accessibilityLabel="Tap to Retry"
       />
-    </GlassCard>
+    </View>
   </View>
 );

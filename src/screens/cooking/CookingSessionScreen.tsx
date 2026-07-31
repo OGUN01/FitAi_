@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -104,6 +104,16 @@ export default function CookingSessionScreen({
     ]);
   }, [cookingFlow, completedSteps, meal, navigation]);
 
+  // cookingTime is optional on DayMeal — never fabricate one for display.
+  useEffect(() => {
+    if (meal.cookingTime == null) {
+      console.warn(
+        "CookingSessionScreen: meal.cookingTime is missing; cook time omitted from header",
+        meal.id,
+      );
+    }
+  }, [meal.id, meal.cookingTime]);
+
   const mealProgress = useMemo(() => {
     if (!cookingFlow) return 0;
     const totalSteps = cookingFlow.steps.length;
@@ -141,7 +151,7 @@ export default function CookingSessionScreen({
             accessibilityLabel="Close cooking session"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={rf(28)} color={colors.text.primary} />
+            <Ionicons name="close" size={rf(22)} color={colors.text.primary} />
           </AnimatedPressable>
           <View style={styles.headerContent}>
             <Text
@@ -159,8 +169,9 @@ export default function CookingSessionScreen({
               adjustsFontSizeToFit
               minimumFontScale={0.85}
             >
-              Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m •{" "}
-              {meal.difficulty}
+              Prep: {meal.preparationTime}m
+              {meal.cookingTime != null ? ` • Cook: ${meal.cookingTime}m` : ""}{" "}
+              • {meal.difficulty}
             </Text>
           </View>
         </View>

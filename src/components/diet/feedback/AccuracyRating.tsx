@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   flatColors as colors,
   spacing,
+  borderRadius,
   flatFontSize as fontSize,
 } from '../../../theme/aurora-tokens';
-import { Card } from '../../ui';
 import { rf } from '../../../utils/responsive';
 
 interface AccuracyRatingProps {
@@ -33,7 +33,7 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({ rating, onRating
   };
 
   return (
-    <Card style={styles.sectionCard}>
+    <View style={styles.sectionCard}>
       <Text style={styles.sectionTitle}>How accurate is this recognition?</Text>
       <View style={styles.starsContainer}>
         {[1, 2, 3, 4, 5].map((star) => (
@@ -54,14 +54,19 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({ rating, onRating
         ))}
       </View>
       <Text style={styles.ratingLabel}>{getRatingLabel(rating)}</Text>
-    </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
   sectionCard: {
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 
   sectionTitle: {

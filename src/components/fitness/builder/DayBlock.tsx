@@ -40,14 +40,16 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import { GlassCard } from "../../ui/aurora/GlassCard";
 import { GlassButton } from "../../ui/aurora/GlassButton";
+import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
 import { useDragToReorder, usePinchToZoom } from "../../../gestures/handlers";
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import {
   colors,
+  surface,
+  border,
   spacing,
   borderRadius,
   typography,
@@ -273,15 +275,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
           gesture={Gesture.Simultaneous(dayDragGesture, swipeGesture, pinchGesture)}
         >
           <Animated.View style={swipeStyle}>
-            <GlassCard
-              blurIntensity="default"
-              elevation={isExpanded ? 4 : 3}
-              padding="none"
-              borderRadius="lg"
-              showBorder
-              style={isExpanded ? { ...styles.card, ...styles.cardExpanded } : styles.card}
-              contentStyle={styles.cardContent}
-            >
+            <View style={styles.card}>
               {/* ── Header (tap to expand, long-press to drag, swipe to copy) ── */}
               <Pressable
                 onPress={handleHeaderPress}
@@ -451,7 +445,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                             );
                           })}
                           <Pressable
-                            style={[styles.dayMenuItem, { borderTopWidth: 1, borderTopColor: colors.glass.border }]}
+                            style={[styles.dayMenuItem, { borderTopWidth: 1, borderTopColor: border.subtle }]}
                             onPress={() => {
                               setMenuOpen(false);
                               haptics.warning();
@@ -476,7 +470,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                   </KeyboardAvoidingView>
                 </Animated.View>
               )}
-            </GlassCard>
+            </View>
           </Animated.View>
         </GestureDetector>
 
@@ -497,20 +491,16 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
           </Pressable>
         </Animated.View>
 
-        {/* Copy-to-day picker — rendered as an absolute overlay so it does NOT
-            push subsequent DayBlocks down (layout shift). Positioned over the
-            current day block, above siblings via zIndex. */}
+        {/* Copy-to-day picker — bottom sheet per Editorial Dark (was a
+            centered absolute overlay with backdrop). */}
         {showCopyPicker && (
-          <View style={styles.copyPickerOverlay} pointerEvents="box-none">
-            <Pressable
-              style={styles.copyPickerBackdrop}
-              onPress={() => {
-                haptics.selection();
-                setShowCopyPicker(false);
-              }}
-              accessibilityLabel="Cancel copy"
-              accessibilityRole="button"
-            />
+          <DetentBottomSheet
+            visible={showCopyPicker}
+            onClose={() => setShowCopyPicker(false)}
+            snapPoints={[0.4, 0.6]}
+            initialSnapIndex={0}
+            testID={`${testID}-copy-picker`}
+          >
             <View style={styles.copyPicker}>
               <Text style={styles.copyPickerTitle}>Copy {dayLabel} to:</Text>
               {DAY_LABELS.map((label, targetIdx) => {
@@ -543,7 +533,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                 <Text style={styles.copyPickerCancelText}>Cancel</Text>
               </Pressable>
             </View>
-          </View>
+          </DetentBottomSheet>
         )}
       </Animated.View>
     );
@@ -555,16 +545,14 @@ const styles = StyleSheet.create({
     position: "relative",
     marginBottom: rp(spacing.sm),
   },
+  // Flat surface + hairline (was GlassCard elevation 3-4 — glass/elevation
+  // replaced by a flat step + 1px border per Editorial Dark).
   card: {
     overflow: "hidden",
-  },
-  cardExpanded: {
-    // Elevation/border tweaks applied via GlassCard props when expanded;
-    // empty style object kept for conditional array composition.
-  } as ViewStyle,
-  cardContent: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    backgroundColor: colors.background.secondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: border.subtle,
   },
   header: {
     flexDirection: "row",
@@ -654,9 +642,9 @@ const styles = StyleSheet.create({
     marginBottom: rp(spacing.xs),
   },
   notesInput: {
-    backgroundColor: colors.glass.background,
+    backgroundColor: surface[1],
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.subtle,
     borderRadius: borderRadius.md,
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.sm),
@@ -691,7 +679,6 @@ const styles = StyleSheet.create({
     top: rp(spacing.xs),
     right: rp(spacing.md),
     zIndex: 50,
-    elevation: 5,
   },
   menuDismiss: {
     ...StyleSheet.absoluteFillObject,
@@ -702,15 +689,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.glass.border,
+    borderColor: border.DEFAULT,
     paddingVertical: rp(spacing.xs),
     minWidth: rw(160),
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-    // Explicitly above menuDismiss so taps on items always win on Android.
+    // Shadow stack removed (shadow discipline) — separation comes from the
+    // hairline + surface step. zIndex kept so taps on items win on Android.
     zIndex: 41,
   },
   dayMenuItem: {
@@ -750,31 +733,10 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.semibold) as TextStyle["fontWeight"],
   },
-  // Copy-to picker — absolute overlay so it does not push siblings down.
-  copyPickerOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 200,
-    elevation: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  } as ViewStyle,
-  copyPickerBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  } as ViewStyle,
+  // Copy-to picker body — rendered inside a DetentBottomSheet (the sheet
+  // supplies the surface, backdrop, and dismiss behavior).
   copyPicker: {
-    backgroundColor: colors.background.tertiary,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-    padding: rp(spacing.md),
-    minWidth: rw(220),
-    zIndex: 201,
-    elevation: 11,
+    paddingBottom: rp(spacing.md),
   },
   copyPickerTitle: {
     color: colors.text.primary,

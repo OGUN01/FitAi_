@@ -28,6 +28,7 @@ import { FullPlanScreen } from '../../screens/workouts/FullPlanScreen';
 import { WorkoutHistoryScreen } from '../../screens/workouts/WorkoutHistoryScreen';
 import { flatColors as colors } from '../../theme/aurora-tokens';
 import { DayWorkout, DayMeal } from '../../types/ai';
+import type { WorkoutTemplate } from '../../services/workoutTemplateService';
 import { useAppConfig } from '../../hooks/useAppConfig';
 import { ScreenErrorBoundary } from '../errors/ScreenErrorBoundary';
 import { isTemplateLink, parseTemplateLink } from '../../services/templateShareService';
@@ -150,6 +151,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   // ScheduleBuilderSession stays for safety until Phase 8 cleanup.)
   const [weeklyBuilderSession, setWeeklyBuilderSession] = useState<{
     isActive: boolean;
+    sourceTemplate?: WorkoutTemplate;
   }>({ isActive: false });
 
   // Build Method Landing overlay state (Phase 2 — 4-option build entry)
@@ -347,7 +349,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
-        setWeeklyBuilderSession({ isActive: true });
+        setWeeklyBuilderSession({
+          isActive: true,
+          sourceTemplate: params?.sourceTemplate as WorkoutTemplate | undefined,
+        });
       } else if (screen === 'BuildMethodLanding') {
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
@@ -754,7 +759,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     } else if (weeklyBuilderSession.isActive) {
       return (
         <ScreenErrorBoundary screenName="WeeklyBuilderScreen">
-          <WeeklyBuilderScreen navigation={navigation} />
+          <WeeklyBuilderScreen
+            navigation={navigation}
+            sourceTemplate={weeklyBuilderSession.sourceTemplate}
+          />
         </ScreenErrorBoundary>
       );
     } else if (workoutDetailSession.isActive && workoutDetailSession.workout) {

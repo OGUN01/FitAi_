@@ -72,8 +72,10 @@ const DAY_LABELS = [
   'Sunday',
 ] as const;
 
-// Rest-day violet — same note as WeeklyPlanOverview (no token available).
-const REST_DAY_VIOLET = '#A78BFA';
+// Rest-day violet — sourced from the `colors.rest` token (aurora-tokens.ts).
+// Mirrors WeeklyPlanOverview; both consumers share the single token so the
+// rest-day accent stays in sync across the weekly plan + full-plan views.
+const REST_DAY_VIOLET = colors.rest;
 
 interface DayRowModel {
   dayKey: (typeof DAY_KEYS)[number];

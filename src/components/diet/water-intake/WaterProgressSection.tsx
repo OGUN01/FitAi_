@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { flatColors as colors } from '../../../theme/aurora-tokens';
 import { rf, rp, rbr } from '../../../utils/responsive';
@@ -29,15 +28,14 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
         </Text>
       </View>
       <View style={styles.progressBar}>
-        <LinearGradient
-          colors={
-            isGoalReached
-              ? [colors.successAlt, colors.successAltDark]
-              : [colors.secondary, colors.primary]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.progressFill, { width: `${progress}%` }]}
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${progress}%`,
+              backgroundColor: isGoalReached ? colors.successAlt : colors.primary,
+            },
+          ]}
         />
       </View>
       {isGoalReached && (
@@ -71,6 +69,7 @@ const styles = StyleSheet.create({
     fontSize: rf(22),
     fontWeight: '700',
     color: colors.white,
+    fontVariant: ['tabular-nums'],
   },
   progressGoal: {
     fontSize: rf(13),
@@ -79,7 +78,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: rp(12),
-    backgroundColor: colors.glassHighlight,
+    backgroundColor: colors.surface,
     borderRadius: rbr(6),
     overflow: 'hidden',
   },
