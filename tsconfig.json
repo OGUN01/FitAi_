@@ -74,7 +74,6 @@
     "src/utils/**/test*.ts",
     "src/utils/**/test*.tsx",
     "src/utils/integration.ts",
-    "src/utils/backendTest.ts",
     "**/*.test.ts",
     "**/*.test.tsx"
   ]
