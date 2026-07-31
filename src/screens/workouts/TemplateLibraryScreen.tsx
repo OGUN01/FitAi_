@@ -493,8 +493,9 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const handleUseInSchedule = useCallback(
     (template: WorkoutTemplate) => {
       setDetailVisible(false);
-      // The WeeklyBuilder seeds this template into the first empty day of
-      // the draft (buildDayWorkoutFromTemplate + updateDay) on mount.
+      // The WeeklyBuilder presents a day-picker sheet on arrival (Mon–Sun,
+      // empty days highlighted, first empty day pre-selected) and seeds the
+      // template into the day the user confirms — never silently.
       navigation.navigate("WeeklyBuilder", { sourceTemplate: template });
     },
     [navigation],

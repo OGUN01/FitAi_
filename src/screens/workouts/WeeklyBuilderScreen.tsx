@@ -11,6 +11,11 @@
  * Back button: if draftDirty, show CustomDialog "Discard changes?" — only
  * discard on confirm.
  *
+ * Template seeding ("Use in Schedule" from TemplateLibrary): when a
+ * sourceTemplate arrives, a DetentBottomSheet day-picker (Mon–Sun rows,
+ * OptionRow-style) lets the user choose the target day. The first EMPTY day
+ * is only the pre-selected default; confirm applies, cancel = no seeding.
+ *
  * Uses useMoveExerciseBetweenDays for cross-day exercise drag (the hook is
  * available in handlers.ts; v1 ships within-day reorder via ExerciseRow's
  * useDragToReorder, and the cross-day hook is available for Phase 8 polish
@@ -23,6 +28,7 @@ import {
   StyleSheet,
   ScrollView,
   LayoutChangeEvent,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,6 +36,8 @@ import { GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, FadeInUp } from "react-native-reanimated";
 import { AuroraBackground, AuroraSpinner } from "../../components/ui/aurora";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { DetentBottomSheet } from "../../components/ui/aurora/DetentBottomSheet";
+import { GlassButton } from "../../components/ui/aurora/GlassButton";
 import { CustomDialog } from "../../components/ui/CustomDialog";
 import { DayBlock } from "../../components/fitness/builder/DayBlock";
 import { ExercisePickerSheet } from "../../components/fitness/builder/ExercisePickerSheet";
@@ -63,13 +71,24 @@ interface Props {
   };
   /**
    * Template passed by TemplateLibraryScreen's "Use in Schedule" action.
-   * Seeded into the first empty day of the draft once hydration completes.
+   * On arrival a day-picker sheet lets the user choose the target day
+   * (first empty day is only the pre-selected default); the template is
+   * seeded only when the user confirms.
    */
   sourceTemplate?: WorkoutTemplate;
 }
 
 const DAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
 const DAY_SHORT = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+const DAY_FULL = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Props) {
   // ── Store subscriptions ──
@@ -132,13 +151,19 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   }, [hydrateFromCustomPlan]);
 
   // ── Seed from TemplateLibrary "Use in Schedule" ──
-  // Runs once per activation, after hydration, so the seed lands on the
-  // freshly hydrated draft (never on a stale one that hydrate then wipes).
-  const seededTemplateRef = useRef<string | null>(null);
+  // Runs once per activation, after hydration, so the picker reflects the
+  // freshly hydrated draft (never a stale one that hydrate then wipes).
+  // The user picks the target day in a DetentBottomSheet — the first empty
+  // day is only the PRE-SELECTED default. Confirm applies; cancel (button,
+  // close icon, or swipe dismiss) means NO seeding and no silent fallback.
+  const presentedTemplateRef = useRef<string | null>(null);
+  const [dayPickerVisible, setDayPickerVisible] = useState(false);
+  const [pickedDayIndex, setPickedDayIndex] = useState<number | null>(null);
+
   useEffect(() => {
     if (!hydrated || !draft || !sourceTemplate) return;
-    if (seededTemplateRef.current === sourceTemplate.id) return;
-    seededTemplateRef.current = sourceTemplate.id;
+    if (presentedTemplateRef.current === sourceTemplate.id) return;
+    presentedTemplateRef.current = sourceTemplate.id;
 
     const emptyIdx = draft.workouts.findIndex(
       (d) => (d.plannedExercises?.length ?? d.exercises?.length ?? 0) === 0,
@@ -151,21 +176,53 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
       return;
     }
 
+    setPickedDayIndex(emptyIdx);
+    setDayPickerVisible(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, draft, sourceTemplate]);
+
+  // Confirm: seed the template into the user-picked day (same single-day
+  // model as before — buildDayWorkoutFromTemplate + updateDay).
+  const handleConfirmTemplateDay = useCallback(() => {
+    setDayPickerVisible(false);
+    if (!sourceTemplate || pickedDayIndex == null) return;
+    const idx = pickedDayIndex;
+    const day = useWorkoutBuilderStore.getState().draft?.workouts[idx];
+    if (!day) return;
+    // Never overwrite an occupied day from this flow (picker rows for
+    // occupied days are disabled; this is the belt-and-suspenders guard).
+    const occupied =
+      (day.plannedExercises?.length ?? day.exercises?.length ?? 0) > 0;
+    if (occupied) return;
+
     const dayWorkout = buildDayWorkoutFromTemplate(sourceTemplate, {
-      dayOfWeek: draft.workouts[emptyIdx].dayOfWeek,
+      dayOfWeek: day.dayOfWeek,
       isExtra: false,
     });
     // The builder's primary structure is plannedExercises — populate it too
     // (buildDayWorkoutFromTemplate only fills the simple exercises shape).
     dayWorkout.plannedExercises = sourceTemplate.exercises.map(fromTemplateExercise);
-    updateDay(emptyIdx, dayWorkout);
-    setSelectedDay(emptyIdx);
-    setExpandedDay(emptyIdx);
+    updateDay(idx, dayWorkout);
+    setSelectedDay(idx);
+    setExpandedDay(idx);
     computeInsights(userWeightKg).catch(() => {
       /* logged in store */
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, draft, sourceTemplate]);
+    haptics.success();
+  }, [
+    sourceTemplate,
+    pickedDayIndex,
+    updateDay,
+    setSelectedDay,
+    setExpandedDay,
+    computeInsights,
+    userWeightKg,
+  ]);
+
+  // Cancel / dismiss: template is NOT applied — no silent fallback.
+  const handleCancelTemplateDay = useCallback(() => {
+    setDayPickerVisible(false);
+  }, []);
 
   // Recompute insights when user weight becomes available (after hydration)
   useEffect(() => {
@@ -593,6 +650,130 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
         onDismiss={() => setDiscardDialogVisible(false)}
       />
 
+      {/*
+        Template day-picker — shown on arrival with a sourceTemplate
+        ("Use in Schedule"). Mon–Sun OptionRow-style rows: empty days are
+        selectable (sublabel "Empty", highlighted), occupied days are
+        disabled and show their current workout. The first empty day is the
+        pre-selected default only. Confirm seeds into the picked day;
+        cancel / close / swipe-dismiss = no seeding, no silent fallback.
+      */}
+      <DetentBottomSheet
+        visible={dayPickerVisible}
+        onClose={handleCancelTemplateDay}
+        snapPoints={[0.72, 0.92]}
+        initialSnapIndex={0}
+        testID="template-day-picker-sheet"
+      >
+        <Text style={styles.sheetEyebrow}>ADD TO SCHEDULE</Text>
+        <Text style={styles.sheetTitle} numberOfLines={2}>
+          Choose a day for {sourceTemplate?.name ?? "this template"}
+        </Text>
+        <Text style={styles.sheetMessage}>
+          Empty days are available. Occupied days keep their current workout.
+        </Text>
+
+        <ScrollView
+          style={styles.dayRowsScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {DAYS_OF_WEEK.map((dayKey, idx) => {
+            const day = draft.workouts[idx];
+            const count =
+              day?.plannedExercises?.length ?? day?.exercises?.length ?? 0;
+            const occupied = count > 0;
+            const selected = pickedDayIndex === idx;
+            const sublabel = occupied
+              ? `${count} exercise${count === 1 ? "" : "s"} · ${day.title}`
+              : "Empty";
+            return (
+              <Pressable
+                key={dayKey}
+                disabled={occupied}
+                onPress={() => {
+                  haptics.selection();
+                  setPickedDayIndex(idx);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  occupied
+                    ? `${DAY_FULL[idx]}, occupied with ${day.title}, ${count} exercise${count === 1 ? "" : "s"}`
+                    : `${DAY_FULL[idx]}, empty`
+                }
+                accessibilityState={{ selected, disabled: occupied }}
+                testID={`day-picker-row-${dayKey}`}
+                style={({ pressed }) => [
+                  styles.dayRow,
+                  pressed && !occupied && styles.dayRowPressed,
+                ]}
+              >
+                <View style={styles.dayRowInner}>
+                  {/* 2px left-edge slot: accent bar when selected,
+                      transparent spacer otherwise (no label shift). */}
+                  <View style={styles.dayRowBarSlot}>
+                    <View
+                      style={[
+                        styles.dayRowBar,
+                        !selected && styles.dayRowBarHidden,
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.dayRowText}>
+                    <Text
+                      style={[
+                        styles.dayRowLabel,
+                        !selected && styles.dayRowLabelUnselected,
+                        occupied && styles.dayRowLabelDisabled,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {DAY_FULL[idx]}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dayRowSublabel,
+                        !occupied && styles.dayRowSublabelEmpty,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {sublabel}
+                    </Text>
+                  </View>
+                  {selected ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={rf(18)}
+                      color={colors.primary}
+                      style={styles.dayRowCheck}
+                    />
+                  ) : null}
+                </View>
+                <View style={styles.dayRowHairline} />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.sheetActions}>
+          <GlassButton
+            label="Cancel"
+            onPress={handleCancelTemplateDay}
+            variant="secondary"
+            hapticType="light"
+            style={styles.sheetActionBtn}
+            testID="day-picker-cancel"
+          />
+          <GlassButton
+            label="Add to Day"
+            onPress={handleConfirmTemplateDay}
+            variant="primary"
+            hapticType="medium"
+            style={styles.sheetActionBtn}
+            testID="day-picker-confirm"
+          />
+        </View>
+      </DetentBottomSheet>
+
       {/* Exercise picker — Phase 4 overlay. Mounted once at screen level and
           driven by pickerOpen/pickerContext on the workoutBuilderStore. */}
       <View style={styles.pickerLayer}>
@@ -763,5 +944,101 @@ const styles = StyleSheet.create({
   editorLayer: {
     zIndex: 1300,
     elevation: 1300,
+  },
+  // ── Template day-picker sheet (OptionRow-style rows) ──
+  sheetEyebrow: {
+    fontSize: rf(11),
+    fontFamily: FONT_FAMILY.bold,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+  },
+  sheetTitle: {
+    fontSize: rf(22),
+    fontFamily: FONT_FAMILY.extrabold,
+    fontWeight: "800",
+    color: colors.text,
+    lineHeight: rf(27),
+    letterSpacing: -0.2,
+    marginTop: rp(spacing.xs),
+  },
+  sheetMessage: {
+    fontSize: rf(13),
+    color: colors.textSecondary,
+    lineHeight: rf(18),
+    marginTop: rp(spacing.xs),
+    marginBottom: rp(spacing.sm),
+  },
+  dayRowsScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  dayRow: {
+    // Full-width row; content mirrors OptionRow (accent bar slot + label
+    // column + trailing check) with a hairline below. >=44pt touch target.
+    minHeight: Math.max(rp(52), 44),
+    justifyContent: "center",
+  },
+  dayRowPressed: {
+    opacity: 0.6,
+  },
+  dayRowInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "transparent",
+    minHeight: Math.max(rp(52), 44),
+  },
+  dayRowBarSlot: {
+    width: rw(2),
+    alignSelf: "stretch",
+    marginRight: rp(14),
+  },
+  dayRowBar: {
+    flex: 1,
+    backgroundColor: colors.primary,
+  },
+  dayRowBarHidden: {
+    backgroundColor: "transparent",
+  },
+  dayRowText: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  dayRowLabel: {
+    fontSize: rf(15),
+    fontFamily: FONT_FAMILY.semibold,
+    fontWeight: "600",
+    color: colors.text,
+  },
+  dayRowLabelUnselected: {
+    color: colors.textSecondary,
+  },
+  dayRowLabelDisabled: {
+    color: colors.textTertiary,
+  },
+  dayRowSublabel: {
+    fontSize: rf(12),
+    color: colors.textTertiary,
+    marginTop: rp(2),
+  },
+  dayRowSublabelEmpty: {
+    color: colors.primary,
+  },
+  dayRowCheck: {
+    marginLeft: rp(12),
+  },
+  dayRowHairline: {
+    height: 1,
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    alignSelf: "stretch",
+  },
+  sheetActions: {
+    flexDirection: "row",
+    gap: rp(spacing.sm),
+    marginTop: rp(spacing.md),
+  },
+  sheetActionBtn: {
+    flex: 1,
   },
 });

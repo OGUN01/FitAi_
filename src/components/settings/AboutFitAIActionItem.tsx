@@ -15,6 +15,8 @@ interface AboutFitAIActionItemProps {
   description: string;
   onPress: () => void;
   animationDelay: number;
+  accessibilityLabel?: string;
+  testID?: string;
 }
 
 export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
@@ -24,6 +26,8 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
   description,
   onPress,
   animationDelay,
+  accessibilityLabel,
+  testID,
 }) => {
   return (
     <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
@@ -34,6 +38,9 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
         }}
         scaleValue={0.98}
         hapticFeedback={false}
+        accessibilityLabel={accessibilityLabel ?? title}
+        accessibilityHint={description}
+        testID={testID}
       >
         <GlassCard
           elevation={1}

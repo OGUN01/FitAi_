@@ -18,6 +18,16 @@ const openUrl = (url: string) => {
   }
 };
 
+// Store listing URLs. The Android package is read from the Expo app config
+// (app.config.js → expo.android.package); the Play Store URL is a placeholder
+// until the listing is live. The iOS URL needs the numeric App Store ID
+// assigned at publish time — replace the placeholder then.
+const ANDROID_PACKAGE =
+  Constants.expoConfig?.android?.package ?? "com.fitai.app";
+export const APP_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
+const PLAY_STORE_MARKET_URL = `market://details?id=${ANDROID_PACKAGE}`;
+const IOS_APP_STORE_URL = "https://apps.apple.com/app/id0000000000"; // TODO(store-listing): real App Store ID once published
+
 export interface FeatureItem {
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
@@ -78,9 +88,8 @@ export const useAboutFitAILogic = () => {
 
   const handleShareApp = useCallback(async () => {
     haptics.success();
-    const shareUrl = "https://fitai.app";
-    const shareMessage =
-      "Check out FitAI — your AI-powered fitness companion! Personalized workouts, AI meal plans, and smart progress tracking. https://fitai.app";
+    const shareUrl = APP_STORE_URL;
+    const shareMessage = `Check out FitAI — your AI-powered fitness companion! Personalized workouts, AI meal plans, and smart progress tracking. Get it here: ${APP_STORE_URL}`;
     try {
       if (Platform.OS === "web") {
         const nav = globalThis.navigator;
@@ -95,7 +104,7 @@ export const useAboutFitAILogic = () => {
         } else {
           crossPlatformAlert(
             "Share FitAI",
-            "Copy this link to invite friends: https://fitai.app",
+            `Copy this link to invite friends: ${APP_STORE_URL}`,
           );
         }
       } else {
@@ -105,6 +114,42 @@ export const useAboutFitAILogic = () => {
       // User dismissing the share sheet also rejects on some platforms — not an error.
       if (error instanceof Error && error.name === "AbortError") return;
       console.error("[useAboutFitAILogic] Share failed:", error);
+    }
+  }, []);
+
+  const handleRateApp = useCallback(async () => {
+    haptics.light();
+    try {
+      if (Platform.OS === "web") {
+        globalThis.open(APP_STORE_URL, "_blank");
+        return;
+      }
+      if (Platform.OS === "ios") {
+        await Linking.openURL(IOS_APP_STORE_URL);
+        return;
+      }
+      // Android: prefer the native Play Store app via market://, falling back
+      // to the https:// listing in a browser (same pattern as Health Connect
+      // install prompt in services/health/core.ts).
+      try {
+        const canOpenMarket = await Linking.canOpenURL(PLAY_STORE_MARKET_URL);
+        if (canOpenMarket) {
+          await Linking.openURL(PLAY_STORE_MARKET_URL);
+          return;
+        }
+      } catch (marketError) {
+        console.error(
+          "[useAboutFitAILogic] market:// open failed, falling back to https:",
+          marketError,
+        );
+      }
+      await Linking.openURL(APP_STORE_URL);
+    } catch (error) {
+      console.error("[useAboutFitAILogic] Failed to open store listing:", error);
+      crossPlatformAlert(
+        "Unable to Open Store",
+        "FitAI could not open the store listing on this device. Please try again later.",
+      );
     }
   }, []);
 
@@ -190,6 +235,7 @@ export const useAboutFitAILogic = () => {
     buildNumber,
     features,
     handleShareApp,
+    handleRateApp,
     handleWebsite,
     handleSocialMedia,
     handleTermsOfService,

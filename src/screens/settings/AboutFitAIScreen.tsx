@@ -33,6 +33,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
     appVersion,
     features,
     handleShareApp,
+    handleRateApp,
     handleWebsite,
     handleSocialMedia,
     handleTermsOfService,
@@ -115,8 +116,16 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Text style={styles.sectionTitle}>Support FitAI</Text>
             </View>
 
-            {/* "Rate the App" is intentionally omitted until the app is
-                published on a store and a real listing URL exists. */}
+            <AboutFitAIActionItem
+              icon="star-outline"
+              iconColor={colors.warning}
+              title="Rate FitAI"
+              description="Enjoying FitAI? Leave us a review on the store"
+              onPress={handleRateApp}
+              animationDelay={600}
+              accessibilityLabel="Rate FitAI"
+              testID="about-rate-fitai"
+            />
 
             <AboutFitAIActionItem
               icon="share-social-outline"
@@ -125,6 +134,8 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               description="Invite friends to join your fitness journey"
               onPress={handleShareApp}
               animationDelay={650}
+              accessibilityLabel="Share FitAI with friends"
+              testID="about-share-fitai"
             />
 
             <AboutFitAIActionItem
