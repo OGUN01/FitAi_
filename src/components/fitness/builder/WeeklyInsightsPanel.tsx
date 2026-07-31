@@ -430,7 +430,14 @@ const CoverageBar: React.FC<{ bar: CoverageBarData; index: number }> = ({
     <View style={styles.coverageRow}>
       <View style={styles.coverageHeader}>
         <Text style={styles.coverageLabel}>{bar.label}</Text>
-        <Text style={styles.coverageValue}>
+        {/* Zero-coverage reads neutral, not accent — "0 sets" in the same
+            orange as populated values implied coverage that isn't there. */}
+        <Text
+          style={[
+            styles.coverageValue,
+            bar.value === 0 && { color: colors.text.tertiary },
+          ]}
+        >
           {bar.value}
           {bar.unit}
         </Text>

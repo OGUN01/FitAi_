@@ -330,6 +330,10 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
                 <AnimatedPressable
                   onPress={() => setPasswordVisible((prev) => !prev)}
                   scaleValue={0.9}
+                  // Absolute anchor lives on the outer wrapper (containerStyle),
+                  // size-only on the inner Pressable (style) — same
+                  // wrapper-anchoring fix as WelcomeScreen's eye toggle.
+                  containerStyle={styles.eyeToggleAnchor}
                   style={styles.eyeToggle}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
@@ -367,6 +371,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
                   <AnimatedPressable
                     onPress={() => setConfirmPasswordVisible((prev) => !prev)}
                     scaleValue={0.9}
+                    containerStyle={styles.eyeToggleAnchor}
                     style={styles.eyeToggle}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="button"
@@ -564,10 +569,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  eyeToggle: {
+  eyeToggleAnchor: {
     position: "absolute",
     right: 0,
     top: spacing.sm,
+  },
+
+  eyeToggle: {
     width: 44,
     height: 44,
     alignItems: "center",

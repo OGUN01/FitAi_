@@ -8,14 +8,13 @@
  * radius 12 (chips). selectionAsync on select.
  */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { StyleSheet, Pressable, View, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-  useDerivedValue,
   runOnJS,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
@@ -68,10 +67,13 @@ export const ChipPicker: React.FC<ChipPickerProps> = ({
   style,
   testID,
 }) => {
-  const selectedSet = useDerivedValue(() => {
-    const arr = Array.isArray(value) ? value : [value];
-    return new Set(arr);
-  });
+  // Plain JS memo — `value` is a regular prop, not a shared value. A
+  // useDerivedValue here forced a `.value` read during React render (Reanimated
+  // strict warning) and could serve a stale set between worklet re-evals.
+  const selectedSet = useMemo(
+    () => new Set(Array.isArray(value) ? value : [value]),
+    [value],
+  );
 
   const handleSelect = useCallback(
     (id: string) => {
@@ -87,7 +89,7 @@ export const ChipPicker: React.FC<ChipPickerProps> = ({
         <Chip
           key={opt.id}
           option={opt}
-          selected={selectedSet.value.has(opt.id)}
+          selected={selectedSet.has(opt.id)}
           suggested={!!suggestions && suggestions.includes(opt.id)}
           accentColor={accentColor}
           onPress={handleSelect}
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
   chipLabel: {
     fontFamily: typography.variants.body.fontFamily,
     fontSize: typography.variants.body.fontSize,
-    lineHeight: typography.variants.body.fontSize * typography.variants.body.lineHeight,
+    lineHeight: typography.variants.body.lineHeight,
   },
   bulb: {
     width: 6,

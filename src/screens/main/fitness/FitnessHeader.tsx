@@ -25,8 +25,10 @@ interface FitnessHeaderProps {
 export const FitnessHeader: React.FC<FitnessHeaderProps> = ({ userName, onCalendarPress }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
+    // Daypart boundaries match HomeHeader (afternoon = 12–18) so the greeting
+    // stays consistent when the user switches between Home and Workout tabs.
     if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
+    if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   };
 

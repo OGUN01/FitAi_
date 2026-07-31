@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: typography.variants.caption.fontSize,
-    lineHeight: typography.variants.caption.fontSize * typography.variants.caption.lineHeight,
+    lineHeight: typography.variants.caption.lineHeight,
     color: colors.text.tertiary,
     marginBottom: spacing.xs,
   },
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontFamily: typography.variants.sectionTitle.fontFamily,
     fontSize: typography.variants.sectionTitle.fontSize,
-    lineHeight: typography.variants.sectionTitle.fontSize * typography.variants.sectionTitle.lineHeight,
+    lineHeight: typography.variants.sectionTitle.lineHeight,
     color: colors.text.primary,
     marginBottom: spacing.md,
   },

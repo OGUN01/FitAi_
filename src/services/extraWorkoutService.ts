@@ -13,6 +13,7 @@ import {
 } from "./calorieCalculator";
 import { generateUUID } from "../utils/uuid";
 import { getCurrentWeekStart, getCurrentDayName } from "../utils/weekUtils";
+import { normalizeSnapshotReps } from "../utils/workoutIdentity";
 import type {
   ExtraWorkoutTemplate,
   CompletedSession,
@@ -232,7 +233,7 @@ export async function completeExtraWorkout(
         exercises: (workout.exercises || []).map((ex: any) => ({
           name: ex.exerciseName || ex.name || "",
           sets: typeof ex.sets === "number" ? ex.sets : 0,
-          reps: typeof ex.reps === "number" ? ex.reps : 0,
+          reps: normalizeSnapshotReps(ex.reps),
           exerciseId: ex.exerciseId || ex.id,
           duration: ex.duration,
           restTime: ex.restTime,

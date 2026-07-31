@@ -203,9 +203,9 @@ const styles = StyleSheet.create({
   metaText: {
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: rf(typography.variants.caption.fontSize),
-    // RN lineHeight is absolute points — the token is a 1.4 multiplier, so
-    // convert to points (≈17) like coachText does above.
-    lineHeight: rf(typography.variants.caption.fontSize * typography.variants.caption.lineHeight),
+    // RN lineHeight is absolute points — the variant token now carries the
+    // pre-computed absolute value (16.8 ≈ 12 × 1.4), so scale it directly.
+    lineHeight: rf(typography.variants.caption.lineHeight),
     color: colors.textSecondary,
     marginBottom: spacing.md,
   },

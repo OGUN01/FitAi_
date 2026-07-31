@@ -73,14 +73,14 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: typography.variants.sectionTitle.fontFamily,
     fontSize: typography.variants.sectionTitle.fontSize,
-    lineHeight: typography.variants.sectionTitle.fontSize * typography.variants.sectionTitle.lineHeight,
+    lineHeight: typography.variants.sectionTitle.lineHeight,
     color: colors.text.primary,
   },
   subtitle: {
     marginTop: spacing.xxs,
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: typography.variants.caption.fontSize,
-    lineHeight: typography.variants.caption.fontSize * typography.variants.caption.lineHeight,
+    lineHeight: typography.variants.caption.lineHeight,
     color: colors.text.secondary,
   },
   right: {

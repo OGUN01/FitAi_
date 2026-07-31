@@ -366,9 +366,12 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
       <GestureDetector gesture={Gesture.Simultaneous(dragGesture, swipeGesture)}>
         <Animated.View
           style={[styles.row, dragAnimatedStyle, swipeAnimatedStyle]}
-          accessibilityRole="button"
+          // NOT role=button: this is a multi-gesture surface (tap / double-tap /
+          // long-press / swipe), and the role made RN-web render a real <button>
+          // wrapping the favourite + kebab <button>s — invalid nested buttons
+          // (React hydration error). Every concrete action has its own labeled
+          // button (favourite, kebab, swipe duplicate/replace/delete).
           accessibilityLabel={`${exercise.name}. ${setCount} sets of ${repsLabel}. Double-tap to favorite, swipe left for actions, long-press to drag.`}
-          accessibilityHint="Double tap to enter reorder mode, then swipe up/down to move. Swipe left to reveal duplicate, replace, delete actions."
         >
           {/* Tap gestures on a separate inner detector so the row body is
               tappable without conflicting with the drag/swipe pan. */}
@@ -586,6 +589,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(spacing.xs),
     marginTop: rp(spacing.xxs),
+    // Let the equipment·difficulty meta wrap under the muscle chips instead of
+    // shrinking to a few px and clipping mid-word on narrow layouts.
+    flexWrap: "wrap",
   },
   muscleChip: {
     backgroundColor: colors.glass.backgroundLight,

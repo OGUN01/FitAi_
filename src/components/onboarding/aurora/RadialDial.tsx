@@ -318,7 +318,12 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",
-  },
+    // Web: RNGH pan gestures are pointercancel'd by the browser's native
+    // scroll unless touch-action is none — without this the ring drag never
+    // reaches onBegin on web (native unaffected; RN-web forwards the CSS).
+    // Not in RN's ViewStyle types — same cast pattern as `background` above.
+    touchAction: "none",
+  } as unknown as ViewStyle,
   fallbackRing: {
     borderColor: surface[2],
   },
@@ -339,7 +344,7 @@ const styles = StyleSheet.create({
   value: {
     fontFamily: typography.variants.heroStat.fontFamily,
     fontSize: typography.variants.heroStat.fontSize,
-    lineHeight: typography.variants.heroStat.fontSize * typography.variants.heroStat.lineHeight,
+    lineHeight: typography.variants.heroStat.lineHeight,
     color: colors.text.primary,
   },
   label: {

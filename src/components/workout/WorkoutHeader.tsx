@@ -106,10 +106,14 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         </View>
       </View>
 
-      {/* Secondary row: plain muted meta line (title · week · cal · volume) */}
+      {/* Secondary row: plain muted meta line (title · week · cal · volume).
+          Title shrinks/ellipsizes; the stats suffix never clips — prevents a
+          dangling "• …" when the plan name is long. */}
       <View style={styles.metaRow}>
-        <Text style={styles.metaText} numberOfLines={1}>
+        <Text style={[styles.metaText, styles.metaTitle]} numberOfLines={1}>
           {safeString(workoutTitle, 'Workout')}
+        </Text>
+        <Text style={styles.metaText} numberOfLines={1}>
           {mesocycleWeek != null && mesocycleWeek > 0 ? `${BULLET}WK ${mesocycleWeek}` : ''}
           {`${BULLET}${safeString(calories)} KCAL`}
           {displayVolume != null ? `${BULLET}${displayVolume.toLocaleString()} ${userUnits.toUpperCase()}` : ''}
@@ -154,7 +158,9 @@ const styles = StyleSheet.create({
   },
   timeWrap: {
     // Balance the 44pt close button on the left so the index stays centered.
-    width: Math.max(rw(40), 44),
+    // minWidth (not fixed width): longer durations like "11:32" must not be
+    // clipped to "11..." — the wrap grows right-aligned beyond 44pt.
+    minWidth: Math.max(rw(40), 44),
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
@@ -166,7 +172,12 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     marginTop: rp(spacing.xxs),
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  metaTitle: {
+    flexShrink: 1,
   },
   metaText: {
     fontSize: rf(11),

@@ -221,6 +221,36 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           </View>
         )}
 
+        {/* Persistent blocking-error callout: the AdjustmentWizard auto-surfaces
+            on recalculation, but applying an alternative (or dismissing it)
+            closes the sheet while the underlying error can still be active —
+            leaving Complete Setup disabled with zero on-screen explanation.
+            Keep the reason + a reopen path visible whenever that happens. */}
+        {hasBlockingErrors && !showErrorWizard && (
+          <View style={styles.callout}>
+            <Rule />
+            <View style={styles.calloutRow}>
+              <Ionicons name="alert-circle" size={18} color={tokens.danger} />
+              <Text style={styles.calloutTextDanger}>
+                {typeof validationResults?.errors[0] === "string"
+                  ? validationResults.errors[0]
+                  : (validationResults?.errors[0]?.message ??
+                    "Your plan needs adjustment before continuing.")}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setShowErrorWizard(true)}
+              style={styles.retryButton}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Review plan adjustment options"
+            >
+              <Text style={styles.retryText}>Review options</Text>
+            </Pressable>
+            <Rule />
+          </View>
+        )}
+
         {successMessage && (
           <View style={styles.callout}>
             <Rule />

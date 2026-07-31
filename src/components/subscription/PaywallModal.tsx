@@ -360,7 +360,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: rbr(24),
     borderTopRightRadius: rbr(24),
-    maxHeight: rh(2208),
+    // Constrain to the viewport: the old rh(2208) cap (~1813px on a 700px web
+    // viewport) let tall content push the header — and its "Close paywall"
+    // button — above the visible area (overlay aligns to flex-end). A
+    // percentage cap keeps the sheet inside the window on every platform and
+    // lets scrollArea flex + scroll within it.
+    maxHeight: "94%",
     minHeight: rh(420),
     borderTopWidth: 1,
     borderLeftWidth: 1,

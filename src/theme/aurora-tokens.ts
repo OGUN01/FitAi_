@@ -186,20 +186,23 @@ export const typography = {
    * Semantic text variants — one consistent Manrope family + weight pairing
    * per use, per the Aurora 2026 type scale. `fontFamily` strings match the
    * loaded native families in `src/theme/fonts.ts` (FONT_FAMILY).
-   * Line-height expressed as a multiplier (RN multiplies by fontSize).
+   * IMPORTANT: RN `lineHeight` is ABSOLUTE density-independent points, NOT a
+   * CSS-style multiplier — values below are pre-computed fontSize × ratio.
+   * A sub-fontSize lineHeight clips glyphs on Android (observed on ColorOS:
+   * chip labels + ring hero score rendered as slivers).
    */
   variants: {
-    pageTitle: { fontFamily: 'Manrope_700Bold', fontSize: 28, lineHeight: 1.3 },
-    sectionTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 18, lineHeight: 1.4 },
-    cardHeadline: { fontFamily: 'Manrope_600SemiBold', fontSize: 16, lineHeight: 1.4 },
-    body: { fontFamily: 'Manrope_400Regular', fontSize: 15, lineHeight: 1.5 },
-    caption: { fontFamily: 'Manrope_500Medium', fontSize: 12, lineHeight: 1.4 },
+    pageTitle: { fontFamily: 'Manrope_700Bold', fontSize: 28, lineHeight: 36.4 }, // 28 × 1.3
+    sectionTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 18, lineHeight: 25.2 }, // 18 × 1.4
+    cardHeadline: { fontFamily: 'Manrope_600SemiBold', fontSize: 16, lineHeight: 22.4 }, // 16 × 1.4
+    body: { fontFamily: 'Manrope_400Regular', fontSize: 15, lineHeight: 22.5 }, // 15 × 1.5
+    caption: { fontFamily: 'Manrope_500Medium', fontSize: 12, lineHeight: 16.8 }, // 12 × 1.4
     // heroStat — the big ring/tile numbers (Apple Fitness hero caliber). 40
     // aligns to the 8pt grid (5×8); tabular feel via the ExtraBold Manrope face.
-    heroStat: { fontFamily: 'Manrope_800ExtraBold', fontSize: 40, lineHeight: 1.1 },
+    heroStat: { fontFamily: 'Manrope_800ExtraBold', fontSize: 40, lineHeight: 44 }, // 40 × 1.1
     // caption2 — the secondary 13px tier (between micro 12 and caption 14),
     // used by meal-type/time labels and hero sublines. First-class, not rogue.
-    caption2: { fontFamily: 'Manrope_500Medium', fontSize: 13, lineHeight: 1.4 },
+    caption2: { fontFamily: 'Manrope_500Medium', fontSize: 13, lineHeight: 18.2 }, // 13 × 1.4
   },
 } as const;
 

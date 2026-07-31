@@ -327,7 +327,9 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
           />
           <Text style={styles.sectionTitle}>Recent Activity</Text>
         </View>
-        <Text style={styles.sectionCount}>{workouts.length} workouts</Text>
+        <Text style={styles.sectionCount}>
+          {workouts.length} {workouts.length === 1 ? 'workout' : 'workouts'}
+        </Text>
       </View>
 
       {/* Workout Cards */}

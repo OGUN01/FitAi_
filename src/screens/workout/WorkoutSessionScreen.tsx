@@ -1202,7 +1202,7 @@ const styles = StyleSheet.create({
     width: rw(12),
     height: rw(12),
     borderRadius: borderRadius.full,
-    backgroundColor: hexToRgba(colors.text.primary, 0.15),
+    backgroundColor: hexToRgba(colors.text.primary, 0.28),
   },
   setDotCompleted: {
     backgroundColor: colors.primary.DEFAULT,

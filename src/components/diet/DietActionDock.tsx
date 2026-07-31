@@ -66,13 +66,12 @@ const DockButton: React.FC<{ action: DockAction }> = React.memo(({ action }) => 
 
   // Press feedback is a flat accent tint ramp on the icon disc (plus the
   // AnimatedPressable spring scale + haptic) — no cast glow shadows on
-  // Editorial Dark.
+  // Editorial Dark. Colors precomputed on the JS thread: hexToRgba is not a
+  // worklet and crashes the UI thread if called inside useAnimatedStyle.
+  const glowBgHidden = hexToRgba(colors.primary, TINT_ALPHA_LOW);
+  const glowBgShown = hexToRgba(colors.primary, TINT_ALPHA_MEDIUM);
   const glowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      glow.value,
-      [0, 1],
-      [hexToRgba(colors.primary, TINT_ALPHA_LOW), hexToRgba(colors.primary, TINT_ALPHA_MEDIUM)],
-    ),
+    backgroundColor: interpolateColor(glow.value, [0, 1], [glowBgHidden, glowBgShown]),
   }));
 
   return (
@@ -120,6 +119,9 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
   // animate translateY + opacity with a spring so the dock glides off the
   // bottom edge instead of snapping. When `hide` is undefined (no scroll
   // wiring) the dock stays permanently visible — the original behaviour.
+  // hiddenOffset is computed on the JS thread: rh() is not a worklet, and
+  // calling it inside useAnimatedStyle crashes the UI thread (reanimated 3.17).
+  const hiddenOffset = rh(100);
   const animatedStyle = useAnimatedStyle(() => {
     if (!hide) {
       return { transform: [{ translateY: 0 }], opacity: 1 };
@@ -128,7 +130,7 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
     return {
       transform: [
         {
-          translateY: withSpring(isHidden ? rh(100) : 0, springConfig.smooth),
+          translateY: withSpring(isHidden ? hiddenOffset : 0, springConfig.smooth),
         },
       ],
       opacity: withSpring(isHidden ? 0 : 1, springConfig.smooth),

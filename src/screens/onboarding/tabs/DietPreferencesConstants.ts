@@ -364,10 +364,50 @@ const COUNTRY_TO_CUISINE_ID: Record<string, string> = {
   IL: "middle-eastern",
 };
 
+/**
+ * Full country NAME → ISO for the S1 location field, which stores the
+ * display name ("India", "United States") rather than the ISO code. Without
+ * this alias the smart default could never fire for curated-list picks.
+ */
+const COUNTRY_NAME_TO_ISO: Record<string, string> = {
+  INDIA: "IN",
+  CHINA: "CN",
+  TAIWAN: "TW",
+  "HONG KONG": "HK",
+  SINGAPORE: "SG",
+  JAPAN: "JP",
+  "SOUTH KOREA": "KR",
+  KOREA: "KR",
+  THAILAND: "TH",
+  ITALY: "IT",
+  FRANCE: "FR",
+  SPAIN: "ES",
+  GREECE: "GR",
+  "UNITED STATES": "US",
+  USA: "US",
+  "UNITED STATES OF AMERICA": "US",
+  "UNITED KINGDOM": "GB",
+  UK: "GB",
+  "GREAT BRITAIN": "GB",
+  ENGLAND: "GB",
+  AUSTRALIA: "AU",
+  CANADA: "CA",
+  MEXICO: "MX",
+  "UNITED ARAB EMIRATES": "AE",
+  UAE: "AE",
+  "SAUDI ARABIA": "SA",
+  TURKEY: "TR",
+  TURKIYE: "TR",
+  LEBANON: "LB",
+  ISRAEL: "IL",
+};
+
 export function getCountryDerivedCuisine(
   country?: string | null,
 ): string | null {
   if (!country) return null;
-  const iso = country.trim().toUpperCase();
+  const key = country.trim().toUpperCase();
+  const iso = COUNTRY_TO_CUISINE_ID[key] ? key : COUNTRY_NAME_TO_ISO[key];
+  if (!iso) return null;
   return COUNTRY_TO_CUISINE_ID[iso] ?? null;
 }

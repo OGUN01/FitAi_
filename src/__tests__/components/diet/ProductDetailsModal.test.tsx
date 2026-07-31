@@ -1,10 +1,17 @@
 import React from "react";
 import { render } from "@testing-library/react-native";
 
-const mockSharedModal = jest.fn(
+// ProductDetailsModal renders through DetentBottomSheet (aurora redesign).
+// Mock it as a lightweight passthrough so tests can assert the product-details
+// UI without booting the full reanimated + gesture-handler stack.
+const mockDetentSheet = jest.fn(
   ({ visible = true, children, ...props }: any) =>
-    visible ? React.createElement("SharedModal", props, children) : null,
+    visible ? React.createElement("DetentBottomSheet", props, children) : null,
 );
+
+jest.mock("@/components/ui/aurora/DetentBottomSheet", () => ({
+  DetentBottomSheet: (props: any) => mockDetentSheet(props),
+}));
 
 jest.mock("react-native", () => {
   const React = require("react");
@@ -45,14 +52,14 @@ jest.mock("@/components/diet/HealthScoreIndicator", () => ({
   HealthScoreIndicator: () => null,
 }));
 
-jest.mock("@/components/ui/Modal", () => ({
-  Modal: (props: any) => mockSharedModal(props),
-}));
-
 jest.mock("@/utils/responsive", () => ({
   rf: (value: number) => value,
   rp: (value: number) => value,
   rh: (value: number) => value,
+  rw: (value: number) => value,
+  rbr: (value: number) => value,
+  // DetentBottomSheet reads dimensions.screenHeight at module-eval time.
+  dimensions: { screenWidth: 393, screenHeight: 852, baseWidth: 393, baseHeight: 852 },
 }));
 
 jest.mock("@/utils/constants", () => ({
@@ -108,10 +115,10 @@ import { ProductDetailsModal } from "@/components/diet/ProductDetailsModal";
 
 describe("ProductDetailsModal", () => {
   beforeEach(() => {
-    mockSharedModal.mockClear();
+    mockDetentSheet.mockClear();
   });
 
-  it("renders through the shared modal wrapper while preserving the product details UI", () => {
+  it("renders through DetentBottomSheet while preserving the product details UI", () => {
     const product = {
       barcode: "8900000000012",
       name: "Sabudana Khichdi",
@@ -138,10 +145,8 @@ describe("ProductDetailsModal", () => {
       />,
     );
 
-    const sharedModal = screen.UNSAFE_getByType("SharedModal");
-    expect(sharedModal.props.animationType).toBe("fade");
-    expect(sharedModal.props.closeOnOverlayPress).toBe(true);
-    expect(sharedModal.props.contentStyle.maxHeight).toBe(750);
+    // Renders through the aurora DetentBottomSheet wrapper.
+    expect(screen.UNSAFE_getByType("DetentBottomSheet")).toBeTruthy();
 
     expect(screen.getByText("Sabudana Khichdi")).toBeTruthy();
     expect(screen.getByText("Nutrition for 100g")).toBeTruthy();
@@ -151,7 +156,7 @@ describe("ProductDetailsModal", () => {
     const scrollView = screen.UNSAFE_getByType("ScrollView");
     expect(scrollView.props.keyboardShouldPersistTaps).toBe("always");
     expect(scrollView.props.keyboardDismissMode).toBe("on-drag");
-    expect(mockSharedModal).toHaveBeenCalledTimes(1);
+    expect(mockDetentSheet).toHaveBeenCalledTimes(1);
   });
 
   it("shows label-scan source text instead of a barcode for vision-label results", () => {

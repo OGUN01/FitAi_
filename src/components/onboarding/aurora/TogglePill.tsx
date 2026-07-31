@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: typography.variants.body.fontFamily,
     fontSize: typography.variants.body.fontSize,
-    lineHeight: typography.variants.body.fontSize * typography.variants.body.lineHeight,
+    lineHeight: typography.variants.body.lineHeight,
   },
   track: {
     width: 44,

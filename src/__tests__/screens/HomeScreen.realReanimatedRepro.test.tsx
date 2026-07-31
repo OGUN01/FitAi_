@@ -56,6 +56,12 @@ jest.mock("react-native-reanimated", () => {
       ReactRef.useRef();
       return { value: updater() };
     },
+    // DailyProgressRings wires a derived value into an opacity via
+    // useAnimatedReaction. Register a useRef so React's hook-count invariant
+    // matches the real component (which calls the real hook there).
+    useAnimatedReaction: () => {
+      ReactRef.useRef();
+    },
     // DailyProgressRings breathing animation calls useReducedMotion to gate the
     // pulse for a11y. Not a hook in the React-counting sense here (returns a
     // plain bool) — but must exist on the mock so the component renders.

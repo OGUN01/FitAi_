@@ -90,6 +90,11 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       disableAnimation={isDisabled}
       containerStyle={[
         styles.container,
+        // Solid fallback under the gradient: on devices where the native
+        // gradient view paints nothing (observed on ColorOS HWUI), the
+        // button stays visible in the gradient's base color instead of
+        // disappearing entirely.
+        { backgroundColor: gradColors[0] },
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,
         style,

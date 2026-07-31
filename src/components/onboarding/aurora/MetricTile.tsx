@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: typography.variants.caption.fontSize,
-    lineHeight: typography.variants.caption.fontSize * typography.variants.caption.lineHeight,
+    lineHeight: typography.variants.caption.lineHeight,
     color: colors.text.secondary,
   },
   valueRow: {
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   value: {
     fontFamily: typography.variants.heroStat.fontFamily,
     fontSize: typography.variants.heroStat.fontSize,
-    lineHeight: typography.variants.heroStat.fontSize * typography.variants.heroStat.lineHeight,
+    lineHeight: typography.variants.heroStat.lineHeight,
   },
   unit: {
     fontFamily: typography.variants.caption2.fontFamily,

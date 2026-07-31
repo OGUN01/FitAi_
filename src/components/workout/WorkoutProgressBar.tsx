@@ -83,6 +83,10 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     overflow: 'hidden',
+    // Solid fallback under the gradient: on devices where the native gradient
+    // view paints nothing (observed on ColorOS HWUI), the fill stays visible
+    // in the gradient's base color instead of disappearing entirely.
+    backgroundColor: gradientPrimary.colors[0],
   },
   gradientFill: {
     flex: 1,

@@ -25,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
+  interpolateColor,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -82,8 +83,12 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   // Success accent — a soft green ring border that fades in around the progress
   // ring when the goal is reached. Editorial Dark depth comes from hairline
   // accents, not cast shadows (which read as dated glow on pure black).
+  // Colors precomputed on the JS thread: hexToRgba is not a worklet, so calling
+  // it inside useAnimatedStyle crashes the UI thread (reanimated 3.17).
+  const glowBorderHidden = hexToRgba(colors.successAlt, 0.3);
+  const glowBorderShown = hexToRgba(colors.successAlt, 0.8);
   const glowStyle = useAnimatedStyle(() => ({
-    borderColor: hexToRgba(colors.successAlt, 0.3 + 0.5 * ringGlow.value),
+    borderColor: interpolateColor(ringGlow.value, [0, 1], [glowBorderHidden, glowBorderShown]),
     borderWidth: 2 * ringGlow.value,
   }));
 

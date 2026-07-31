@@ -10,6 +10,10 @@ import { healthConnectService } from "../services/healthConnect";
 import { haptics } from "../utils/haptics";
 
 const isExpoGo = Constants.appOwnership === "expo";
+// Health Connect / HealthKit are native-only. On web neither is available, and
+// `Constants.appOwnership === "expo"` is true under the Expo dev server, which
+// would otherwise surface the native `eas build` instructions to web users.
+const isWeb = Platform.OS !== "ios" && Platform.OS !== "android";
 
 // One-time disclosure acknowledgement flag. Once the user has acknowledged the
 // Health Connect data-use disclosure, we don't block them with it again on
@@ -122,6 +126,15 @@ export const useWearableConnection = () => {
         healthKitEnabled: false,
         healthConnectEnabled: false,
       });
+      return;
+    }
+
+    if (isWeb) {
+      crossPlatformAlert(
+        "Not available on web",
+        `${platformName} sync works in the FitAI mobile app. Connect your watch or fitness tracker there and your health data will appear here.`,
+        [{ text: "OK" }],
+      );
       return;
     }
 

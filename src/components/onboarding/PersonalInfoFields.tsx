@@ -113,8 +113,16 @@ export const DemographicsFields: React.FC<PersonalInfoFieldsProps> = ({
 
   return (
     <View>
+      {/* CLAUDE.md #8 — no hardcoded fallbacks for user data: when age is
+          unset the stepper shows "—" (validation requires a real value),
+          not a fake 13 that looks filled but blocks Next with "age required".
+          First tap on + commits the real minimum (13). */}
       <AgeStepper
-        value={Math.max(formData.age, 13)}
+        value={
+          typeof formData.age === "number" && formData.age >= 13
+            ? formData.age
+            : null
+        }
         min={13}
         max={120}
         onChange={(v) => updateField("age", v)}
@@ -158,7 +166,8 @@ export const DemographicsFields: React.FC<PersonalInfoFieldsProps> = ({
 // ---------------------------------------------------------------------------
 
 interface AgeStepperProps {
-  value: number;
+  /** null = unset (shows "—"; first + commits `min`). */
+  value: number | null;
   min: number;
   max: number;
   onChange: (v: number) => void;
@@ -190,18 +199,18 @@ const AgeStepper: React.FC<AgeStepperProps> = ({
         <View style={styles.stepper}>
           <StepButton
             icon="remove"
-            onPress={() => onChange(Math.max(min, value - 1))}
-            disabled={value <= min}
+            onPress={() => value != null && onChange(Math.max(min, value - 1))}
+            disabled={value == null || value <= min}
             accessibilityLabel="Decrease age"
             testID={testID ? `${testID}-minus` : undefined}
           />
           <Animated.Text style={[styles.stepperValue, valueStyle]}>
-            {value}
+            {value == null ? "—" : value}
           </Animated.Text>
           <StepButton
             icon="add"
-            onPress={() => onChange(Math.min(max, value + 1))}
-            disabled={value >= max}
+            onPress={() => onChange(value == null ? min : Math.min(max, value + 1))}
+            disabled={value != null && value >= max}
             accessibilityLabel="Increase age"
             testID={testID ? `${testID}-plus` : undefined}
           />

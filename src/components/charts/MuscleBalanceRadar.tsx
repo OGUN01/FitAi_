@@ -30,12 +30,13 @@ import {
   useDerivedValue,
   withSpring,
 } from "react-native-reanimated";
-import { colors, flatColors } from "../../theme/aurora-tokens";
+import { colors, flatColors, borderRadius } from "../../theme/aurora-tokens";
 import { springConfig } from "../../theme/animations";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 import { rf, rs, rp, rbr } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
+import { useSkiaReady } from "../onboarding/aurora/useSkiaReady";
 
 // ============================================================================
 // TYPES
@@ -248,10 +249,21 @@ export const MuscleBalanceRadar: React.FC<MuscleBalanceRadarProps> = ({
   // Tooltip state (lightweight - tap an axis label to highlight it).
   const [activeAxis, setActiveAxis] = useState<number | null>(null);
 
+  // Skia readiness gate (useSkiaReady pattern): on web, CanvasKit loads async
+  // and can fail entirely (WASM fetch); on native cold-start the JSI Skia
+  // object may lag a frame. matchFont + <Canvas> throw in both cases — the
+  // error previously crashed the whole WeeklyBuilderScreen via its boundary.
+  // While not ready, render the RN fallback below instead of any Skia API.
+  const skiaReady = useSkiaReady();
+
   // Font (resolved via matchFont - memoized by size). Re-resolves when the
-  // responsive font size changes (font scale).
+  // responsive font size changes (font scale). Skipped entirely until Skia is
+  // ready — matchFont dereferences TypefaceFontProvider on web pre-load.
   const axisFontSize = rf(11);
-  const axisFont = useMemo(() => buildAxisFont(axisFontSize), [axisFontSize]);
+  const axisFont = useMemo(
+    () => (skiaReady ? buildAxisFont(axisFontSize) : null),
+    [skiaReady, axisFontSize],
+  );
 
   // Precompute static grid + spoke paths (don't animate).
   const { gridPath, spokesPath } = useMemo(() => {
@@ -314,6 +326,34 @@ export const MuscleBalanceRadar: React.FC<MuscleBalanceRadarProps> = ({
       }}
       testID={testID}
     >
+      {!skiaReady ? (
+        /* Non-Skia fallback (web WASM unavailable / native cold start):
+           same data as labeled mini-bars so the panel never crashes. */
+        <View style={styles.fallbackWrap}>
+          {RADAR_AXES.map((axis, i) => {
+            const v = values[i] ?? 0;
+            return (
+              <View key={axis} style={styles.fallbackRow}>
+                <Text style={styles.fallbackLabel} numberOfLines={1}>
+                  {axis}
+                </Text>
+                <View style={styles.fallbackTrack}>
+                  <View
+                    style={[
+                      styles.fallbackFill,
+                      {
+                        width: `${Math.min(100, Math.max(0, (v / MAX_VALUE) * 100))}%`,
+                        backgroundColor: gradientColors[0],
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.fallbackValue}>{v}</Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : (
       <Canvas style={StyleSheet.absoluteFill}>
         {/* Grid rings (static) */}
         <Path
@@ -380,8 +420,10 @@ export const MuscleBalanceRadar: React.FC<MuscleBalanceRadarProps> = ({
             />
           ))}
       </Canvas>
+      )}
 
       {/* Tappable hotspots over each axis label - RN layer so Pressable works */}
+      {skiaReady && (
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {RADAR_AXES.map((_, i) => {
           const angle = -Math.PI / 2 + (i * 2 * Math.PI) / RADAR_AXES.length;
@@ -406,10 +448,11 @@ export const MuscleBalanceRadar: React.FC<MuscleBalanceRadarProps> = ({
           );
         })}
       </View>
+      )}
 
       {/* Tooltip overlay (RN Text - crisp, accessible, sits above canvas).
           Clamp position so the tooltip can't overflow the canvas edges. */}
-      {activeAxis !== null && activeValue !== null && (
+      {skiaReady && activeAxis !== null && activeValue !== null && (
         <View
           style={[
             styles.tooltip,
@@ -464,6 +507,43 @@ const styles = StyleSheet.create({
     color: colors.primary[400],
     fontSize: rf(14),
     fontWeight: "700",
+  },
+  // Non-Skia fallback (web/no-WASM): compact labeled bars, same data.
+  fallbackWrap: {
+    flex: 1,
+    justifyContent: "center",
+    gap: rp(6),
+    paddingHorizontal: rp(8),
+  },
+  fallbackRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(8),
+  },
+  fallbackLabel: {
+    width: rp(72),
+    color: colors.text.secondary,
+    fontSize: rf(11),
+    fontWeight: "600",
+  },
+  fallbackTrack: {
+    flex: 1,
+    height: rp(6),
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(flatColors.white, 0.08),
+    overflow: "hidden",
+  },
+  fallbackFill: {
+    height: "100%",
+    borderRadius: borderRadius.full,
+  },
+  fallbackValue: {
+    width: rp(24),
+    textAlign: "right",
+    color: colors.primary[400],
+    fontSize: rf(11),
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
   },
 });
 

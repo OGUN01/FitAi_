@@ -6,6 +6,7 @@ import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { DashboardSkeleton } from '../../components/ui/aurora/DashboardSkeleton';
 import { colors } from '../../theme/aurora-tokens';
 import { rh } from '../../utils/responsive';
+import { mergeWeightSeries } from '../../components/progress/goalProgressUtils';
 
 // Hooks
 import { useProgressScreen } from '../../hooks/useProgressScreen';
@@ -56,7 +57,40 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
 
   const { onRefresh, setShowWeightModal, handleShareProgress } = actions;
 
-  const combinedError = progressError || analysisError || statsError;
+  // getProgressStats reports "No progress entries found" as an error for any
+  // account with zero weigh-ins (i.e. every new user). That's an empty state,
+  // not a failure — don't show the error panel with a useless Retry; the
+  // friendly empty-state panel below handles it.
+  const BENIGN_EMPTY_STATS_ERROR = "No progress entries found";
+  const combinedError =
+    progressError ||
+    analysisError ||
+    (statsError && statsError !== BENIGN_EMPTY_STATS_ERROR ? statsError : null);
+
+  // Single merged per-day weight series (analytics history + local entries) —
+  // shared by the hero chart and the goal card so start/current never diverge
+  // for guests (analytics-only series would pin start === current → 0%).
+  const mergedWeightSeries = React.useMemo(
+    () => mergeWeightSeries(weightHistory, progressEntries),
+    [weightHistory, progressEntries],
+  );
+
+  // Modal pre-fill: progressStats is auth-only, so without this guests start
+  // the dial at the 20kg validation floor. Resolve the real current weight the
+  // same way the hero does: latest merged entry, then onboarding weight.
+  const resolvedCurrentWeight = React.useMemo(() => {
+    if (progressStats?.weightChange?.current != null) {
+      return progressStats.weightChange.current;
+    }
+    if (mergedWeightSeries.length > 0) {
+      return mergedWeightSeries[mergedWeightSeries.length - 1].weight;
+    }
+    return calculatedMetrics?.currentWeightKg ?? undefined;
+  }, [
+    progressStats?.weightChange?.current,
+    mergedWeightSeries,
+    calculatedMetrics?.currentWeightKg,
+  ]);
 
   if (isLoading) {
     return (
@@ -119,6 +153,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
                     progressEntries={progressEntries}
                     onLogWeight={() => setShowWeightModal(true)}
                     unit={weightUnit}
+                    fallbackCurrentWeightKg={calculatedMetrics?.currentWeightKg ?? null}
                   />
 
                   {/* 2. Goal Progress — am I getting closer? */}
@@ -126,7 +161,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
                     progressStats={progressStats}
                     calculatedMetrics={calculatedMetrics}
                     weeklyProgress={weeklyProgress}
-                    weightHistory={weightHistory}
+                    weightHistory={mergedWeightSeries}
                     unit={weightUnit}
                   />
 
@@ -149,7 +184,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
       <WeightEntryModal
         visible={showWeightModal}
         onClose={() => setShowWeightModal(false)}
-        currentWeight={progressStats?.weightChange?.current}
+        currentWeight={resolvedCurrentWeight}
         unit={weightUnit}
         onSuccess={onRefresh}
       />

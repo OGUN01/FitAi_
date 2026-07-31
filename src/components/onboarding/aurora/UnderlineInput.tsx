@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: typography.variants.caption.fontSize,
-    lineHeight: typography.variants.caption.fontSize * typography.variants.caption.lineHeight,
+    lineHeight: typography.variants.caption.lineHeight,
     color: colors.text.tertiary,
     marginBottom: spacing.xs,
   },

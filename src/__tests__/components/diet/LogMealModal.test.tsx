@@ -68,6 +68,8 @@ jest.mock("@/utils/responsive", () => ({
   rh: (value: number) => value,
   rp: (value: number) => value,
   rbr: (value: number) => value,
+  // DetentBottomSheet reads dimensions.screenHeight at module-eval time.
+  dimensions: { screenWidth: 393, screenHeight: 852, baseWidth: 393, baseHeight: 852 },
 }));
 
 jest.mock("@/utils/constants", () => ({

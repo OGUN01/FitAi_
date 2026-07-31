@@ -19,6 +19,8 @@ import { colors, spacing, shadows } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rh, rf, rp, rbr } from '../../utils/responsive';
 import { useFitnessStore } from '../../stores/fitnessStore';
+import { useSubscriptionStore } from '../../stores/subscriptionStore';
+import PaywallModal from '../../components/subscription/PaywallModal';
 import { DayWorkout, WeeklyWorkoutPlan } from '../../types/ai';
 import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
 import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
@@ -146,6 +148,14 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const setActivePlanSource = useFitnessStore((s) => s.setActivePlanSource);
   const customWeeklyPlan = useFitnessStore((s) => s.customWeeklyPlan);
   const getActivePlan = useFitnessStore((s) => s.getActivePlan);
+
+  // Paywall: AI-generation gate fires triggerPaywall() from this tab
+  // (useFitnessLogic.generateWeeklyWorkoutPlan), but no PaywallModal was
+  // mounted here — the CTA looked dead for exhausted guests. DietScreen and
+  // AnalyticsScreen mount their own; do the same (audit w-qa).
+  const showPaywall = useSubscriptionStore((s) => s.showPaywall);
+  const paywallReason = useSubscriptionStore((s) => s.paywallReason);
+  const dismissPaywall = useSubscriptionStore((s) => s.dismissPaywall);
 
   // Derive which plan to display based on toggle
   const activePlan = getActivePlan();
@@ -470,7 +480,11 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               {state.selectedWorkout?.isResuming ??
               (state.selectedWorkout?.resumeExerciseIndex ?? 0) > 0
                 ? `Pick up "${state.selectedWorkout?.title || ''}" where you left off?`
-                : `"${state.selectedWorkout?.title || ''}" — ready when you are.`}
+                : // Guard: no workout selected (e.g. empty-plan "Start a workout")
+                  // rendered a bare `""` — fall back to generic copy.
+                  state.selectedWorkout?.title
+                  ? `"${state.selectedWorkout.title}" — ready when you are.`
+                  : 'Ready when you are.'}
             </Text>
             <View style={styles.startSheetActions}>
               <GlassButton
@@ -529,6 +543,16 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             message={state.proactiveDeload.message}
             onAccept={actions.dismissProactiveDeload}
             onDismiss={actions.dismissProactiveDeload}
+          />
+        )}
+
+        {/* Subscription paywall for AI-generation limit — mounted here because
+            this tab is the source of triggerPaywall() for workout plans. */}
+        {showPaywall && (
+          <PaywallModal
+            visible={showPaywall}
+            reason={paywallReason ?? undefined}
+            onClose={dismissPaywall}
           />
         )}
       </SafeAreaView>

@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     fontFamily: typography.variants.caption.fontFamily,
     fontSize: typography.variants.caption.fontSize,
-    lineHeight: typography.variants.caption.fontSize * typography.variants.caption.lineHeight,
+    lineHeight: typography.variants.caption.lineHeight,
     color: colors.text.tertiary,
     textAlign: "center",
   },

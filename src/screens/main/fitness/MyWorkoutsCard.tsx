@@ -174,7 +174,7 @@ export const MyWorkoutsCard: React.FC<MyWorkoutsCardProps> = ({ navigation, onSt
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>MY WORKOUTS</Text>
         <Text style={styles.sectionCount} numberOfLines={1}>
-          {stats.count} workouts
+          {stats.count} {stats.count === 1 ? 'workout' : 'workouts'}
         </Text>
       </View>
 

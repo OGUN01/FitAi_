@@ -65,6 +65,13 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   completedCount,
   totalCount,
 }) => {
+  // Guests never initialize achievement definitions (auth-only store), so the
+  // section would render a bare "Achievements 0/0" header with an empty strip —
+  // looks broken, not intentional. Hide until definitions exist.
+  if (achievements.length === 0) {
+    return null;
+  }
+
   const sorted = [...achievements].sort((a, b) => {
     if (a.completed && !b.completed) {
       return -1;

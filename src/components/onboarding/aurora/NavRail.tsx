@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   backText: {
     fontFamily: typography.variants.body.fontFamily,
     fontSize: typography.variants.body.fontSize,
-    lineHeight: typography.variants.body.fontSize * typography.variants.body.lineHeight,
+    lineHeight: typography.variants.body.lineHeight,
     color: colors.primary.DEFAULT,
   },
   next: {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   nextText: {
     fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: typography.variants.cardHeadline.fontSize,
-    lineHeight: typography.variants.cardHeadline.fontSize * typography.variants.cardHeadline.lineHeight,
+    lineHeight: typography.variants.cardHeadline.lineHeight,
     color: colors.text.primary,
   },
 });

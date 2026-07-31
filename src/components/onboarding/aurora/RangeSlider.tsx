@@ -76,6 +76,12 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
 }) => {
   const trackWidth = useSharedValue(0);
   const lastTickBucket = useRef<number>(-1);
+  // Absolute page offset of the track — gestureState x0/moveX are
+  // screen-relative (pageX), so the fraction MUST subtract this or web's
+  // centered layout (track starts hundreds of px into the viewport) reads
+  // every touch as fraction > 1 and the slider pins to max.
+  const trackPageX = useRef(0);
+  const trackRef = useRef<View | null>(null);
 
   const fraction = max > min ? (value - min) / (max - min) : 0;
   const clampedFraction = Math.max(0, Math.min(1, fraction));
@@ -90,6 +96,23 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
 
   const onLayout = (e: LayoutChangeEvent) => {
     trackWidth.value = e.nativeEvent.layout.width;
+    const node = trackRef.current as unknown as {
+      measure?: (
+        cb: (
+          x: number,
+          y: number,
+          width: number,
+          height: number,
+          pageX: number,
+          pageY: number,
+        ) => void,
+      ) => void;
+    } | null;
+    node?.measure?.((_x, _y, _w, _h, pageX) => {
+      if (typeof pageX === "number" && Number.isFinite(pageX)) {
+        trackPageX.current = pageX;
+      }
+    });
   };
 
   const updateFromFraction = useCallback(
@@ -127,11 +150,11 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
         const w = trackWidth.value || 1;
-        updateFromFractionRef.current(g.x0 / w);
+        updateFromFractionRef.current((g.x0 - trackPageX.current) / w);
       },
       onPanResponderMove: (_e: GestureResponderEvent, g: PanResponderGestureState) => {
         const w = trackWidth.value || 1;
-        updateFromFractionRef.current((g.x0 + g.dx) / w);
+        updateFromFractionRef.current((g.x0 + g.dx - trackPageX.current) / w);
       },
       onPanResponderRelease: () => {
         runOnJS(fireImpact)();
@@ -142,6 +165,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   return (
     <View style={[styles.container, style]} testID={testID}>
       <View
+        ref={trackRef}
         style={styles.track}
         onLayout={onLayout}
         {...panResponder.panHandlers}

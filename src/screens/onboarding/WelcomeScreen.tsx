@@ -211,6 +211,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           >
             <View style={styles.signInHeader}>
               <AnimatedPressable
+                // Same wrapper-anchoring fix as the eye toggle: the absolute
+                // position must sit on the outer wrapper (containerStyle) or
+                // web anchors the button to AnimatedPressable's 0×0 inner
+                // wrapper — it landed center-screen under the title and was
+                // unclickable.
+                containerStyle={styles.backButtonAnchor}
                 style={styles.backButton}
                 onPress={switchToWelcome}
                 scaleValue={0.97}
@@ -289,6 +295,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   <AnimatedPressable
                     onPress={() => setPasswordVisible((prev) => !prev)}
                     scaleValue={0.9}
+                    // The absolute anchor MUST live on the outer wrapper
+                    // (containerStyle), not the inner Pressable (style):
+                    // AnimatedPressable wraps the Pressable in a 0-height
+                    // Animated.View, and on web that wrapper becomes the
+                    // containing block — the eye landed below the field,
+                    // overlapped by "Forgot Password?", and was unclickable.
+                    containerStyle={styles.eyeToggleAnchor}
                     style={styles.eyeToggle}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="button"
@@ -571,11 +584,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  backButton: {
+  backButtonAnchor: {
     position: "absolute",
     left: spacing.lg,
     top: spacing.lg,
     zIndex: 1,
+  },
+  backButton: {
     width: 44,
     height: 44,
     alignItems: "center",
@@ -684,10 +699,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  eyeToggle: {
+  eyeToggleAnchor: {
     position: "absolute",
     right: 0,
     top: spacing.sm,
+  },
+  eyeToggle: {
     width: 44,
     height: 44,
     alignItems: "center",

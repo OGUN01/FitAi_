@@ -18,7 +18,11 @@ import { analyticsDataService } from "./analyticsData";
 import { resolveCurrentWeightForUser } from "./currentWeight";
 import { weightTrackingService } from "./WeightTrackingService";
 import { getCurrentWeekStart, getWeekStartForDate } from "../utils/weekUtils";
-import { getWorkoutDayKey, getWorkoutSlotKey } from "../utils/workoutIdentity";
+import {
+  getWorkoutDayKey,
+  getWorkoutSlotKey,
+  normalizeSnapshotReps,
+} from "../utils/workoutIdentity";
 import { generateUUID } from "../utils/uuid";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import { offlineService } from "./offline";
@@ -380,7 +384,7 @@ class CompletionTrackingService {
             exercises: (workout.exercises || []).map((ex: any) => ({
               name: ex.exerciseName || ex.name || "",
               sets: typeof ex.sets === "number" ? ex.sets : 0,
-              reps: typeof ex.reps === "number" ? ex.reps : 0,
+              reps: normalizeSnapshotReps(ex.reps),
               exerciseId: ex.exerciseId || ex.id,
               duration: ex.duration,
               restTime: ex.restTime,

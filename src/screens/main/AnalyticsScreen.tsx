@@ -36,6 +36,7 @@ import { hexToRgba } from "../../utils/colors";
 // Subscription gate
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { usePaywall } from "../../hooks/usePaywall";
+import PaywallModal from "../../components/subscription/PaywallModal";
 
 // Stores
 import { useAnalyticsStore } from "../../stores/analyticsStore";
@@ -86,13 +87,19 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   const featuresAnalytics = useSubscriptionStore((s) => s.features.analytics);
   const isPremium = useSubscriptionStore((s) => s.isPremium);
   const subscriptionInitialized = useSubscriptionStore((s) => s.isInitialized);
+  const isGuestMode = useAuthStore((s) => s.isGuestMode);
+  const authUserId = useAuthStore((s) => s.user?.id);
   // Before initialization completes, features defaults to FREE_FEATURES, so
   // analyticsEnabled would be false and flash the locked screen for premium
   // users. Treat the pre-init state as "access undetermined" -> show locked
   // screen only after init; the locked screen's upgrade CTA still works.
+  // Guests/signed-out users never run initializeSubscription() (App.tsx clears
+  // the store instead), so isInitialized stays false forever — don't strand
+  // them on "Loading your subscription..." with no CTA; show the locked screen.
   const analyticsEnabled = featuresAnalytics && isPremium();
-  const showLockedInitializing = !subscriptionInitialized;
-  const { triggerPaywall } = usePaywall();
+  const showLockedInitializing =
+    !subscriptionInitialized && !!authUserId && !isGuestMode;
+  const { triggerPaywall, showPaywall, paywallReason, dismiss } = usePaywall();
 
   // State
   // NOTE: selectedPeriod is intentionally NOT local state — we read it from
@@ -694,6 +701,14 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
             />
             )}
           </View>
+          {/* PaywallModal is NOT mounted globally (only DietScreen +
+              SubscriptionManagement mount it) — without this local mount the
+              Upgrade CTA set showPaywall in the store but rendered nothing. */}
+          <PaywallModal
+            visible={showPaywall}
+            onClose={dismiss}
+            reason={paywallReason ?? undefined}
+          />
         </SafeAreaView>
       </AuroraBackground>
     );

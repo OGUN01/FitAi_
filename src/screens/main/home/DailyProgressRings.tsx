@@ -5,12 +5,14 @@
  * at the center and a calm stat stack to the right. Same data, same props.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useAnimatedProps,
+  useAnimatedReaction,
+  runOnJS,
   withSpring,
   withDelay,
   withRepeat,
@@ -28,7 +30,6 @@ import { rf, rw, rp } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedText = Animated.createAnimatedComponent(Text);
 
 // Ring configuration — the four Aurora ring colors (flat token strokes)
 const RINGS = {
@@ -176,7 +177,11 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   // paired with the staggered ring sweep so the number "arrives" as the rings
   // fill. Re-runs if overallScore changes mid-day (meal/workout logged). Honors
   // reduce-motion: snaps to the final value instantly.
+  // NOTE: the value is bridged to JS state instead of an animatedProps `text`
+  // prop — reanimated's `text` prop only paints on TextInput, so on Android the
+  // hero number never rendered (observed on ColorOS, old arch).
   const displayScore = useSharedValue(0);
+  const [scoreText, setScoreText] = useState('0');
   useEffect(() => {
     if (reduceMotion) {
       displayScore.value = overallScore;
@@ -190,9 +195,14 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       cancelAnimation(displayScore);
     };
   }, [reduceMotion, overallScore, displayScore]);
-  const scoreProps = useAnimatedProps(() => ({
-    text: String(Math.round(displayScore.value)),
-  }));
+  useAnimatedReaction(
+    () => Math.round(displayScore.value),
+    (current, previous) => {
+      if (current !== previous) {
+        runOnJS(setScoreText)(String(current));
+      }
+    }
+  );
 
   // Show empty state when goals are not set
   if (hasNoGoals) {
@@ -308,14 +318,14 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 />
               </View>
               <Animated.View style={[styles.centerContent, breathStyle]}>
-                <AnimatedText
+                <Text
                   style={styles.scoreText}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.55}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  animatedProps={scoreProps as any}
-                />
+                >
+                  {scoreText}
+                </Text>
                 <Text style={styles.scoreLabel} numberOfLines={1}>
                   %
                 </Text>

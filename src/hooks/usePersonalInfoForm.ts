@@ -23,6 +23,11 @@ const REGION_TO_COUNTRY: Record<string, string> = {
   DE: "Germany",
 };
 
+/** Inverse of REGION_TO_COUNTRY — picker country names → ISO-3166 region. */
+const COUNTRY_TO_REGION: Record<string, string> = Object.fromEntries(
+  Object.entries(REGION_TO_COUNTRY).map(([region, name]) => [name, region]),
+);
+
 function detectDeviceRegion(): string {
   try {
     const c = I18nManager.getConstants() as { localeIdentifier?: string };
@@ -197,6 +202,16 @@ export const usePersonalInfoForm = ({
     updateField("country", country);
     updateField("state", "");
     updateField("region", "");
+    // The field subtitle promises "Sets your … units": known countries drive
+    // the unit system (US/LR/MM → imperial, everything else → metric).
+    // Unknown/custom countries keep the current units — no fabricated default.
+    const region = COUNTRY_TO_REGION[country];
+    if (region) {
+      updateField(
+        "units",
+        IMPERIAL_REGIONS.has(region) ? "imperial" : "metric",
+      );
+    }
   };
 
   const handleAgeChange = (ageText: string) => {

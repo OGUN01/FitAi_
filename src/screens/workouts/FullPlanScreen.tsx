@@ -93,7 +93,15 @@ interface DayRowModel {
 // ----------------------------------------------------------------------------
 
 export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) => {
-  const weeklyWorkoutPlan = useFitnessStore((state) => state.weeklyWorkoutPlan);
+  // SSOT: respect the AI/My-Plan toggle — "View plan" from the custom (My
+  // Plan) view must show the custom schedule, not the AI plan. Reading only
+  // weeklyWorkoutPlan showed "No Plan Yet" to custom-schedule users. Subscribe
+  // to the three reactive inputs (NOT getActivePlan(), a non-reactive getter
+  // that never re-renders after hydration lands).
+  const activePlanSource = useFitnessStore((state) => state.activePlanSource);
+  const aiWeeklyPlan = useFitnessStore((state) => state.weeklyWorkoutPlan);
+  const customWeeklyPlan = useFitnessStore((state) => state.customWeeklyPlan);
+  const weeklyWorkoutPlan = activePlanSource === 'custom' ? customWeeklyPlan : aiWeeklyPlan;
   const workoutProgress = useFitnessStore((state) => state.workoutProgress);
   const completedSessions = useFitnessStore((state) => state.completedSessions);
 
@@ -112,7 +120,11 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
       });
 
       const workout = plan?.workouts?.find((w) => w.dayOfWeek?.toLowerCase() === dayKey) ?? null;
-      const isRestDay = (plan?.restDays || []).some((d: number | string) =>
+      // Defense: a day carrying exercises can never be a rest day, even if
+      // plan.restDays is stale (custom-builder drafts keep restDays at the
+      // blank-week default of all-7 — see workoutBuilderStore restDays note).
+      const hasExercises = (workout?.exercises?.length ?? 0) > 0;
+      const isRestDay = !hasExercises && (plan?.restDays || []).some((d: number | string) =>
         typeof d === 'string' ? d.toLowerCase() === dayKey : d === index
       );
 

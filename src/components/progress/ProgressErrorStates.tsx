@@ -75,12 +75,10 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
     );
   }
 
-  if (
-    isAuthenticated &&
-    !hasCalculatedMetrics &&
-    progressEntriesLength === 0 &&
-    !progressLoading
-  ) {
+  // Empty state: authenticated user with zero weigh-ins. Applies even when the
+  // user has calculatedMetrics from onboarding — stats still have no entries,
+  // so show the friendly CTA instead of an error or nothing.
+  if (isAuthenticated && progressEntriesLength === 0 && !progressLoading) {
     return (
       <View style={styles.panel}>
         <View style={styles.row}>

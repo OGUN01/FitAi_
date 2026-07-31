@@ -96,7 +96,10 @@ async function loadPlansFromServer(): Promise<LoadedPlans> {
       configs.push({
         id: `${row.id}_yearly`,
         tier,
-        name: `${row.name} Plan (Yearly)`,
+        // DB row.name already ends in "Plan" (e.g. "Pro Plan") — appending
+        // another "Plan" rendered "Pro Plan Plan (Yearly)". Mirror the
+        // monthly tier-based naming instead.
+        name: tier === "basic" ? "Basic Plan (Yearly)" : "Pro Plan (Yearly)",
         price_monthly: Math.round(row.price_yearly / 100 / 12),
         billing_cycle: "yearly",
       });

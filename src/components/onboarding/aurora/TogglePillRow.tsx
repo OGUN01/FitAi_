@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: typography.variants.cardHeadline.fontSize,
-    lineHeight: typography.variants.cardHeadline.fontSize * typography.variants.cardHeadline.lineHeight,
+    lineHeight: typography.variants.cardHeadline.lineHeight,
   },
   strike: {
     position: "absolute",

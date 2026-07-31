@@ -102,15 +102,30 @@ export const CurrentDietSection: React.FC<CurrentDietSectionProps> = ({
   // only when the user has no persisted/existing picks. The ref guard keeps
   // it a true default — the user can still deselect it or clear everything
   // afterwards without the default snapping back.
+  //
+  // Two mount-order hazards on web (and device on rehydrate):
+  //  1. `country` may arrive a tick late (async store rehydration), so key the
+  //     effect on `suggestedCuisine` instead of firing once blindly.
+  //  2. The parent form hook (useDietPreferences) runs a sync-from-props
+  //     setFormData in its own mount effect AFTER this child effect (child
+  //     effects flush first), which would clobber a same-tick write. Defer
+  //     the write past the mount flush with setTimeout(0) so it lands after.
   const appliedCuisineDefaultRef = useRef(false);
   useEffect(() => {
     if (appliedCuisineDefaultRef.current) return;
-    appliedCuisineDefaultRef.current = true;
-    if (selectedCuisines.length > 0) return;
+    if (selectedCuisines.length > 0) {
+      appliedCuisineDefaultRef.current = true;
+      return;
+    }
     if (!suggestedCuisine) return;
-    updateField("cuisine_preferences", [suggestedCuisine]);
+    appliedCuisineDefaultRef.current = true;
+    const t = setTimeout(
+      () => updateField("cuisine_preferences", [suggestedCuisine]),
+      0,
+    );
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [suggestedCuisine]);
 
   const handleCuisineSelect = (id: string) => {
     const next = selectedCuisines.includes(id)

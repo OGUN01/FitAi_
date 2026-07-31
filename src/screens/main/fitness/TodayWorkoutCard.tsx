@@ -104,6 +104,18 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
         buttonText: 'Recovery Tips',
       };
     }
+    // A workout object with ZERO exercises (custom-builder rest days persist
+    // as { title: 'Rest Day', exercises: [] }) is NOT "Ready to Go" — starting
+    // it lands on the player's "No Exercises Found" guard. Treat it as a rest
+    // day: honest label + recovery CTA instead of a dead Start Workout.
+    if (workout && (workout.exercises?.length ?? 0) === 0) {
+      return {
+        color: colors.primary,
+        gradient: [colors.primary, colors.primaryDark] as [string, string],
+        label: 'Rest Day',
+        buttonText: 'Recovery Tips',
+      };
+    }
     // Unscheduled day (no workout AND not a designated rest day). Previously
     // this fell through to "Ready to Go / Start Workout", then the handler
     // showed a "No Workout Today" alert — the card lied. Show the honest
@@ -136,6 +148,8 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
 
   const config = getStatusConfig();
   const exerciseCount = workout?.exercises?.length || 0;
+  // Zero-exercise workout object = effective rest day (see getStatusConfig).
+  const hasNoExercises = workout != null && exerciseCount === 0;
 
   // Compute the plan "Day N" label (Monday=1 … Sunday=7).
   // Prefer the workout's dayOfWeek; otherwise use the selectedDay; otherwise
@@ -192,7 +206,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
 
             {/* Hero title */}
             <Text style={styles.title} numberOfLines={2}>
-              {isRestDay
+              {isRestDay || hasNoExercises
                 ? 'Rest & Recover'
                 : workout?.title || (isToday ? 'No Workout Today' : 'No Workout Scheduled')}
             </Text>
@@ -205,8 +219,9 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
               </Text>
             </View>
 
-            {/* Meta — plain text row, no chips */}
-            {!isRestDay && workout && (
+            {/* Meta — plain text row, no chips (hidden for rest days AND
+                zero-exercise placeholders, which would read "0 min • 0 exercises") */}
+            {!isRestDay && workout && !hasNoExercises && (
               <Text style={styles.metaRow} numberOfLines={1}>
                 {`${workout.duration} min${META_BULLET}${exerciseCount} exercises${META_BULLET}${
                   displayCalories !== undefined ? displayCalories : workout.estimatedCalories || 0
@@ -225,7 +240,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
               </Text>
             )}
 
-            {isRestDay && (
+            {(isRestDay || hasNoExercises) && (
               <Text style={styles.restDaySubtitle}>
                 Recovery is essential for muscle growth and preventing injury
               </Text>
@@ -247,7 +262,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
           {/* Single full-width gradient CTA */}
           <AnimatedPressable
             onPress={
-              (isRestDay || !workout) && onRecoveryTips
+              (isRestDay || !workout || hasNoExercises) && onRecoveryTips
                 ? onRecoveryTips
                 : isCompleted
                   ? onViewDetails
@@ -258,7 +273,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
             hapticType="medium"
             style={styles.actionButton}
             accessibilityLabel={
-              isRestDay || !workout
+              isRestDay || !workout || hasNoExercises
                 ? 'Recovery tips'
                 : isCompleted
                   ? 'View workout summary'

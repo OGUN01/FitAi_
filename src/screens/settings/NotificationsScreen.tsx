@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Switch } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Switch, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +26,12 @@ const isExpoGo =
   Constants.appOwnership === "expo" ||
   Constants.executionEnvironment === "storeClient" ||
   (__DEV__ && !Constants.isDevice && !Constants.platform?.web);
+
+// On web, `Constants.appOwnership === "expo"` is true under the Expo dev
+// server, which would wrongly route web users to the Expo Go / `eas build`
+// message. Notifications simply aren't supported on web, so we show a
+// web-appropriate unavailable card instead.
+const isWeb = Platform.OS === "web";
 
 let WaterReminderEditModal: any = null;
 let NotificationEditModal: any = null;
@@ -193,7 +199,20 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
           <NotificationsHeader onBack={onBack} />
-          {isExpoGo ? (
+          {isWeb ? (
+            <View style={styles.unavailableContainer}>
+              <View style={styles.unavailableCard}>
+                <Text style={styles.unavailableTitle}>
+                  Notifications Unavailable
+                </Text>
+                <Text style={styles.unavailableText}>
+                  Reminders aren't supported in the web app yet. Use the FitAI
+                  mobile app to set up water, meal, workout, and sleep
+                  reminders.
+                </Text>
+              </View>
+            </View>
+          ) : isExpoGo ? (
             <ExpoGoMessage />
           ) : (
             <View style={styles.unavailableContainer}>

@@ -192,7 +192,7 @@ export interface CompletedSession {
     exercises: Array<{
       name: string;
       sets: number;
-      reps: number;
+      reps: number | string; // planned range ("8-12") preserved via normalizeSnapshotReps
       exerciseId?: string;
       duration?: number; // seconds, for time-based exercises
       restTime?: number; // seconds between sets

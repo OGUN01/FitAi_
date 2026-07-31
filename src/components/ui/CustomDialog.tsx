@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import {
   spacing,
   borderRadius,
   flatFontSize as fontSize,
+  zIndex as auroraZIndex,
 } from '../../theme/aurora-tokens';
 import { rf, rs, rh, rbr } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_SOFT } from '../../utils/colors';
@@ -43,6 +45,53 @@ interface CustomDialogProps {
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
+
+/**
+ * Web scrim-layering fix: react-native-web renders <Modal> into a body-level
+ * portal whose fixed wrapper has z-index:auto, so any in-app element with
+ * zIndex>0 (RestTimer/ExerciseCard z10, achievement toasts z1200, builder
+ * chrome z1300) paints ABOVE the scrim — the workout player header (X,
+ * counter, timer) and the background CTA punched through the dimmed overlay.
+ * On web, bypass Modal and render the scrim as a fixed View at
+ * zIndex.modal (1400), above every app-level zIndex (≤1300). Native keeps the
+ * real Modal (fade/slide animations, hardware back, accessibility).
+ */
+const DialogShell: React.FC<{
+  visible: boolean;
+  animationType: 'fade' | 'slide';
+  onRequestClose?: () => void;
+  keyboardAvoiding?: boolean;
+  children: React.ReactNode;
+}> = ({ visible, animationType, onRequestClose, keyboardAvoiding, children }) => {
+  if (Platform.OS === 'web') {
+    if (!visible) return null;
+    const WebWrapper = keyboardAvoiding ? KeyboardAvoidingView : View;
+    return (
+      <WebWrapper style={[styles.overlay, styles.webScrim]}>
+        {children}
+      </WebWrapper>
+    );
+  }
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType={animationType}
+      onRequestClose={onRequestClose}
+    >
+      {keyboardAvoiding ? (
+        <KeyboardAvoidingView
+          style={styles.overlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          {children}
+        </KeyboardAvoidingView>
+      ) : (
+        <View style={styles.overlay}>{children}</View>
+      )}
+    </Modal>
+  );
+};
 
 export const CustomDialog: React.FC<CustomDialogProps> = ({
   visible,
@@ -95,9 +144,9 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   // NOTE: do NOT early-return on !visible. The Modal relies on its `visible`
   // prop transitioning from true→false to play animationType="fade"'s
   // fade-out. Returning null before that transition skips the fade-out.
+  // (DialogShell handles the web path, where this fade does not apply.)
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <View style={styles.overlay}>
+    <DialogShell visible={visible} animationType="fade" onRequestClose={onDismiss}>
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
             {/* Icon */}
@@ -154,8 +203,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
             )}
           </Card>
         </SafeAreaView>
-      </View>
-    </Modal>
+    </DialogShell>
   );
 };
 
@@ -204,6 +252,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
+  },
+
+  // Web-only (see DialogShell): fixed full-viewport scrim stacked above every
+  // app-level zIndex so nothing punches through the dimmed overlay.
+  // RN's ViewStyle lacks 'fixed' — react-native-web passes it through to CSS.
+  webScrim: {
+    position: 'fixed' as unknown as ViewStyle['position'],
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: auroraZIndex.modal,
   },
 
   safeArea: {
@@ -560,11 +620,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+    <DialogShell visible={visible} animationType="slide" keyboardAvoiding>
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
             {/* Celebration Icon */}
@@ -589,7 +645,8 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{duration}</Text>
-                  <Text style={styles.statLabel}>minutes</Text>
+                  {/* Pluralize — a 1-minute workout read "1 minutes" */}
+                  <Text style={styles.statLabel}>{duration === 1 ? 'minute' : 'minutes'}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>~{calories}</Text>
@@ -658,8 +715,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
             </View>
           </Card>
         </SafeAreaView>
-      </KeyboardAvoidingView>
-    </Modal>
+    </DialogShell>
   );
 };
 

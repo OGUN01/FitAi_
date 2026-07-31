@@ -12,6 +12,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   findPlanWorkoutBySessionIdentity,
   getWorkoutSlotKey,
+  normalizeSnapshotReps,
 } from "../utils/workoutIdentity";
 // SSOT: import canonical type definitions from ./fitness/types — do NOT redeclare locally
 import {
@@ -38,7 +39,7 @@ type StoredSessionExercise = {
   exerciseName?: string;
   name?: string;
   sets?: number;
-  reps?: number;
+  reps?: number | string; // planned range strings ("8-12") are preserved as-is
   exerciseId?: string;
   id?: string;
   duration?: number;
@@ -1066,7 +1067,7 @@ export const useFitnessStore = create<FitnessState>()(
                   const exercises = rawExercises.map((ex) => ({
                     name: ex.exerciseName || ex.name || "",
                     sets: Number(ex.sets) || 0,
-                    reps: Number(ex.reps) || 0,
+                    reps: normalizeSnapshotReps(ex.reps),
                     exerciseId: ex.exerciseId || ex.id,
                     duration: ex.duration,
                     restTime: ex.restTime,
@@ -1378,7 +1379,7 @@ export const useFitnessStore = create<FitnessState>()(
           const exercises = rawExercises.map((ex) => ({
             name: ex.exerciseName || ex.name || "",
             sets: Number(ex.sets) || 0,
-            reps: Number(ex.reps) || 0,
+            reps: normalizeSnapshotReps(ex.reps),
             exerciseId: ex.exerciseId || ex.id,
             duration: ex.duration,
             restTime: ex.restTime,

@@ -547,6 +547,9 @@ const styles = StyleSheet.create({
   },
   difficultyCell: {
     flex: 1,
+    // ~100px keeps the longest difficulty label ("Intermediate") on one line;
+    // at flex widths below this the single word clipped with an ellipsis.
+    minWidth: rp(100),
   },
   difficultyLabel: {
     color: colors.text.tertiary,

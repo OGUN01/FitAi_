@@ -670,6 +670,8 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                               }
                               testID={`rest-input-${index}`}
                             />
+                            {/* Unit suffix — without it "REST 60" is ambiguous (sec vs min) */}
+                            <Text style={styles.inputLabel}>s</Text>
                             <Text style={styles.inputLabel}>kg</Text>
                             <TextInput
                               style={styles.smallInput}
@@ -1077,7 +1079,7 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: rp(spacing.xs),
+    gap: rp(spacing.xxs),
     flexWrap: "wrap",
   },
   inputLabel: {
@@ -1090,7 +1092,7 @@ const styles = StyleSheet.create({
   smallInput: {
     backgroundColor: hexToRgba(colors.white, 0.06),
     color: colors.text,
-    width: rw(44),
+    width: rw(38),
     height: rh(32),
     borderRadius: borderRadius.lg,
     textAlign: "center",

@@ -117,6 +117,12 @@ export const useWorkoutPreferences = ({
   const hasUserSetIntensity = useRef(false);
   const hasUserSetWorkoutTypes = useRef(false);
   const hasUserSetGoals = useRef(false);
+  // Signature of the last workout_types array THIS hook auto-applied. The
+  // hasUserSet* refs reset on remount (Back→Next), so the auto-recommend
+  // effect also compares persisted data.workout_types against this signature:
+  // any non-empty persisted value we did NOT auto-apply this mount is treated
+  // as an explicit user choice and is never overwritten.
+  const lastAutoWorkoutTypesKey = useRef<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<WorkoutPreferencesData>({
@@ -559,18 +565,27 @@ export const useWorkoutPreferences = ({
   ]);
 
   useEffect(() => {
-    // Only auto-recommend workout types if user hasn't manually set them
-    if (!hasUserSetWorkoutTypes.current) {
-      const recommendedTypes = calculateRecommendedWorkoutTypes();
-      setFormData((prev: WorkoutPreferencesData) => ({
-        ...prev,
-        workout_types: recommendedTypes,
-      }));
+    // Only auto-recommend workout types if user hasn't manually set them —
+    // in this mount (ref) or a previous one (persisted non-empty value we did
+    // not auto-apply; refs reset on remount, so this covers Back→Next).
+    if (hasUserSetWorkoutTypes.current) return;
+    const persisted = data?.workout_types ?? [];
+    const persistedIsUserValue =
+      persisted.length > 0 &&
+      JSON.stringify(persisted) !== lastAutoWorkoutTypesKey.current;
+    if (persistedIsUserValue) return;
 
-      if (!isSyncingFromProps.current) {
-        onUpdate({ workout_types: recommendedTypes });
-      }
+    const recommendedTypes = calculateRecommendedWorkoutTypes();
+    lastAutoWorkoutTypesKey.current = JSON.stringify(recommendedTypes);
+    setFormData((prev: WorkoutPreferencesData) => ({
+      ...prev,
+      workout_types: recommendedTypes,
+    }));
+
+    if (!isSyncingFromProps.current) {
+      onUpdate({ workout_types: recommendedTypes });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calculateRecommendedWorkoutTypes]);
 
   const getFieldError = (fieldName: string): string | undefined => {

@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   value: {
     fontFamily: typography.variants.heroStat.fontFamily,
     fontSize: typography.variants.heroStat.fontSize,
-    lineHeight: typography.variants.heroStat.fontSize * typography.variants.heroStat.lineHeight,
+    lineHeight: typography.variants.heroStat.lineHeight,
     color: colors.text.primary,
   },
   unit: {

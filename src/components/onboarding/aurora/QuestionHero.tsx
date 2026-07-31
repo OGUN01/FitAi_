@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     fontFamily: typography.variants.body.fontFamily,
     fontSize: typography.variants.body.fontSize,
-    lineHeight: typography.variants.body.fontSize * typography.variants.body.lineHeight,
+    lineHeight: typography.variants.body.lineHeight,
     color: colors.text.secondary,
     textAlign: "left",
   },

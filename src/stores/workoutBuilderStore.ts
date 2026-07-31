@@ -227,6 +227,26 @@ function clonePlan(plan: WeeklyWorkoutPlan): WeeklyWorkoutPlan {
   return JSON.parse(JSON.stringify(plan));
 }
 
+/**
+ * restDays is DERIVED state, never authored: a week day is a rest day iff it
+ * has zero exercises. Recomputed on every draft mutation so saved custom plans
+ * never carry the blank-week default (all 7 days) that would mark real workout
+ * days as rest downstream (WeeklyPlanOverview, useFitnessLogic, FullPlanScreen).
+ * Indices are Monday-based (0=monday … 6=sunday), matching useFitnessLogic.
+ */
+function computeRestDays(workouts: DayWorkout[]): number[] {
+  return workouts
+    .map((w, i) =>
+      (w.plannedExercises?.length || w.exercises?.length || 0) > 0 ? -1 : i,
+    )
+    .filter((i) => i >= 0);
+}
+
+/** Return a copy of the plan with restDays recomputed from its workouts. */
+function withRestDays(plan: WeeklyWorkoutPlan): WeeklyWorkoutPlan {
+  return { ...plan, restDays: computeRestDays(plan.workouts) };
+}
+
 // ----------------------------------------------------------------------------
 // STORE
 // ----------------------------------------------------------------------------
@@ -251,7 +271,8 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
   hydrateFromCustomPlan: async () => {
     const customPlan = useFitnessStore.getState().customWeeklyPlan;
     if (customPlan) {
-      set({ draft: clonePlan(customPlan), draftDirty: false });
+      // withRestDays also heals legacy saved plans whose restDays went stale.
+      set({ draft: withRestDays(clonePlan(customPlan)), draftDirty: false });
     } else {
       // No existing plan — start blank
       set({ draft: blankWeek(), draftDirty: false });
@@ -261,7 +282,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
   },
 
   hydrateFromPlan: (plan) => {
-    set({ draft: clonePlan(plan), draftDirty: false });
+    set({ draft: withRestDays(clonePlan(plan)), draftDirty: false });
     void get().computeInsights();
   },
 
@@ -275,7 +296,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     if (!draft) return;
     const workouts = [...draft.workouts];
     workouts[index] = day;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
   },
 
   addExercise: (dayIndex, exercise) => {
@@ -305,7 +329,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     );
     day.duration = estimateDayDuration(day.plannedExercises);
     workouts[dayIndex] = day;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -342,7 +369,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     );
     day.duration = estimateDayDuration(day.plannedExercises);
     workouts[dayIndex] = day;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -367,7 +397,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     }));
     day.duration = estimateDayDuration(day.plannedExercises);
     workouts[dayIndex] = day;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -406,7 +439,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       ]),
     );
     workouts[dayIndex] = day;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -433,7 +469,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       exerciseName: p.name,
     }));
     workouts[dayIndex] = day;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
   },
 
   moveExerciseBetweenDays: (fromDay, fromIndex, toDay, toIndex) => {
@@ -498,7 +537,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     );
     workouts[fromDay] = fromDayObj;
     workouts[toDay] = toDayObj;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -512,7 +554,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     clone.id = `custom_${clone.dayOfWeek}_${Date.now()}`;
     clone.dayOfWeek = DAYS_OF_WEEK[toIndex];
     workouts[toIndex] = clone;
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -521,7 +566,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     if (!draft) return;
     const workouts = [...draft.workouts];
     workouts[dayIndex] = blankDay(DAYS_OF_WEEK[dayIndex]);
-    set({ draft: { ...draft, workouts }, draftDirty: true });
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
     void get().computeInsights();
   },
 
@@ -560,7 +608,8 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
   save: async () => {
     const { draft } = get();
     if (!draft) return;
-    await useFitnessStore.getState().saveCustomWeeklyPlan(draft);
+    // Defensive: restDays is derived — never persist a stale copy.
+    await useFitnessStore.getState().saveCustomWeeklyPlan(withRestDays(draft));
     // Sync back the databaseId if it was assigned
     const saved = useFitnessStore.getState().customWeeklyPlan;
     if (saved?.databaseId && !draft.databaseId) {
@@ -612,7 +661,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
   },
 
   applyAiEdit: (updatedPlan) => {
-    set({ draft: clonePlan(updatedPlan), draftDirty: true });
+    set({ draft: withRestDays(clonePlan(updatedPlan)), draftDirty: true });
     void get().computeInsights();
   },
 
@@ -630,7 +679,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
         console.error("[workoutBuilderStore] generateFullWeek failed:", result.error);
         return { success: false, error: result.error };
       }
-      set({ draft: clonePlan(result.data.completePlan), draftDirty: true });
+      set({
+        draft: withRestDays(clonePlan(result.data.completePlan)),
+        draftDirty: true,
+      });
       void get().computeInsights();
       return { success: true };
     } catch (error) {
@@ -659,7 +711,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
         console.error("[workoutBuilderStore] applyProgression failed:", result.error);
         return { success: false, error: result.error };
       }
-      set({ draft: clonePlan(result.data.updatedPlan), draftDirty: true });
+      set({
+        draft: withRestDays(clonePlan(result.data.updatedPlan)),
+        draftDirty: true,
+      });
       void get().computeInsights();
       return { success: true };
     } catch (error) {
@@ -685,7 +740,10 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
         console.error("[workoutBuilderStore] deloadWeek failed:", result.error);
         return { success: false, error: result.error };
       }
-      set({ draft: clonePlan(result.data.deloadPlan), draftDirty: true });
+      set({
+        draft: withRestDays(clonePlan(result.data.deloadPlan)),
+        draftDirty: true,
+      });
       void get().computeInsights();
       return { success: true };
     } catch (error) {

@@ -412,6 +412,9 @@ export const ExercisePickerSheet: React.FC = () => {
   const renderCard = useCallback(
     (exercise: CuratedExercise, index: number) => (
       <ExercisePickerCard
+        // key required: section-header maps (Popular/Recommended/Favorites)
+        // render via .map(), not FlatList — keyExtractor doesn't cover them.
+        key={exercise.id}
         exercise={exercise}
         isFavorite={favorites.includes(exercise.id)}
         isSelected={selectedIds.has(exercise.id)}

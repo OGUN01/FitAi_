@@ -36,6 +36,7 @@ import {
 import { haptics } from '../../utils/haptics';
 import type { WeightUnit } from '../../utils/units';
 import { toDisplayWeight } from '../../utils/units';
+import { mergeWeightSeries } from './goalProgressUtils';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -49,7 +50,9 @@ const PERIODS: { key: Period; label: string; days: number }[] = [
 ];
 
 const CHART_HEIGHT = 180;
-const CHART_PADDING_X = 4;
+// 12px (not 4): the end-point marker is a 5r dot + 9r halo drawn at the last
+// x — with 4px padding the halo was clipped by the SVG's right edge.
+const CHART_PADDING_X = 12;
 const CHART_PADDING_TOP = 12;
 const CHART_PADDING_BOTTOM = 20;
 const LINE_COLOR = chart[1];
@@ -59,6 +62,13 @@ interface WeightJourneySectionProps {
   progressEntries: ProgressEntry[];
   onLogWeight: () => void;
   unit?: WeightUnit;
+  /**
+   * Onboarding-derived current weight (calculatedMetrics.currentWeightKg).
+   * Hero-only fallback so a fresh user who just entered their weight sees it
+   * instead of "—" before any weigh-in is logged (matches AnalyticsScreen's
+   * resolveCurrentWeight fallback). Never seeds chart data.
+   */
+  fallbackCurrentWeightKg?: number | null;
 }
 
 interface RawChartPoint {
@@ -109,11 +119,19 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
   progressEntries,
   onLogWeight,
   unit = 'kg',
+  fallbackCurrentWeightKg = null,
 }) => {
   const [period, setPeriod] = useState<Period>('1M');
   const cutoffDays = PERIODS.find((item) => item.key === period)?.days ?? 30;
   const { width: windowWidth } = useWindowDimensions();
   const chartWidth = windowWidth - spacing.lg * 2;
+
+  // Merged per-day series from both sources (analytics history + local entries)
+  // so a same-day log never collapses the chart to a single point.
+  const mergedSeries = useMemo(
+    () => mergeWeightSeries(weightHistory, progressEntries),
+    [weightHistory, progressEntries],
+  );
 
   const rawChartData = useMemo((): RawChartPoint[] => {
     const now = Date.now();
@@ -124,19 +142,10 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
         ? date.toLocaleDateString('en-US', { weekday: 'short' })
         : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-    if (weightHistory && weightHistory.length > 0) {
-      return weightHistory
-        .filter((entry) => new Date(entry.date).getTime() >= cutoff)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .map((entry) => ({ label: toLabel(new Date(entry.date)), valueKg: entry.weight }));
-    }
-
-    return progressEntries
-      .filter((entry) => entry.weight_kg != null)
-      .filter((entry) => new Date(entry.entry_date).getTime() >= cutoff)
-      .sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime())
-      .map((entry) => ({ label: toLabel(new Date(entry.entry_date)), valueKg: entry.weight_kg }));
-  }, [cutoffDays, progressEntries, weightHistory]);
+    return mergedSeries
+      .filter((entry) => new Date(entry.date).getTime() >= cutoff)
+      .map((entry) => ({ label: toLabel(new Date(entry.date)), valueKg: entry.weight }));
+  }, [cutoffDays, mergedSeries]);
 
   const chartValues = useMemo(
     () => rawChartData.map((entry) => toDisplayWeight(entry.valueKg, unit) ?? 0),
@@ -147,26 +156,21 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
   // period-filtered chart data can be empty for 1W/1M even when older
   // weightHistory exists, and the hero must not blank out in that case.
   const latestWeightKg = useMemo((): number | null => {
-    if (weightHistory && weightHistory.length > 0) {
-      const sorted = [...weightHistory].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-      );
-      return sorted[sorted.length - 1].weight;
-    }
-    const withWeight = progressEntries
-      .filter((entry) => entry.weight_kg != null)
-      .sort(
-        (a, b) =>
-          new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime(),
-      );
-    return withWeight.length > 0
-      ? withWeight[withWeight.length - 1].weight_kg
+    return mergedSeries.length > 0
+      ? mergedSeries[mergedSeries.length - 1].weight
       : null;
-  }, [weightHistory, progressEntries]);
+  }, [mergedSeries]);
 
   const hasAnyWeightData = latestWeightKg != null;
 
-  const currentWeightKg = latestWeightKg;
+  // Hero prefers the latest logged entry; falls back to the onboarding weight
+  // so the hero doesn't show "—" for a fresh user. hasAnyWeightData stays
+  // entry-based so the empty-chart copy keeps asking for weigh-ins.
+  const currentWeightKg =
+    latestWeightKg ??
+    (fallbackCurrentWeightKg != null && fallbackCurrentWeightKg > 0
+      ? fallbackCurrentWeightKg
+      : null);
   const startWeightKg = rawChartData.length > 0 ? rawChartData[0].valueKg : null;
 
   const totalChangeKg =

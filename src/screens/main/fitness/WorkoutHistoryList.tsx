@@ -316,7 +316,7 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
           HISTORY
         </Text>
         <Text style={styles.sectionCount} numberOfLines={1}>
-          {workouts.length} workouts
+          {workouts.length} {workouts.length === 1 ? 'workout' : 'workouts'}
         </Text>
       </View>
 

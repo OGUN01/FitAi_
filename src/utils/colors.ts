@@ -16,6 +16,11 @@
  * token to a hex form or use rgba() directly.
  */
 export function hexToRgba(hex: string, alpha: number): string {
+  // Marked as a worklet so it is also safe to call inside reanimated
+  // useAnimatedStyle/useAnimatedProps callbacks on the UI thread (reanimated
+  // 3.17 throws ReanimatedError for non-worklet calls there). Pure string
+  // math only — no captures beyond its arguments.
+  'worklet';
   if (!hex) return hex;
   // Pass through rgba()/rgb()/named colors untouched.
   if (hex.startsWith("rgba") || hex.startsWith("rgb")) {

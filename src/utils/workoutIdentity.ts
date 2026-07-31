@@ -13,6 +13,18 @@ export function getWorkoutDayKey(
   return workout?.dayOfWeek?.toLowerCase() || "unknown";
 }
 
+/**
+ * Snapshot reps may carry a planned range string ("8-12") from PlannedSet.reps
+ * — preserve it verbatim so completed-workout detail shows the planned range
+ * instead of "3 × 0" (the previous `typeof === "number" ? … : 0` coercion).
+ * Finite numbers pass through; anything else (undefined/null/"") becomes 0.
+ */
+export function normalizeSnapshotReps(reps: unknown): number | string {
+  if (typeof reps === "number" && Number.isFinite(reps)) return reps;
+  if (typeof reps === "string" && reps.trim() !== "") return reps;
+  return 0;
+}
+
 export function getWorkoutSlotKey(
   workout: Pick<DayWorkout, "id" | "dayOfWeek">,
   workoutsOrPlan?: WeeklyWorkoutPlan | Array<Pick<DayWorkout, "id" | "dayOfWeek">>,

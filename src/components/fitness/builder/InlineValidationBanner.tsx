@@ -225,7 +225,9 @@ export const InlineValidationBanner: React.FC = () => {
           <Text style={styles.headerLabel} numberOfLines={1}>
             {headerLabel}
           </Text>
-          <Text style={styles.topMessage} numberOfLines={1}>
+          {/* 2 lines — at 1 line the guidance truncated mid-sentence on
+              narrow layouts (web/mobile shell), losing the actionable part. */}
+          <Text style={styles.topMessage} numberOfLines={2}>
             {topWarning.message}
           </Text>
           <Ionicons
