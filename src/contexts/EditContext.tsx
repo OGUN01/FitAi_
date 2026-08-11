@@ -547,28 +547,47 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   // CONTEXT VALUE
   // ============================================================================
 
-  const contextValue: EditContextType = {
-    // Edit context data
-    isEditMode,
-    editSection,
-    originalData,
-    currentData,
-    hasChanges,
-    validationErrors,
+  const contextValue: EditContextType = useMemo(
+    () => ({
+      // Edit context data
+      isEditMode,
+      editSection,
+      originalData,
+      currentData,
+      hasChanges,
+      validationErrors,
 
-    // Edit actions
-    startEdit,
-    updateData,
-    saveChanges,
-    cancelEdit,
-    validateData,
+      // Edit actions
+      startEdit,
+      updateData,
+      saveChanges,
+      cancelEdit,
+      validateData,
 
-    // Additional state
-    isLoading,
-    isSaving,
-    showOverlay,
-    setShowOverlay,
-  };
+      // Additional state
+      isLoading,
+      isSaving,
+      showOverlay,
+      setShowOverlay,
+    }),
+    [
+      isEditMode,
+      editSection,
+      originalData,
+      currentData,
+      hasChanges,
+      validationErrors,
+      startEdit,
+      updateData,
+      saveChanges,
+      cancelEdit,
+      validateData,
+      isLoading,
+      isSaving,
+      showOverlay,
+      setShowOverlay,
+    ],
+  );
 
   return (
     <EditContext.Provider value={contextValue}>{children}</EditContext.Provider>

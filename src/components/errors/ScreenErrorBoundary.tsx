@@ -10,10 +10,8 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
-import { rh, rw, rf } from '../../utils/responsive';
-import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { EmptyState } from "../ui/aurora/EmptyState";
 
 
 interface Props {
@@ -75,39 +73,33 @@ export class ScreenErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <View style={styles.content}>
-            <Ionicons
-              name="alert-circle"
-              size={rf(64)}
-              color={colors.error}
-            />
-
-            <Text style={styles.title}>Oops! Something went wrong</Text>
-
-            <Text style={styles.message}>
-              {this.props.screenName
+          <EmptyState
+            icon="alert-circle"
+            iconColor={colors.error}
+            title="Oops! Something went wrong"
+            subtitle={
+              this.props.screenName
                 ? `We encountered an error loading ${this.props.screenName}.`
-                : "We encountered an unexpected error."}
-            </Text>
+                : "We encountered an unexpected error."
+            }
+            ctaText="Try Again"
+            onCta={this.handleReset}
+            accessibilityLabel="Try Again"
+          />
 
-            <AnimatedPressable style={styles.button} onPress={this.handleReset} scaleValue={0.95} accessibilityRole="button" accessibilityLabel="Try again">
-              <Text style={styles.buttonText}>Try Again</Text>
-            </AnimatedPressable>
-
-            {__DEV__ && this.state.error && (
-              <ScrollView style={styles.errorDetails}>
-                <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
-                <Text style={styles.errorText}>
-                  {this.state.error.toString()}
+          {__DEV__ && this.state.error && (
+            <ScrollView style={styles.errorDetails}>
+              <Text style={styles.errorTitle}>Error Details (Dev Only):</Text>
+              <Text style={styles.errorText}>
+                {this.state.error.toString()}
+              </Text>
+              {this.state.errorInfo && (
+                <Text style={styles.errorStack}>
+                  {this.state.errorInfo.componentStack}
                 </Text>
-                {this.state.errorInfo && (
-                  <Text style={styles.errorStack}>
-                    {this.state.errorInfo.componentStack}
-                  </Text>
-                )}
-              </ScrollView>
-            )}
-          </View>
+              )}
+            </ScrollView>
+          )}
         </View>
       );
     }
@@ -125,49 +117,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
 
-  content: {
-    alignItems: "center" as const,
-    maxWidth: 400,
-  },
-
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-
-  message: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.xl,
-    lineHeight: rf(22),
-  },
-
-  button: {
-    backgroundColor: colors.primary,
-    minHeight: Math.max(rh(44), 44),
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: borderRadius.md,
-    minWidth: Math.max(rw(150), 150),
-  },
-
-  buttonText: {
-    color: colors.white,
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    textAlign: "center",
-  },
-
   errorDetails: {
     marginTop: spacing.xl,
     maxHeight: 200,
     width: "100%",
+    maxWidth: 400,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.sm,

@@ -8,6 +8,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { hexToRgba } from "../../utils/colors";
 
 interface ResourceItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -47,7 +48,10 @@ export const ResourceItem: React.FC<ResourceItemProps> = ({
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: `${iconColor}15` },
+                // hexToRgba(iconColor, 0.08) matches the FAQList.tsx migration
+                // (0x15/255 ≈ 0.08 alpha) — replaces the fragile hex-append
+                // pattern that silently breaks for 3-digit hex/named colors.
+                { backgroundColor: hexToRgba(iconColor, 0.08) },
               ]}
             >
               <Ionicons name={icon} size={rf(18)} color={iconColor} />
