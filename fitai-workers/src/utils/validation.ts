@@ -1165,3 +1165,52 @@ export const DeloadResponseSchema = z.object({
 
 export type DeloadRequest = z.infer<typeof DeloadRequestSchema>;
 export type DeloadResponse = z.infer<typeof DeloadResponseSchema>;
+
+// ============================================================================
+// ADMIN WRITE ENDPOINT SCHEMAS
+// ============================================================================
+// Validated at the top of each admin.ts write handler with validateRequest().
+// `value`/`note` deliberately stay loosely typed (app_config values and audit
+// notes are heterogeneous by design) — the goal here is to reject malformed
+// shapes (missing key, wrong enum, non-object body), not to constrain every
+// possible config payload.
+
+/**
+ * Body for POST /api/admin/config
+ */
+export const SetConfigRequestSchema = z.object({
+	key: z.string().min(1).max(200),
+	value: z.unknown(),
+});
+
+export type SetConfigRequest = z.infer<typeof SetConfigRequestSchema>;
+
+/**
+ * Body for POST /api/admin/cache/clear
+ */
+export const ClearCacheRequestSchema = z.object({
+	type: z.enum(['workout', 'meal', 'all']),
+});
+
+export type ClearCacheRequest = z.infer<typeof ClearCacheRequestSchema>;
+
+/**
+ * Body for POST /api/admin/users/:userId/subscription
+ */
+export const OverrideSubscriptionRequestSchema = z.object({
+	tier: z.enum(['free', 'basic', 'pro']),
+	billing_cycle: z.enum(['monthly', 'yearly']).optional(),
+	note: z.string().max(1000).optional(),
+});
+
+export type OverrideSubscriptionRequest = z.infer<typeof OverrideSubscriptionRequestSchema>;
+
+/**
+ * Body for POST /api/admin/admins
+ */
+export const CreateAdminRequestSchema = z.object({
+	email: z.string().email().max(320),
+	display_name: z.string().max(200).optional(),
+});
+
+export type CreateAdminRequest = z.infer<typeof CreateAdminRequestSchema>;

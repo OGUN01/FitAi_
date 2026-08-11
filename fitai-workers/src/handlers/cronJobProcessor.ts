@@ -46,6 +46,32 @@ export async function processPendingJobs(env: Env): Promise<void> {
 		}
 
 		const job = pendingJobs[0];
+
+		// 2b. Atomically claim the job before processing. The Cron Trigger fires
+		// every 1 minute; if a diet-generation AI call from the previous tick is
+		// still in flight past that minute, the next tick's SELECT above can see
+		// the same still-'pending' row before the prior invocation's status write
+		// lands, which would send the same job to the (paid) AI provider twice.
+		// This UPDATE ... WHERE status='pending' only succeeds for whichever
+		// invocation gets there first — Postgres row-level locking makes the
+		// claim atomic, unlike a plain SELECT-then-UPDATE.
+		const { data: claimed, error: claimError } = await supabase
+			.from('meal_generation_jobs')
+			.update({ status: 'processing' })
+			.eq('id', job.id)
+			.eq('status', 'pending')
+			.select('id');
+
+		if (claimError) {
+			console.error(`[CronJobProcessor] Failed to claim job ${job.id}:`, claimError);
+			return;
+		}
+
+		if (!claimed || claimed.length === 0) {
+			console.log(`[CronJobProcessor] Job ${job.id} already claimed by another invocation — skipping`);
+			return;
+		}
+
 		console.log(`[CronJobProcessor] Processing job ${job.id}`);
 
 		// 2. Import queue consumer and process the job
@@ -158,6 +184,27 @@ export async function processJobsManually(env: Env, limit: number = 5): Promise<
 		// Process each job
 		for (const job of pendingJobs) {
 			try {
+				// Atomically claim the job before processing — see the matching
+				// comment in processPendingJobs() for why a plain status check
+				// here isn't enough to prevent a job being processed twice.
+				const { data: claimed, error: claimError } = await supabase
+					.from('meal_generation_jobs')
+					.update({ status: 'processing' })
+					.eq('id', job.id)
+					.eq('status', 'pending')
+					.select('id');
+
+				if (claimError) {
+					console.error(`[CronJobProcessor] Failed to claim job ${job.id}:`, claimError);
+					errors++;
+					continue;
+				}
+
+				if (!claimed || claimed.length === 0) {
+					console.log(`[CronJobProcessor] Job ${job.id} already claimed by another invocation — skipping`);
+					continue;
+				}
+
 				console.log(`[CronJobProcessor] Processing job ${job.id}`);
 
 				const attempts = (job.retry_count ?? 0) + 1;

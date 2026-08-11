@@ -12,6 +12,13 @@ import { getSupabaseClient } from '../utils/supabase';
 import { invalidateAIConfigCache, invalidatePublicAppConfigCache } from '../utils/appConfig';
 import { ErrorCode } from '../utils/errorCodes';
 import { APIError, NotFoundError, ValidationError, ResourceAlreadyExistsError, handleSupabaseError } from '../utils/errors';
+import {
+	validateRequest,
+	SetConfigRequestSchema,
+	ClearCacheRequestSchema,
+	OverrideSubscriptionRequestSchema,
+	CreateAdminRequestSchema,
+} from '../utils/validation';
 
 type AdminCtx = Context<{ Bindings: Env; Variables: AuthContext }>;
 
@@ -221,11 +228,8 @@ export async function handleGetConfig(c: AdminCtx): Promise<Response> {
  */
 export async function handleSetConfig(c: AdminCtx): Promise<Response> {
 	const user = c.get('user');
-	const body = await c.req.json<{ key: string; value: unknown }>();
-
-	if (!body.key) {
-		throw new ValidationError('key is required');
-	}
+	const rawBody = await c.req.json();
+	const body = validateRequest(SetConfigRequestSchema, rawBody);
 
 	const supabase = getSupabaseClient(c.env);
 	// Use UPDATE (not upsert) — keys must already exist; this avoids the category check constraint
@@ -348,6 +352,15 @@ export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 
 /**
  * GET /api/admin/users?page=1&limit=20&search=email
+ *
+ * KNOWN LIMITATION: `search` only filters the users already returned by the
+ * current `page`/`limit` of Supabase's `auth.admin.listUsers()` — that API has
+ * no server-side email filter, so a real user sitting on page 2+ of the full
+ * user list will not be found when searching from page 1. A correct fix needs
+ * a searchable index over user email (e.g. querying `profiles.email` first to
+ * resolve matching user_ids, then paginating that filtered set) rather than
+ * paginating the raw auth.admin listing — that's a bigger restructuring than
+ * this pass covers, so this is left documented rather than silently wrong.
  */
 export async function handleListUsers(c: AdminCtx): Promise<Response> {
 	const page = Math.max(1, Number(c.req.query('page') ?? 1));
@@ -366,7 +379,8 @@ export async function handleListUsers(c: AdminCtx): Promise<Response> {
 
 	let users: unknown[] = authData?.users ?? [];
 
-	// Filter by search term (email)
+	// Filter by search term (email) — scoped to the current page only, see
+	// the KNOWN LIMITATION note above.
 	if (search) {
 		const q = search.toLowerCase();
 		users = users.filter((u: any) => u.email?.toLowerCase().includes(q));
@@ -445,11 +459,8 @@ export async function handleGetUser(c: AdminCtx): Promise<Response> {
 export async function handleOverrideSubscription(c: AdminCtx): Promise<Response> {
 	const userId = c.req.param('userId');
 	const user = c.get('user');
-	const body = await c.req.json<{ tier: string; billing_cycle?: string; note?: string }>();
-
-	if (!['free', 'basic', 'pro'].includes(body.tier)) {
-		throw new ValidationError('Invalid tier');
-	}
+	const rawBody = await c.req.json();
+	const body = validateRequest(OverrideSubscriptionRequestSchema, rawBody);
 
 	const supabase = getSupabaseClient(c.env);
 
@@ -577,7 +588,8 @@ export async function handleCacheStats(c: AdminCtx): Promise<Response> {
  * Body: { type: 'workout' | 'meal' | 'all' }
  */
 export async function handleClearCache(c: AdminCtx): Promise<Response> {
-	const body = await c.req.json<{ type: 'workout' | 'meal' | 'all' }>();
+	const rawBody = await c.req.json();
+	const body = validateRequest(ClearCacheRequestSchema, rawBody);
 	const supabase = getSupabaseClient(c.env);
 
 	const cleared: string[] = [];
@@ -709,11 +721,8 @@ export async function handleListAdmins(c: AdminCtx): Promise<Response> {
  */
 export async function handleCreateAdmin(c: AdminCtx): Promise<Response> {
 	const requestingUser = c.get('user');
-	const body = await c.req.json<{ email: string; display_name?: string }>();
-
-	if (!body.email) {
-		throw new ValidationError('email is required');
-	}
+	const rawBody = await c.req.json();
+	const body = validateRequest(CreateAdminRequestSchema, rawBody);
 
 	const supabase = getSupabaseClient(c.env);
 

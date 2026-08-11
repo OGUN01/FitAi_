@@ -78,6 +78,22 @@ function getClientIdentifier(c: Context<{ Bindings: Env; Variables: Partial<Auth
 
 /**
  * Check and update rate limit using KV
+ *
+ * KNOWN RACE (documented, not fixed here — see subscriptionGate.ts for the
+ * same class of issue on the usage-quota path): this is a non-atomic
+ * read-modify-write. Cloudflare KV has no compare-and-swap, so under
+ * concurrent requests from the same identifier within the same tick (a
+ * client retry storm, or a burst against AI_GENERATION's 50/hour limit),
+ * multiple in-flight calls can all `kv.get()` the same existing window,
+ * each independently decide "under limit", and each `kv.put()` back an
+ * array containing only their own timestamp — silently dropping the other
+ * concurrent requests' timestamps (lost update). Net effect: this limiter
+ * under-counts and a burst can exceed maxRequests. A real fix needs an
+ * atomic counter primitive (a Durable Object per rate-limit key is
+ * Cloudflare's recommended pattern for this, or a Postgres RPC like
+ * `increment_feature_usage`) — both are out of scope for this pass since
+ * they require new infrastructure/migrations. Treat this limiter as
+ * approximate abuse protection, not a hard cap.
  */
 async function checkRateLimit(kv: KVNamespace, identifier: string, config: RateLimitConfig): Promise<RateLimitInfo> {
 	const now = Math.floor(Date.now() / 1000); // Current time in seconds
