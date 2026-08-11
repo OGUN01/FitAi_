@@ -8,6 +8,7 @@ import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { MealsTimeline } from './MealsTimeline';
 import { CompactIntakeSummary } from './CompactIntakeSummary';
 import { flatColors as colors, flatFontSize as fontSize, spacing } from '../../theme/aurora-tokens';
+import { fontFamilyForWeight } from '../../theme/fonts';
 
 interface TodaysPlanOverlayProps {
   selectedDate: string;
@@ -86,6 +87,7 @@ export const TodaysPlanOverlay: React.FC<TodaysPlanOverlayProps> = ({
           mealCount={mealCount}
           plannedMealCount={meals.length}
           onLogMeal={onLogMeal}
+          selectedDate={selectedDate}
         />
       </ScrollView>
     </View>
@@ -113,7 +115,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitleWrap: { flex: 1, alignItems: 'center' },
-  title: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
+  title: {
+    color: colors.text,
+    fontSize: fontSize.lg,
+    fontFamily: fontFamilyForWeight('800'),
+    fontWeight: '800',
+  },
   subtitle: {
     color: colors.textSecondary,
     fontSize: fontSize.xs,
@@ -122,7 +129,9 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: spacing.lg,
     paddingBottom: spacing.xxl,
-    gap: spacing.sm,
+    // No explicit gap here — MealsTimeline's own marginBottom (spacing.lg)
+    // owns the rhythm between it and CompactIntakeSummary below, so the
+    // top padding and inter-section gap stay a single consistent value.
   },
 });
 

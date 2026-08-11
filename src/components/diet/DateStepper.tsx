@@ -9,6 +9,7 @@ import {
   spacing,
 } from '../../theme/aurora-tokens';
 import { getLocalDateString } from '../../utils/weekUtils';
+import { fontFamilyForWeight } from '../../theme/fonts';
 
 interface DateStepperProps {
   selectedDate: string;
@@ -201,7 +202,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
   },
-  dateLabel: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  dateLabel: {
+    color: colors.text,
+    fontSize: fontSize.md,
+    fontFamily: fontFamilyForWeight('700'),
+    fontWeight: '700',
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: colors.overlayDark,
@@ -227,13 +233,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthLabel: { color: colors.text, fontSize: fontSize.lg, fontWeight: '700' },
+  monthLabel: {
+    color: colors.text,
+    fontSize: fontSize.lg,
+    fontFamily: fontFamilyForWeight('700'),
+    fontWeight: '700',
+  },
   weekdayRow: { flexDirection: 'row', marginBottom: spacing.xs },
   weekday: {
     width: '14.285%',
     textAlign: 'center',
     color: colors.textSecondary,
     fontSize: fontSize.xs,
+    fontFamily: fontFamilyForWeight('700'),
     fontWeight: '700',
   },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -247,7 +259,11 @@ const styles = StyleSheet.create({
   daySelected: { backgroundColor: colors.primary },
   dayText: { color: colors.text, fontSize: fontSize.sm },
   dayTextMuted: { color: colors.textMuted },
-  dayTextSelected: { color: colors.white, fontWeight: '700' },
+  dayTextSelected: {
+    color: colors.white,
+    fontFamily: fontFamilyForWeight('700'),
+    fontWeight: '700',
+  },
   closeButton: {
     minHeight: 44,
     alignItems: 'center',
@@ -257,6 +273,7 @@ const styles = StyleSheet.create({
   closeText: {
     color: colors.primary,
     fontSize: fontSize.md,
+    fontFamily: fontFamilyForWeight('700'),
     fontWeight: '700',
   },
 });

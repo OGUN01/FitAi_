@@ -1,5 +1,14 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, RefreshControl, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  Modal,
+  Share,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSharedValue } from 'react-native-reanimated';
@@ -26,7 +35,6 @@ import { WaterIntakeModal } from '../../components/diet/WaterIntakeModal';
 // selected-day plan overlay so the home surface never duplicates meal cards.
 import { DietModals } from '../../components/diet/DietModals';
 import { StreakPill } from '../../components/diet/StreakPill';
-import { WeekCalendarStrip } from '../../components/diet/WeekCalendarStrip';
 import { ConcentricRings } from '../../components/diet/ConcentricRings';
 import { DateStepper } from '../../components/diet/DateStepper';
 import { CompactIntakeSummary } from '../../components/diet/CompactIntakeSummary';
@@ -47,7 +55,6 @@ import { useAIMealGeneration } from '../../hooks/useAIMealGeneration';
 import { ProductLookupResult } from '../../services/barcodeService';
 import { calculateMealSchedule } from '../../utils/mealSchedule';
 import { getLocalDateString } from '../../utils/weekUtils';
-import { getWeekDates } from '../../components/diet/dietViewModel';
 import { DateFormatters } from '../../utils/formatters/dateFormatters';
 import PaywallModal from '../../components/subscription/PaywallModal';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
@@ -98,6 +105,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     forceRefresh,
     completeMealPreparation,
     swapMealInPlan,
+    handleDeleteMeal,
   } = useMealPlanning(navigation);
 
   const {
@@ -351,30 +359,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       ),
     [weeklyMealPlan?.meals, selectedWeekday]
   );
-  // Per-day calorie completion for the WeekCalendarStrip dots. Sums the
-  // reactive dailyMeals list per visible week date against the user's daily
-  // calorie target. Past/today days get a percent; future days are omitted
-  // (the strip skips dots for those). Recomputes only when meals or target
-  // change — cheap (7 dates × filter).
-  const dayCompletion = useMemo(() => {
-    const target = getCalorieTarget() || 0;
-    if (target <= 0) return undefined;
-    const todayStr = getLocalDateString();
-    const week = getWeekDates(selectedDateMidnight);
-    const map: Record<string, number> = {};
-    for (const date of week) {
-      const dateStr = getLocalDateString(date);
-      if (dateStr > todayStr) continue; // skip future
-      const consumed = dailyMeals
-        .filter((m) => {
-          const loggedAt = (m as unknown as Record<string, unknown>).loggedAt;
-          return typeof loggedAt === 'string' && getLocalDateString(loggedAt as string) === dateStr;
-        })
-        .reduce((sum, m) => sum + (m.totalCalories || 0), 0);
-      map[dateStr] = Math.min(100, Math.round((consumed / target) * 100));
-    }
-    return map;
-  }, [dailyMeals, selectedDateMidnight]);
   // Use optimized today cache when viewing today, date-filtered query otherwise
   const displayNutrition = isSelectedDateToday ? storeNutrition : selectedDateNutrition;
   // SSOT fix: nutritionStore.getTodaysConsumedNutrition() is the single source
@@ -591,6 +575,28 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     },
     [swapMealInPlan]
   );
+  // Overflow menu — "Share" hands the meal summary to the OS share sheet.
+  const handleMealDetailShare = useCallback((meal: DayMeal) => {
+    const calories = Math.round(meal.totalCalories || 0);
+    Share.share({
+      message: `${meal.name || 'Meal'} — ${calories} kcal\n\nShared from FitAI`,
+    }).catch((error) => {
+      console.error('[DietScreen] Failed to share meal:', error);
+    });
+  }, []);
+  // Overflow menu — "Delete Meal" removes it from the weekly plan (and its
+  // log, if any) via the existing useMealPlanning.handleDeleteMeal action.
+  // The confirm dialog itself lives in MealDetailView (crossPlatformAlert).
+  const handleMealDetailDelete = useCallback(
+    async (meal: DayMeal) => {
+      const deleted = await handleDeleteMeal(meal);
+      if (deleted) {
+        setShowMealDetail(false);
+        setSelectedMeal(null);
+      }
+    },
+    [handleDeleteMeal]
+  );
   const handleCloseLogMealModal = useCallback(() => setShowLogMealModal(false), []);
   const handleScanResultConsumed = useCallback(() => setLogMealScanResult(null), []);
   const handleCloseWaterIntake = useCallback(
@@ -671,12 +677,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onSelectDate={setSelectedDate}
             />
 
-            <WeekCalendarStrip
-              selectedDate={selectedDateKey}
-              dayCompletion={dayCompletion}
-              onDateSelect={setSelectedDate}
-            />
-
             {foodsLoading ? (
               <DashboardSkeleton showHeader={false} cardCount={3} listItemCount={3} />
             ) : foodsError ? (
@@ -739,6 +739,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   plannedMealCount={selectedDayMeals.length}
                   onLogMeal={handleSearchFood}
                   onViewPlan={() => setShowTodaysPlan(true)}
+                  selectedDate={selectedDateKey}
                 />
 
                 <WaterQuickRow
@@ -1111,6 +1112,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               onBack={handleMealDetailBack}
               onLogMeal={handleMealDetailLogMeal}
               onSwapMeal={handleMealDetailSwap}
+              onShareMeal={handleMealDetailShare}
+              onDeleteMeal={handleMealDetailDelete}
               mealSchedule={mealSchedule}
               selectedDate={selectedDateKey}
               testID="diet-meal-detail-view"

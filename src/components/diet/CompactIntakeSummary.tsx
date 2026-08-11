@@ -8,6 +8,9 @@ import {
   flatFontSize as fontSize,
   spacing,
 } from '../../theme/aurora-tokens';
+import { fontFamilyForWeight } from '../../theme/fonts';
+import { getLocalDateString } from '../../utils/weekUtils';
+import { DateFormatters } from '../../utils/formatters/dateFormatters';
 
 interface CompactIntakeSummaryProps {
   consumedCalories: number;
@@ -16,6 +19,9 @@ interface CompactIntakeSummaryProps {
   plannedMealCount: number;
   onLogMeal: () => void;
   onViewPlan?: () => void;
+  /** ISO date the card is summarizing. Defaults to today when omitted so
+   * existing callers keep the "Today" copy. */
+  selectedDate?: string;
 }
 
 export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
@@ -25,16 +31,24 @@ export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
   plannedMealCount,
   onLogMeal,
   onViewPlan,
+  selectedDate,
 }) => {
   const remaining = Math.max(0, calorieTarget - consumedCalories);
   const percent =
     calorieTarget > 0 ? Math.min(100, Math.round((consumedCalories / calorieTarget) * 100)) : 0;
 
+  const isToday = !selectedDate || selectedDate === getLocalDateString();
+  const title = isToday
+    ? "Today's intake"
+    : `${DateFormatters.weekdayShort(`${selectedDate}T12:00:00`)}, ${DateFormatters.short(`${selectedDate}T12:00:00`)} intake`;
+  const planButtonLabel = isToday ? "View Today's Plan" : 'View Plan';
+  const planButtonA11yLabel = isToday ? "View today's plan" : 'View plan';
+
   return (
     <View style={styles.card}>
       <View style={styles.headingRow}>
         <View>
-          <Text style={styles.title}>Selected-day intake</Text>
+          <Text style={styles.title}>{title}</Text>
           <Text style={styles.mealCount}>
             {mealCount} logged
             {plannedMealCount > 0 ? ` · ${plannedMealCount} planned` : ''}
@@ -74,10 +88,10 @@ export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
           style={styles.planButton}
           onPress={onViewPlan}
           accessibilityRole="button"
-          accessibilityLabel="View today's plan"
+          accessibilityLabel={planButtonA11yLabel}
           hapticType="light"
         >
-          <Text style={styles.planText}>View Today&apos;s Plan</Text>
+          <Text style={styles.planText}>{planButtonLabel}</Text>
           <Ionicons name="arrow-forward" size={18} color={colors.white} />
         </AnimatedPressable>
       ) : null}
@@ -100,13 +114,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
+  title: {
+    color: colors.text,
+    fontSize: fontSize.md,
+    fontFamily: fontFamilyForWeight('700'),
+    fontWeight: '700',
+  },
   mealCount: {
     color: colors.textSecondary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
-  percent: { color: colors.primary, fontSize: fontSize.lg, fontWeight: '800' },
+  percent: {
+    color: colors.primary,
+    fontSize: fontSize.lg,
+    fontFamily: fontFamilyForWeight('800'),
+    fontWeight: '800',
+  },
   track: {
     height: 6,
     borderRadius: 3,
@@ -116,7 +140,12 @@ const styles = StyleSheet.create({
   fill: { height: '100%', borderRadius: 3, backgroundColor: colors.primary },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   statRight: { alignItems: 'flex-end' },
-  statValue: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
+  statValue: {
+    color: colors.text,
+    fontSize: fontSize.lg,
+    fontFamily: fontFamilyForWeight('800'),
+    fontWeight: '800',
+  },
   statLabel: { color: colors.textSecondary, fontSize: fontSize.xs },
   logButton: {
     minHeight: 44,
@@ -128,7 +157,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
-  logText: { color: colors.primary, fontSize: fontSize.sm, fontWeight: '700' },
+  logText: {
+    color: colors.primary,
+    fontSize: fontSize.sm,
+    fontFamily: fontFamilyForWeight('700'),
+    fontWeight: '700',
+  },
   planButton: {
     minHeight: 48,
     borderRadius: borderRadius.md,
@@ -138,7 +172,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  planText: { color: colors.white, fontSize: fontSize.md, fontWeight: '800' },
+  planText: {
+    color: colors.white,
+    fontSize: fontSize.md,
+    fontFamily: fontFamilyForWeight('800'),
+    fontWeight: '800',
+  },
 });
 
 export default CompactIntakeSummary;
