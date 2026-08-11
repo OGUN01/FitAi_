@@ -728,14 +728,60 @@ class UnifiedAIService {
   }
 
   async swapMealInPlan(
-    _meal: DayMeal,
-    _options: {
+    meal: DayMeal,
+    options: {
       dietType?: string;
       allergies?: string[];
-      targetCalories?: number;
+      restrictions?: string[];
+      excludeIngredients?: string[];
     }
   ): Promise<DayMeal | null> {
-    return null;
+    try {
+      const response = await fitaiWorkersClient.swapMeal<any>({
+        meal: {
+          name: meal.name,
+          type: meal.type,
+          dayOfWeek: meal.dayOfWeek.toLowerCase(),
+          totalCalories: meal.totalCalories,
+          totalMacros: {
+            protein: meal.totalMacros.protein,
+            carbohydrates: meal.totalMacros.carbohydrates,
+            fat: meal.totalMacros.fat,
+            fiber: meal.totalMacros.fiber,
+          },
+        },
+        dietType: options.dietType || 'balanced',
+        allergies: options.allergies || [],
+        restrictions: options.restrictions || [],
+        excludeIngredients: options.excludeIngredients || [],
+      });
+      if (!response.success || !response.data) {
+        console.error('[AIService] Meal swap failed:', response.error || 'Meal swap failed');
+        return null;
+      }
+      const plan = transformDietResponseToWeeklyPlan(
+        {
+          success: true,
+          data: {
+            id: `swap_${meal.id}`,
+            title: 'Meal replacement',
+            meals: [response.data],
+            dailyTotals: {
+              calories: response.data.totalNutrition?.calories || 0,
+              protein: response.data.totalNutrition?.protein || 0,
+              carbs: response.data.totalNutrition?.carbs || 0,
+              fat: response.data.totalNutrition?.fats || 0,
+            },
+          },
+        },
+        1,
+        { requestedDaysCount: 1 }
+      );
+      return plan?.meals[0] ?? null;
+    } catch (error) {
+      console.error('[AIService] swapMealInPlan failed:', error);
+      return null;
+    }
   }
 
   /**

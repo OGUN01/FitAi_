@@ -546,6 +546,40 @@ class AnalyticsDataService {
   }
 
   /**
+   * Load recent meal-log dates for authoritative nutrition streak recomputation.
+   * The Diet UI hydrates only today's rows, so deriving a multi-day streak from
+   * nutritionStore.dailyMeals alone would collapse a restored streak to 0/1.
+   */
+  async loadNutritionMealDates(
+    userId: string,
+    days: number = 400,
+  ): Promise<string[]> {
+    if (!userId || userId.startsWith("guest") || userId === "local-user") {
+      return [];
+    }
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const { data, error } = await supabase
+        .from("meal_logs")
+        .select("logged_at")
+        .eq("user_id", userId)
+        .gte("logged_at", startDate.toISOString())
+        .order("logged_at", { ascending: false });
+      if (error) {
+        console.error("[analyticsData] loadNutritionMealDates error:", error);
+        return [];
+      }
+      return (data || [])
+        .map((row) => row.logged_at as string | null)
+        .filter((value): value is string => typeof value === "string");
+    } catch (error) {
+      console.error("[analyticsData] loadNutritionMealDates threw:", error);
+      return [];
+    }
+  }
+
+  /**
    * Diet redesign: Load persisted nutrition streaks for a user.
    * SSOT writer is achievementStore.updateNutritionStreak.
    */

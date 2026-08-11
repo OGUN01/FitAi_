@@ -33,6 +33,8 @@ import {
 	BodyMetricsContext,
 	AdvancedReviewContext,
 	Meal,
+	MealSchema,
+	MealSwapRequestSchema,
 } from '../utils/validation';
 import { getCachedData, saveCachedData, CacheMetadata } from '../utils/cache';
 import { ValidationError, APIError } from '../utils/errors';
@@ -1072,6 +1074,95 @@ export async function handleDietGeneration(c: Context<{ Bindings: Env; Variables
 		}
 
 		throw new APIError('Failed to generate diet plan. Please try again.', 500, ErrorCode.AI_GENERATION_FAILED, {
+			error: error instanceof Error ? error.message : String(error),
+		});
+	}
+}
+
+// ============================================================================
+// SINGLE-MEAL SWAP
+// ============================================================================
+
+export async function handleMealSwap(
+	c: Context<{ Bindings: Env; Variables: Partial<AuthContext> }>,
+): Promise<Response> {
+	try {
+		const request = validateRequest(MealSwapRequestSchema, await c.req.json());
+		const user = c.get('user');
+		if (!user?.id) {
+			throw new APIError('Authentication required', 401, ErrorCode.UNAUTHORIZED);
+		}
+
+		const forbidden = Array.from(
+			new Set([...request.allergies, ...request.restrictions, ...request.excludeIngredients]),
+		);
+		const target = request.meal;
+		const prompt = `Generate exactly one replacement ${target.type} meal for ${target.dayOfWeek}.
+It must be materially different from "${target.name}".
+Diet type: ${request.dietType}.
+Allergies/restrictions/excluded ingredients (must not appear): ${forbidden.join(', ') || 'none'}.
+Preserve the meal slot and stay within 10% of these nutrition targets: ${target.totalCalories} kcal, ${target.totalMacros.protein}g protein, ${target.totalMacros.carbohydrates}g carbs, ${target.totalMacros.fat}g fat, ${target.totalMacros.fiber}g fiber.
+Return the meal only. Use mealType "${target.type === 'snack' ? 'afternoon_snack' : target.type}" and dayOfWeek "${target.dayOfWeek}".`;
+
+		const aiConfig = await getAIConfig(c.env);
+		const result = await generateObject({
+			model: createAIProvider(c.env, aiConfig.model),
+			schema: MealSchema,
+			prompt,
+			temperature: 0.7,
+		});
+		const replacement = result.object;
+		if (!replacement) {
+			throw new APIError('AI returned an empty replacement meal', 500, ErrorCode.AI_INVALID_RESPONSE);
+		}
+
+		const validationPlan: DietResponse = {
+			title: 'Meal swap validation',
+			description: 'Single meal replacement',
+			totalCalories: replacement.totalNutrition.calories,
+			totalNutrition: replacement.totalNutrition,
+			meals: [replacement],
+		};
+		const violations = [
+			...request.allergies.flatMap((allergen) =>
+				replacement.foods
+					.filter((food) => containsAllergen(food.name, allergen))
+					.map((food) => `${food.name} contains ${allergen}`),
+			),
+			...checkDietTypeViolations([replacement], request.dietType, request.restrictions),
+			...request.excludeIngredients.flatMap((excluded) =>
+				replacement.foods
+					.filter((food) => food.name.toLowerCase().includes(excluded.toLowerCase()))
+					.map((food) => `${food.name} contains excluded ingredient ${excluded}`),
+			),
+		];
+		const calorieDrift = Math.abs(replacement.totalNutrition.calories - target.totalCalories) / Math.max(target.totalCalories, 1);
+		const macroDrift = (actual: number, expected: number) =>
+			Math.abs(actual - expected) / Math.max(expected, 1);
+		if (
+			violations.length > 0 ||
+			calorieDrift > 0.1 ||
+			macroDrift(replacement.totalNutrition.protein, target.totalMacros.protein) > 0.15 ||
+			macroDrift(replacement.totalNutrition.carbs, target.totalMacros.carbohydrates) > 0.15 ||
+			macroDrift(replacement.totalNutrition.fats, target.totalMacros.fat) > 0.15
+		) {
+			throw new APIError('Replacement meal failed diet or nutrition constraints', 422, ErrorCode.VALIDATION_ERROR, {
+				violations,
+				validationPlan,
+			});
+		}
+
+		try {
+			await resolveMealImages([replacement], c.env);
+		} catch (error) {
+			console.warn('[Meal Swap] Image resolution failed (non-fatal):', error);
+		}
+
+		return c.json({ success: true, data: replacement }, 200);
+	} catch (error) {
+		console.error('[Meal Swap] Error:', error);
+		if (error instanceof ValidationError || error instanceof APIError) throw error;
+		throw new APIError('Failed to generate replacement meal', 500, ErrorCode.AI_GENERATION_FAILED, {
 			error: error instanceof Error ? error.message : String(error),
 		});
 	}

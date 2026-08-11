@@ -28,6 +28,23 @@ export const NEUTRAL_HEIGHT_CM = 168;
 export const NEUTRAL_WEIGHT_KG = 72;
 export const NEUTRAL_TARGET_KG = 67; // 72 - 5 (default loss intent)
 
+// Plausible human measurement bounds (mirror the RangeSlider min/max in
+// MeasurementsSection). Persisted values outside these (e.g. a corrupted
+// height_cm=250 from the first-touch slider race) fall back to the neutral
+// default instead of rendering an impossible value and blocking completion.
+const HEIGHT_MIN = 100;
+const HEIGHT_MAX = 230; // below slider max (250) — anything above is not human
+const WEIGHT_MIN = 30;
+const WEIGHT_MAX = 250; // below slider max (300) — guard against corrupt max
+const sanitizeHeight = (v: number | null | undefined) =>
+  typeof v === "number" && v >= HEIGHT_MIN && v <= HEIGHT_MAX
+    ? v
+    : NEUTRAL_HEIGHT_CM;
+const sanitizeWeight = (v: number | null | undefined) =>
+  typeof v === "number" && v >= WEIGHT_MIN && v <= WEIGHT_MAX
+    ? v
+    : NEUTRAL_WEIGHT_KG;
+
 export const GENDER_MEDIANS: Record<
   string,
   { height: number; weight: number; target: number }
@@ -56,9 +73,9 @@ export const useBodyAnalysis = ({
   // the gender-specific median once gender is known and sliders are untouched.
   const [formData, setFormData] = useState<BodyAnalysisData>({
     // Basic measurements
-    height_cm: data?.height_cm ?? NEUTRAL_HEIGHT_CM,
-    current_weight_kg: data?.current_weight_kg ?? NEUTRAL_WEIGHT_KG,
-    target_weight_kg: data?.target_weight_kg ?? NEUTRAL_TARGET_KG,
+    height_cm: sanitizeHeight(data?.height_cm),
+    current_weight_kg: sanitizeWeight(data?.current_weight_kg),
+    target_weight_kg: sanitizeWeight(data?.target_weight_kg),
     target_timeline_weeks: data?.target_timeline_weeks ?? 12,
 
     // Body composition
@@ -113,9 +130,9 @@ export const useBodyAnalysis = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        height_cm: data.height_cm ?? NEUTRAL_HEIGHT_CM,
-        current_weight_kg: data.current_weight_kg ?? NEUTRAL_WEIGHT_KG,
-        target_weight_kg: data.target_weight_kg ?? NEUTRAL_TARGET_KG,
+        height_cm: sanitizeHeight(data.height_cm),
+        current_weight_kg: sanitizeWeight(data.current_weight_kg),
+        target_weight_kg: sanitizeWeight(data.target_weight_kg),
         target_timeline_weeks: data.target_timeline_weeks ?? 12,
         body_fat_percentage: data.body_fat_percentage || undefined,
         waist_cm: data.waist_cm || undefined,

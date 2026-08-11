@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    minHeight: 42,
+    minHeight: 44,
   },
 
   primaryBtnText: {
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    minHeight: 42,
+    minHeight: 44,
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
   },
 
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   ghostBtn: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-    minHeight: 42,
+    minHeight: 44,
     justifyContent: 'center',
   },
 
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    minHeight: 42,
+    minHeight: 44,
   },
 
   btnIcon: {

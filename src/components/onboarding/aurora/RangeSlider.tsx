@@ -117,6 +117,12 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
 
   const updateFromFraction = useCallback(
     (fx: number) => {
+      // Guard against the first-touch race: onLayout's async measure() may not
+      // have resolved yet, leaving trackPageX.current at 0. Gesture math then
+      // computes (g.x0 - 0) / w, a fraction far above 1 that clamps to 1 and
+      // writes max (e.g. height_cm=250) — corrupting persisted state. Skip the
+      // write entirely until the track position is actually known.
+      if (trackPageX.current === 0) return;
       const clamped = Math.max(0, Math.min(1, fx));
       const raw = min + clamped * (max - min);
       const snapped = snap(raw, min, step);

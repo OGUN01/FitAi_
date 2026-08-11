@@ -620,15 +620,15 @@ export const useMealPlanning = (navigation: any) => {
         const swapped = await aiService.swapMealInPlan(meal, {
           dietType: dietPrefs?.diet_type || 'balanced',
           allergies: dietPrefs?.allergies || [],
-          targetCalories: meal.totalCalories || 500,
+          restrictions: dietPrefs?.restrictions || [],
+          excludeIngredients: dietPrefs?.dislikes || [],
         });
 
         if (swapped) {
           meals[idx] = { ...swapped, id: meal.id, dayOfWeek: meal.dayOfWeek };
           const updatedPlan = { ...weeklyMealPlan, meals };
-          setWeeklyMealPlan(updatedPlan);
           await saveWeeklyMealPlan(updatedPlan);
-          await forceRefresh();
+          setWeeklyMealPlan(updatedPlan);
         } else {
           crossPlatformAlert(
             'Swap Failed',
@@ -645,7 +645,7 @@ export const useMealPlanning = (navigation: any) => {
         setIsSwappingMeal(false);
       }
     },
-    [weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan, forceRefresh]
+    [weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan]
   );
 
   return {

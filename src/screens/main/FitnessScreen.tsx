@@ -6,8 +6,8 @@
  */
 
 import React, { useMemo, useCallback } from 'react';
-import { View, StyleSheet, RefreshControl, Text, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, StyleSheet, RefreshControl, Text, Platform, StatusBar } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -136,6 +136,22 @@ interface FitnessScreenProps {
 }
 
 const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
+  // Top safe-area inset — applied explicitly to FitnessHeader so the greeting
+  // clears the status bar the same way Diet/Home do. SafeAreaView edges={
+  // ['top','bottom']} was not pushing the header down on some devices (greeting
+  // rendered behind the status bar), so we mirror the WorkoutSessionScreen
+  // pattern: SafeAreaView keeps only the bottom edge, and the top inset is
+  // handed to the header as explicit paddingTop.
+  const insets = useSafeAreaInsets();
+  // Robust top inset for FitnessHeader. useSafeAreaInsets().top can report 0
+  // (before SafeAreaProvider measures, or certain Expo Go / device configs),
+  // which previously let the greeting render behind the status bar. Fall back to
+  // StatusBar.currentHeight (Android) and a 24px floor so the greeting always
+  // clears the bar. SafeAreaView owns only the bottom edge (edges={['bottom']}),
+  // so this header is the sole owner of top padding — no double-pad risk.
+  const statusBarHeight =
+    Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+  const headerPaddingTop = Math.max(insets.top, statusBarHeight, 24);
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
   const setPlanError = useFitnessStore((s) => s.setPlanError);
@@ -216,7 +232,10 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* edges={['bottom']} — top inset is applied explicitly to FitnessHeader
+          (paddingTop={insets.top}) so the greeting clears the status bar
+          reliably. edges={['top']} here would double-pad the top. */}
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <Animated.View
           entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}
@@ -238,6 +257,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             <FitnessHeader
               userName={state.userName || ''}
               onCalendarPress={actions.handleCalendarPress}
+              paddingTop={headerPaddingTop}
             />
 
             {/* 1.5 Week Progress Ring Card — single source of truth for weekly stats.
@@ -446,8 +466,8 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </View>
             )}
 
-            {/* Bottom Spacing — SafeAreaView already applies the bottom inset via
-                edges=['top','bottom']; only the tab-bar offset is needed (audit #14). */}
+            {/* Bottom Spacing — SafeAreaView applies the bottom inset via
+                edges=['bottom']; only the tab-bar offset is needed (audit #14). */}
             <View style={{ height: rh(120) }} />
           </Animated.ScrollView>
         </Animated.View>

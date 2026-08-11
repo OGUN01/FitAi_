@@ -22,16 +22,15 @@ import { GuestSignUpScreen } from './GuestSignUpScreen';
 
 import { MealDetailView } from '../../components/diet/MealDetailView';
 import { WaterIntakeModal } from '../../components/diet/WaterIntakeModal';
-// Diet tab redesigned (Hero Ring layout): the dashboard now shows a big
-// calorie ring hero + macro rings + an integrated meals timeline on the
-// AuroraBackground, replacing the prior card-stack (CalorieRingCard,
-// MacroPillRow, QuickActionStrip, TodaysIntakeSummary, DateStepper) and
-// the MealsListView full-screen overlay. Those components are now legacy.
+// Diet dashboard stays summary-only; its meal timeline lives in the dedicated
+// selected-day plan overlay so the home surface never duplicates meal cards.
 import { DietModals } from '../../components/diet/DietModals';
 import { StreakPill } from '../../components/diet/StreakPill';
 import { WeekCalendarStrip } from '../../components/diet/WeekCalendarStrip';
 import { ConcentricRings } from '../../components/diet/ConcentricRings';
-import { MealsTimeline } from '../../components/diet/MealsTimeline';
+import { DateStepper } from '../../components/diet/DateStepper';
+import { CompactIntakeSummary } from '../../components/diet/CompactIntakeSummary';
+import { TodaysPlanOverlay } from '../../components/diet/TodaysPlanOverlay';
 import { WaterQuickRow } from '../../components/diet/WaterQuickRow';
 import { DietActionDock } from '../../components/diet/DietActionDock';
 import { ManualBarcodeEntry } from '../../components/diet/ManualBarcodeEntry';
@@ -78,6 +77,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [showLogMealModal, setShowLogMealModal] = useState(false);
   const [logMealScanResult, setLogMealScanResult] = useState<LogMealScanResult | null>(null);
   const [showMealDetail, setShowMealDetail] = useState(false);
+  const [showTodaysPlan, setShowTodaysPlan] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<DayMeal | null>(null);
   const [showBarcodeOptions, setShowBarcodeOptions] = useState(false);
   const [showLabelScanPrep, setShowLabelScanPrep] = useState(false);
@@ -93,7 +93,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     isGeneratingPlan,
     asyncJob,
     aiError,
-    todaysMeals,
     generateWeeklyMealPlan,
     cancelAsyncGeneration,
     forceRefresh,
@@ -174,6 +173,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   });
 
   const selectedDateKey = useAppStateStore((state) => state.selectedDate);
+  const setSelectedDate = useAppStateStore((state) => state.setSelectedDate);
+  const shiftSelectedDate = useAppStateStore((state) => state.shiftSelectedDate);
 
   // Auto-hide action dock on scroll-down, reveal on scroll-up (Google/Apple
   // pattern). `dockHide` is a Reanimated shared value (0 = visible,
@@ -221,22 +222,21 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   // the tree and keeps the scroll-driven show/hide logic intact when closed.
   useEffect(() => {
     const overlayOpen =
-      showMealDetail || (isProcessingBarcode && !showCamera) || showCamera;
+      showTodaysPlan || showMealDetail || (isProcessingBarcode && !showCamera) || showCamera;
     dockHide.value = overlayOpen ? 1 : 0;
-  }, [showMealDetail, isProcessingBarcode, showCamera, dockHide]);
+  }, [showTodaysPlan, showMealDetail, isProcessingBarcode, showCamera, dockHide]);
 
   const mealProgress = useNutritionStore((state) => state.mealProgress);
   const storeGetMealProgress = (mealId: string) => mealProgress[mealId] ?? null;
   const dailyMeals = useNutritionStore((state) => state.dailyMeals);
-  const todaysConsumedMeals = React.useMemo(() => {
-    const todayDate = getLocalDateString();
+  const selectedDateConsumedMeals = React.useMemo(() => {
     return dailyMeals.filter(
       (meal) =>
         typeof (meal as unknown as Record<string, unknown>).loggedAt === 'string' &&
         getLocalDateString((meal as unknown as Record<string, unknown>).loggedAt as string) ===
-          todayDate
+          selectedDateKey
     );
-  }, [dailyMeals]);
+  }, [dailyMeals, selectedDateKey]);
   const personalInfo = useProfileStore((state) => state.personalInfo);
   const bodyAnalysis = useProfileStore((state) => state.bodyAnalysis);
   const dietPreferences = useProfileStore((state) => state.dietPreferences);
@@ -334,16 +334,23 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   // midnight-UTC day-shift in negative timezones.
   const selectedDateMidnight = useMemo(
     () => new Date(`${selectedDateKey}T12:00:00`),
-    [selectedDateKey],
+    [selectedDateKey]
   );
   const dateSubtitle = isSelectedDateToday
     ? `Today, ${DateFormatters.short(selectedDateMidnight)}`
     : `${DateFormatters.weekdayShort(selectedDateMidnight)}, ${DateFormatters.short(selectedDateMidnight)}`;
-  // Meals-timeline header: "Today's Meals" for today, else a human-readable
-  // date (never a raw ISO string like "2026-07-28").
-  const mealsTimelineTitle = isSelectedDateToday
-    ? "Today's Meals"
-    : `Meals · ${DateFormatters.weekdayShort(selectedDateMidnight)}, ${DateFormatters.short(selectedDateMidnight)}`;
+  // Weekly plans are weekday-based, so every selected date must resolve its own
+  // weekday rather than reusing the hook's today-only projection.
+  const selectedWeekday = selectedDateMidnight
+    .toLocaleDateString('en-US', { weekday: 'long' })
+    .toLowerCase();
+  const selectedDayMeals = useMemo(
+    () =>
+      (weeklyMealPlan?.meals ?? []).filter(
+        (meal) => meal.dayOfWeek?.toLowerCase() === selectedWeekday
+      ),
+    [weeklyMealPlan?.meals, selectedWeekday]
+  );
   // Per-day calorie completion for the WeekCalendarStrip dots. Sums the
   // reactive dailyMeals list per visible week date against the user's daily
   // calorie target. Past/today days get a percent; future days are omitted
@@ -384,7 +391,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     fat: displayNutrition.fat,
     fiber: displayNutrition.fiber,
     sugar: displayNutrition.sugar,
-    mealsCount: dailyNutrition?.mealsCount ?? todaysConsumedMeals.length,
+    mealsCount: isSelectedDateToday
+      ? (dailyNutrition?.mealsCount ?? selectedDateConsumedMeals.length)
+      : selectedDateConsumedMeals.length,
   };
 
   const macroTargets = getMacroTargets();
@@ -655,12 +664,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               </View>
             </View>
 
+            <DateStepper
+              selectedDate={selectedDateKey}
+              onPrevious={() => shiftSelectedDate(-1)}
+              onNext={() => shiftSelectedDate(1)}
+              onSelectDate={setSelectedDate}
+            />
+
             <WeekCalendarStrip
               selectedDate={selectedDateKey}
               dayCompletion={dayCompletion}
-              onDateSelect={(dateStr) => {
-                useAppStateStore.getState().setSelectedDate(dateStr);
-              }}
+              onDateSelect={setSelectedDate}
             />
 
             {foodsLoading ? (
@@ -680,64 +694,66 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 />
               </View>
             ) : null}
-            {!canAccessMealFeatures && (
-              <View style={styles.errorCard}>
-                <Text style={styles.errorText}>Please sign in to track your nutrition</Text>
-              </View>
-            )}
+            {!foodsLoading ? (
+              <>
+                {!canAccessMealFeatures && (
+                  <View style={styles.errorCard}>
+                    <Text style={styles.errorText}>Please sign in to track your nutrition</Text>
+                  </View>
+                )}
 
-            {aiError && !isGeneratingPlan ? (
-              <View style={styles.errorCard}>
-                <View style={styles.errorBannerRow}>
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={rf(22)}
-                    color={colors.error}
-                    style={styles.errorBannerIcon}
-                  />
-                  <Text style={styles.errorText}>
-                    {typeof aiError === 'string'
-                      ? aiError
-                      : 'Failed to generate meal plan. Please try again.'}
-                  </Text>
-                </View>
-                <GlassButton
-                  label="Retry Generation"
-                  onPress={() => onGenerateWeeklyPlan()}
-                  variant="primary"
+                {aiError && !isGeneratingPlan ? (
+                  <View style={styles.errorCard}>
+                    <View style={styles.errorBannerRow}>
+                      <Ionicons
+                        name="alert-circle-outline"
+                        size={rf(22)}
+                        color={colors.error}
+                        style={styles.errorBannerIcon}
+                      />
+                      <Text style={styles.errorText}>
+                        {typeof aiError === 'string'
+                          ? aiError
+                          : 'Failed to generate meal plan. Please try again.'}
+                      </Text>
+                    </View>
+                    <GlassButton
+                      label="Retry Generation"
+                      onPress={() => onGenerateWeeklyPlan()}
+                      variant="primary"
+                    />
+                  </View>
+                ) : null}
+
+                <ConcentricRings
+                  calories={nutritionTargets.calories}
+                  protein={nutritionTargets.protein}
+                  carbs={nutritionTargets.carbs}
+                  fat={nutritionTargets.fat}
                 />
-              </View>
-            ) : null}
 
-            <ConcentricRings
-              calories={nutritionTargets.calories}
-              protein={nutritionTargets.protein}
-              carbs={nutritionTargets.carbs}
-              fat={nutritionTargets.fat}
-            />
+                <CompactIntakeSummary
+                  consumedCalories={currentNutrition.calories}
+                  calorieTarget={calorieTarget}
+                  mealCount={currentNutrition.mealsCount}
+                  plannedMealCount={selectedDayMeals.length}
+                  onLogMeal={handleSearchFood}
+                  onViewPlan={() => setShowTodaysPlan(true)}
+                />
 
-            <MealsTimeline
-              meals={todaysMeals}
-              mealSchedule={mealSchedule}
-              mealProgress={mealProgress}
-              selectedDate={selectedDateKey}
-              onMealPress={handleTimelineMealPress}
-              onGeneratePlan={onGenerateWeeklyPlan}
-              isGeneratingPlan={isGeneratingPlan}
-              title={mealsTimelineTitle}
-            />
+                <WaterQuickRow
+                  intakeML={waterIntakeML || 0}
+                  goalML={waterGoalML ?? 0}
+                  onAddWater={hydrationAddWater}
+                  onOpenDetails={handleShowWaterIntake}
+                />
 
-            <WaterQuickRow
-              intakeML={waterIntakeML || 0}
-              goalML={waterGoalML ?? 0}
-              onAddWater={hydrationAddWater}
-              onOpenDetails={handleShowWaterIntake}
-            />
-
-            {/* Offline-DB download prompt — kept off the top so the hero rings
+                {/* Offline-DB download prompt — kept off the top so the hero rings
                 + meals are the first thing a user sees. Sits quietly at the
                 bottom of the feed; dismissable. */}
-            <DatabaseDownloadBanner />
+                <DatabaseDownloadBanner />
+              </>
+            ) : null}
           </View>
         </ScrollView>
 
@@ -859,7 +875,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             onRequestClose={() => setShowBarcodeOptions(false)}
           >
             <View style={styles.optionsOverlay}>
-              <View style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}>
+              <View
+                style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}
+              >
                 <Text style={styles.optionsTitle}>Barcode</Text>
                 <AnimatedPressable
                   style={styles.optionButton}
@@ -913,7 +931,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             }}
           >
             <View style={styles.optionsOverlay}>
-              <View style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}>
+              <View
+                style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}
+              >
                 <Text style={styles.optionsTitle}>Scan Nutrition Label</Text>
                 <Text style={styles.optionsSubtitle}>
                   Enter the serving size you are eating for exact nutrient calculation
@@ -983,7 +1003,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             }}
           >
             <View style={styles.optionsOverlay}>
-              <View style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}>
+              <View
+                style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}
+              >
                 <Text style={styles.optionsTitle}>Scan Food</Text>
                 <Text style={styles.optionsSubtitle}>
                   Enter the weight of your portion for more accurate calorie tracking
@@ -1062,10 +1084,24 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           />
         )}
 
-        {/* Meal-detail overlay — opens when a timeline meal row is tapped
-            (selectedMeal + showMealDetail). Renders the full meal detail card
-            with macros, food items, and a "Log this meal" CTA that delegates to
-            the existing completeMealPreparation flow. */}
+        {showTodaysPlan && !showMealDetail ? (
+          <TodaysPlanOverlay
+            selectedDate={selectedDateKey}
+            meals={selectedDayMeals}
+            mealSchedule={mealSchedule}
+            mealProgress={mealProgress}
+            consumedCalories={currentNutrition.calories}
+            calorieTarget={calorieTarget}
+            mealCount={currentNutrition.mealsCount}
+            isGeneratingPlan={isGeneratingPlan}
+            onBack={() => setShowTodaysPlan(false)}
+            onMealPress={handleTimelineMealPress}
+            onLogMeal={handleSearchFood}
+            onGeneratePlan={onGenerateWeeklyPlan}
+          />
+        ) : null}
+
+        {/* Meal-detail overlay — back dismisses detail and reveals the plan. */}
         {showMealDetail && selectedMeal ? (
           <View style={styles.mealDetailOverlay}>
             <MealDetailView
@@ -1170,7 +1206,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     zIndex: 200,
   },
-  bottomSpacing: { height: rh(120) },
   barcodeLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.overlay,

@@ -190,7 +190,7 @@ export const WeightManagementSection: React.FC<
       {/* Weight-management metric rows */}
       <View style={styles.rows}>
         <MetricRow
-          label="Healthy Min"
+          label="Ideal Min"
           value={isValidMetric(calculatedData.healthy_weight_min) ? Math.round(disp(calculatedData.healthy_weight_min!)) : "—"}
           unit={unitLabel}
           onPress={goToBody}
@@ -198,7 +198,7 @@ export const WeightManagementSection: React.FC<
           testID="tile-healthy-min"
         />
         <MetricRow
-          label="Healthy Max"
+          label="Ideal Max"
           value={isValidMetric(calculatedData.healthy_weight_max) ? Math.round(disp(calculatedData.healthy_weight_max!)) : "—"}
           unit={unitLabel}
           onPress={goToBody}

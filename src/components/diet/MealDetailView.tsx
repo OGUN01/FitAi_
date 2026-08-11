@@ -28,6 +28,7 @@ import {
 } from '../../theme/aurora-tokens';
 import { rf, rw, rp, rh, rbr } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT } from '../../utils/colors';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 import { haptics } from '../../utils/haptics';
 import { fontFamilyForWeight } from '../../theme/fonts';
 
@@ -54,6 +55,11 @@ export interface MealDetailViewProps {
   onBack: () => void;
   onLogMeal?: (meal: DayMeal) => void;
   onSwapMeal?: (meal: DayMeal) => void;
+  onShareMeal?: (meal: DayMeal) => void;
+  onEditMeal?: (meal: DayMeal) => void;
+  onDeleteMeal?: (meal: DayMeal) => void;
+  isCompleting?: boolean;
+  isSwapping?: boolean;
   mealSchedule?: MealSchedule;
   /** ISO date of the day being viewed, for time-aware status derivation. */
   selectedDate?: string | null;
@@ -74,12 +80,7 @@ interface HeroMacroBlockProps {
 }
 
 const HeroMacroBlock = React.memo(({ value, label, unit, color }: HeroMacroBlockProps) => (
-  <View
-    style={[
-      styles.heroMacroBlock,
-      { backgroundColor: hexToRgba(color, TINT_ALPHA_SOFT) },
-    ]}
-  >
+  <View style={[styles.heroMacroBlock, { backgroundColor: hexToRgba(color, TINT_ALPHA_SOFT) }]}>
     <Text
       style={[styles.heroMacroValue, { color }]}
       numberOfLines={1}
@@ -311,6 +312,11 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
   onBack,
   onLogMeal,
   onSwapMeal,
+  onShareMeal,
+  onEditMeal,
+  onDeleteMeal,
+  isCompleting = false,
+  isSwapping = false,
   mealSchedule,
   selectedDate,
   testID = 'meal-detail-view',
@@ -321,6 +327,7 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
   // indicator on notched devices. Apply to the sticky bar's bottom padding.
   const insets = useSafeAreaInsets();
   const [celebrate, setCelebrate] = useState(false);
+  const [showOverflow, setShowOverflow] = useState(false);
 
   // Cook-along ingredient check state — local only, never mutates meal data.
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
@@ -347,6 +354,29 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
   const handleSwapMeal = useCallback(() => {
     onSwapMeal?.(meal);
   }, [onSwapMeal, meal]);
+  const runOverflowAction = useCallback(
+    (action: (meal: DayMeal) => void) => {
+      setShowOverflow(false);
+      action(meal);
+    },
+    [meal]
+  );
+  const handleDeleteMeal = useCallback(() => {
+    if (!onDeleteMeal) return;
+    setShowOverflow(false);
+    crossPlatformAlert(
+      'Delete Meal',
+      `Delete ${meal.name || 'this meal'}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => onDeleteMeal(meal),
+        },
+      ]
+    );
+  }, [meal, onDeleteMeal]);
 
   const mealLabel = MEAL_TYPE_LABELS[meal.type] ?? meal.type;
   const iconName = MEAL_TYPE_ICONS[meal.type] ?? 'restaurant-outline';
@@ -378,6 +408,17 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
   const cookingInstructions = useMemo(
     () => meal.cookingInstructions ?? [],
     [meal.cookingInstructions]
+  );
+  const instructionNotes = useMemo(
+    () =>
+      (meal.instructions ?? []).filter(
+        (instruction) =>
+          instruction.trim().length > 0 &&
+          !cookingInstructions.some(
+            (step) => step.instruction.trim().toLowerCase() === instruction.trim().toLowerCase()
+          )
+      ),
+    [meal.instructions, cookingInstructions]
   );
 
   const heroImageUrl = meal.imageUrl || null;
@@ -503,12 +544,61 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
             adjustsFontSizeToFit
             minimumFontScale={0.8}
           >
-            {mealLabel}
+            Meal Details
           </Text>
-          {/* Balancing spacer — mirrors the back button width so the title
-              stays optically centered now that the dead "more options" button
-              has been removed. */}
-          <View style={styles.headerSpacer} />
+          <AnimatedPressable
+            onPress={() => setShowOverflow((visible) => !visible)}
+            disabled={!onShareMeal && !onEditMeal && !onDeleteMeal}
+            scaleValue={0.92}
+            hapticType="light"
+            accessibilityRole="button"
+            accessibilityLabel="Meal options"
+            accessibilityState={{
+              disabled: !onShareMeal && !onEditMeal && !onDeleteMeal,
+              expanded: showOverflow,
+            }}
+            testID="meal-detail-overflow"
+            style={[
+              styles.backButton,
+              !onShareMeal && !onEditMeal && !onDeleteMeal && styles.headerButtonDisabled,
+            ]}
+          >
+            <Ionicons name="ellipsis-horizontal" size={rf(22)} color={colors.text} />
+          </AnimatedPressable>
+          {showOverflow ? (
+            <View style={styles.overflowMenu} accessibilityRole="menu">
+              {onShareMeal ? (
+                <Pressable
+                  style={styles.overflowItem}
+                  accessibilityRole="menuitem"
+                  onPress={() => runOverflowAction(onShareMeal)}
+                >
+                  <Ionicons name="share-outline" size={rf(18)} color={colors.text} />
+                  <Text style={styles.overflowText}>Share</Text>
+                </Pressable>
+              ) : null}
+              {onEditMeal ? (
+                <Pressable
+                  style={styles.overflowItem}
+                  accessibilityRole="menuitem"
+                  onPress={() => runOverflowAction(onEditMeal)}
+                >
+                  <Ionicons name="create-outline" size={rf(18)} color={colors.text} />
+                  <Text style={styles.overflowText}>Edit</Text>
+                </Pressable>
+              ) : null}
+              {onDeleteMeal ? (
+                <Pressable
+                  style={styles.overflowItem}
+                  accessibilityRole="menuitem"
+                  onPress={handleDeleteMeal}
+                >
+                  <Ionicons name="trash-outline" size={rf(18)} color={colors.error} />
+                  <Text style={[styles.overflowText, { color: colors.error }]}>Delete Meal</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </SafeAreaView>
 
@@ -621,28 +711,30 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
           <HeroMacroBlock value={calories} label="kcal" color={colors.primary} />
           <MacroBlock value={protein} label="Protein" unit="g" color={MACRO_PILL_COLORS.protein} />
           <MacroBlock value={carbs} label="Carbs" unit="g" color={MACRO_PILL_COLORS.carbs} />
-          <MacroBlock value={fat} label="Fats" unit="g" color={MACRO_PILL_COLORS.fat} />
+          <MacroBlock value={fat} label="Fat" unit="g" color={MACRO_PILL_COLORS.fat} />
+          <MacroBlock value={fiber} label="Fiber" unit="g" color={MACRO_PILL_COLORS.fiber} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(240).duration(300)} style={styles.metaChipsRow}>
-          {/* Prep time already appears in the hero overlay caption above; omit
-              it here so the chips carry only info not shown elsewhere. */}
-          {meal.difficulty ? <MetaChip icon="barbell-outline" text={meal.difficulty} /> : null}
-          {fiber > 0 ? <MetaChip icon="leaf-outline" text={`${fiber}g fiber`} /> : null}
+          <MetaChip
+            icon="time-outline"
+            text={prepTime ? `${prepTime} min prep` : 'Prep time unavailable'}
+          />
+          <MetaChip
+            icon="flame-outline"
+            text={
+              meal.cookingTime || meal.cookTime
+                ? `${meal.cookingTime || meal.cookTime} min cook`
+                : 'Cook time unavailable'
+            }
+          />
+          <MetaChip icon="barbell-outline" text={meal.difficulty || 'Difficulty unavailable'} />
         </Animated.View>
 
-        {meal.description ? (
-          <Text
-            style={styles.description}
-            numberOfLines={4}
-            adjustsFontSizeToFit
-            minimumFontScale={0.85}
-          >
-            {meal.description}
-          </Text>
-        ) : null}
-
-        <Animated.View entering={FadeInDown.delay(320).duration(300)} style={styles.accordionSection}>
+        <Animated.View
+          entering={FadeInDown.delay(320).duration(300)}
+          style={styles.accordionSection}
+        >
           <Accordion
             title="Ingredients"
             subtitle={foodItems.length > 0 ? `${foodItems.length} items` : undefined}
@@ -666,13 +758,33 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
             )}
           </Accordion>
 
-          <Accordion title="Recipe" subtitle="Step by step" defaultOpen={false}>
+          <Accordion title="Recipe" subtitle="Meal overview" defaultOpen={false}>
+            {meal.description ? (
+              <Text style={styles.sectionBodyText}>{meal.description}</Text>
+            ) : (
+              <Text style={styles.emptySectionText}>No recipe overview available.</Text>
+            )}
+          </Accordion>
+
+          <Accordion
+            title="Instructions"
+            subtitle={
+              cookingInstructions.length > 0 ? `${cookingInstructions.length} steps` : undefined
+            }
+            defaultOpen={false}
+          >
             {cookingInstructions.length > 0 ? (
               <StepViewer steps={cookingInstructions} />
+            ) : instructionNotes.length > 0 ? (
+              <View style={styles.instructionList}>
+                {instructionNotes.map((instruction, index) => (
+                  <Text key={`instruction-${index}`} style={styles.sectionBodyText}>
+                    {index + 1}. {instruction}
+                  </Text>
+                ))}
+              </View>
             ) : (
-              <Text style={styles.emptySectionText}>
-                Follow your preferred cooking method for this meal.
-              </Text>
+              <Text style={styles.emptySectionText}>No preparation instructions available.</Text>
             )}
           </Accordion>
 
@@ -692,33 +804,26 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
       </Animated.ScrollView>
 
       <View style={[styles.stickyActions, { paddingBottom: Math.max(insets.bottom, rp(24)) }]}>
-        {isCompleted ? (
-          <View style={styles.completedBadge}>
-            <Ionicons name="checkmark-circle" size={rf(20)} color={colors.success} />
-            <Text style={styles.completedText}>Completed</Text>
-          </View>
-        ) : (
-          <View style={styles.actionRow}>
-            {onLogMeal ? (
-              <GlassButton
-                label="Mark as Completed"
-                onPress={handleLogMeal}
-                variant="success"
-                icon="checkmark-circle-outline"
-                fullWidth
-              />
-            ) : null}
-            {onSwapMeal ? (
-              <GlassButton
-                label="Swap"
-                onPress={handleSwapMeal}
-                variant="secondary"
-                icon="swap-horizontal-outline"
-                fullWidth
-              />
-            ) : null}
-          </View>
-        )}
+        <View style={styles.actionRow}>
+          <GlassButton
+            label={isCompleted ? 'Completed' : 'Mark as Completed'}
+            onPress={handleLogMeal}
+            variant="success"
+            icon={isCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'}
+            loading={isCompleting}
+            disabled={isCompleted || !onLogMeal || isSwapping}
+            fullWidth
+          />
+          <GlassButton
+            label="Swap This Meal"
+            onPress={handleSwapMeal}
+            variant="secondary"
+            icon="swap-horizontal-outline"
+            loading={isSwapping}
+            disabled={!onSwapMeal || isCompleting}
+            fullWidth
+          />
+        </View>
       </View>
 
       {/* Celebration burst — mounted at the view root (not inside the
@@ -770,9 +875,32 @@ const styles = StyleSheet.create({
     fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
-  headerSpacer: {
-    width: rw(40),
-    height: rw(40),
+  headerButtonDisabled: {
+    opacity: 0.35,
+  },
+  overflowMenu: {
+    position: 'absolute' as const,
+    top: '100%' as const,
+    right: spacing.md,
+    zIndex: 20,
+    minWidth: rw(170),
+    padding: spacing.xs,
+    borderRadius: rbr(borderRadius.md),
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  overflowItem: {
+    minHeight: 44,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  overflowText: {
+    fontSize: fontSize.sm,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+    color: colors.text,
   },
   scrollView: {
     flex: 1,
@@ -931,12 +1059,13 @@ const styles = StyleSheet.create({
   // ── Meta chips ─────────────────────────────────────────────────────────
   metaChipsRow: {
     flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
   metaChip: {
+    flex: 1,
+    minHeight: 52,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: spacing.xxs,
@@ -949,13 +1078,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     fontWeight: String(typography.fontWeight.medium) as any,
-  },
-  description: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    lineHeight: rf(20),
   },
   // ── Accordion section ──────────────────────────────────────────────────
   accordionSection: {
@@ -1107,6 +1229,16 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: rf(20),
   },
+  instructionList: {
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  sectionBodyText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: rf(20),
+    paddingVertical: spacing.xs,
+  },
   emptySectionText: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
@@ -1124,25 +1256,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   actionRow: {
-    flexDirection: 'row' as const,
     gap: spacing.sm,
-  },
-  completedBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    gap: spacing.xs,
-    minHeight: 52,
-    paddingVertical: spacing.md,
-    borderRadius: rbr(borderRadius.md),
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.success,
-    backgroundColor: hexToRgba(colors.success, TINT_ALPHA_LOW),
-  },
-  completedText: {
-    fontSize: fontSize.md,
-    fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.success,
   },
   confettiOverlay: {
     position: 'absolute' as const,

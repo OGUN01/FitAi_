@@ -87,6 +87,12 @@ jest.mock("../../utils/weekUtils", () => ({
   })),
 }));
 
+jest.mock("../../stores/achievementStore", () => ({
+  useAchievementStore: {
+    getState: () => ({ updateNutritionStreak: jest.fn() }),
+  },
+}));
+
 jest.mock("../../stores/nutrition/legacyScanShadowCleanup", () => ({
   filterLegacyScanShadowMeals: (meals: any[] = []) => meals,
   pruneLegacyScanShadowState: jest.fn(() => null),
@@ -382,6 +388,68 @@ describe("nutritionStore SSOT hydration", () => {
     expect(state.weeklyMealPlan).toBeNull();
     expect(state.dailyMeals).toEqual([]);
     expect(state.mealProgress).toEqual({});
+  });
+
+  it("uses explicit is_completed for realtime progress and preserves in-flight state", () => {
+    useNutritionStore.setState({
+      mealProgress: {
+        "planned-meal-1": {
+          mealId: "planned-meal-1",
+          progress: 40,
+          logId: "log-1",
+        },
+      },
+      dailyMeals: [],
+    });
+
+    useNutritionStore.getState().handleMealLogRealtimeChange({
+      eventType: "UPDATE",
+      new: {
+        id: "log-1",
+        plan_meal_id: "planned-meal-1",
+        meal_type: "lunch",
+        logged_at: `${TEST_DATE}T12:00:00.000Z`,
+        food_items: [],
+        is_completed: false,
+      },
+    });
+    expect(useNutritionStore.getState().mealProgress["planned-meal-1"].progress).toBe(40);
+
+    useNutritionStore.getState().handleMealLogRealtimeChange({
+      eventType: "UPDATE",
+      new: {
+        id: "log-1",
+        plan_meal_id: "planned-meal-1",
+        meal_type: "lunch",
+        logged_at: `${TEST_DATE}T12:30:00.000Z`,
+        food_items: [],
+        is_completed: true,
+      },
+    });
+    expect(useNutritionStore.getState().mealProgress["planned-meal-1"]).toMatchObject({
+      progress: 100,
+      logId: "log-1",
+    });
+  });
+
+  it("removes plan-keyed progress when its realtime meal log is deleted", () => {
+    useNutritionStore.setState({
+      mealProgress: {
+        "planned-meal-1": {
+          mealId: "planned-meal-1",
+          progress: 100,
+          logId: "log-1",
+        },
+      },
+      dailyMeals: [],
+    });
+
+    useNutritionStore.getState().handleMealLogRealtimeChange({
+      eventType: "DELETE",
+      old: { id: "log-1" },
+    });
+
+    expect(useNutritionStore.getState().mealProgress["planned-meal-1"]).toBeUndefined();
   });
 
   // Regression for P0-2: saveWeeklyMealPlan must THROW on empty plan (not

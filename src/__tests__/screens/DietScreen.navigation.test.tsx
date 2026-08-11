@@ -1,26 +1,26 @@
-import React from "react";
-import { fireEvent, render } from "@testing-library/react-native";
+import React from 'react';
+import { fireEvent, render } from '@testing-library/react-native';
 
-jest.mock("react-native", () => {
-  const React = require("react");
+jest.mock('react-native', () => {
+  const React = require('react');
   const createComponent = (name: string) =>
     React.forwardRef((props: any, ref) =>
-      React.createElement(name, { ...props, ref }, props.children),
+      React.createElement(name, { ...props, ref }, props.children)
     );
   const MockModal = ({ visible = true, children, ...props }: any) =>
-    visible ? React.createElement("Modal", props, children) : null;
+    visible ? React.createElement('Modal', props, children) : null;
   return {
-    View: createComponent("View"),
-    Text: createComponent("Text"),
-    Image: createComponent("Image"),
-    ScrollView: createComponent("ScrollView"),
-    RefreshControl: createComponent("RefreshControl"),
+    View: createComponent('View'),
+    Text: createComponent('Text'),
+    Image: createComponent('Image'),
+    ScrollView: createComponent('ScrollView'),
+    RefreshControl: createComponent('RefreshControl'),
     Modal: MockModal,
-    Pressable: createComponent("Pressable"),
-    TextInput: createComponent("TextInput"),
-    TouchableOpacity: createComponent("TouchableOpacity"),
-    ActivityIndicator: createComponent("ActivityIndicator"),
-    KeyboardAvoidingView: createComponent("KeyboardAvoidingView"),
+    Pressable: createComponent('Pressable'),
+    TextInput: createComponent('TextInput'),
+    TouchableOpacity: createComponent('TouchableOpacity'),
+    ActivityIndicator: createComponent('ActivityIndicator'),
+    KeyboardAvoidingView: createComponent('KeyboardAvoidingView'),
     StyleSheet: {
       create: (styles: unknown) => styles,
       flatten: (style: any) =>
@@ -30,8 +30,10 @@ jest.mock("react-native", () => {
       hairlineWidth: 1,
       absoluteFillObject: {},
     },
-    Platform: { OS: "android" },
-    Dimensions: { get: () => ({ width: 375, height: 812, scale: 1, fontScale: 1 }) },
+    Platform: { OS: 'android' },
+    Dimensions: {
+      get: () => ({ width: 375, height: 812, scale: 1, fontScale: 1 }),
+    },
     UIManager: {
       setLayoutAnimationEnabledExperimental: jest.fn(),
     },
@@ -42,54 +44,57 @@ jest.mock("react-native", () => {
   };
 });
 
-jest.mock("react-native-safe-area-context", () => ({
+jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock("@expo/vector-icons", () => ({
+jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
-jest.mock("expo-linear-gradient", () => {
-  const { View: MockView } = jest.requireActual("react-native");
+jest.mock('expo-linear-gradient', () => {
+  const { View: MockView } = jest.requireActual('react-native');
   return {
-    LinearGradient: ({ children, ...props }: React.ComponentProps<typeof MockView>) => (
+    LinearGradient: ({
+      children,
+      ...props
+    }: React.ComponentProps<typeof MockView>) => (
       <MockView {...props}>{children}</MockView>
     ),
   };
 });
 
-jest.mock("@/utils/haptics", () => ({
+jest.mock('@/utils/haptics', () => ({
   haptics: { trigger: jest.fn() },
 }));
 
-jest.mock("../../components/ui/aurora/AnimatedPressable", () => {
-  const React = require("react");
-  const { Pressable } = require("react-native");
+jest.mock('../../components/ui/aurora/AnimatedPressable', () => {
+  const React = require('react');
+  const { Pressable } = require('react-native');
   return {
     AnimatedPressable: React.forwardRef((props: any, ref: any) =>
-      React.createElement(Pressable, { ...props, ref }, props.children),
+      React.createElement(Pressable, { ...props, ref }, props.children)
     ),
   };
 });
 
-jest.mock("../../components/ui/aurora/GlassCard", () => ({
+jest.mock('../../components/ui/aurora/GlassCard', () => ({
   GlassCard: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-jest.mock("../../components/ui/aurora/AuroraSpinner", () => ({
+jest.mock('../../components/ui/aurora/AuroraSpinner', () => ({
   AuroraSpinner: () => null,
 }));
 
-jest.mock("../../components/ui/aurora/AuroraBackground", () => ({
+jest.mock('../../components/ui/aurora/AuroraBackground', () => ({
   AuroraBackground: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-jest.mock("../../components/ui", () => ({
+jest.mock('../../components/ui', () => ({
   Button: ({ title }: { title: string }) => {
-    const React = require("react");
-    return React.createElement("Text", null, title);
+    const React = require('react');
+    return React.createElement('Text', null, title);
   },
 }));
 
@@ -100,41 +105,41 @@ jest.mock("../../components/ui", () => ({
 // MealsListView full-screen overlay was removed; tapping a timeline row opens
 // the MealDetailView overlay directly. These new components render real under
 // the global svg/reanimated mocks; only the heavy/visual siblings are stubbed.
-jest.mock("../../components/diet/StreakPill", () => ({
+jest.mock('../../components/diet/StreakPill', () => ({
   StreakPill: () => null,
 }));
-jest.mock("../../components/diet/WeekCalendarStrip", () => ({
+jest.mock('../../components/diet/WeekCalendarStrip', () => ({
   WeekCalendarStrip: () => null,
 }));
-jest.mock("../../components/DatabaseDownloadBanner", () => () => null);
-jest.mock("../../components/diet/DietModals", () => ({
+jest.mock('../../components/DatabaseDownloadBanner', () => () => null);
+jest.mock('../../components/diet/DietModals', () => ({
   DietModals: () => null,
 }));
-jest.mock("../../components/diet/ManualBarcodeEntry", () => ({
+jest.mock('../../components/diet/ManualBarcodeEntry', () => ({
   ManualBarcodeEntry: () => null,
 }));
-jest.mock("../../components/diet/LogMealModal", () => ({
+jest.mock('../../components/diet/LogMealModal', () => ({
   LogMealModal: () => null,
 }));
-jest.mock("../../components/diet/WaterIntakeModal", () => ({
+jest.mock('../../components/diet/WaterIntakeModal', () => ({
   WaterIntakeModal: () => null,
 }));
-jest.mock("../../components/diet/ProductDetailsModal", () => ({
+jest.mock('../../components/diet/ProductDetailsModal', () => ({
   ProductDetailsModal: () => null,
 }));
-jest.mock("../../components/diet/FoodScanLoadingOverlay", () => ({
+jest.mock('../../components/diet/FoodScanLoadingOverlay', () => ({
   FoodScanLoadingOverlay: () => null,
 }));
-jest.mock("../../components/diet/ScanResultModal", () => ({
+jest.mock('../../components/diet/ScanResultModal', () => ({
   ScanResultModal: () => null,
 }));
 
-jest.mock("../../components/subscription/PaywallModal", () => () => null);
-jest.mock("../../screens/main/GuestSignUpScreen", () => ({
+jest.mock('../../components/subscription/PaywallModal', () => () => null);
+jest.mock('../../screens/main/GuestSignUpScreen', () => ({
   GuestSignUpScreen: () => null,
 }));
 
-jest.mock("../../utils/responsive", () => ({
+jest.mock('../../utils/responsive', () => ({
   rf: (v: number) => v,
   rw: (v: number) => v,
   rp: (v: number) => v,
@@ -146,51 +151,51 @@ jest.mock("../../utils/responsive", () => ({
 // Keep the real getMealTime (used by MealsTimeline/MealDetailView to render
 // each meal's scheduled time slot) while stubbing calculateMealSchedule so the
 // navigation contract doesn't depend on wake/sleep-derived schedule calc.
-jest.mock("../../utils/mealSchedule", () => {
-  const actual = jest.requireActual("../../utils/mealSchedule");
+jest.mock('../../utils/mealSchedule', () => {
+  const actual = jest.requireActual('../../utils/mealSchedule');
   return {
     ...actual,
     calculateMealSchedule: () => ({
-      breakfast: "7:45 AM",
-      morningSnack: "10:30 AM",
-      lunch: "12:00 PM",
-      afternoonSnack: "3:00 PM",
-      dinner: "8:00 PM",
+      breakfast: '7:45 AM',
+      morningSnack: '10:30 AM',
+      lunch: '12:00 PM',
+      afternoonSnack: '3:00 PM',
+      dinner: '8:00 PM',
     }),
   };
 });
 
-jest.mock("../../utils/weekUtils", () => ({
-  getLocalDateString: () => "2026-07-24",
+jest.mock('../../utils/weekUtils', () => ({
+  getLocalDateString: () => '2026-07-24',
 }));
 
-jest.mock("../../utils/profileLegacyAdapter", () => ({
+jest.mock('../../utils/profileLegacyAdapter', () => ({
   buildLegacyProfileAdapter: () => ({}),
 }));
 
-jest.mock("../../hooks/useAuth", () => ({
+jest.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({ isAuthenticated: true, isGuestMode: false }),
 }));
 
 const meal = {
-  id: "breakfast-1",
-  type: "breakfast",
-  name: "Paneer Stuffed Moong Dal Chilla",
-  description: "Protein-rich breakfast",
+  id: 'breakfast-1',
+  type: 'breakfast',
+  name: 'Paneer Stuffed Moong Dal Chilla',
+  description: 'Protein-rich breakfast',
   items: [],
   totalCalories: 450,
   totalMacros: { protein: 30, carbohydrates: 50, fat: 14, fiber: 8 },
   preparationTime: 10,
   cookingTime: 20,
-  difficulty: "easy",
+  difficulty: 'easy',
   tags: [],
-  dayOfWeek: "Friday",
+  dayOfWeek: 'Friday',
   isPersonalized: true,
   aiGenerated: true,
-  createdAt: "2026-07-24T00:00:00.000Z",
+  createdAt: '2026-07-24T00:00:00.000Z',
 } as any;
 
-jest.mock("../../stores", () => ({
+jest.mock('../../stores', () => ({
   useNutritionStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
       mealProgress: {},
@@ -208,8 +213,8 @@ jest.mock("../../stores", () => ({
   }),
   useAppStateStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
-      selectedDay: "Friday",
-      selectedDate: "2026-07-24",
+      selectedDay: 'Friday',
+      selectedDate: '2026-07-24',
       shiftSelectedDate: jest.fn(),
       setSelectedDate: jest.fn(),
       setSelectedDay: jest.fn(),
@@ -231,7 +236,7 @@ jest.mock("../../stores", () => ({
   }),
 }));
 
-jest.mock("../../stores/subscriptionStore", () => ({
+jest.mock('../../stores/subscriptionStore', () => ({
   useSubscriptionStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
       showPaywall: false,
@@ -242,8 +247,9 @@ jest.mock("../../stores/subscriptionStore", () => ({
   }),
 }));
 
-jest.mock("../../hooks/useMealPlanning", () => ({
+jest.mock('../../hooks/useMealPlanning', () => ({
   useMealPlanning: () => ({
+    weeklyMealPlan: { meals: [meal] },
     isGeneratingPlan: false,
     asyncJob: null,
     aiError: null,
@@ -257,7 +263,7 @@ jest.mock("../../hooks/useMealPlanning", () => ({
   }),
 }));
 
-jest.mock("../../hooks/useNutritionTracking", () => ({
+jest.mock('../../hooks/useNutritionTracking', () => ({
   useNutritionTracking: () => ({
     waterIntakeML: 0,
     waterGoalML: 2500,
@@ -285,12 +291,12 @@ jest.mock("../../hooks/useNutritionTracking", () => ({
   }),
 }));
 
-jest.mock("../../hooks/useAIMealGeneration", () => ({
+jest.mock('../../hooks/useAIMealGeneration', () => ({
   useAIMealGeneration: () => ({
     isGeneratingMeal: false,
     showCamera: false,
     setShowCamera: jest.fn(),
-    cameraMode: "food",
+    cameraMode: 'food',
     setCameraMode: jest.fn(),
     scannedProduct: null,
     productHealthAssessment: null,
@@ -319,7 +325,7 @@ jest.mock("../../hooks/useAIMealGeneration", () => ({
     handleFeedbackSubmit: jest.fn(),
     handlePortionAdjustmentComplete: jest.fn(),
     isProcessingBarcode: false,
-    barcodeCameraState: "idle",
+    barcodeCameraState: 'idle',
     barcodeStatusMessage: null,
     barcodeInlineActions: [],
     portionGrams: null,
@@ -338,40 +344,40 @@ jest.mock("../../hooks/useAIMealGeneration", () => ({
   }),
 }));
 
-import { DietScreen } from "../../screens/main/DietScreen";
+import { DietScreen } from '../../screens/main/DietScreen';
 
-describe("DietScreen dashboard → timeline → meal detail navigation", () => {
-  it("renders the meals timeline on the dashboard and opens meal detail on row tap", () => {
+describe('DietScreen dashboard → plan → meal detail navigation', () => {
+  it('moves through all three screens and preserves back navigation', () => {
     const view = render(
-      <DietScreen navigation={{ navigate: jest.fn(), setParams: jest.fn() }} route={{}} />,
+      <DietScreen
+        navigation={{ navigate: jest.fn(), setParams: jest.fn() }}
+        route={{}}
+      />
     );
 
-    // 1. Dashboard is mounted; the meals-list overlay is gone (removed in the
-    //    Hero Ring redesign) and the meal-detail overlay is not yet open.
-    expect(view.getByText("Diet")).toBeTruthy();
-    expect(view.queryByTestId("diet-meals-list-view")).toBeNull();
-    expect(view.queryByTestId("diet-meal-detail-view")).toBeNull();
+    // Dashboard summarizes intake only; planned meal cards live on the plan screen.
+    expect(view.getByText('Diet')).toBeTruthy();
+    expect(view.queryByTestId('diet-todays-plan-overlay')).toBeNull();
+    expect(view.queryByTestId(`meal-timeline-card-${meal.id}`)).toBeNull();
 
-    // 2. The meals timeline renders directly on the dashboard with the
-    //    "Today's Meals" header and a row per meal.
-    expect(view.getByText("Today's Meals")).toBeTruthy();
+    fireEvent.press(view.getByLabelText("View today's plan"));
+
+    expect(view.getByTestId('diet-todays-plan-overlay')).toBeTruthy();
     const mealRow = view.getByTestId(`meal-timeline-card-${meal.id}`);
-    expect(mealRow).toBeTruthy();
-
-    // 3. Tapping a timeline row opens the meal-detail overlay.
     fireEvent.press(mealRow);
-    const mealDetailView = view.getByTestId("diet-meal-detail-view");
-    expect(mealDetailView).toBeTruthy();
-    // MealDetailView header title is meal.name; the name also appears in the
-    // timeline row behind the overlay (the overlay is absolute-fill, not
-    // unmounted), so assert at least one match rather than a unique one.
+
+    expect(view.queryByTestId('diet-todays-plan-overlay')).toBeNull();
+    expect(view.getByTestId('diet-meal-detail-view')).toBeTruthy();
     expect(view.getAllByText(meal.name).length).toBeGreaterThan(0);
 
-    // 4. Detail → Dashboard: press the detail back button.
-    fireEvent.press(view.getByTestId("meal-detail-back"));
-    expect(view.queryByTestId("diet-meal-detail-view")).toBeNull();
-    // Dashboard is still mounted with its timeline.
-    expect(view.getByText("Diet")).toBeTruthy();
+    fireEvent.press(view.getByTestId('meal-detail-back'));
+    expect(view.queryByTestId('diet-meal-detail-view')).toBeNull();
+    expect(view.getByTestId('diet-todays-plan-overlay')).toBeTruthy();
     expect(view.getByTestId(`meal-timeline-card-${meal.id}`)).toBeTruthy();
+
+    fireEvent.press(view.getByLabelText('Back to Diet'));
+    expect(view.queryByTestId('diet-todays-plan-overlay')).toBeNull();
+    expect(view.queryByTestId(`meal-timeline-card-${meal.id}`)).toBeNull();
+    expect(view.getByText('Diet')).toBeTruthy();
   });
 });

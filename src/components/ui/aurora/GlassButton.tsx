@@ -133,6 +133,7 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
+    minHeight: rf(48),
     borderRadius: borderRadius.xl,
     overflow: "hidden",
   },

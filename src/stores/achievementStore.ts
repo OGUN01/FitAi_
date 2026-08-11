@@ -278,7 +278,7 @@ interface AchievementStore {
   // Diet redesign: nutrition streak updater — called after every meal log
   // so nutritionStreak is always the real live value. SSOT writer for
   // analytics_metrics.nutrition_streak / longest_nutrition_streak.
-  updateNutritionStreak: () => void;
+  updateNutritionStreak: (persistedMealDates?: string[]) => void;
   updateNutritionStreakFromCount: (count: number, longest?: number) => void;
 
   // Reset store (for logout)
@@ -448,7 +448,21 @@ export const useAchievementStore = create<AchievementStore>()(
               isLoading: false,
             });
 
-            // SSOT Fix 19: seed currentStreak immediately from live completedSessions
+            // Seed persisted nutrition streak before the meal-log hydration pass
+            // recomputes it from the locally available history. achievementStore
+            // remains the only writer; analyticsDataService is read/persistence only.
+            const persistedNutritionStreaks =
+              await analyticsDataService.loadNutritionStreaks(userId);
+            get().updateNutritionStreakFromCount(
+              persistedNutritionStreaks.nutritionStreak,
+              persistedNutritionStreaks.longestNutritionStreak,
+            );
+            const persistedMealDates =
+              await analyticsDataService.loadNutritionMealDates(userId);
+            get().updateNutritionStreak(persistedMealDates);
+
+            // Workout history is already available here; nutritionStore invokes
+            // updateNutritionStreak after its own persisted/remote hydration.
             get().updateCurrentStreak();
             await get().reconcileWithCurrentData(userId);
 
@@ -731,12 +745,12 @@ export const useAchievementStore = create<AchievementStore>()(
       // This is the ONLY place nutrition streak is written so there is exactly one source
       // of truth. The streak counts consecutive calendar days (from today backward) that
       // have at least one logged meal (meal.loggedAt is a string).
-      updateNutritionStreak: () => {
+      updateNutritionStreak: (persistedMealDates: string[] = []) => {
         // Lazy import avoids circular dependency (achievementStore ↔ nutritionStore)
         const nutritionModule = require("./nutritionStore");
         const meals: any[] = nutritionModule.useNutritionStore.getState().dailyMeals || [];
 
-        if (!meals || meals.length === 0) {
+        if ((!meals || meals.length === 0) && persistedMealDates.length === 0) {
           set({ nutritionStreak: 0 });
           return;
         }
@@ -750,6 +764,9 @@ export const useAchievementStore = create<AchievementStore>()(
           .forEach((m) => {
             loggedDates.add(getLocalDateString(m.loggedAt));
           });
+        persistedMealDates.forEach((loggedAt) => {
+          loggedDates.add(getLocalDateString(loggedAt));
+        });
 
         // Walk backward from today counting consecutive days
         let streak = 0;

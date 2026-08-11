@@ -11,7 +11,7 @@ import { Env, DietJobMessage } from './utils/types';
 import { createErrorResponse, logError, APIError } from './utils/errors';
 import { handleHealthCheck } from './handlers/health';
 import { handleWorkoutGeneration } from './handlers/workoutGeneration';
-import { handleDietGeneration } from './handlers/dietGeneration';
+import { handleDietGeneration, handleMealSwap } from './handlers/dietGeneration';
 import { handleChat, handleGetConversationHistory, handleGetConversations } from './handlers/chatHandler';
 import { handleExerciseSearch } from './handlers/exerciseSearch';
 import { handleMediaServe, handleMediaUpload, handleMediaDelete } from './handlers/mediaHandler';
@@ -345,6 +345,14 @@ app.post(
 	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
 	subscriptionGateMiddleware('ai_generation'),
 	handleDietGeneration,
+);
+
+app.post(
+	'/diet/swap',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleMealSwap,
 );
 
 /**

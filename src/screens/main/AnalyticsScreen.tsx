@@ -716,7 +716,10 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* edges={["bottom"]} — top inset is applied explicitly in AnalyticsHeader
+          (paddingTop = insets.top + spacing.md) so the title clears the status
+          bar reliably. edges={["top"]} here would double-pad the top. */}
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
         <Animated.View
           entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
           style={styles.animatedContainer}

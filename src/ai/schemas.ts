@@ -465,6 +465,10 @@ export const WEEKLY_MEAL_PLAN_SCHEMA = {
   ],
 };
 
+// Single-meal response used by POST /diet/swap. The worker's Zod schema is the
+// runtime validator; this JSON schema documents the client boundary.
+export const MEAL_SWAP_SCHEMA = WEEKLY_MEAL_PLAN_SCHEMA.properties.meals.items;
+
 // ============================================================================
 // MOTIVATIONAL CONTENT SCHEMA
 // ============================================================================

@@ -1,31 +1,31 @@
-import React from "react";
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import React from 'react';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 
-import { DietScreen } from "../../screens/main/DietScreen";
+import { DietScreen } from '../../screens/main/DietScreen';
 
 const mockSetParams = jest.fn();
 
-jest.mock("react-native", () => {
-  const React = require("react");
+jest.mock('react-native', () => {
+  const React = require('react');
   const createComponent = (name: string) =>
     React.forwardRef((props: any, ref) =>
-      React.createElement(name, { ...props, ref }, props.children),
+      React.createElement(name, { ...props, ref }, props.children)
     );
   const MockModal = ({ visible = true, children, ...props }: any) =>
-    visible ? React.createElement("Modal", props, children) : null;
+    visible ? React.createElement('Modal', props, children) : null;
 
   return {
-    View: createComponent("View"),
-    Text: createComponent("Text"),
-    Image: createComponent("Image"),
-    ScrollView: createComponent("ScrollView"),
-    RefreshControl: createComponent("RefreshControl"),
+    View: createComponent('View'),
+    Text: createComponent('Text'),
+    Image: createComponent('Image'),
+    ScrollView: createComponent('ScrollView'),
+    RefreshControl: createComponent('RefreshControl'),
     Modal: MockModal,
-    Pressable: createComponent("Pressable"),
-    TextInput: createComponent("TextInput"),
-    TouchableOpacity: createComponent("TouchableOpacity"),
-    ActivityIndicator: createComponent("ActivityIndicator"),
-    KeyboardAvoidingView: createComponent("KeyboardAvoidingView"),
+    Pressable: createComponent('Pressable'),
+    TextInput: createComponent('TextInput'),
+    TouchableOpacity: createComponent('TouchableOpacity'),
+    ActivityIndicator: createComponent('ActivityIndicator'),
+    KeyboardAvoidingView: createComponent('KeyboardAvoidingView'),
     StyleSheet: {
       create: (styles: unknown) => styles,
       flatten: (style: any) =>
@@ -36,24 +36,24 @@ jest.mock("react-native", () => {
       absoluteFillObject: {},
     },
     Platform: {
-      OS: "android",
+      OS: 'android',
     },
   };
 });
 
-jest.mock("../../utils/crossPlatformAlert", () => ({
+jest.mock('../../utils/crossPlatformAlert', () => ({
   crossPlatformAlert: jest.fn(),
 }));
 
-jest.mock("../../hooks/useAuth", () => ({
+jest.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
     isGuestMode: false,
-    user: { id: "user-1" },
+    user: { id: 'user-1' },
   }),
 }));
 
-jest.mock("../../stores", () => ({
+jest.mock('../../stores', () => ({
   useNutritionStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
       weeklyMealPlan: null,
@@ -75,8 +75,8 @@ jest.mock("../../stores", () => ({
   }),
   useAppStateStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
-      selectedDay: "Wednesday",
-      selectedDate: "2026-03-25",
+      selectedDay: 'Wednesday',
+      selectedDate: '2026-03-25',
       shiftSelectedDate: jest.fn(),
       setSelectedDay: jest.fn(),
     };
@@ -93,7 +93,7 @@ jest.mock("../../stores", () => ({
   }),
 }));
 
-jest.mock("../../stores/subscriptionStore", () => ({
+jest.mock('../../stores/subscriptionStore', () => ({
   useSubscriptionStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
       showPaywall: false,
@@ -107,7 +107,7 @@ jest.mock("../../stores/subscriptionStore", () => ({
   }),
 }));
 
-jest.mock("../../stores/userStore", () => ({
+jest.mock('../../stores/userStore', () => ({
   useUserStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
       profile: {},
@@ -116,20 +116,20 @@ jest.mock("../../stores/userStore", () => ({
   }),
 }));
 
-jest.mock("../../stores/profileStore", () => {
+jest.mock('../../stores/profileStore', () => {
   const state = {
     personalInfo: null,
     workoutPreferences: null,
     dietPreferences: null,
   };
   const fn = jest.fn((selector?: (state: any) => unknown) =>
-    selector ? selector(state) : state,
+    selector ? selector(state) : state
   );
   (fn as any).getState = jest.fn(() => state);
   return { useProfileStore: fn };
 });
 
-jest.mock("../../hooks/useMealPlanning", () => ({
+jest.mock('../../hooks/useMealPlanning', () => ({
   useMealPlanning: () => ({
     weeklyMealPlan: null,
     isGeneratingPlan: false,
@@ -144,20 +144,20 @@ jest.mock("../../hooks/useMealPlanning", () => ({
   }),
 }));
 
-jest.mock("../../hooks/useNutritionData", () => ({
+jest.mock('../../hooks/useNutritionData', () => ({
   useNutritionData: () => ({
     loadDailyNutrition: jest.fn(() => Promise.resolve()),
     refreshAll: jest.fn(() => Promise.resolve()),
   }),
 }));
 
-jest.mock("../../hooks/useCalculatedMetrics", () => ({
+jest.mock('../../hooks/useCalculatedMetrics', () => ({
   useCalculatedMetrics: () => ({
     getCalorieTarget: jest.fn(() => 2000),
   }),
 }));
 
-jest.mock("../../hooks/useNutritionTracking", () => ({
+jest.mock('../../hooks/useNutritionTracking', () => ({
   useNutritionTracking: () => ({
     waterIntakeML: 0,
     waterGoalML: 2500,
@@ -184,63 +184,59 @@ jest.mock("../../hooks/useNutritionTracking", () => ({
   }),
 }));
 
-jest.mock("../../services/recognizedFoodLogger", () => ({
+jest.mock('../../services/recognizedFoodLogger', () => ({
   recognizedFoodLogger: {
     logRecognizedFoods: jest.fn(() =>
-      Promise.resolve({ success: true, mealId: "meal-log-1" }),
+      Promise.resolve({ success: true, mealId: 'meal-log-1' })
     ),
   },
 }));
 
-jest.mock("../../services/foodRecognitionService", () => ({
+jest.mock('../../services/foodRecognitionService', () => ({
   foodRecognitionService: null,
 }));
 
-jest.mock("../../services/foodRecognitionFeedbackService", () => ({
+jest.mock('../../services/foodRecognitionFeedbackService', () => ({
   foodRecognitionFeedbackService: {},
 }));
 
-jest.mock("../../services/barcodeService", () => ({
+jest.mock('../../services/barcodeService', () => ({
   barcodeService: {
     lookupProduct: jest.fn(),
   },
 }));
 
-jest.mock("../../services/fitaiWorkersClient", () => ({
+jest.mock('../../services/fitaiWorkersClient', () => ({
   fitaiWorkersClient: {
     scanNutritionLabel: jest.fn(),
   },
 }));
 
-jest.mock("../../ai", () => ({
+jest.mock('../../ai', () => ({
   aiService: {},
 }));
 
-jest.mock("../../utils/imageDataUrl", () => ({
+jest.mock('../../utils/imageDataUrl', () => ({
   imageAssetToDataUrl: jest.fn(),
   imageUriToDataUrl: jest.fn(),
 }));
 
-jest.mock("@expo/vector-icons", () => ({
+jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
-jest.mock("react-native-safe-area-context", () => ({
-  SafeAreaView: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-jest.mock("../../components/ui", () => {
-  const React = require("react");
-  const { Text, TouchableOpacity } = require("react-native");
+jest.mock('../../components/ui', () => {
+  const React = require('react');
+  const { Text, TouchableOpacity } = require('react-native');
   return {
-    Button: ({
-      title,
-      onPress,
-    }: {
-      title: string;
-      onPress?: () => void;
-    }) => (
+    Button: ({ title, onPress }: { title: string; onPress?: () => void }) => (
       <TouchableOpacity onPress={onPress}>
         <Text>{title}</Text>
       </TouchableOpacity>
@@ -248,57 +244,53 @@ jest.mock("../../components/ui", () => {
   };
 });
 
-jest.mock("../../components/ui/aurora/AnimatedPressable", () => {
-  const React = require("react");
-  const { TouchableOpacity } = require("react-native");
+jest.mock('../../components/ui/aurora/AnimatedPressable', () => {
+  const React = require('react');
+  const { TouchableOpacity } = require('react-native');
   return {
-    AnimatedPressable: ({
-      children,
-      onPress,
-    }: {
-      children: React.ReactNode;
-      onPress?: () => void;
-    }) => <TouchableOpacity onPress={onPress}>{children}</TouchableOpacity>,
+    AnimatedPressable: ({ children, ...props }: any) => (
+      <TouchableOpacity {...props}>{children}</TouchableOpacity>
+    ),
   };
 });
 
-jest.mock("../../components/ui/aurora/GlassCard", () => ({
+jest.mock('../../components/ui/aurora/GlassCard', () => ({
   GlassCard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-jest.mock("../../components/ui/aurora/AuroraSpinner", () => ({
+jest.mock('../../components/ui/aurora/AuroraSpinner', () => ({
   AuroraSpinner: () => null,
 }));
 
-jest.mock("../../components/ui/aurora/AuroraBackground", () => ({
+jest.mock('../../components/ui/aurora/AuroraBackground', () => ({
   AuroraBackground: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
 }));
 
-jest.mock("../../components/diet/StreakPill", () => ({
+jest.mock('../../components/diet/StreakPill', () => ({
   StreakPill: () => null,
 }));
-jest.mock("../../components/diet/WeekCalendarStrip", () => ({
+jest.mock('../../components/diet/WeekCalendarStrip', () => ({
   WeekCalendarStrip: () => null,
 }));
 
-jest.mock("../../components/diet/WaterIntakeModal", () => ({
+jest.mock('../../components/diet/WaterIntakeModal', () => ({
   WaterIntakeModal: () => null,
 }));
 
-jest.mock("../../components/diet/DietModals", () => {
-  const React = require("react");
-  const { Text, TouchableOpacity, View } = require("react-native");
+jest.mock('../../components/diet/DietModals', () => {
+  const React = require('react');
+  const { Text, TouchableOpacity, View } = require('react-native');
   return {
     DietModals: (props: any) =>
-      props.showCamera && props.cameraMode === "label" ? (
+      props.showCamera && props.cameraMode === 'label' ? (
         <View>
           <Text>Label Camera</Text>
           <TouchableOpacity
             onPress={() => {
               props.setShowCamera(false);
-              props.setCameraMode("food");
+              props.setCameraMode('food');
             }}
           >
             <Text>Close Label Camera</Text>
@@ -308,15 +300,15 @@ jest.mock("../../components/diet/DietModals", () => {
   };
 });
 
-jest.mock("../../components/diet/ManualBarcodeEntry", () => ({
+jest.mock('../../components/diet/ManualBarcodeEntry', () => ({
   ManualBarcodeEntry: () => null,
 }));
 
-jest.mock("../../components/DatabaseDownloadBanner", () => () => null);
+jest.mock('../../components/DatabaseDownloadBanner', () => () => null);
 
-jest.mock("../../components/diet/LogMealModal", () => {
-  const React = require("react");
-  const { Text, TouchableOpacity, View } = require("react-native");
+jest.mock('../../components/diet/LogMealModal', () => {
+  const React = require('react');
+  const { Text, TouchableOpacity, View } = require('react-native');
   return {
     LogMealModal: ({
       visible,
@@ -324,13 +316,13 @@ jest.mock("../../components/diet/LogMealModal", () => {
     }: {
       visible: boolean;
       onRequestLabelScan?: (
-        mealType: "breakfast" | "lunch" | "dinner" | "snack",
+        mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'
       ) => Promise<void> | void;
     }) =>
       visible ? (
         <View>
           <Text>Log Meal Modal</Text>
-          <TouchableOpacity onPress={() => void onRequestLabelScan?.("lunch")}>
+          <TouchableOpacity onPress={() => void onRequestLabelScan?.('lunch')}>
             <Text>Open Label Camera</Text>
           </TouchableOpacity>
         </View>
@@ -338,30 +330,30 @@ jest.mock("../../components/diet/LogMealModal", () => {
   };
 });
 
-jest.mock("../../components/diet/ProductDetailsModal", () => ({
+jest.mock('../../components/diet/ProductDetailsModal', () => ({
   ProductDetailsModal: () => null,
 }));
 
-jest.mock("../../components/diet/FoodScanLoadingOverlay", () => ({
+jest.mock('../../components/diet/FoodScanLoadingOverlay', () => ({
   FoodScanLoadingOverlay: () => null,
 }));
 
-jest.mock("../../components/diet/ScanResultModal", () => ({
+jest.mock('../../components/diet/ScanResultModal', () => ({
   ScanResultModal: () => null,
 }));
 
-jest.mock("../../components/subscription/PaywallModal", () => () => null);
+jest.mock('../../components/subscription/PaywallModal', () => () => null);
 
-jest.mock("../../screens/main/GuestSignUpScreen", () => ({
+jest.mock('../../screens/main/GuestSignUpScreen', () => ({
   GuestSignUpScreen: () => null,
 }));
 
-describe("DietScreen label camera flow", () => {
+describe('DietScreen label camera flow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("opens the prep modal from navigation params and launches the label camera after confirmation", async () => {
+  it('opens the prep modal from navigation params and launches the label camera after confirmation', async () => {
     const navigation = {
       setParams: mockSetParams,
       navigate: jest.fn(),
@@ -371,26 +363,26 @@ describe("DietScreen label camera flow", () => {
       <DietScreen
         navigation={navigation}
         route={{ params: { openLabelScanPrep: true } }}
-      />,
+      />
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Scan Nutrition Label")).toBeTruthy();
-      expect(screen.getByText("Serving size (optional)")).toBeTruthy();
+      expect(screen.getByText('Scan Nutrition Label')).toBeTruthy();
+      expect(screen.getByText('Serving size (optional)')).toBeTruthy();
     });
 
     expect(mockSetParams).toHaveBeenCalledWith({
       openLabelScanPrep: undefined,
     });
 
-    fireEvent.press(screen.getByText("Scan Label"));
+    fireEvent.press(screen.getByLabelText('Scan Label'));
 
     await waitFor(() => {
-      expect(screen.getByText("Label Camera")).toBeTruthy();
+      expect(screen.getByText('Label Camera')).toBeTruthy();
     });
   });
 
-  it("reopens the log meal modal when the label camera is closed without a result", async () => {
+  it('reopens the log meal modal when the label camera is closed without a result', async () => {
     const navigation = {
       setParams: mockSetParams,
       navigate: jest.fn(),
@@ -400,24 +392,23 @@ describe("DietScreen label camera flow", () => {
       <DietScreen
         navigation={navigation}
         route={{ params: { openLogMeal: true } }}
-      />,
+      />
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Log Meal Modal")).toBeTruthy();
+      expect(screen.getByText('Log Meal Modal')).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByText("Open Label Camera"));
+    fireEvent.press(screen.getByText('Open Label Camera'));
 
     await waitFor(() => {
-      expect(screen.getByText("Label Camera")).toBeTruthy();
+      expect(screen.getByText('Label Camera')).toBeTruthy();
     });
 
-    fireEvent.press(screen.getByText("Close Label Camera"));
+    fireEvent.press(screen.getByText('Close Label Camera'));
 
     await waitFor(() => {
-      expect(screen.getByText("Log Meal Modal")).toBeTruthy();
+      expect(screen.getByText('Log Meal Modal')).toBeTruthy();
     });
   });
-
 });

@@ -41,10 +41,20 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  const topPadding =
-    Platform.OS === "android"
-      ? Math.max(insets.top, StatusBar.currentHeight || 0) + spacing.sm
-      : spacing.md;
+  // Top spacing so the title clears the status bar. The wrapping SafeAreaView
+  // in AnalyticsScreen owns only the bottom edge (edges={["bottom"]}) — earlier
+  // relying on its top edge left the title overlapping the status bar on some
+  // devices, so the header is the sole owner of top padding here.
+  //
+  // Robustness: useSafeAreaInsets().top can report 0 (e.g. before
+  // SafeAreaProvider measures, or certain Expo Go / device configs), which let
+  // the title render behind the status bar. Fall back to StatusBar.currentHeight
+  // (Android) and a 24px floor so the title always clears the bar even when the
+  // inset is unavailable. Same approach as FitnessHeader.
+  const statusBarHeight =
+    Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0;
+  const topInset = Math.max(insets.top, statusBarHeight, 24);
+  const topPadding = topInset + spacing.md;
 
   const getPeriodLabel = () => {
     switch (selectedPeriod) {

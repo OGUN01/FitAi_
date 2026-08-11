@@ -1,25 +1,16 @@
 /**
- * DietActionDock — horizontally-scrolling "dial" of quick actions pinned above
- * the tab bar. Restores the full action set the old DietQuickActions carried
- * (Scan Dish, Barcode, Label, Log Meal, Water) so no capability is
- * hidden behind a modal — every entry point is one tap away from the tab.
- * (The old "Recipes" action was removed: AI recipe generation has no backend
- * endpoint and its modal could never succeed.)
- *
- * Design: a single accent (colors.primary) so the row reads as one cohesive
- * control, not a christmas tree of per-action hues (the old multi-color row
- * was noisy). Tints lift only on the icon disc. Auto-hides on scroll-down /
- * reveals on scroll-up via the optional `hide` shared value.
+ * DietActionDock — floating add button above the tab bar. Tapping it expands
+ * every diet action into an opaque radial menu, keeping dashboard content clear.
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import Animated, {
-  interpolateColor,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
   withSpring,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -32,8 +23,7 @@ import {
   flatShadows,
 } from '../../theme/aurora-tokens';
 import { springConfig } from '../../theme/animations';
-import { rf, rh, rw } from '../../utils/responsive';
-import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
+import { dimensions, rf, rh } from '../../utils/responsive';
 import { fontFamilyForWeight } from '../../theme/fonts';
 
 export interface DietActionDockProps {
@@ -43,12 +33,6 @@ export interface DietActionDockProps {
   onLog: () => void;
   onWater: () => void;
   testID?: string;
-  /**
-   * Reanimated shared value carrying a boolean (0 = visible, 1 = hidden).
-   * The dock auto-hides on scroll-down and reveals on scroll-up, mirroring the
-   * Google/Apple premium pattern so it never covers content while reading.
-   * When omitted, the dock is always visible.
-   */
   hide?: SharedValue<number>;
 }
 
@@ -59,49 +43,68 @@ interface DockAction {
   ariaLabel: string;
   onPress: () => void;
   testID: string;
+  x: number;
+  y: number;
 }
 
-const DockButton: React.FC<{ action: DockAction }> = React.memo(({ action }) => {
-  const glow = useSharedValue(0);
+const MENU_WIDTH = Math.min(dimensions.screenWidth, 393);
+const MENU_HEIGHT = 220;
+const ACTION_SIZE = 72;
+const FAB_SIZE = 64;
+const FAB_BOTTOM = 0;
+const FAB_CENTER_X = MENU_WIDTH / 2;
+const FAB_CENTER_Y = MENU_HEIGHT - FAB_SIZE / 2;
+const RADIAL_RADIUS = Math.min(126, MENU_WIDTH / 2 - ACTION_SIZE / 2 - spacing.xs);
+// Screen Y grows downward, so 180–360° keeps every action above the FAB.
+const RADIAL_ANGLES = [200, 235, 270, 305, 340];
 
-  // Press feedback is a flat accent tint ramp on the icon disc (plus the
-  // AnimatedPressable spring scale + haptic) — no cast glow shadows on
-  // Editorial Dark. Colors precomputed on the JS thread: hexToRgba is not a
-  // worklet and crashes the UI thread if called inside useAnimatedStyle.
-  const glowBgHidden = hexToRgba(colors.primary, TINT_ALPHA_LOW);
-  const glowBgShown = hexToRgba(colors.primary, TINT_ALPHA_MEDIUM);
-  const glowStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(glow.value, [0, 1], [glowBgHidden, glowBgShown]),
+const RadialAction: React.FC<{
+  action: DockAction;
+  progress: SharedValue<number>;
+  isOpen: boolean;
+  onPress: (action: () => void) => void;
+}> = React.memo(({ action, progress, isOpen, onPress }) => {
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [
+      {
+        translateX: interpolate(
+          progress.value,
+          [0, 1],
+          [FAB_CENTER_X - (action.x + ACTION_SIZE / 2), 0]
+        ),
+      },
+      {
+        translateY: interpolate(
+          progress.value,
+          [0, 1],
+          [FAB_CENTER_Y - (action.y + ACTION_SIZE / 2), 0]
+        ),
+      },
+      { scale: interpolate(progress.value, [0, 1], [0.4, 1]) },
+    ],
   }));
 
   return (
-    <AnimatedPressable
-      onPress={action.onPress}
-      scaleValue={0.92}
-      hapticType="light"
-      accessibilityRole="button"
-      accessibilityLabel={action.ariaLabel}
-      testID={action.testID}
-      style={styles.button}
-      onPressIn={() => {
-        glow.value = withTiming(1, { duration: 100 });
-      }}
-      onPressOut={() => {
-        glow.value = withTiming(0, { duration: 300 });
-      }}
+    <Animated.View
+      pointerEvents={isOpen ? 'auto' : 'none'}
+      style={[styles.actionPosition, { left: action.x, top: action.y }, animatedStyle]}
     >
-      <Animated.View style={[styles.iconWrap, glowStyle]}>
-        <Ionicons name={action.icon} size={rf(16)} color={colors.primary} />
-      </Animated.View>
-      <Text
-        style={styles.label}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.8}
+      <AnimatedPressable
+        onPress={() => onPress(action.onPress)}
+        scaleValue={0.9}
+        hapticType="light"
+        accessibilityRole="button"
+        accessibilityLabel={action.ariaLabel}
+        testID={action.testID}
+        style={styles.actionButton}
       >
+        <Ionicons name={action.icon} size={rf(22)} color={colors.primary} />
+      </AnimatedPressable>
+      <Text style={styles.actionLabel} numberOfLines={1}>
         {action.label}
       </Text>
-    </AnimatedPressable>
+    </Animated.View>
   );
 });
 
@@ -114,97 +117,184 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
   testID,
   hide,
 }) => {
-  // Auto-hide on scroll-down / reveal on scroll-up. `hide` is a shared value
-  // (0 = visible, 1 = hidden) driven by DietScreen's onScroll handler. We
-  // animate translateY + opacity with a spring so the dock glides off the
-  // bottom edge instead of snapping. When `hide` is undefined (no scroll
-  // wiring) the dock stays permanently visible — the original behaviour.
-  // hiddenOffset is computed on the JS thread: rh() is not a worklet, and
-  // calling it inside useAnimatedStyle crashes the UI thread (reanimated 3.17).
+  const [isOpen, setIsOpen] = useState(false);
+  const menuProgress = useSharedValue(0);
   const hiddenOffset = rh(100);
-  const animatedStyle = useAnimatedStyle(() => {
-    if (!hide) {
-      return { transform: [{ translateY: 0 }], opacity: 1 };
-    }
+
+  useEffect(() => {
+    menuProgress.value = withSpring(isOpen ? 1 : 0, springConfig.smooth);
+  }, [isOpen, menuProgress]);
+
+  const containerStyle = useAnimatedStyle(() => {
+    if (!hide) return { transform: [{ translateY: 0 }], opacity: 1 };
     const isHidden = hide.value > 0.5;
     return {
       transform: [
-        {
-          translateY: withSpring(isHidden ? hiddenOffset : 0, springConfig.smooth),
-        },
+        { translateY: withSpring(isHidden ? hiddenOffset : 0, springConfig.smooth) },
       ],
       opacity: withSpring(isHidden ? 0 : 1, springConfig.smooth),
     };
   });
 
-  const actions: DockAction[] = [
-    { id: 'scan', icon: 'camera-outline', label: 'Scan', ariaLabel: 'Scan dish', onPress: onScan, testID: 'diet-dock-scan' },
-    { id: 'barcode', icon: 'barcode-outline', label: 'Barcode', ariaLabel: 'Scan barcode', onPress: onBarcode, testID: 'diet-dock-barcode' },
-    { id: 'label', icon: 'document-text-outline', label: 'Label', ariaLabel: 'Scan nutrition label', onPress: onLabel, testID: 'diet-dock-label' },
-    { id: 'log', icon: 'restaurant-outline', label: 'Log', ariaLabel: 'Log meal', onPress: onLog, testID: 'diet-dock-log' },
-    { id: 'water', icon: 'water-outline', label: 'Water', ariaLabel: 'Log water', onPress: onWater, testID: 'diet-dock-water' },
-  ];
+  const fabIconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${interpolate(menuProgress.value, [0, 1], [0, 45])}deg` }],
+  }));
+
+  const runAction = useCallback((action: () => void) => {
+    setIsOpen(false);
+    action();
+  }, []);
+
+  const actionDefinitions = [
+    ['scan', 'camera-outline', 'Scan Food', 'Scan food', onScan, 'diet-dock-scan'],
+    ['barcode', 'barcode-outline', 'Barcode', 'Scan barcode', onBarcode, 'diet-dock-barcode'],
+    [
+      'label',
+      'document-text-outline',
+      'Scan Label',
+      'Scan nutrition label',
+      onLabel,
+      'diet-dock-label',
+    ],
+    ['log', 'restaurant-outline', 'Log Meal', 'Log meal', onLog, 'diet-dock-log'],
+    ['water', 'water-outline', 'Water', 'Log water', onWater, 'diet-dock-water'],
+  ] as const;
+
+  const actions: DockAction[] = actionDefinitions.map((definition, index) => {
+    const angle = (RADIAL_ANGLES[index] * Math.PI) / 180;
+    return {
+      id: definition[0],
+      icon: definition[1],
+      label: definition[2],
+      ariaLabel: definition[3],
+      onPress: definition[4],
+      testID: definition[5],
+      x: FAB_CENTER_X + Math.cos(angle) * RADIAL_RADIUS - ACTION_SIZE / 2,
+      y: FAB_CENTER_Y + Math.sin(angle) * RADIAL_RADIUS - ACTION_SIZE / 2,
+    };
+  });
 
   return (
-    <Animated.View style={[styles.dock, animatedStyle]} testID={testID}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+    <>
+      {isOpen ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close diet actions"
+          onPress={() => setIsOpen(false)}
+          style={styles.backdrop}
+          testID="diet-dock-backdrop"
+        >
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+          <Animated.View style={styles.backdropTint} />
+        </Pressable>
+      ) : null}
+
+      <Animated.View
+        pointerEvents="box-none"
+        style={[styles.container, containerStyle]}
+        testID={testID}
       >
         {actions.map((action) => (
-          <DockButton key={action.id} action={action} />
-        ))}
-      </ScrollView>
-    </Animated.View>
+        <RadialAction
+          key={action.id}
+          action={action}
+          progress={menuProgress}
+          isOpen={isOpen}
+          onPress={runAction}
+        />
+      ))}
+
+        <AnimatedPressable
+          onPress={() => setIsOpen((open) => !open)}
+          scaleValue={0.9}
+          hapticType="medium"
+          accessibilityRole="button"
+          accessibilityLabel={isOpen ? 'Close diet actions' : 'Open diet actions'}
+          accessibilityState={{ expanded: isOpen }}
+          testID="diet-dock-more"
+          containerStyle={styles.fabPosition}
+          style={[styles.fab, isOpen && styles.fabOpen]}
+        >
+          <Animated.View style={fabIconStyle}>
+            <Ionicons name="add" size={rf(32)} color={colors.background} />
+          </Animated.View>
+        </AnimatedPressable>
+      </Animated.View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  dock: {
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    elevation: 10,
+  },
+  backdropTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  container: {
     position: 'absolute' as const,
-    left: spacing.md,
-    right: spacing.md,
-    // Sit just above the tab bar, not floating mid-screen. rh(72) clears the
-    // tab bar (~56px) + a small gap; clamped so short viewports keep it on-screen.
-    bottom: Math.max(rh(72), 72),
-    backgroundColor: hexToRgba(colors.backgroundSecondary, 0.96),
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    // Lightest flat shadow — the hairline border + surface step do the real
-    // separation work on Editorial Dark.
-    ...flatShadows.sm,
+    left: '50%' as const,
+    bottom: 0,
+    width: MENU_WIDTH,
+    height: MENU_HEIGHT,
+    marginLeft: -MENU_WIDTH / 2,
+    zIndex: 11,
+    elevation: 11,
   },
-  scrollContent: {
-    flexDirection: 'row' as const,
+  actionPosition: {
+    position: 'absolute' as const,
+    width: ACTION_SIZE,
     alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    gap: 0,
   },
-  button: {
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    flex: 1 as const,
-    paddingVertical: spacing.xs,
-    minHeight: 48, // ≥44px touch target
-  },
-  iconWrap: {
-    width: rw(30),
-    height: rw(30),
+  actionButton: {
+    width: 56,
+    height: 56,
     borderRadius: borderRadius.full,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...flatShadows.md,
   },
-  label: {
+  actionLabel: {
+    minWidth: 68,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden' as const,
+    backgroundColor: colors.backgroundSecondary,
+    color: colors.text,
     fontSize: rf(fontSize.micro),
+    lineHeight: rf(14),
     fontFamily: fontFamilyForWeight('600'),
     fontWeight: '600' as const,
-    color: colors.textSecondary,
-    marginTop: 2,
+    textAlign: 'center' as const,
+  },
+  fabPosition: {
+    position: 'absolute' as const,
+    left: FAB_CENTER_X - FAB_SIZE / 2,
+    bottom: FAB_BOTTOM,
+    zIndex: 12,
+    elevation: 12,
+  },
+  fab: {
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: borderRadius.full,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.backgroundSecondary,
+    ...flatShadows.lg,
+  },
+  fabOpen: {
+    backgroundColor: colors.primaryLight,
   },
 });
 

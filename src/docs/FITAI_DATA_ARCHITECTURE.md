@@ -910,6 +910,14 @@ useCalculatedMetrics = derived view of profileStore data
 | Diet preferences | `profileStore.dietPreferences` | Passed to AI generation |
 | Meal plan generation | `aiService.generateWeeklyMealPlanAsync()` | Full profile data sent |
 
+**Diet navigation structure:** the Diet feature is split into three screens: the plan/today view, meal logging/history, and nutrition insights. All three consume the same `nutritionStore`; screens do not maintain parallel meal-completion state.
+
+**Meal status SSOT:** `meal_logs.is_completed` is authoritative for persisted completion. `nutritionStore.mealProgress` is the runtime projection: realtime INSERT/UPDATE sets 100 only when `is_completed=true`, preserves an existing sub-100 in-progress value for false/null, and removes stale completion when a row becomes incomplete or is deleted. Planned meals without an explicit completed log remain planned/in-progress.
+
+**Nutrition streak flow:** `achievementStore` is the sole writer of `nutritionStreak` and `longestNutritionStreak`. Initialization restores persisted values through `analyticsDataService.loadNutritionStreaks` and loads recent `meal_logs.logged_at` dates for an authoritative multi-day recompute; nutrition hydration, realtime insert/update/delete, completion, and local meal additions invoke the achievement action via lazy module resolution to avoid a circular-import initialization hazard. The action derives consecutive local dates and persists through `analytics_metrics`.
+
+**Selected-date history limitation:** remote `meal_logs` hydration currently fetches today's consumed logs plus planned-log rows for the active plan. Historical selected dates are therefore limited to already-local/persisted store data; broad remote date-range history loading is intentionally out of scope here.
+
 ### E.4 Workout Screen
 
 **Hook:** `useFitnessLogic` (`src/hooks/useFitnessLogic.ts`)
@@ -993,6 +1001,8 @@ useMealPlanning hook
                     ├── validateDietPlan() — allergens, diet violations, calorie drift
                     └── adjustForProteinTarget() — mathematical portion adjustment
 ```
+
+**Per-meal swap flow:** `useMealPlanning.swapMealInPlan(selectedMeal)` sends the selected slot's type/day/calories/macros plus the current profileStore diet type, allergies, restrictions, and dislikes to authenticated `POST /diet/swap`. The Worker validates with Zod, generates exactly one meal through the existing `createAIProvider` abstraction, rejects diet/allergen/exclusion or calorie/macro drift, and resolves its image. The client transforms that one worker meal, preserves the selected meal's `id` and `dayOfWeek`, replaces only that array entry, then persists the complete weekly plan through `nutritionStore.saveWeeklyMealPlan` (the existing save flow).
 
 ### F.1.1 All Fields Sent to Diet Worker
 

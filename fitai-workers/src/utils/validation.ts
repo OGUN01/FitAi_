@@ -581,6 +581,31 @@ export const DietGenerationRequestSchema = z.object({
 
 export type DietGenerationRequest = z.infer<typeof DietGenerationRequestSchema>;
 
+/**
+ * Request body for POST /diet/swap. The selected meal's slot and nutrition are
+ * explicit constraints; the worker returns one replacement MealSchema object.
+ */
+export const MealSwapRequestSchema = z.object({
+	meal: z.object({
+		name: z.string().min(1).max(200),
+		type: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+		dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+		totalCalories: z.number().min(0).max(5000),
+		totalMacros: z.object({
+			protein: z.number().min(0).max(400),
+			carbohydrates: z.number().min(0).max(600),
+			fat: z.number().min(0).max(250),
+			fiber: z.number().min(0).max(200),
+		}),
+	}),
+	dietType: z.string().min(1).max(50),
+	allergies: z.array(z.string().min(1).max(100)).max(50).default([]),
+	restrictions: z.array(z.string().min(1).max(100)).max(50).default([]),
+	excludeIngredients: z.array(z.string().min(1).max(100)).max(50).default([]),
+});
+
+export type MealSwapRequest = z.infer<typeof MealSwapRequestSchema>;
+
 // ============================================================================
 // CHAT REQUEST SCHEMA (Task 1.7)
 // ============================================================================
