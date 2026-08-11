@@ -13,11 +13,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../components/ui/aurora/AuroraSpinner";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, border } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { useHealthDataStore } from "../../../stores/healthDataStore";
 import { haptics } from "../../../utils/haptics";
-import { hexToRgba } from "../../../utils/colors";
 
 interface SyncStatusIndicatorProps {
   onPress?: () => void;
@@ -193,7 +192,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: hexToRgba("#FFFFFF", 0.05),
+    // Flat Editorial-Dark hairline-card fill, matching every other Home
+    // surface (rings, hub, body progress, calendar, quick actions).
+    backgroundColor: colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: border.subtle,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,

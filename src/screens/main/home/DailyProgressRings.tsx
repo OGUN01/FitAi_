@@ -224,6 +224,10 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
             <Text style={styles.emptyStateText} numberOfLines={2}>
               Complete your profile to track daily progress
             </Text>
+            <View style={styles.emptyStateCta}>
+              <Text style={styles.emptyStateCtaText}>Complete Profile</Text>
+              <Ionicons name="chevron-forward" size={rf(14)} color={colors.white} />
+            </View>
           </View>
         </View>
       </AnimatedPressable>
@@ -344,7 +348,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 minimumFontScale={0.7}
               >
                 {caloriesBurned}
-                <Text style={styles.chipUnit}>/{caloriesGoal}</Text>
+                <Text style={styles.chipUnit}>/{caloriesGoal > 0 ? caloriesGoal : '--'}</Text>
               </Text>
               <Text style={styles.chipLabel} numberOfLines={1}>
                 Move
@@ -360,7 +364,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 minimumFontScale={0.7}
               >
                 {workoutMinutes}
-                <Text style={styles.chipUnit}>/{workoutGoal}</Text>
+                <Text style={styles.chipUnit}>/{workoutGoal > 0 ? workoutGoal : '--'}</Text>
               </Text>
               <Text style={styles.chipLabel} numberOfLines={1}>
                 Exercise
@@ -376,7 +380,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 minimumFontScale={0.7}
               >
                 {mealsLogged}
-                <Text style={styles.chipUnit}>/{mealsGoal}</Text>
+                <Text style={styles.chipUnit}>/{mealsGoal > 0 ? mealsGoal : '--'}</Text>
               </Text>
               <Text style={styles.chipLabel} numberOfLines={1}>
                 Nutrition
@@ -439,6 +443,25 @@ const styles = StyleSheet.create({
     ...typography.variants.caption2,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  // Explicit tap affordance — a solid-color pill, matching the CTA pattern
+  // used by every other empty state on Home (EmptyMealsMessage, EmptyCalendarMessage).
+  emptyStateCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    borderRadius: borderRadius.full,
+    marginTop: spacing.xs,
+  },
+  emptyStateCtaText: {
+    ...typography.variants.caption2,
+    fontFamily: 'Manrope_700Bold',
+    color: colors.white,
   },
   ringsHero: {
     alignItems: 'center',

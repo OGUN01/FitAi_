@@ -160,6 +160,10 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
               </Text>
             </View>
           </View>
+          {/* No Steps chip here — DailyProgressRings (directly above on Home)
+              already renders a conditional Steps chip fed by this same
+              `steps` value whenever hasStepsData. Repeating it here would
+              show the identical step count twice, back-to-back. */}
         </View>
       </AnimatedPressable>
     );

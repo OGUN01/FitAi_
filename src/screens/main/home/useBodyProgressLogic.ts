@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { flatColors as colors } from "../../../theme/aurora-tokens";
 
 export interface WeightEntry {
   date: string;
@@ -84,7 +85,7 @@ export const useBodyProgressLogic = ({
       startingWeight && goalWeight && startingWeight > goalWeight;
 
     if (trendDirection === "stable") {
-      return { icon: "remove" as const, color: "#9E9E9E", label: "Stable" };
+      return { icon: "remove" as const, color: colors.textSecondary, label: "Stable" };
     }
 
     // For weight loss: down is good, for weight gain: up is good
@@ -92,20 +93,20 @@ export const useBodyProgressLogic = ({
       return trendDirection === "down"
         ? {
             icon: "trending-down" as const,
-            color: "#4CAF50",
+            color: colors.success,
             label: "On track",
           }
         : {
             icon: "trending-up" as const,
-            color: "#FF9800",
+            color: colors.warning,
             label: "Review needed",
           };
     } else {
       return trendDirection === "up"
-        ? { icon: "trending-up" as const, color: "#4CAF50", label: "On track" }
+        ? { icon: "trending-up" as const, color: colors.success, label: "On track" }
         : {
             icon: "trending-down" as const,
-            color: "#FF9800",
+            color: colors.warning,
             label: "Review needed",
           };
     }
@@ -115,15 +116,17 @@ export const useBodyProgressLogic = ({
   const chartData = weightHistory.slice(-7).map((e) => e.weight);
   const hasData = !!(currentWeight && currentWeight > 0);
 
-  // Progress color based on percentage
+  // Progress color based on percentage — success/successLight/amber/warning
+  // design tokens, not ad hoc hex, so this stays in sync with the rest of the
+  // app's success/warning palette.
   const progressColor =
     progress >= 75
-      ? "#4CAF50"
+      ? colors.success
       : progress >= 50
-        ? "#8BC34A"
+        ? colors.successLight
         : progress >= 25
-          ? "#FFC107"
-          : "#FF9800";
+          ? colors.amber
+          : colors.warning;
 
   return {
     progress,

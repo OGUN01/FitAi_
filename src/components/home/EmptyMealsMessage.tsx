@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, border, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 
@@ -30,16 +31,18 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
           Track your nutrition to hit your daily goals
         </Text>
         {onLogMeal && (
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.ctaButton}
             onPress={onLogMeal}
-            activeOpacity={0.8}
+            scaleValue={0.96}
+            hapticFeedback
+            hapticType="light"
             accessibilityRole="button"
             accessibilityLabel="Log your first meal"
           >
             <Ionicons name="add-circle-outline" size={rf(16)} color={colors.white} />
             <Text style={styles.ctaText}>Log Meal</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
       </View>
     </View>
