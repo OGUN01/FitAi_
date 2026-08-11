@@ -201,7 +201,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             {/* Collapsed — "Progress photos" (Optional) */}
             <CollapsibleSection
               title="Progress photos"
-              subtitle="Optional — AI body-fat estimate"
+              subtitle="Optional — for your own reference"
               expanded={showPhotos}
               onToggle={() => setShowPhotos((v) => !v)}
               testID="progress-photos-section"

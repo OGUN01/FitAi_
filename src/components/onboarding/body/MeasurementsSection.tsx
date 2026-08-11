@@ -150,7 +150,11 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
             accentColor={tokens.accent}
             onChange={(v) => updateField("height_cm", v)}
             showValue={false}
-            accessibilityLabel={`Height, ${heightVal > 0 ? Math.round(heightVal) : HEIGHT_MIN} centimeters`}
+            accessibilityLabel={
+              isImperial
+                ? `Height, ${cmToFtIn(heightVal > 0 ? heightVal : HEIGHT_MIN)}`
+                : `Height, ${heightVal > 0 ? Math.round(heightVal) : HEIGHT_MIN} centimeters`
+            }
             testID="height-slider"
           />
         </View>
@@ -202,7 +206,11 @@ export const MeasurementsSection: React.FC<MeasurementsSectionProps> = ({
             accentColor={tokens.accent}
             onChange={(v) => updateField("current_weight_kg", v)}
             showValue={false}
-            accessibilityLabel={`Current weight, ${weightVal > 0 ? weightVal.toFixed(1).replace(/\.0$/, "") : WEIGHT_MIN} kilograms`}
+            accessibilityLabel={
+              isImperial
+                ? `Current weight, ${Math.round((weightVal > 0 ? weightVal : WEIGHT_MIN) * 2.20462)} pounds`
+                : `Current weight, ${weightVal > 0 ? weightVal.toFixed(1).replace(/\.0$/, "") : WEIGHT_MIN} kilograms`
+            }
             testID="current-weight-slider"
           />
         </View>

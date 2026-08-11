@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     // visible effect. Matching the same near-OLED black here keeps the tab
     // bar strip visually seamless with the content below it without paying
     // for an animated gradient nobody ever sees.
-    backgroundColor: "#050505",
+    backgroundColor: colors.background,
   },
 
   contentContainer: {
