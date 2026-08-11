@@ -90,7 +90,6 @@ export const useWorkoutSession = (
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
   const [workoutStartTime] = useState(new Date());
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showNextExercisePreview, setShowNextExercisePreview] = useState(false);
 
@@ -207,14 +206,24 @@ export const useWorkoutSession = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exerciseProgress, workout.exercises, storeExercises, resolvedWeight]);
 
-  // Time-based stats — recalculate every second for the live duration display.
+  // Time-based stats. `totalDuration` used to tick off a `currentTime` state
+  // updated by a 1s interval in the parent screen; that interval was removed
+  // (it re-rendered the entire WorkoutSessionScreen tree every tick — the
+  // live elapsed-time DISPLAY now lives entirely in WorkoutHeader's
+  // self-contained WorkoutElapsedTime, driven off the stable
+  // `workoutStartTime`). Nothing calls `setCurrentTime` anymore, so re-adding
+  // it here would just freeze totalDuration near 0 forever. Instead we
+  // compute totalDuration fresh from Date.now() whenever this memo
+  // recomputes (i.e. whenever exerciseStats changes — a set is logged / an
+  // exercise completes), which keeps it accurate as of the last real workout
+  // event without reintroducing a per-second re-render.
   const workoutStats = useMemo((): WorkoutStats => {
-    const durationSeconds = Math.floor((currentTime.getTime() - workoutStartTime.getTime()) / 1000);
+    const durationSeconds = Math.floor((Date.now() - workoutStartTime.getTime()) / 1000);
     return {
       totalDuration: Math.max(0, durationSeconds),
       ...exerciseStats,
     };
-  }, [currentTime, workoutStartTime, exerciseStats]);
+  }, [workoutStartTime, exerciseStats]);
 
   // P2-13 fix: keep the ref in sync synchronously at render time (not via an
   // effect that runs after render). This guarantees handleSetComplete emits the
@@ -368,35 +377,70 @@ export const useWorkoutSession = (
     }
   }, [currentExerciseIndex]);
 
-  return {
-    currentExerciseIndex,
-    exerciseProgress,
-    exercisePhase,
-    currentSetIndex,
-    workoutStartTime,
-    currentTime,
-    showInstructionModal,
-    showNextExercisePreview,
-    currentExercise,
-    currentProgress,
-    totalExercises,
-    overallProgress,
-    workoutStats,
-    nextExercise,
-    setCurrentTime,
-    setShowInstructionModal,
-    handleSetComplete,
-    startExercise,
-    completeCurrentSet,
-    completeTimeBasedSet,
-    cancelPerforming,
-    cancelLogging,
-    advanceAfterLog,
-    onRestComplete,
-    goToNextExercise,
-    goToPreviousExercise,
-    nextExercisePreviewTimeoutRef,
-  };
+  // Memoize the returned surface itself. Without this, useWorkoutSession
+  // returned a brand-new object literal on every render, so `session`
+  // changed identity on every parent re-render regardless of whether any of
+  // its actual fields changed — which in turn defeated React.memo on every
+  // component consuming `session` (and any downstream useCallback that
+  // depends on the whole `session` object, e.g. exitWorkout in
+  // WorkoutSessionScreen.tsx). Now `session` only gets a new identity when
+  // one of its constituent values actually changes.
+  return useMemo(
+    () => ({
+      currentExerciseIndex,
+      exerciseProgress,
+      exercisePhase,
+      currentSetIndex,
+      workoutStartTime,
+      showInstructionModal,
+      showNextExercisePreview,
+      currentExercise,
+      currentProgress,
+      totalExercises,
+      overallProgress,
+      workoutStats,
+      nextExercise,
+      setShowInstructionModal,
+      handleSetComplete,
+      startExercise,
+      completeCurrentSet,
+      completeTimeBasedSet,
+      cancelPerforming,
+      cancelLogging,
+      advanceAfterLog,
+      onRestComplete,
+      goToNextExercise,
+      goToPreviousExercise,
+      nextExercisePreviewTimeoutRef,
+    }),
+    [
+      currentExerciseIndex,
+      exerciseProgress,
+      exercisePhase,
+      currentSetIndex,
+      workoutStartTime,
+      showInstructionModal,
+      showNextExercisePreview,
+      currentExercise,
+      currentProgress,
+      totalExercises,
+      overallProgress,
+      workoutStats,
+      nextExercise,
+      setShowInstructionModal,
+      handleSetComplete,
+      startExercise,
+      completeCurrentSet,
+      completeTimeBasedSet,
+      cancelPerforming,
+      cancelLogging,
+      advanceAfterLog,
+      onRestComplete,
+      goToNextExercise,
+      goToPreviousExercise,
+      nextExercisePreviewTimeoutRef,
+    ]
+  );
 };
 
 /**

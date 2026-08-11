@@ -206,12 +206,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     return titleCaseExerciseName(safeString(exerciseId, 'Exercise').replace(/_/g, ' '));
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      session.setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [session.setCurrentTime]);
+  // NOTE: the live elapsed-time display used to tick `session.setCurrentTime`
+  // here every 1000ms. That state lives inside useWorkoutSession — the hook
+  // backing this whole screen — so every tick re-rendered the entire screen
+  // tree (WorkoutHeader, WorkoutProgressBar, ExerciseGifPlayer,
+  // ExerciseSessionModal, SetLogModal, AchievementNotifications, none of
+  // which were memoized). WorkoutHeader now owns its own ticking display
+  // (WorkoutElapsedTime, mirroring RestTimer's self-contained countdown)
+  // driven off the stable `session.workoutStartTime`, so no interval needs to
+  // run at this level anymore.
 
   // Load calibration status for each exercise when the plan changes.
   // P2-14 fix: deps now include workout.exercises so a plan reload re-fetches
@@ -357,6 +360,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     await handleSaveSetData(session.currentSetIndex, autoData);
   }, [handleSaveSetData, session.currentSetIndex]);
 
+  // Stable prop for ExerciseGifPlayer (React.memo'd) — session.setShowInstructionModal
+  // is the raw useState setter returned by useWorkoutSession, itself always
+  // stable, so this callback never changes identity.
+  const handleShowInstructions = useCallback(() => {
+    session.setShowInstructionModal(true);
+  }, [session.setShowInstructionModal]);
+
+  // Stable prop for ExerciseSessionModal (React.memo'd) when the current
+  // exercise is time-based: auto-logs the set and advances the phase.
+  const handleTimeBasedComplete = useCallback(() => {
+    session.completeTimeBasedSet();
+    handleTimeBasedSetComplete();
+  }, [session.completeTimeBasedSet, handleTimeBasedSetComplete]);
+
   const handleRestTimerExpire = useCallback(() => {
     setRestTimerEndTime(null);
     setIsInterExerciseRest((prevIsInter) => {
@@ -375,8 +392,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     // Bug 1: prevent double-tap from creating two Supabase rows
     if (isCompletingRef.current) return;
     isCompletingRef.current = true;
+    // Declared outside the try block so the catch block below can also
+    // surface an accurate elapsed duration in its alert (session.workoutStats
+    // is a display-only projection recomputed on other state changes — it is
+    // no longer ticked live every second, see the removed per-second effect
+    // above — so it can lag the true elapsed time by the time an error path
+    // reads it here).
+    let elapsedSeconds = 0;
     try {
-      const elapsedSeconds = Math.floor(
+      elapsedSeconds = Math.floor(
         (new Date().getTime() - session.workoutStartTime.getTime()) / 1000
       );
       // Pull actual logged set data (weight, reps) from store.
@@ -532,12 +556,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       //   - persisted + later step failed → "Workout saved, but stats may not have updated"
       //   - not persisted → "Workout could not be saved", allow a retry by
       //     resetting the guard only in this not-yet-persisted case.
+      const statsForAlert = { ...session.workoutStats, totalDuration: elapsedSeconds };
       if (workoutPersistedRef.current) {
-        showWorkoutPartialSuccessAlert(workout, session.workoutStats, () => navigation.goBack());
+        showWorkoutPartialSuccessAlert(workout, statsForAlert, () => navigation.goBack());
       } else {
         // Nothing was persisted yet — safe to let the user retry.
         isCompletingRef.current = false;
-        showWorkoutCompleteErrorAlert(workout, session.workoutStats, () => navigation.goBack());
+        showWorkoutCompleteErrorAlert(workout, statsForAlert, () => navigation.goBack());
       }
     }
   }, [workout, sessionId, isExtra, session, achievements, navigation]);
@@ -597,6 +622,16 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         // that on resume the hook's derived exerciseProgress restores the
         // actual logged weight/reps/rpe from the SSOT
         // (currentWorkoutSession.exercises[].sets[]).
+        //
+        // NOTE: session.workoutStats.totalDuration is included via the spread
+        // below but savePartialExit's stats type only reads caloriesBurned +
+        // exercises — totalDuration is intentionally never persisted on
+        // partial exit (see completionTracking.ts: "total_duration_minutes is
+        // intentionally NOT set here"). useWorkoutSession now computes
+        // totalDuration from Date.now() each time it recomputes (on set /
+        // exercise progress changes), so it's accurate as of the last workout
+        // event rather than frozen — but since it isn't read here anyway,
+        // this is belt-and-suspenders, not load-bearing.
         await completionTrackingService.savePartialExit(workout.id || 'unknown', {
           sessionId: sessionId || 'unknown',
           userId,
@@ -715,7 +750,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               : session.currentExerciseIndex + 1
           }
           totalExercises={session.totalExercises}
-          duration={session.workoutStats.totalDuration}
+          workoutStartTime={session.workoutStartTime}
           calories={session.workoutStats.caloriesBurned}
           onExit={exitWorkout}
           paddingTop={Math.max(insets.top, 12)}
@@ -795,7 +830,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                 width={rp(300)}
                 showTitle={false}
                 showInstructions={true}
-                onInstructionsPress={() => session.setShowInstructionModal(true)}
+                onInstructionsPress={handleShowInstructions}
                 style={styles.exerciseGifPlayer}
               />
             )}
@@ -950,10 +985,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           onComplete={
             isTimeBased
               ? // Time-based: tap Complete Set → auto-log + skip SetLogModal
-                () => {
-                  session.completeTimeBasedSet();
-                  handleTimeBasedSetComplete();
-                }
+                handleTimeBasedComplete
               : session.completeCurrentSet
           }
           onCancel={session.cancelPerforming}

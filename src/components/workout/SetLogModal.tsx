@@ -300,37 +300,44 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   // ── Live PR preview ───────────────────────────────────────────────────────
   // Recompute the PR check whenever the weight/reps inputs change so the user
   // sees a live PR badge before tapping save. Non-blocking; failures swallowed.
+  // Debounced 350ms after the last keystroke — this fires on every character
+  // typed into weight/reps (the highest-frequency interaction on this screen),
+  // and each lookup is a DB round trip via exerciseHistoryService, so an
+  // undebounced effect fanned out a query per character during rapid typing.
   useEffect(() => {
     if (!isVisible || !userId || calibrationMode || isTimeBased) {
       setPrPreview(null);
       return;
     }
-    let cancelled = false;
     const weightKg = isBodyweight ? 0 : displayToKg(weight, userUnits);
     const repsValue = parseInt(repsInput, 10) || 0;
     if (repsValue <= 0 || (!isBodyweight && weightKg <= 0)) {
       setPrPreview(null);
       return;
     }
-    exerciseHistoryService
-      .getPersonalRecords(exerciseId, userId)
-      .then((prs) => {
-        if (cancelled) return;
-        const weightPR = prs.find((p) => p.prType === 'weight');
-        const e1rmPR = prs.find((p) => p.prType === 'estimated_1rm');
-        const result = prDetectionService.checkForPR(
-          exerciseId,
-          { weightKg: isBodyweight ? repsValue : weightKg, reps: repsValue },
-          { weight: weightPR?.value, estimated1rm: e1rmPR?.value }
-        );
-        setPrPreview(result);
-      })
-      .catch((err) => {
-        if (!cancelled) setPrPreview(null);
-        console.error('[SetLogModal] live PR preview error:', err);
-      });
+    let cancelled = false;
+    const timeoutId = setTimeout(() => {
+      exerciseHistoryService
+        .getPersonalRecords(exerciseId, userId)
+        .then((prs) => {
+          if (cancelled) return;
+          const weightPR = prs.find((p) => p.prType === 'weight');
+          const e1rmPR = prs.find((p) => p.prType === 'estimated_1rm');
+          const result = prDetectionService.checkForPR(
+            exerciseId,
+            { weightKg: isBodyweight ? repsValue : weightKg, reps: repsValue },
+            { weight: weightPR?.value, estimated1rm: e1rmPR?.value }
+          );
+          setPrPreview(result);
+        })
+        .catch((err) => {
+          if (!cancelled) setPrPreview(null);
+          console.error('[SetLogModal] live PR preview error:', err);
+        });
+    }, 350);
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [
     weight,

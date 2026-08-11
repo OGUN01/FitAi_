@@ -597,7 +597,7 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
                     dayIndex={idx}
                     day={day}
                     isExpanded={expandedDayIndex === idx}
-                    onToggleExpand={() => toggleExpand(idx)}
+                    onToggleExpand={toggleExpand}
                     onAddExercise={handleAddExercise}
                     onOpenEditor={handleOpenEditor}
                     onDuplicateExercise={handleDuplicateExercise}

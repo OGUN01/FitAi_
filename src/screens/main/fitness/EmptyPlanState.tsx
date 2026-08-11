@@ -24,6 +24,7 @@ import { flatColors as colors, spacing, borderRadius } from "../../../theme/auro
 import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rp, rh, rbr } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
+import { useProfileStore } from "../../../stores/profileStore";
 
 interface EmptyPlanStateProps {
   experienceLevel?: "beginner" | "intermediate" | "advanced";
@@ -57,20 +58,19 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const getPlanDetails = () => {
-    switch (experienceLevel) {
-      case "beginner":
-        return { workouts: 3, duration: "1 week" };
-      case "intermediate":
-        return { workouts: 5, duration: "1.5 weeks" };
-      case "advanced":
-        return { workouts: 6, duration: "2 weeks" };
-      default:
-        return { workouts: 3, duration: "1 week" };
-    }
-  };
+  // Preview chips must reflect what the generator will actually produce, not
+  // a fabricated estimate. The rule-based generator derives workout frequency
+  // from the user's own workout_frequency_per_week onboarding preference (see
+  // fitai-workers/src/handlers/workoutGenerationRuleBased.ts), and a generated
+  // "weekly" plan is always exactly one week — there is no 1.5/2-week concept
+  // anywhere in the pipeline. When the real preference isn't available yet we
+  // omit the chip rather than guess (CLAUDE.md: no hardcoded fallbacks for
+  // user data).
+  const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week;
+  const sessionMinutes =
+    workoutPreferences?.session_duration_minutes ?? workoutPreferences?.time_preference;
 
-  const planDetails = getPlanDetails();
   const goalLabel =
     primaryGoals.length > 0
       ? primaryGoals[0].replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
@@ -110,20 +110,27 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
         </Text>
       </Animated.View>
 
-      {/* Plan preview — flat pill chips */}
+      {/* Plan preview — flat pill chips. Workouts/week and session length come
+          from the user's real onboarding preferences (the same values the
+          generator reads) — omitted entirely when not yet available rather
+          than showing a fabricated number. */}
       <Animated.View entering={FadeInDown.delay(360).duration(500)} style={styles.previewRow}>
-        <View style={styles.previewChip}>
-          <Ionicons name="calendar-outline" size={rf(14)} color={colors.primary} />
-          <Text style={styles.previewChipText} numberOfLines={1}>
-            {planDetails.workouts} workouts
-          </Text>
-        </View>
-        <View style={styles.previewChip}>
-          <Ionicons name="time-outline" size={rf(14)} color={colors.primary} />
-          <Text style={styles.previewChipText} numberOfLines={1}>
-            {planDetails.duration}
-          </Text>
-        </View>
+        {workoutsPerWeek != null && workoutsPerWeek > 0 ? (
+          <View style={styles.previewChip}>
+            <Ionicons name="calendar-outline" size={rf(14)} color={colors.primary} />
+            <Text style={styles.previewChipText} numberOfLines={1}>
+              {workoutsPerWeek} workouts/week
+            </Text>
+          </View>
+        ) : null}
+        {sessionMinutes != null && sessionMinutes > 0 ? (
+          <View style={styles.previewChip}>
+            <Ionicons name="time-outline" size={rf(14)} color={colors.primary} />
+            <Text style={styles.previewChipText} numberOfLines={1}>
+              ~{sessionMinutes} min sessions
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.previewChip}>
           <Ionicons name="trophy-outline" size={rf(14)} color={colors.primary} />
           <Text style={styles.previewChipText} numberOfLines={1}>

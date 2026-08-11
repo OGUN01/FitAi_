@@ -104,6 +104,14 @@ const CATEGORY_THUMBNAIL: Record<
 
 const DEFAULT_THUMBNAIL = CATEGORY_THUMBNAIL.full_body;
 
+// Module-level id→exercise map (built once) so each row does an O(1) lookup
+// instead of a CURATED_EXERCISES.find() linear scan on every render — the
+// scan re-ran for every row across every day on every keystroke elsewhere in
+// the builder (e.g. Notes text input) before this component was memoized.
+const CURATED_EXERCISES_BY_ID: ReadonlyMap<string, (typeof CURATED_EXERCISES)[number]> = new Map(
+  CURATED_EXERCISES.map((c) => [c.id, c]),
+);
+
 export interface ExerciseRowProps {
   exercise: PlannedExercise;
   dayIndex: number;
@@ -200,7 +208,7 @@ function useFavourites(): Set<string> {
 // Component
 // ----------------------------------------------------------------------------
 
-export const ExerciseRow: React.FC<ExerciseRowProps> = ({
+const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
   exercise,
   dayIndex,
   exerciseIndex,
@@ -218,7 +226,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const isFavourite = favourites.has(exercise.exerciseId);
 
   // Resolve curated metadata (muscle groups, equipment, difficulty)
-  const curated = CURATED_EXERCISES.find((c) => c.id === exercise.exerciseId);
+  const curated = CURATED_EXERCISES_BY_ID.get(exercise.exerciseId);
   const muscleGroups = curated?.muscleGroups ?? [];
   const equipment = curated?.equipment ?? [];
   const difficulty = curated?.difficulty ?? "intermediate";
@@ -590,6 +598,11 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
     </View>
   );
 };
+
+// Memoized: DayBlock renders one ExerciseRow per exercise across all 7 days.
+// Without memo, every row re-rendered (and re-ran the curated-exercise
+// lookup) on any single keystroke anywhere in the builder screen.
+export const ExerciseRow = React.memo(ExerciseRowComponent);
 
 const styles = StyleSheet.create({
   container: {

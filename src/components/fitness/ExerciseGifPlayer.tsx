@@ -18,6 +18,7 @@ import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
 import { getFallbackGifUrl } from "../../services/exercise-visual/urlUtils";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface ExerciseGifPlayerProps {
   exerciseId: string; // Direct exercise ID - no more complex matching!
@@ -33,7 +34,7 @@ interface ExerciseGifPlayerProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
+const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   exerciseId,
   exerciseName,
   height = 200,
@@ -310,8 +311,18 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               <AnimatedPressable
                 style={[styles.retryButton, styles.reportButton]}
                 onPress={() => {
-                  // Surface a mailto-style report hook if available; otherwise
-                  // just clear the error so the user can dismiss.
+                  // Real report: log the broken exercise (id + attempted URL)
+                  // for diagnostics, and confirm to the user it was noted —
+                  // previously this button did neither and just silently
+                  // reset the error state, which re-triggered the same
+                  // broken load with no record it ever happened.
+                  console.error(
+                    `[ExerciseGifPlayer] Reported broken demonstration — exerciseId="${exerciseId}" name="${displayName}" url="${fallbackUrl ?? exercise?.gifUrl ?? "unknown"}"`
+                  );
+                  crossPlatformAlert(
+                    "Reported",
+                    `Thanks — we've noted that the ${displayName} demonstration isn't loading.`
+                  );
                   setHasError(false);
                   setRetryCount(0);
                 }}
@@ -420,6 +431,14 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     </>
   );
 };
+
+/**
+ * Memoized: rendered inside WorkoutSessionScreen, which re-renders on every
+ * set logged / phase change. Without memo this (relatively heavy — GIF image,
+ * fullscreen modal, several derived pieces) component re-rendered on every
+ * unrelated screen-level state change.
+ */
+export const ExerciseGifPlayer = React.memo(ExerciseGifPlayerComponent);
 
 const styles = StyleSheet.create({
   // Flat surface + hairline (was old ui/Card variant="elevated" — elevation

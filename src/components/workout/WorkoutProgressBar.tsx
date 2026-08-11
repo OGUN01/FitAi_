@@ -41,7 +41,7 @@ const safeString = (value: any, fallback: string = ''): string => {
   }
 };
 
-export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({ progress, fadeAnim }) => {
+const WorkoutProgressBarComponent: React.FC<WorkoutProgressBarProps> = ({ progress, fadeAnim }) => {
   const widthSV = useSharedValue(0);
 
   // Animate the bar width whenever progress changes (smooth instead of snap).
@@ -73,6 +73,9 @@ export const WorkoutProgressBar: React.FC<WorkoutProgressBarProps> = ({ progress
     </View>
   );
 };
+
+/** Memoized — see WorkoutHeader.tsx for why (avoids unrelated screen ticks). */
+export const WorkoutProgressBar = React.memo(WorkoutProgressBarComponent);
 
 const styles = StyleSheet.create({
   track: {

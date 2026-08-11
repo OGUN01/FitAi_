@@ -936,7 +936,7 @@ useCalculatedMetrics = derived view of profileStore data
 
 | Metric | Source | Derivation | Reactivity |
 |--------|--------|------------|------------|
-| Timer (TIME) | `workoutStats.totalDuration` | `currentTime - workoutStartTime` (per-second interval) | `setCurrentTime` interval (1s) |
+| Timer (TIME) | `workoutStats.totalDuration` | `Date.now() - workoutStartTime`, computed inside the `workoutStats` memo | Recomputes when `exerciseStats` changes (set/exercise completion); the live-ticking display is a separate self-ticking `WorkoutElapsedTime` in `WorkoutHeader` |
 | Calories (CAL) | `workoutStats.caloriesBurned` | MET calc via `calculateWorkoutCalories(completedInputs, resolvedWeight)` — reads ACTUAL logged reps from store SSOT | Recomputes when `exerciseProgress` / `storeExercises` change |
 | Volume (VOL) | `sessionVolume` (WorkoutSessionScreen) | `Σ(weight × reps)` across `currentWorkoutSession.exercises[].sets[]` where `weight != null && reps != null` | **Must subscribe reactively** via `useFitnessStore((s) => s.currentWorkoutSession?.exercises)` — `getState()` in a `useMemo` dep is NOT reactive (bug fixed 2026-07-28) |
 | Progress bar | `overallProgress` (0..1) | **Set-based**: `completedSets / totalSets` across ALL exercises (not exercise-based) | Recomputes when `exerciseProgress` changes |

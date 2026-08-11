@@ -202,7 +202,7 @@ const bannerStyles = StyleSheet.create({
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
+const ExerciseSessionModalComponent: React.FC<ExerciseSessionModalProps> = ({
   isVisible,
   onComplete,
   onCancel,
@@ -540,6 +540,15 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
     </View>
   );
 };
+
+/**
+ * Memoized: mounted unconditionally in WorkoutSessionScreen (isVisible=false
+ * returns null internally rather than being conditionally unmounted), so
+ * without memo every screen-level re-render — including the old per-second
+ * timer tick — re-ran this component's full render + effect bookkeeping even
+ * while hidden.
+ */
+export const ExerciseSessionModal = React.memo(ExerciseSessionModalComponent);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Styles

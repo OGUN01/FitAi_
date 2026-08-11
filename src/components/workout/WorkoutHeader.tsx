@@ -7,8 +7,16 @@
  * mesocycle week, calories and live session volume.
  *
  * All props, handlers, haptics and accessibility labels are unchanged.
+ *
+ * Perf note: the elapsed-time display ticks every second on its own local
+ * state (WorkoutElapsedTime below), mirroring RestTimer's self-contained
+ * countdown. Previously the parent screen ticked a shared `currentTime` state
+ * every second (via useWorkoutSession), which re-rendered the entire
+ * WorkoutSessionScreen tree every tick. WorkoutHeader now only needs the
+ * stable `workoutStartTime` — it owns the ticking, so a tick only re-renders
+ * this small subcomponent, not the screen.
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora';
@@ -21,7 +29,8 @@ interface WorkoutHeaderProps {
   workoutTitle: string;
   currentExercise: number;
   totalExercises: number;
-  duration: number;
+  /** Workout start time — the elapsed-time display ticks from this locally. */
+  workoutStartTime: Date;
   calories: number;
   onExit: () => void;
   paddingTop?: number;
@@ -41,6 +50,30 @@ const formatSeconds = (totalSeconds: number): string => {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 };
 
+/**
+ * Self-contained ticking elapsed-time display — owns its own setInterval and
+ * local state, so a tick re-renders only this small text node instead of the
+ * whole WorkoutHeader (and, before this fix, the whole screen).
+ */
+const WorkoutElapsedTime: React.FC<{ startTime: Date }> = ({ startTime }) => {
+  const [elapsedSeconds, setElapsedSeconds] = useState(() =>
+    Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000))
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startTime.getTime()) / 1000)));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  return (
+    <Text style={styles.timeText} numberOfLines={1}>
+      {formatSeconds(elapsedSeconds)}
+    </Text>
+  );
+};
+
 const safeString = (value: any, fallback: string = ''): string => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'number' && Number.isNaN(value)) return fallback;
@@ -54,11 +87,11 @@ const safeString = (value: any, fallback: string = ''): string => {
 
 const BULLET = '  •  ';
 
-export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
+const WorkoutHeaderComponent: React.FC<WorkoutHeaderProps> = ({
   workoutTitle,
   currentExercise,
   totalExercises,
-  duration,
+  workoutStartTime,
   calories,
   onExit,
   paddingTop = 12,
@@ -100,9 +133,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         </Text>
 
         <View style={styles.timeWrap}>
-          <Text style={styles.timeText} numberOfLines={1}>
-            {formatSeconds(duration)}
-          </Text>
+          <WorkoutElapsedTime startTime={workoutStartTime} />
         </View>
       </View>
 
@@ -122,6 +153,14 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
     </View>
   );
 };
+
+/**
+ * Memoized: this header re-renders on nearly every parent render (workout
+ * screen state changes, set logging, phase transitions). Wrapping it means an
+ * unrelated re-render upstream doesn't force it (and its child tree) to
+ * re-render when none of its own props changed.
+ */
+export const WorkoutHeader = React.memo(WorkoutHeaderComponent);
 
 const styles = StyleSheet.create({
   header: {

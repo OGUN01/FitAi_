@@ -63,7 +63,14 @@ export interface DayBlockProps {
   dayIndex: number;
   day: DayWorkout;
   isExpanded: boolean;
-  onToggleExpand: () => void;
+  /**
+   * Toggle this day's expanded state. Takes dayIndex (not a bound closure) so
+   * the parent can pass one stable useCallback reference for all 7 DayBlocks
+   * instead of a fresh `() => toggleExpand(idx)` arrow per row per render —
+   * that pattern defeated this component's React.memo on every single edit
+   * anywhere in the plan (any one row's Notes keystroke re-rendered all 7).
+   */
+  onToggleExpand: (dayIndex: number) => void;
   /** Open the exercise picker for this day. */
   onAddExercise: (dayIndex: number) => void;
   /** Open the exercise editor. */
@@ -259,8 +266,8 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
 
     const handleHeaderPress = useCallback(() => {
       haptics.selection();
-      onToggleExpand();
-    }, [onToggleExpand]);
+      onToggleExpand(dayIndex);
+    }, [onToggleExpand, dayIndex]);
 
     const planned: PlannedExercise[] = exercises;
 
