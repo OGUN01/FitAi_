@@ -609,19 +609,19 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     <>
       {renderTabScreen(
         'home',
-        <ScreenErrorBoundary screenName="HomeScreen">
+        <ScreenErrorBoundary screenName="HomeScreen" onReset={() => transitionToTab('home', undefined, true)}>
           <HomeScreen onNavigateToTab={handleHomeNavigation} />
         </ScreenErrorBoundary>
       )}
       {renderTabScreen(
         'fitness',
-        <ScreenErrorBoundary screenName="FitnessScreen">
+        <ScreenErrorBoundary screenName="FitnessScreen" onReset={() => transitionToTab('fitness', undefined, true)}>
           <FitnessScreen navigation={navigation} />
         </ScreenErrorBoundary>
       )}
       {renderTabScreen(
         'diet',
-        <ScreenErrorBoundary screenName="DietScreen">
+        <ScreenErrorBoundary screenName="DietScreen" onReset={() => transitionToTab('diet', undefined, true)}>
           <DietScreen
             navigation={navigation}
             route={{ params: tabParams.diet }}
@@ -631,13 +631,13 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       )}
       {renderTabScreen(
         'profile',
-        <ScreenErrorBoundary screenName="ProfileScreen">
+        <ScreenErrorBoundary screenName="ProfileScreen" onReset={() => transitionToTab('profile', undefined, true)}>
           <ProfileScreen navigation={navigation} route={{ params: tabParams.profile }} />
         </ScreenErrorBoundary>
       )}
       {renderTabScreen(
         'analytics',
-        <ScreenErrorBoundary screenName="AnalyticsScreen">
+        <ScreenErrorBoundary screenName="AnalyticsScreen" onReset={() => transitionToTab('analytics', undefined, true)}>
           <AnalyticsScreen navigation={navigation} />
         </ScreenErrorBoundary>
       )}
@@ -648,7 +648,13 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     // Mutually exclusive if/else if chain — only one overlay renders at a time
     if (onboardingEditSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="OnboardingContainer">
+        <ScreenErrorBoundary
+          screenName="OnboardingContainer"
+          onReset={() => {
+            onboardingEditSession.onEditCancel?.();
+            clearTransientScreens();
+          }}
+        >
           <OnboardingContainer
             editMode={onboardingEditSession.editMode}
             initialTab={onboardingEditSession.initialTab}
@@ -668,7 +674,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       );
     } else if (workoutSession.isActive && workoutSession.workout) {
       return (
-        <ScreenErrorBoundary screenName="WorkoutSessionScreen">
+        <ScreenErrorBoundary screenName="WorkoutSessionScreen" onReset={clearTransientScreens}>
           <WorkoutSessionScreen
             route={{
               params: {
@@ -684,7 +690,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       );
     } else if (cookingSession.isActive && cookingSession.meal) {
       return (
-        <ScreenErrorBoundary screenName="CookingSessionScreen">
+        <ScreenErrorBoundary screenName="CookingSessionScreen" onReset={clearTransientScreens}>
           <CookingSessionScreen
             route={{
               params: {
@@ -697,25 +703,25 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       );
     } else if (mealSession.isActive && mealSession.meal) {
       return (
-        <ScreenErrorBoundary screenName="MealSession">
+        <ScreenErrorBoundary screenName="MealSession" onReset={clearTransientScreens}>
           <MealSession route={{ params: { meal: mealSession.meal } }} navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (progressSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="ProgressScreen">
+        <ScreenErrorBoundary screenName="ProgressScreen" onReset={clearTransientScreens}>
           <ProgressScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (progressTrendsSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="ProgressTrendsScreen">
+        <ScreenErrorBoundary screenName="ProgressTrendsScreen" onReset={clearTransientScreens}>
           <ProgressTrendsScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (achievementsSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="AchievementsScreen">
+        <ScreenErrorBoundary screenName="AchievementsScreen" onReset={clearTransientScreens}>
           <AchievementsScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
@@ -731,7 +737,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         );
       }
       return (
-        <ScreenErrorBoundary screenName="ContributeFood">
+        <ScreenErrorBoundary screenName="ContributeFood" onReset={clearTransientScreens}>
           <ContributeFood
             route={{ params: { barcode: contributeFoodSession.barcode ?? '' } }}
             navigation={navigation}
@@ -740,25 +746,25 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       );
     } else if (templateLibrarySession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="TemplateLibraryScreen">
+        <ScreenErrorBoundary screenName="TemplateLibraryScreen" onReset={clearTransientScreens}>
           <TemplateLibraryScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (buildMethodLandingSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="BuildMethodLandingScreen">
+        <ScreenErrorBoundary screenName="BuildMethodLandingScreen" onReset={clearTransientScreens}>
           <BuildMethodLandingScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (scheduleBuilderSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="ScheduleBuilderScreen">
+        <ScreenErrorBoundary screenName="ScheduleBuilderScreen" onReset={clearTransientScreens}>
           <ScheduleBuilderScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (weeklyBuilderSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="WeeklyBuilderScreen">
+        <ScreenErrorBoundary screenName="WeeklyBuilderScreen" onReset={clearTransientScreens}>
           <WeeklyBuilderScreen
             navigation={navigation}
             sourceTemplate={weeklyBuilderSession.sourceTemplate}
@@ -768,7 +774,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     } else if (workoutDetailSession.isActive && workoutDetailSession.workout) {
       // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
       return (
-        <ScreenErrorBoundary screenName="WorkoutDetailScreen">
+        <ScreenErrorBoundary screenName="WorkoutDetailScreen" onReset={clearTransientScreens}>
           <WorkoutDetailScreen
             workout={workoutDetailSession.workout}
             dayIndex={workoutDetailSession.dayIndex ?? 0}
@@ -779,7 +785,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     } else if (fullPlanSession.isActive) {
       // Full week plan view (audit #2 — "View All" previously opened an Alert).
       return (
-        <ScreenErrorBoundary screenName="FullPlanScreen">
+        <ScreenErrorBoundary screenName="FullPlanScreen" onReset={clearTransientScreens}>
           <FullPlanScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
@@ -787,13 +793,13 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       // Full workout history (audit #3 — "See all N workouts" previously opened
       // an Alert showing a single arbitrary workout).
       return (
-        <ScreenErrorBoundary screenName="WorkoutHistoryScreen">
+        <ScreenErrorBoundary screenName="WorkoutHistoryScreen" onReset={clearTransientScreens}>
           <WorkoutHistoryScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (createWorkoutSession.isActive) {
       return (
-        <ScreenErrorBoundary screenName="CreateWorkoutScreen">
+        <ScreenErrorBoundary screenName="CreateWorkoutScreen" onReset={clearTransientScreens}>
           <CreateWorkoutScreen
             navigation={navigation}
             route={
@@ -809,7 +815,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       // with the linked templateId so it can fetch the public template and open
       // the TemplateDetailSheet for the user to review / fork.
       return (
-        <ScreenErrorBoundary screenName="TemplateLibraryScreen (share import)">
+        <ScreenErrorBoundary screenName="TemplateLibraryScreen (share import)" onReset={clearTransientScreens}>
           <TemplateLibraryScreen
             navigation={navigation}
             route={{
@@ -846,7 +852,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
             otherwise hide WorkoutSessionScreen when ExerciseHistory activates. */}
         {exerciseHistorySession.isActive && exerciseHistorySession.exerciseId ? (
           <View style={styles.overlayScreen}>
-            <ScreenErrorBoundary screenName="ExerciseHistoryScreen">
+            <ScreenErrorBoundary
+              screenName="ExerciseHistoryScreen"
+              onReset={() => setExerciseHistorySession({ isActive: false })}
+            >
               <ExerciseHistoryScreen
                 route={{
                   params: {

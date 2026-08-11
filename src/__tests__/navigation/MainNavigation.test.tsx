@@ -301,6 +301,39 @@ jest.mock("../../screens/cooking/CookingSessionScreen", () => ({
   },
 }));
 
+// This suite already mocks react-native heavily, so this mock pins the
+// onReset wiring contract (every ScreenErrorBoundary call site gets a real
+// reset handler) rather than re-testing the boundary's own crash-catch
+// behavior, which ScreenErrorBoundary.test.tsx covers directly.
+jest.mock("../../components/errors/ScreenErrorBoundary", () => ({
+  ScreenErrorBoundary: ({
+    children,
+    screenName,
+    onReset,
+  }: {
+    children: React.ReactNode;
+    screenName?: string;
+    onReset?: () => void;
+  }) => {
+    const React = require("react");
+    return React.createElement(
+      React.Fragment,
+      null,
+      onReset
+        ? React.createElement(
+            "Pressable",
+            {
+              onPress: onReset,
+              testID: `crash-reset-${screenName}`,
+            },
+            React.createElement("Text", null, `Reset ${screenName}`),
+          )
+        : null,
+      children,
+    );
+  },
+}));
+
 jest.mock("../../screens/main/ProfileScreen", () => ({
   ProfileScreen: ({ route }: { route?: { params?: { settingsScreen?: string } } }) => {
     const React = require("react");
@@ -397,6 +430,32 @@ describe("MainNavigation", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("profile-state").props.children).toBe("Profile Screen");
+    });
+  });
+
+  it("crash recovery on the Diet tab clears a stale route param instead of re-showing the crashed state", async () => {
+    const screen = render(<MainNavigation initialTab="home" />);
+
+    fireEvent.press(screen.getByTestId("open-water-quick-action"));
+    expect(screen.getByTestId("diet-state").props.children).toBe("Diet Water Modal");
+
+    fireEvent.press(screen.getByTestId("crash-reset-DietScreen"));
+    await waitFor(() => {
+      expect(screen.getByTestId("diet-state").props.children).toBe("Diet Screen");
+    });
+  });
+
+  it("crash recovery on an active overlay closes it and re-reveals the tab bar", async () => {
+    const screen = render(<MainNavigation initialTab="diet" />);
+
+    fireEvent.press(screen.getByTestId("open-cooking"));
+    expect(screen.getByTestId("finish-cooking")).toBeTruthy();
+    expect(screen.queryByTestId("tab-diet")).toBeNull();
+
+    fireEvent.press(screen.getByTestId("crash-reset-CookingSessionScreen"));
+    await waitFor(() => {
+      expect(screen.getByTestId("tab-diet")).toBeTruthy();
+      expect(screen.queryByTestId("finish-cooking")).toBeNull();
     });
   });
 });

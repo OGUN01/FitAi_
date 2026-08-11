@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from '../../theme/aurora-tokens';
 import { EmptyState } from "../ui/aurora/EmptyState";
+import { AuroraBackground } from "../ui/aurora/AuroraBackground";
 
 
 interface Props {
@@ -72,7 +73,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.container}>
+        <AuroraBackground theme="space" animated={false} style={styles.container}>
           <EmptyState
             icon="alert-circle"
             iconColor={colors.error}
@@ -100,7 +101,7 @@ export class ScreenErrorBoundary extends Component<Props, State> {
               )}
             </ScrollView>
           )}
-        </View>
+        </AuroraBackground>
       );
     }
 
@@ -111,7 +112,6 @@ export class ScreenErrorBoundary extends Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: "center" as const,
     alignItems: "center" as const,
     padding: spacing.lg,
