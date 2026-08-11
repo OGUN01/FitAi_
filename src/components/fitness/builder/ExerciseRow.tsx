@@ -91,9 +91,13 @@ const CATEGORY_THUMBNAIL: Record<
   chest: { gradient: [colors.primary.DEFAULT, colors.primary.dark], icon: "barbell-outline" },
   back: { gradient: [colors.info.DEFAULT, colors.info.dark], icon: "body-outline" },
   shoulders: { gradient: [colors.secondary.DEFAULT, colors.secondary.dark], icon: "accessibility-outline" },
-  arms: { gradient: [colors.rest.DEFAULT, colors.rest.dark], icon: "fitness-outline" },
+  // arms/core intentionally avoid colors.rest and colors.error: this same file
+  // uses .rest for rest-day semantics elsewhere and .error for the destructive
+  // delete-swipe action + RPE danger dot, so reusing either as a decorative
+  // category color would collide with an existing meaning in this component.
+  arms: { gradient: [colors.info.DEFAULT, colors.secondary.dark], icon: "fitness-outline" },
   legs: { gradient: [colors.success.DEFAULT, colors.success.dark], icon: "walk-outline" },
-  core: { gradient: [colors.error.DEFAULT, colors.error.dark], icon: "ellipse-outline" },
+  core: { gradient: [colors.warning.DEFAULT, colors.success.dark], icon: "ellipse-outline" },
   cardio: { gradient: [colors.warning.DEFAULT, colors.warning.dark], icon: "heart-outline" },
   full_body: { gradient: [colors.primary.DEFAULT, colors.secondary.dark], icon: "layers-outline" },
 };
