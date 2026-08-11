@@ -264,6 +264,21 @@ function handleError(error: unknown, context: string): AiServiceResult<never> {
   };
 }
 
+/**
+ * Derive `retryable` for a `!response.success` WorkersResponse.
+ *
+ * makeRequest() (fitaiWorkersClient.ts) only returns a `success: false`
+ * response (rather than throwing, which handleError() above already marks
+ * retryable) in two cases: `isOffline` (transport fault, retries exhausted —
+ * transient) or a 200-status backend business-logic failure (e.g. plan
+ * validation rejected the request — not transient). This mirrors the
+ * retryable classification already established in src/ai/index.ts's
+ * handleError() for WorkersAPIError/NetworkError.
+ */
+function isRetryableFailure(response: { isOffline?: boolean }): boolean {
+  return response.isOffline === true;
+}
+
 // ----------------------------------------------------------------------------
 // SERVICE
 // ----------------------------------------------------------------------------
@@ -303,7 +318,11 @@ class WorkoutBuilderAiService {
 
       if (!response.success || !response.data) {
         console.error("[workoutBuilderAi] suggest-day worker error:", response.error);
-        return { success: false, error: response.error ?? "Failed to get suggestions" };
+        return {
+          success: false,
+          error: response.error ?? "Failed to get suggestions",
+          retryable: isRetryableFailure(response),
+        };
       }
 
       const suggestions: AiSuggestion[] = (response.data.suggestedExercises ?? []).map((s) => ({
@@ -350,7 +369,11 @@ class WorkoutBuilderAiService {
 
       if (!response.success || !response.data) {
         console.error("[workoutBuilderAi] validate worker error:", response.error);
-        return { success: false, error: response.error ?? "Failed to validate plan" };
+        return {
+          success: false,
+          error: response.error ?? "Failed to validate plan",
+          retryable: isRetryableFailure(response),
+        };
       }
 
       return {
@@ -384,7 +407,11 @@ class WorkoutBuilderAiService {
 
       if (!response.success || !response.data) {
         console.error("[workoutBuilderAi] edit-nl worker error:", response.error);
-        return { success: false, error: response.error ?? "Failed to apply edit" };
+        return {
+          success: false,
+          error: response.error ?? "Failed to apply edit",
+          retryable: isRetryableFailure(response),
+        };
       }
 
       return {
@@ -423,7 +450,11 @@ class WorkoutBuilderAiService {
 
       if (!response.success || !response.data) {
         console.error("[workoutBuilderAi] generate-full-week worker error:", response.error);
-        return { success: false, error: response.error ?? "Failed to generate full week" };
+        return {
+          success: false,
+          error: response.error ?? "Failed to generate full week",
+          retryable: isRetryableFailure(response),
+        };
       }
 
       return {
@@ -454,7 +485,11 @@ class WorkoutBuilderAiService {
 
       if (!response.success || !response.data) {
         console.error("[workoutBuilderAi] apply-progression worker error:", response.error);
-        return { success: false, error: response.error ?? "Failed to apply progression" };
+        return {
+          success: false,
+          error: response.error ?? "Failed to apply progression",
+          retryable: isRetryableFailure(response),
+        };
       }
 
       return {
@@ -482,7 +517,11 @@ class WorkoutBuilderAiService {
 
       if (!response.success || !response.data) {
         console.error("[workoutBuilderAi] deload worker error:", response.error);
-        return { success: false, error: response.error ?? "Failed to deload plan" };
+        return {
+          success: false,
+          error: response.error ?? "Failed to deload plan",
+          retryable: isRetryableFailure(response),
+        };
       }
 
       return {

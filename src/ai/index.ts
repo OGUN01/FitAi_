@@ -16,15 +16,6 @@
 // EXPORTS
 // ============================================================================
 
-// NOTE: The JSON Schema definitions in src/ai/schemas.ts (WORKOUT_SCHEMA,
-// NUTRITION_SCHEMA, WEEKLY_MEAL_PLAN_SCHEMA, MOTIVATIONAL_CONTENT_SCHEMA,
-// FOOD_ANALYSIS_SCHEMA, PROGRESS_ANALYSIS_SCHEMA) are not currently consumed
-// by any code path — full response validation against these schemas is not
-// yet implemented (see generateWorkout below). They are retained as the
-// canonical schema reference for future validation work. Do not re-export
-// them here without wiring an actual consumer, to avoid implying an active
-// public API that doesn't exist.
-
 // Feature Engines - Keep these (they use demo data for UI)
 export { workoutEngine } from '../features/workouts/WorkoutEngine';
 export { nutritionEngine } from '../features/nutrition/NutritionEngine';
@@ -298,10 +289,6 @@ class UnifiedAIService {
       request.priorPerformance = await this.fetchPriorPerformance(request.excludeExercises);
 
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
-
-      // NOTE: Schemas in src/ai/schemas.ts are JSON Schema format (not Zod).
-      // Full response validation against WORKOUT_SCHEMA is not yet implemented here.
-      // Unknown or extra fields from the AI backend are passed through as-is.
 
       // Store metadata
       if (response.metadata) {
@@ -1040,12 +1027,18 @@ class UnifiedAIService {
     const isFresh =
       cached !== null && now - cached.lastCheckedAt < UnifiedAIService.STATUS_STALE_MS;
 
+    // Prefer the model captured from an actual backend response over the
+    // static fallback literal — if the backend swaps models, this stays
+    // accurate instead of going stale. Only used when no real response has
+    // ever been observed yet.
+    const modelVersion = this.lastMetadata?.model ?? 'google/gemini-3.5-flash-lite';
+
     // No fresh probe → optimistic default (see tradeoff above).
     if (!isFresh) {
       return {
         isAvailable: true,
         mode: 'real',
-        modelVersion: 'google/gemini-3.5-flash-lite',
+        modelVersion,
         message:
           '✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)',
       };
@@ -1057,7 +1050,7 @@ class UnifiedAIService {
       return {
         isAvailable: true,
         mode: 'real',
-        modelVersion: 'google/gemini-3.5-flash-lite',
+        modelVersion,
         message:
           '✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)',
       };
@@ -1091,9 +1084,25 @@ class UnifiedAIService {
     if (error instanceof WorkersAPIError) {
       // 5xx / 429 are transient → retryable; 4xx (bad request) is not.
       const retryable = error.statusCode >= 500 || error.statusCode === 429;
+      // Map status ranges to curated, friendly copy — mirrors the copy style
+      // used by every explicit `!response.success` branch in this class.
+      // The raw backend/Zod message is kept in the console.error above
+      // (for diagnostics) rather than shown to the user.
+      let friendlyMessage: string;
+      if (error.statusCode === 401 || error.statusCode === 403) {
+        friendlyMessage = 'Authentication required. Please sign in again.';
+      } else if (error.statusCode === 429) {
+        friendlyMessage = "You're sending requests too quickly. Please wait a moment and try again.";
+      } else if (error.statusCode >= 500) {
+        friendlyMessage = 'Our servers are having trouble right now. Please try again shortly.';
+      } else if (error.statusCode >= 400) {
+        friendlyMessage = 'Something about that request was invalid. Please try again.';
+      } else {
+        friendlyMessage = 'Something went wrong. Please try again.';
+      }
       return {
         success: false,
-        error: error.message,
+        error: friendlyMessage,
         retryable,
       };
     }
@@ -1140,16 +1149,108 @@ interface RawWorkerExercise {
 /**
  * Shape of a single workout entry returned by the backend within a weekly plan.
  * `difficulty` may be any string; unknown values fall back to "intermediate".
+ * `category` is not currently emitted by the worker's rule-based generator
+ * (see fitai-workers SingleWorkoutSchema — no category field), but is read
+ * here in case a future backend revision adds it directly.
  */
 interface RawWorkerWorkout {
   title?: string;
   description?: string;
   difficulty?: string;
+  category?: string;
   totalDuration?: number;
   estimatedCalories?: number;
   exercises?: RawWorkerExercise[];
   warmup?: RawWorkerExercise[];
   cooldown?: RawWorkerExercise[];
+}
+
+type WorkoutCategory =
+  | 'strength'
+  | 'cardio'
+  | 'flexibility'
+  | 'hiit'
+  | 'yoga'
+  | 'pilates'
+  | 'hybrid';
+
+const WORKOUT_CATEGORY_WHITELIST: Record<string, WorkoutCategory> = {
+  strength: 'strength',
+  cardio: 'cardio',
+  flexibility: 'flexibility',
+  hiit: 'hiit',
+  yoga: 'yoga',
+  pilates: 'pilates',
+  hybrid: 'hybrid',
+};
+
+/**
+ * Resolve the real workout category instead of hardcoding 'strength'.
+ *
+ * Prefers an explicit `category` field (whitelisted, same pattern as
+ * difficultyMap) if the backend ever starts sending one. Today the worker's
+ * rule-based generator does not emit `category`, but it does bake the real
+ * type into the title (e.g. "Full Body HIIT - ...", "Lower Body Circuit -
+ * ..." — see fitai-workers/src/handlers/workoutGenerationRuleBased.ts), so we
+ * infer from title keywords rather than silently discarding a cardio/HIIT/
+ * flexibility day as 'strength'. Mirrors the same heuristic already used in
+ * services/aiRequestTransformers.ts's mapWorkoutCategory for the single-
+ * workout path.
+ */
+function resolveWorkoutCategory(workoutPlan: RawWorkerWorkout): WorkoutCategory {
+  const explicit = WORKOUT_CATEGORY_WHITELIST[(workoutPlan.category ?? '').toLowerCase()];
+  if (explicit) return explicit;
+
+  const title = (workoutPlan.title ?? '').toLowerCase();
+  if (title.includes('hiit')) return 'hiit';
+  if (title.includes('cardio')) return 'cardio';
+  if (title.includes('yoga')) return 'yoga';
+  if (title.includes('pilates')) return 'pilates';
+  if (title.includes('mobility') || title.includes('flexibility')) return 'flexibility';
+  if (title.includes('circuit') || title.includes('metabolic')) return 'hybrid';
+  return 'strength';
+}
+
+/**
+ * Validate + transform a raw exercise entry, or return null to drop it.
+ *
+ * Guards against silently corrupted AI output: an exercise with no
+ * `exerciseId` can't be resolved to real exercise data downstream, and a
+ * negative/zero `sets` value would otherwise slip through the old
+ * `ex.sets || fallback` pattern (falsy-check only catches 0, not negatives —
+ * `-1 || 3` evaluates to `-1`). Logs via console.error so corrupted AI
+ * output is visible in dev/QA rather than silently reaching the UI.
+ */
+function transformRawExercise(
+  ex: RawWorkerExercise,
+  idPrefix: string,
+  idx: number,
+  defaultSets: number,
+  defaultReps: string,
+  defaultRestTime: number
+): WorkoutSet | null {
+  const exerciseId = ex?.exerciseId?.trim();
+  if (!exerciseId) {
+    console.error(
+      `[AIService] Dropping malformed exercise (missing exerciseId) at ${idPrefix}_${idx}:`,
+      ex
+    );
+    return null;
+  }
+  const sets = typeof ex.sets === 'number' && ex.sets > 0 ? ex.sets : defaultSets;
+  const restTime =
+    (typeof ex.restSeconds === 'number' && ex.restSeconds >= 0 && ex.restSeconds) ||
+    (typeof ex.restTime === 'number' && ex.restTime >= 0 && ex.restTime) ||
+    defaultRestTime;
+  return {
+    id: `${idPrefix}_${idx}`,
+    exerciseId,
+    sets,
+    reps: typeof ex.reps === 'number' ? ex.reps : ex.reps || defaultReps,
+    duration: typeof ex.duration === 'number' && ex.duration >= 0 ? ex.duration : undefined,
+    restTime,
+    notes: ex.notes,
+  };
 }
 
 /**
@@ -1189,54 +1290,43 @@ function transformWorkoutData(
     advanced: 'advanced',
   };
   const difficulty = difficultyMap[workoutPlan.difficulty ?? ''] || 'intermediate';
+  const category = resolveWorkoutCategory(workoutPlan);
 
-  // Transform exercises
-  const exercises: WorkoutSet[] = (workoutPlan.exercises ?? []).map(
-    (ex: RawWorkerExercise, idx: number) => ({
-      id: `${dayOfWeek}_ex_${idx}`,
-      exerciseId: ex.exerciseId ?? '',
-      sets: ex.sets || 3,
-      reps: typeof ex.reps === 'number' ? ex.reps : ex.reps || '8-12',
-      duration: ex.duration,
-      restTime: ex.restSeconds || ex.restTime || 60,
-      notes: ex.notes,
-    })
-  );
+  // Transform exercises — drop any entry that fails validation (missing
+  // exerciseId) instead of silently passing corrupted data downstream.
+  const exercises: WorkoutSet[] = (workoutPlan.exercises ?? [])
+    .map((ex, idx) => transformRawExercise(ex, `${dayOfWeek}_ex`, idx, 3, '8-12', 60))
+    .filter((ex): ex is WorkoutSet => ex !== null);
 
   // Transform warmup
-  const warmup: WorkoutSet[] = (workoutPlan.warmup ?? []).map(
-    (ex: RawWorkerExercise, idx: number) => ({
-      id: `${dayOfWeek}_warmup_${idx}`,
-      exerciseId: ex.exerciseId ?? '',
-      sets: ex.sets || 1,
-      reps: typeof ex.reps === 'number' ? ex.reps : ex.reps || '10',
-      duration: ex.duration,
-      restTime: ex.restSeconds || ex.restTime || 30,
-      notes: ex.notes,
-    })
-  );
+  const warmup: WorkoutSet[] = (workoutPlan.warmup ?? [])
+    .map((ex, idx) => transformRawExercise(ex, `${dayOfWeek}_warmup`, idx, 1, '10', 30))
+    .filter((ex): ex is WorkoutSet => ex !== null);
 
   // Transform cooldown
-  const cooldown: WorkoutSet[] = (workoutPlan.cooldown ?? []).map(
-    (ex: RawWorkerExercise, idx: number) => ({
-      id: `${dayOfWeek}_cooldown_${idx}`,
-      exerciseId: ex.exerciseId ?? '',
-      sets: ex.sets || 1,
-      reps: typeof ex.reps === 'number' ? ex.reps : ex.reps || '10',
-      duration: ex.duration,
-      restTime: ex.restSeconds || ex.restTime || 30,
-      notes: ex.notes,
-    })
-  );
+  const cooldown: WorkoutSet[] = (workoutPlan.cooldown ?? [])
+    .map((ex, idx) => transformRawExercise(ex, `${dayOfWeek}_cooldown`, idx, 1, '10', 30))
+    .filter((ex): ex is WorkoutSet => ex !== null);
+
+  if ((workoutPlan.exercises?.length ?? 0) > 0 && exercises.length === 0) {
+    console.error(
+      `[AIService] All exercises for ${dayOfWeek} were malformed and dropped — workout will render empty.`
+    );
+  }
 
   return {
     id: `${dayOfWeek}_workout_${slotIndex}`,
     title: workoutPlan.title || 'AI Generated Workout',
     description: workoutPlan.description || '',
-    category: 'strength', // Default category
+    category,
     difficulty,
     duration: workoutPlan.totalDuration ?? 0,
-    estimatedCalories: workoutPlan.estimatedCalories || 0, // 0 = will be calculated at completion with user's real weight
+    // 0 = will be calculated at completion with user's real weight. Guard
+    // against a negative/implausible value reaching the UI as-is.
+    estimatedCalories:
+      typeof workoutPlan.estimatedCalories === 'number' && workoutPlan.estimatedCalories > 0
+        ? workoutPlan.estimatedCalories
+        : 0,
     exercises,
     warmup,
     cooldown,
