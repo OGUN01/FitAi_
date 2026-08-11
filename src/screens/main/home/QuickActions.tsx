@@ -42,7 +42,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
           onPress={action.onPress}
           scaleValue={0.92}
           hapticFeedback={true}
-          hapticType="medium"
+          hapticType="light"
           disabled={action.disabled}
           style={
             [

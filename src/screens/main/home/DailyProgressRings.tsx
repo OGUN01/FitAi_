@@ -26,7 +26,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, typography, borderRadius, border } from '../../../theme/aurora-tokens';
-import { rf, rw, rp } from '../../../utils/responsive';
+import { rf, rw, rp, rbr } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -74,13 +74,20 @@ const Ring: React.FC<{
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const center = size / 2;
+  // Honor reduce-motion: skip the staggered spring sweep and snap straight to
+  // the target value, matching the breathing pulse + count-up text below.
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      animatedProgress.value = Math.min(progress, 100);
+      return;
+    }
     animatedProgress.value = withDelay(
       delay,
       withSpring(Math.min(progress, 100), { damping: 15, stiffness: 80 })
     );
-  }, [progress]);
+  }, [progress, reduceMotion]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference - (circumference * animatedProgress.value) / 100,
@@ -113,7 +120,7 @@ const Ring: React.FC<{
   );
 };
 
-export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
+export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(({
   caloriesBurned,
   caloriesGoal,
   workoutMinutes,
@@ -217,7 +224,9 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       >
         <View style={styles.surface}>
           <View style={styles.emptyStateContainer}>
-            <Ionicons name="fitness-outline" size={rf(48)} color={colors.textSecondary} />
+            <View style={styles.emptyStateIconContainer}>
+              <Ionicons name="fitness-outline" size={rf(28)} color={colors.primary} />
+            </View>
             <Text style={styles.emptyStateTitle} numberOfLines={1}>
               Set Your Goals
             </Text>
@@ -411,7 +420,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       </View>
     </AnimatedPressable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   // Flat Editorial-Dark surface replacing the former GlassCard (no blur, no
@@ -433,6 +442,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.lg,
     gap: spacing.sm,
+  },
+  // Tinted circular badge behind the leading icon — matches the empty-state
+  // visual pattern shared by EmptyMealsMessage/EmptyCalendarMessage/BodyProgressCard.
+  emptyStateIconContainer: {
+    width: rw(56),
+    height: rw(56),
+    borderRadius: rbr(28),
+    backgroundColor: colors.primaryTint,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyStateTitle: {
     ...typography.variants.cardHeadline,

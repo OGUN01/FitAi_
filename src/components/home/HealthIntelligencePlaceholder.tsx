@@ -19,9 +19,13 @@ export const HealthIntelligencePlaceholder: React.FC<
       scaleValue={0.98}
       hapticFeedback={true}
       hapticType="light"
+      accessibilityRole="button"
+      accessibilityLabel="Health Intelligence"
     >
       <View style={styles.card}>
-        {/* Header */}
+        {/* Header — shares one shell with the populated HealthIntelligenceHub
+            header: no status badge on the right (matches the populated card's
+            own header, which deliberately omits it — see its inline comment). */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Ionicons
@@ -30,26 +34,6 @@ export const HealthIntelligencePlaceholder: React.FC<
               color={colors.primary}
             />
             <Text style={styles.headerTitle}>Health Intelligence</Text>
-          </View>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: hexToRgba(colors.textMuted, 0.25) },
-            ]}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: colors.textMuted },
-              ]}
-            />
-            <Text
-              style={[
-                styles.statusText,
-                { color: colors.textSecondary },
-              ]}
-            >
-              No Data
-            </Text>
           </View>
         </View>
 
@@ -116,24 +100,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
     letterSpacing: 0.3,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    gap: spacing.xs,
-  },
-  statusDot: {
-    width: rw(6),
-    height: rw(6),
-    borderRadius: rw(3),
-  },
-  statusText: {
-    fontSize: rf(11),
-    fontWeight: typography.fontWeight.semibold,
   },
   placeholderContent: {
     flexDirection: "row",

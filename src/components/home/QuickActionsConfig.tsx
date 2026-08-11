@@ -7,6 +7,7 @@ interface QuickAction {
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   onPress: () => void;
+  progress?: number;
 }
 
 interface QuickActionsConfigProps {
@@ -15,6 +16,9 @@ interface QuickActionsConfigProps {
   onLogWater?: () => void;
   onBarcodeScan?: () => void;
   onScanLabel?: () => void;
+  // Today's hydration progress toward the daily goal, 0-100. Undefined when
+  // no goal is set yet — QuickActions only renders the ring when defined.
+  waterProgressPercent?: number;
 }
 
 export const createQuickActions = ({
@@ -23,6 +27,7 @@ export const createQuickActions = ({
   onLogWater,
   onBarcodeScan,
   onScanLabel,
+  waterProgressPercent,
 }: QuickActionsConfigProps): QuickAction[] => [
   {
     id: 'log-weight',
@@ -50,6 +55,7 @@ export const createQuickActions = ({
           icon: 'water-outline' as keyof typeof Ionicons.glyphMap,
           color: colors.info,
           onPress: onLogWater,
+          progress: waterProgressPercent,
         },
       ]
     : []),

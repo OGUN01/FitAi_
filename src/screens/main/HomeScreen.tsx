@@ -88,7 +88,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     workoutPreferences,
     handleRefresh,
     weightUnit,
+    waterIntakeML,
+    waterGoal,
   } = useHomeLogic();
+
+  // Today's hydration progress for the Water quick action's ring overlay.
+  // Undefined (no ring rendered) until a real daily goal is known.
+  const waterProgressPercent = React.useMemo(() => {
+    if (!waterGoal || waterGoal <= 0) return undefined;
+    return Math.min(((waterIntakeML ?? 0) / waterGoal) * 100, 100);
+  }, [waterIntakeML, waterGoal]);
 
   // --- useCallback: child component prop callbacks ---
   const handleGuestBack = useCallback(() => setShowGuestSignUp(false), []);
@@ -142,8 +151,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         onLogWater: () => onNavigateToTab?.('diet', { openWaterModal: true }),
         onBarcodeScan: () => onNavigateToTab?.('diet', { openBarcodeOptions: true }),
         onScanLabel: () => onNavigateToTab?.('diet', { openLabelScanPrep: true }),
+        waterProgressPercent,
       }),
-    [setShowWeightModal, onNavigateToTab]
+    [setShowWeightModal, onNavigateToTab, waterProgressPercent]
   );
 
   // Reanimated entrance fade — shared value driven from useHomeLogic.
