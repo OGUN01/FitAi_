@@ -339,21 +339,37 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                       </Text>
                     ) : (
                       <View style={styles.exerciseList}>
-                        {planned.map((ex, idx) => (
-                          <ExerciseRow
-                            key={`${ex.exerciseId}_${idx}`}
-                            exercise={ex}
-                            dayIndex={dayIndex}
-                            exerciseIndex={idx}
-                            onOpenEditor={onOpenEditor}
-                            onDuplicate={onDuplicateExercise}
-                            onRemove={onRemoveExercise}
-                            onReplace={onReplaceExercise}
-                            onMoveTo={onMoveExerciseTo}
-                            onReorder={onReorderExercise}
-                            testID={`${testID}-ex-${idx}`}
-                          />
-                        ))}
+                        {planned.map((ex, idx) => {
+                          // Superset grouping is a contiguous run of rows sharing
+                          // the same supersetId. First/last-in-group flags let
+                          // ExerciseRow render a continuous bracket (flush
+                          // stacking + flattened abutting corners) instead of
+                          // independent per-row rails, so the group reads as one
+                          // visual unit.
+                          const prevSupersetId = planned[idx - 1]?.supersetId;
+                          const nextSupersetId = planned[idx + 1]?.supersetId;
+                          const isFirstInSuperset =
+                            !!ex.supersetId && ex.supersetId !== prevSupersetId;
+                          const isLastInSuperset =
+                            !!ex.supersetId && ex.supersetId !== nextSupersetId;
+                          return (
+                            <ExerciseRow
+                              key={`${ex.exerciseId}_${idx}`}
+                              exercise={ex}
+                              dayIndex={dayIndex}
+                              exerciseIndex={idx}
+                              isFirstInSuperset={isFirstInSuperset}
+                              isLastInSuperset={isLastInSuperset}
+                              onOpenEditor={onOpenEditor}
+                              onDuplicate={onDuplicateExercise}
+                              onRemove={onRemoveExercise}
+                              onReplace={onReplaceExercise}
+                              onMoveTo={onMoveExerciseTo}
+                              onReorder={onReorderExercise}
+                              testID={`${testID}-ex-${idx}`}
+                            />
+                          );
+                        })}
                       </View>
                     )}
 

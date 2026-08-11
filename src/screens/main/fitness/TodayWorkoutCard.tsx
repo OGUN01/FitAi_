@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +15,46 @@ import { FONT_FAMILY } from '../../../theme/fonts';
 import { rf, rw, rh, rbr } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 import { DayWorkout } from '../../../ai';
+
+// Category-specific hero treatment. The previous full-bleed hero image
+// (assets/images/hero-workout.png) was a solid near-black placeholder that
+// never varied by workout type — every category rendered the identical
+// featureless tile. This replaces it with a designed diagonal gradient +
+// oversized icon watermark, keyed off workout.category, so strength/cardio/
+// HIIT/flexibility/rest each read as visually distinct at a glance.
+type HeroCategory =
+  | 'strength'
+  | 'cardio'
+  | 'flexibility'
+  | 'hiit'
+  | 'yoga'
+  | 'pilates'
+  | 'hybrid'
+  | 'rest';
+
+const HERO_CONFIG: Record<
+  HeroCategory,
+  { gradient: [string, string]; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  strength: { gradient: [colors.purple, colors.primaryDark], icon: 'barbell-outline' },
+  cardio: { gradient: [colors.orange, colors.errorAlt], icon: 'heart-outline' },
+  hiit: { gradient: [colors.errorAlt, colors.pink], icon: 'flash-outline' },
+  flexibility: { gradient: [colors.teal, colors.cyan], icon: 'body-outline' },
+  yoga: { gradient: [colors.teal, colors.cyan], icon: 'body-outline' },
+  pilates: { gradient: [colors.teal, colors.cyan], icon: 'body-outline' },
+  hybrid: { gradient: [colors.blue, colors.purple], icon: 'layers-outline' },
+  rest: { gradient: [colors.backgroundTertiary, colors.backgroundSecondary], icon: 'moon-outline' },
+};
+
+const getHeroConfig = (
+  workout: DayWorkout | null,
+  isRestDay: boolean,
+  hasNoExercises: boolean
+): (typeof HERO_CONFIG)[HeroCategory] => {
+  if (isRestDay || !workout || hasNoExercises) return HERO_CONFIG.rest;
+  const category = workout.category as HeroCategory | undefined;
+  return (category && HERO_CONFIG[category]) || HERO_CONFIG.strength;
+};
 
 interface TodayWorkoutCardProps {
   workout: DayWorkout | null;
@@ -91,7 +131,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
         completedAt && new Date(completedAt).toDateString() === new Date().toDateString();
       return {
         color: colors.successAlt,
-        gradient: [colors.successAlt, '#059669'] as [string, string],
+        gradient: [colors.successAlt, colors.successAltDark] as [string, string],
         label: isCompletedToday ? 'Completed Today' : 'Completed',
         buttonText: 'View Summary',
       };
@@ -150,6 +190,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   const exerciseCount = workout?.exercises?.length || 0;
   // Zero-exercise workout object = effective rest day (see getStatusConfig).
   const hasNoExercises = workout != null && exerciseCount === 0;
+  const hero = getHeroConfig(workout, isRestDay, hasNoExercises);
 
   // Compute the plan "Day N" label (Monday=1 … Sunday=7).
   // Prefer the workout's dayOfWeek; otherwise use the selectedDay; otherwise
@@ -169,13 +210,19 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   return (
     <Animated.View entering={FadeInDown.delay(200).duration(400)}>
       <View style={styles.card}>
-        {/* Full-bleed hero image */}
-        <ImageBackground
-          source={require('../../../assets/images/hero-workout.png')}
+        {/* Full-bleed hero — category-specific diagonal gradient (strength,
+            cardio, HIIT, flexibility, rest each get a distinct treatment) */}
+        <LinearGradient
+          colors={hero.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}
-          resizeMode="cover"
         />
-        {/* Bottom-to-top scrim so text stays readable over the image */}
+        {/* Oversized icon watermark for visual texture (decorative only) */}
+        <View style={styles.heroWatermark} pointerEvents="none">
+          <Ionicons name={hero.icon} size={rf(160)} color={hexToRgba(colors.white, 0.12)} />
+        </View>
+        {/* Bottom-to-top scrim so text stays readable over the gradient */}
         <LinearGradient
           colors={['rgba(10,15,28,0)', 'rgba(10,15,28,0.55)', 'rgba(10,15,28,0.95)']}
           locations={[0, 0.45, 1]}
@@ -314,6 +361,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
     borderColor: hexToRgba(colors.white, 0.08),
+  },
+  heroWatermark: {
+    position: 'absolute',
+    top: -rh(28),
+    right: -rw(28),
   },
   body: {
     flex: 1,

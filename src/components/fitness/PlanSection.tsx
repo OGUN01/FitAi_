@@ -3,6 +3,8 @@ import { View, StyleSheet } from 'react-native';
 import { spacing } from '../../theme/aurora-tokens';
 import { rp } from '../../utils/responsive';
 import { DayName } from '../../stores/appStateStore';
+import { WeeklyWorkoutPlan } from '../../ai';
+import { WorkoutProgress } from '../../stores/fitness/types';
 
 // Importing from screens/main/fitness as they are currently located there
 // These should ideally be moved to components/fitness in a future refactor
@@ -16,16 +18,33 @@ import { EmptyPlanState } from '../../screens/main/fitness/EmptyPlanState';
  * one cohesive section separated by spacing.lg gaps.
  */
 
+// Minimal shape actually consumed by PlanSection/EmptyPlanState. FitnessScreen
+// passes a locally-merged profile object (personalInfo + SSOT fitnessGoals)
+// that has no single exported type, so this is scoped to exactly what's read
+// here rather than importing/duplicating the full onboarding profile shape.
+// experience_level is typed as `string` (not the narrower EmptyPlanState
+// union) because the upstream FitnessGoals type (types/user.ts) declares it
+// as `string` — narrowed only at the EmptyPlanState boundary below, where the
+// value is expected to genuinely be one of the three known levels.
+interface PlanSectionProfile {
+  fitnessGoals?: {
+    experience_level?: string;
+    primaryGoals?: string[];
+  } | null;
+}
+
+type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+
 interface PlanSectionProps {
-  weeklyWorkoutPlan: any;
-  workoutProgress: any;
-  selectedDay: any;
+  weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
+  workoutProgress: Record<string, WorkoutProgress>;
+  selectedDay: DayName;
   onDayPress: (day: DayName) => void;
   onViewFullPlan: () => void;
   /** Omit for custom plans — regenerate is an AI-plan-only action. */
   onRegeneratePlan?: () => void;
   isGeneratingPlan: boolean;
-  profile: any;
+  profile: PlanSectionProfile | null;
   onGeneratePlan: () => void;
 }
 
@@ -54,7 +73,7 @@ export const PlanSection: React.FC<PlanSectionProps> = ({
         />
       ) : (
         <EmptyPlanState
-          experienceLevel={profile?.fitnessGoals?.experience_level}
+          experienceLevel={profile?.fitnessGoals?.experience_level as ExperienceLevel | undefined}
           primaryGoals={profile?.fitnessGoals?.primaryGoals}
           isGenerating={isGeneratingPlan}
           onGeneratePlan={onGeneratePlan}

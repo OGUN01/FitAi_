@@ -12,7 +12,14 @@
  *  - Kebab menu = Edit / Duplicate / Move to... / Replace / Remove.
  *
  * Superset indicator: if exercise.supersetId is set, render a purple "SS" chip
- * + a purple left-border (Phase 1 SupersetConnector does not exist yet — inline).
+ * + a purple left-border rail. Grouped rows (isFirstInSuperset/
+ * isLastInSuperset, computed by the parent list) stack flush with flattened
+ * abutting corners so the rail reads as one continuous bracket spanning the
+ * group rather than independent per-row segments.
+ *
+ * Thumbnail: category-keyed icon + gradient (see CATEGORY_THUMBNAIL below),
+ * resolved from CuratedExercise.category — not a per-exercise GIF (too heavy
+ * for a scrollable list of small discs).
  */
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -57,6 +64,42 @@ const FAV_STORAGE_KEY = "favorite_exercises";
 
 const EXERCISE_ROW_HEIGHT = 76; // approximate row height for drag snap math
 
+// ----------------------------------------------------------------------------
+// Category-keyed thumbnail (icon + gradient). Every row previously rendered
+// the identical primary-gradient disc with a hardcoded "barbell-outline"
+// icon regardless of exercise type. A full per-exercise GIF thumbnail (as
+// used by ExerciseGifPlayer elsewhere) is deliberately not used here — that
+// component loads a remote animated asset per instance, which is too heavy
+// for a scrollable list of small 44px discs. Instead the thumbnail is keyed
+// off CuratedExercise.category so cardio/core/mobility rows read distinctly
+// from strength rows at a glance.
+// ----------------------------------------------------------------------------
+type ExerciseCategory =
+  | "chest"
+  | "back"
+  | "shoulders"
+  | "arms"
+  | "legs"
+  | "core"
+  | "cardio"
+  | "full_body";
+
+const CATEGORY_THUMBNAIL: Record<
+  ExerciseCategory,
+  { gradient: [string, string]; icon: keyof typeof Ionicons.glyphMap }
+> = {
+  chest: { gradient: [colors.primary.DEFAULT, colors.primary.dark], icon: "barbell-outline" },
+  back: { gradient: [colors.info.DEFAULT, colors.info.dark], icon: "body-outline" },
+  shoulders: { gradient: [colors.secondary.DEFAULT, colors.secondary.dark], icon: "accessibility-outline" },
+  arms: { gradient: [colors.rest.DEFAULT, colors.rest.dark], icon: "fitness-outline" },
+  legs: { gradient: [colors.success.DEFAULT, colors.success.dark], icon: "walk-outline" },
+  core: { gradient: [colors.error.DEFAULT, colors.error.dark], icon: "ellipse-outline" },
+  cardio: { gradient: [colors.warning.DEFAULT, colors.warning.dark], icon: "heart-outline" },
+  full_body: { gradient: [colors.primary.DEFAULT, colors.secondary.dark], icon: "layers-outline" },
+};
+
+const DEFAULT_THUMBNAIL = CATEGORY_THUMBNAIL.full_body;
+
 export interface ExerciseRowProps {
   exercise: PlannedExercise;
   dayIndex: number;
@@ -73,6 +116,12 @@ export interface ExerciseRowProps {
   onMoveTo: (dayIndex: number, exerciseIndex: number) => void;
   /** Reorder within this day (drag end). */
   onReorder: (dayIndex: number, fromIndex: number, toIndex: number) => void;
+  /** True when this is the first row of a contiguous superset group (rounds
+   *  the top of the connector bracket). Computed by the parent list. */
+  isFirstInSuperset?: boolean;
+  /** True when this is the last row of a contiguous superset group (rounds
+   *  the bottom of the connector bracket). Computed by the parent list. */
+  isLastInSuperset?: boolean;
   /** Test ID prefix. */
   testID?: string;
 }
@@ -157,6 +206,8 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
   onReplace,
   onMoveTo,
   onReorder,
+  isFirstInSuperset = false,
+  isLastInSuperset = false,
   testID,
 }) => {
   const favourites = useFavourites();
@@ -167,6 +218,8 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
   const muscleGroups = curated?.muscleGroups ?? [];
   const equipment = curated?.equipment ?? [];
   const difficulty = curated?.difficulty ?? "intermediate";
+  const thumbnail =
+    (curated?.category && CATEGORY_THUMBNAIL[curated.category]) || DEFAULT_THUMBNAIL;
 
   // Sets × reps summary
   const setCount = exercise.sets.length;
@@ -317,8 +370,24 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
 
   const supersetActive = Boolean(exercise.supersetId);
 
+  // Superset connector: grouped rows stack flush (tight margin) with their
+  // abutting corners flattened, so the shared left rail (styles.supersetRail)
+  // reads as one continuous bracket spanning the group instead of separate
+  // per-row rail segments.
+  const connectorMarginStyle: ViewStyle = supersetActive
+    ? { marginBottom: isLastInSuperset ? rp(spacing.xs) : rp(2) }
+    : {};
+  const connectorCornerStyle: ViewStyle = supersetActive
+    ? {
+        borderTopLeftRadius: isFirstInSuperset ? borderRadius.lg : 0,
+        borderTopRightRadius: isFirstInSuperset ? borderRadius.lg : 0,
+        borderBottomLeftRadius: isLastInSuperset ? borderRadius.lg : 0,
+        borderBottomRightRadius: isLastInSuperset ? borderRadius.lg : 0,
+      }
+    : {};
+
   return (
-    <View style={styles.container} testID={testID}>
+    <View style={[styles.container, connectorMarginStyle]} testID={testID}>
       {/* Swipe-revealed actions (sit behind the row, revealed on left swipe) */}
       <Animated.View style={[styles.actionsLayer, actionOpacity]} pointerEvents="box-none">
         <Pressable
@@ -365,7 +434,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
       {/* The row itself — draggable + swipeable + tappable */}
       <GestureDetector gesture={Gesture.Simultaneous(dragGesture, swipeGesture)}>
         <Animated.View
-          style={[styles.row, dragAnimatedStyle, swipeAnimatedStyle]}
+          style={[styles.row, connectorCornerStyle, dragAnimatedStyle, swipeAnimatedStyle]}
           // NOT role=button: this is a multi-gesture surface (tap / double-tap /
           // long-press / swipe), and the role made RN-web render a real <button>
           // wrapping the favourite + kebab <button>s — invalid nested buttons
@@ -376,7 +445,7 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
           {/* Tap gestures on a separate inner detector so the row body is
               tappable without conflicting with the drag/swipe pan. */}
           <GestureDetector gesture={tapGestures}>
-            <Animated.View style={styles.rowInner}>
+            <Animated.View style={[styles.rowInner, connectorCornerStyle]}>
               {/* Superset left-border indicator (Phase 1 SupersetConnector absent) */}
               {supersetActive && <View style={styles.supersetRail} />}
 
@@ -389,15 +458,16 @@ export const ExerciseRow: React.FC<ExerciseRowProps> = ({
                 />
               </View>
 
-              {/* Thumbnail disc — icon-based (no GIFs in CURATED_EXERCISES) */}
+              {/* Thumbnail disc — category-keyed icon + gradient (see
+                  CATEGORY_THUMBNAIL above; no per-exercise GIFs here) */}
               <LinearGradient
-                colors={[colors.primary.DEFAULT, colors.primary.dark]}
+                colors={thumbnail.gradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.thumbnail}
               >
                 <Ionicons
-                  name="barbell-outline"
+                  name={thumbnail.icon}
                   size={rf(20)}
                   color={colors.text.primary}
                 />

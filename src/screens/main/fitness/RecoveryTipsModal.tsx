@@ -31,6 +31,8 @@ import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { useProfileStore } from "../../../stores/profileStore";
+import { useFitnessStore } from "../../../stores/fitnessStore";
+import { getCurrentWeekStart } from "../../../utils/weekUtils";
 
 // Semantic accent per recovery-tip category, sourced from theme tokens (no
 // fragile inline hex literals). Each accent drives the flat icon-chip tint.
@@ -116,11 +118,23 @@ const RECOVERY_TIPS: RecoveryTip[] = [
 ];
 
 
+// Real recovery signals, sourced from fitnessStore.completedSessions (SSOT
+// for actual training history) rather than static onboarding preferences.
+interface RecoverySignals {
+  /** workoutSnapshot.category of the most recently completed session. */
+  lastSessionCategory?: string;
+  /** Days elapsed since the most recently completed session (0 = today). */
+  daysSinceLastSession?: number;
+  /** Count of completed sessions in the current calendar week. */
+  sessionsThisWeek: number;
+}
+
 function buildPriorityScores(
   workoutPreferences: {
     intensity?: string;
     workout_types?: string[];
   } | null,
+  signals: RecoverySignals,
 ): Record<string, number> {
   const scores: Record<string, number> = {
     sleep: 0,
@@ -131,41 +145,68 @@ function buildPriorityScores(
     "foam-rolling": 0,
   };
 
-  if (!workoutPreferences) return scores;
+  if (workoutPreferences) {
+    const { intensity, workout_types = [] } = workoutPreferences;
 
-  const { intensity, workout_types = [] } = workoutPreferences;
+    if (intensity === "advanced" || intensity === "intermediate") {
+      scores["foam-rolling"] += 3;
+      scores["stretching"] += 2;
+      scores["nutrition"] += 2;
+    } else if (intensity === "beginner") {
+      scores["sleep"] += 3;
+      scores["hydration"] += 2;
+      scores["walking"] += 2;
+    }
 
+    const lowerTypes = workout_types.map((t) => t.toLowerCase());
 
-  if (intensity === "advanced" || intensity === "intermediate") {
+    const isStrength = lowerTypes.some(
+      (t) =>
+        t.includes("strength") ||
+        t.includes("weight_training") ||
+        t.includes("weight training"),
+    );
+    const isCardio = lowerTypes.some(
+      (t) => t.includes("cardio") || t.includes("running"),
+    );
+
+    if (isStrength) {
+      scores["nutrition"] += 3;
+      scores["foam-rolling"] += 2;
+    }
+    if (isCardio) {
+      scores["hydration"] += 3;
+      scores["stretching"] += 2;
+    }
+  }
+
+  // ── Real training-history signals (fitnessStore.completedSessions) ──
+  const category = signals.lastSessionCategory?.toLowerCase();
+  if (category === "strength" || category === "hiit") {
     scores["foam-rolling"] += 3;
-    scores["stretching"] += 2;
     scores["nutrition"] += 2;
-  } else if (intensity === "beginner") {
+  } else if (category === "cardio") {
+    scores["hydration"] += 3;
+    scores["stretching"] += 2;
+  } else if (category === "flexibility" || category === "yoga" || category === "pilates") {
+    scores["walking"] += 1;
+    scores["hydration"] += 1;
+  }
+
+  if (signals.daysSinceLastSession === 0) {
+    // Trained today — freshest fatigue, prioritize sleep + tissue recovery.
     scores["sleep"] += 3;
-    scores["hydration"] += 2;
+    scores["foam-rolling"] += 2;
+  } else if (signals.daysSinceLastSession != null && signals.daysSinceLastSession >= 3) {
+    // Idle for a few days — ease back in with light movement rather than
+    // deep-recovery tips that assume recent training stress.
     scores["walking"] += 2;
   }
 
-
-  const lowerTypes = workout_types.map((t) => t.toLowerCase());
-
-  const isStrength = lowerTypes.some(
-    (t) =>
-      t.includes("strength") ||
-      t.includes("weight_training") ||
-      t.includes("weight training"),
-  );
-  const isCardio = lowerTypes.some(
-    (t) => t.includes("cardio") || t.includes("running"),
-  );
-
-  if (isStrength) {
-    scores["nutrition"] += 3;
-    scores["foam-rolling"] += 2;
-  }
-  if (isCardio) {
-    scores["hydration"] += 3;
-    scores["stretching"] += 2;
+  if (signals.sessionsThisWeek >= 4) {
+    // High weekly volume — recovery matters more than usual this week.
+    scores["sleep"] += 2;
+    scores["hydration"] += 1;
   }
 
   return scores;
@@ -218,13 +259,46 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
   const workoutPreferences = useProfileStore(
     (state) => state.workoutPreferences,
   );
+  const completedSessions = useFitnessStore((state) => state.completedSessions);
+
+  const signals = useMemo<RecoverySignals>(() => {
+    if (completedSessions.length === 0) {
+      return { sessionsThisWeek: 0 };
+    }
+    const sorted = [...completedSessions].sort(
+      (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+    );
+    const lastSession = sorted[0];
+    const daysSinceLastSession = Math.floor(
+      (Date.now() - new Date(lastSession.completedAt).getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const currentWeekStart = getCurrentWeekStart();
+    const sessionsThisWeek = completedSessions.filter(
+      (s) => s.weekStart === currentWeekStart,
+    ).length;
+    return {
+      lastSessionCategory: lastSession.workoutSnapshot?.category,
+      daysSinceLastSession,
+      sessionsThisWeek,
+    };
+  }, [completedSessions]);
 
   const sortedTips = useMemo(() => {
-    const scores = buildPriorityScores(workoutPreferences);
+    const scores = buildPriorityScores(workoutPreferences, signals);
     return [...RECOVERY_TIPS].sort(
       (a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0),
     );
-  }, [workoutPreferences]);
+  }, [workoutPreferences, signals]);
+
+  // Honest subtitle: only claim personalization when there's real training
+  // history to base it on; otherwise say plainly that this is general
+  // guidance rather than implying a computed insight that doesn't exist yet.
+  const headerSubtitle =
+    signals.lastSessionCategory && signals.daysSinceLastSession != null
+      ? signals.daysSinceLastSession === 0
+        ? `Based on today's ${signals.lastSessionCategory} session`
+        : `Based on your last ${signals.lastSessionCategory} session, ${signals.daysSinceLastSession}d ago`
+      : "General Recovery Guidance";
 
   return (
     <BottomSheet
@@ -248,7 +322,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
         <View style={styles.headerText}>
           <Text style={styles.headerTitle} numberOfLines={1}>Recovery Tips</Text>
           <Text style={styles.headerSubtitle} numberOfLines={1}>
-            Rest Day Recommendations
+            {headerSubtitle}
           </Text>
         </View>
         <AnimatedPressable
