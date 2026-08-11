@@ -160,7 +160,12 @@ export const WeightManagementSection: React.FC<
             accessibilityHint="Tap to adjust on the Body screen"
             testID="goal-arc"
           >
-            <Text style={styles.heroLine}>
+            <Text
+              style={styles.heroLine}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+            >
               <Text style={styles.heroCurrent}>
                 {fmtRaw(currentWeight)} {unitLabel}
               </Text>

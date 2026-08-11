@@ -39,6 +39,16 @@ const toHHMM = (mins: number): string => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
+/** "HH:MM" 24h → "h:MM AM/PM" for imperial-locale display. Stored value stays 24h. */
+const toDisplay12h = (hhmm: string): string => {
+  const mins = toMinutes(hhmm);
+  const h24 = Math.floor(mins / 60);
+  const m = mins % 60;
+  const period = h24 < 12 ? "AM" : "PM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+};
+
 export interface TimeRowProps {
   label: string;
   /** "HH:MM" 24h value. */
@@ -47,6 +57,9 @@ export interface TimeRowProps {
   onChange: (hhmm: string) => void;
   /** Step size in minutes. @default 15 */
   stepMinutes?: number;
+  /** Display as 12h "h:MM AM/PM" instead of raw 24h "HH:MM". Stored value is
+   * always 24h — this only affects the rendered label. @default false */
+  use12Hour?: boolean;
   testID?: string;
 }
 
@@ -55,6 +68,7 @@ export const TimeRow: React.FC<TimeRowProps> = ({
   value,
   onChange,
   stepMinutes = 15,
+  use12Hour = false,
   testID,
 }) => {
   const step = (dir: 1 | -1) =>
@@ -89,8 +103,10 @@ export const TimeRow: React.FC<TimeRowProps> = ({
             accessibilityLabel={`Decrease ${label}`}
             testID={testID ? `${testID}-minus` : undefined}
           />
-          <Animated.Text style={[styles.time, valueStyle]}>
-            {value}
+          <Animated.Text
+            style={[styles.time, use12Hour && styles.time12h, valueStyle]}
+          >
+            {use12Hour ? toDisplay12h(value) : value}
           </Animated.Text>
           <StepButton
             icon="add"
@@ -156,6 +172,11 @@ const styles = StyleSheet.create({
     minWidth: 72,
     textAlign: "center",
     fontVariant: ["tabular-nums"],
+  },
+  // "12:00 AM" is wider than 24h "HH:MM" — give the 12h display more room so
+  // the AM/PM suffix doesn't get clipped against the stepper buttons.
+  time12h: {
+    minWidth: 96,
   },
   btn: {
     width: 32,

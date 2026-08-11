@@ -31,6 +31,22 @@ export const WORKOUT_DAY_IDS = [
   "sunday",
 ] as const;
 
+// Shallow array comparison for the string[] fields on WorkoutPreferencesData —
+// avoids JSON.stringify-ing the whole formData on every props-sync check,
+// which ran on every RangeSlider drag tick (session duration, etc.).
+const arraysEqual = (
+  a: string[] | null | undefined,
+  b: string[] | null | undefined,
+): boolean => {
+  const av = a || [];
+  const bv = b || [];
+  if (av.length !== bv.length) return false;
+  for (let i = 0; i < av.length; i++) {
+    if (av[i] !== bv[i]) return false;
+  }
+  return true;
+};
+
 /** Evenly spread n sessions across a Mon–Sun week (3 → mon/wed/fri, 5 → mon/tue/wed/fri/sat). */
 export const spreadDaysForCount = (n: number): string[] => {
   const count = Math.max(0, Math.min(7, Math.round(n)));
@@ -229,7 +245,27 @@ export const useWorkoutPreferences = ({
       };
 
       const hasChanged =
-        JSON.stringify(formData) !== JSON.stringify(newFormData);
+        formData.location !== newFormData.location ||
+        formData.time_preference !== newFormData.time_preference ||
+        formData.intensity !== newFormData.intensity ||
+        formData.activity_level !== newFormData.activity_level ||
+        formData.workout_experience_years !== newFormData.workout_experience_years ||
+        formData.workout_frequency_per_week !== newFormData.workout_frequency_per_week ||
+        formData.can_do_pushups !== newFormData.can_do_pushups ||
+        formData.can_run_minutes !== newFormData.can_run_minutes ||
+        formData.flexibility_level !== newFormData.flexibility_level ||
+        formData.weekly_weight_loss_goal !== newFormData.weekly_weight_loss_goal ||
+        formData.enjoys_cardio !== newFormData.enjoys_cardio ||
+        formData.enjoys_strength_training !== newFormData.enjoys_strength_training ||
+        formData.enjoys_group_classes !== newFormData.enjoys_group_classes ||
+        formData.prefers_outdoor_activities !== newFormData.prefers_outdoor_activities ||
+        formData.needs_motivation !== newFormData.needs_motivation ||
+        formData.prefers_variety !== newFormData.prefers_variety ||
+        !arraysEqual(formData.equipment, newFormData.equipment) ||
+        !arraysEqual(formData.workout_types, newFormData.workout_types) ||
+        !arraysEqual(formData.primary_goals, newFormData.primary_goals) ||
+        !arraysEqual(formData.preferred_workout_days, newFormData.preferred_workout_days) ||
+        !arraysEqual(formData.preferred_workout_times, newFormData.preferred_workout_times);
 
       if (hasChanged) {
         isSyncingFromProps.current = true;
@@ -348,6 +384,28 @@ export const useWorkoutPreferences = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.primary_goals]);
 
+  // Debounced commit to parent state (mirrors useDietPreferences/
+  // usePersonalInfoForm). RangeSlider-driven fields (time_preference,
+  // workout_experience_years, can_do_pushups, can_run_minutes, all written
+  // via updateField) fire many formData updates per second while dragging;
+  // without this, every tick synchronously wrote into the top-level
+  // onboarding state and re-ran the whole onboarding tree. handleNext in
+  // WorkoutPreferencesTab already flushes `onUpdate(formData)` synchronously
+  // before navigating, so this debounce never risks losing data on tab
+  // transition.
+  const stableOnUpdate = useCallback(() => {
+    onUpdate(formData);
+  }, [formData, onUpdate]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isSyncingFromProps.current) {
+        stableOnUpdate();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, stableOnUpdate]);
+
   // Form Handlers
   const updateField = <K extends keyof WorkoutPreferencesData>(
     field: K,
@@ -389,7 +447,6 @@ export const useWorkoutPreferences = ({
     }
 
     setFormData(updated);
-    onUpdate(updated);
   };
 
   /** Ruler control: change the session COUNT; re-spread days if size changed. */
@@ -405,7 +462,6 @@ export const useWorkoutPreferences = ({
       preferred_workout_days: days,
     };
     setFormData(updated);
-    onUpdate(updated);
   };
 
   /** Day-chip control: toggle WHICH day; the count follows the selection. */
@@ -423,7 +479,6 @@ export const useWorkoutPreferences = ({
       preferred_workout_days: [...ordered],
     };
     setFormData(updated);
-    onUpdate(updated);
   };
 
   const toggleGoal = (goalId: string) => {

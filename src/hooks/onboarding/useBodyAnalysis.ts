@@ -45,6 +45,22 @@ const sanitizeWeight = (v: number | null | undefined) =>
     ? v
     : NEUTRAL_WEIGHT_KG;
 
+// Shallow array comparison for the string[] fields on BodyAnalysisData —
+// avoids JSON.stringify-ing the whole formData (incl. arrays) on every
+// props-sync check, which ran on every RangeSlider drag tick.
+const arraysEqual = (
+  a: string[] | null | undefined,
+  b: string[] | null | undefined,
+): boolean => {
+  const av = a || [];
+  const bv = b || [];
+  if (av.length !== bv.length) return false;
+  for (let i = 0; i < av.length; i++) {
+    if (av[i] !== bv[i]) return false;
+  }
+  return true;
+};
+
 export const GENDER_MEDIANS: Record<
   string,
   { height: number; weight: number; target: number }
@@ -159,7 +175,32 @@ export const useBodyAnalysis = ({
       };
 
       const hasChanged =
-        JSON.stringify(formData) !== JSON.stringify(newFormData);
+        formData.height_cm !== newFormData.height_cm ||
+        formData.current_weight_kg !== newFormData.current_weight_kg ||
+        formData.target_weight_kg !== newFormData.target_weight_kg ||
+        formData.target_timeline_weeks !== newFormData.target_timeline_weeks ||
+        formData.body_fat_percentage !== newFormData.body_fat_percentage ||
+        formData.waist_cm !== newFormData.waist_cm ||
+        formData.hip_cm !== newFormData.hip_cm ||
+        formData.chest_cm !== newFormData.chest_cm ||
+        formData.front_photo_url !== newFormData.front_photo_url ||
+        formData.side_photo_url !== newFormData.side_photo_url ||
+        formData.back_photo_url !== newFormData.back_photo_url ||
+        formData.ai_estimated_body_fat !== newFormData.ai_estimated_body_fat ||
+        formData.ai_body_type !== newFormData.ai_body_type ||
+        formData.ai_confidence_score !== newFormData.ai_confidence_score ||
+        formData.pregnancy_status !== newFormData.pregnancy_status ||
+        formData.pregnancy_trimester !== newFormData.pregnancy_trimester ||
+        formData.breastfeeding_status !== newFormData.breastfeeding_status ||
+        formData.stress_level !== newFormData.stress_level ||
+        formData.bmi !== newFormData.bmi ||
+        formData.bmr !== newFormData.bmr ||
+        formData.ideal_weight_min !== newFormData.ideal_weight_min ||
+        formData.ideal_weight_max !== newFormData.ideal_weight_max ||
+        formData.waist_hip_ratio !== newFormData.waist_hip_ratio ||
+        !arraysEqual(formData.medical_conditions, newFormData.medical_conditions) ||
+        !arraysEqual(formData.medications, newFormData.medications) ||
+        !arraysEqual(formData.physical_limitations, newFormData.physical_limitations);
 
       if (hasChanged) {
         isSyncingFromProps.current = true;
@@ -231,17 +272,12 @@ export const useBodyAnalysis = ({
       };
 
       setFormData((prev: BodyAnalysisData) => ({ ...prev, ...computed }));
-
-      if (!isSyncingFromProps.current) {
-        onUpdate(computed);
-      }
     }
   }, [
     formData.height_cm,
     formData.current_weight_kg,
     calculateBMRMemo,
     calculateIdealWeightRangeMemo,
-    onUpdate,
   ]);
 
   // Calculate waist-hip ratio when measurements change
@@ -256,12 +292,28 @@ export const useBodyAnalysis = ({
       const waist_hip_ratio = Math.round(ratio * 100) / 100;
 
       setFormData((prev: BodyAnalysisData) => ({ ...prev, waist_hip_ratio }));
-
-      if (!isSyncingFromProps.current) {
-        onUpdate({ waist_hip_ratio });
-      }
     }
-  }, [formData.waist_cm, formData.hip_cm, onUpdate]);
+  }, [formData.waist_cm, formData.hip_cm]);
+
+  // Debounced commit to parent state (mirrors useDietPreferences/
+  // usePersonalInfoForm). RangeSlider-driven fields (height/weight/target)
+  // fire many formData updates per second while dragging; without this,
+  // every tick synchronously wrote into the top-level onboarding state and
+  // re-ran the whole onboarding tree. handleNext in BodyAnalysisTab already
+  // flushes `onUpdate(formData)` synchronously before navigating, so this
+  // debounce never risks losing data on tab transition.
+  const stableOnUpdate = useCallback(() => {
+    onUpdate(formData);
+  }, [formData, onUpdate]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isSyncingFromProps.current) {
+        stableOnUpdate();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, stableOnUpdate]);
 
   // Helpers
   const getBMICategory = (
@@ -308,22 +360,20 @@ export const useBodyAnalysis = ({
   };
 
   // Form Handlers
+  // Commit to local formData only — the debounced effect above pushes the
+  // merged result up to parent state (see stableOnUpdate).
   const updateField = <K extends keyof BodyAnalysisData>(
     field: K,
     value: BodyAnalysisData[K],
   ) => {
-    const updated = { ...formData, [field]: value };
-    setFormData(updated);
-    onUpdate(updated);
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   // Multi-field atomic update (avoids stale-closure over `formData` when several
   // fields must change together, e.g. the S2 goal-arc recomputing the timeline
   // alongside target_weight_kg).
   const updateFields = (patch: Partial<BodyAnalysisData>) => {
-    const updated = { ...formData, ...patch };
-    setFormData(updated);
-    onUpdate(updated);
+    setFormData((prev) => ({ ...prev, ...patch }));
   };
 
   const handleNumberInput = (field: keyof BodyAnalysisData, text: string) => {

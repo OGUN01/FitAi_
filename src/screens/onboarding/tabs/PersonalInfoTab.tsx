@@ -210,6 +210,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             value={formData.wake_time}
             onChange={(v) => actions.handleTimeChange("wake_time", v)}
             stepMinutes={15}
+            use12Hour={(formData.units ?? "metric") === "imperial"}
             testID="onboarding-wake-dial"
           />
           <TimeRow
@@ -217,6 +218,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             value={formData.sleep_time}
             onChange={(v) => actions.handleTimeChange("sleep_time", v)}
             stepMinutes={15}
+            use12Hour={(formData.units ?? "metric") === "imperial"}
             testID="onboarding-sleep-dial"
           />
           {sleepDuration ? <SleepInsight value={sleepDuration} /> : null}

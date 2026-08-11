@@ -195,9 +195,16 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     setFormData({ email: "", password: "" });
   };
 
+  // Intensity dialed down from 0.3 — the onboarding tabs that follow
+  // (OnboardingContainer → S1 etc.) are flat #050505 "Editorial Dark" with no
+  // gradient/motion. A quieter wash here softens the hand-off instead of
+  // jumping from a vivid animated space gradient straight to static black; a
+  // literal cross-fade would need changes in the shared AuroraBackground
+  // component (src/components/ui/aurora/), which is out of the
+  // onboarding-scoped surface this fix covers.
   if (mode === "signin") {
     return (
-      <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <AuroraBackground theme="space" animated={true} intensity={0.15}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -361,7 +368,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   }
 
   return (
-    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+    <AuroraBackground theme="space" animated={true} intensity={0.15}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <ScrollView
           style={styles.scrollView}

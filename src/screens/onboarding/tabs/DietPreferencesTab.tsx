@@ -19,7 +19,7 @@
  * disclosure (§5) is pure local UI state inside each section.
  */
 
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -178,6 +178,15 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     }
   };
 
+  // formData changes on every keystroke/toggle across all 6 Diet sections —
+  // buildReceipt was previously called twice per render (accessibilityLabel +
+  // visible segments) with no memoization.
+  const enabledMealsCount = getEnabledMealsCount();
+  const receipt = useMemo(
+    () => buildReceipt(formData, enabledMealsCount),
+    [formData, enabledMealsCount],
+  );
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -251,15 +260,10 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               style={styles.receipt}
               numberOfLines={2}
               accessibilityLiveRegion="polite"
-              accessibilityLabel={buildReceipt(
-                formData,
-                getEnabledMealsCount(),
-              )
-                .map((s) => s.label)
-                .join(", ")}
+              accessibilityLabel={receipt.map((s) => s.label).join(", ")}
               testID="diet-setup-receipt"
             >
-              {buildReceipt(formData, getEnabledMealsCount()).map(
+              {receipt.map(
                 (segment, index) => (
                   <React.Fragment key={segment.key}>
                     {index > 0 && (
