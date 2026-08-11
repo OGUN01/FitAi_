@@ -213,7 +213,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
         hapticFeedback={true}
         hapticType="light"
         accessibilityRole="button"
-        accessibilityLabel="Set your goals"
+        accessibilityLabel="Complete profile to set your goals"
       >
         <View style={styles.surface}>
           <View style={styles.emptyStateContainer}>
