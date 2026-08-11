@@ -248,9 +248,12 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                   Manage or revoke access
                 </Text>
                 <Text style={styles.privacyPolicyBody}>
-                  You can review or revoke FitAI's access to any data type at any
-                  time in Settings → Health Connect. Disconnecting FitAI in this
-                  app also revokes system-level read/write access.
+                  The connect toggle and per-type switches in Settings →
+                  Health Connect only control what FitAI syncs going
+                  forward — they don't revoke the underlying OS permission.
+                  To fully revoke Health Connect access, open your phone's
+                  Health Connect (Android) or Health app (iOS) settings and
+                  remove FitAI's permissions there.
                 </Text>
               </View>
             </Animated.View>

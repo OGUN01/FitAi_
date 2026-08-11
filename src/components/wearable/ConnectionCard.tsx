@@ -97,9 +97,9 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             scaleValue={0.95}
           >
             {syncStatus === "syncing" ? (
-              <ActivityIndicator size="small" color={colors.text} />
+              <ActivityIndicator size="small" color={colors.background} />
             ) : (
-              <Ionicons name="refresh" size={rf(18)} color={colors.text} />
+              <Ionicons name="refresh" size={rf(18)} color={colors.background} />
             )}
             <Text style={styles.syncButtonText}>
               {syncStatus === "syncing" ? "Syncing..." : "Sync Now"}
@@ -204,7 +204,9 @@ const styles = StyleSheet.create({
   syncButtonText: {
     fontSize: rf(14),
     fontWeight: "600",
-    color: colors.text,
+    // Near-black on the orange (colors.primary) button background — white
+    // text here was ~2.9:1, failing WCAG AA (needs 4.5:1 for normal text).
+    color: colors.background,
     marginLeft: spacing.xs,
   },
   reauthorizeButton: {

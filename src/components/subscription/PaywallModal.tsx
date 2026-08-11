@@ -309,6 +309,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                       isCurrent={isCurrent}
                       recommended={isPro && !isCurrent}
                       badgeLabel={isCurrent ? undefined : badgeLabel}
+                      monthlyOnly={billingCycle === "yearly" && plan.billing_cycle === "monthly"}
                       onSelect={() => { haptics.selection(); setSelectedPlanId(plan.id); }}
                     />
                   );

@@ -70,7 +70,9 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: colors.text,
+    // Near-black on the orange (colors.primary) badge background — white
+    // text here was ~2.9:1, failing WCAG AA (needs 3:1 minimum for this size).
+    color: colors.background,
   },
   stepText: {
     flex: 1,

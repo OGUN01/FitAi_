@@ -21,6 +21,11 @@ export interface PlanCardProps {
   badgeLabel?: string;
   index?: number;
   isStatic?: boolean;
+  /** True when the Yearly tab is selected but this specific plan only has a
+   * monthly billing option (e.g. Basic has no yearly Razorpay plan). Shows a
+   * neutral pill so the toggle's partial effect is explained instead of the
+   * card silently staying unchanged next to a re-priced sibling card. */
+  monthlyOnly?: boolean;
 }
 
 /**
@@ -54,6 +59,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   badgeLabel,
   index = 0,
   isStatic = false,
+  monthlyOnly = false,
 }) => {
   const a11yLabel =
     `${name}, ${formatINR(pricePerMonth)} per month` +
@@ -101,6 +107,11 @@ const PlanCard: React.FC<PlanCardProps> = ({
         {billingCycle === "yearly" && (
           <View style={styles.billedPill}>
             <Text style={styles.billedPillText}>{formatINR(pricePerMonth * 12)}/yr billed</Text>
+          </View>
+        )}
+        {monthlyOnly && billingCycle === "monthly" && (
+          <View style={styles.monthlyOnlyPill}>
+            <Text style={styles.monthlyOnlyPillText}>Monthly only</Text>
           </View>
         )}
       </View>
@@ -251,6 +262,18 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     fontWeight: "700",
     color: colors.successLight,
+  },
+  monthlyOnlyPill: {
+    marginLeft: "auto",
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: rbr(6),
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+  },
+  monthlyOnlyPillText: {
+    fontSize: rf(10),
+    fontWeight: "700",
+    color: colors.textSecondary,
   },
   priceRow: {
     flexDirection: "row",

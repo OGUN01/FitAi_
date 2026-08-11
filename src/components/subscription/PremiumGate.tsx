@@ -142,6 +142,12 @@ const styles = StyleSheet.create({
   },
   upgradeButton: {
     marginTop: rh(16),
+    // GlassButton's `fullWidth` style is flex:1, which only stretches along
+    // the parent's main axis. gatePanel is a column with alignItems:"center",
+    // so flex:1 alone doesn't stretch the button's cross-axis width — it
+    // sizes to its label instead of spanning the panel like a normal
+    // full-width CTA. Force the width explicitly here.
+    width: "100%",
   },
   usageCounterRow: {
     paddingHorizontal: rw(16),

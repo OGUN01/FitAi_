@@ -27,6 +27,10 @@ const ANDROID_PACKAGE =
 export const APP_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
 const PLAY_STORE_MARKET_URL = `market://details?id=${ANDROID_PACKAGE}`;
 const IOS_APP_STORE_URL = "https://apps.apple.com/app/id0000000000"; // TODO(store-listing): real App Store ID once published
+// The numeric ID above is a placeholder — opening it sends real users to an
+// App Store "not found" page. Detect it so handleRateApp can fall back to
+// the website instead of a link that is known-broken.
+const IOS_APP_STORE_ID_IS_PLACEHOLDER = IOS_APP_STORE_URL.includes("id0000000000");
 
 export interface FeatureItem {
   icon: keyof typeof Ionicons.glyphMap;
@@ -125,6 +129,19 @@ export const useAboutFitAILogic = () => {
         return;
       }
       if (Platform.OS === "ios") {
+        if (IOS_APP_STORE_ID_IS_PLACEHOLDER) {
+          // Real App Store ID isn't assigned yet — opening the placeholder
+          // URL would land real users on an error page. Fall back to the
+          // website instead of a link known to be broken. The navigation is
+          // triggered from the alert's own button so the explanation is
+          // guaranteed to be read before the app backgrounds to the browser.
+          crossPlatformAlert(
+            "Coming Soon to the App Store",
+            "FitAI isn't listed on the App Store yet. We'll open our website instead — check back soon to rate us there!",
+            [{ text: "OK", onPress: () => openUrl("https://fitai.app") }],
+          );
+          return;
+        }
         await Linking.openURL(IOS_APP_STORE_URL);
         return;
       }

@@ -152,7 +152,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons
-                name="logo-buffer"
+                name="share-social-outline"
                 size={rf(14)}
                 color={colors.textSecondary}
               />

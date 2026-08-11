@@ -100,6 +100,12 @@ export const DataTypesCard: React.FC<DataTypesCardProps> = ({
   return (
     <GlassCard elevation={1} style={styles.card}>
       <Text style={styles.title}>Data to Sync</Text>
+      <Text style={styles.hint}>
+        Sets your sync preferences. Turning a switch off stops FitAI from
+        reading that data — it does not revoke the permission at the OS
+        level. To fully revoke access, open your phone's Health Connect (or
+        Health app) settings and remove FitAI there.
+      </Text>
       {HEALTH_DATA_TYPES.map((dataType, index) => (
         <View
           key={dataType.key}
@@ -139,7 +145,13 @@ const styles = StyleSheet.create({
     fontSize: rf(16),
     fontWeight: "600",
     color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  hint: {
+    fontSize: rf(12),
+    color: colors.textTertiary,
     marginBottom: spacing.md,
+    lineHeight: rf(16),
   },
   row: {
     flexDirection: "row",

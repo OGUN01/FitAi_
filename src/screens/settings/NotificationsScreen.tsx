@@ -329,20 +329,12 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
               animationDelay={250}
             />
 
-            <NotificationItem
-              icon="analytics-outline"
-              iconColor={colors.warning}
-              title="Progress Updates"
-              description="Weekly summary of your fitness journey"
-              timeInfo={
-                preferences.progress.enabled
-                  ? getTimeDisplay("progress")
-                  : undefined
-              }
-              enabled={preferences.progress.enabled}
-              onToggle={() => handleToggle("progress")}
-              animationDelay={300}
-            />
+            {/* "Progress Updates" was removed — the toggle persisted a
+                preference but scheduled no actual weekly-summary
+                notification anywhere in the app (unlike water/workout/meal/
+                sleep, which each call a real schedule*Reminders function).
+                Re-add once a real progress-summary notification is
+                implemented in notificationStore. */}
           </View>
 
           <View style={styles.section}>

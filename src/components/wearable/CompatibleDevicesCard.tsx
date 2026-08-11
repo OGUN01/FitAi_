@@ -52,6 +52,10 @@ export const CompatibleDevicesCard: React.FC<CompatibleDevicesCardProps> = ({
           </View>
         ))}
       </View>
+      <Text style={styles.caveat}>
+        Third-party devices sync via their own app connected to {platformName}
+        — FitAI doesn't talk to them directly.
+      </Text>
     </GlassCard>
   );
 };
@@ -90,5 +94,11 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: colors.text,
     marginLeft: spacing.xs,
+  },
+  caveat: {
+    fontSize: rf(11),
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
+    lineHeight: rf(15),
   },
 });
