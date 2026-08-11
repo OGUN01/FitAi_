@@ -45,7 +45,9 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
   const title = isToday
     ? "Today's intake"
     : `${DateFormatters.weekdayShort(`${selectedDate}T12:00:00`)}, ${DateFormatters.short(`${selectedDate}T12:00:00`)} intake`;
-  const planButtonLabel = isToday ? "View Today's Plan" : 'View Plan';
+  // Visible label stays short ("View Plan") so it fits comfortably in a
+  // half-width button next to "Log Meal"; the fuller "today"/date-aware
+  // phrasing lives in the accessibility label instead.
   const planButtonA11yLabel = isToday ? "View today's plan" : 'View plan';
 
   return (
@@ -81,28 +83,34 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
           <Text style={styles.statLabel}>{isOverTarget ? 'kcal over' : 'Remaining kcal'}</Text>
         </View>
       </View>
-      <AnimatedPressable
-        style={styles.logButton}
-        onPress={onLogMeal}
-        accessibilityRole="button"
-        accessibilityLabel="Log a meal or food"
-        hapticType="light"
-      >
-        <Ionicons name="add" size={20} color={colors.primary} />
-        <Text style={styles.logText}>Log a Meal / Food</Text>
-      </AnimatedPressable>
-      {onViewPlan ? (
+      <View style={styles.actionsRow}>
         <AnimatedPressable
-          style={styles.planButton}
-          onPress={onViewPlan}
+          style={[styles.logButton, onViewPlan && styles.actionHalf]}
+          onPress={onLogMeal}
           accessibilityRole="button"
-          accessibilityLabel={planButtonA11yLabel}
+          accessibilityLabel="Log a meal or food"
           hapticType="light"
         >
-          <Text style={styles.planText}>{planButtonLabel}</Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.white} />
+          <Ionicons name="add" size={20} color={colors.primary} />
+          <Text style={styles.logText} numberOfLines={1}>
+            {onViewPlan ? 'Log Meal' : 'Log a Meal / Food'}
+          </Text>
         </AnimatedPressable>
-      ) : null}
+        {onViewPlan ? (
+          <AnimatedPressable
+            style={[styles.planButton, styles.actionHalf]}
+            onPress={onViewPlan}
+            accessibilityRole="button"
+            accessibilityLabel={planButtonA11yLabel}
+            hapticType="light"
+          >
+            <Text style={styles.planText} numberOfLines={1}>
+              View Plan
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.white} />
+          </AnimatedPressable>
+        ) : null}
+      </View>
     </View>
   );
 };
@@ -116,12 +124,12 @@ export const CompactIntakeSummary = React.memo(CompactIntakeSummaryComponent);
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.md,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.backgroundSecondary,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   headingRow: {
     flexDirection: 'row',
@@ -168,6 +176,13 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
   statLabel: { color: colors.textSecondary, fontSize: fontSize.xs },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionHalf: {
+    flex: 1,
+  },
   logButton: {
     minHeight: 44,
     borderRadius: borderRadius.md,
@@ -177,6 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   logText: {
     color: colors.primary,
@@ -185,13 +201,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   planButton: {
-    minHeight: 48,
+    minHeight: 44,
     borderRadius: borderRadius.md,
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
   },
   planText: {
     color: colors.white,
