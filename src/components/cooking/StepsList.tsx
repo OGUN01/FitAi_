@@ -2,7 +2,6 @@ import React from "react";
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   ViewStyle,
 } from "react-native";
@@ -19,7 +18,6 @@ interface StepsListProps {
   currentStepIndex: number;
   completedSteps: Set<number>;
   onStepPress: (index: number) => void;
-  scrollViewRef?: React.RefObject<ScrollView | null>;
   registerStepRef?: (index: number, ref: View | null) => void;
 }
 

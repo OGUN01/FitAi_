@@ -299,6 +299,13 @@ export const usePinchToZoom = (
               : withSpring(maxScale, animations.spring.gentle);
             savedScale.value = maxScale;
           }
+        })
+        // onEnd only fires on a clean gesture end; a cancelled/interrupted
+        // pinch (e.g. a system gesture taking over mid-pinch) skips it and
+        // would leave atLimit stuck true, suppressing the boundary haptic on
+        // the next pinch's first limit-hit. onFinalize always fires.
+        .onFinalize(() => {
+          atLimit.value = false;
         }),
     [minScale, maxScale, hapticAtLimits, scale, savedScale, focalX, focalY, atLimit, reduceMotion],
   );
