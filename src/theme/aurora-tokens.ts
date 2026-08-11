@@ -417,7 +417,14 @@ export const flatColors = {
   errorAlt: '#EF4444',
   warningAlt: '#F59E0B',
 
-  // Accent / macro palette (no nested aurora equivalent — semantic)
+  // Accent / macro palette (no nested aurora equivalent — semantic).
+  // FROZEN: this list is legacy — 36+ files already consume these exact
+  // keys (macroColors.ts, AnalyticsCard.tsx, MacroDashboard.tsx,
+  // ExerciseCard.tsx, ...), so removing/renaming any of them is a breaking
+  // change across the app. Do NOT add new ad hoc accent colors here — the
+  // `chart` token group above (chart[1..6]) is the governed home for new
+  // category/series accent colors; route new accents through it (with a
+  // contrast check) instead of freehanding another literal into this map.
   gold: '#FFD700',
   amber: '#FFC107',
   teal: '#4ECDC4',

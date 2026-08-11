@@ -1,13 +1,15 @@
 // Advanced Components Barrel Export
-// This file exports all advanced UI components for easy importing
+// This file exports advanced UI components for easy importing.
+//
+// Only components with real production or test usage live here. The rest
+// (Slider, RatingSelector, SwipeGesture, PullToRefresh, LongPressMenu,
+// HapticFeedback) were unmaintained duplicates never imported by any screen
+// — every screen that needed that behavior built its own local version
+// instead (e.g. onboarding/aurora/RangeSlider, diet/portion/CustomSlider,
+// gestures/handlers.ts's usePullToRefresh) — and have been removed.
 
 export { Camera } from './Camera';
 export { ImagePicker } from './ImagePicker';
-export { Slider } from './Slider';
 export { DatePicker } from './DatePicker';
 export { MultiSelect } from './MultiSelect';
-export { RatingSelector } from './RatingSelector';
-export { SwipeGesture } from './SwipeGesture';
-export { PullToRefresh } from './PullToRefresh';
-export { LongPressMenu } from './LongPressMenu';
-export { HapticFeedback, useHapticFeedback } from './HapticFeedback';
+export { MultiSelectWithCustom } from './MultiSelectWithCustom';

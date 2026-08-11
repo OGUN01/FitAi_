@@ -5,10 +5,8 @@ import {
   StyleSheet,
   Pressable,
   ViewStyle,
-  DimensionValue,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { rh, rw } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatShadows as shadows } from "../../theme/aurora-tokens";
 
 // REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
@@ -73,68 +71,12 @@ export const Modal: React.FC<ModalProps> = ({
   );
 };
 
-// Bottom Sheet Modal variant
-interface BottomSheetModalProps
-  extends Omit<ModalProps, "style" | "contentStyle"> {
-  height?: number | string;
-}
-
-export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
-  visible,
-  onClose,
-  children,
-  height = "50%",
-  overlayStyle,
-  closeOnOverlayPress = true,
-}) => {
-  const insets = useSafeAreaInsets();
-
-  const handleOverlayPress = () => {
-    if (closeOnOverlayPress) {
-      onClose();
-    }
-  };
-
-  return (
-    <RNModal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <View style={[styles.overlay, overlayStyle, { paddingTop: insets.top }]}>
-        <Pressable
-          style={StyleSheet.absoluteFillObject}
-          onPress={handleOverlayPress}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss modal"
-          accessibilityHint="Closes this bottom sheet"
-          accessible={closeOnOverlayPress}
-        />
-        <View style={styles.bottomSheetContainer} pointerEvents="box-none">
-          <View
-            style={[
-              styles.bottomSheetContent,
-              {
-                height: height as DimensionValue,
-                paddingBottom: insets.bottom + spacing.lg,
-              },
-            ]}
-          >
-            <View
-              style={styles.bottomSheetHandle}
-              accessibilityRole="button"
-              accessibilityLabel="Bottom sheet handle"
-              accessibilityHint="Drag to dismiss"
-            />
-            {children}
-          </View>
-        </View>
-      </View>
-    </RNModal>
-  );
-};
+// NOTE: A BottomSheetModal variant used to live here (flat, non-glass,
+// slide-up RNModal). It had zero production imports and is fully superseded
+// by `ui/aurora/BottomSheet.tsx`, which is the glass bottom-sheet every
+// other in-app sheet (LogMealModal, ExercisePickerSheet, TemplateDetailSheet,
+// etc.) already uses. Removed rather than kept as an unmaintained duplicate
+// — use `ui/aurora/BottomSheet` for any new bottom sheet.
 
 const styles = StyleSheet.create({
   overlay: {
@@ -158,30 +100,5 @@ const styles = StyleSheet.create({
     // could exceed screen height on small devices.
     maxHeight: "85%",
     ...shadows.lg,
-  },
-
-  // Bottom Sheet styles
-  bottomSheetContainer: {
-    flex: 1,
-    justifyContent: "flex-end" as const,
-  },
-
-  bottomSheetContent: {
-    backgroundColor: colors.backgroundSecondary,
-    borderTopLeftRadius: borderRadius.xxl,
-    borderTopRightRadius: borderRadius.xxl,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.md,
-    ...shadows.lg,
-  },
-
-  bottomSheetHandle: {
-    width: rw(40),
-    height: 4,
-    backgroundColor: colors.textMuted,
-    borderRadius: borderRadius.full,
-    alignSelf: "center",
-    marginBottom: spacing.lg,
   },
 });

@@ -7,7 +7,6 @@ export { PasswordInput } from './PasswordInput';
 export { Card } from './Card';
 export { Modal } from './Modal';
 export { CustomDialog, WorkoutStartDialog, WorkoutCompleteDialog } from './CustomDialog';
-export { Slider } from './Slider';
 
 // Phase 3: Advanced Visual Components
 export { ChartTooltip } from './ChartTooltip';

@@ -8,7 +8,12 @@ import {
   TextStyle,
   TouchableOpacity,
 } from "react-native";
-import { useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
 import { rf, rp, rh, rw, rbr } from "../../utils/responsive";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 
@@ -62,11 +67,30 @@ export const Input: React.FC<InputProps> = ({
     });
   }, [isFocused]);
 
+  // Real animated border/glow transition (border colour, width, background
+  // tint and shadow all ease in together instead of snapping instantly),
+  // matching the Reanimated-driven feel of Button/GlassButton/EmptyState.
+  const animatedFocusStyle = useAnimatedStyle(() => ({
+    borderColor: interpolateColor(
+      focusAnimation.value,
+      [0, 1],
+      [colors.glassBorder, colors.primary],
+    ),
+    borderWidth: 1 + focusAnimation.value * 0.5,
+    backgroundColor: interpolateColor(
+      focusAnimation.value,
+      [0, 1],
+      [colors.glassSurface, colors.primaryTint],
+    ),
+    shadowOpacity: focusAnimation.value * 0.3,
+    elevation: focusAnimation.value * 4,
+  }));
+
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label} numberOfLines={1}>{label}</Text>}
 
-      <View
+      <Animated.View
         style={[
           styles.inputContainer,
           // Error colour takes precedence while there is an error; once the
@@ -74,11 +98,7 @@ export const Input: React.FC<InputProps> = ({
           // immediately instead of sticking on the error colour until the
           // next focus event (the previous animated border style only
           // re-evaluated on focus/blur).
-          error
-            ? styles.inputContainerError
-            : isFocused
-              ? styles.inputContainerFocused
-              : null,
+          error ? styles.inputContainerError : animatedFocusStyle,
           disabled && styles.inputContainerDisabled,
         ]}
       >
@@ -125,7 +145,7 @@ export const Input: React.FC<InputProps> = ({
             {rightIcon}
           </TouchableOpacity>
         )}
-      </View>
+      </Animated.View>
 
       {error && <Text style={styles.errorText} numberOfLines={3}>{error}</Text>}
     </View>
@@ -154,17 +174,10 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     minHeight: rh(48),
     overflow: "hidden",
-  },
-
-  inputContainerFocused: {
-    borderColor: colors.primary,
-    borderWidth: 1.5,
-    backgroundColor: colors.primaryTint,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0,
   },
 
   inputContainerError: {

@@ -28,8 +28,6 @@ export { MetricCard } from './MetricCard';
 export { FeatureGrid } from './FeatureGrid';
 export type { Feature, FeatureGridProps } from './FeatureGrid';
 export { AnimatedIcon } from './AnimatedIcon';
-export { DynamicTabBar } from './DynamicTabBar';
-export type { TabItem, DynamicTabBarProps } from './DynamicTabBar';
 export { GestureCard } from './GestureCard';
 export type { SwipeAction, GestureCardProps } from './GestureCard';
 
@@ -57,7 +55,6 @@ export { default as HeroSectionDefault } from './HeroSection';
 export { default as MetricCardDefault } from './MetricCard';
 export { default as FeatureGridDefault } from './FeatureGrid';
 export { default as AnimatedIconDefault } from './AnimatedIcon';
-export { default as DynamicTabBarDefault } from './DynamicTabBar';
 export { default as GestureCardDefault } from './GestureCard';
 export { default as AuroraSpinnerDefault } from './AuroraSpinner';
 export { default as SkeletonLoaderDefault } from './SkeletonLoader';
