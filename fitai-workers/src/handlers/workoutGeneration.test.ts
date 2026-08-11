@@ -6,9 +6,13 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { getAuthToken, API_URL } from '../test/testSetup';
+import { getAuthToken, getApiUrl, canRunLiveTests } from '../test/testSetup';
 
-describe('Workout Generation Tests', () => {
+// Live/E2E smoke tests — require a fully-configured live-test environment
+// (TEST_EMAIL, TEST_PASSWORD, API_URL, SUPABASE_URL, SUPABASE_ANON_KEY,
+// TEST_USER_ID). They skip cleanly in a normal `npm test` run instead of
+// throwing, and must never point at production — see src/test/testSetup.ts.
+describe.skipIf(!canRunLiveTests())('Workout Generation Tests', () => {
 	let authToken: string;
 
 	beforeAll(async () => {
@@ -40,7 +44,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 1: Basic Workout Generation', () => {
 		it('should generate a basic workout plan', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -69,7 +73,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 2: Beginner Workout Plan', () => {
 		it('should generate beginner-friendly workout', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -92,7 +96,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 3: Advanced Strength Training', () => {
 		it('should generate advanced strength program', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -115,7 +119,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 4: Cardio-Focused Plan', () => {
 		it('should generate cardio and endurance workout', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -138,7 +142,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 5: Bodyweight Only', () => {
 		it('should generate bodyweight-only workout', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -161,7 +165,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 6: Full Gym Equipment', () => {
 		it('should utilize full gym equipment', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -184,7 +188,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 7: Women-Specific Program', () => {
 		it('should generate women-focused workout', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -208,7 +212,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 8: Split Training Program', () => {
 		it('should generate split training schedule', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -235,7 +239,7 @@ describe('Workout Generation Tests', () => {
 
 	describe('Test 9: Error Handling', () => {
 		it('should reject invalid days per week', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -251,7 +255,7 @@ describe('Workout Generation Tests', () => {
 		}, 30000); // Add 30s timeout
 
 		it('should reject missing authentication', async () => {
-			const response = await fetch(`${API_URL}/workout/generate`, {
+			const response = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -278,7 +282,7 @@ describe('Workout Generation Tests', () => {
 			};
 
 			// First request
-			const response1 = await fetch(`${API_URL}/workout/generate`, {
+			const response1 = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -290,7 +294,7 @@ describe('Workout Generation Tests', () => {
 			expect([200, 202]).toContain(response1.status);
 
 			// Second identical request (should hit cache)
-			const response2 = await fetch(`${API_URL}/workout/generate`, {
+			const response2 = await fetch(`${getApiUrl()}/workout/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,

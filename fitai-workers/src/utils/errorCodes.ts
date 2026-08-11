@@ -54,6 +54,7 @@ export enum ErrorCode {
 	// ============================================================================
 	MEDIA_NOT_FOUND = 'MEDIA_NOT_FOUND',
 	MEDIA_FETCH_FAILED = 'MEDIA_FETCH_FAILED',
+	MEDIA_SERVE_FAILED = 'MEDIA_SERVE_FAILED',
 	MEDIA_UPLOAD_FAILED = 'MEDIA_UPLOAD_FAILED',
 	FILE_TOO_LARGE = 'FILE_TOO_LARGE',
 	INVALID_FILE_TYPE = 'INVALID_FILE_TYPE',
@@ -271,6 +272,13 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorCodeMetadata> = {
 	[ErrorCode.MEDIA_FETCH_FAILED]: {
 		code: ErrorCode.MEDIA_FETCH_FAILED,
 		defaultMessage: 'Failed to fetch media file',
+		httpStatus: 500,
+		isRetryable: true,
+		category: 'media',
+	},
+	[ErrorCode.MEDIA_SERVE_FAILED]: {
+		code: ErrorCode.MEDIA_SERVE_FAILED,
+		defaultMessage: 'Failed to serve media file',
 		httpStatus: 500,
 		isRetryable: true,
 		category: 'media',

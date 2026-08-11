@@ -87,6 +87,64 @@ export async function incrementUsage(env: Env, userId: string, featureKey: Featu
 }
 
 /**
+ * Best-effort compensating decrement for a usage credit that was reserved via
+ * `incrementUsage()` before the handler ran, then needs to be refunded because
+ * the handler failed (threw or returned a non-2xx response).
+ *
+ * There is no atomic `decrement_feature_usage` RPC (would require a new
+ * migration, out of scope here), so this does a read-then-conditional-write:
+ * it re-reads the current `usage_count` and only writes `count - 1` if the
+ * row is still at the value it just read (`.eq('usage_count', row.usage_count)`
+ * as an optimistic-concurrency guard). If another request incremented the
+ * same row in between, the conditional update matches zero rows and this
+ * silently skips the refund rather than clobbering the concurrent write —
+ * the user loses at most the one credit that was already reserved for the
+ * failed request, which is the same outcome as before this compensation
+ * existed, so this can never make quota accounting worse, only better.
+ */
+export async function decrementUsage(env: Env, userId: string, featureKey: FeatureKey, periodType: PeriodType): Promise<{ success: boolean; error?: string }> {
+	const supabase = getSupabaseClient(env);
+	const periodStart = getPeriodStart(periodType);
+
+	const { data: row, error: selectError } = await supabase
+		.from('feature_usage')
+		.select('id, usage_count')
+		.eq('user_id', userId)
+		.eq('feature_key', featureKey)
+		.eq('period_type', periodType)
+		.eq('period_start', periodStart)
+		.maybeSingle();
+
+	if (selectError) {
+		return { success: false, error: `Failed to read usage for compensating decrement: ${selectError.message}` };
+	}
+
+	if (!row || typeof row.usage_count !== 'number' || row.usage_count <= 0) {
+		// Nothing to refund (row missing or already at zero).
+		return { success: true };
+	}
+
+	const { data: updated, error: updateError } = await supabase
+		.from('feature_usage')
+		.update({ usage_count: row.usage_count - 1 })
+		.eq('id', row.id)
+		.eq('usage_count', row.usage_count)
+		.select('id');
+
+	if (updateError) {
+		return { success: false, error: `Failed to write compensating decrement: ${updateError.message}` };
+	}
+
+	if (!updated || updated.length === 0) {
+		// Row changed concurrently between the read and the write — skip
+		// rather than risk decrementing a value we no longer know is correct.
+		return { success: true };
+	}
+
+	return { success: true };
+}
+
+/**
  * Resolve numeric limit from plan features.
  * null = unlimited, 0 = no access, positive = concrete limit.
  * Priority: unlimitedFlag=true → null, then period-specific numeric field.

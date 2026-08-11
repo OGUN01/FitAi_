@@ -173,9 +173,12 @@ export async function handleChat(
 
       // Persist conversation in the background after streaming completes.
       // result.text is a Promise that resolves once the full text is available.
+      // This must be handed to waitUntil() — without it, Cloudflare Workers can
+      // terminate the isolate once the SSE body is fully flushed to the client,
+      // silently dropping the save (same reasoning as middleware/logging.ts).
       if (user) {
         const userMessage = request.messages[request.messages.length - 1];
-        result.text
+        const persistConversation = result.text
           .then(async (assistantText) => {
             const usage = await result.usage;
             const generationTimeMs = Date.now() - streamStartTime;
@@ -197,6 +200,8 @@ export async function handleChat(
           .catch((saveError: unknown) => {
             console.error('[Chat] Failed to save streaming conversation:', saveError);
           });
+
+        c.executionCtx.waitUntil(persistConversation);
       }
 
       // Return SSE stream

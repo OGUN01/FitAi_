@@ -526,7 +526,8 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 
 	if (!razorpayResponse.ok) {
 		const errorBody = await razorpayResponse.text();
-		throw new APIError('Failed to create Razorpay subscription', 502, ErrorCode.INTERNAL_ERROR, { razorpayError: errorBody });
+		console.error('[Subscription] Razorpay subscription creation failed:', errorBody);
+		throw new APIError('Failed to create Razorpay subscription', 502, ErrorCode.INTERNAL_ERROR);
 	}
 
 	const razorpaySubscription: RazorpaySubscription = await razorpayResponse.json();
@@ -561,7 +562,8 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 			throw new APIError('User already has an active or pending subscription', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
 		}
 
-		throw new APIError('Failed to save subscription record', 500, ErrorCode.DATABASE_ERROR, { detail: insertError.message });
+		console.error('[Subscription] Failed to save subscription record:', insertError);
+		throw new APIError('Failed to save subscription record', 500, ErrorCode.DATABASE_ERROR);
 	}
 
 	return c.json(
@@ -671,7 +673,8 @@ export async function handleVerifyPayment(c: Context<{ Bindings: Env; Variables:
 		.eq('id', subscription.id);
 
 	if (updateError) {
-		throw new APIError('Failed to verify subscription payment', 500, ErrorCode.DATABASE_ERROR, { detail: updateError.message });
+		console.error('[Subscription] Failed to verify subscription payment:', updateError);
+		throw new APIError('Failed to verify subscription payment', 500, ErrorCode.DATABASE_ERROR);
 	}
 
 	return c.json(
@@ -1104,9 +1107,8 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 
 	if (!razorpayResponse.ok) {
 		const errorBody = await razorpayResponse.text();
-		throw new APIError('Failed to cancel subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR, {
-			razorpayError: errorBody,
-		});
+		console.error('[Subscription] Razorpay cancel failed:', errorBody);
+		throw new APIError('Failed to cancel subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR);
 	}
 
 	const { error: updateError } = await supabase
@@ -1117,9 +1119,8 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 		.eq('id', subscription.id);
 
 	if (updateError) {
-		throw new APIError('Failed to update subscription record', 500, ErrorCode.DATABASE_ERROR, {
-			detail: updateError.message,
-		});
+		console.error('[Subscription] Failed to update subscription record after cancel:', updateError);
+		throw new APIError('Failed to update subscription record', 500, ErrorCode.DATABASE_ERROR);
 	}
 
 	const periodEndDate = subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null;
@@ -1174,9 +1175,8 @@ export async function handlePauseSubscription(c: Context<{ Bindings: Env; Variab
 
 	if (!razorpayResponse.ok) {
 		const errorBody = await razorpayResponse.text();
-		throw new APIError('Failed to pause subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR, {
-			razorpayError: errorBody,
-		});
+		console.error('[Subscription] Razorpay pause failed:', errorBody);
+		throw new APIError('Failed to pause subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR);
 	}
 
 	const { error: updateError } = await supabase
@@ -1188,9 +1188,8 @@ export async function handlePauseSubscription(c: Context<{ Bindings: Env; Variab
 		.eq('id', subscription.id);
 
 	if (updateError) {
-		throw new APIError('Failed to update subscription record', 500, ErrorCode.DATABASE_ERROR, {
-			detail: updateError.message,
-		});
+		console.error('[Subscription] Failed to update subscription record after pause:', updateError);
+		throw new APIError('Failed to update subscription record', 500, ErrorCode.DATABASE_ERROR);
 	}
 
 	return c.json(
@@ -1241,9 +1240,8 @@ export async function handleResumeSubscription(c: Context<{ Bindings: Env; Varia
 
 	if (!razorpayResponse.ok) {
 		const errorBody = await razorpayResponse.text();
-		throw new APIError('Failed to resume subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR, {
-			razorpayError: errorBody,
-		});
+		console.error('[Subscription] Razorpay resume failed:', errorBody);
+		throw new APIError('Failed to resume subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR);
 	}
 
 	const { error: updateError } = await supabase
@@ -1255,9 +1253,8 @@ export async function handleResumeSubscription(c: Context<{ Bindings: Env; Varia
 		.eq('id', subscription.id);
 
 	if (updateError) {
-		throw new APIError('Failed to update subscription record', 500, ErrorCode.DATABASE_ERROR, {
-			detail: updateError.message,
-		});
+		console.error('[Subscription] Failed to update subscription record after resume:', updateError);
+		throw new APIError('Failed to update subscription record', 500, ErrorCode.DATABASE_ERROR);
 	}
 
 	return c.json(

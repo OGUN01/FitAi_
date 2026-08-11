@@ -118,7 +118,6 @@ export async function loggingMiddleware(
 
   const userAgent = c.req.header('User-Agent') || null;
   const ipAddress = getClientIP(c);
-  const user = c.get('user');
   const requestId = crypto.randomUUID();
 
   // Execute request
@@ -147,6 +146,12 @@ export async function loggingMiddleware(
     throw error; // Re-throw to let error handler deal with it
 
   } finally {
+    // Read the authenticated user AFTER next() has run — authMiddleware (which
+    // runs downstream of this global middleware) only calls c.set('user', ...)
+    // during the request chain triggered by next(), so reading it beforehand
+    // always yields undefined.
+    const user = c.get('user');
+
     // Calculate response time
     const responseTime = Date.now() - startTime;
 

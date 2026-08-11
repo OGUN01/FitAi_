@@ -6,9 +6,13 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { getAuthToken, API_URL, TEST_USER_ID } from '../test/testSetup';
+import { getAuthToken, getApiUrl, canRunLiveTests } from '../test/testSetup';
 
-describe('Meal Generation Tests', () => {
+// Live/E2E smoke tests — require a fully-configured live-test environment
+// (TEST_EMAIL, TEST_PASSWORD, API_URL, SUPABASE_URL, SUPABASE_ANON_KEY,
+// TEST_USER_ID). They skip cleanly in a normal `npm test` run instead of
+// throwing, and must never point at production — see src/test/testSetup.ts.
+describe.skipIf(!canRunLiveTests())('Meal Generation Tests', () => {
 	let authToken: string;
 
 	beforeAll(async () => {
@@ -18,7 +22,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 1: Basic Meal Generation (Async)', () => {
 		it('should generate a 1-day meal plan successfully', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -50,7 +54,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 2: Multi-day Generation (Async)', () => {
 		it('should handle 3-day meal plan generation', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -74,7 +78,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 3: Vegan Diet', () => {
 		it('should generate vegan meal plan', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -99,7 +103,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 4: Keto Diet', () => {
 		it('should generate keto meal plan', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -124,7 +128,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 5: Allergen Exclusion', () => {
 		it('should exclude specified ingredients', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -148,7 +152,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 6: Custom Macros', () => {
 		it('should generate plan with custom macro targets', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -173,7 +177,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 7: Sync Mode (for testing)', () => {
 		it('should support sync mode with async=false', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -194,7 +198,7 @@ describe('Meal Generation Tests', () => {
 
 	describe('Test 8: Error Handling', () => {
 		it('should reject invalid calorie target', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -211,7 +215,7 @@ describe('Meal Generation Tests', () => {
 		});
 
 		it('should reject missing authentication', async () => {
-			const response = await fetch(`${API_URL}/diet/generate`, {
+			const response = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -230,7 +234,7 @@ describe('Meal Generation Tests', () => {
 	describe('Job Status Endpoints', () => {
 		it('should check job status or get cached result', async () => {
 			// Create a job first with unique timestamp to avoid cache
-			const createRes = await fetch(`${API_URL}/diet/generate`, {
+			const createRes = await fetch(`${getApiUrl()}/diet/generate`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${authToken}`,
@@ -255,7 +259,7 @@ describe('Meal Generation Tests', () => {
 				const jobId = createData.data.jobId;
 
 				// Check status
-				const statusRes = await fetch(`${API_URL}/diet/jobs/${jobId}`, {
+				const statusRes = await fetch(`${getApiUrl()}/diet/jobs/${jobId}`, {
 					headers: {
 						Authorization: `Bearer ${authToken}`,
 					},
@@ -270,7 +274,7 @@ describe('Meal Generation Tests', () => {
 		});
 
 		it('should list user jobs', async () => {
-			const response = await fetch(`${API_URL}/diet/jobs`, {
+			const response = await fetch(`${getApiUrl()}/diet/jobs`, {
 				headers: {
 					Authorization: `Bearer ${authToken}`,
 				},

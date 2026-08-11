@@ -11,7 +11,7 @@ import { AuthContext } from '../middleware/auth';
 import { getSupabaseClient } from '../utils/supabase';
 import { invalidateAIConfigCache, invalidatePublicAppConfigCache } from '../utils/appConfig';
 import { ErrorCode } from '../utils/errorCodes';
-import { APIError } from '../utils/errors';
+import { APIError, NotFoundError, ValidationError, ResourceAlreadyExistsError, handleSupabaseError } from '../utils/errors';
 
 type AdminCtx = Context<{ Bindings: Env; Variables: AuthContext }>;
 
@@ -117,19 +117,19 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 
 	if (usersResult.error) {
 		console.error('[Admin Dashboard] Failed to fetch total users:', usersResult.error);
-		return c.json({ success: false, error: { message: usersResult.error.message } }, 500);
+		handleSupabaseError(usersResult.error, 'Failed to fetch total users');
 	}
 	if (subsResult.error) {
 		console.error('[Admin Dashboard] Failed to fetch active subscriptions:', subsResult.error);
-		return c.json({ success: false, error: { message: subsResult.error.message } }, 500);
+		handleSupabaseError(subsResult.error, 'Failed to fetch active subscriptions');
 	}
 	if (aiCallsResult.error) {
 		console.error('[Admin Dashboard] Failed to fetch AI calls today:', aiCallsResult.error);
-		return c.json({ success: false, error: { message: aiCallsResult.error.message } }, 500);
+		handleSupabaseError(aiCallsResult.error, 'Failed to fetch AI calls today');
 	}
 	if (maintenanceResult.error) {
 		console.error('[Admin Dashboard] Failed to fetch maintenance mode:', maintenanceResult.error);
-		return c.json({ success: false, error: { message: maintenanceResult.error.message } }, 500);
+		handleSupabaseError(maintenanceResult.error, 'Failed to fetch maintenance mode');
 	}
 
 	const { count: totalUsers } = usersResult;
@@ -152,7 +152,7 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 
 	if (revError) {
 		console.error('[Admin Dashboard] Failed to fetch revenue data:', revError);
-		return c.json({ success: false, error: { message: revError.message } }, 500);
+		handleSupabaseError(revError, 'Failed to fetch revenue data');
 	}
 
 	const { data: plans, error: plansError } = await supabase
@@ -161,7 +161,7 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 
 	if (plansError) {
 		console.error('[Admin Dashboard] Failed to fetch subscription plans:', plansError);
-		return c.json({ success: false, error: { message: plansError.message } }, 500);
+		handleSupabaseError(plansError, 'Failed to fetch subscription plans');
 	}
 
 	const priceMap: Record<string, { monthly: number; yearly: number }> = {};
@@ -203,7 +203,7 @@ export async function handleGetConfig(c: AdminCtx): Promise<Response> {
 		.order('category')
 		.order('key');
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to fetch app config');
 
 	// Group by category
 	const grouped: Record<string, unknown[]> = {};
@@ -224,7 +224,7 @@ export async function handleSetConfig(c: AdminCtx): Promise<Response> {
 	const body = await c.req.json<{ key: string; value: unknown }>();
 
 	if (!body.key) {
-		return c.json({ success: false, error: { message: 'key is required' } }, 400);
+		throw new ValidationError('key is required');
 	}
 
 	const supabase = getSupabaseClient(c.env);
@@ -235,9 +235,9 @@ export async function handleSetConfig(c: AdminCtx): Promise<Response> {
 		.eq('key', body.key)
 		.select('key');
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to update app config');
 	if (!data || data.length === 0) {
-		return c.json({ success: false, error: { message: `Config key '${body.key}' was not found` } }, 404);
+		throw new NotFoundError(`Config key '${body.key}'`);
 	}
 
 	// Invalidate KV cache if an AI key changed
@@ -288,7 +288,7 @@ export async function handleGetPlans(c: AdminCtx): Promise<Response> {
 		.select('*')
 		.order('price_monthly', { ascending: true, nullsFirst: true });
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to fetch subscription plans');
 	return c.json({ success: true, data });
 }
 
@@ -305,10 +305,10 @@ export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 	const BLOCKED = new Set(['id', 'tier', 'razorpay_plan_id_monthly', 'razorpay_plan_id_yearly', 'created_at']);
 	for (const k of Object.keys(body)) {
 		if (BLOCKED.has(k)) {
-			return c.json({ success: false, error: { message: `Field '${k}' cannot be updated` } }, 400);
+			throw new ValidationError(`Field '${k}' cannot be updated`);
 		}
 		if (!EDITABLE_PLAN_FIELDS.has(k)) {
-			return c.json({ success: false, error: { message: `Field '${k}' cannot be updated` } }, 400);
+			throw new ValidationError(`Field '${k}' cannot be updated`);
 		}
 	}
 
@@ -338,7 +338,7 @@ export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 		.select()
 		.single();
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to update subscription plan');
 	return c.json({ success: true, data });
 }
 
@@ -362,7 +362,7 @@ export async function handleListUsers(c: AdminCtx): Promise<Response> {
 		perPage: limit,
 	});
 
-	if (authError) return c.json({ success: false, error: { message: authError.message } }, 500);
+	if (authError) handleSupabaseError(authError, 'Failed to list users');
 
 	let users: unknown[] = authData?.users ?? [];
 
@@ -418,7 +418,7 @@ export async function handleGetUser(c: AdminCtx): Promise<Response> {
 			.limit(30),
 	]);
 
-	if (authError) return c.json({ success: false, error: { message: authError.message } }, 404);
+	if (authError) throw new NotFoundError('User');
 
 	return c.json({
 		success: true,
@@ -448,7 +448,7 @@ export async function handleOverrideSubscription(c: AdminCtx): Promise<Response>
 	const body = await c.req.json<{ tier: string; billing_cycle?: string; note?: string }>();
 
 	if (!['free', 'basic', 'pro'].includes(body.tier)) {
-		return c.json({ success: false, error: { message: 'Invalid tier' } }, 400);
+		throw new ValidationError('Invalid tier');
 	}
 
 	const supabase = getSupabaseClient(c.env);
@@ -477,7 +477,7 @@ export async function handleOverrideSubscription(c: AdminCtx): Promise<Response>
 		.select()
 		.single();
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to override subscription');
 	return c.json({ success: true, data }, 201);
 }
 
@@ -504,7 +504,7 @@ export async function handleAdminAnalytics(c: AdminCtx): Promise<Response> {
 
 		if (error) {
 			console.error('[Admin Analytics] Failed to fetch revenue metric:', error);
-			return c.json({ success: false, error: { message: error.message } }, 500);
+			handleSupabaseError(error, 'Failed to fetch revenue metric');
 		}
 		return c.json({ success: true, data: data ?? [] });
 	}
@@ -519,7 +519,7 @@ export async function handleAdminAnalytics(c: AdminCtx): Promise<Response> {
 
 		if (error) {
 			console.error('[Admin Analytics] Failed to fetch dau metric:', error);
-			return c.json({ success: false, error: { message: error.message } }, 500);
+			handleSupabaseError(error, 'Failed to fetch dau metric');
 		}
 		return c.json({ success: true, data: data ?? [] });
 	}
@@ -535,7 +535,7 @@ export async function handleAdminAnalytics(c: AdminCtx): Promise<Response> {
 
 	if (error) {
 		console.error('[Admin Analytics] Failed to fetch ai_calls metric:', error);
-		return c.json({ success: false, error: { message: error.message } }, 500);
+		handleSupabaseError(error, 'Failed to fetch ai_calls metric');
 	}
 	return c.json({ success: true, data: data ?? [] });
 }
@@ -584,13 +584,13 @@ export async function handleClearCache(c: AdminCtx): Promise<Response> {
 
 	if (body.type === 'workout' || body.type === 'all') {
 		const { error } = await supabase.from('workout_cache').delete().neq('cache_key', '__never__');
-		if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+		if (error) handleSupabaseError(error, 'Failed to clear workout cache');
 		cleared.push('workout');
 	}
 
 	if (body.type === 'meal' || body.type === 'all') {
 		const { error } = await supabase.from('meal_cache').delete().neq('cache_key', '__never__');
-		if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+		if (error) handleSupabaseError(error, 'Failed to clear meal cache');
 		cleared.push('meal');
 	}
 
@@ -623,7 +623,7 @@ export async function handleListContributions(c: AdminCtx): Promise<Response> {
 
 	const { data, error, count } = await query;
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to fetch food contributions');
 	return c.json({ success: true, data: data ?? [], total: count ?? 0, page });
 }
 
@@ -640,7 +640,7 @@ export async function handleApproveContribution(c: AdminCtx): Promise<Response> 
 		.update({ is_approved: true, approved_by: user.id, approved_at: new Date().toISOString() })
 		.eq('id', id);
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to approve contribution');
 	return c.json({ success: true });
 }
 
@@ -658,7 +658,7 @@ export async function handleRejectContribution(c: AdminCtx): Promise<Response> {
 		.update({ is_approved: false, rejection_reason: body.reason ?? '' })
 		.eq('id', id);
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to reject contribution');
 	return c.json({ success: true });
 }
 
@@ -684,7 +684,7 @@ export async function handleWebhookLogs(c: AdminCtx): Promise<Response> {
 	if (eventType) query = query.eq('event_type', eventType);
 
 	const { data, error, count } = await query;
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to fetch webhook logs');
 	return c.json({ success: true, data: data ?? [], total: count ?? 0, page });
 }
 
@@ -699,7 +699,7 @@ export async function handleListAdmins(c: AdminCtx): Promise<Response> {
 	const supabase = getSupabaseClient(c.env);
 	const { data, error } = await supabase.from('admin_users').select('id, user_id, email, display_name, created_at').order('created_at');
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to list admins');
 	return c.json({ success: true, data: data ?? [] });
 }
 
@@ -712,18 +712,18 @@ export async function handleCreateAdmin(c: AdminCtx): Promise<Response> {
 	const body = await c.req.json<{ email: string; display_name?: string }>();
 
 	if (!body.email) {
-		return c.json({ success: false, error: { message: 'email is required' } }, 400);
+		throw new ValidationError('email is required');
 	}
 
 	const supabase = getSupabaseClient(c.env);
 
 	// Look up the user by email in auth.users via admin API
 	const { data: found, error: lookupError } = await (supabase.auth.admin as any).listUsers();
-	if (lookupError) return c.json({ success: false, error: { message: lookupError.message } }, 500);
+	if (lookupError) handleSupabaseError(lookupError, 'Failed to look up user');
 
 	const targetUser = (found?.users ?? []).find((u: any) => u.email === body.email);
 	if (!targetUser) {
-		return c.json({ success: false, error: { message: 'No user found with that email' } }, 404);
+		throw new NotFoundError('User with that email');
 	}
 
 	const { data, error } = await supabase
@@ -739,9 +739,10 @@ export async function handleCreateAdmin(c: AdminCtx): Promise<Response> {
 
 	if (error) {
 		if (error.code === '23505') {
-			return c.json({ success: false, error: { message: 'User is already an admin' } }, 409);
+			throw new ResourceAlreadyExistsError('Admin user');
 		}
-		return c.json({ success: false, error: { message: error.message } }, 500);
+		console.error('[Admin] Failed to create admin:', error);
+		handleSupabaseError(error, 'Failed to create admin');
 	}
 
 	return c.json({ success: true, data }, 201);
@@ -756,12 +757,12 @@ export async function handleRemoveAdmin(c: AdminCtx): Promise<Response> {
 	const targetUserId = c.req.param('userId');
 
 	if (requestingUser.id === targetUserId) {
-		return c.json({ success: false, error: { message: 'Cannot remove your own admin access' } }, 400);
+		throw new ValidationError('Cannot remove your own admin access');
 	}
 
 	const supabase = getSupabaseClient(c.env);
 	const { error } = await supabase.from('admin_users').delete().eq('user_id', targetUserId);
 
-	if (error) return c.json({ success: false, error: { message: error.message } }, 500);
+	if (error) handleSupabaseError(error, 'Failed to remove admin');
 	return c.json({ success: true });
 }

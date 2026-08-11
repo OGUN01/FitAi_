@@ -241,70 +241,47 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 		const processingTime = Date.now() - startTime;
 		console.error('[Food Recognition] Error:', error);
 
+		// Let already-typed APIErrors (auth, validation) flow straight through
+		// to the centralized app.onError handler.
 		if (error instanceof APIError) {
-			return c.json(
-				{
-					success: false,
-					error: error.message,
-					code: error.errorCode,
-				},
-				error.statusCode as any,
-			);
+			throw error;
 		}
 
-		// Handle Gemini API errors
+		// Translate known Gemini/AI failure signatures into the shared error
+		// envelope instead of hand-building a bespoke response shape here.
 		if (error instanceof Error) {
 			if (error.message.includes('timed out after 25s')) {
-				return c.json(
-					{
-						success: false,
-						error: 'Food recognition timed out. Please try again.',
-						code: ErrorCode.INTERNAL_ERROR,
-					},
-					408,
-				);
+				throw new APIError('Food recognition timed out. Please try again.', 408, ErrorCode.AI_GENERATION_FAILED, {
+					processingTime,
+				});
 			}
 
 			if (error.message.includes('quota') || error.message.includes('429')) {
-				return c.json(
-					{
-						success: false,
-						error: 'AI service temporarily unavailable. Please try again in a few minutes.',
-						code: ErrorCode.RATE_LIMIT_EXCEEDED,
-					},
+				throw new APIError(
+					'AI service temporarily unavailable. Please try again in a few minutes.',
 					429,
+					ErrorCode.RATE_LIMIT_EXCEEDED,
 				);
 			}
 
 			if (error.message.includes('image') || error.message.includes('vision')) {
-				return c.json(
-					{
-						success: false,
-						error: 'Could not process image. Please ensure the image is clear and try again.',
-						code: ErrorCode.VALIDATION_ERROR,
-					},
+				throw new APIError(
+					'Could not process image. Please ensure the image is clear and try again.',
 					400,
+					ErrorCode.VALIDATION_ERROR,
 				);
 			}
 		}
 
-		// Include actual error details for debugging
+		// Log full details server-side only — never forward raw AI/SDK error
+		// internals to the client.
 		const errorDetails =
 			error instanceof Error ? { message: error.message, stack: error.stack?.split('\n').slice(0, 3).join('\n') } : String(error);
-
 		console.error('[Food Recognition] Full error details:', JSON.stringify(errorDetails));
 
-		return c.json(
-			{
-				success: false,
-				error: 'Failed to recognize food. Please try again.',
-				code: ErrorCode.INTERNAL_ERROR,
-				metadata: {
-					processingTime,
-				},
-			},
-			500,
-		);
+		throw new APIError('Failed to recognize food. Please try again.', 500, ErrorCode.AI_GENERATION_FAILED, {
+			processingTime,
+		});
 	}
 }
 

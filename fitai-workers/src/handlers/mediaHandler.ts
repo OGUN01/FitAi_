@@ -11,13 +11,17 @@ import { Context } from 'hono';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
 import { APIError } from '../utils/errors';
+import { ErrorCode } from '../utils/errorCodes';
 
 // ============================================================================
 // MEDIA TYPES AND CONFIGURATION
 // ============================================================================
 
 /**
- * Supported media types and their content types
+ * Supported media types and their content types.
+ * SVG is intentionally excluded — SVGs can embed <script> and this route is
+ * served publicly/unauthenticated, which would allow stored XSS via a
+ * malicious upload rendered inline in a browser.
  */
 const MEDIA_TYPES: Record<string, string> = {
   gif: 'image/gif',
@@ -25,8 +29,13 @@ const MEDIA_TYPES: Record<string, string> = {
   jpeg: 'image/jpeg',
   png: 'image/png',
   webp: 'image/webp',
-  svg: 'image/svg+xml',
 };
+
+/**
+ * Content types blocked at upload time even though they may otherwise look
+ * like an "image/*" MIME type (e.g. SVG, which can execute inline script).
+ */
+const BLOCKED_UPLOAD_CONTENT_TYPES = new Set(['image/svg+xml']);
 
 /**
  * Cache configuration for different media types
@@ -82,7 +91,7 @@ export async function handleMediaServe(
       throw new APIError(
         'Missing category or ID parameter',
         400,
-        'INVALID_PARAMETERS' as any
+        ErrorCode.INVALID_PARAMETER
       );
     }
 
@@ -99,7 +108,7 @@ export async function handleMediaServe(
       throw new APIError(
         'Media file not found',
         404,
-        'MEDIA_NOT_FOUND' as any,
+        ErrorCode.MEDIA_NOT_FOUND,
         { key }
       );
     }
@@ -127,6 +136,10 @@ export async function handleMediaServe(
         'ETag': object.etag,
         'Last-Modified': object.uploaded.toUTCString(),
         'X-Response-Time': responseTime + 'ms',
+        // Defense-in-depth against stored-content MIME confusion: never let the
+        // browser sniff/execute a served file as something other than its
+        // declared Content-Type.
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {
@@ -139,8 +152,7 @@ export async function handleMediaServe(
     throw new APIError(
       'Failed to serve media file',
       500,
-      'MEDIA_SERVE_FAILED' as any,
-      { error: error instanceof Error ? error.message : String(error) }
+      ErrorCode.MEDIA_SERVE_FAILED
     );
   }
 }
@@ -162,7 +174,7 @@ export async function handleMediaUpload(
       throw new APIError(
         'Authentication required',
         401,
-        'UNAUTHORIZED' as any
+        ErrorCode.UNAUTHORIZED
       );
     }
 
@@ -176,7 +188,7 @@ export async function handleMediaUpload(
       throw new APIError(
         'No file provided',
         400,
-        'INVALID_REQUEST' as any
+        ErrorCode.INVALID_REQUEST
       );
     }
 
@@ -184,7 +196,7 @@ export async function handleMediaUpload(
       throw new APIError(
         'Invalid category. Must be: exercise, diet, or user',
         400,
-        'INVALID_CATEGORY' as any
+        ErrorCode.INVALID_PARAMETER
       );
     }
 
@@ -194,18 +206,20 @@ export async function handleMediaUpload(
       throw new APIError(
         'File too large. Maximum size is 10MB',
         400,
-        'FILE_TOO_LARGE' as any,
+        ErrorCode.FILE_TOO_LARGE,
         { size: file.size, maxSize }
       );
     }
 
-    // Validate file type
+    // Validate file type — images only, and never SVG (can embed <script>
+    // and this content is later served back on a public, unauthenticated
+    // route, making SVG upload a stored-XSS vector).
     const contentType = file.type;
-    if (!contentType.startsWith('image/')) {
+    if (!contentType.startsWith('image/') || BLOCKED_UPLOAD_CONTENT_TYPES.has(contentType)) {
       throw new APIError(
-        'Invalid file type. Only images are allowed',
+        'Invalid file type. Only JPG, PNG, GIF, or WebP images are allowed',
         400,
-        'INVALID_FILE_TYPE' as any,
+        ErrorCode.INVALID_FILE_TYPE,
         { contentType }
       );
     }
@@ -275,8 +289,7 @@ export async function handleMediaUpload(
     throw new APIError(
       'Failed to upload media file',
       500,
-      'MEDIA_UPLOAD_FAILED' as any,
-      { error: error instanceof Error ? error.message : String(error) }
+      ErrorCode.MEDIA_UPLOAD_FAILED
     );
   }
 }
@@ -296,7 +309,7 @@ export async function handleMediaDelete(
       throw new APIError(
         'Authentication required',
         401,
-        'UNAUTHORIZED' as any
+        ErrorCode.UNAUTHORIZED
       );
     }
 
@@ -308,7 +321,7 @@ export async function handleMediaDelete(
       throw new APIError(
         'Missing category or ID parameter',
         400,
-        'INVALID_PARAMETERS' as any
+        ErrorCode.INVALID_PARAMETER
       );
     }
 
@@ -323,7 +336,7 @@ export async function handleMediaDelete(
       throw new APIError(
         'Media file not found',
         404,
-        'MEDIA_NOT_FOUND' as any,
+        ErrorCode.MEDIA_NOT_FOUND,
         { key }
       );
     }
@@ -336,14 +349,14 @@ export async function handleMediaDelete(
       throw new APIError(
         'Unauthorized to delete this file',
         403,
-        'FORBIDDEN' as any
+        ErrorCode.FORBIDDEN
       );
     }
     if (uploadedBy && uploadedBy !== user.id) {
       throw new APIError(
         'Unauthorized to delete this file',
         403,
-        'FORBIDDEN' as any
+        ErrorCode.FORBIDDEN
       );
     }
 
@@ -372,8 +385,7 @@ export async function handleMediaDelete(
     throw new APIError(
       'Failed to delete media file',
       500,
-      'MEDIA_DELETE_FAILED' as any,
-      { error: error instanceof Error ? error.message : String(error) }
+      ErrorCode.MEDIA_DELETE_FAILED
     );
   }
 }

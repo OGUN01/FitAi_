@@ -3,7 +3,7 @@ import type { Env, FeatureLimitConfig, SubscriptionStatus, SubscriptionTier } fr
 import type { AuthContext } from './auth';
 import { ErrorCode } from '../utils/errorCodes';
 import { getSupabaseClient } from '../utils/supabase';
-import { checkUsageLimit, incrementUsage } from '../services/usageTracker';
+import { checkUsageLimit, incrementUsage, decrementUsage } from '../services/usageTracker';
 import type { FeatureKey, PeriodType, UsageLimitResult } from '../services/usageTracker';
 
 interface SubscriptionPlanRow {
@@ -212,14 +212,77 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 			usage: limitCheck,
 		});
 
-		// Increment usage before the handler runs to avoid race conditions where
-		// the response is returned before the increment completes.
+		// Reserve the usage credit before the handler runs (matches the
+		// pre-existing behavior) so the check-then-act window between
+		// checkUsageLimit() and the increment stays as short as it always
+		// was — just the latency of two sequential Supabase calls — instead
+		// of spanning the whole handler (which can be many seconds for an AI
+		// generation). incrementUsage() is a non-atomic upsert RPC that never
+		// re-checks the limit, so a wide window here would let concurrent
+		// requests all pass the limit check before any of them incremented,
+		// letting a user exceed their daily/monthly quota. That race still
+		// exists in principle at the size it was before this change (two
+		// concurrent requests inside the ~ms select+upsert window can both
+		// pass), same as it was prior to any of these edits — it is not
+		// newly introduced or widened here.
+		//
+		// If the handler then fails (throws, or returns a non-2xx response),
+		// the reserved credit is refunded via a best-effort compensating
+		// decrement so a failed AI generation/scan doesn't permanently burn
+		// the user's quota. The compensation is a read-then-conditional-write
+		// (see decrementUsage in usageTracker.ts) rather than a single atomic
+		// RPC — that would require a new Postgres function/migration, out of
+		// scope for this change — so under rare concurrent-request timing it
+		// can skip a refund it "should" have made, but it can never double-
+		// refund or clobber a concurrent write. Worst case is identical to
+		// pre-compensation behavior (credit stays spent); it never makes
+		// accounting worse.
+		let reservedCredit = false;
 		try {
-			await incrementUsage(c.env, userId, featureKey, periodType);
+			const incrementResult = await incrementUsage(c.env, userId, featureKey, periodType);
+			reservedCredit = incrementResult.success;
+			if (!incrementResult.success) {
+				console.error(`[SubscriptionGate] Failed to reserve usage for ${featureKey}:`, incrementResult.error);
+			}
 		} catch (incrementError) {
-			console.error(`[SubscriptionGate] Failed to increment usage for ${featureKey}:`, incrementError);
+			console.error(`[SubscriptionGate] Failed to reserve usage for ${featureKey}:`, incrementError);
 		}
 
-		await next();
+		// next() is wrapped in try/catch rather than left as a bare `await
+		// next()` because every gated AI-generation/scan handler in this
+		// codebase signals failure by throwing an APIError, not by returning
+		// a 4xx/5xx Response directly (see dietGeneration.ts's catch-all
+		// re-throw, and the throw sites in workoutGeneration.ts and
+		// foodRecognition.ts). A bare `await next()` would let that throw
+		// propagate straight past the refund logic below to the global
+		// app.onError handler in index.ts, silently skipping the refund for
+		// the codebase's actual failure pattern. Catching here lets the
+		// refund run for both failure shapes (thrown exception and returned
+		// error status), then rethrows the original error unchanged so
+		// app.onError still produces exactly the response it always did.
+		let handlerThrew = false;
+		let thrownError: unknown;
+		try {
+			await next();
+		} catch (err) {
+			handlerThrew = true;
+			thrownError = err;
+		}
+
+		const handlerFailed = handlerThrew || (typeof c.res?.status === 'number' && c.res.status >= 400);
+		if (handlerFailed && reservedCredit) {
+			try {
+				const decrementResult = await decrementUsage(c.env, userId, featureKey, periodType);
+				if (!decrementResult.success) {
+					console.error(`[SubscriptionGate] Failed to refund usage for ${featureKey}:`, decrementResult.error);
+				}
+			} catch (decrementError) {
+				console.error(`[SubscriptionGate] Failed to refund usage for ${featureKey}:`, decrementError);
+			}
+		}
+
+		if (handlerThrew) {
+			throw thrownError;
+		}
 	};
 }

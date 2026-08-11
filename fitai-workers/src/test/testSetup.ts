@@ -1,20 +1,62 @@
 /**
  * Test Setup Helper
  *
- * Provides authentication and common test utilities for E2E tests.
- * Gets a real JWT token from Supabase for authenticated endpoint testing.
+ * Provides authentication and common test utilities for opt-in live/E2E
+ * smoke tests. Gets a real JWT token from Supabase for authenticated
+ * endpoint testing.
+ *
+ * SECURITY: This file MUST NOT hardcode credentials, API URLs, or keys as
+ * fallback defaults. All required values are read lazily (only when a live
+ * test actually runs) and throw immediately if missing — they never fall
+ * back to a real account or production deployment. Consuming test files
+ * must guard themselves with `describe.skipIf(!canRunLiveTests())` so the
+ * default `npm test` run skips these tests cleanly instead of throwing when
+ * the live-test environment isn't configured. Point TEST_* / API_URL /
+ * SUPABASE_* at a local/staging Miniflare instance or a dedicated test
+ * Supabase project — never production.
  */
 
-// Test user credentials (from environment or defaults for local testing)
-const TEST_EMAIL = process.env.TEST_EMAIL || 'sharmaharsh9887@gmail.com';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || 'Harsh@9887';
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mqfrwtmkokivoxgukgsz.supabase.co';
-const SUPABASE_ANON_KEY =
-	process.env.SUPABASE_ANON_KEY ||
-	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08';
+function requireEnv(name: string): string {
+	const value = process.env[name];
+	if (!value) {
+		throw new Error(
+			`[testSetup] Missing required environment variable '${name}'. ` +
+				'Live/E2E tests must supply TEST_EMAIL, TEST_PASSWORD, API_URL, SUPABASE_URL, ' +
+				'SUPABASE_ANON_KEY, and TEST_USER_ID via env/CI secrets — pointed at a local/staging ' +
+				'environment or a dedicated test Supabase project. Production credentials must never ' +
+				'be hardcoded here. Guard tests with canRunLiveTests() to skip cleanly when unset.',
+		);
+	}
+	return value;
+}
 
-export const API_URL = process.env.API_URL || 'https://fitai-workers.sharmaharsh9887.workers.dev';
-export const TEST_USER_ID = '892ae2fe-0d89-446d-a52d-a364f6ee8c8e';
+/**
+ * Whether the live-test environment is fully configured. Test files should
+ * gate their top-level `describe` block with
+ * `describe.skipIf(!canRunLiveTests())(...)` so they skip (rather than
+ * throw and fail the whole suite) when these env vars aren't set — e.g. in
+ * a normal local/CI `npm test` run that isn't targeting a live deployment.
+ */
+export function canRunLiveTests(): boolean {
+	return Boolean(
+		process.env.TEST_EMAIL &&
+			process.env.TEST_PASSWORD &&
+			process.env.SUPABASE_URL &&
+			process.env.SUPABASE_ANON_KEY &&
+			process.env.API_URL &&
+			process.env.TEST_USER_ID,
+	);
+}
+
+/** Base URL of the API under test. Resolved lazily — see requireEnv(). */
+export function getApiUrl(): string {
+	return requireEnv('API_URL');
+}
+
+/** The Supabase user id the live tests authenticate as. Resolved lazily. */
+export function getTestUserId(): string {
+	return requireEnv('TEST_USER_ID');
+}
 
 // Cache the token to avoid multiple auth calls
 let cachedToken: string | null = null;
@@ -30,47 +72,47 @@ export async function getAuthToken(): Promise<string> {
 		return cachedToken;
 	}
 
-	try {
-		const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-			method: 'POST',
-			headers: {
-				apikey: SUPABASE_ANON_KEY,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				email: TEST_EMAIL,
-				password: TEST_PASSWORD,
-			}),
-		});
+	const supabaseUrl = requireEnv('SUPABASE_URL');
+	const supabaseAnonKey = requireEnv('SUPABASE_ANON_KEY');
+	const testEmail = requireEnv('TEST_EMAIL');
+	const testPassword = requireEnv('TEST_PASSWORD');
 
-		if (!response.ok) {
-			const error = await response.text();
-			throw new Error(`Auth failed: ${response.status} - ${error}`);
-		}
+	const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+		method: 'POST',
+		headers: {
+			apikey: supabaseAnonKey,
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			email: testEmail,
+			password: testPassword,
+		}),
+	});
 
-		const data = (await response.json()) as {
-			access_token: string;
-			expires_at: number;
-		};
-
-		cachedToken = data.access_token;
-		tokenExpiry = data.expires_at * 1000; // Convert to milliseconds
-
-		return cachedToken;
-	} catch (error) {
-		console.error('Failed to get auth token:', error);
-		// Return a placeholder that will cause 401 - better than crashing
-		return 'auth-failed-placeholder';
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(`Auth failed: ${response.status} - ${error}`);
 	}
+
+	const data = (await response.json()) as {
+		access_token: string;
+		expires_at: number;
+	};
+
+	cachedToken = data.access_token;
+	tokenExpiry = data.expires_at * 1000; // Convert to milliseconds
+
+	return cachedToken;
 }
 
 /**
  * Check if we can authenticate (for conditional test skipping)
  */
 export async function canAuthenticate(): Promise<boolean> {
+	if (!canRunLiveTests()) return false;
 	try {
-		const token = await getAuthToken();
-		return token !== 'auth-failed-placeholder';
+		await getAuthToken();
+		return true;
 	} catch {
 		return false;
 	}
@@ -81,8 +123,9 @@ export async function canAuthenticate(): Promise<boolean> {
  */
 export async function authenticatedFetch(path: string, options: RequestInit = {}): Promise<Response> {
 	const token = await getAuthToken();
+	const apiUrl = getApiUrl();
 
-	return fetch(`${API_URL}${path}`, {
+	return fetch(`${apiUrl}${path}`, {
 		...options,
 		headers: {
 			...options.headers,
