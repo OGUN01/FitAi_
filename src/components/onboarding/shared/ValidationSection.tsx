@@ -67,7 +67,9 @@ export const ValidationSection: React.FC<ValidationSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.screenPad,
+    // No horizontal padding here: this section is always rendered inside
+    // ScreenScaffold's ScrollView, which already applies
+    // paddingHorizontal: spacing.screenPad to its content container.
     marginBottom: spacing.xl,
   },
   headerRow: {

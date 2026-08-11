@@ -9,8 +9,12 @@
  * re-deriving calories, deficit and timeline from the ValidationEngine SSOT;
  * Complete Setup is the single solid-accent CTA (via ScreenScaffold).
  *
- * On "Complete Setup": a volt-glow reveal washes over the screen + a larger
- * SkiaBloom (24 particles) fires, then the flow bridges into Home.
+ * On "Complete Setup": once the save is confirmed, a volt-glow reveal washes
+ * over the screen + a larger SkiaBloom (24 particles) fires. Only after that
+ * celebration has played out (~900ms) does the flow hand off to the
+ * full-screen completion modal (mounted by the parent via
+ * onCelebrationComplete) — sequenced this way so the modal, a non-transparent
+ * native RN Modal, doesn't cover the celebration the instant save succeeds.
  *
  * Data wiring, hooks, validation, props — UNCHANGED. Presentation only.
  */
@@ -58,7 +62,14 @@ interface AdvancedReviewTabProps {
   advancedReview: AdvancedReviewData | null;
   onNext: () => void;
   onBack: () => void;
-  onComplete: () => void;
+  // Real contract: resolves true on a confirmed save, false on failure.
+  // (useOnboardingLogic.handleCompleteOnboarding is the sole caller today.)
+  onComplete: () => Promise<boolean>;
+  // Fired once the payoff celebration (glow reveal + bloom) has had its
+  // on-screen window — the parent uses this to mount the full-screen
+  // completion modal without covering the celebration. Optional so the
+  // component still degrades gracefully with no follow-up if unwired.
+  onCelebrationComplete?: () => void;
   onUpdate: (data: Partial<AdvancedReviewData>) => void;
   onUpdateBodyAnalysis?: (data: Partial<BodyAnalysisData>) => void;
   onUpdateWorkoutPreferences?: (data: Partial<WorkoutPreferencesData>) => void;
@@ -76,6 +87,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   workoutPreferences,
   onBack,
   onComplete,
+  onCelebrationComplete,
   onUpdate,
   onUpdateBodyAnalysis,
   onUpdateWorkoutPreferences,
@@ -151,12 +163,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     hasBlockingErrors;
 
   // ── Payoff reveal state ──
-  // On "Complete Setup": wash a volt glow over the screen, fire a larger
-  // SkiaBloom (24 particles), then bridge into Home via onComplete.
+  // On "Complete Setup": await the real save result, then wash a volt glow
+  // over the screen and fire a larger SkiaBloom (24 particles) — only once
+  // completion is confirmed.
   const [revealTrigger, setRevealTrigger] = useState(false);
   const [bloomTrigger, setBloomTrigger] = useState(false);
   const revealOpacity = useSharedValue(0);
-  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bloomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -169,25 +181,60 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     opacity: revealOpacity.value,
   }));
 
-  const handleComplete = useCallback(() => {
+  const handleComplete = useCallback(async () => {
     if (isCompleteDisabled) return;
-    // Fire the glow reveal + larger bloom.
+    // Wait for the actual save result before celebrating — firing the glow
+    // reveal ahead of a failed save leaves the screen stuck in a "success"
+    // tint underneath the error dialog.
+    const success = await onComplete();
+    if (!success) {
+      // Save failed: make sure no stale reveal is left mid-animation and
+      // bail without triggering the celebration or the completion modal.
+      setRevealTrigger(false);
+      return;
+    }
+    // Save confirmed — play the glow reveal + larger bloom first. The
+    // completion modal (a full-screen, non-transparent native Modal) is
+    // deliberately NOT shown yet: mounting it now would cover this
+    // celebration the instant it starts. onCelebrationComplete is called
+    // once the wash + bloom have had their full on-screen window, handing
+    // off to the parent to present the modal.
     setRevealTrigger(true);
     setBloomTrigger(false);
     requestAnimationFrame(() => setBloomTrigger(true));
     if (bloomTimer.current) clearTimeout(bloomTimer.current);
-    bloomTimer.current = setTimeout(() => setBloomTrigger(false), 900);
-    // Bridge into Home after the reveal plays.
-    if (revealTimer.current) clearTimeout(revealTimer.current);
-    revealTimer.current = setTimeout(() => {
-      onComplete();
-    }, 700);
-  }, [isCompleteDisabled, onComplete]);
+    bloomTimer.current = setTimeout(() => {
+      setBloomTrigger(false);
+      onCelebrationComplete?.();
+    }, 900);
+  }, [isCompleteDisabled, onComplete, onCelebrationComplete]);
+
+  // Keep the latest callback available to the mount/unmount-only effect
+  // below without putting it in that effect's dependency array — the parent
+  // passes an inline arrow (new identity every render), and depending on it
+  // directly would run the *cleanup* on every such re-render (React re-runs
+  // an effect's cleanup whenever a dependency changes, not just on
+  // unmount), firing onCelebrationComplete mid-celebration and showing the
+  // completion modal over the still-playing glow/bloom.
+  const onCelebrationCompleteRef = useRef(onCelebrationComplete);
+  useEffect(() => {
+    onCelebrationCompleteRef.current = onCelebrationComplete;
+  }, [onCelebrationComplete]);
 
   useEffect(() => {
     return () => {
-      if (revealTimer.current) clearTimeout(revealTimer.current);
-      if (bloomTimer.current) clearTimeout(bloomTimer.current);
+      // Empty deps: this cleanup only runs on true unmount (backgrounding,
+      // remount, error-boundary reset). If it fires while the celebration
+      // is still mid-flight, the queued setTimeout below is torn down and
+      // would otherwise never fire — that would leave the parent's
+      // showCompletionModal permanently unset after a fully successful
+      // save. Hand off to the parent immediately instead of losing the
+      // signal, even though the on-screen celebration itself is cut short.
+      if (bloomTimer.current) {
+        clearTimeout(bloomTimer.current);
+        bloomTimer.current = null;
+        onCelebrationCompleteRef.current?.();
+      }
     };
   }, []);
 
@@ -323,9 +370,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         )}
       </ScreenScaffold>
 
-      {/* Volt payoff reveal — a screen-wide accent glow that washes in on
-          "Complete Setup" before bridging into Home. Sits above all content
-          and never intercepts touches. */}
+      {/* Volt payoff reveal — a screen-wide accent glow that washes in once
+          the save is confirmed, playing out fully (~900ms) before
+          onCelebrationComplete hands off to the completion modal. Sits
+          above all content and never intercepts touches. */}
       <Animated.View
         style={[styles.revealLayer, revealGradientStyle]}
         pointerEvents="none"

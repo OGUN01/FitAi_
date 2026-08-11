@@ -166,15 +166,26 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     isSubmittingRef.current = true;
     try {
       onUpdate(formData);
-      if (isEditingFromReview && onReturnToReview) {
-        onReturnToReview();
-      } else {
-        setTimeout(() => {
-          onNext(formData);
-        }, 100);
-      }
-    } finally {
+    } catch (error) {
+      // Exception safety: a synchronous throw from onUpdate must not leave
+      // the Next button permanently disabled with no recovery.
       isSubmittingRef.current = false;
+      throw error;
+    }
+    if (isEditingFromReview && onReturnToReview) {
+      try {
+        onReturnToReview();
+      } finally {
+        isSubmittingRef.current = false;
+      }
+    } else {
+      setTimeout(() => {
+        try {
+          onNext(formData);
+        } finally {
+          isSubmittingRef.current = false;
+        }
+      }, 100);
     }
   };
 

@@ -113,7 +113,12 @@ export const NutritionalNeedsSection: React.FC<
           accessibilityHint="Tap to edit"
           testID="tile-calories"
         >
-          <Text style={styles.heroNumber}>
+          <Text
+            style={styles.heroNumber}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.6}
+          >
             {calories != null ? groupThousands(calories) : "—"}
           </Text>
           <Text style={styles.heroUnitLine}>

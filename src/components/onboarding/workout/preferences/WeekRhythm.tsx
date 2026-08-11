@@ -255,15 +255,19 @@ const styles = StyleSheet.create({
   },
   weekMap: {
     flexDirection: "row",
-    justifyContent: "space-between",
     marginTop: 16,
-    paddingHorizontal: 22,
   },
   dayCol: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    // 44pt minimum touch target (touch-target tests enforce this).
-    minWidth: 44,
+    // 44pt minimum touch target on the vertical axis (touch-target tests
+    // enforce this). Width is an equal 1/7 share of weekMap's content width
+    // (screen width minus the screen's 24pt side padding), which clears
+    // 44pt on device widths >=~356px — true for all mainstream phones.
+    // No minWidth floor here on purpose: adding one back would let the 7
+    // columns' summed minimums exceed the container on narrower screens
+    // and reintroduce the fixed-width horizontal overflow this replaced.
     minHeight: 44,
   },
   dayDot: {

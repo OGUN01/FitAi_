@@ -140,6 +140,11 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
             workoutPreferences={logic.workoutPreferences}
             advancedReview={logic.advancedReview}
             onComplete={logic.handleCompleteOnboarding}
+            // Fired by AdvancedReviewTab once its payoff celebration (glow
+            // reveal + bloom) has finished playing on a successful save —
+            // only then does the full-screen completion modal mount, so it
+            // doesn't cover the celebration the instant completion succeeds.
+            onCelebrationComplete={() => logic.setShowCompletionModal(true)}
             onUpdate={logic.updateAdvancedReview}
             onUpdateBodyAnalysis={logic.updateBodyAnalysis}
             onUpdateWorkoutPreferences={logic.updateWorkoutPreferences}

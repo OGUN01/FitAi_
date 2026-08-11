@@ -352,7 +352,7 @@ export const useOnboardingLogic = ({
     return () => backHandler.remove();
   }, [handlePreviousTab]);
 
-  const handleCompleteOnboarding = useCallback(async () => {
+  const handleCompleteOnboarding = useCallback(async (): Promise<boolean> => {
     // M8: isCalculating (Tab 5's performCalculations flag) is not accessible from this hook —
     // it lives in the AdvancedReviewTab's local state. If the user presses "Complete Setup"
     // while calculations are still running, refs here may snapshot pre-calculation values.
@@ -494,9 +494,7 @@ export const useOnboardingLogic = ({
 
     const success = await completeOnboarding();
 
-    if (success) {
-      setShowCompletionModal(true);
-    } else {
+    if (!success) {
       console.error("❌ useOnboardingLogic: Completion failed!");
       setCompletionDialog({
         visible: true,
@@ -509,6 +507,16 @@ export const useOnboardingLogic = ({
         },
       });
     }
+    // On success, showCompletionModal is deliberately NOT flipped here.
+    // OnboardingCompleteModal is a full-screen, non-transparent RN <Modal>
+    // that would otherwise mount above AdvancedReviewTab's own payoff
+    // celebration (glow reveal + SkiaBloom) the instant this returns,
+    // making that celebration invisible on the common (success) path.
+    // AdvancedReviewTab calls setShowCompletionModal (wired in via
+    // OnboardingContainer's onCelebrationComplete prop) once its
+    // celebration has had its on-screen window.
+
+    return success;
   }, [completeOnboarding]);
 
   const handleCompletionGetStarted = useCallback(() => {

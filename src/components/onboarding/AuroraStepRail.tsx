@@ -12,8 +12,10 @@
  * Manrope micro-caps). Research basis: 2026 segmented-gradient progress meters
  * (shadcn/SaaS UI blocks) + single-header-indicator onboarding patterns.
  *
- * Touch targets: every segment is >= 44x44pt (enforced via Math.max floor);
- * labels keep the "<Title> step" a11y contract used by existing tests.
+ * Touch targets: every segment is >= 44x44pt — segments share the rail width
+ * equally (flex: 1) and `minWidth: TOUCH` (Math.max floor) guarantees the
+ * 44pt minimum even if the tab count grows or the rail narrows; labels keep
+ * the "<Title> step" a11y contract used by existing tests.
  */
 
 import React, { useEffect, useRef, useState } from "react";
@@ -233,7 +235,7 @@ const styles = StyleSheet.create({
 
   segment: {
     flex: 1,
-    width: TOUCH,
+    minWidth: TOUCH,
     height: TOUCH,
     borderRadius: rbr(999),
     justifyContent: "center",
