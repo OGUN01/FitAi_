@@ -15,15 +15,32 @@ const getRelativeLuminance = (r: number, g: number, b: number): number => {
   return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
 };
 
+/**
+ * Accepts 3-digit shorthand (#fff), 6-digit (#ffffff), and 8-digit RGBA
+ * (#ffffffff — trailing alpha pair is ignored, matching how these colors are
+ * always rendered opaque against a background in a contrast check).
+ */
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
+  const stripped = hex.replace(/^#/, "");
+
+  if (/^[a-f\d]{3}$/i.test(stripped)) {
+    const [r, g, b] = stripped.split("");
+    return {
+      r: parseInt(r + r, 16),
+      g: parseInt(g + g, 16),
+      b: parseInt(b + b, 16),
+    };
+  }
+
+  if (/^[a-f\d]{6}$/i.test(stripped) || /^[a-f\d]{8}$/i.test(stripped)) {
+    return {
+      r: parseInt(stripped.slice(0, 2), 16),
+      g: parseInt(stripped.slice(2, 4), 16),
+      b: parseInt(stripped.slice(4, 6), 16),
+    };
+  }
+
+  return null;
 };
 
 /**

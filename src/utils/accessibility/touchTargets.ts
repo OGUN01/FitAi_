@@ -2,10 +2,15 @@ import { Platform } from "react-native";
 import type { TouchTargetConfig } from "./types";
 
 // Defensive Platform access: some test suites mock `react-native` minimally
-// without exporting `Platform` (e.g. AnimatedPressable's own test harness).
-// This module is now imported from AnimatedPressable — a component nearly
-// every screen touches — so a hard crash here on a partial mock would ripple
-// widely. Mirrors the same guard in `theme/aurora-tokens.ts`.
+// without exporting `Platform`. NOTE: this module is NOT currently imported
+// by AnimatedPressable or any other component — AnimatedPressable only pulls
+// `useReducedMotion`/`getAccessibleDuration` from `accessibility/hooks` and
+// still uses a static `DEFAULT_PRESS_RETENTION_OFFSET`. These exports
+// (calculateHitSlop/ensureTouchTargetSize/getMinTouchTargetSize) are unused
+// scaffolding pending adoption — wire them into AnimatedPressable's hitSlop
+// logic to actually enforce the 44pt/48dp minimum touch target. The
+// defensive guard below is kept anyway, mirroring `theme/aurora-tokens.ts`,
+// so this module is safe to adopt without a follow-up hardening pass.
 const platformOS = typeof Platform !== "undefined" ? Platform?.OS : undefined;
 
 export const TOUCH_TARGET_SIZES = {

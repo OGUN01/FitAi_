@@ -11,9 +11,11 @@ import {
   runOnJS,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { animations } from '../theme/animations';
 import { haptics } from '../utils/haptics';
+import { useReducedMotion } from '../utils/accessibility/hooks';
 
 // ============================================================================
 // TYPES
@@ -52,6 +54,11 @@ export const usePullToRefresh = (config: PullToRefreshConfig) => {
   const translateY = useSharedValue(0);
   const isRefreshing = useSharedValue(false);
 
+  // Reduce Motion: snap-back/settle animations collapse to an instant
+  // (0ms) move instead of a spring, matching the pattern already used by
+  // DetentBottomSheet's settleToSnap.
+  const reduceMotion = useReducedMotion();
+
   // Note: `isRefreshing` is checked *inside* onUpdate/onEnd (worklet-safe
   // reads) rather than snapshotted into `.enabled()` — a shared-value read in
   // `.enabled()` would freeze at whatever isRefreshing.value was when this
@@ -71,7 +78,9 @@ export const usePullToRefresh = (config: PullToRefreshConfig) => {
           if (translateY.value >= threshold && !isRefreshing.value) {
             // Trigger refresh
             isRefreshing.value = true;
-            translateY.value = withSpring(refreshingHeight, animations.spring.gentle);
+            translateY.value = reduceMotion
+              ? withTiming(refreshingHeight, { duration: 0 })
+              : withSpring(refreshingHeight, animations.spring.gentle);
 
             // Haptic feedback
             runOnJS(haptics.refreshComplete)();
@@ -83,15 +92,19 @@ export const usePullToRefresh = (config: PullToRefreshConfig) => {
               } finally {
                 // Reset after refresh completes
                 isRefreshing.value = false;
-                translateY.value = withSpring(0, animations.spring.default);
+                translateY.value = reduceMotion
+                  ? withTiming(0, { duration: 0 })
+                  : withSpring(0, animations.spring.default);
               }
             })();
           } else if (!isRefreshing.value) {
             // Snap back
-            translateY.value = withSpring(0, animations.spring.default);
+            translateY.value = reduceMotion
+              ? withTiming(0, { duration: 0 })
+              : withSpring(0, animations.spring.default);
           }
         }),
-    [threshold, refreshingHeight, onRefresh, translateY, isRefreshing],
+    [threshold, refreshingHeight, onRefresh, translateY, isRefreshing, reduceMotion],
   );
 
   return { gesture, translateY, isRefreshing };
@@ -127,12 +140,19 @@ export const useDragToReorder = (
   const translateY = useSharedValue(0);
   const isDragging = useSharedValue(false);
 
+  // Reduce Motion: snap-to-position animations collapse to an instant
+  // (0ms) move instead of a spring, matching the pattern already used by
+  // DetentBottomSheet's settleToSnap.
+  const reduceMotion = useReducedMotion();
+
   // Reset position must run on JS thread (setTimeout is a JS-thread API)
   const resetPosition = useCallback(() => {
     setTimeout(() => {
-      translateY.value = withSpring(0, animations.spring.default);
+      translateY.value = reduceMotion
+        ? withTiming(0, { duration: 0 })
+        : withSpring(0, animations.spring.default);
     }, 100);
-  }, [translateY]);
+  }, [translateY, reduceMotion]);
 
   // Recreating the native gesture recognizer on every parent re-render can
   // drop an in-progress gesture, so the composition is memoized and only
@@ -169,7 +189,9 @@ export const useDragToReorder = (
 
         // Snap to target position
         const snapPosition = (targetIndex - itemIndex) * itemHeight;
-        translateY.value = withSpring(snapPosition, animations.spring.snappy);
+        translateY.value = reduceMotion
+          ? withTiming(snapPosition, { duration: 0 })
+          : withSpring(snapPosition, animations.spring.snappy);
 
         if (hapticFeedback) {
           runOnJS(haptics.dragDrop)();
@@ -199,6 +221,7 @@ export const useDragToReorder = (
     translateY,
     isDragging,
     resetPosition,
+    reduceMotion,
   ]);
 
   return { gesture, translateY, isDragging };
@@ -223,8 +246,17 @@ export const usePinchToZoom = (
   const savedScale = useSharedValue(1);
   const focalX = useSharedValue(0);
   const focalY = useSharedValue(0);
+  // Tracks whether the pinch is currently pinned at a limit, so the boundary
+  // haptic fires once on the false→true transition instead of on every
+  // onUpdate frame while the user holds the pinch against the limit.
+  const atLimit = useSharedValue(false);
 
   const hapticAtLimits = options?.hapticAtLimits ?? true;
+
+  // Reduce Motion: the min/max limit-snap animation collapses to an instant
+  // (0ms) move instead of a spring, matching the pattern already used by
+  // DetentBottomSheet's settleToSnap.
+  const reduceMotion = useReducedMotion();
 
   const gesture = useMemo(
     () =>
@@ -239,31 +271,43 @@ export const usePinchToZoom = (
           focalX.value = event.focalX;
           focalY.value = event.focalY;
 
-          // Haptic feedback at limits
+          // Haptic feedback at limits — edge-triggered (fires once per
+          // approach to the limit, not once per frame while pinned there).
           if (hapticAtLimits) {
-            if (scale.value === minScale || scale.value === maxScale) {
+            const isAtLimit = scale.value === minScale || scale.value === maxScale;
+            if (isAtLimit && !atLimit.value) {
+              atLimit.value = true;
               runOnJS(haptics.boundary)();
+            } else if (!isAtLimit && atLimit.value) {
+              atLimit.value = false;
             }
           }
         })
         .onEnd(() => {
           savedScale.value = scale.value;
+          atLimit.value = false;
 
           // Snap to min/max if very close
           if (Math.abs(scale.value - minScale) < 0.1) {
-            scale.value = withSpring(minScale, animations.spring.gentle);
+            scale.value = reduceMotion
+              ? withTiming(minScale, { duration: 0 })
+              : withSpring(minScale, animations.spring.gentle);
             savedScale.value = minScale;
           } else if (Math.abs(scale.value - maxScale) < 0.1) {
-            scale.value = withSpring(maxScale, animations.spring.gentle);
+            scale.value = reduceMotion
+              ? withTiming(maxScale, { duration: 0 })
+              : withSpring(maxScale, animations.spring.gentle);
             savedScale.value = maxScale;
           }
         }),
-    [minScale, maxScale, hapticAtLimits, scale, savedScale, focalX, focalY],
+    [minScale, maxScale, hapticAtLimits, scale, savedScale, focalX, focalY, atLimit, reduceMotion],
   );
 
   const resetZoom = () => {
     'worklet';
-    scale.value = withSpring(1, animations.spring.default);
+    scale.value = reduceMotion
+      ? withTiming(1, { duration: 0 })
+      : withSpring(1, animations.spring.default);
     savedScale.value = 1;
   };
 
