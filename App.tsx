@@ -984,10 +984,9 @@ export default function App() {
 
           if (!mounted) return;
 
-          // Seed the AI backend status cache so getAIStatus() reflects real
-          // reachability instead of an optimistic default. Fire-and-forget —
-          // a failure just leaves the cache at "unavailable", which is the
-          // honest state. Logged inside isRealAIAvailable().
+          // Startup connectivity health-check ping to the AI backend.
+          // Fire-and-forget — a failure is logged inside isRealAIAvailable()
+          // so unreachability shows up in diagnostics without blocking startup.
           void aiService.isRealAIAvailable();
 
           // Initialize Google Sign-In after the first interaction frame.

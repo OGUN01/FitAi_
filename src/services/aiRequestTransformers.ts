@@ -35,6 +35,7 @@ import type {
 import type { MealItem, Food } from "../types/diet";
 import { resolveCurrentWeight } from "./currentWeight";
 import { mapActivityLevelForHealthCalc } from "../utils/typeTransformers";
+import { resolveWorkoutCategory } from "../ai/workoutCategory";
 // Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
 // where we have access to the user's actual weight from their profile
 
@@ -721,14 +722,7 @@ export function transformWorkoutResponseToWeeklyPlan(
       id: `${day}_workout_${slotIndex}`,
       title: workoutPlan.title || "AI Generated Workout",
       description: workoutPlan.description || "",
-      category: mapWorkoutCategory(workoutPlan) as
-        | "strength"
-        | "flexibility"
-        | "cardio"
-        | "hiit"
-        | "yoga"
-        | "pilates"
-        | "hybrid",
+      category: resolveWorkoutCategory(workoutPlan),
       difficulty: mapDifficulty(workoutPlan.difficulty),
       duration: workoutPlan.totalDuration ?? workoutPlan.duration ?? 0,
       estimatedCalories: calculateEstimatedCalories(workoutPlan, userWeightKg),
@@ -947,15 +941,6 @@ function mapDifficultyLevel(difficulty?: string): "easy" | "medium" | "hard" {
   return diffMap[difficulty?.toLowerCase() || ""] || "easy";
 }
 
-function mapWorkoutCategory(workout: WorkoutPlan): string {
-  // Determine category based on workout content
-  if (workout.title?.toLowerCase().includes("cardio")) return "cardio";
-  if (workout.title?.toLowerCase().includes("hiit")) return "hiit";
-  if (workout.title?.toLowerCase().includes("strength")) return "strength";
-  if (workout.title?.toLowerCase().includes("yoga")) return "flexibility";
-  return "strength";
-}
-
 function mapDifficulty(
   difficulty?: string,
 ): "beginner" | "intermediate" | "advanced" {
@@ -1055,7 +1040,7 @@ function extractTargetMuscles(workout: WorkoutPlan): string[] {
 }
 
 function getWorkoutIcon(workout: WorkoutPlan): string {
-  const category = mapWorkoutCategory(workout);
+  const category = resolveWorkoutCategory(workout);
   const icons: Record<string, string> = {
     strength: "barbell-outline",
     cardio: "bicycle-outline",

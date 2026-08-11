@@ -16,7 +16,10 @@
 // EXPORTS
 // ============================================================================
 
-// Feature Engines - Keep these (they use demo data for UI)
+// Feature Engines - wrap aiService (the real Cloudflare Workers backend) with
+// exercise-DB enrichment. workoutEngine.generateSmartWorkout and
+// nutritionEngine's meal-generation methods are AI-backed via aiService;
+// only their "quick"/local-only variants use static data.
 export { workoutEngine } from '../features/workouts/WorkoutEngine';
 export { nutritionEngine } from '../features/nutrition/NutritionEngine';
 
@@ -76,10 +79,11 @@ import { getCurrentUserId } from '../services/authUtils';
 /**
  * Metadata about an AI service generation (caching, cost, model, timing).
  *
- * Populated by the backend response's `metadata` field and surfaced via
- * aiService.getLastMetadata() for UI display. The previous duplicate
- * definition in src/ai/types.ts was removed when that dead file was deleted;
- * this is now the single source of truth.
+ * Populated by the backend response's `metadata` field on every generation
+ * call and readable via aiService.getLastMetadata(), but currently unused —
+ * no debug/QA view surfaces it yet. The previous duplicate definition in
+ * src/ai/types.ts was removed when that dead file was deleted; this is now
+ * the single source of truth.
  */
 export interface AIServiceMetadata {
   cached: boolean;
@@ -131,9 +135,6 @@ interface SwapMealResponse {
 // UNIFIED AI SERVICE (Connected to Cloudflare Workers)
 // ============================================================================
 
-// MAX_POLL_ATTEMPTS = 30 (at 6s interval = 3 minutes max)
-const MAX_POLL_ATTEMPTS = 30;
-
 /**
  * Resolve the user's pace-tier selection for diet generation.
  *
@@ -156,41 +157,15 @@ function resolveWeeklyWeightLossGoalFromStore(): number | undefined {
 class UnifiedAIService {
   private lastMetadata: AIServiceMetadata | null = null;
 
-  // Cached last-known backend status. Set by isRealAIAvailable()/testConnection()
-  // and consulted by getAIStatus() so callers aren't told "real AI available"
-  // when the Worker is actually down. Null = no probe has run yet; in that case
-  // we default to optimistic ("real") to preserve pre-existing startup UX
-  // rather than flashing a false "unavailable" state on first paint.
-  private cachedBackendStatus: {
-    connected: boolean;
-    authenticated: boolean;
-    lastCheckedAt: number;
-  } | null = null;
-
-  // Cached status is considered stale after 5 minutes — callers that need a
-  // fresh answer should call isRealAIAvailable()/testConnection() directly.
-  private static readonly STATUS_STALE_MS = 5 * 60 * 1000;
-
   /**
    * Check if backend is reachable and user is authenticated.
-   * Side-effect: updates cachedBackendStatus so getAIStatus() can reflect reality.
    */
   async isRealAIAvailable(): Promise<boolean> {
     try {
       const status = await fitaiWorkersClient.testConnection();
-      this.cachedBackendStatus = {
-        connected: status.connected,
-        authenticated: status.authenticated,
-        lastCheckedAt: Date.now(),
-      };
       return status.connected && status.authenticated;
     } catch (error) {
       // Probe failed (network error, etc.) — backend is effectively unreachable.
-      this.cachedBackendStatus = {
-        connected: false,
-        authenticated: false,
-        lastCheckedAt: Date.now(),
-      };
       console.error('[AIService] isRealAIAvailable probe failed:', error);
       return false;
     }
@@ -584,7 +559,7 @@ class UnifiedAIService {
       }
 
       if (!response.success || !response.data) {
-        console.error('❌ [aiService] Backend returned error:', response.error);
+        console.error('[AIService] Backend returned error:', response.error);
         return {
           success: false,
           error: response.error || 'Failed to generate workout plan. Please try again.',
@@ -666,7 +641,7 @@ class UnifiedAIService {
       }
 
       if (!response.success || !response.data) {
-        console.error('❌ [aiService] Backend returned error:', response.error);
+        console.error('[AIService] Backend returned error:', response.error);
         return {
           success: false,
           error: response.error || 'Failed to generate meal plan. Please try again.',
@@ -825,7 +800,7 @@ class UnifiedAIService {
       const response = await fitaiWorkersClient.generateDietPlanAsync(request);
 
       if (!response.success || !response.data) {
-        console.error('[DIET:AI] Backend returned error:', response.error);
+        console.error('[AIService] Backend returned error:', response.error);
         return {
           success: false,
           error: response.error || 'Failed to generate meal plan',
@@ -847,7 +822,7 @@ class UnifiedAIService {
         );
 
         if (!weeklyPlan) {
-          console.error('[DIET:AI] cache_hit: transformDietResponseToWeeklyPlan returned null');
+          console.error('[AIService] cache_hit: transformDietResponseToWeeklyPlan returned null');
           return {
             success: false,
             error: 'Failed to transform diet response',
@@ -883,13 +858,15 @@ class UnifiedAIService {
 
   /**
    * Check async job status and get result when completed.
-   * Callers should pass a monotonically incrementing `attempts` counter.
-   * When attempts >= MAX_POLL_ATTEMPTS (30 × 6s = 3 min) this returns a timeout error.
+   *
+   * Poll-count/wall-clock timeout enforcement lives entirely in the caller
+   * (useMealPlanning.ts's startJobPolling: maxAttempts + exponential backoff
+   * + wall-clock deadline) — this method makes a single status check and
+   * reports whatever the worker returns, with no timeout logic of its own.
    */
   async checkMealPlanJobStatus(
     jobId: string,
-    weekNumber: number = 1,
-    attempts: number = 0
+    weekNumber: number = 1
   ): Promise<
     AIResponse<{
       status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
@@ -899,14 +876,6 @@ class UnifiedAIService {
     }>
   > {
     try {
-      if (attempts >= MAX_POLL_ATTEMPTS) {
-        return {
-          success: false,
-          error: 'Meal plan generation timed out. Please try again.',
-          timedOut: true,
-        };
-      }
-
       const response = await fitaiWorkersClient.getJobStatus(jobId);
 
       if (!response.success || !response.data) {
@@ -961,17 +930,10 @@ class UnifiedAIService {
 
   /**
    * Test backend connection.
-   * Side-effect: updates cachedBackendStatus so getAIStatus() reflects reality.
    */
   async testConnection(): Promise<AIResponse<string>> {
     try {
       const status = await fitaiWorkersClient.testConnection();
-
-      this.cachedBackendStatus = {
-        connected: status.connected,
-        authenticated: status.authenticated,
-        lastCheckedAt: Date.now(),
-      };
 
       if (!status.connected) {
         return {
@@ -994,11 +956,6 @@ class UnifiedAIService {
         data: `Connected to FitAI Workers ${status.backendVersion}`,
       };
     } catch (error) {
-      this.cachedBackendStatus = {
-        connected: false,
-        authenticated: false,
-        lastCheckedAt: Date.now(),
-      };
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Connection test failed',
@@ -1008,77 +965,10 @@ class UnifiedAIService {
   }
 
   /**
-   * Get AI service status.
-   *
-   * TRADEOFF: This method is synchronous because its only caller
-   * (AIStatusIndicator) reads it during render. Making it async would force a
-   * loading state + re-render pattern there. Instead, we consult the
-   * cachedBackendStatus populated by isRealAIAvailable()/testConnection().
-   *
-   * - If a recent probe (≤ STATUS_STALE_MS) ran, return its result.
-   * - If the probe is stale or never ran, we default to optimistic ("real" /
-   *   available) so first paint doesn't flash a misleading "unavailable"
-   *   state. Callers needing a guaranteed-fresh answer must call
-   *   isRealAIAvailable() (async) directly.
-   * - If the last probe FAILED, return mode="demo" / isAvailable=false so the
-   *   UI tells the user the truth instead of lying like the old hardcoded impl.
-   */
-  getAIStatus(): {
-    isAvailable: boolean;
-    mode: 'real' | 'demo';
-    message: string;
-    modelVersion?: string;
-  } {
-    const now = Date.now();
-    const cached = this.cachedBackendStatus;
-    const isFresh =
-      cached !== null && now - cached.lastCheckedAt < UnifiedAIService.STATUS_STALE_MS;
-
-    // Prefer the model captured from an actual backend response over the
-    // static fallback literal — if the backend swaps models, this stays
-    // accurate instead of going stale. Only used when no real response has
-    // ever been observed yet.
-    const modelVersion = this.lastMetadata?.model ?? 'google/gemini-3.5-flash-lite';
-
-    // No fresh probe → optimistic default (see tradeoff above).
-    if (!isFresh) {
-      return {
-        isAvailable: true,
-        mode: 'real',
-        modelVersion,
-        message:
-          '✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)',
-      };
-    }
-
-    // Fresh probe exists — reflect its actual result.
-    const backendOk = cached!.connected && cached!.authenticated;
-    if (backendOk) {
-      return {
-        isAvailable: true,
-        mode: 'real',
-        modelVersion,
-        message:
-          '✅ Connected to FitAI Workers backend (https://fitai-workers.fitai-prod.workers.dev)',
-      };
-    }
-
-    // Last probe failed — be honest with the caller.
-    const reason = !cached!.connected ? 'Backend not reachable' : 'User not authenticated';
-    return {
-      isAvailable: false,
-      mode: 'demo',
-      message: `⚠️ ${reason}. AI features may be unavailable. Last checked: ${new Date(
-        cached!.lastCheckedAt
-      ).toLocaleTimeString()}`,
-    };
-  }
-
-  /**
    * Handle errors from API calls
    */
   private handleError(error: unknown, context: string): AIResponse<any> {
-    console.error(`❌ [aiService] Error in ${context}:`, error);
+    console.error(`[AIService] Error in ${context}:`, error);
 
     if (error instanceof AuthenticationError) {
       return {
@@ -1172,71 +1062,11 @@ export interface RawWorkerWorkout {
   cooldown?: RawWorkerExercise[];
 }
 
-type WorkoutCategory =
-  | 'strength'
-  | 'cardio'
-  | 'flexibility'
-  | 'hiit'
-  | 'yoga'
-  | 'pilates'
-  | 'hybrid';
-
-const WORKOUT_CATEGORY_WHITELIST: Record<string, WorkoutCategory> = {
-  strength: 'strength',
-  cardio: 'cardio',
-  flexibility: 'flexibility',
-  hiit: 'hiit',
-  yoga: 'yoga',
-  pilates: 'pilates',
-  hybrid: 'hybrid',
-};
-
-/**
- * Resolve the real workout category instead of hardcoding 'strength'.
- *
- * Prefers an explicit `category` field (whitelisted, same pattern as
- * difficultyMap) if the backend ever starts sending one. Today the worker's
- * rule-based generator does not emit `category`, but it does bake the real
- * type into the title (e.g. "Full Body HIIT - ...", "Lower Body Circuit -
- * ..." — see fitai-workers/src/handlers/workoutGenerationRuleBased.ts), so we
- * infer from title keywords rather than silently discarding a cardio/HIIT/
- * flexibility day as 'strength'. Mirrors the same heuristic already used in
- * services/aiRequestTransformers.ts's mapWorkoutCategory for the single-
- * workout path.
- */
-export function resolveWorkoutCategory(workoutPlan: RawWorkerWorkout): WorkoutCategory {
-  const explicit = WORKOUT_CATEGORY_WHITELIST[(workoutPlan.category ?? '').toLowerCase()];
-  if (explicit) return explicit;
-
-  const title = (workoutPlan.title ?? '').toLowerCase();
-  const hasUnambiguousStrengthKeyword =
-    title.includes('strength') ||
-    title.includes('push day') ||
-    title.includes('pull day') ||
-    title.includes('leg day') ||
-    title.includes('push/pull') ||
-    title.includes('powerlifting') ||
-    title.includes('hypertrophy');
-  // Unambiguous strength keywords are checked before the generic 'circuit'/
-  // 'metabolic' → 'hybrid' branch below: a title like "Upper Body Circuit
-  // Strength" or "Metabolic Push Day" would otherwise match 'hybrid' first,
-  // since first-match-wins can't weigh co-occurrence. But when the title ALSO
-  // carries an explicit hiit/cardio cue (e.g. "HIIT Strength Circuit"), that
-  // more specific session-format cue wins instead — matching the ordering
-  // that existed before this strength pre-check was added, so a HIIT session
-  // that happens to use strength moves isn't reclassified as a plain
-  // strength day. See resolveWorkoutCategory.test.ts for both cases pinned.
-  if (hasUnambiguousStrengthKeyword && !title.includes('hiit') && !title.includes('cardio')) {
-    return 'strength';
-  }
-  if (title.includes('hiit')) return 'hiit';
-  if (title.includes('cardio')) return 'cardio';
-  if (title.includes('yoga')) return 'yoga';
-  if (title.includes('pilates')) return 'pilates';
-  if (title.includes('mobility') || title.includes('flexibility')) return 'flexibility';
-  if (title.includes('circuit') || title.includes('metabolic')) return 'hybrid';
-  return 'strength';
-}
+// Workout-category resolution lives in ./workoutCategory so this file and
+// services/aiRequestTransformers.ts's single-workout path share one
+// implementation instead of two hand-written keyword lists that can drift.
+export { resolveWorkoutCategory } from './workoutCategory';
+import { resolveWorkoutCategory } from './workoutCategory';
 
 /**
  * Validate + transform a raw exercise entry, or return null to drop it.

@@ -74,3 +74,103 @@ describe('validateExerciseSafety — shoulder injury cross-check', () => {
     expect(violations).toEqual([]);
   });
 });
+
+describe('validateExerciseSafety — neck-problems cross-check', () => {
+  it.each(['Overhead Press', 'Shoulder Press', 'Barbell Shrug'])(
+    'flags "%s" for the "neck-problems" onboarding option',
+    (name) => {
+      const violations = validateExerciseSafety([{ id: 'e1', name }], {
+        injuries: ['neck-problems'],
+      });
+      expect(violations).toHaveLength(1);
+      expect(violations[0].exerciseId).toBe('e1');
+    }
+  );
+
+  it('does not flag an unrelated exercise for neck-problems', () => {
+    const violations = validateExerciseSafety([{ id: 'e1', name: 'Leg Curl' }], {
+      injuries: ['neck-problems'],
+    });
+    expect(violations).toEqual([]);
+  });
+});
+
+describe('validateExerciseSafety — ankle-issues cross-check', () => {
+  it.each(['Box Jump', 'Jump Rope', 'Calf Raise', 'Single-Leg Deadlift'])(
+    'flags "%s" for the "ankle-issues" onboarding option',
+    (name) => {
+      const violations = validateExerciseSafety([{ id: 'e1', name }], {
+        injuries: ['ankle-issues'],
+      });
+      expect(violations).toHaveLength(1);
+      expect(violations[0].exerciseId).toBe('e1');
+    }
+  );
+
+  it('does not flag an unrelated exercise for ankle-issues', () => {
+    const violations = validateExerciseSafety([{ id: 'e1', name: 'Bench Press' }], {
+      injuries: ['ankle-issues'],
+    });
+    expect(violations).toEqual([]);
+  });
+});
+
+describe('validateExerciseSafety — wrist-problems cross-check', () => {
+  it.each(['Push-Up', 'Plank', 'Front Squat', 'Overhead Press'])(
+    'flags "%s" for the "wrist-problems" onboarding option',
+    (name) => {
+      const violations = validateExerciseSafety([{ id: 'e1', name }], {
+        injuries: ['wrist-problems'],
+      });
+      expect(violations).toHaveLength(1);
+      expect(violations[0].exerciseId).toBe('e1');
+    }
+  );
+
+  it('does not flag an unrelated exercise for wrist-problems', () => {
+    const violations = validateExerciseSafety([{ id: 'e1', name: 'Leg Press' }], {
+      injuries: ['wrist-problems'],
+    });
+    expect(violations).toEqual([]);
+  });
+});
+
+describe('validateExerciseSafety — balance-issues cross-check', () => {
+  it.each(['Pistol Squat', 'Box Jump', 'Single-Leg Romanian Deadlift', 'Bosu Ball Squat'])(
+    'flags "%s" for the "balance-issues" onboarding option',
+    (name) => {
+      const violations = validateExerciseSafety([{ id: 'e1', name }], {
+        injuries: ['balance-issues'],
+      });
+      expect(violations).toHaveLength(1);
+      expect(violations[0].exerciseId).toBe('e1');
+    }
+  );
+
+  it('does not flag an unrelated exercise for balance-issues', () => {
+    const violations = validateExerciseSafety([{ id: 'e1', name: 'Bench Press' }], {
+      injuries: ['balance-issues'],
+    });
+    expect(violations).toEqual([]);
+  });
+});
+
+describe('validateExerciseSafety — mobility-limited cross-check', () => {
+  it.each(['Deep Squat', 'Walking Lunge', 'Turkish Get-Up', 'Overhead Squat'])(
+    'flags "%s" for the "mobility-limited" onboarding option',
+    (name) => {
+      const violations = validateExerciseSafety([{ id: 'e1', name }], {
+        injuries: ['mobility-limited'],
+      });
+      expect(violations).toHaveLength(1);
+      expect(violations[0].exerciseId).toBe('e1');
+    }
+  );
+
+  it('does not flag an unrelated exercise for mobility-limited', () => {
+    const violations = validateExerciseSafety([{ id: 'e1', name: 'Leg Press' }], {
+      injuries: ['mobility-limited'],
+    });
+    expect(violations).toEqual([]);
+  });
+});

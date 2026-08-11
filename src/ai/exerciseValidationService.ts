@@ -100,6 +100,56 @@ export function validateExerciseSafety(
           break;
         }
       }
+      if (injuryLower.includes('neck')) {
+        const neckKeywords = [
+          'overhead press', 'shoulder press', 'military press', 'neck bridge',
+          'shrug', 'behind the neck', 'upright row',
+        ];
+        if (neckKeywords.some(kw => name.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: `Neck injury: ${exercise.name} may aggravate condition` });
+          break;
+        }
+      }
+      if (injuryLower.includes('ankle')) {
+        const ankleKeywords = [
+          'jump', 'box jump', 'plyometric', 'single-leg', 'single leg',
+          'calf raise', 'sprint', 'jump rope', 'jump squat',
+        ];
+        if (ankleKeywords.some(kw => name.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: `Ankle/foot injury: ${exercise.name} may aggravate condition` });
+          break;
+        }
+      }
+      if (injuryLower.includes('wrist')) {
+        const wristKeywords = [
+          'push-up', 'push up', 'plank', 'front squat', 'overhead press',
+          'handstand', 'burpee', 'clean', 'snatch',
+        ];
+        if (wristKeywords.some(kw => name.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: `Wrist injury: ${exercise.name} may aggravate condition` });
+          break;
+        }
+      }
+      if (injuryLower.includes('balance')) {
+        const balanceKeywords = [
+          'single-leg', 'single leg', 'pistol', 'bosu', 'box jump',
+          'step-up', 'step up', 'balance', 'stability ball',
+        ];
+        if (balanceKeywords.some(kw => name.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: `Balance issue: ${exercise.name} may aggravate condition` });
+          break;
+        }
+      }
+      if (injuryLower.includes('mobility')) {
+        const mobilityKeywords = [
+          'deep squat', 'walking lunge', 'burpee', 'jump lunge',
+          'full range', 'overhead squat', 'turkish get-up', 'turkish get up',
+        ];
+        if (mobilityKeywords.some(kw => name.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: `Limited mobility: ${exercise.name} may aggravate condition` });
+          break;
+        }
+      }
     }
   }
 
