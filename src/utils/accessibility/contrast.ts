@@ -1,4 +1,4 @@
-import type { ColorContrastResult } from "./types";
+import type { ColorContrastResult, WCAGLevel } from "./types";
 
 const getRelativeLuminance = (r: number, g: number, b: number): number => {
   const rsRGB = r / 255;
@@ -26,10 +26,12 @@ const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
     : null;
 };
 
-export const getContrastRatio = (
-  color1: string,
-  color2: string,
-): ColorContrastResult => {
+/**
+ * Raw WCAG contrast ratio between two hex colors (1:1 .. 21:1). This is the
+ * single source of truth for the ratio math — use `checkContrast` below for a
+ * pass/fail verdict against a specific WCAG level + text size.
+ */
+export const getContrastRatio = (color1: string, color2: string): number => {
   const rgb1 = hexToRgb(color1);
   const rgb2 = hexToRgb(color2);
 
@@ -43,48 +45,38 @@ export const getContrastRatio = (
   const lighter = Math.max(l1, l2);
   const darker = Math.min(l1, l2);
 
-  const ratio = (lighter + 0.05) / (darker + 0.05);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+// WCAG 2.1 required contrast ratios — the correct 4-way threshold table.
+// Large text = 18pt+ (24px+) regular, or 14pt+ (18.66px+) bold.
+const REQUIRED_RATIO: Record<WCAGLevel, { normal: number; large: number }> = {
+  AA: { normal: 4.5, large: 3.0 },
+  AAA: { normal: 7.0, large: 4.5 },
+};
+
+/**
+ * Single WCAG pass/fail contrast check. Replaces the previous three
+ * functions (`meetsWCAG_AA`, `meetsWCAG_AAA`, `validateTextContrast`), which
+ * encoded three different, mutually-inconsistent rules — none of which let a
+ * caller ask for "AA, large text" (the legitimate 3:1 case).
+ */
+export const checkContrast = (
+  foreground: string,
+  background: string,
+  level: WCAGLevel = "AA",
+  isLargeText: boolean = false,
+): ColorContrastResult => {
+  const ratio = getContrastRatio(foreground, background);
+  const requiredRatio = isLargeText
+    ? REQUIRED_RATIO[level].large
+    : REQUIRED_RATIO[level].normal;
 
   return {
     ratio,
-    passes: {
-      aa: ratio >= 4.5,
-      aaa: ratio >= 7.0,
-    },
-  };
-};
-
-export const meetsWCAG_AAA = (
-  foreground: string,
-  background: string,
-): boolean => {
-  const result = getContrastRatio(foreground, background);
-  return result.passes.aaa;
-};
-
-export const meetsWCAG_AA = (
-  foreground: string,
-  background: string,
-): boolean => {
-  const result = getContrastRatio(foreground, background);
-  return result.passes.aa;
-};
-
-export const validateTextContrast = (
-  textColor: string,
-  backgroundColor: string,
-  isLargeText: boolean = false,
-): {
-  valid: boolean;
-  ratio: number;
-  requiredRatio: number;
-} => {
-  const result = getContrastRatio(textColor, backgroundColor);
-  const requiredRatio = isLargeText ? 4.5 : 7.0;
-
-  return {
-    valid: result.ratio >= requiredRatio,
-    ratio: result.ratio,
     requiredRatio,
+    level,
+    isLargeText,
+    passes: ratio >= requiredRatio,
   };
 };

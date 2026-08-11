@@ -1,6 +1,13 @@
 import { Platform } from "react-native";
 import type { TouchTargetConfig } from "./types";
 
+// Defensive Platform access: some test suites mock `react-native` minimally
+// without exporting `Platform` (e.g. AnimatedPressable's own test harness).
+// This module is now imported from AnimatedPressable — a component nearly
+// every screen touches — so a hard crash here on a partial mock would ripple
+// widely. Mirrors the same guard in `theme/aurora-tokens.ts`.
+const platformOS = typeof Platform !== "undefined" ? Platform?.OS : undefined;
+
 export const TOUCH_TARGET_SIZES = {
   iOS: {
     minWidth: 44,
@@ -11,8 +18,8 @@ export const TOUCH_TARGET_SIZES = {
     minHeight: 48,
   },
   minimum: {
-    minWidth: Platform.OS === "ios" ? 44 : 48,
-    minHeight: Platform.OS === "ios" ? 44 : 48,
+    minWidth: platformOS === "ios" ? 44 : 48,
+    minHeight: platformOS === "ios" ? 44 : 48,
   },
 } as const;
 

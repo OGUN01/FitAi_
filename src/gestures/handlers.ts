@@ -1,7 +1,7 @@
 /**
  * Gesture Handlers
- * Reusable gesture logic for pull-to-refresh, drag-to-reorder (within-day and
- * cross-day), pinch-to-zoom, and double tap.
+ * Reusable gesture logic for pull-to-refresh, drag-to-reorder, pinch-to-zoom,
+ * and double tap.
  * Built on React Native Gesture Handler and Reanimated
  */
 
@@ -10,7 +10,6 @@ import { useCallback, useMemo } from 'react';
 import {
   runOnJS,
   useSharedValue,
-  useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
 import { animations } from '../theme/animations';
@@ -117,7 +116,7 @@ export const useDragToReorder = (
   config: DragToReorderConfig
 ) => {
   const {
-    activationDelay = 500,
+    activationDelay = animations.gesture.longPressDuration,
     onDragStart,
     onDragMove,
     onDragEnd,
@@ -300,211 +299,24 @@ export const createDoubleTapGesture = (
 };
 
 // ============================================================================
-// MOVE EXERCISE BETWEEN DAYS (cross-list drag)
-// ============================================================================
-
-/**
- * Cross-day drag hook — extends the useDragToReorder pattern to support moving
- * an exercise row from one day's expanded list into a DIFFERENT day's list.
- *
- * On pan-update, the hook reports the absolute Y position so the caller can
- * hit-test which day the finger is over and highlight that day. On drop, the
- * caller resolves (fromDay, fromIndex) → (toDay, toIndex) and calls the store's
- * `moveExerciseBetweenDays`.
- *
- * Haptics:
- *  - longPress on pick-up
- *  - dragStart on pick-up
- *  - boundary when the finger crosses into a new day (caller fires this via
- *    `haptics.boundary()` when `onDayCross` first fires for a new toDay)
- *  - dragDrop on release
- *
- * The hook itself does NOT know about days — it only reports absolute Y and
- * relative drag offsets. The caller owns the day hit-testing (because day
- * layout positions are a UI concern, not a gesture concern). This keeps the
- * hook reusable and testable.
- *
- * Used by WeeklyBuilderScreen for cross-day exercise drag (Phase 8 wiring —
- * see that screen's file-header doc comment for the integration plan).
- */
-export interface MoveExerciseBetweenDaysConfig {
-  /** Long-press activation delay before drag engages. @default 400 */
-  activationDelay?: number;
-  /** Height of each exercise row (for within-day reorder math). */
-  itemHeight: number;
-  /** Fired when drag begins. */
-  onDragStart?: (fromIndex: number) => void;
-  /**
-   * Fired on every pan move with the absolute Y translation (relative to the
-   * drag start point). The caller hit-tests this against day block rects to
-   * determine the target day + index.
-   */
-  onDragMove?: (absoluteY: number, fromIndex: number) => void;
-  /**
-   * Fired when the finger crosses into a new day (caller-driven). The caller
-   * tracks the last toDay it computed and fires this hook's
-   * `notifyDayCross(toDay)` when it changes — which this hook routes to the
-   * boundary haptic. Provided for convenience; the caller can also fire
-   * `haptics.boundary()` directly.
-   */
-  onDayCross?: (toDay: number) => void;
-  /**
-   * Fired on drop. Caller resolves toDay/toIndex from its own layout refs and
-   * invokes `moveExerciseBetweenDays(fromDay, fromIndex, toDay, toIndex)`.
-   * If the drop target is the same day, `toIndex` is the within-day reorder
-   * target (caller should clamp to [0, dayLength-1]).
-   */
-  onDragEnd?: (
-    fromIndex: number,
-    absoluteY: number,
-    translationX: number,
-    translationY: number,
-  ) => void;
-  hapticFeedback?: boolean;
-}
-
-export const useMoveExerciseBetweenDays = (
-  itemIndex: number,
-  config: MoveExerciseBetweenDaysConfig,
-) => {
-  const {
-    activationDelay = 400,
-    onDragStart,
-    onDragMove,
-    onDragEnd,
-    onDayCross,
-    itemHeight,
-    hapticFeedback = true,
-  } = config;
-
-  const translateY = useSharedValue(0);
-  const translateX = useSharedValue(0);
-  const isDragging = useSharedValue(false);
-  const lastCrossedDay = useSharedValue(-1);
-
-  const resetPosition = useCallback(() => {
-    setTimeout(() => {
-      translateY.value = withSpring(0, animations.spring.default);
-      translateX.value = withSpring(0, animations.spring.default);
-    }, 100);
-  }, [translateY, translateX]);
-
-  // Recreating the native gesture recognizer on every parent re-render can
-  // drop an in-progress gesture, so the composition is memoized and only
-  // rebuilt when an input that actually changes its behavior changes.
-  const gesture = useMemo(() => {
-    const longPress = Gesture.LongPress()
-      .minDuration(activationDelay)
-      .onStart(() => {
-        isDragging.value = true;
-        if (hapticFeedback) {
-          runOnJS(haptics.longPress)();
-          runOnJS(haptics.dragStart)();
-        }
-        if (onDragStart) {
-          runOnJS(onDragStart)(itemIndex);
-        }
-      });
-
-    const pan = Gesture.Pan()
-      .onUpdate((event) => {
-        if (!isDragging.value) return;
-        translateY.value = event.translationY;
-        translateX.value = event.translationX;
-        if (onDragMove) {
-          runOnJS(onDragMove)(event.absoluteY, itemIndex);
-        }
-      })
-      .onEnd((event) => {
-        if (!isDragging.value) return;
-
-        if (hapticFeedback) {
-          runOnJS(haptics.dragDrop)();
-        }
-
-        if (onDragEnd) {
-          runOnJS(onDragEnd)(
-            itemIndex,
-            event.absoluteY,
-            event.translationX,
-            event.translationY,
-          );
-        }
-
-        // Reset
-        isDragging.value = false;
-        lastCrossedDay.value = -1;
-        runOnJS(resetPosition)();
-      });
-
-    return Gesture.Simultaneous(longPress, pan);
-  }, [
-    itemIndex,
-    activationDelay,
-    onDragStart,
-    onDragMove,
-    onDragEnd,
-    itemHeight,
-    hapticFeedback,
-    translateY,
-    translateX,
-    isDragging,
-    lastCrossedDay,
-    resetPosition,
-  ]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-    ],
-    opacity: isDragging.value ? 0.9 : 1,
-    zIndex: isDragging.value ? 200 : 0,
-    elevation: isDragging.value ? 8 : 0,
-  }));
-
-  /**
-   * Caller invokes this when its hit-test detects the finger has entered a new
-   * day's bounds. Fires the boundary haptic + onDayCross callback on change.
-   */
-  const notifyDayCross = useCallback(
-    (toDay: number) => {
-      if (lastCrossedDay.value === toDay) return;
-      lastCrossedDay.value = toDay;
-      if (hapticFeedback) {
-        runOnJS(haptics.boundary)();
-      }
-      if (onDayCross) {
-        runOnJS(onDayCross)(toDay);
-      }
-    },
-    [onDayCross, hapticFeedback, lastCrossedDay],
-  );
-
-  return {
-    gesture,
-    translateY,
-    translateX,
-    isDragging,
-    animatedStyle,
-    notifyDayCross,
-    /** Reset the last-crossed-day tracker (call when a drag ends). */
-    resetCrossTracker: () => {
-      lastCrossedDay.value = -1;
-    },
-  };
-};
-
-// ============================================================================
 // EXPORTS
 // ============================================================================
+//
+// NOTE: A `useMoveExerciseBetweenDays` cross-day drag hook previously lived
+// here (~190 lines). It had zero call sites anywhere in the app —
+// WeeklyBuilderScreen's header comment described it as "available for Phase
+// 8 polish" but never imported or called it — and its own `itemHeight` config
+// field was dead (destructured and listed in the gesture's useMemo deps, but
+// never read inside onUpdate/onEnd). Removed rather than shipping unverified,
+// unexercised gesture logic; reintroduce it (with itemHeight actually wired
+// into the target-index math, the same way useDragToReorder uses it) once
+// WeeklyBuilderScreen's cross-day drag is actually built.
 
 export const gestures = {
   pullToRefresh: usePullToRefresh,
   dragToReorder: useDragToReorder,
   pinchToZoom: usePinchToZoom,
   doubleTap: createDoubleTapGesture,
-  moveExerciseBetweenDays: useMoveExerciseBetweenDays,
 } as const;
 
 export default gestures;

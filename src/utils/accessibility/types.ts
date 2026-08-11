@@ -53,12 +53,14 @@ export interface AccessibilityProps {
   importantForAccessibility?: "auto" | "yes" | "no" | "no-hide-descendants";
 }
 
+export type WCAGLevel = "AA" | "AAA";
+
 export interface ColorContrastResult {
   ratio: number;
-  passes: {
-    aa: boolean;
-    aaa: boolean;
-  };
+  requiredRatio: number;
+  level: WCAGLevel;
+  isLargeText: boolean;
+  passes: boolean;
 }
 
 export interface TouchTargetConfig {
