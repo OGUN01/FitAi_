@@ -1,19 +1,21 @@
-import React, { useState, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
-  Modal,
+  FlatList,
+  ListRenderItemInfo,
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Button } from "../ui";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { GlassButton } from "../ui/aurora/GlassButton";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
-import { rf, rbr } from "../../utils/responsive";
+import { rf } from "../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_SOFT } from "../../utils/colors";
 
 interface DatePickerProps {
@@ -69,10 +71,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   // Date list — capped to ±60 days around today (or to the provided
-  // minimumDate/maximumDate window when narrower). The previous
-  // implementation walked from `minDate - 1 month` to `maxDate + 2 months`,
-  // which could allocate thousands of Date objects when callers passed wide
-  // minimumDate/maximumDate ranges (e.g. birth date pickers).
+  // minimumDate/maximumDate window when narrower). Rendering is virtualized
+  // via FlatList below, so this cap is a belt-and-suspenders bound rather
+  // than the only thing standing between us and hundreds of mounted rows.
   const dateOptions = useMemo(() => {
     const options = [];
     const today = new Date();
@@ -131,40 +132,39 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     setIsVisible(false);
   };
 
-  const renderDatePicker = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
 
-    return (
-      <ScrollView
-        style={styles.optionsContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {dateOptions.map((date) => {
-          const isSelected = isDateSelected(date);
-          const isToday = date.toDateString() === today.toDateString();
-          const isPast = date < today && !isToday;
+  const renderDateItem = useCallback(
+    ({ item: date }: ListRenderItemInfo<Date>) => {
+      const isSelected = isDateSelected(date);
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast = date < today && !isToday;
 
-          return (
-            <TouchableOpacity
-              key={`date-${date.toISOString()}`}
-              style={[
-                styles.optionItem,
-                isSelected && styles.optionItemSelected,
-                isPast && styles.optionItemPast,
-              ]}
-              onPress={() => setSelectedDate(date)}
-              disabled={isPast}
-              accessibilityRole="button"
-              accessibilityLabel={formatDate(date)}
-            >
+      return (
+        <AnimatedPressable
+          onPress={() => setSelectedDate(date)}
+          disabled={isPast}
+          scaleValue={0.98}
+          springConfig="smooth"
+          hapticType="light"
+          accessibilityLabel={formatDate(date)}
+          accessibilityState={{ selected: isSelected, disabled: isPast }}
+          containerStyle={styles.rowWrapper}
+          style={[styles.rowPressable, isPast && styles.rowPastPressable]}
+        >
+          <GlassCard
+            padding="sm"
+            borderRadius="md"
+            style={isSelected ? styles.optionItemSelected : undefined}
+          >
+            <View style={styles.optionRow}>
               <View style={styles.optionContent}>
                 <Text
-                  style={[
-                    styles.optionText,
-                    isSelected && styles.optionTextSelected,
-                    isPast && styles.optionTextPast,
-                  ]}
+                  style={[styles.optionText, isSelected && styles.optionTextSelected]}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
@@ -183,45 +183,45 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {isSelected && (
                 <Ionicons name="checkmark" size={rf(18)} color={colors.primary} />
               )}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    );
-  };
+            </View>
+          </GlassCard>
+        </AnimatedPressable>
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate, today, mode],
+  );
 
-  const renderTimePicker = () => {
-    return (
-      <ScrollView
-        style={styles.optionsContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {timeOptions.map((time) => {
-          const isSelected = isDateSelected(time);
+  const renderTimeItem = useCallback(
+    ({ item: time }: ListRenderItemInfo<Date>) => {
+      const isSelected = isDateSelected(time);
 
-          return (
-            <TouchableOpacity
-              key={`time-${time.getHours()}-${time.getMinutes()}`}
-              style={[
-                styles.optionItem,
-                isSelected && styles.optionItemSelected,
-              ]}
-              onPress={() => {
-                const newDate = new Date(selectedDate);
-                newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
-                setSelectedDate(newDate);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={time.toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            >
+      return (
+        <AnimatedPressable
+          onPress={() => {
+            const newDate = new Date(selectedDate);
+            newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
+            setSelectedDate(newDate);
+          }}
+          scaleValue={0.98}
+          springConfig="smooth"
+          hapticType="light"
+          accessibilityLabel={time.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+          accessibilityState={{ selected: isSelected }}
+          containerStyle={styles.rowWrapper}
+          style={styles.rowPressable}
+        >
+          <GlassCard
+            padding="sm"
+            borderRadius="md"
+            style={isSelected ? styles.optionItemSelected : undefined}
+          >
+            <View style={styles.optionRow}>
               <Text
-                style={[
-                  styles.optionText,
-                  isSelected && styles.optionTextSelected,
-                ]}
+                style={[styles.optionText, isSelected && styles.optionTextSelected]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
@@ -233,27 +233,61 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {isSelected && (
                 <Ionicons name="checkmark" size={rf(18)} color={colors.primary} />
               )}
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    );
-  };
+            </View>
+          </GlassCard>
+        </AnimatedPressable>
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedDate],
+  );
 
-  const renderDateTimePicker = () => {
-    return (
-      <View style={styles.dateTimeContainer}>
-        <View style={styles.dateTimeSection}>
-          <Text style={styles.sectionTitle}>Date</Text>
-          {renderDatePicker()}
-        </View>
-        <View style={styles.dateTimeSection}>
-          <Text style={styles.sectionTitle}>Time</Text>
-          {renderTimePicker()}
-        </View>
+  const dateKeyExtractor = useCallback((date: Date) => `date-${date.toISOString()}`, []);
+  const timeKeyExtractor = useCallback(
+    (time: Date) => `time-${time.getHours()}-${time.getMinutes()}`,
+    [],
+  );
+
+  const renderDatePicker = () => (
+    <FlatList
+      data={dateOptions}
+      keyExtractor={dateKeyExtractor}
+      renderItem={renderDateItem}
+      style={styles.optionsContainer}
+      showsVerticalScrollIndicator={false}
+      initialNumToRender={16}
+      maxToRenderPerBatch={16}
+      windowSize={7}
+      removeClippedSubviews
+    />
+  );
+
+  const renderTimePicker = () => (
+    <FlatList
+      data={timeOptions}
+      keyExtractor={timeKeyExtractor}
+      renderItem={renderTimeItem}
+      style={styles.optionsContainer}
+      showsVerticalScrollIndicator={false}
+      initialNumToRender={16}
+      maxToRenderPerBatch={16}
+      windowSize={7}
+      removeClippedSubviews
+    />
+  );
+
+  const renderDateTimePicker = () => (
+    <View style={styles.dateTimeContainer}>
+      <View style={styles.dateTimeSection}>
+        <Text style={styles.sectionTitle}>Date</Text>
+        {renderDatePicker()}
       </View>
-    );
-  };
+      <View style={styles.dateTimeSection}>
+        <Text style={styles.sectionTitle}>Time</Text>
+        {renderTimePicker()}
+      </View>
+    </View>
+  );
 
   const renderPicker = () => {
     switch (mode) {
@@ -267,6 +301,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         return renderDatePicker();
     }
   };
+
+  const sheetTitle =
+    mode === "datetime" ? "Select Date & Time" : mode === "time" ? "Select Time" : "Select Date";
 
   return (
     <View style={[styles.container, style]}>
@@ -285,54 +322,29 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <Ionicons name="calendar-outline" size={rf(20)} color={disabled ? colors.textMuted : colors.primary} />
       </TouchableOpacity>
 
-      <Modal
+      <BottomSheet
         visible={isVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
+        onClose={handleCancel}
+        title={sheetTitle}
+        testID="date-picker-sheet"
       >
-        <View style={styles.modalOverlay}>
-          <SafeAreaView style={styles.modalContent} edges={["top", "bottom"]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={1}>
-                Select{" "}
-                {mode === "datetime"
-                  ? "Date & Time"
-                  : mode === "time"
-                    ? "Time"
-                    : "Date"}
-              </Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={handleCancel}
-                accessibilityLabel="Close date picker"
-                accessibilityRole="button"
-                accessibilityHint="Closes the date picker without saving"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="close" size={rf(22)} color={colors.text} />
-              </TouchableOpacity>
-            </View>
+        {renderPicker()}
 
-            {renderPicker()}
-
-            <View style={styles.modalActions}>
-              <Button
-                title="Cancel"
-                onPress={handleCancel}
-                variant="outline"
-                style={styles.actionButton}
-              />
-              <Button
-                title="Confirm"
-                onPress={handleConfirm}
-                variant="primary"
-                style={styles.actionButton}
-              />
-            </View>
-          </SafeAreaView>
+        <View style={styles.modalActions}>
+          <GlassButton
+            label="Cancel"
+            onPress={handleCancel}
+            variant="secondary"
+            style={styles.actionButton}
+          />
+          <GlassButton
+            label="Confirm"
+            onPress={handleConfirm}
+            variant="primary"
+            style={styles.actionButton}
+          />
         </View>
-      </Modal>
+      </BottomSheet>
     </View>
   );
 };
@@ -375,73 +387,36 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-
-  modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    maxHeight: "80%",
-  },
-
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    position: "relative",
-  },
-
-  modalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold as "600",
-    color: colors.text,
-    textAlign: "center",
-    flex: 1,
-  },
-
-  modalCloseButton: {
-    position: "absolute",
-    right: spacing.md,
-    width: 44,
-    height: 44,
-    borderRadius: rbr(22),
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: spacing.md,
   },
 
-  optionItem: {
+  // Wrapper carries the row's bottom spacing; the Pressable inside carries
+  // the 44pt touch-target floor directly (not nested behind GlassCard's own
+  // press handling) so accessibility tooling measures the real target.
+  rowWrapper: {
+    marginVertical: spacing.xs / 2,
+  },
+
+  rowPressable: {
+    minHeight: 44,
+    justifyContent: "center",
+  },
+
+  rowPastPressable: {
+    opacity: 0.5,
+  },
+
+  optionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: 44,
-    marginVertical: spacing.xs / 2,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
   },
 
   optionItemSelected: {
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     borderWidth: 1,
     borderColor: colors.primary,
-  },
-
-  optionItemPast: {
-    opacity: 0.5,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
   },
 
   optionContent: {
@@ -458,10 +433,6 @@ const styles = StyleSheet.create({
   optionTextSelected: {
     color: colors.primary,
     fontWeight: typography.fontWeight.semibold as "600",
-  },
-
-  optionTextPast: {
-    color: colors.textMuted,
   },
 
   todayBadge: {
@@ -500,10 +471,8 @@ const styles = StyleSheet.create({
 
   modalActions: {
     flexDirection: "row",
-    padding: spacing.md,
+    paddingTop: spacing.md,
     gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
 
   actionButton: {

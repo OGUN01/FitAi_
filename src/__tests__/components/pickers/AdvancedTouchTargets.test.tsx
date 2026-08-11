@@ -21,6 +21,23 @@ jest.mock("react-native", () => {
     TouchableOpacity: React.forwardRef((props: any, ref) =>
       React.createElement("TouchableOpacity", { ...props, ref }, props.children),
     ),
+    // Non-virtualized shim: renders every row via renderItem so RTL queries
+    // can find them (real windowing isn't meaningful in a unit test). Used by
+    // the aurora BottomSheet-based DatePicker/MultiSelect option lists.
+    FlatList: React.forwardRef((props: any, ref) => {
+      const data = props.data || [];
+      return React.createElement(
+        "FlatList",
+        { ...props, ref },
+        data.map((item: any, index: number) =>
+          React.createElement(
+            React.Fragment,
+            { key: props.keyExtractor ? props.keyExtractor(item, index) : String(index) },
+            props.renderItem({ item, index }),
+          ),
+        ),
+      );
+    }),
     KeyboardAvoidingView: ({ children }: { children: React.ReactNode }) => children,
     Platform: { OS: "ios", select: (obj: any) => obj.ios },
     StyleSheet: {
@@ -90,6 +107,9 @@ jest.mock("@/utils/responsive", () => ({
   rp: (value: number) => value,
   rs: (value: number) => Math.round(value * 0.75),
   rbr: (value: number) => Math.round(value * 0.75),
+  // Read lazily by BottomSheet (`getScreenHeight()`), not at module load —
+  // must still be present or that read throws.
+  dimensions: { screenWidth: 393, screenHeight: 852 },
 }));
 
 jest.mock("@/utils/constants", () => ({

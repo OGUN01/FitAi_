@@ -280,6 +280,12 @@ const styles = StyleSheet.create({
   },
   sheetWrapper: {
     width: "100%",
+    // Capped so the sheet reads as a deliberate, centered panel on tablets
+    // instead of a phone sheet stretched edge-to-edge across a wide viewport
+    // (responsive.ts already clamps font/padding scaling to a 480px design
+    // reference — this keeps the container in step with that).
+    maxWidth: 560,
+    alignSelf: "center",
     zIndex: zIndex.modal,
   },
   sheetContent: {

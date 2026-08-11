@@ -5,16 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Modal,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Button } from "../ui";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { GlassButton } from "../ui/aurora/GlassButton";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rs, rbr, rp, rf } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
@@ -281,112 +280,118 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         </ScrollView>
       )}
 
-      <Modal
+      <BottomSheet
         visible={isVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
+        onClose={handleCancel}
+        title={label || "Select Options"}
+        testID="multi-select-custom-sheet"
       >
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <SafeAreaView style={styles.modalContent} edges={["bottom"]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={1}>{label || "Select Options"}</Text>
-              {maxSelections && (
-                <Text style={styles.selectionCount} numberOfLines={1}>
-                  {tempSelectedValues.length}/{maxSelections} selected
-                </Text>
-              )}
+        {maxSelections && (
+          <Text style={styles.selectionCount} numberOfLines={1}>
+            {tempSelectedValues.length}/{maxSelections} selected
+          </Text>
+        )}
+
+        {/* Search Input */}
+        {searchable && !showCustomInput && (
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search options..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              accessibilityLabel="Search options"
+            />
+            <Ionicons name="search" size={rf(fontSize.md)} color={colors.textMuted} style={styles.searchIcon} />
+          </View>
+        )}
+
+        {/* Custom Input Mode */}
+        {showCustomInput ? (
+          <View style={styles.customInputContainer}>
+            <Text style={styles.customInputLabel} numberOfLines={1}>
+              Add Custom {label?.replace("Select ", "")}
+            </Text>
+            <TextInput
+              style={styles.customTextInput}
+              placeholder={customPlaceholder}
+              placeholderTextColor={colors.textMuted}
+              value={customValue}
+              onChangeText={setCustomValue}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleAddCustom}
+              accessibilityLabel={customPlaceholder}
+            />
+            <View style={styles.customInputActions}>
+              <GlassButton
+                label="Cancel"
+                onPress={() => {
+                  setShowCustomInput(false);
+                  setCustomValue("");
+                }}
+                variant="secondary"
+                style={styles.customActionButton}
+              />
+              <GlassButton
+                label="Add"
+                onPress={handleAddCustom}
+                variant="primary"
+                style={styles.customActionButton}
+              />
             </View>
+          </View>
+        ) : (
+          /* Options List */
+          <ScrollView
+            style={styles.optionsContainer}
+            showsVerticalScrollIndicator={false}
+          >
+            {Object.entries(groupedOptions).map(
+              ([region, regionOptions]) => (
+                <View key={`region-${region}`}>
+                  {showRegions && region && (
+                    <Text style={styles.regionHeader} numberOfLines={1}>{region}</Text>
+                  )}
+                  {regionOptions.map((option) => {
+                    const isSelected = isOptionSelected(option.value);
+                    const isDisabled =
+                      option.disabled ||
+                      (!canSelectMore && !isSelected && !option.isCustom);
 
-            {/* Search Input */}
-            {searchable && !showCustomInput && (
-              <View style={styles.searchContainer}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search options..."
-                  placeholderTextColor={colors.textMuted}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  accessibilityLabel="Search options"
-                />
-                <Ionicons name="search" size={rf(fontSize.md)} color={colors.textMuted} style={styles.searchIcon} />
-              </View>
-            )}
-
-            {/* Custom Input Mode */}
-            {showCustomInput ? (
-              <View style={styles.customInputContainer}>
-                <Text style={styles.customInputLabel} numberOfLines={1}>
-                  Add Custom {label?.replace("Select ", "")}
-                </Text>
-                <TextInput
-                  style={styles.customTextInput}
-                  placeholder={customPlaceholder}
-                  placeholderTextColor={colors.textMuted}
-                  value={customValue}
-                  onChangeText={setCustomValue}
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={handleAddCustom}
-                  accessibilityLabel={customPlaceholder}
-                />
-                <View style={styles.customInputActions}>
-                  <Button
-                    title="Cancel"
-                    onPress={() => {
-                      setShowCustomInput(false);
-                      setCustomValue("");
-                    }}
-                    variant="outline"
-                    style={styles.customActionButton}
-                  />
-                  <Button
-                    title="Add"
-                    onPress={handleAddCustom}
-                    variant="primary"
-                    style={styles.customActionButton}
-                  />
-                </View>
-              </View>
-            ) : (
-              /* Options List */
-              <ScrollView
-                style={styles.optionsContainer}
-                showsVerticalScrollIndicator={false}
-              >
-                {Object.entries(groupedOptions).map(
-                  ([region, regionOptions]) => (
-                    <View key={`region-${region}`}>
-                      {showRegions && region && (
-                        <Text style={styles.regionHeader} numberOfLines={1}>{region}</Text>
-                      )}
-                      {regionOptions.map((option) => {
-                        const isSelected = isOptionSelected(option.value);
-                        const isDisabled =
-                          option.disabled ||
-                          (!canSelectMore && !isSelected && !option.isCustom);
-
-                        return (
-                          <TouchableOpacity
-                            key={option.id}
-                            style={[
-                              styles.optionItem,
-                              isSelected && styles.optionItemSelected,
-                              isDisabled && styles.optionItemDisabled,
-                              option.isCustom && styles.optionItemCustom,
-                            ]}
-                            onPress={() => toggleOption(option)}
-                            disabled={isDisabled && !option.isCustom}
-                            accessibilityRole={option.isCustom ? "button" : "checkbox"}
-                            accessibilityLabel={option.label}
-                            accessibilityState={{
-                              checked: isSelected,
-                              disabled: isDisabled && !option.isCustom,
-                            }}
-                          >
+                    return (
+                      <AnimatedPressable
+                        key={option.id}
+                        onPress={() => toggleOption(option)}
+                        disabled={isDisabled && !option.isCustom}
+                        scaleValue={0.98}
+                        springConfig="smooth"
+                        hapticType="light"
+                        accessibilityRole={option.isCustom ? "button" : "checkbox"}
+                        accessibilityLabel={option.label}
+                        accessibilityState={{
+                          checked: isSelected,
+                          disabled: isDisabled && !option.isCustom,
+                        }}
+                        containerStyle={styles.rowWrapper}
+                        style={[
+                          styles.rowPressable,
+                          isDisabled && !option.isCustom && styles.rowDisabledPressable,
+                        ]}
+                      >
+                        <GlassCard
+                          padding="sm"
+                          borderRadius="md"
+                          style={
+                            option.isCustom
+                              ? styles.optionItemCustom
+                              : isSelected
+                                ? styles.optionItemSelected
+                                : undefined
+                          }
+                        >
+                          <View style={styles.optionRow}>
                             <View style={styles.optionContent}>
                               {option.icon && (
                                 <Ionicons
@@ -429,42 +434,42 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                                 )}
                               </View>
                             )}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  ),
-                )}
-
-                {filteredOptions.length === 0 && (
-                  <View style={styles.noResults}>
-                    <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
-                    <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
-                  </View>
-                )}
-              </ScrollView>
+                          </View>
+                        </GlassCard>
+                      </AnimatedPressable>
+                    );
+                  })}
+                </View>
+              ),
             )}
 
-            {/* Actions */}
-            {!showCustomInput && (
-              <View style={styles.modalActions}>
-                <Button
-                  title="Cancel"
-                  onPress={handleCancel}
-                  variant="outline"
-                  style={styles.actionButton}
-                />
-                <Button
-                  title={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? "s" : ""}`}
-                  onPress={handleConfirm}
-                  variant="primary"
-                  style={styles.actionButton}
-                />
+            {filteredOptions.length === 0 && (
+              <View style={styles.noResults}>
+                <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
+                <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
               </View>
             )}
-          </SafeAreaView>
-        </KeyboardAvoidingView>
-      </Modal>
+          </ScrollView>
+        )}
+
+        {/* Actions */}
+        {!showCustomInput && (
+          <View style={styles.modalActions}>
+            <GlassButton
+              label="Cancel"
+              onPress={handleCancel}
+              variant="secondary"
+              style={styles.actionButton}
+            />
+            <GlassButton
+              label={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? "s" : ""}`}
+              onPress={handleConfirm}
+              variant="primary"
+              style={styles.actionButton}
+            />
+          </View>
+        )}
+      </BottomSheet>
     </View>
   );
 };
@@ -533,43 +538,17 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium as "500",
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-
-  modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    maxHeight: "80%",
-  },
-
-  modalHeader: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-
-  modalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold as "600",
-    color: colors.text,
-    textAlign: "center",
-  },
-
   selectionCount: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     textAlign: "center",
-    marginTop: spacing.xs / 2,
+    marginBottom: spacing.sm,
   },
 
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    margin: spacing.md,
+    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
@@ -590,7 +569,7 @@ const styles = StyleSheet.create({
   },
 
   customInputContainer: {
-    padding: spacing.md,
+    paddingBottom: spacing.md,
   },
 
   customInputLabel: {
@@ -624,7 +603,6 @@ const styles = StyleSheet.create({
 
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: spacing.md,
   },
 
   regionHeader: {
@@ -636,33 +614,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
 
-  optionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: 44,
+  // Wrapper carries row spacing; the Pressable inside carries the 44pt
+  // touch-target floor directly so accessibility tooling measures the real
+  // interactive element (not the GlassCard visual layer nested inside it).
+  rowWrapper: {
     marginVertical: spacing.xs / 2,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
   },
 
-  optionItemSelected: {
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+  rowPressable: {
+    minHeight: 44,
+    justifyContent: "center",
   },
 
-  optionItemDisabled: {
+  rowDisabledPressable: {
     opacity: 0.5,
   },
 
+  optionItemSelected: {
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
+  },
+
   optionItemCustom: {
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW + 0.05),
     borderWidth: 1,
     borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM + 0.1),
     borderStyle: "dashed",
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW + 0.05),
+  },
+
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   optionContent: {
@@ -737,10 +721,8 @@ const styles = StyleSheet.create({
 
   modalActions: {
     flexDirection: "row",
-    padding: spacing.md,
+    paddingTop: spacing.md,
     gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
 
   actionButton: {

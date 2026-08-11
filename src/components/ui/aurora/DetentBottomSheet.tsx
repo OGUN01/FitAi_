@@ -314,6 +314,10 @@ const styles = StyleSheet.create({
   },
   detentSheet: {
     width: "100%",
+    // Same cap as BottomSheet.sheetWrapper — keeps the detent sheet a
+    // centered panel on tablets/web instead of stretching full-width.
+    maxWidth: 560,
+    alignSelf: "center",
   },
   sheetSurface: {
     backgroundColor: colors.background.secondary,

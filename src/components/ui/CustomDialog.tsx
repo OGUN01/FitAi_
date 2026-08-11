@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from './Card';
+import { GlassCard } from './aurora/GlassCard';
 import { Button } from './Button';
 import {
   flatColors as colors,
@@ -148,7 +148,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   return (
     <DialogShell visible={visible} animationType="fade" onRequestClose={onDismiss}>
         <SafeAreaView style={styles.safeArea}>
-          <Card style={styles.dialogCard} variant="elevated">
+          <GlassCard padding="xl" contentStyle={styles.dialogContent} elevation={4}>
             {/* Icon */}
             <View
               style={[
@@ -201,7 +201,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                 )}
               </View>
             )}
-          </Card>
+          </GlassCard>
         </SafeAreaView>
     </DialogShell>
   );
@@ -271,8 +271,9 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
 
-  dialogCard: {
-    padding: spacing.xl,
+  // Padding now comes from GlassCard's own `padding="xl"` prop; this only
+  // needs to center the content column (icon/title/message/actions).
+  dialogContent: {
     alignItems: 'center' as const,
   },
 
@@ -429,6 +430,12 @@ interface WorkoutDetailsDialogProps {
   onClose: () => void;
 }
 
+// Was previously a hand-rolled raw RN `Modal` + a fully separate flat
+// `detailStyles.card` panel — the third of three different dialog patterns
+// living in this file. Now shares `DialogShell` (same web-scrim fix, same
+// fade/slide handling as the other dialogs above) and `GlassCard` for the
+// surface, so this is visually and structurally the same shell as
+// CustomDialog/WorkoutCompleteDialog instead of a bespoke one.
 export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
   visible,
   title,
@@ -440,9 +447,9 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
 }) => {
   if (!visible) return null;
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={detailStyles.card}>
+    <DialogShell visible={visible} animationType="fade" onRequestClose={onClose}>
+      <SafeAreaView style={styles.safeArea}>
+        <GlassCard padding="xl" elevation={4}>
           {/* Header */}
           <View style={detailStyles.header}>
             <View style={detailStyles.iconCircle}>
@@ -502,22 +509,13 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
           >
             <Text style={detailStyles.closeButtonText}>Got it</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
+        </GlassCard>
+      </SafeAreaView>
+    </DialogShell>
   );
 };
 
 const detailStyles = StyleSheet.create({
-  card: {
-    width: '85%',
-    maxWidth: 400,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: rbr(20),
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -622,7 +620,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   return (
     <DialogShell visible={visible} animationType="slide" keyboardAvoiding>
         <SafeAreaView style={styles.safeArea}>
-          <Card style={styles.dialogCard} variant="elevated">
+          <GlassCard padding="xl" contentStyle={styles.dialogContent} elevation={4}>
             {/* Celebration Icon */}
             <View
               style={[
@@ -713,7 +711,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 style={styles.lastActionButton}
               />
             </View>
-          </Card>
+          </GlassCard>
         </SafeAreaView>
     </DialogShell>
   );

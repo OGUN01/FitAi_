@@ -21,6 +21,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { animations } from "../../../theme/animations";
 import { haptics, type HapticType } from "../../../utils/haptics";
+import { useReducedMotion, getAccessibleDuration } from "../../../utils/accessibility/hooks";
 
 interface AnimatedPressableProps extends Omit<PressableProps, "style"> {
   /**
@@ -159,6 +160,12 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
         onPressOut,
     );
 
+  // Respect the OS "Reduce Motion" setting: press/release animations collapse
+  // to an instant (0ms) transform instead of a timed/spring scale, matching
+  // the pattern already used elsewhere in the aurora system (e.g.
+  // DailyProgressRings' Ring). Haptics are unaffected — those are not motion.
+  const reducedMotion = useReducedMotion();
+
   // Animated values
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
@@ -167,14 +174,15 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
   const handlePressIn = useCallback(
     (event: any) => {
       if (!disableAnimation && isInteractive) {
-        scale.value = withTiming(scaleValue, {
-          duration: animations.duration.instant,
-        });
+        const pressDuration = getAccessibleDuration(
+          animations.duration.instant,
+          reducedMotion,
+          true,
+        );
+        scale.value = withTiming(scaleValue, { duration: pressDuration });
 
         if (fadeOnPress) {
-          opacity.value = withTiming(pressOpacity, {
-            duration: animations.duration.instant,
-          });
+          opacity.value = withTiming(pressOpacity, { duration: pressDuration });
         }
       }
 
@@ -193,6 +201,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
       isInteractive,
       hapticType,
       onPressIn,
+      reducedMotion,
     ],
   );
 
@@ -200,7 +209,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
   const handlePressOut = useCallback(
     (event: any) => {
       if (!disableAnimation && isInteractive) {
-        if (useSpring) {
+        if (useSpring && !reducedMotion) {
           const spring = getSpringConfig(springConfig);
           scale.value = withSpring(1, spring);
 
@@ -208,14 +217,15 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
             opacity.value = withSpring(1, spring);
           }
         } else {
-          scale.value = withTiming(1, {
-            duration: animations.duration.quick,
-          });
+          const releaseDuration = getAccessibleDuration(
+            animations.duration.quick,
+            reducedMotion,
+            true,
+          );
+          scale.value = withTiming(1, { duration: releaseDuration });
 
           if (fadeOnPress) {
-            opacity.value = withTiming(1, {
-              duration: animations.duration.quick,
-            });
+            opacity.value = withTiming(1, { duration: releaseDuration });
           }
         }
       }
@@ -229,6 +239,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
       springConfig,
       fadeOnPress,
       onPressOut,
+      reducedMotion,
     ],
   );
 

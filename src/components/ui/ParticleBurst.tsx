@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
@@ -97,19 +97,25 @@ export const ParticleBurst: React.FC<ParticleBurstProps> = ({
 }) => {
   const progress = useSharedValue(0);
 
-  // Generate particles
-  const particles: Particle[] = [];
-  for (let i = 0; i < particleCount; i++) {
-    const angle = (Math.PI * 2 * i) / particleCount;
-    particles.push({
-      id: i,
-      angle,
-      distance: radius,
-      size: rf(8 + Math.random() * 8),
-      color: colors[Math.floor(Math.random() * colors.length)],
-      delay: Math.random() * 100,
-    });
-  }
+  // Generate particles once per (particleCount, colors) pair — previously
+  // rebuilt on every render (including unrelated parent re-renders while the
+  // burst was mid-animation), causing visible flicker as sizes/colors jumped.
+  const particles: Particle[] = useMemo(() => {
+    const next: Particle[] = [];
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (Math.PI * 2 * i) / particleCount;
+      next.push({
+        id: i,
+        angle,
+        distance: radius,
+        size: rf(8 + Math.random() * 8),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        delay: Math.random() * 100,
+      });
+    }
+    return next;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [particleCount, colors]);
 
   useEffect(() => {
     if (autoPlay) {

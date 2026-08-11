@@ -5,14 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Modal,
   TextInput,
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Button } from "../ui";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { GlassButton } from "../ui/aurora/GlassButton";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rs, rbr, rf } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
@@ -157,62 +158,63 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         </ScrollView>
       )}
 
-      <Modal
+      <BottomSheet
         visible={isVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
+        onClose={handleCancel}
+        title={label || "Select Options"}
+        testID="multi-select-sheet"
       >
-        <View style={styles.modalOverlay}>
-          <SafeAreaView style={styles.modalContent} edges={["bottom"]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={1}>{label || "Select Options"}</Text>
-              {maxSelections && (
-                <Text style={styles.selectionCount} numberOfLines={1}>
-                  {tempSelectedValues.length}/{maxSelections} selected
-                </Text>
-              )}
-            </View>
+        {maxSelections && (
+          <Text style={styles.selectionCount} numberOfLines={1}>
+            {tempSelectedValues.length}/{maxSelections} selected
+          </Text>
+        )}
 
-            {/* Search Input */}
-            {searchable && (
-              <View style={styles.searchContainer}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search options..."
-                  placeholderTextColor={colors.textMuted}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  accessibilityLabel="Search options"
-                />
-                <Ionicons name="search" size={rf(fontSize.md)} color={colors.textMuted} style={styles.searchIcon} />
-              </View>
-            )}
+        {/* Search Input */}
+        {searchable && (
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search options..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              accessibilityLabel="Search options"
+            />
+            <Ionicons name="search" size={rf(fontSize.md)} color={colors.textMuted} style={styles.searchIcon} />
+          </View>
+        )}
 
-            {/* Options List */}
-            <ScrollView
-              style={styles.optionsContainer}
-              showsVerticalScrollIndicator={false}
-            >
-              {filteredOptions.map((option) => {
-                const isSelected = isOptionSelected(option.value);
-                const isDisabled =
-                  option.disabled || (!canSelectMore && !isSelected);
+        {/* Options List */}
+        <ScrollView
+          style={styles.optionsContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredOptions.map((option) => {
+            const isSelected = isOptionSelected(option.value);
+            const isDisabled =
+              option.disabled || (!canSelectMore && !isSelected);
 
-                return (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[
-                      styles.optionItem,
-                      isSelected && styles.optionItemSelected,
-                      isDisabled && styles.optionItemDisabled,
-                    ]}
-                    onPress={() => toggleOption(option)}
-                    disabled={isDisabled}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={option.label}
-                    accessibilityState={{ checked: isSelected, disabled: isDisabled }}
-                  >
+            return (
+              <AnimatedPressable
+                key={option.id}
+                onPress={() => toggleOption(option)}
+                disabled={isDisabled}
+                scaleValue={0.98}
+                springConfig="smooth"
+                hapticType="light"
+                accessibilityRole="checkbox"
+                accessibilityLabel={option.label}
+                accessibilityState={{ checked: isSelected, disabled: isDisabled }}
+                containerStyle={styles.rowWrapper}
+                style={[styles.rowPressable, isDisabled && styles.rowDisabledPressable]}
+              >
+                <GlassCard
+                  padding="sm"
+                  borderRadius="md"
+                  style={isSelected ? styles.optionItemSelected : undefined}
+                >
+                  <View style={styles.optionRow}>
                     <View style={styles.optionContent}>
                       {option.icon && (
                         <Ionicons
@@ -246,36 +248,36 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                         <Ionicons name="checkmark" size={rf(fontSize.sm)} color={colors.white} />
                       )}
                     </View>
-                  </TouchableOpacity>
-                );
-              })}
+                  </View>
+                </GlassCard>
+              </AnimatedPressable>
+            );
+          })}
 
-              {filteredOptions.length === 0 && (
-                <View style={styles.noResults}>
-                  <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
-                  <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
-                </View>
-              )}
-            </ScrollView>
-
-            {/* Actions */}
-            <View style={styles.modalActions}>
-              <Button
-                title="Cancel"
-                onPress={handleCancel}
-                variant="outline"
-                style={styles.actionButton}
-              />
-              <Button
-                title={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? "s" : ""}`}
-                onPress={handleConfirm}
-                variant="primary"
-                style={styles.actionButton}
-              />
+          {filteredOptions.length === 0 && (
+            <View style={styles.noResults}>
+              <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
+              <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
             </View>
-          </SafeAreaView>
+          )}
+        </ScrollView>
+
+        {/* Actions */}
+        <View style={styles.modalActions}>
+          <GlassButton
+            label="Cancel"
+            onPress={handleCancel}
+            variant="secondary"
+            style={styles.actionButton}
+          />
+          <GlassButton
+            label={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? "s" : ""}`}
+            onPress={handleConfirm}
+            variant="primary"
+            style={styles.actionButton}
+          />
         </View>
-      </Modal>
+      </BottomSheet>
     </View>
   );
 };
@@ -344,43 +346,17 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium as "500",
   },
 
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-
-  modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    maxHeight: "80%",
-  },
-
-  modalHeader: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-
-  modalTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold as "600",
-    color: colors.text,
-    textAlign: "center",
-  },
-
   selectionCount: {
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     textAlign: "center",
-    marginTop: spacing.xs / 2,
+    marginBottom: spacing.sm,
   },
 
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    margin: spacing.md,
+    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
@@ -402,29 +378,34 @@ const styles = StyleSheet.create({
 
   optionsContainer: {
     maxHeight: 300,
-    paddingHorizontal: spacing.md,
   },
 
-  optionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: 44,
+  // Wrapper carries row spacing; the Pressable inside carries the 44pt
+  // touch-target floor directly so accessibility tooling measures the real
+  // interactive element (not the GlassCard visual layer nested inside it).
+  rowWrapper: {
     marginVertical: spacing.xs / 2,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
+  },
+
+  rowPressable: {
+    minHeight: 44,
+    justifyContent: "center",
+  },
+
+  rowDisabledPressable: {
+    opacity: 0.5,
   },
 
   optionItemSelected: {
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
     borderWidth: 1,
     borderColor: hexToRgba(colors.primary, TINT_ALPHA_MEDIUM),
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_SOFT),
   },
 
-  optionItemDisabled: {
-    opacity: 0.5,
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   optionContent: {
@@ -486,10 +467,8 @@ const styles = StyleSheet.create({
 
   modalActions: {
     flexDirection: "row",
-    padding: spacing.md,
+    paddingTop: spacing.md,
     gap: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
 
   actionButton: {
