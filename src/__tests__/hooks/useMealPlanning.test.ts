@@ -6,34 +6,46 @@ jest.mock("../../utils/crossPlatformAlert", () => ({
   crossPlatformAlert: jest.fn(),
 }));
 
-jest.mock("../../stores", () => ({
-  useNutritionStore: jest.fn((selector?: (state: any) => unknown) => {
-    const state = {
-      weeklyMealPlan: { meals: [{ id: "meal-1" }] },
-      isGeneratingPlan: false,
-      mealProgress: {},
-      dailyMeals: [],
-      saveWeeklyMealPlan: jest.fn(),
-      setWeeklyMealPlan: jest.fn(),
-      setGeneratingPlan: jest.fn(),
-      getMealProgress: jest.fn(),
-      loadData: mockLoadNutritionStoreData,
-    };
-    return selector ? selector(state) : state;
-  }),
-  useAppStateStore: jest.fn((selector?: (state: any) => unknown) => {
-    const state = {
-      selectedDay: "monday",
-    };
-    return selector ? selector(state) : state;
-  }),
-  useAchievementStore: jest.fn((selector?: (state: any) => unknown) => {
-    const state = {
-      currentStreak: 0,
-    };
-    return selector ? selector(state) : state;
-  }),
-}));
+const mockSaveWeeklyMealPlan = jest.fn();
+const mockSetWeeklyMealPlan = jest.fn();
+const mockSetNutritionStoreState = jest.fn();
+let mockNutritionStoreState = {
+  weeklyMealPlan: { meals: [{ id: "meal-1" }] },
+  isGeneratingPlan: false,
+  mealProgress: {} as Record<string, { logId?: string; progress?: number }>,
+  dailyMeals: [],
+  saveWeeklyMealPlan: mockSaveWeeklyMealPlan,
+  setWeeklyMealPlan: mockSetWeeklyMealPlan,
+  setGeneratingPlan: jest.fn(),
+  getMealProgress: jest.fn(),
+  loadData: mockLoadNutritionStoreData,
+};
+
+jest.mock("../../stores", () => {
+  const useNutritionStoreMock: any = jest.fn((selector?: (state: any) => unknown) =>
+    selector ? selector(mockNutritionStoreState) : mockNutritionStoreState,
+  );
+  useNutritionStoreMock.getState = jest.fn(() => mockNutritionStoreState);
+  useNutritionStoreMock.setState = jest.fn((partial: any) => {
+    mockNutritionStoreState = { ...mockNutritionStoreState, ...partial };
+    mockSetNutritionStoreState(partial);
+  });
+  return {
+    useNutritionStore: useNutritionStoreMock,
+    useAppStateStore: jest.fn((selector?: (state: any) => unknown) => {
+      const state = {
+        selectedDay: "monday",
+      };
+      return selector ? selector(state) : state;
+    }),
+    useAchievementStore: jest.fn((selector?: (state: any) => unknown) => {
+      const state = {
+        currentStreak: 0,
+      };
+      return selector ? selector(state) : state;
+    }),
+  };
+});
 
 jest.mock("../../stores/profileStore", () => {
   const state = {
@@ -94,12 +106,18 @@ jest.mock("../../services/completionTracking", () => ({
   },
 }));
 
+const mockAiSwapMealInPlan = jest.fn();
 jest.mock("../../ai", () => ({
-  aiService: {},
+  aiService: {
+    swapMealInPlan: (...args: unknown[]) => mockAiSwapMealInPlan(...args),
+  },
 }));
 
+const mockDeleteMealLog = jest.fn();
 jest.mock("../../services/crudOperations", () => ({
-  crudOperations: {},
+  crudOperations: {
+    deleteMealLog: (...args: unknown[]) => mockDeleteMealLog(...args),
+  },
 }));
 
 import { useMealPlanning } from "../../hooks/useMealPlanning";
@@ -115,5 +133,66 @@ describe("useMealPlanning hydration", () => {
     await waitFor(() => {
       expect(mockLoadNutritionStoreData).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("useMealPlanning swapMealInPlan meal-progress cleanup", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockNutritionStoreState = {
+      ...mockNutritionStoreState,
+      weeklyMealPlan: { meals: [{ id: "meal-1", dayOfWeek: "monday" }] },
+      mealProgress: { "meal-1": { logId: "log-1", progress: 100 } },
+    };
+    mockSaveWeeklyMealPlan.mockResolvedValue(undefined);
+  });
+
+  const originalMeal: any = {
+    id: "meal-1",
+    dayOfWeek: "monday",
+    type: "lunch",
+    name: "Original Meal",
+    totalCalories: 500,
+    totalMacros: { protein: 30, carbohydrates: 50, fat: 15, fiber: 5 },
+  };
+
+  const swappedMeal: any = {
+    id: "swap_meal-1",
+    dayOfWeek: "monday",
+    type: "lunch",
+    name: "New Meal",
+    totalCalories: 450,
+    totalMacros: { protein: 25, carbohydrates: 40, fat: 10, fiber: 4 },
+  };
+
+  it("deletes the underlying meal_logs row (not just the local cache entry) after a successful swap", async () => {
+    mockAiSwapMealInPlan.mockResolvedValue({ success: true, data: swappedMeal });
+
+    const { result } = renderHook(() => useMealPlanning({}));
+    await result.current.swapMealInPlan(originalMeal);
+
+    // Bug this pins: previously only the Zustand cache entry was cleared,
+    // never the Supabase meal_logs row — so the stale 'completed' log would
+    // silently reattach to the swapped-in meal on next hydration (same id).
+    expect(mockDeleteMealLog).toHaveBeenCalledWith("log-1");
+    expect(mockSetNutritionStoreState).toHaveBeenCalledWith({
+      mealProgress: {},
+    });
+    // The DB delete must happen before the local cache is cleared, so a
+    // crash/kill between the two steps can't leave a stale DB row believed
+    // to be already cleared.
+    const deleteOrder = mockDeleteMealLog.mock.invocationCallOrder[0];
+    const setStateOrder = mockSetNutritionStoreState.mock.invocationCallOrder[0];
+    expect(deleteOrder).toBeLessThan(setStateOrder);
+  });
+
+  it("does not attempt a meal_logs delete when there is no prior progress entry", async () => {
+    mockNutritionStoreState = { ...mockNutritionStoreState, mealProgress: {} };
+    mockAiSwapMealInPlan.mockResolvedValue({ success: true, data: swappedMeal });
+
+    const { result } = renderHook(() => useMealPlanning({}));
+    await result.current.swapMealInPlan(originalMeal);
+
+    expect(mockDeleteMealLog).not.toHaveBeenCalled();
   });
 });

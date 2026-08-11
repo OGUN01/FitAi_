@@ -11,6 +11,7 @@ import {
 import { fontFamilyForWeight } from '../../theme/fonts';
 import { getLocalDateString } from '../../utils/weekUtils';
 import { DateFormatters } from '../../utils/formatters/dateFormatters';
+import { getIntakeSummary } from './dietViewModel';
 
 interface CompactIntakeSummaryProps {
   consumedCalories: number;
@@ -24,7 +25,7 @@ interface CompactIntakeSummaryProps {
   selectedDate?: string;
 }
 
-export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
+const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
   consumedCalories,
   calorieTarget,
   mealCount,
@@ -33,9 +34,12 @@ export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
   onViewPlan,
   selectedDate,
 }) => {
-  const remaining = Math.max(0, calorieTarget - consumedCalories);
-  const percent =
-    calorieTarget > 0 ? Math.min(100, Math.round((consumedCalories / calorieTarget) * 100)) : 0;
+  // percent is clamped to 100 for the progress-bar fill, but remaining stays
+  // signed so an over-target day shows the true overage (e.g. "-244") instead
+  // of a misleading "0 Remaining" that hides it. Matches dietViewModel's
+  // getIntakeSummary, the shared source of truth for this calculation.
+  const { remaining, percent } = getIntakeSummary(consumedCalories, calorieTarget);
+  const isOverTarget = remaining < 0;
 
   const isToday = !selectedDate || selectedDate === getLocalDateString();
   const title = isToday
@@ -54,14 +58,16 @@ export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
             {plannedMealCount > 0 ? ` · ${plannedMealCount} planned` : ''}
           </Text>
         </View>
-        <Text style={styles.percent}>{percent}%</Text>
+        <Text style={[styles.percent, isOverTarget && styles.percentOver]}>{percent}%</Text>
       </View>
       <View
         style={styles.track}
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: 100, now: percent }}
       >
-        <View style={[styles.fill, { width: `${percent}%` }]} />
+        <View
+          style={[styles.fill, isOverTarget && styles.fillOver, { width: `${percent}%` }]}
+        />
       </View>
       <View style={styles.statsRow}>
         <View>
@@ -69,8 +75,10 @@ export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
           <Text style={styles.statLabel}>Consumed kcal</Text>
         </View>
         <View style={styles.statRight}>
-          <Text style={styles.statValue}>{Math.round(remaining)}</Text>
-          <Text style={styles.statLabel}>Remaining kcal</Text>
+          <Text style={[styles.statValue, isOverTarget && styles.statValueOver]}>
+            {Math.abs(Math.round(remaining))}
+          </Text>
+          <Text style={styles.statLabel}>{isOverTarget ? 'kcal over' : 'Remaining kcal'}</Text>
         </View>
       </View>
       <AnimatedPressable
@@ -98,6 +106,12 @@ export const CompactIntakeSummary: React.FC<CompactIntakeSummaryProps> = ({
     </View>
   );
 };
+
+// Memoized: DietScreen re-renders on every keystroke of its unrelated local
+// input state (label-scan grams, photo weight, etc.); this component's props
+// are plain primitives, so it should skip re-rendering when they haven't
+// actually changed.
+export const CompactIntakeSummary = React.memo(CompactIntakeSummaryComponent);
 
 const styles = StyleSheet.create({
   card: {
@@ -131,6 +145,9 @@ const styles = StyleSheet.create({
     fontFamily: fontFamilyForWeight('800'),
     fontWeight: '800',
   },
+  percentOver: {
+    color: colors.error,
+  },
   track: {
     height: 6,
     borderRadius: 3,
@@ -138,6 +155,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fill: { height: '100%', borderRadius: 3, backgroundColor: colors.primary },
+  fillOver: { backgroundColor: colors.error },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   statRight: { alignItems: 'flex-end' },
   statValue: {
@@ -145,6 +163,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontFamily: fontFamilyForWeight('800'),
     fontWeight: '800',
+  },
+  statValueOver: {
+    color: colors.error,
   },
   statLabel: { color: colors.textSecondary, fontSize: fontSize.xs },
   logButton: {

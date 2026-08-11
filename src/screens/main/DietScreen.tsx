@@ -66,6 +66,20 @@ interface DietScreenProps {
   isActive?: boolean;
 }
 
+// Stable zero-value placeholder used when the selected-date nutrition query is
+// skipped (viewing "today", where storeNutrition is the source of truth). A
+// module-level constant keeps the reference stable across renders so the
+// useMemo below doesn't churn.
+const EMPTY_CONSUMED_NUTRITION = {
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+  fiber: 0,
+  sugar: 0,
+  sodium: 0,
+};
+
 export const DietScreen: React.FC<DietScreenProps> = ({
   navigation,
   route,
@@ -323,6 +337,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setShowLogMealModal(true);
   }, []);
 
+  // Stable reference so it doesn't defeat CompactIntakeSummary's React.memo
+  // (an inline `() => setShowTodaysPlan(true)` prop is a new function every
+  // render, failing the shallow-compare regardless of the memo).
+  const handleViewTodaysPlan = useCallback(() => {
+    setShowTodaysPlan(true);
+  }, []);
+
   const handleManualProductFound = useCallback(
     (lookupResult: ProductLookupResult) => {
       setShowManualEntry(false);
@@ -332,11 +353,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   );
 
   const storeNutrition = getTodaysConsumedNutrition();
-  // Date-aware nutrition: when user swipes to a different day, show that day's data
-  const selectedDateNutrition = useNutritionStore((s) => s.getConsumedNutritionForDate)(
-    selectedDateKey
-  );
   const isSelectedDateToday = selectedDateKey === getLocalDateString();
+  const getConsumedNutritionForDate = useNutritionStore((s) => s.getConsumedNutritionForDate);
+  // Date-aware nutrition: when user swipes to a different day, show that day's
+  // data. Skipped entirely when viewing today (storeNutrition is used instead
+  // below) and memoized on [dailyMeals, mealProgress, selectedDateKey] so this
+  // O(n) scan doesn't re-run on every render while viewing a past/future day.
+  const selectedDateNutrition = useMemo(
+    () =>
+      isSelectedDateToday
+        ? EMPTY_CONSUMED_NUTRITION
+        : getConsumedNutritionForDate(selectedDateKey),
+    [isSelectedDateToday, getConsumedNutritionForDate, dailyMeals, mealProgress, selectedDateKey]
+  );
   // Anchor the screen with a date subtitle (Apple Fitness / Whoop pattern).
   // selectedDateKey is an ISO date ("2026-07-28"); parse at noon to avoid the
   // midnight-UTC day-shift in negative timezones.
@@ -368,54 +397,78 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   // We no longer fall back to a separate Supabase dailyNutrition fetch because
   // that fetch and the store fetch target the same meal_logs table \u2014 merging them
   // caused different calorie numbers on different screens.
-  const currentNutrition = {
-    calories: displayNutrition.calories,
-    protein: displayNutrition.protein,
-    carbs: displayNutrition.carbs,
-    fat: displayNutrition.fat,
-    fiber: displayNutrition.fiber,
-    sugar: displayNutrition.sugar,
-    mealsCount: isSelectedDateToday
-      ? (dailyNutrition?.mealsCount ?? selectedDateConsumedMeals.length)
-      : selectedDateConsumedMeals.length,
-  };
+  // Memoized on the underlying primitives (not on displayNutrition/storeNutrition
+  // object identity, which is rebuilt every render by getTodaysConsumedNutrition)
+  // so this object reference is stable across renders where the actual values
+  // haven't changed. ConcentricRings and CompactIntakeSummary are React.memo'd
+  // and receive this object as a prop — without primitive-keyed memoization here,
+  // that memo does nothing (a fresh object every render always fails the shallow
+  // compare, so both components re-render on every DietScreen keystroke/state
+  // change regardless of whether the actual nutrition numbers moved).
+  const currentNutrition = useMemo(
+    () => ({
+      calories: displayNutrition.calories,
+      protein: displayNutrition.protein,
+      carbs: displayNutrition.carbs,
+      fat: displayNutrition.fat,
+      fiber: displayNutrition.fiber,
+      sugar: displayNutrition.sugar,
+      mealsCount: isSelectedDateToday
+        ? (dailyNutrition?.mealsCount ?? selectedDateConsumedMeals.length)
+        : selectedDateConsumedMeals.length,
+    }),
+    [
+      displayNutrition.calories,
+      displayNutrition.protein,
+      displayNutrition.carbs,
+      displayNutrition.fat,
+      displayNutrition.fiber,
+      displayNutrition.sugar,
+      isSelectedDateToday,
+      dailyNutrition?.mealsCount,
+      selectedDateConsumedMeals.length,
+    ]
+  );
 
   const macroTargets = getMacroTargets();
   // 0 when target not set â€” CompactDietCard renders the ring/pills against
   // these targets; a zero target shows an empty ring (no fabricated fallback).
   const calorieTarget = getCalorieTarget() || 0;
 
-  const nutritionTargets = {
-    calories: {
-      current: currentNutrition.calories,
-      target: calorieTarget,
-    },
-    protein: {
-      current: currentNutrition.protein,
-      target: macroTargets.protein ?? 0,
-    },
-    carbs: {
-      current: currentNutrition.carbs,
-      target: macroTargets.carbs ?? 0,
-    },
-    fat: {
-      current: currentNutrition.fat,
-      target: macroTargets.fat ?? 0,
-    },
-    fiber: {
-      current: currentNutrition.fiber,
-      // Prefer the onboarding-calculated value (advancedReview.daily_fiber_g).
-      // Runtime fallback mirrors the architecture-doc formula (calories/1000 × 14)
-      // so a partial profile still shows a reasonable fiber target instead of 0.
-      target:
-        calculatedMetrics?.dailyFiberG ??
-        (calorieTarget ? Math.round((calorieTarget / 1000) * 14) : 0),
-    },
-    sugar: {
-      current: currentNutrition.sugar,
-      target: Math.round((calorieTarget * 0.1) / 4) || 0, // 10% of daily calories from sugar (WHO guideline), personalized
-    },
-  };
+  const nutritionTargets = useMemo(
+    () => ({
+      calories: {
+        current: currentNutrition.calories,
+        target: calorieTarget,
+      },
+      protein: {
+        current: currentNutrition.protein,
+        target: macroTargets.protein ?? 0,
+      },
+      carbs: {
+        current: currentNutrition.carbs,
+        target: macroTargets.carbs ?? 0,
+      },
+      fat: {
+        current: currentNutrition.fat,
+        target: macroTargets.fat ?? 0,
+      },
+      fiber: {
+        current: currentNutrition.fiber,
+        // Prefer the onboarding-calculated value (advancedReview.daily_fiber_g).
+        // Runtime fallback mirrors the architecture-doc formula (calories/1000 × 14)
+        // so a partial profile still shows a reasonable fiber target instead of 0.
+        target:
+          calculatedMetrics?.dailyFiberG ??
+          (calorieTarget ? Math.round((calorieTarget / 1000) * 14) : 0),
+      },
+      sugar: {
+        current: currentNutrition.sugar,
+        target: Math.round((calorieTarget * 0.1) / 4) || 0, // 10% of daily calories from sugar (WHO guideline), personalized
+      },
+    }),
+    [currentNutrition, calorieTarget, macroTargets.protein, macroTargets.carbs, macroTargets.fat, calculatedMetrics?.dailyFiberG]
+  );
 
   const mealSchedule = React.useMemo(() => {
     return calculateMealSchedule(
@@ -738,7 +791,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   mealCount={currentNutrition.mealsCount}
                   plannedMealCount={selectedDayMeals.length}
                   onLogMeal={handleSearchFood}
-                  onViewPlan={() => setShowTodaysPlan(true)}
+                  onViewPlan={handleViewTodaysPlan}
                   selectedDate={selectedDateKey}
                 />
 

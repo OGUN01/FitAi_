@@ -2,18 +2,10 @@ import {
   getIntakeSummary,
   getMealPlanStatus,
   getMealScheduleTime,
-  getWeekDates,
   isSameCalendarDay,
 } from "@/components/diet/dietViewModel";
 
 describe("dietViewModel", () => {
-  it("builds a Monday-to-Sunday week containing the selected date", () => {
-    const days = getWeekDates(new Date("2026-07-24T12:00:00"));
-    expect(days.map((day) => day.getDate())).toEqual([
-      20, 21, 22, 23, 24, 25, 26,
-    ]);
-  });
-
   it.each([
     [0, "upcoming"],
     [20, "in_progress"],

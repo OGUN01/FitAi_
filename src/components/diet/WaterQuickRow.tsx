@@ -37,7 +37,7 @@ const QUICK_AMOUNTS = [250, 500, 1000] as const;
 
 const formatAmount = (ml: number): string => (ml >= 1000 ? '+1L' : `+${ml}`);
 
-export const WaterQuickRow: React.FC<WaterQuickRowProps> = ({
+const WaterQuickRowComponent: React.FC<WaterQuickRowProps> = ({
   intakeML,
   goalML,
   onAddWater,
@@ -209,6 +209,12 @@ export const WaterQuickRow: React.FC<WaterQuickRowProps> = ({
     </Animated.View>
   );
 };
+
+// Memoized: DietScreen re-renders on every keystroke of its unrelated local
+// input state (label-scan grams, photo weight, etc.); this component's props
+// are plain primitives, so it should skip re-rendering when they haven't
+// actually changed.
+export const WaterQuickRow = React.memo(WaterQuickRowComponent);
 
 const styles = StyleSheet.create({
   container: {

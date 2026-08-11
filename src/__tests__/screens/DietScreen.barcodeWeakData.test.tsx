@@ -99,9 +99,6 @@ jest.mock("../../components/ui", () => ({
 jest.mock("../../components/diet/StreakPill", () => ({
   StreakPill: () => null,
 }));
-jest.mock("../../components/diet/WeekCalendarStrip", () => ({
-  WeekCalendarStrip: () => null,
-}));
 
 jest.mock("../../components/diet/WaterIntakeModal", () => ({
   WaterIntakeModal: () => null,
@@ -246,6 +243,18 @@ jest.mock("../../utils/responsive", () => ({
   rh: (value: number) => value,
   rs: (value: number) => value,
   rbr: (value: number) => value,
+  // DietActionDock reads `dimensions.screenWidth` at module scope; this mock
+  // previously omitted it, crashing every test in this file with "Cannot
+  // read properties of undefined (reading 'screenWidth')" as soon as
+  // DietScreen (which renders DietActionDock) was required.
+  dimensions: {
+    screenWidth: 393,
+    screenHeight: 852,
+    widthScale: 1,
+    heightScale: 1,
+    scale: 1,
+    fontScale: 1,
+  },
 }));
 
 jest.mock("../../hooks/useAuth", () => ({

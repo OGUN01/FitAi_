@@ -10,6 +10,7 @@ import {
 } from '../../theme/aurora-tokens';
 import { getLocalDateString } from '../../utils/weekUtils';
 import { fontFamilyForWeight } from '../../theme/fonts';
+import { rf, rw } from '../../utils/responsive';
 
 interface DateStepperProps {
   selectedDate: string;
@@ -19,6 +20,13 @@ interface DateStepperProps {
 }
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+// 44px accessibility touch-target floor, matching the sibling pattern in
+// FoodSearchSheet.tsx / MealsTimeline.tsx (Math.max(rw(44), 44)) so these
+// controls never shrink below the minimum tap size on small-width devices
+// (widthScale < 1).
+const TOUCH_TARGET = Math.max(rw(44), 44);
+const TOUCH_TARGET_RADIUS = TOUCH_TARGET / 2;
 
 export const DateStepper: React.FC<DateStepperProps> = ({
   selectedDate,
@@ -68,7 +76,7 @@ export const DateStepper: React.FC<DateStepperProps> = ({
           accessibilityLabel="Previous day"
           hapticType="light"
         >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
+          <Ionicons name="chevron-back" size={rf(22)} color={colors.text} />
         </AnimatedPressable>
         <AnimatedPressable
           style={styles.dateButton}
@@ -77,9 +85,9 @@ export const DateStepper: React.FC<DateStepperProps> = ({
           accessibilityLabel={`Choose date, currently ${label}`}
           hapticType="light"
         >
-          <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+          <Ionicons name="calendar-outline" size={rf(18)} color={colors.primary} />
           <Text style={styles.dateLabel}>{label}</Text>
-          <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+          <Ionicons name="chevron-down" size={rf(16)} color={colors.textSecondary} />
         </AnimatedPressable>
         <AnimatedPressable
           style={styles.arrow}
@@ -88,7 +96,7 @@ export const DateStepper: React.FC<DateStepperProps> = ({
           accessibilityLabel="Next day"
           hapticType="light"
         >
-          <Ionicons name="chevron-forward" size={22} color={colors.text} />
+          <Ionicons name="chevron-forward" size={rf(22)} color={colors.text} />
         </AnimatedPressable>
       </View>
 
@@ -107,7 +115,7 @@ export const DateStepper: React.FC<DateStepperProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Previous month"
               >
-                <Ionicons name="chevron-back" size={20} color={colors.text} />
+                <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
               </AnimatedPressable>
               <Text style={styles.monthLabel}>
                 {visibleMonth.toLocaleDateString(undefined, {
@@ -121,7 +129,7 @@ export const DateStepper: React.FC<DateStepperProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Next month"
               >
-                <Ionicons name="chevron-forward" size={20} color={colors.text} />
+                <Ionicons name="chevron-forward" size={rf(20)} color={colors.text} />
               </AnimatedPressable>
             </View>
             <View style={styles.weekdayRow}>
@@ -184,16 +192,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   arrow: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    minWidth: TOUCH_TARGET,
+    minHeight: TOUCH_TARGET,
+    borderRadius: TOUCH_TARGET_RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
   },
   dateButton: {
     flex: 1,
-    minHeight: 44,
+    minHeight: TOUCH_TARGET,
     borderRadius: borderRadius.full,
     backgroundColor: colors.surface,
     flexDirection: 'row',
@@ -228,8 +236,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   monthArrow: {
-    width: 44,
-    height: 44,
+    minWidth: TOUCH_TARGET,
+    minHeight: TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -251,10 +259,10 @@ const styles = StyleSheet.create({
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   day: {
     width: '14.285%',
-    minHeight: 44,
+    minHeight: TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 22,
+    borderRadius: TOUCH_TARGET_RADIUS,
   },
   daySelected: { backgroundColor: colors.primary },
   dayText: { color: colors.text, fontSize: fontSize.sm },
@@ -265,7 +273,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   closeButton: {
-    minHeight: 44,
+    minHeight: TOUCH_TARGET,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.sm,

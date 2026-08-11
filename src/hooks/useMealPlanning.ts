@@ -617,22 +617,54 @@ export const useMealPlanning = (navigation: any) => {
 
         const dietPrefs = buildLegacyDietPreferences(useProfileStore.getState().dietPreferences);
 
-        const swapped = await aiService.swapMealInPlan(meal, {
+        const result = await aiService.swapMealInPlan(meal, {
           dietType: dietPrefs?.diet_type || 'balanced',
           allergies: dietPrefs?.allergies || [],
           restrictions: dietPrefs?.restrictions || [],
           excludeIngredients: dietPrefs?.dislikes || [],
         });
 
-        if (swapped) {
-          meals[idx] = { ...swapped, id: meal.id, dayOfWeek: meal.dayOfWeek };
+        if (result.success && result.data) {
+          meals[idx] = { ...result.data, id: meal.id, dayOfWeek: meal.dayOfWeek };
           const updatedPlan = { ...weeklyMealPlan, meals };
           await saveWeeklyMealPlan(updatedPlan);
           setWeeklyMealPlan(updatedPlan);
+
+          // The new AI-generated meal replaces the old one's content but keeps
+          // its id, so any prior mealProgress entry (including a 100%-complete
+          // one) would otherwise be inherited by a meal that was never logged.
+          // Clear it, matching handleDeleteMeal's equivalent cleanup above — and
+          // like handleDeleteMeal, delete the underlying meal_logs row FIRST.
+          // nutritionStore.loadData() rehydrates mealProgress by querying
+          // meal_logs WHERE plan_meal_id IN planMealIds; since the swapped meal
+          // keeps the same id, a stale logged row would silently reattach itself
+          // to the new meal on the next hydration (restart/re-login/resync) if
+          // we only cleared the local Zustand cache.
+          try {
+            // Read the logId from a fresh store snapshot (not the closure-bound
+            // `getMealProgress`, which is captured over this callback's
+            // render-time mealProgressMap and can be stale here) so the delete
+            // and the subsequent clear both act on the same up-to-date state.
+            const freshProgress = useNutritionStore.getState().mealProgress;
+            const mealProgressData = freshProgress[meal.id];
+            if (mealProgressData?.logId) {
+              await crudOperations.deleteMealLog(mealProgressData.logId);
+            }
+            const currentProgress = { ...useNutritionStore.getState().mealProgress };
+            if (currentProgress[meal.id]) {
+              delete currentProgress[meal.id];
+              useNutritionStore.setState({ mealProgress: currentProgress });
+            }
+          } catch (progressError) {
+            console.error(
+              '[MealPlanning] Failed to reset meal progress after swap:',
+              progressError
+            );
+          }
         } else {
           crossPlatformAlert(
             'Swap Failed',
-            'Could not generate a replacement meal. Please try again.'
+            result.error || 'Could not generate a replacement meal. Please try again.'
           );
         }
       } catch (error) {

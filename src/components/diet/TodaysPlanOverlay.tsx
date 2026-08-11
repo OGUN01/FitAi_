@@ -78,7 +78,7 @@ export const TodaysPlanOverlay: React.FC<TodaysPlanOverlayProps> = ({
           onMealPress={onMealPress}
           onGeneratePlan={onGeneratePlan}
           isGeneratingPlan={isGeneratingPlan}
-          title="Meal timeline"
+          title="Meal Timeline"
           onLogMeal={onLogMeal}
         />
         <CompactIntakeSummary

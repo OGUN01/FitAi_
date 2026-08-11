@@ -174,7 +174,7 @@ const safe = (n: number): number => (Number.isFinite(n) ? Math.max(0, n) : 0);
 const pct = (current: number, target: number): number =>
   target > 0 ? Math.min(100, Math.max(0, (current / target) * 100)) : 0;
 
-export const ConcentricRings: React.FC<ConcentricRingsProps> = ({
+const ConcentricRingsComponent: React.FC<ConcentricRingsProps> = ({
   calories,
   protein,
   carbs,
@@ -366,6 +366,12 @@ const LegendItem: React.FC<LegendItemProps> = ({ color, label, current, target, 
     </View>
   );
 };
+
+// Memoized: DietScreen re-renders on every keystroke of its unrelated local
+// input state (label-scan grams, photo weight, etc.); the three-ring SVG/
+// gradient computation here is expensive enough that it shouldn't re-run
+// unless its own primitive/object props actually changed.
+export const ConcentricRings = React.memo(ConcentricRingsComponent);
 
 // ============================================================================
 // STYLES

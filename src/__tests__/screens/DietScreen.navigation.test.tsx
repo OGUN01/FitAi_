@@ -99,17 +99,14 @@ jest.mock('../../components/ui', () => ({
 }));
 
 // Diet tab redesigned (Hero Ring layout): the dashboard now renders a big
-// calorie ring (DietHeroRing), macro rings (MacroRingsRow), an integrated
-// meals timeline (MealsTimeline) and a water row (WaterQuickRow) directly on
-// the AuroraBackground, plus a floating action dock (DietActionDock). The
-// MealsListView full-screen overlay was removed; tapping a timeline row opens
-// the MealDetailView overlay directly. These new components render real under
-// the global svg/reanimated mocks; only the heavy/visual siblings are stubbed.
+// calorie ring, an integrated meals timeline (MealsTimeline) and a water row
+// (WaterQuickRow) directly on the AuroraBackground, plus a floating action
+// dock (DietActionDock). The MealsListView full-screen overlay was removed;
+// tapping a timeline row opens the MealDetailView overlay directly. These new
+// components render real under the global svg/reanimated mocks; only the
+// heavy/visual siblings are stubbed.
 jest.mock('../../components/diet/StreakPill', () => ({
   StreakPill: () => null,
-}));
-jest.mock('../../components/diet/WeekCalendarStrip', () => ({
-  WeekCalendarStrip: () => null,
 }));
 jest.mock('../../components/DatabaseDownloadBanner', () => () => null);
 jest.mock('../../components/diet/DietModals', () => ({
@@ -146,6 +143,18 @@ jest.mock('../../utils/responsive', () => ({
   rh: (v: number) => v,
   rs: (v: number) => v,
   rbr: (v: number) => v,
+  // DietActionDock reads `dimensions.screenWidth` at module scope; this mock
+  // previously omitted it, crashing every test in this file with "Cannot
+  // read properties of undefined (reading 'screenWidth')" as soon as
+  // DietScreen (which renders DietActionDock) was required.
+  dimensions: {
+    screenWidth: 393,
+    screenHeight: 852,
+    widthScale: 1,
+    heightScale: 1,
+    scale: 1,
+    fontScale: 1,
+  },
 }));
 
 // Keep the real getMealTime (used by MealsTimeline/MealDetailView to render

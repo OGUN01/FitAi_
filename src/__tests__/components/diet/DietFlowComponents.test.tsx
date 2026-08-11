@@ -64,7 +64,7 @@ describe('Diet flow components', () => {
     expect(screen.queryByLabelText('Close calendar')).toBeNull();
   });
 
-  it('shows capped intake progress and invokes both dashboard actions', () => {
+  it('caps intake progress at 100% but shows the true overage, not a clamped remaining', () => {
     const onLogMeal = jest.fn();
     const onViewPlan = jest.fn();
     const screen = render(
@@ -80,7 +80,10 @@ describe('Diet flow components', () => {
 
     expect(screen.getByText('3 logged · 4 planned')).toBeTruthy();
     expect(screen.getByText('100%')).toBeTruthy();
-    expect(screen.getByText('0')).toBeTruthy();
+    // Consumed 200 kcal over target — must surface the real overage, not a
+    // clamped "0 Remaining" that hides it.
+    expect(screen.getByText('200')).toBeTruthy();
+    expect(screen.getByText('kcal over')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Log a meal or food'));
     fireEvent.press(screen.getByLabelText("View today's plan"));
     expect(onLogMeal).toHaveBeenCalledTimes(1);
@@ -109,7 +112,7 @@ describe('Diet flow components', () => {
     );
 
     expect(screen.getByTestId('diet-todays-plan-overlay')).toBeTruthy();
-    expect(screen.getByText('Meal timeline')).toBeTruthy();
+    expect(screen.getByText('Meal Timeline')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Back to Diet'));
     fireEvent.press(screen.getByTestId('meal-timeline-card-lunch-1'));
     fireEvent.press(screen.getByLabelText('Log a meal or food'));

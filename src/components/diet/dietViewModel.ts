@@ -14,17 +14,6 @@ export const isSameCalendarDay = (a: Date, b: Date): boolean =>
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
-export const getWeekDates = (anchor: Date): Date[] => {
-  const start = new Date(anchor);
-  start.setHours(12, 0, 0, 0);
-  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(start);
-    day.setDate(start.getDate() + index);
-    return day;
-  });
-};
-
 /**
  * Parse a scheduled meal time to minutes since midnight. Accepts both the
  * 12-hour strings `getMealTime` produces ("7:45 AM" / "12:00 PM") and 24-hour

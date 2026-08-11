@@ -271,9 +271,6 @@ jest.mock('../../components/ui/aurora/AuroraBackground', () => ({
 jest.mock('../../components/diet/StreakPill', () => ({
   StreakPill: () => null,
 }));
-jest.mock('../../components/diet/WeekCalendarStrip', () => ({
-  WeekCalendarStrip: () => null,
-}));
 
 jest.mock('../../components/diet/WaterIntakeModal', () => ({
   WaterIntakeModal: () => null,

@@ -820,7 +820,7 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
             variant="secondary"
             icon="swap-horizontal-outline"
             loading={isSwapping}
-            disabled={!onSwapMeal || isCompleting}
+            disabled={!onSwapMeal || isCompleting || isCompleted}
             fullWidth
           />
         </View>
