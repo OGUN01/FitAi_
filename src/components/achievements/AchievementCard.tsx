@@ -16,6 +16,7 @@ import {
 import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { TIER_COLOR_MAP as tierColorMap } from "../../data/achievements/tierColors";
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -23,15 +24,6 @@ interface AchievementCardProps {
   onPress?: () => void;
   showProgress?: boolean;
 }
-
-const tierColorMap: Record<string, string> = {
-  bronze: chart[1],
-  silver: chart[2],
-  gold: chart[5],
-  platinum: chart[3],
-  diamond: chart[6],
-  legendary: chart[4],
-};
 
 const AchievementCard: React.FC<AchievementCardProps> = ({
   achievement,

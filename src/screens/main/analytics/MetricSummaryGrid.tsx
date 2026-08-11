@@ -336,12 +336,12 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
                 subtitle={
                   data.bmi
                     ? data.bmi < 18.5
-                      ? "Underweight"
+                      ? "Below typical range"
                       : data.bmi < 25
-                        ? "Normal"
+                        ? "Typical range"
                         : data.bmi < 30
-                          ? "Overweight"
-                          : "Obese"
+                          ? "Above typical range"
+                          : "Well above typical range"
                     : undefined
                 }
                 icon="body-outline"

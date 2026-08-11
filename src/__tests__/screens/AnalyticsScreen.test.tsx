@@ -246,11 +246,15 @@ jest.mock("../../stores/subscriptionStore", () => ({
   },
 }));
 
-jest.mock("../../stores/authStore", () => ({
-  useAuthStore: () => ({
+jest.mock("../../stores/authStore", () => {
+  const state = {
     user: { id: "user-1" },
-  }),
-}));
+  };
+  return {
+    useAuthStore: (selector?: (state: any) => unknown) =>
+      selector ? selector(state) : state,
+  };
+});
 
 jest.mock("../../stores/profileStore", () => {
   const state = {
@@ -258,7 +262,9 @@ jest.mock("../../stores/profileStore", () => {
     personalInfo: null,
     workoutPreferences: null,
   };
-  const fn = jest.fn(() => state);
+  const fn = jest.fn((selector?: (state: any) => unknown) =>
+    selector ? selector(state) : state
+  );
   (fn as any).getState = jest.fn(() => state);
   return { useProfileStore: fn };
 });

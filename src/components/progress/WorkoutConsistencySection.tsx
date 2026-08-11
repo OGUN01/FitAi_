@@ -51,12 +51,16 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
 }) => {
   const completedSessions = useFitnessStore((s) => s.completedSessions);
 
-  const workedOutDays = useMemo(() => {
-    const set = new Set<string>();
+  // Session count per day (not just worked/didn't-work) so the heatmap can
+  // show real graduated intensity across all 5 legend swatches instead of
+  // a binary on/off that only ever hit level 0 or the max level.
+  const sessionCountByDay = useMemo(() => {
+    const counts = new Map<string, number>();
     completedSessions.forEach((s) => {
-      set.add(dateKey(new Date(s.completedAt)));
+      const key = dateKey(new Date(s.completedAt));
+      counts.set(key, (counts.get(key) ?? 0) + 1);
     });
-    return set;
+    return counts;
   }, [completedSessions]);
 
   const { weeks, monthLabels, totalThisPeriod } = useMemo(() => {
@@ -72,20 +76,20 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
     const gridStart = new Date(gridEnd);
     gridStart.setDate(gridEnd.getDate() - (WEEKS_SHOWN * DAYS_PER_WEEK - 1));
 
-    const weeksArr: Array<Array<{ key: string; worked: boolean; isToday: boolean; inFuture: boolean }>> = [];
+    const weeksArr: Array<Array<{ key: string; count: number; isToday: boolean; inFuture: boolean }>> = [];
     const months: Array<{ index: number; label: string }> = [];
     let lastMonth = -1;
     let total = 0;
 
     for (let w = 0; w < WEEKS_SHOWN; w++) {
-      const week: Array<{ key: string; worked: boolean; isToday: boolean; inFuture: boolean }> = [];
+      const week: Array<{ key: string; count: number; isToday: boolean; inFuture: boolean }> = [];
       for (let d = 0; d < DAYS_PER_WEEK; d++) {
         const date = new Date(gridStart);
         date.setDate(gridStart.getDate() + w * DAYS_PER_WEEK + d);
         const key = dateKey(date);
-        const worked = workedOutDays.has(key);
-        if (worked && date <= today) {
-          total += 1;
+        const count = sessionCountByDay.get(key) ?? 0;
+        if (count > 0 && date <= today) {
+          total += count;
         }
         if (d === 0 && date.getMonth() !== lastMonth) {
           months.push({
@@ -96,7 +100,7 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
         }
         week.push({
           key,
-          worked,
+          count,
           isToday: date.getTime() === today.getTime(),
           inFuture: date.getTime() > today.getTime(),
         });
@@ -104,7 +108,7 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
       weeksArr.push(week);
     }
     return { weeks: weeksArr, monthLabels: months, totalThisPeriod: total };
-  }, [workedOutDays]);
+  }, [sessionCountByDay]);
 
   return (
     <Animated.View
@@ -146,7 +150,10 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
           {weeks.map((week, wi) => (
             <View key={wi} style={styles.weekCol}>
               {week.map((cell) => {
-                const level = cell.worked ? 4 : 0;
+                // Graduated intensity from real session count per day
+                // (1 session = level 1 … 4+ sessions = level 4), matching
+                // the 5-swatch "Less -> More" legend below.
+                const level = Math.min(cell.count, ACCENT_SCALE.length - 1);
                 return (
                   <View
                     key={cell.key}

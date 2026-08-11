@@ -69,7 +69,12 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
       <View style={styles.chartsContainer}>
         <ChartCard
           title="Weight Progress"
-          icon="trending-down"
+          // A directional icon here would contradict the LineChart body,
+          // which already computes and shows the real trend arrow/badge
+          // from the data (via calculateTrend + weightLossGoal below). Use a
+          // neutral topic icon instead, matching the "flame"/"barbell"
+          // pattern used by the other two cards.
+          icon="body-outline"
           iconColor={chart[1]}
           legend={weightLegend}
           delay={0}

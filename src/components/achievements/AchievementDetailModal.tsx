@@ -36,6 +36,7 @@ import { rf } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { TIER_COLOR_MAP } from "../../data/achievements/tierColors";
 
 interface AchievementDetailModalProps {
   visible: boolean;
@@ -44,14 +45,15 @@ interface AchievementDetailModalProps {
   onClose: () => void;
 }
 
-const tierGradients: Record<string, readonly [string, string]> = {
-  bronze: [chart[1], chart[1]] as const,
-  silver: [chart[2], chart[2]] as const,
-  gold: [chart[5], chart[5]] as const,
-  platinum: [chart[3], chart[3]] as const,
-  diamond: [chart[6], chart[6]] as const,
-  legendary: [chart[4], chart[4]] as const,
-};
+// Solid-color "gradient" (both stops equal) derived from the shared tier map
+// so this stays in lockstep with the canonical tier colors used elsewhere.
+const tierGradients: Record<string, readonly [string, string]> =
+  Object.fromEntries(
+    Object.entries(TIER_COLOR_MAP).map(([tier, color]) => [
+      tier,
+      [color, color] as const,
+    ]),
+  );
 
 export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
   visible,

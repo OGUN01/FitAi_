@@ -72,8 +72,13 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
         <View style={[styles.iconWrap, { backgroundColor: `${chart[1]}18` }]}>
           <Ionicons name="flag-outline" size={rf(18)} color={chart[1]} />
         </View>
+        {/* Distinct title from components/progress/GoalProgressSection
+            (shown on ProgressScreen) — that section tracks Weight +
+            Workouts This Week, this card tracks Weight + Daily Calorie
+            Target. Disambiguates the two "Goal Progress" widgets without
+            changing either's data contract or visual language. */}
         <Text style={styles.title} numberOfLines={1}>
-          Goal Progress
+          Nutrition & Weight Goals
         </Text>
       </View>
 

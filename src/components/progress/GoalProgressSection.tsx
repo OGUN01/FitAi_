@@ -166,7 +166,13 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
       entering={FadeInDown.delay(90).duration(320)}
       style={styles.section}
     >
-      <Text style={styles.sectionTitle}>Goal Progress</Text>
+      {/* Distinct title from analytics/GoalProgressCard (shown on
+          ProgressTrends) — that card tracks Weight + Daily Calorie Target,
+          this section tracks Weight + Workouts This Week. Same "Goal
+          Progress" title on both screens read as duplicate/inconsistent
+          widgets; naming this one for its weekly workout scope disambiguates
+          them without changing either's data contract or visual language. */}
+      <Text style={styles.sectionTitle}>This Week's Goals</Text>
 
       {showWeightRow && (
         <GoalRow

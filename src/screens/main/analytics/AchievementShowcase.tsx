@@ -15,6 +15,7 @@ import { hexToRgba } from "../../../utils/colors";
 import { SectionHeader } from "../home/SectionHeader";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { buildAchievementViewModels } from "../../../utils/achievementViewModel";
+import { TIER_COLOR_MAP } from "../../../data/achievements/tierColors";
 
 interface AchievementShowcaseProps {
   isLoading?: boolean;
@@ -23,15 +24,6 @@ interface AchievementShowcaseProps {
 
 const ITEM_HEIGHT = 68;
 const VISIBLE_COUNT = 3;
-
-const rarityColor: Record<string, string> = {
-  bronze: colors.text.muted,
-  silver: chart[2],
-  gold: chart[5],
-  platinum: chart[3],
-  diamond: chart[1],
-  legendary: chart[5],
-};
 
 export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
   isLoading = false,
@@ -106,7 +98,7 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
             {displayAchievements.map((item, index) => {
               const accentColor = item.completed
                 ? chart[4]
-                : (rarityColor[item.tier] ?? colors.text.muted);
+                : (TIER_COLOR_MAP[item.tier] ?? colors.text.muted);
               const hasProgress =
                 !item.completed && item.progress > 0 && item.target > 0;
               const pct = hasProgress

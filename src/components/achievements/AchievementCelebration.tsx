@@ -20,6 +20,7 @@ import { rf, rp } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import useAchievementStore from "../../stores/achievementStore";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { TIER_COLOR_MAP as tierColorMap } from "../../data/achievements/tierColors";
 
 interface AchievementCelebrationProps {
   visible: boolean;
@@ -27,23 +28,11 @@ interface AchievementCelebrationProps {
   onClose: () => void;
 }
 
-const tierColorMap: Record<string, string> = {
-  bronze: chart[1],
-  silver: chart[2],
-  gold: chart[5],
-  platinum: chart[3],
-  diamond: chart[6],
-  legendary: chart[4],
-};
-
-const tierGradientMap: Record<string, [string, string]> = {
-  bronze: [chart[1], chart[1]],
-  silver: [chart[2], chart[2]],
-  gold: [chart[5], chart[5]],
-  platinum: [chart[3], chart[3]],
-  diamond: [chart[6], chart[6]],
-  legendary: [chart[4], chart[4]],
-};
+// Solid-color "gradient" (both stops equal) derived from the shared tier map
+// so this stays in lockstep with tierColorMap instead of hand-duplicating it.
+const tierGradientMap: Record<string, [string, string]> = Object.fromEntries(
+  Object.entries(tierColorMap).map(([tier, color]) => [tier, [color, color]]),
+) as Record<string, [string, string]>;
 
 const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   visible,

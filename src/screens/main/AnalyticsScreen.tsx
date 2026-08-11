@@ -40,7 +40,6 @@ import PaywallModal from "../../components/subscription/PaywallModal";
 
 // Stores
 import { useAnalyticsStore } from "../../stores/analyticsStore";
-import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useAuthStore } from "../../stores/authStore";
 import { useProfileStore } from "../../stores/profileStore";
@@ -113,10 +112,12 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   // Stores
   // SSOT: weight/target come from profileStore.bodyAnalysis — userStore.profile is NOT used here
-  const { user } = useAuthStore();
-  const { metrics: healthMetrics } = useHealthDataStore();
+  // Field-level selectors (instead of destructuring the whole store) so this
+  // screen doesn't re-render on unrelated field changes elsewhere in the store.
+  const user = useAuthStore((s) => s.user);
   const completedSessions = useFitnessStore((state) => state.completedSessions);
-  const { bodyAnalysis, personalInfo, workoutPreferences } = useProfileStore();
+  const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
+  const personalInfo = useProfileStore((s) => s.personalInfo);
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
 
   // Stored weights are metric (kg); convert to the user's unit at display time.
@@ -368,14 +369,27 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         consumed: displayCalories,
         target: calculatedMetrics?.dailyCalories || undefined,
         change: calorieChange,
-        trend: displayCalories > 0 ? ("up" as const) : ("stable" as const),
+        // Trend must agree with the sign of `change` (the displayed %) —
+        // never derive it from an unrelated fact like "was anything logged".
+        trend:
+          calorieChange === undefined
+            ? ("stable" as const)
+            : calorieChange > 0
+              ? ("up" as const)
+              : calorieChange < 0
+                ? ("down" as const)
+                : ("stable" as const),
         period: selectedPeriod,
         hasData: periodCalorieHistory.some((entry) => (entry.consumed || 0) > 0),
       },
       workouts: {
         count: completedWorkouts,
         change: undefined,
-        trend: completedWorkouts > 0 ? ("up" as const) : ("stable" as const),
+        // No real period-over-period comparison exists for workouts (change
+        // is always undefined), so don't attach a vacuous "up" trend flag —
+        // StatCell requires both trend + trendValue truthy to render, but a
+        // future trendValue addition would otherwise ship a fake indicator.
+        trend: undefined,
       },
       streak: {
         days: streak,
@@ -401,7 +415,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       dailyWater: calculatedMetrics?.dailyWaterML,
     };
   }, [
-    healthMetrics,
     bodyAnalysis,
     completedSessions,
     calculatedMetrics,
