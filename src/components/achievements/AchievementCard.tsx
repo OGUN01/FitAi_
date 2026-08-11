@@ -17,6 +17,7 @@ import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP as tierColorMap } from "../../data/achievements/tierColors";
+import { getReadableTextColor } from "./AchievementCelebration";
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -38,6 +39,11 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   const progressPercent = Math.min((progress / maxProgress) * 100, 100);
   const isLocked = !isCompleted && progress === 0;
   const tierColor = tierColorMap[achievement.tier] ?? chart[1];
+  // Bright tiers (gold/silver) need a dark checkmark, not hardcoded white —
+  // same WCAG-luminance rule AchievementCelebration uses for its button label.
+  const statusIconColor = isCompleted
+    ? getReadableTextColor(tierColor)
+    : colors.text.muted;
 
   return (
     <AnimatedPressable
@@ -52,15 +58,29 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
         entering={FadeInDown.duration(300)}
         style={[styles.tile, isLocked && styles.tileLocked]}
       >
-        {/* Tier ring badge */}
+        {/* Tier ring badge — primary glyph is the achievement's own emoji
+            (services/achievements/definitions.ts contract), not a generic
+            status icon. Completion/lock state is a small corner badge. */}
         <View style={[styles.ringOuter, { borderColor: tierColor }]}>
           <View style={[styles.ringInner, { backgroundColor: `${tierColor}18` }]}>
-            <Ionicons
-              name={isCompleted ? "checkmark" : isLocked ? "lock-closed" : "trophy"}
-              size={rf(18)}
-              color={isLocked ? colors.text.muted : tierColor}
-            />
+            <Text style={[styles.iconEmoji, isLocked && styles.iconEmojiLocked]}>
+              {achievement.icon}
+            </Text>
           </View>
+          {(isCompleted || isLocked) && (
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: isCompleted ? tierColor : surface[2] },
+              ]}
+            >
+              <Ionicons
+                name={isCompleted ? "checkmark" : "lock-closed"}
+                size={rf(10)}
+                color={statusIconColor}
+              />
+            </View>
+          )}
         </View>
 
         {/* Title */}
@@ -127,6 +147,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.sm,
+    position: "relative",
   },
   ringInner: {
     width: 44,
@@ -134,6 +155,24 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+  },
+  iconEmoji: {
+    fontSize: rf(22),
+  },
+  iconEmojiLocked: {
+    opacity: 0.5,
+  },
+  statusBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: surface[1],
   },
   title: {
     ...typography.variants.cardHeadline,

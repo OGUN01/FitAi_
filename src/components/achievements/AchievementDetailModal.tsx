@@ -37,6 +37,7 @@ import { hexToRgba } from "../../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP } from "../../data/achievements/tierColors";
+import { getReadableTextColor } from "./AchievementCelebration";
 
 interface AchievementDetailModalProps {
   visible: boolean;
@@ -76,6 +77,11 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
   const tierGradient = achievement
     ? (tierGradients[achievement.tier] ?? ([chart[1], chart[1]] as const))
     : ([chart[1], chart[1]] as const);
+  // Bright tiers (gold/silver) need a dark checkmark, not hardcoded white —
+  // same WCAG-luminance rule AchievementCelebration uses for its button label.
+  const heroStatusIconColor = isUnlocked
+    ? getReadableTextColor(tierColor)
+    : colors.text.muted;
 
   useEffect(() => {
     if (visible && achievement) {
@@ -144,22 +150,35 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
           style={styles.modalContent}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          {/* Hero badge with spring entrance */}
+          {/* Hero badge with spring entrance — primary glyph is the
+              achievement's own emoji (services/achievements/definitions.ts
+              contract), not a generic trophy/lock icon. Completion/lock
+              state is a small corner badge on the ring. */}
           <View style={styles.header}>
-            <Animated.View style={[styles.heroBadgeWrap, badgeStyle]}>
-              <LinearGradient
-                colors={tierGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.heroBadge}
+            <View style={styles.heroBadgeContainer}>
+              <Animated.View style={[styles.heroBadgeWrap, badgeStyle]}>
+                <LinearGradient
+                  colors={tierGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.heroBadge}
+                >
+                  <Text style={styles.heroIcon}>{achievement.icon}</Text>
+                </LinearGradient>
+              </Animated.View>
+              <View
+                style={[
+                  styles.heroStatusBadge,
+                  { backgroundColor: isUnlocked ? tierColor : surface[2] },
+                ]}
               >
                 <Ionicons
-                  name={isUnlocked ? "trophy" : "lock-closed"}
-                  size={rf(32)}
-                  color={colors.text.primary}
+                  name={isUnlocked ? "checkmark" : "lock-closed"}
+                  size={rf(14)}
+                  color={heroStatusIconColor}
                 />
-              </LinearGradient>
-            </Animated.View>
+              </View>
+            </View>
             <AnimatedPressable
               onPress={onClose}
               scaleValue={0.9}
@@ -314,6 +333,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  heroBadgeContainer: {
+    width: 88,
+    height: 88,
+  },
   heroBadgeWrap: {
     width: 88,
     height: 88,
@@ -326,6 +349,21 @@ const styles = StyleSheet.create({
     borderRadius: 44,
     justifyContent: "center",
     alignItems: "center",
+  },
+  heroIcon: {
+    fontSize: rf(40),
+  },
+  heroStatusBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: surface[2],
   },
   title: {
     ...typography.variants.pageTitle,

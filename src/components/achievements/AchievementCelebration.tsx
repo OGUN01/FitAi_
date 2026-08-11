@@ -34,6 +34,28 @@ const tierGradientMap: Record<string, [string, string]> = Object.fromEntries(
   Object.entries(tierColorMap).map(([tier, color]) => [tier, [color, color]]),
 ) as Record<string, [string, string]>;
 
+// WCAG relative-luminance check so text/icons stay legible against whichever
+// tier accent they're placed on (bright tiers like gold/silver need a dark
+// label; darker tiers like platinum read fine with white). Computed from the
+// color itself rather than hardcoded per tier so this stays correct if
+// TIER_COLOR_MAP ever changes. Exported so AchievementCard and
+// AchievementDetailModal can apply the same rule to their status badges
+// instead of hardcoding white-on-tierColor (which is illegible on gold/silver).
+export const getReadableTextColor = (hex: string): string => {
+  const clean = hex.replace("#", "");
+  if (clean.length !== 6) return colors.text.primary;
+  const r = parseInt(clean.substring(0, 2), 16) / 255;
+  const g = parseInt(clean.substring(2, 4), 16) / 255;
+  const b = parseInt(clean.substring(4, 6), 16) / 255;
+  const toLinear = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const luminance =
+    0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  const contrastWithWhite = 1.05 / (luminance + 0.05);
+  const contrastWithBlack = (luminance + 0.05) / 0.05;
+  return contrastWithBlack > contrastWithWhite ? "#0A0A0F" : "#FFFFFF";
+};
+
 const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   visible,
   achievement,
@@ -195,6 +217,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 
   const tierColor = tierColorMap[achievement.tier] ?? chart[1];
   const tierGradient = tierGradientMap[achievement.tier] ?? [chart[1], chart[1]];
+  const closeTextColor = getReadableTextColor(tierColor);
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
@@ -311,7 +334,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
               accessibilityLabel="Dismiss celebration"
               accessibilityHint="Closes the achievement celebration"
             >
-              <Text style={styles.closeButtonText}>Awesome!</Text>
+              <Text style={[styles.closeButtonText, { color: closeTextColor }]}>
+                Awesome!
+              </Text>
             </AnimatedPressable>
 
             {/* Swipe Indicator */}

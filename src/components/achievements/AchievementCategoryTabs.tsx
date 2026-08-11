@@ -25,16 +25,20 @@ interface AchievementCategoryTabsProps {
   onSelectCategory: (category: AchievementCategory | "all") => void;
 }
 
+// Kept in sync with the live catalog (services/achievements/definitions.ts).
+// "social" and "special" are intentionally omitted — no achievement currently
+// uses either category, so a tab for them would always render the empty
+// state. "consistency" (1 achievement: active-week) has no dedicated tab and
+// is reachable via "All" — not worth a tab of its own at this catalog size.
 const CATEGORIES: { id: AchievementCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
   { id: "fitness", label: "Fitness" },
+  { id: "streak", label: "Streak" },
   { id: "nutrition", label: "Nutrition" },
   { id: "wellness", label: "Wellness" },
-  { id: "consistency", label: "Streak" },
   { id: "milestone", label: "Milestones" },
-  { id: "social", label: "Social" },
+  { id: "exploration", label: "Exploration" },
   { id: "challenge", label: "Challenges" },
-  { id: "special", label: "Special" },
 ];
 
 const TabItem: React.FC<{

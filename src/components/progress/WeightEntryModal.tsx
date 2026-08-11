@@ -44,7 +44,9 @@ import { BodyAnalysisService } from "../../services/onboardingService";
 import type { BodyAnalysisData } from "../../types/onboarding";
 import { useProfileStore } from "../../stores/profileStore";
 import { useAnalyticsStore } from "../../stores/analyticsStore";
+import { trackAchievementActivity, isWeightGoalAchieved } from "../../stores/achievementStore";
 import { useAuth } from "../../hooks/useAuth";
+import { getCurrentUserId } from "../../services/authUtils";
 import { invalidateMetricsCache } from "../../hooks/useCalculatedMetrics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocalDateString } from "../../utils/weekUtils";
@@ -190,6 +192,25 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
       useProfileStore.getState().updateBodyAnalysis(nextBodyAnalysis);
       weightTrackingService.setWeight(weightKg);
 
+      // Milestone achievements (weight-first-log, weight-goal-hit) key off
+      // these two fields — see services/achievements/definitions.ts. This was
+      // the one primary weight-entry flow that never surfaced weight activity
+      // to the achievement engine, so those milestones could never unlock.
+      const achievementUserId = getCurrentUserId();
+      if (achievementUserId) {
+        // Reuses achievementStore's canonical tolerance-based check so this
+        // flow and the store's own reconciliation path agree on what counts
+        // as "goal achieved" (within 0.25kg of target).
+        const weightGoalAchieved = isWeightGoalAchieved(
+          weightKg,
+          nextBodyAnalysis.target_weight_kg,
+        );
+        trackAchievementActivity.customActivity(achievementUserId, {
+          weightLogged: 1,
+          weightGoalAchieved,
+        });
+      }
+
       if (user?.id) {
         try {
           await BodyAnalysisService.save(user.id, nextBodyAnalysis as BodyAnalysisData);
@@ -309,7 +330,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="fitness-outline"
                         size={rs(20)}
-                        color={colors.error.light}
+                        color={colors.text.muted}
                         style={styles.inputIcon}
                       />
                       <TextInput

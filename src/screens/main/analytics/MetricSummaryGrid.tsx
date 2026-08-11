@@ -4,8 +4,8 @@
  * big Manrope_700Bold numbers, no cards-in-cards (Aurora 2026).
  */
 
-import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
@@ -16,11 +16,16 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
+  flatColors,
 } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { type WeightUnit, toDisplayWeight } from "../../../utils/units";
-import { SectionHeader } from "../home/SectionHeader";
+import { SectionHeader } from "./SectionHeader";
+import { getMetricDescription, METRIC_DESCRIPTIONS } from "../../../constants/metricDescriptions";
+
+type MetricDescriptionKey = keyof typeof METRIC_DESCRIPTIONS;
 
 export interface MetricData {
   weight?: {
@@ -76,6 +81,8 @@ const StatCell: React.FC<{
   onPress?: () => void;
   metricId?: string;
   onMetricPress?: (metric: string) => void;
+  infoKey?: MetricDescriptionKey;
+  onInfoPress?: (key: MetricDescriptionKey) => void;
 }> = React.memo(({
   title,
   value,
@@ -88,6 +95,8 @@ const StatCell: React.FC<{
   onPress,
   metricId,
   onMetricPress,
+  infoKey,
+  onInfoPress,
 }) => {
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
@@ -144,6 +153,21 @@ const StatCell: React.FC<{
               <Ionicons name={icon} size={rf(16)} color={color} />
             </View>
             <Text style={styles.cellLabel} numberOfLines={1}>{title}</Text>
+            {infoKey && onInfoPress ? (
+              <TouchableOpacity
+                onPress={() => onInfoPress(infoKey)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                style={styles.infoButton}
+                accessibilityRole="button"
+                accessibilityLabel={`What is ${title}?`}
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={rf(14)}
+                  color={colors.text.muted}
+                />
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           <Text
@@ -187,6 +211,15 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
   onMetricPress,
   weightUnit = "kg",
 }) => {
+  // Tap-to-info: BMI/BMR/TDEE/Water Goal cells open a sheet explaining the
+  // metric, sourced from the shared metricDescriptions constant.
+  const [infoMetric, setInfoMetric] = useState<MetricDescriptionKey | null>(null);
+  const handleInfoPress = useCallback((key: MetricDescriptionKey) => {
+    setInfoMetric(key);
+  }, []);
+  const closeInfo = useCallback(() => setInfoMetric(null), []);
+  const activeInfo = infoMetric ? getMetricDescription(infoMetric) : null;
+
   // Stored values are metric (kg) — convert to the user's display unit.
   const formatWeight = (weight?: number) => {
     if (weight === undefined || weight === null) return "--";
@@ -349,6 +382,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
                 delay={320}
                 metricId="bmi"
                 onMetricPress={onMetricPress}
+                infoKey="BMI"
+                onInfoPress={handleInfoPress}
               />
               <View style={styles.vDivider} />
               <StatCell
@@ -360,6 +395,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
                 delay={400}
                 metricId="bmr"
                 onMetricPress={onMetricPress}
+                infoKey="BMR"
+                onInfoPress={handleInfoPress}
               />
             </View>
 
@@ -374,6 +411,8 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
                 color={chart[5]}
                 delay={480}
                 metricId="tdee"
+                infoKey="TDEE"
+                onInfoPress={handleInfoPress}
                 onMetricPress={onMetricPress}
               />
               <View style={styles.vDivider} />
@@ -390,11 +429,44 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
                 delay={560}
                 metricId="water"
                 onMetricPress={onMetricPress}
+                infoKey="WATER"
+                onInfoPress={handleInfoPress}
               />
             </View>
           </View>
         </>
       )}
+
+      {/* Metric info sheet — explains what BMI/BMR/TDEE/Water Goal mean. */}
+      <Modal
+        visible={!!activeInfo}
+        transparent
+        animationType="fade"
+        onRequestClose={closeInfo}
+      >
+        <View style={styles.infoOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeInfo}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss metric information"
+          />
+          <View style={styles.infoCard}>
+            <View style={styles.infoHeader}>
+              <Text style={styles.infoTitle}>{activeInfo?.title}</Text>
+              <TouchableOpacity
+                onPress={closeInfo}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={rf(22)} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.infoDescription}>{activeInfo?.description}</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 });
@@ -456,6 +528,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     flexShrink: 1,
   },
+  infoButton: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
   cellValue: {
     fontFamily: "Manrope_700Bold",
     fontSize: rf(28),
@@ -475,6 +551,39 @@ const styles = StyleSheet.create({
   trendText: {
     fontFamily: typography.variants.cardHeadline.fontFamily,
     fontSize: rf(12),
+  },
+  infoOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+    backgroundColor: flatColors.overlay,
+  },
+  infoCard: {
+    width: "100%",
+    maxWidth: rw(420),
+    backgroundColor: surface[2],
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: borderTokens.DEFAULT,
+    padding: spacing.lg,
+  },
+  infoHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.sm,
+    gap: spacing.md,
+  },
+  infoTitle: {
+    ...typography.variants.cardHeadline,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  infoDescription: {
+    ...typography.variants.body,
+    color: colors.text.secondary,
+    lineHeight: rf(20),
   },
 });
 

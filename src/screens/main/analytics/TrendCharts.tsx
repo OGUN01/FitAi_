@@ -15,7 +15,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
 import type { WeightUnit } from "../../../utils/units";
-import { SectionHeader } from "../home/SectionHeader";
+import { SectionHeader } from "./SectionHeader";
 import { Period } from "./PeriodSelector";
 import { BarChart, ChartData } from "./components/BarChart";
 import { LineChart } from "./components/LineChart";

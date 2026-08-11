@@ -52,7 +52,19 @@ const normalizeWorkoutType = (value?: string | null): string => {
   return normalized || "mixed";
 };
 
-const isWeightGoalAchieved = (
+// Exported so other weight-entry flows (e.g. WeightEntryModal) can compute
+// "goal achieved" the same way the engine does. This only ever sees a single
+// (currentWeight, targetWeight) snapshot — it has no record of which side of
+// the target the user started on — so it cannot tell a true "crossed toward
+// the goal" from "still on the wrong side of it" for a non-exact match.
+// Achieved = at the target within a small tolerance, which is direction-
+// agnostic and correct for both weight-loss and weight-gain goals.
+// (A previous version tried to be "direction-aware" by branching on
+// `targetWeight < currentWeight` and then re-testing that same relationship —
+// that branch could only ever be true on exact equality, i.e. it silently
+// never fired for any real-world non-equal reading.)
+const WEIGHT_GOAL_TOLERANCE_KG = 0.25;
+export const isWeightGoalAchieved = (
   currentWeight?: number | null,
   targetWeight?: number | null,
 ): boolean => {
@@ -60,13 +72,7 @@ const isWeightGoalAchieved = (
     return false;
   }
 
-  if (currentWeight === targetWeight) {
-    return true;
-  }
-
-  return targetWeight < currentWeight
-    ? currentWeight <= targetWeight
-    : currentWeight >= targetWeight;
+  return Math.abs(currentWeight - targetWeight) <= WEIGHT_GOAL_TOLERANCE_KG;
 };
 
 const buildAchievementActivityData = ({

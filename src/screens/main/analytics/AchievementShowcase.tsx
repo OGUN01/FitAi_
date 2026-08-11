@@ -12,7 +12,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
-import { SectionHeader } from "../home/SectionHeader";
+import { SectionHeader } from "./SectionHeader";
 import { useAchievementStore } from "../../../stores/achievementStore";
 import { buildAchievementViewModels } from "../../../utils/achievementViewModel";
 import { TIER_COLOR_MAP } from "../../../data/achievements/tierColors";
