@@ -15,8 +15,8 @@
  * ```
  */
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { rf, rp, rh, rw } from "../../utils/responsive";
@@ -186,10 +186,34 @@ export const LoadingMetric: React.FC<{
 }> = ({ size = "medium" }) => {
   const width = size === "small" ? rw(30) : size === "large" ? rw(60) : rw(45);
   const height = size === "small" ? rh(16) : size === "large" ? rh(28) : rh(20);
+  const pulseAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.3,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
 
   return (
     <View style={[styles.loadingMetric, { width, height }]}>
-      <View style={styles.loadingShimmer} />
+      <Animated.View
+        style={[styles.loadingShimmer, { opacity: pulseAnim }]}
+      />
     </View>
   );
 };

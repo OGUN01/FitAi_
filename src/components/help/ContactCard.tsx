@@ -8,6 +8,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 interface ContactCardProps {
   onContactEmail: () => void;
@@ -24,7 +25,10 @@ export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
         style={styles.contactCard}
       >
         <LinearGradient
-          colors={["rgba(255, 107, 53, 0.15)", "rgba(229, 90, 43, 0.1)"]}
+          colors={[
+            hexToRgba(colors.primary, 0.15),
+            hexToRgba(colors.primaryDark || colors.primary, 0.1),
+          ]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.contactIconContainer}>
