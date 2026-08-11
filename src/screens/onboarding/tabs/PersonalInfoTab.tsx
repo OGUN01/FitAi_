@@ -45,7 +45,7 @@ import {
   DemographicsFields,
 } from "../../../components/onboarding/PersonalInfoFields";
 import { LocationFields } from "../../../components/onboarding/LocationFields";
-import { ValidationSummary } from "../../../components/onboarding/ValidationSummary";
+import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
 
 const MOUNT_DURATION = 360;
 const STAGGER = 70;
@@ -289,7 +289,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         )}
 
         {validationResult && (
-          <ValidationSummary validationResult={validationResult} />
+          <ValidationSection validationResult={validationResult} />
         )}
       </ScreenScaffold>
     </KeyboardAvoidingView>

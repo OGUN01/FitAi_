@@ -283,6 +283,7 @@ export const GoalVisualizationSection: React.FC<
           accentColor={tokens.accent}
           onChange={handleTimelineChange}
           showValue={false}
+          accessibilityLabel={`Timeline, ${timeline} weeks`}
           testID="timeline-slider"
         />
         <View style={styles.timelineReadout}>

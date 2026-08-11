@@ -15,6 +15,7 @@ import {
   ScreenScaffold,
   CollapsibleSection,
 } from "../../../components/onboarding/fresh";
+import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
 import {
   tokens,
   spacing as freshSpacing,
@@ -61,7 +62,6 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     setShowCamera,
     showImagePicker,
     setShowImagePicker,
-    isAnalyzingPhotos,
     showMeasurementGuide,
     setShowMeasurementGuide,
     updateField,
@@ -70,7 +70,6 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     handleImagePickerSelect,
     openPhotoOptions,
     removePhoto,
-    analyzePhotos,
     getBMICategory,
     getFieldError,
     hasFieldError,
@@ -211,8 +210,6 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 formData={formData}
                 openPhotoOptions={openPhotoOptions}
                 removePhoto={removePhoto}
-                analyzePhotos={analyzePhotos}
-                isAnalyzingPhotos={isAnalyzingPhotos}
               />
             </CollapsibleSection>
 
@@ -231,6 +228,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               />
             </CollapsibleSection>
           </View>
+
+          {/* Validation summary — matches Diet/Workout tabs (fresh design). */}
+          <ValidationSection validationResult={validationResult} />
         </ScreenScaffold>
       </KeyboardAvoidingView>
     </View>

@@ -20,6 +20,7 @@ import {
   AdvancedReviewData,
 } from "../../../types/onboarding";
 import { DIET_TYPE_OPTIONS } from "../../../screens/onboarding/tabs/DietPreferencesConstants";
+import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 
 interface DataSummarySectionProps {
   personalInfo: PersonalInfoData | null;
@@ -95,9 +96,17 @@ export const DataSummarySection: React.FC<DataSummarySectionProps> = ({
     dietPreferences?.diet_type ??
     "—";
 
+  // Display-only unit conversion — stored values stay kg (SSOT). Matches
+  // WeightManagementSection further down the same review screen so an
+  // imperial-unit user sees consistent lbs values in both places.
+  const weightUnit: WeightUnit = personalInfo?.units === "imperial" ? "lbs" : "kg";
+  const fmtWeight = (kg: number): string => {
+    const disp = toDisplayWeight(kg, weightUnit) ?? kg;
+    return weightUnit === "kg" ? `${disp}` : `${parseFloat(disp.toFixed(1))}`;
+  };
   const bodyValue =
     bodyAnalysis?.current_weight_kg && bodyAnalysis?.target_weight_kg
-      ? `${bodyAnalysis.current_weight_kg}kg → ${bodyAnalysis.target_weight_kg}kg`
+      ? `${fmtWeight(bodyAnalysis.current_weight_kg)} ${weightUnit} → ${fmtWeight(bodyAnalysis.target_weight_kg)} ${weightUnit}`
       : "—";
   const bodySub = calculatedData?.calculated_bmi
     ? `BMI ${calculatedData.calculated_bmi.toFixed(1)}`

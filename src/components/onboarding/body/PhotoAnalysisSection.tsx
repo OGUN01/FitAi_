@@ -2,9 +2,11 @@
  * PhotoAnalysisSection — Body tab collapsed "Progress photos" group
  * (Editorial Dark).
  *
- * Existing capture flow (openPhotoOptions / removePhoto / analyzePhotos) is
- * kept intact — only the presentation is restyled: hairline-outlined capture
- * tiles, an accent text action, and AI results as plain stats over a hairline.
+ * Capture flow (openPhotoOptions / removePhoto) is kept intact — hairline-
+ * outlined capture tiles, and any previously-saved AI results (from before
+ * the AI backend was stubbed out) render as plain stats over a hairline.
+ * No "Analyze" / "Re-analyze" entry points are exposed here — the backend
+ * is a stub, so we don't invite users into a dead end.
  * Renders flat inside the parent CollapsibleSection.
  */
 
@@ -23,7 +25,6 @@ import { Rule } from "../../onboarding/fresh";
 import {
   tokens,
   type as freshType,
-  font,
   spacing as freshSpacing,
 } from "../../onboarding/fresh/tokens";
 import { PHOTO_TYPES } from "../../../screens/onboarding/tabs/BodyAnalysisConstants";
@@ -33,16 +34,12 @@ interface PhotoAnalysisSectionProps {
   formData: BodyAnalysisData;
   openPhotoOptions: (photoType: "front" | "side" | "back") => void;
   removePhoto: (photoType: "front" | "side" | "back") => void;
-  analyzePhotos: () => void;
-  isAnalyzingPhotos: boolean;
 }
 
 export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
   formData,
   openPhotoOptions,
   removePhoto,
-  analyzePhotos,
-  isAnalyzingPhotos,
 }) => {
   const photoCount = [
     formData.front_photo_url,
@@ -60,19 +57,11 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
         <Text style={styles.count} numberOfLines={1}>
           {photoCount}/3 photos
         </Text>
-        {photoCount > 0 && !hasAi && (
-          <Pressable
-            style={styles.analyzeButton}
-            onPress={analyzePhotos}
-            accessibilityRole="button"
-            accessibilityLabel="Analyze photos"
-          >
-            <Ionicons name="sparkles" size={rf(14)} color={tokens.accent} />
-            <Text style={styles.analyzeText}>
-              {isAnalyzingPhotos ? "Analyzing…" : "Analyze"}
-            </Text>
-          </Pressable>
-        )}
+        {/* AI photo analysis has no real backend yet (analyzePhotos is a
+            stub) — both the first-time "Analyze" CTA and the "Re-analyze"
+            action below are hidden rather than shipping an interactive
+            dead end for a privacy-sensitive feature. Re-enable once a real
+            vision-model backend exists. */}
       </View>
 
       {/* Trust line — body photos are sensitive; explicit framing lowers
@@ -208,15 +197,6 @@ export const PhotoAnalysisSection: React.FC<PhotoAnalysisSectionProps> = ({
                 {formData.ai_confidence_score}%
               </Text>
             </View>
-            <Pressable
-              style={styles.reanalyze}
-              onPress={analyzePhotos}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityLabel="Re-analyze photos"
-            >
-              <Ionicons name="refresh" size={rf(16)} color={tokens.ink2} />
-            </Pressable>
           </View>
         </View>
       ) : null}
@@ -247,17 +227,6 @@ const styles = StyleSheet.create({
     color: tokens.ink3,
     flex: 1,
     lineHeight: 17,
-  },
-  analyzeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: freshSpacing.xs,
-    paddingVertical: freshSpacing.xs,
-  },
-  analyzeText: {
-    fontFamily: font.semibold,
-    fontSize: 14,
-    color: tokens.accent,
   },
   photoScroll: {
     gap: freshSpacing.l,
@@ -358,8 +327,5 @@ const styles = StyleSheet.create({
     width: 1,
     height: 28,
     backgroundColor: tokens.hairline,
-  },
-  reanalyze: {
-    padding: freshSpacing.xs,
   },
 });

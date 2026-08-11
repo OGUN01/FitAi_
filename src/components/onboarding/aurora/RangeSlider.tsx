@@ -47,6 +47,9 @@ export interface RangeSliderProps {
   accentColor?: string;
   /** Show the live value bubble above the thumb. @default true */
   showValue?: boolean;
+  /** Accessible name announced by screen readers (e.g. "Height"). Falls back
+      to the unit string if omitted — always pass a real label per field. */
+  accessibilityLabel?: string;
   /** Extra container style. */
   style?: ViewStyle;
   testID?: string;
@@ -71,6 +74,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   tickHapticEvery = 8,
   accentColor = chart[1],
   showValue = true,
+  accessibilityLabel,
   style,
   testID,
 }) => {
@@ -168,6 +172,18 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     })
   ).current;
 
+  // VoiceOver/TalkBack: swipe-up/down on an "adjustable" element fires these
+  // actions instead of the pan gesture (screen-reader users can't drag).
+  // Nudge by one step per action so the control is actually operable.
+  const handleAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      const delta = event.nativeEvent.actionName === "increment" ? step : -step;
+      const next = Math.max(min, Math.min(max, value + delta));
+      onChange(next);
+    },
+    [min, max, step, value, onChange]
+  );
+
   return (
     <View style={[styles.container, style]} testID={testID}>
       <View
@@ -176,12 +192,18 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
         onLayout={onLayout}
         {...panResponder.panHandlers}
         accessibilityRole="adjustable"
+        accessibilityLabel={accessibilityLabel || (unit ? `Value in ${unit}` : "Value")}
         accessibilityValue={{
           min,
           max,
           now: value,
           text: `${value}${unit ? " " + unit : ""}`,
         }}
+        accessibilityActions={[
+          { name: "increment", label: "Increase" },
+          { name: "decrement", label: "Decrease" },
+        ]}
+        onAccessibilityAction={handleAccessibilityAction}
       >
         <Animated.View style={[styles.fill, fillStyle, { backgroundColor: accentColor }]} />
         <Animated.View style={[styles.thumbWrap, thumbStyle]}>

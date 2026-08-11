@@ -167,6 +167,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
         tickHapticEvery={5}
         accentColor={tokens.accent}
         showValue={false}
+        accessibilityLabel={`Session duration, ${formData.time_preference} minutes`}
         style={styles.slider}
         testID="time-preference-slider"
       />

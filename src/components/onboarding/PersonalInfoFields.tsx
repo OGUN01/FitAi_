@@ -13,7 +13,7 @@
  *
  * Presentation only — props/hooks/validation stay identical to the data layer.
  */
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import Animated, {
   FadeInDown,
@@ -230,18 +230,70 @@ const StepButton: React.FC<{
 }> = ({ icon, onPress, disabled = false, accessibilityLabel, testID }) => {
   const opacity = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  // Press-and-hold repeat-acceleration: reaching a realistic age (or rep
+  // count elsewhere) from the unset default took dozens of single taps.
+  // Holding the button now auto-repeats after a short delay, speeding up
+  // the longer it's held. A single quick tap still increments exactly once.
+  const onPressRef = useRef(onPress);
+  onPressRef.current = onPress;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+  const repeatTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tickCount = useRef(0);
+  const didRepeat = useRef(false);
+
+  const stopRepeat = () => {
+    if (repeatTimer.current) {
+      clearTimeout(repeatTimer.current);
+      repeatTimer.current = null;
+    }
+    tickCount.current = 0;
+  };
+
+  const startRepeat = () => {
+    const tick = (delay: number) => {
+      repeatTimer.current = setTimeout(() => {
+        if (disabledRef.current) {
+          stopRepeat();
+          return;
+        }
+        didRepeat.current = true;
+        onPressRef.current();
+        tickCount.current += 1;
+        const nextDelay = tickCount.current > 15 ? 40 : tickCount.current > 6 ? 80 : 140;
+        tick(nextDelay);
+      }, delay);
+    };
+    tick(450); // initial hold threshold before repeating begins
+  };
+
+  useEffect(() => stopRepeat, []);
+
   return (
     <Pressable
-      onPress={disabled ? undefined : onPress}
+      onPress={() => {
+        if (disabled) return;
+        // Suppress the release tap that follows a completed long-press
+        // repeat — it already applied its increments.
+        if (didRepeat.current) {
+          didRepeat.current = false;
+          return;
+        }
+        onPress();
+      }}
       onPressIn={() => {
         if (!disabled) {
           opacity.value = withTiming(PRESS_OPACITY, {
             duration: PRESS_DURATION,
           });
         }
+        didRepeat.current = false;
+        startRepeat();
       }}
       onPressOut={() => {
         opacity.value = withTiming(1, { duration: PRESS_DURATION });
+        stopRepeat();
       }}
       disabled={disabled}
       accessibilityRole="button"

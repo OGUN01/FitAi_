@@ -88,6 +88,7 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
         unit="yrs"
         accentColor={tokens.accent}
         showValue={false}
+        accessibilityLabel={`Experience, ${formData.workout_experience_years} years`}
         style={styles.slider}
         testID="experience-stepper"
       />
@@ -106,6 +107,7 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
         unit="reps"
         accentColor={tokens.accent}
         showValue={false}
+        accessibilityLabel={`Max pushups, ${formData.can_do_pushups} reps`}
         style={styles.slider}
         testID="pushups-stepper"
       />
@@ -124,6 +126,7 @@ export const FitnessLevelSection: React.FC<FitnessLevelSectionProps> = ({
         unit="min"
         accentColor={tokens.accent}
         showValue={false}
+        accessibilityLabel={`Continuous running, ${formData.can_run_minutes} minutes`}
         style={styles.slider}
         testID="run-minutes-stepper"
       />

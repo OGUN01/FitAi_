@@ -4,7 +4,6 @@ import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context"
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { useOnboardingLogic } from "../../hooks/useOnboardingLogic";
 import OnboardingProgressIndicator from "../../components/onboarding/OnboardingProgressIndicator";
-import { AuroraBackground } from "../../components/ui/aurora";
 
 import PersonalInfoTab from "./tabs/PersonalInfoTab";
 import DietPreferencesTab from "./tabs/DietPreferencesTab";
@@ -172,12 +171,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
   }
 
   return (
-    <AuroraBackground
-      theme="space"
-      animated={true}
-      animationSpeed={1}
-      intensity={0.3}
-    >
+    <>
       <StatusBar
         barStyle="light-content"
         translucent
@@ -203,14 +197,21 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
           onDismissDialog={logic.handleDismissDialog}
         />
       </View>
-    </AuroraBackground>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "transparent",
+    // The per-tab ScreenScaffold (Editorial Dark) already paints pure black
+    // (tokens.bg) for every tab's content; AuroraBackground previously sat
+    // behind this and was 100% occluded by ScreenScaffold + the near-opaque
+    // OnboardingTabBar, so it was pure render/animation cost with zero
+    // visible effect. Matching the same near-OLED black here keeps the tab
+    // bar strip visually seamless with the content below it without paying
+    // for an animated gradient nobody ever sees.
+    backgroundColor: "#050505",
   },
 
   contentContainer: {

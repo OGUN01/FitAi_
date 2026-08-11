@@ -166,6 +166,7 @@ export const CookingPreferencesSection: React.FC<
             accentColor={tokens.accent}
             onChange={(value) => updateField("max_prep_time_minutes", value)}
             showValue={false}
+            accessibilityLabel={`Max prep time, ${formData.max_prep_time_minutes ?? 30} minutes`}
           />
         )}
       </View>
