@@ -23,7 +23,24 @@ export interface PlanCardProps {
   isStatic?: boolean;
 }
 
-const FEATURE_ICONS = ["flash", "nutrition", "analytics", "checkmark-circle"] as const;
+/**
+ * Feature-row icon, matched to what the copy actually says rather than
+ * cycled by list position — a "5th item gets a leaf icon" mismatch reads as
+ * templated on the highest-scrutiny paywall screen. Falls back to a generic
+ * checkmark for anything that doesn't match a known keyword.
+ */
+const getFeatureIcon = (
+  feature: string,
+): keyof typeof Ionicons.glyphMap => {
+  const f = feature.toLowerCase();
+  if (f.includes("scan")) return "camera-outline";
+  if (f.includes("coach")) return "person-outline";
+  if (f.includes("support")) return "headset-outline";
+  if (f.includes("export") || f.includes("data")) return "cloud-download-outline";
+  if (f.includes("analytic") || f.includes("insight") || f.includes("dashboard")) return "analytics-outline";
+  if (f.includes("ai ") || f.includes("generation")) return "flash-outline";
+  return "checkmark-circle";
+};
 
 const PlanCard: React.FC<PlanCardProps> = ({
   name,
@@ -97,7 +114,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
         {features.map((feat, i) => (
           <View key={i} style={styles.featureRow}>
             <Ionicons
-              name={FEATURE_ICONS[i % FEATURE_ICONS.length]}
+              name={getFeatureIcon(feat)}
               size={rf(14)}
               color={colors.successLight}
               style={styles.featureIcon}

@@ -55,7 +55,7 @@ const AccountRow: React.FC<{
     <Pressable
       onPress={handlePress}
       accessibilityRole="button"
-      accessibilityLabel={`${account.name} ${account.isConnected ? "connected" : "connect"}`}
+      accessibilityLabel={`${account.name}, ${account.isConnected ? "connected. Tap to disconnect" : "not connected. Tap to connect"}`}
       style={({ pressed }) => [
         styles.row,
         pressed && styles.rowPressed,
@@ -104,6 +104,19 @@ const AccountRow: React.FC<{
           {account.isConnected ? "Connected" : "Connect"}
         </Text>
       </View>
+
+      {/* Trailing affordance — visually distinguishes the destructive tap
+          (disconnect a connected account) from the additive one (connect a
+          new account) via glyph shape only. Both stay neutral text.tertiary
+          — colors.error is reserved for the actual confirm modal, so this
+          row never mixes a "problem" red next to the "Connected" green
+          badge on the same permanently-visible row. */}
+      <Ionicons
+        name={account.isConnected ? "close-circle-outline" : "chevron-forward"}
+        size={rf(16)}
+        color={colors.text.tertiary}
+        style={styles.trailingIcon}
+      />
     </Pressable>
   );
 });
@@ -249,6 +262,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flexShrink: 0,
     marginLeft: spacing.sm,
+  },
+  trailingIcon: {
+    marginLeft: spacing.xs,
+    flexShrink: 0,
   },
   connectedBadge: {
     backgroundColor: `${colors.success.DEFAULT}26`,

@@ -44,6 +44,7 @@ import {
 
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 import { LogoutConfirmationModal } from "../../components/profile/LogoutConfirmationModal";
+import { DestructiveConfirmModal } from "../../components/profile/DestructiveConfirmModal";
 import { SettingsScreenRenderer } from "../../components/profile/SettingsScreenRenderer";
 
 const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
@@ -89,6 +90,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
   // useProfileLogic because the linking APIs are exposed directly on authStore.
   const [isGoogleLinked, setIsGoogleLinked] = useState(false);
   const [isGoogleLinkBusy, setIsGoogleLinkBusy] = useState(false);
+  const [showUnlinkGoogleConfirm, setShowUnlinkGoogleConfirm] = useState(false);
   const authUserEmail = useAuthStore((s) => s.user?.email);
 
   const refreshGoogleLinkStatus = useCallback(async () => {
@@ -108,39 +110,10 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
   const handleGooglePress = useCallback(async () => {
     if (isGoogleLinkBusy) return;
     if (isGoogleLinked) {
-      crossPlatformAlert(
-        "Unlink Google Account",
-        "Are you sure you want to unlink your Google account? You will no longer be able to sign in with it.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Unlink",
-            style: "destructive",
-            onPress: async () => {
-              setIsGoogleLinkBusy(true);
-              try {
-                const result = await useAuthStore.getState().unlinkGoogleAccount();
-                if (result.success) {
-                  setIsGoogleLinked(false);
-                } else {
-                  crossPlatformAlert(
-                    "Unlink Failed",
-                    result.error || "Could not unlink your Google account. Please try again.",
-                  );
-                }
-              } catch (error) {
-                console.error("[ProfileScreen] Google unlink failed:", error);
-                crossPlatformAlert(
-                  "Unlink Failed",
-                  "Could not unlink your Google account. Please try again.",
-                );
-              } finally {
-                setIsGoogleLinkBusy(false);
-              }
-            },
-          },
-        ],
-      );
+      // Destructive confirmation now routes through the shared branded
+      // modal (DestructiveConfirmModal) instead of a raw OS alert, so it
+      // matches the Sign Out / Delete Account visual language.
+      setShowUnlinkGoogleConfirm(true);
       return;
     }
 
@@ -165,6 +138,32 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
       setIsGoogleLinkBusy(false);
     }
   }, [isGoogleLinkBusy, isGoogleLinked, refreshGoogleLinkStatus]);
+
+  const confirmUnlinkGoogle = useCallback(async () => {
+    setIsGoogleLinkBusy(true);
+    try {
+      const result = await useAuthStore.getState().unlinkGoogleAccount();
+      if (result.success) {
+        setIsGoogleLinked(false);
+        setShowUnlinkGoogleConfirm(false);
+      } else {
+        setShowUnlinkGoogleConfirm(false);
+        crossPlatformAlert(
+          "Unlink Failed",
+          result.error || "Could not unlink your Google account. Please try again.",
+        );
+      }
+    } catch (error) {
+      console.error("[ProfileScreen] Google unlink failed:", error);
+      setShowUnlinkGoogleConfirm(false);
+      crossPlatformAlert(
+        "Unlink Failed",
+        "Could not unlink your Google account. Please try again.",
+      );
+    } finally {
+      setIsGoogleLinkBusy(false);
+    }
+  }, []);
 
   React.useEffect(() => {
     const requestedSettingsScreen = route?.params?.settingsScreen;
@@ -324,6 +323,18 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           visible={showLogoutConfirmation}
           onConfirm={confirmLogout}
           onCancel={cancelLogout}
+        />
+
+        <DestructiveConfirmModal
+          visible={showUnlinkGoogleConfirm}
+          icon="close-circle-outline"
+          title="Unlink Google Account"
+          message="Are you sure you want to unlink your Google account? You will no longer be able to sign in with it."
+          confirmLabel="Unlink"
+          cancelLabel="Cancel"
+          isLoading={isGoogleLinkBusy}
+          onConfirm={confirmUnlinkGoogle}
+          onCancel={() => setShowUnlinkGoogleConfirm(false)}
         />
 
         {showOverlay && (

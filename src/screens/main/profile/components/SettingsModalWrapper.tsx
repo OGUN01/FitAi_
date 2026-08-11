@@ -81,6 +81,10 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
     >
       <StatusBar barStyle="light-content" backgroundColor={surface[0]} />
       <View style={styles.modalContainer}>
+        {/* WEB/TABLET: mirror App.tsx's appColumn 480px phone-width column so
+            this full-screen Modal (which portals outside that wrapper) doesn't
+            stretch edge-to-edge on wide viewports. No-op on phones. */}
+        <View style={styles.contentColumn}>
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -190,6 +194,7 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
             )}
           </KeyboardAvoidingView>
         </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );
@@ -199,6 +204,12 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: surface[0],
+  },
+  contentColumn: {
+    flex: 1,
+    maxWidth: 480,
+    width: "100%",
+    alignSelf: "center",
   },
   safeArea: {
     flex: 1,

@@ -6,9 +6,14 @@
  * user-data table AND removes the auth.users credential via
  * auth.admin.deleteUser. Client-side per-table deletion was retired — RLS
  * blocked several tables and the auth credential was never removable.
+ *
+ * Confirmation for this irreversible action is owned by the caller (a typed
+ * "DELETE" confirmation modal on PrivacySecurityScreen) — this hook exposes
+ * `deleteAccount` as a plain async action plus `isDeletingAccount` loading
+ * state, rather than gating the deletion behind its own alert chain.
  */
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Share } from "react-native";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -80,124 +85,102 @@ export const usePrivacySecurityLogic = () => {
     );
   }, []);
 
-  const handleDeleteAccount = useCallback(async () => {
-    const doDelete = async () => {
-      try {
-        haptics.medium();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
-        // Get current user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          crossPlatformAlert(
-            "Error",
-            "You must be logged in to delete your account.",
-          );
-          return;
-        }
+  const deleteAccount = useCallback(async () => {
+    setIsDeletingAccount(true);
+    try {
+      haptics.medium();
 
-        // Server-side wipe — service role deletes rows in every user-data
-        // table AND removes the auth.users credential. Client no longer
-        // loops per-table (RLS denied several; auth was unreachable).
-        const result = await accountService.deleteAccount();
-
-        if (!result.success) {
-          if (result.isOffline) {
-            crossPlatformAlert(
-              "You're Offline",
-              "Account deletion requires a network connection. Please try again when you're back online.",
-            );
-            return;
-          }
-          crossPlatformAlert(
-            "Deletion Failed",
-            result.error ||
-              "The server could not delete your account. Please try again or contact support@fitai.app.",
-          );
-          return;
-        }
-
-        // Server confirmed deletion. Wipe local storage and sign out — the
-        // refresh token is already invalid server-side, but signOut clears
-        // the in-memory session so the auth gate routes to Welcome.
-        try {
-          const allKeys = await AsyncStorage.getAllKeys();
-          const fitaiKeys = allKeys.filter(
-            (key) =>
-              key.startsWith("@fitai") || key.startsWith("fitai"),
-          );
-          await AsyncStorage.multiRemove(fitaiKeys);
-        } catch (storageErr) {
-          console.error(
-            "Account deletion: local storage wipe failed:",
-            storageErr,
-          );
-        }
-
-        try {
-          await supabase.auth.signOut();
-        } catch (signOutErr) {
-          console.error(
-            "Account deletion: signOut failed (session already invalid server-side):",
-            signOutErr,
-          );
-        }
-
-        if (result.authDeletionRequired) {
-          crossPlatformAlert(
-            "Data Deleted",
-            "Your FitAI data has been permanently deleted. Your sign-in credential is being removed and will be fully gone shortly.",
-          );
-        } else if (result.failedTables && result.failedTables.length > 0) {
-          crossPlatformAlert(
-            "Account Deleted",
-            "Your account has been permanently deleted. A small number of records are being cleaned up in the background.",
-          );
-        } else {
-          crossPlatformAlert(
-            "Account Deleted",
-            "Your FitAI account and all associated data have been permanently deleted.",
-          );
-        }
-      } catch (error) {
-        console.error("Account deletion failed:", error);
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
         crossPlatformAlert(
           "Error",
-          "Failed to delete account. Please try again.",
+          "You must be logged in to delete your account.",
+        );
+        return;
+      }
+
+      // Server-side wipe — service role deletes rows in every user-data
+      // table AND removes the auth.users credential. Client no longer
+      // loops per-table (RLS denied several; auth was unreachable).
+      const result = await accountService.deleteAccount();
+
+      if (!result.success) {
+        if (result.isOffline) {
+          crossPlatformAlert(
+            "You're Offline",
+            "Account deletion requires a network connection. Please try again when you're back online.",
+          );
+          return;
+        }
+        crossPlatformAlert(
+          "Deletion Failed",
+          result.error ||
+            "The server could not delete your account. Please try again or contact support@fitai.app.",
+        );
+        return;
+      }
+
+      // Server confirmed deletion. Wipe local storage and sign out — the
+      // refresh token is already invalid server-side, but signOut clears
+      // the in-memory session so the auth gate routes to Welcome.
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        const fitaiKeys = allKeys.filter(
+          (key) =>
+            key.startsWith("@fitai") || key.startsWith("fitai"),
+        );
+        await AsyncStorage.multiRemove(fitaiKeys);
+      } catch (storageErr) {
+        console.error(
+          "Account deletion: local storage wipe failed:",
+          storageErr,
         );
       }
-    };
 
-    crossPlatformAlert(
-      "Delete Account Permanently",
-      "This will permanently delete your FitAI account, all your data (profile, plans, logs, achievements), and your sign-in credential. This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            crossPlatformAlert(
-              "Final Confirmation",
-              "Are you absolutely sure? Your account, workout plans, meal logs, health data, and sign-in credential will be permanently deleted. There is no way to recover them.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Delete Forever",
-                  style: "destructive",
-                  onPress: doDelete,
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutErr) {
+        console.error(
+          "Account deletion: signOut failed (session already invalid server-side):",
+          signOutErr,
+        );
+      }
+
+      if (result.authDeletionRequired) {
+        crossPlatformAlert(
+          "Data Deleted",
+          "Your FitAI data has been permanently deleted. Your sign-in credential is being removed and will be fully gone shortly.",
+        );
+      } else if (result.failedTables && result.failedTables.length > 0) {
+        crossPlatformAlert(
+          "Account Deleted",
+          "Your account has been permanently deleted. A small number of records are being cleaned up in the background.",
+        );
+      } else {
+        crossPlatformAlert(
+          "Account Deleted",
+          "Your FitAI account and all associated data have been permanently deleted.",
+        );
+      }
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+      crossPlatformAlert(
+        "Error",
+        "Failed to delete account. Please try again.",
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
   }, []);
 
   return {
     handleDataExport,
-    handleDeleteAccount,
+    deleteAccount,
+    isDeletingAccount,
   };
 };

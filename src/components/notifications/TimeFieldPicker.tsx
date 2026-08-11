@@ -285,6 +285,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: rh(420),
+    // WEB/TABLET: mirror App.tsx's appColumn 480px phone-width column — this
+    // Modal portals outside that wrapper, so without a cap the sheet
+    // stretches edge-to-edge on wide viewports. No-op on phones.
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
     borderWidth: 1,
     borderColor: border.DEFAULT,
     borderBottomWidth: 0,

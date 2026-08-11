@@ -23,6 +23,7 @@ import {
 } from "../../components/auth/AppLockGate";
 
 import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
+import { DeleteAccountConfirmModal } from "./components/DeleteAccountConfirmModal";
 import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
@@ -97,12 +98,13 @@ const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   onBack,
 }) => {
-  const { handleDataExport, handleDeleteAccount } =
+  const { handleDataExport, deleteAccount, isDeletingAccount } =
     usePrivacySecurityLogic();
 
   const [appLockEnabled, setAppLockEnabled] = useState(false);
   const [autoLockEnabled, setAutoLockEnabled] = useState(false);
   const [appLockAvailable, setAppLockAvailable] = useState<boolean | null>(null);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -140,6 +142,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     },
     [appLockAvailable, autoLockEnabled],
   );
+
+  const confirmDeleteAccount = useCallback(async () => {
+    await deleteAccount();
+    setShowDeleteAccountModal(false);
+  }, [deleteAccount]);
 
   const handleAutoLockToggle = useCallback(
     (next: boolean) => {
@@ -345,9 +352,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             <ActionItem
               icon="trash-outline"
               iconColor={colors.error}
-              title="Delete Account Data"
-              description="Delete your FitAI data and sign out"
-              onPress={handleDeleteAccount}
+              title="Delete Account"
+              description="Permanently delete your account and all data — this cannot be undone"
+              onPress={() => setShowDeleteAccountModal(true)}
               isDanger={true}
               animationDelay={550}
             />
@@ -355,6 +362,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
           <View style={styles.bottomSpacing} />
         </ScrollView>
+
+        <DeleteAccountConfirmModal
+          visible={showDeleteAccountModal}
+          isLoading={isDeletingAccount}
+          onConfirm={confirmDeleteAccount}
+          onCancel={() => setShowDeleteAccountModal(false)}
+        />
       </SafeAreaView>
     </AuroraBackground>
   );

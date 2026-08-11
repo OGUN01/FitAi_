@@ -367,6 +367,13 @@ const styles = StyleSheet.create({
     // lets scrollArea flex + scroll within it.
     maxHeight: "94%",
     minHeight: rh(420),
+    // WEB/TABLET: mirror App.tsx's appColumn 480px phone-width column — this
+    // Modal portals outside that wrapper, so without a cap the sheet
+    // stretches edge-to-edge on wide viewports. No-op on phones (width is
+    // already under 480 there).
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
