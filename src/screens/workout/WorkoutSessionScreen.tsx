@@ -129,6 +129,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   // Guard against double-tap on "Finish Workout" creating two Supabase rows (Bug 1)
   const isCompletingRef = useRef(false);
+  // Mirrors isCompletingRef in real state so the Finish Workout button can show
+  // a visible loading/disabled state — mutating a ref alone doesn't re-render,
+  // so the button previously gave zero feedback during the multi-step async
+  // completion chain (Supabase write, achievements, deload history fetches).
+  const [isCompleting, setIsCompleting] = useState(false);
   // Stores the Supabase-generated row ID returned by completeExtraWorkout (Bug 3)
   const supabaseSessionIdRef = useRef<string | null>(null);
   // P1 race fix: tracks whether the workout row was already persisted to
@@ -392,6 +397,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     // Bug 1: prevent double-tap from creating two Supabase rows
     if (isCompletingRef.current) return;
     isCompletingRef.current = true;
+    setIsCompleting(true);
     // Declared outside the try block so the catch block below can also
     // surface an accurate elapsed duration in its alert (session.workoutStats
     // is a display-only projection recomputed on other state changes — it is
@@ -538,6 +544,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             }
             setCompleteDialog(null);
             isCompletingRef.current = false;
+            setIsCompleting(false);
             navigation.goBack();
           },
         });
@@ -562,6 +569,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       } else {
         // Nothing was persisted yet — safe to let the user retry.
         isCompletingRef.current = false;
+        setIsCompleting(false);
         showWorkoutCompleteErrorAlert(workout, statsForAlert, () => navigation.goBack());
       }
     }
@@ -697,6 +705,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   const totalSets = safeNumber(session.currentExercise.sets, 3);
   const completedSetsCount = session.currentProgress.completedSets.filter(Boolean).length;
+  // True while the Finish Workout CTA's async completion chain (Supabase
+  // write, achievements, deload history fetches) is in flight — drives the
+  // button's visible loading/disabled state so a tap always gives feedback.
+  const isFinishingWorkout =
+    session.currentProgress.isCompleted &&
+    session.currentExerciseIndex >= session.totalExercises - 1 &&
+    isCompleting;
 
   // Hero subline — target muscle · sets × reps · rest. Derived (not stored):
   // plan exerciseData first, then the exercise database, then workout category.
@@ -945,11 +960,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               onPress={
                 session.currentProgress.isCompleted ? goToNextExercise : session.startExercise
               }
-              disabled={
-                session.currentProgress.isCompleted &&
-                session.currentExerciseIndex >= session.totalExercises - 1 &&
-                isCompletingRef.current
-              }
+              disabled={isFinishingWorkout}
+              loading={isFinishingWorkout}
               variant={session.currentProgress.isCompleted ? 'success' : 'primary'}
               fullWidth
               icon={

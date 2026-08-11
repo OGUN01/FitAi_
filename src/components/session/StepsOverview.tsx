@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card } from "../ui";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../ui/aurora";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
@@ -25,20 +26,21 @@ export const StepsOverview: React.FC<StepsOverviewProps> = ({
         const isCurrent = index === currentStep;
         const isCompleted = completedSteps[index];
 
-        const cardStyle = isCurrentAndCompleted
-          ? [
-              styles.stepOverviewCard,
-              styles.currentStepOverview,
-              styles.completedStepOverview,
-            ]
+        const overlayStyle = isCurrentAndCompleted
+          ? [styles.currentStepOverview, styles.completedStepOverview]
           : isCurrent
-            ? [styles.stepOverviewCard, styles.currentStepOverview]
+            ? [styles.currentStepOverview]
             : isCompleted
-              ? [styles.stepOverviewCard, styles.completedStepOverview]
-              : styles.stepOverviewCard;
+              ? [styles.completedStepOverview]
+              : [];
 
         return (
-          <Card key={index} style={StyleSheet.flatten(cardStyle)}>
+          <GlassCard
+            key={index}
+            padding="none"
+            contentStyle={styles.stepOverviewCard}
+            style={StyleSheet.flatten(overlayStyle)}
+          >
             <View style={styles.stepOverviewContent}>
               <View style={styles.stepOverviewLeft}>
                 <Text style={styles.stepOverviewNumber}>{index + 1}</Text>
@@ -51,15 +53,15 @@ export const StepsOverview: React.FC<StepsOverviewProps> = ({
               </View>
               <View style={styles.stepOverviewRight}>
                 {completedSteps[index] ? (
-                  <Text style={styles.stepCompleteIcon}>✅</Text>
+                  <Ionicons name="checkmark-circle" size={rf(20)} color={colors.success} />
                 ) : index === currentStep ? (
-                  <Text style={styles.stepCurrentIcon}>👉</Text>
+                  <Ionicons name="play" size={rf(20)} color={colors.primary} />
                 ) : (
-                  <Text style={styles.stepPendingIcon}>⏳</Text>
+                  <Ionicons name="time-outline" size={rf(16)} color={colors.textSecondary} />
                 )}
               </View>
             </View>
-          </Card>
+          </GlassCard>
         );
       })}
     </View>
@@ -124,14 +126,5 @@ const styles = StyleSheet.create({
   },
   stepOverviewRight: {
     marginLeft: spacing.md,
-  },
-  stepCompleteIcon: {
-    fontSize: rf(20),
-  },
-  stepCurrentIcon: {
-    fontSize: rf(20),
-  },
-  stepPendingIcon: {
-    fontSize: rf(16),
   },
 });

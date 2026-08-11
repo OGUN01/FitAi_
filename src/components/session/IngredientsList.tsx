@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card } from "../ui";
+import { GlassCard } from "../ui/aurora";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
@@ -14,7 +14,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({ meal }) => {
     <View style={styles.ingredientsSection}>
       <Text style={styles.sectionTitle}>Ingredients Needed</Text>
       {(meal.items ?? []).map((item, index) => (
-        <Card key={index} style={styles.ingredientCard}>
+        <GlassCard key={index} padding="none" contentStyle={styles.ingredientCard}>
           <View style={styles.ingredientHeader}>
             <Text style={styles.ingredientName}>{item.name}</Text>
             <Text style={styles.ingredientQuantity}>
@@ -25,7 +25,7 @@ export const IngredientsList: React.FC<IngredientsListProps> = ({ meal }) => {
             <Text style={styles.ingredientCalories}>{item.calories} cal</Text>
             <Text style={styles.ingredientCategory}>{item.category}</Text>
           </View>
-        </Card>
+        </GlassCard>
       ))}
     </View>
   );

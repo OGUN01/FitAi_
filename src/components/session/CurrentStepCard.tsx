@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card, Button } from "../ui";
+import { GlassCard, GlassButton } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
@@ -26,7 +26,7 @@ export const CurrentStepCard: React.FC<CurrentStepCardProps> = ({
   }
 
   return (
-    <Card style={styles.currentStepCard} variant="elevated">
+    <GlassCard padding="none" contentStyle={styles.currentStepCard}>
       <View style={styles.stepHeader}>
         <Text style={styles.stepNumber}>
           Step {currentStep + 1} of {items.length}
@@ -57,13 +57,14 @@ export const CurrentStepCard: React.FC<CurrentStepCardProps> = ({
         )}
       </View>
 
-      <Button
-        title="Mark Complete"
+      <GlassButton
+        label="Mark Complete"
         onPress={() => onStepComplete(currentStep)}
         style={styles.completeButton}
         disabled={completedSteps[currentStep]}
+        fullWidth
       />
-    </Card>
+    </GlassCard>
   );
 };
 

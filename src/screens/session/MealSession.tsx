@@ -8,7 +8,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Button } from "../../components/ui";
 import { colors, spacing } from "../../theme/aurora-tokens";
 import { gradientProgressRing } from "../../theme/gradients";
 import { rf, rp, rbr, rh } from '../../utils/responsive';
@@ -18,8 +17,7 @@ import { IngredientsList } from "../../components/session/IngredientsList";
 import { CurrentStepCard } from "../../components/session/CurrentStepCard";
 import { StepsOverview } from "../../components/session/StepsOverview";
 import { DayMeal } from "../../types/ai";
-import { AuroraBackground } from "../../components/ui/aurora";
-import { AnimatedPressable } from "../../components/ui/aurora";
+import { AuroraBackground, AnimatedPressable, GlassButton } from "../../components/ui/aurora";
 
 interface MealSessionProps {
   route: {
@@ -99,11 +97,12 @@ export const MealSession: React.FC<MealSessionProps> = ({
                 getDifficultyColor={helpers.getDifficultyColor}
               />
               <IngredientsList meal={meal} />
-              <Button
-                title="Start Cooking"
+              <GlassButton
+                label="Start Cooking"
                 onPress={actions.handleStartSession}
                 style={styles.startButton}
-                size="lg"
+                icon="restaurant"
+                fullWidth
               />
             </View>
           ) : (

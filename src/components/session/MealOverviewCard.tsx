@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Card } from "../ui";
+import { GlassCard } from "../ui/aurora";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from '../../utils/responsive';
 import { DayMeal } from "../../types/ai";
@@ -17,7 +17,7 @@ export const MealOverviewCard: React.FC<MealOverviewCardProps> = ({
   getDifficultyColor,
 }) => {
   return (
-    <Card style={styles.mealOverviewCard} variant="elevated">
+    <GlassCard padding="none" contentStyle={styles.mealOverviewCard}>
       <View style={styles.mealHeader}>
         <View style={styles.mealIconContainer}>
           <Text style={styles.mealIcon}>{getMealTypeIcon(meal.type)}</Text>
@@ -53,7 +53,7 @@ export const MealOverviewCard: React.FC<MealOverviewCardProps> = ({
           <Text style={styles.statLabel}>Ingredients</Text>
         </View>
       </View>
-    </Card>
+    </GlassCard>
   );
 };
 

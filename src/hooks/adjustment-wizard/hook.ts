@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger';
 import { useState, useEffect } from "react";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { Alternative, UseAdjustmentWizardProps } from "./types";
 import { transformSmartAlternativeToAlternative } from "./utils";
 import { calculateAlternativesForError } from "./errorRouter";
@@ -98,6 +99,14 @@ export const useAdjustmentWizard = ({
           logger.debug('[AdjustmentWizard] Saved to database successfully');
         } catch (err) {
           logger.error('[AdjustmentWizard] Failed to save to database', { error: String(err) });
+          setIsSaving(false);
+          // No Silent Failures: surface the save failure and keep the wizard
+          // open so the user can retry, instead of closing as if it succeeded.
+          crossPlatformAlert(
+            "Couldn't Save Your Choice",
+            'Your selection could not be saved. Please try again.',
+          );
+          return;
         }
       }
 

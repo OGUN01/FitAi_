@@ -14,8 +14,9 @@ import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { DetentBottomSheet } from '../../components/ui/aurora/DetentBottomSheet';
 import { GlassButton } from '../../components/ui/aurora/GlassButton';
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
 import { Pill } from '../../components/onboarding/fresh/Pill';
-import { colors, spacing, shadows } from '../../theme/aurora-tokens';
+import { colors, spacing } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rh, rf, rp, rbr } from '../../utils/responsive';
 import { useFitnessStore } from '../../stores/fitnessStore';
@@ -390,7 +391,12 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {/* 3.6 Plan error — anchored under the plan section it belongs to,
                 AI-source only (retry regenerates the AI plan), with dismiss (audit #7). */}
             {planError && activePlanSource === 'ai' && (
-              <View style={styles.errorCard}>
+              <GlassCard
+                padding="md"
+                borderRadius="lg"
+                showBorder
+                style={styles.errorCard}
+              >
                 <View style={styles.errorHeader}>
                   <Ionicons name="alert-circle" size={rf(20)} color={colors.error.DEFAULT} />
                   <Text style={styles.errorTitle}>Plan Generation Failed</Text>
@@ -407,19 +413,16 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   </AnimatedPressable>
                 </View>
                 <Text style={styles.errorMessage}>{planError}</Text>
-                <AnimatedPressable
+                <GlassButton
+                  variant="error"
+                  label="Retry"
+                  icon="refresh"
                   onPress={actions.handleRegeneratePlan}
-                  scaleValue={0.96}
-                  hapticFeedback={true}
                   hapticType="medium"
                   style={styles.errorRetryButton}
-                  accessibilityRole="button"
                   accessibilityLabel="Retry plan generation"
-                >
-                  <Ionicons name="refresh" size={rf(14)} color={colors.text.primary} />
-                  <Text style={styles.errorRetryText}>Retry</Text>
-                </AnimatedPressable>
-              </View>
+                />
+              </GlassCard>
             )}
 
             {/* 4. My Workouts library summary — replaces the old simple button.
@@ -604,14 +607,16 @@ const styles = StyleSheet.create({
     marginBottom: rp(spacing.lg),
   },
   errorCard: {
+    // Background-tinting a GlassCard doesn't read through: GlassView paints an
+    // opaque-ish overlay on top of any custom backgroundColor on Android/Web
+    // (its optimizeForAndroid fallback path) and a glass overlay on iOS's
+    // BlurView path, masking the tint almost entirely. Follow the same
+    // pattern InlineValidationBanner uses for severity signaling — a static
+    // glass card + colored border/icon/text — instead of a tint that won't
+    // render on most devices.
     marginHorizontal: rp(spacing.lg),
     marginBottom: rp(spacing.lg),
-    padding: rp(spacing.md),
-    backgroundColor: hexToRgba(colors.error.DEFAULT, 0.12),
-    borderRadius: rbr(12),
-    borderWidth: 1,
     borderColor: hexToRgba(colors.error.DEFAULT, 0.35),
-    ...shadows.level2,
   },
   errorHeader: {
     flexDirection: 'row',
@@ -631,22 +636,8 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
   },
   errorRetryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: rp(spacing.xs),
     marginTop: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
-    paddingHorizontal: rp(spacing.lg),
-    borderRadius: rbr(8),
-    backgroundColor: colors.error.DEFAULT,
-    minHeight: 44,
     alignSelf: 'flex-start',
-  },
-  errorRetryText: {
-    fontSize: rf(13),
-    fontWeight: '600',
-    color: colors.text.primary,
   },
   guestSignUpOverlay: {
     position: 'absolute' as const,
