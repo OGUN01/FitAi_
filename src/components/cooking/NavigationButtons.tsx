@@ -112,7 +112,7 @@ export default function NavigationButtons({
           {isLastStep ? "Finish Cooking" : "Next Step"}
         </Text>
         <Ionicons
-          name={isLastStep ? "checkmark" : "chevron-forward"}
+          name={isLastStep ? "checkmark-done" : "chevron-forward"}
           size={24}
           color={colors.text.primary}
         />
@@ -145,7 +145,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glass.backgroundDark,
   },
   finishButton: {
-    backgroundColor: colors.success.DEFAULT,
+    // Deliberately a third, distinct color from both completeStepButton
+    // states: its uncompleted default is colors.primary.DEFAULT (orange) and
+    // its completed state is colors.success.DEFAULT (green). On the final
+    // step those two buttons sit side by side with this one, so reusing
+    // either color would still produce identical-looking pills — this must
+    // stay visually distinct from both, not just from the completed state.
+    backgroundColor: colors.secondary.DEFAULT,
   },
   completeStepButton: {
     flex: 1,

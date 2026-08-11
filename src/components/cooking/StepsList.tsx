@@ -20,6 +20,7 @@ interface StepsListProps {
   completedSteps: Set<number>;
   onStepPress: (index: number) => void;
   scrollViewRef?: React.RefObject<ScrollView | null>;
+  registerStepRef?: (index: number, ref: View | null) => void;
 }
 
 export default function StepsList({
@@ -27,6 +28,7 @@ export default function StepsList({
   currentStepIndex,
   completedSteps,
   onStepPress,
+  registerStepRef,
 }: StepsListProps) {
   if (!cookingFlow) return null;
 
@@ -46,8 +48,11 @@ export default function StepsList({
       </Text>
       <View style={styles.stepsList}>
         {cookingFlow.steps.map((step, index) => (
-          <AnimatedPressable
+          <View
             key={index}
+            ref={(ref) => registerStepRef?.(index, ref)}
+          >
+          <AnimatedPressable
             style={[
               styles.stepItem,
               index === currentStepIndex && styles.currentStepItem,
@@ -116,6 +121,7 @@ export default function StepsList({
               )}
             </View>
           </AnimatedPressable>
+          </View>
         ))}
       </View>
 

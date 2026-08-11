@@ -56,9 +56,11 @@ export default function CookingSessionScreen({
     setCurrentStepIndex,
     completedSteps,
     markStepComplete,
+    toggleStepComplete,
     goToNextStep,
     goToPreviousStep,
     scrollViewRef,
+    registerStepRef,
   } = useCookingFlow(meal);
 
   const handleIngredientPress = useCallback((ingredient: string) => {
@@ -69,13 +71,22 @@ export default function CookingSessionScreen({
   const completeCooking = useCallback(async () => {
     if (!cookingFlow) return;
 
+    // The "Next Step" flow marks the step being LEFT as complete, so the
+    // final step is only ever added here when the user goes straight from
+    // "Next" to "Finish Cooking" without separately tapping "Mark Complete".
+    // Compute the true final set synchronously so both the completion
+    // payload and allStepsCompleted reflect it immediately.
+    const finalCompletedSteps = new Set(completedSteps);
+    finalCompletedSteps.add(currentStepIndex);
+    markStepComplete(currentStepIndex);
+
     try {
       const success = await completionTrackingService.completeMeal(meal.id, {
         completedAt: new Date().toISOString(),
         source: "cooking_session",
-        allStepsCompleted: completedSteps.size === cookingFlow.steps.length,
+        allStepsCompleted: finalCompletedSteps.size === cookingFlow.steps.length,
         totalSteps: cookingFlow.steps.length,
-        completedSteps: completedSteps.size,
+        completedSteps: finalCompletedSteps.size,
       });
 
       if (!success) {
@@ -102,7 +113,7 @@ export default function CookingSessionScreen({
         },
       },
     ]);
-  }, [cookingFlow, completedSteps, meal, navigation]);
+  }, [cookingFlow, completedSteps, currentStepIndex, markStepComplete, meal, navigation]);
 
   // cookingTime is optional on DayMeal — never fabricate one for display.
   useEffect(() => {
@@ -177,6 +188,7 @@ export default function CookingSessionScreen({
         </View>
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -209,7 +221,7 @@ export default function CookingSessionScreen({
             currentStepIndex={currentStepIndex}
             completedSteps={completedSteps}
             onStepPress={setCurrentStepIndex}
-            scrollViewRef={scrollViewRef}
+            registerStepRef={registerStepRef}
           />
         )}
       </ScrollView>
@@ -219,7 +231,7 @@ export default function CookingSessionScreen({
         currentStepIndex={currentStepIndex}
         completedSteps={completedSteps}
         onPrevious={goToPreviousStep}
-        onToggleComplete={() => markStepComplete(currentStepIndex)}
+        onToggleComplete={() => toggleStepComplete(currentStepIndex)}
         onNext={goToNextStep}
         onFinish={completeCooking}
       />

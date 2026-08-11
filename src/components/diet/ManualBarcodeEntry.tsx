@@ -6,13 +6,13 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import barcodeService, { ProductLookupResult } from '@/services/barcodeService';
 import { getCountryFromBarcode } from '@/utils/countryMapping';
 import { flatColors as colors, spacing, borderRadius } from '@/theme/aurora-tokens';
 import { rbr, rf, rp } from '@/utils/responsive';
+import { AnimatedPressable } from '@/components/ui/aurora/AnimatedPressable';
 
 interface ManualBarcodeEntryProps {
   onLookupResolved: (result: ProductLookupResult) => void;
@@ -116,15 +116,18 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Enter Barcode</Text>
-          <TouchableOpacity
+          <AnimatedPressable
             onPress={onClose}
             style={styles.closeButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
             <Text style={styles.closeButtonText}>X</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
         <Text style={styles.subtitle}>Type the barcode number printed on the package.</Text>
@@ -147,15 +150,18 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
           />
 
           {barcode.length > 0 && (
-            <TouchableOpacity
+            <AnimatedPressable
               onPress={handleClear}
               style={styles.clearButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              scaleValue={0.9}
+              springConfig="snappy"
+              hapticType="light"
               accessibilityLabel="Clear barcode"
               accessibilityRole="button"
             >
               <Text style={styles.clearButtonText}>X</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           )}
         </View>
 
@@ -169,35 +175,53 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         {error ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={() => inputRef.current?.focus()}>
+            <AnimatedPressable
+              onPress={() => inputRef.current?.focus()}
+              scaleValue={0.96}
+              springConfig="smooth"
+              hapticType="light"
+              accessibilityRole="button"
+              accessibilityLabel="Edit barcode"
+            >
               <Text style={styles.retryLink}>Edit barcode</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         ) : null}
 
         {showFallbackActions ? (
           <View style={styles.fallbackActions}>
-            <TouchableOpacity
+            <AnimatedPressable
+              containerStyle={styles.secondaryActionContainer}
               style={styles.secondaryAction}
               onPress={onRequestLabelScan}
+              scaleValue={0.96}
+              springConfig="smooth"
+              hapticType="light"
               accessibilityRole="button"
             >
               <Text style={styles.secondaryActionText}>Scan Label</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </AnimatedPressable>
+            <AnimatedPressable
+              containerStyle={styles.secondaryActionContainer}
               style={styles.secondaryAction}
               onPress={() => onContributeProduct(cleanBarcode)}
+              scaleValue={0.96}
+              springConfig="smooth"
+              hapticType="light"
               accessibilityRole="button"
             >
               <Text style={styles.secondaryActionText}>Contribute Product</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         ) : null}
 
-        <TouchableOpacity
+        <AnimatedPressable
           style={[styles.lookUpButton, !canLookUp && styles.lookUpButtonDisabled]}
           onPress={handleLookUp}
           disabled={!canLookUp}
+          scaleValue={0.97}
+          springConfig="smooth"
+          hapticType="medium"
           accessibilityLabel="Look up product"
           accessibilityRole="button"
         >
@@ -211,16 +235,19 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
               Look Up
             </Text>
           )}
-        </TouchableOpacity>
+        </AnimatedPressable>
 
-        <TouchableOpacity
+        <AnimatedPressable
           onPress={onClose}
           style={styles.cancelButton}
+          scaleValue={0.96}
+          springConfig="smooth"
+          hapticType="light"
           accessibilityLabel="Cancel"
           accessibilityRole="button"
         >
           <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -344,8 +371,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  secondaryAction: {
+  // Sizing lives on the AnimatedPressable's containerStyle (the outer
+  // Animated.View — the actual flex participant in fallbackActions); `style`
+  // below is applied to the inner Pressable and stays paint-only.
+  secondaryActionContainer: {
     flex: 1,
+  },
+  secondaryAction: {
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,

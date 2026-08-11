@@ -44,11 +44,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
       ingredientName.toLowerCase().includes(item.name?.toLowerCase() || ""),
   );
 
-  const handleMarkComplete = async () => {
-    if (isCompleted || isCompleting) {
-      return;
-    }
-
+  const performMarkComplete = async () => {
     try {
       setIsCompleting(true);
 
@@ -66,9 +62,9 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           {},
         );
 
-        crossPlatformAlert("🎉 Meal Completed!", completionMessage, [
+        crossPlatformAlert("Meal Completed!", completionMessage, [
           {
-            text: "Awesome! 🍽️",
+            text: "Awesome!",
             onPress: () => {
 
               // Call the completion callback
@@ -86,15 +82,33 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         throw new Error("Failed to complete meal");
       }
     } catch (error) {
-      console.error("❌ Failed to complete meal from ingredient modal:", error);
+      console.error("Failed to complete meal from ingredient modal:", error);
       crossPlatformAlert(
-        "❌ Error",
+        "Error",
         "Failed to mark meal as completed. Please try again.",
         [{ text: "OK" }],
       );
     } finally {
       setIsCompleting(false);
     }
+  };
+
+  // This action completes the WHOLE meal, not just the tapped ingredient —
+  // confirm before firing it, matching the confirm-before-destructive-action
+  // pattern used elsewhere in Diet (e.g. CookingSessionScreen's exit alert).
+  const handleMarkComplete = () => {
+    if (isCompleted || isCompleting) {
+      return;
+    }
+
+    crossPlatformAlert(
+      "Mark Meal Complete?",
+      `This marks the entire "${meal.name}" meal as complete, not just ${ingredientData?.name || ingredientName}.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Mark Complete", onPress: () => performMarkComplete() },
+      ],
+    );
   };
 
   if (!ingredientData) {
@@ -159,7 +173,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               color={colors.success}
             />
             <Text style={styles.completionBannerText}>
-              🎉 This meal has been completed!
+              This meal has been completed!
             </Text>
           </View>
         )}
@@ -168,7 +182,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           {/* Ingredient Header */}
           <View style={styles.ingredientHeader}>
             <View style={styles.ingredientIcon}>
-              <Text style={styles.iconText}>🥘</Text>
+              <Ionicons name="restaurant" size={rf(36)} color={colors.primary} />
             </View>
             <View style={styles.ingredientInfo}>
               <Text style={styles.ingredientName}>{ingredientData.name}</Text>
@@ -232,21 +246,30 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           <View style={styles.contextCard}>
             <Text style={styles.sectionTitle}>In This Meal</Text>
             <View style={styles.contextInfo}>
-              <Text style={styles.contextText}>🍽️ Part of: {meal.name}</Text>
-              <Text style={styles.contextText}>
-                📊 Contributes{" "}
-                {meal.totalCalories > 0
-                  ? Math.round(
-                      (ingredientData.calories / meal.totalCalories) * 100,
-                    )
-                  : 0}
-                % of total calories
-              </Text>
-              <Text style={styles.contextText}>
-                💪 Provides {Math.round(ingredientData.macros?.protein || 0)}g
-                of the meal's {Math.round(meal.totalMacros?.protein || 0)}g
-                protein
-              </Text>
+              <View style={styles.iconTextRow}>
+                <Ionicons name="restaurant-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.contextText}>Part of: {meal.name}</Text>
+              </View>
+              <View style={styles.iconTextRow}>
+                <Ionicons name="stats-chart-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.contextText}>
+                  Contributes{" "}
+                  {meal.totalCalories > 0
+                    ? Math.round(
+                        (ingredientData.calories / meal.totalCalories) * 100,
+                      )
+                    : 0}
+                  % of total calories
+                </Text>
+              </View>
+              <View style={styles.iconTextRow}>
+                <Ionicons name="barbell-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.contextText}>
+                  Provides {Math.round(ingredientData.macros?.protein || 0)}g
+                  of the meal's {Math.round(meal.totalMacros?.protein || 0)}g
+                  protein
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -254,18 +277,24 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           <View style={styles.quantityCard}>
             <Text style={styles.sectionTitle}>Serving Details</Text>
             <View style={styles.quantityInfo}>
-              <Text style={styles.quantityText}>
-                📏 Quantity: {ingredientData.quantity}{" "}
-                {ingredientData.unit || "grams"}
-              </Text>
-              <Text style={styles.quantityText}>
-                ⚖️ Calories per 100g:{" "}
-                {(() => {
-                  const qty = Number(ingredientData.quantity);
-                  const calsPerUnit = qty > 0 ? (ingredientData.calories / qty) * 100 : null;
-                  return calsPerUnit != null ? Math.round(calsPerUnit * 100) / 100 : '—';
-                })()}
-              </Text>
+              <View style={styles.iconTextRow}>
+                <Ionicons name="resize-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.quantityText}>
+                  Quantity: {ingredientData.quantity}{" "}
+                  {ingredientData.unit || "grams"}
+                </Text>
+              </View>
+              <View style={styles.iconTextRow}>
+                <Ionicons name="scale-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.quantityText}>
+                  Calories per 100g:{" "}
+                  {(() => {
+                    const qty = Number(ingredientData.quantity);
+                    const calsPerUnit = qty > 0 ? (ingredientData.calories / qty) * 100 : null;
+                    return calsPerUnit != null ? Math.round(calsPerUnit * 100) / 100 : '—';
+                  })()}
+                </Text>
+              </View>
             </View>
           </View>
         </ScrollView>
@@ -296,7 +325,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               disabled={isCompleted || isCompleting}
               activeOpacity={isCompleted ? 1.0 : 0.8}
               accessibilityRole="button"
-              accessibilityLabel="Mark ingredient complete"
+              accessibilityLabel="Mark meal complete"
               accessibilityState={{
                 disabled: isCompleted || isCompleting,
                 busy: isCompleting,
@@ -325,7 +354,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
                   >
-                    {isCompleted ? "✅ Completed" : "Mark Complete"}
+                    {isCompleted ? "Completed" : "Mark Complete"}
                   </Text>
                 </>
               )}
@@ -431,9 +460,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: spacing.lg,
   },
-  iconText: {
-    fontSize: rf(40),
-  },
   ingredientInfo: {
     flex: 1,
   },
@@ -485,7 +511,7 @@ const styles = StyleSheet.create({
   calorieValue: {
     fontSize: fontSize.xxl,
     fontWeight: String(typography.fontWeight.bold) as any,
-    color: colors.errorLight,
+    color: colors.text,
   },
   divider: {
     height: 1,
@@ -553,7 +579,13 @@ const styles = StyleSheet.create({
   contextInfo: {
     gap: spacing.sm,
   },
+  iconTextRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
   contextText: {
+    flex: 1,
     fontSize: fontSize.md,
     color: colors.text,
     lineHeight: 22,

@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { HealthScoreIndicator } from './HealthScoreIndicator';
@@ -221,15 +221,18 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
+            <AnimatedPressable
               onPress={handleClose}
               style={styles.closeButton}
+              scaleValue={0.95}
+              springConfig="smooth"
+              hapticType="light"
               accessibilityRole="button"
               accessibilityLabel="Close product details"
               disabled={isSubmitting}
             >
               <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           {product.isAIEstimated ? (
@@ -420,22 +423,30 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             ) : null}
 
             <View style={styles.footerButtons}>
-              <TouchableOpacity
+              <AnimatedPressable
+                containerStyle={styles.secondaryButtonContainer}
                 style={styles.secondaryButton}
                 onPress={handleClose}
+                scaleValue={0.97}
+                springConfig="smooth"
+                hapticType="light"
                 accessibilityRole="button"
                 disabled={isSubmitting}
               >
                 <Text style={styles.secondaryButtonText}>Close</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
 
               {onAddToMeal ? (
-                <TouchableOpacity
+                <AnimatedPressable
+                  containerStyle={styles.primaryButtonContainer}
                   style={[
                     styles.primaryButton,
                     (isSubmitting || amountIsInvalid) && styles.primaryButtonDisabled,
                   ]}
                   disabled={isSubmitting || amountIsInvalid}
+                  scaleValue={0.97}
+                  springConfig="smooth"
+                  hapticType="medium"
                   onPress={() => {
                     void handleAddToMeal();
                   }}
@@ -446,7 +457,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   ) : (
                     <Text style={styles.primaryButtonText}>Add to meal</Text>
                   )}
-                </TouchableOpacity>
+                </AnimatedPressable>
               ) : null}
             </View>
           </View>
@@ -769,8 +780,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  secondaryButton: {
+  // Sizing lives on the AnimatedPressable's containerStyle (the outer
+  // Animated.View — the actual flex participant in footerButtons); `style`
+  // below is applied to the inner Pressable and stays paint-only.
+  secondaryButtonContainer: {
     flex: 1,
+  },
+  secondaryButton: {
     minHeight: rp(48),
     alignItems: 'center',
     justifyContent: 'center',
@@ -784,8 +800,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-  primaryButton: {
+  primaryButtonContainer: {
     flex: 1.4,
+  },
+  primaryButton: {
     minHeight: rp(48),
     alignItems: 'center',
     justifyContent: 'center',

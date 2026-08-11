@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { rf, rp, rh, rw } from '../../utils/responsive';
@@ -198,38 +199,46 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
             />
 
             <View style={styles.secondaryRow}>
-              <TouchableOpacity
+              <AnimatedPressable
+                containerStyle={styles.outlineButtonContainer}
                 style={styles.outlineButton}
-                activeOpacity={0.7}
+                scaleValue={0.96}
+                springConfig="smooth"
+                hapticType="light"
                 onPress={onAdjustPortions}
                 accessibilityRole="button"
                 accessibilityLabel="Adjust portions"
               >
                 <Ionicons name="resize-outline" size={rf(16)} color={colors.primary} />
                 <Text style={styles.outlineButtonText}>Adjust Portions</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
+                containerStyle={styles.outlineButtonContainer}
                 style={styles.outlineButton}
-                activeOpacity={0.7}
+                scaleValue={0.96}
+                springConfig="smooth"
+                hapticType="light"
                 onPress={onFeedback}
                 accessibilityRole="button"
                 accessibilityLabel="Feedback"
               >
                 <Ionicons name="chatbubble-outline" size={rf(16)} color={colors.primary} />
                 <Text style={styles.outlineButtonText}>Feedback</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.cancelButton}
-              activeOpacity={0.7}
+              scaleValue={0.96}
+              springConfig="smooth"
+              hapticType="light"
               onPress={onDismiss}
               hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
               accessibilityRole="button"
               accessibilityLabel="Cancel"
             >
               <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </Animated.View>
         </View>
       </View>
@@ -446,8 +455,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  outlineButton: {
+  // Sizing lives on the AnimatedPressable's containerStyle (the outer
+  // Animated.View — the actual flex participant in secondaryRow); `style`
+  // below is applied to the inner Pressable and stays paint-only.
+  outlineButtonContainer: {
     flex: 1,
+  },
+  outlineButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
