@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
   ListRenderItemInfo,
   StyleProp,
@@ -309,18 +308,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
-      <TouchableOpacity
-        style={[styles.trigger, disabled && styles.triggerDisabled]}
-        onPress={() => !disabled && setIsVisible(true)}
-        accessibilityRole="button"
+      <GlassCard
+        pressable={!disabled}
+        onPress={() => setIsVisible(true)}
+        elevation={2}
+        padding="none"
+        borderRadius="md"
+        style={disabled ? styles.triggerDisabled : undefined}
+        contentStyle={styles.trigger}
         accessibilityLabel={label || placeholder}
-        accessibilityState={{ disabled }}
+        accessibilityHint="Opens the date picker"
       >
         <Text style={[styles.triggerText, !value && styles.placeholderText]} numberOfLines={1}>
           {value ? formatDate(value) : placeholder}
         </Text>
         <Ionicons name="calendar-outline" size={rf(20)} color={disabled ? colors.textMuted : colors.primary} />
-      </TouchableOpacity>
+      </GlassCard>
 
       <BottomSheet
         visible={isVisible}
@@ -368,10 +371,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     minHeight: 44,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
 
   triggerDisabled: {

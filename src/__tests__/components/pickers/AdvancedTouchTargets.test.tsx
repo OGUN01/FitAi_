@@ -91,12 +91,41 @@ jest.mock("@/components/ui", () => {
   };
 });
 
+// Faithful enough to exercise the pressable trigger path used by
+// DatePicker/MultiSelect: when `pressable`+`onPress` are set (the collapsed
+// trigger), render a Pressable that forwards the accessibility label/hint and
+// the combined style+contentStyle (mirroring the real GlassCard's touch
+// target) so `getByLabelText` queries and their style assertions still work.
+// Non-pressable usages (the option rows, which get their own accessible
+// AnimatedPressable wrapper from the caller) just render a plain View.
 jest.mock("@/components/ui/aurora/GlassCard", () => {
   const React = require("react");
-  const { View } = require("react-native");
+  const { View, Pressable } = require("react-native");
   return {
-    GlassCard: ({ children }: { children: React.ReactNode }) =>
-      React.createElement(View, null, children),
+    GlassCard: ({
+      children,
+      pressable,
+      onPress,
+      accessibilityLabel,
+      accessibilityHint,
+      style,
+      contentStyle,
+    }: any) => {
+      if (pressable && onPress) {
+        return React.createElement(
+          Pressable,
+          {
+            onPress,
+            accessibilityRole: "button",
+            accessibilityLabel,
+            accessibilityHint,
+            style: [style, contentStyle],
+          },
+          children,
+        );
+      }
+      return React.createElement(View, { style: [style, contentStyle] }, children);
+    },
   };
 });
 
@@ -237,8 +266,11 @@ describe("advanced picker touch targets", () => {
       />,
     );
 
+    // Segments share the rail width equally (flex: 1) with a 44pt floor via
+    // minWidth instead of a fixed width — a fixed width here would let 7
+    // columns' summed minimums overflow narrower screens.
     expect(StyleSheet.flatten(tabs.getAllByLabelText(/step$/i)[0].props.style)).toMatchObject({
-      width: 44,
+      minWidth: 44,
       height: 44,
     });
   });

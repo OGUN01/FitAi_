@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   TextInput,
   StyleProp,
@@ -121,12 +120,16 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
-      <TouchableOpacity
-        style={[styles.trigger, disabled && styles.triggerDisabled]}
-        onPress={() => !disabled && setIsVisible(true)}
-        accessibilityRole="button"
+      <GlassCard
+        pressable={!disabled}
+        onPress={() => setIsVisible(true)}
+        elevation={2}
+        padding="none"
+        borderRadius="md"
+        style={disabled ? styles.triggerDisabled : undefined}
+        contentStyle={styles.trigger}
         accessibilityLabel={label || placeholder}
-        accessibilityState={{ disabled }}
+        accessibilityHint="Opens the options list"
       >
         <Text
           style={[
@@ -139,7 +142,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
           {getDisplayText()}
         </Text>
         <Ionicons name="chevron-down" size={rf(fontSize.sm)} color={colors.textSecondary} style={styles.triggerIcon} />
-      </TouchableOpacity>
+      </GlassCard>
 
       {/* Selected Items Preview */}
       {selectedValues.length > 0 && (
@@ -301,10 +304,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     minHeight: 44,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
 
   triggerDisabled: {

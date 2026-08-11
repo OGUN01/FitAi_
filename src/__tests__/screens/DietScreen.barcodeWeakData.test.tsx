@@ -4,10 +4,6 @@ import { render } from "@testing-library/react-native";
 const mockDismissPaywall = jest.fn();
 const mockSetShowProductModal = jest.fn();
 const mockHandleAddProductToMeal = jest.fn();
-const mockSharedModal = jest.fn(
-  ({ visible = true, children, ...props }: any) =>
-    visible ? React.createElement("SharedModal", props, children) : null,
-);
 const mockProduct = {
   barcode: "8900000000012",
   name: "Sabudana Khichdi",
@@ -124,27 +120,22 @@ jest.mock("../../components/diet/LogMealModal", () => ({
 jest.mock("../../components/diet/ProductDetailsModal", () => {
   const React = require("react");
   const { Text, View } = require("react-native");
-  const { Modal } = require("@/components/ui/Modal");
   return {
     ProductDetailsModal: ({ product, visible }: any) =>
       visible && product
         ? React.createElement(
-            Modal,
-            { visible },
+            View,
+            null,
+            React.createElement(Text, null, product.name),
+            React.createElement(Text, null, "Barcode: " + product.barcode),
             React.createElement(
-              View,
+              Text,
               null,
-              React.createElement(Text, null, product.name),
-              React.createElement(Text, null, "Barcode: " + product.barcode),
-              React.createElement(
-                Text,
-                null,
-                "Nutrition for " +
-                  product.nutrition.servingSize +
-                  product.nutrition.servingUnit,
-              ),
-              React.createElement(Text, null, String(product.nutrition.calories)),
+              "Nutrition for " +
+                product.nutrition.servingSize +
+                product.nutrition.servingUnit,
             ),
+            React.createElement(Text, null, String(product.nutrition.calories)),
           )
         : null,
   };
@@ -162,10 +153,6 @@ jest.mock("../../components/subscription/PaywallModal", () => () => null);
 
 jest.mock("../../components/diet/HealthScoreIndicator", () => ({
   HealthScoreIndicator: () => null,
-}));
-
-jest.mock("@/components/ui/Modal", () => ({
-  Modal: (props: any) => mockSharedModal(props),
 }));
 
 jest.mock("../../screens/main/GuestSignUpScreen", () => ({
@@ -461,7 +448,6 @@ import { DietScreen } from "../../screens/main/DietScreen";
 describe("DietScreen barcode weak-data flow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSharedModal.mockClear();
   });
 
   it("renders product details at screen level when barcode weak-data is accepted", () => {
@@ -477,6 +463,5 @@ describe("DietScreen barcode weak-data flow", () => {
     expect(screen.getByText("Barcode: 8900000000012")).toBeTruthy();
     expect(screen.getByText("Nutrition for 100g")).toBeTruthy();
     expect(screen.getByText("152")).toBeTruthy();
-    expect(mockSharedModal).toHaveBeenCalled();
   });
 });

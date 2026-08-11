@@ -15,6 +15,7 @@ jest.mock("react-native", () => {
     View: host("View"),
     Text: host("Text"),
     TouchableOpacity: host("TouchableOpacity"),
+    Pressable: host("Pressable"),
     TextInput: host("TextInput"),
     ActivityIndicator: host("ActivityIndicator"),
     Modal: ({ visible = true, children, ...props }: any) =>

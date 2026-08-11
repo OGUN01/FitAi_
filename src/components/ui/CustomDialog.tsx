@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from './aurora/GlassCard';
-import { Button } from './Button';
+import { GlassButton, GlassButtonVariant } from './aurora/GlassButton';
 import {
   flatColors as colors,
   spacing,
@@ -30,7 +30,7 @@ interface DialogAction {
   text: string;
   onPress: () => void;
   style?: 'default' | 'cancel' | 'destructive';
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: GlassButtonVariant;
 }
 
 interface CustomDialogProps {
@@ -128,14 +128,14 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
     }
   };
 
-  const getButtonVariant = (action: DialogAction) => {
+  const getButtonVariant = (action: DialogAction): GlassButtonVariant => {
     if (action.variant) return action.variant;
 
     switch (action.style) {
       case 'destructive':
-        return 'primary';
+        return 'error';
       case 'cancel':
-        return 'outline';
+        return 'secondary';
       default:
         return 'primary';
     }
@@ -175,21 +175,23 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
             {actions.length > 0 && (
               <View style={styles.actionsContainer}>
                 {actions.length === 1 ? (
-                  <Button
-                    title={actions[0].text}
+                  <GlassButton
+                    label={actions[0].text}
                     onPress={actions[0].onPress}
                     variant={getButtonVariant(actions[0])}
+                    fullWidth
                     style={styles.singleAction}
                   />
                 ) : (
                   <View style={styles.multipleActions}>
                     {actions.map((action, index) => (
-                      <Button
+                      <GlassButton
                         key={index}
-                        title={action.text}
+                        label={action.text}
                         onPress={action.onPress}
                         variant={getButtonVariant(action)}
                         accessibilityLabel={action.text}
+                        fullWidth
                         style={
                           index === actions.length - 1
                             ? styles.lastActionButton
@@ -499,16 +501,13 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
           </View>
 
           {/* Close Button */}
-          <TouchableOpacity
-            style={detailStyles.closeButton}
+          <GlassButton
+            label="Got it"
             onPress={onClose}
-            activeOpacity={0.8}
-            accessibilityRole="button"
+            variant="primary"
+            fullWidth
             accessibilityLabel="Got it"
-            accessibilityHint="Closes the workout details dialog"
-          >
-            <Text style={detailStyles.closeButtonText}>Got it</Text>
-          </TouchableOpacity>
+          />
         </GlassCard>
       </SafeAreaView>
     </DialogShell>
@@ -577,17 +576,6 @@ const detailStyles = StyleSheet.create({
   statLabel: {
     fontSize: rf(11),
     color: colors.textSecondary,
-  },
-  closeButton: {
-    backgroundColor: colors.primary,
-    borderRadius: rbr(12),
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: rf(15),
-    fontWeight: '600',
-    color: colors.white,
   },
 });
 
@@ -698,16 +686,18 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 
             {/* Actions */}
             <View style={styles.actionsContainer}>
-              <Button
-                title="View Progress"
+              <GlassButton
+                label="View Progress"
                 onPress={handleViewProgress}
-                variant="outline"
+                variant="secondary"
+                fullWidth
                 style={styles.actionButton}
               />
-              <Button
-                title="Done"
+              <GlassButton
+                label="Done"
                 onPress={handleDone}
                 variant="primary"
+                fullWidth
                 style={styles.lastActionButton}
               />
             </View>

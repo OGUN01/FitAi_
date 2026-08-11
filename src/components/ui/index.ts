@@ -16,13 +16,6 @@ export { PasswordInput } from './PasswordInput';
  */
 export { Card } from './Card';
 /**
- * @deprecated Flat, unblurred modal wrapper. Use `BottomSheet` (or
- * `DetentBottomSheet`) from './aurora/BottomSheet' for any new sheet/dialog —
- * it provides the glass surface, drag-to-dismiss, and backdrop treatment used
- * by the rest of the app's modals. Kept for legacy call sites only.
- */
-export { Modal } from './Modal';
-/**
  * @deprecated Already uses `GlassCard` internally, but still renders through a
  * raw RN `Modal` (`DialogShell`) rather than the `BottomSheet` sheet system.
  * Prefer `BottomSheet` from './aurora/BottomSheet' with `GlassCard` content
