@@ -7,7 +7,6 @@
 export { default as HomeHeader } from './HomeHeader';
 export { default as GuestPromptBanner } from './GuestPromptBanner';
 export { default as TodayHero } from './TodayHero';
-export { default as SectionHeader } from './SectionHeader';
 export { default as DailyProgressRings } from './DailyProgressRings';
 export { default as QuickActions } from './QuickActions';
 export { default as WeeklyMiniCalendar } from './WeeklyMiniCalendar';

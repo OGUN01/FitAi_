@@ -52,16 +52,6 @@ export const HealthIntelligencePlaceholder: React.FC<
               Sync Apple Health or Health Connect to unlock recovery, sleep,
               and heart-rate insights.
             </Text>
-            <View style={styles.placeholderHintRow}>
-              <Ionicons
-                name="phone-portrait-outline"
-                size={rf(12)}
-                color={colors.textMuted}
-              />
-              <Text style={styles.placeholderHintText}>
-                Use Health Sync on your phone to get started
-              </Text>
-            </View>
           </View>
           {onPress ? (
             <Ionicons
@@ -131,16 +121,5 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: rf(18),
     opacity: 0.65,
-  },
-  placeholderHintRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  placeholderHintText: {
-    fontSize: rf(10),
-    color: colors.textMuted,
-    flex: 1,
   },
 });

@@ -60,6 +60,11 @@ interface DailyProgressRingsProps {
   steps?: number;
   stepsGoal?: number;
   onPress?: () => void;
+  // Separate CTA for the no-goals empty state ("Complete Profile") — it must
+  // route to the profile tab where goals are actually set, not the same
+  // destination as the populated rings (analytics). Falls back to onPress
+  // when not provided.
+  onEmptyStatePress?: () => void;
 }
 
 // Single Ring Component
@@ -130,6 +135,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
   steps = 0,
   stepsGoal = 0,
   onPress,
+  onEmptyStatePress,
 }) => {
   // Check for empty/unset goals state
   const hasNoGoals = caloriesGoal === 0 && workoutGoal === 0 && mealsGoal === 0;
@@ -215,7 +221,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
   if (hasNoGoals) {
     return (
       <AnimatedPressable
-        onPress={onPress}
+        onPress={onEmptyStatePress ?? onPress}
         scaleValue={0.98}
         hapticFeedback={true}
         hapticType="light"

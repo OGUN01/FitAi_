@@ -12,7 +12,7 @@
 import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, border } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface ManualMetricEntryProps {
@@ -55,7 +55,7 @@ export const ManualMetricEntry: React.FC<ManualMetricEntryProps> = ({
               {
                 backgroundColor: hasError
                   ? colors.errorTint
-                  : colors.glassHighlight,
+                  : colors.primaryTint,
               },
             ]}
           >
@@ -141,9 +141,9 @@ const styles = StyleSheet.create({
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.glassSurface,
+    backgroundColor: colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: border.subtle,
     borderRadius: rbr(10),
     paddingHorizontal: spacing.sm,
     minWidth: rw(130),

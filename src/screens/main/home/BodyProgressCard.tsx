@@ -33,7 +33,6 @@ interface BodyProgressCardProps {
   weightHistory?: WeightEntry[];
   unit?: 'kg' | 'lbs';
   onPress?: () => void;
-  onPhotoPress?: () => void;
   onLogWeight?: () => void;
 }
 
@@ -45,7 +44,6 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
     weightHistory = [],
     unit = 'kg',
     onPress,
-    onPhotoPress,
     onLogWeight,
   }) => {
     const { progress, remaining, trendInfo, chartData, hasData, progressColor } =
@@ -181,27 +179,6 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
                     Log Weight
                   </Text>
                 </AnimatedPressable>
-
-                {onPhotoPress ? (
-                  <>
-                    <View style={styles.actionDivider} />
-
-                    <AnimatedPressable
-                      onPress={onPhotoPress}
-                      scaleValue={0.95}
-                      hapticFeedback={true}
-                      hapticType="light"
-                      style={styles.actionButton}
-                      accessibilityRole="button"
-                      accessibilityLabel="Progress photo"
-                    >
-                      <Ionicons name="camera-outline" size={rf(16)} color={colors.primary} />
-                      <Text style={styles.actionButtonText} numberOfLines={1}>
-                        Progress Photo
-                      </Text>
-                    </AnimatedPressable>
-                  </>
-                ) : null}
               </View>
             </>
           ) : (
@@ -370,11 +347,6 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: '600',
     color: colors.primary,
-  },
-  actionDivider: {
-    width: rw(1),
-    height: rh(20),
-    backgroundColor: border.subtle,
   },
   emptyState: {
     alignItems: 'center',

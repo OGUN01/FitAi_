@@ -97,7 +97,6 @@ export const useHomeLogic = () => {
   // Hydration
   const waterIntakeML = useHydrationStore((s) => s.waterIntakeML);
   const waterGoal = useHydrationStore((s) => s.dailyGoalML);
-  const hydrationAddWater = useHydrationStore((s) => s.addWater);
   const checkAndResetIfNewDay = useHydrationStore(
     (s) => s.checkAndResetIfNewDay,
   );
@@ -443,34 +442,6 @@ export const useHomeLogic = () => {
     [hasFreshWearableMetrics, healthMetrics?.steps],
   );
 
-  const currentStepsSource = useMemo(
-    () => (hasFreshWearableMetrics ? healthMetrics?.sources?.steps : undefined),
-    [hasFreshWearableMetrics, healthMetrics?.sources?.steps],
-  );
-
-  const actualCaloriesGoal = useMemo(() => {
-    if (healthMetrics?.caloriesGoal && healthMetrics.caloriesGoal > 0) {
-      return healthMetrics.caloriesGoal;
-    }
-    if (
-      calculatedMetrics?.dailyCalories &&
-      calculatedMetrics.dailyCalories > 0
-    ) {
-      return calculatedMetrics.dailyCalories;
-    }
-    if (
-      calculatedMetrics?.calculatedTDEE &&
-      calculatedMetrics.calculatedTDEE > 0
-    ) {
-      return calculatedMetrics.calculatedTDEE;
-    }
-    return 0;
-  }, [
-    healthMetrics?.caloriesGoal,
-    calculatedMetrics?.calculatedTDEE,
-    calculatedMetrics?.dailyCalories,
-  ]);
-
   const realStreak = achievementStreak;
 
   const todaysWorkoutInfo = useMemo(() => {
@@ -524,12 +495,6 @@ export const useHomeLogic = () => {
       dayStatus: dStatus,
     };
   }, [todaysData, weeklyWorkoutPlan, completedSessions]);
-
-  const userAge = useMemo(() => {
-    // SSOT: profileStore.personalInfo is authoritative (onboarding_data); userStore profile is legacy fallback
-    const legacyPersonalInfo = profile?.personalInfo as { age?: number; name?: string } | undefined;
-    return personalInfo?.age || legacyPersonalInfo?.age;
-  }, [personalInfo, profile]);
 
   const userName = useMemo(() => {
     // SSOT: profileStore.personalInfo is authoritative; compute from first+last, fallback to userStore
@@ -645,14 +610,6 @@ export const useHomeLogic = () => {
     user?.id,
   ]);
 
-  const handleAddWater = useCallback(
-    (amount: number) => {
-      haptics.medium();
-      hydrationAddWater(amount);
-    },
-    [hydrationAddWater],
-  );
-
   return {
     // State
     isLoading,
@@ -665,20 +622,15 @@ export const useHomeLogic = () => {
     fadeAnim,
 
     // Profile data
-    profile,
     isGuestMode,
     realStreak,
-    userAge,
     userName,
 
     // Health metrics
     healthMetrics,
     wearableConnected,
-    hasFreshWearableMetrics,
     realCaloriesBurned,
     currentSteps,
-    currentStepsSource,
-    actualCaloriesGoal,
 
     // Workout/nutrition data
     todaysWorkoutInfo,
@@ -697,9 +649,6 @@ export const useHomeLogic = () => {
     // Weight unit preference
     weightUnit,
 
-    // Health sync functions
-    syncHealthData,
-    syncFromHealthConnect,
     // Workout preferences (live SSOT for user-selected duration)
     workoutPreferences,
     // Calculated metrics
@@ -707,6 +656,5 @@ export const useHomeLogic = () => {
 
     // Handlers
     handleRefresh,
-    handleAddWater,
   };
 };

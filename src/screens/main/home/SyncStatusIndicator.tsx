@@ -125,6 +125,27 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
   const truncateError = (msg: string, max = 48) =>
     msg.length > max ? `${msg.slice(0, max).trimEnd()}…` : msg;
 
+  // `tier` is an internal 1-5 source-priority rank (see
+  // src/services/health/dataSources.ts) used to pick which wearable source
+  // wins — never meant as user-facing copy. Translate it to a qualitative
+  // accuracy label instead of exposing the raw rank number.
+  const tierAccuracyLabel = (tier?: number): string | undefined => {
+    switch (tier) {
+      case 1:
+        return "Medical grade";
+      case 2:
+        return "Premium accuracy";
+      case 3:
+        return "High accuracy";
+      case 4:
+        return "Moderate accuracy";
+      case 5:
+        return "Phone sensor";
+      default:
+        return undefined;
+    }
+  };
+
   return (
     <AnimatedPressable
       onPress={handleSync}
@@ -168,7 +189,10 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
           ) : (
             <Text style={[styles.status, { color: getStatusColor() }]} numberOfLines={1}>
               {isSyncing ? "Syncing..." : formatLastSync(lastSyncTime)}
-              {primarySource && !isSyncing && ` • Tier ${primarySource.tier}`}
+              {primarySource &&
+                !isSyncing &&
+                tierAccuracyLabel(primarySource.tier) &&
+                ` • ${tierAccuracyLabel(primarySource.tier)}`}
             </Text>
           )}
         </View>

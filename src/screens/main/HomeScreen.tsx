@@ -115,6 +115,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     [onNavigateToTab]
   );
   const handleRingsPress = useCallback(() => onNavigateToTab?.('analytics'), [onNavigateToTab]);
+  // The rings' empty-state CTA promises "Complete Profile" — it must land on
+  // the profile tab (same destination as the avatar tap), not analytics
+  // (handleRingsPress), which has no goal-setting affordance.
+  const handleRingsEmptyStatePress = useCallback(
+    () => onNavigateToTab?.('profile'),
+    [onNavigateToTab]
+  );
   const handleLogMealPress = useCallback(
     () => onNavigateToTab?.('diet', { openLogMeal: true }),
     [onNavigateToTab]
@@ -329,6 +336,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   steps={currentSteps} // Only use wearable steps when the synced snapshot is from today
                   stepsGoal={healthMetrics?.stepsGoal ?? 0} // No hardcoded fallback - 0 reveals missing data
                   onPress={handleRingsPress}
+                  onEmptyStatePress={handleRingsEmptyStatePress}
                 />
                 <EmptyMealsMessage mealsLogged={caloriesConsumed} onLogMeal={handleLogMealPress} />
                 {/* Wearable Sync Status */}
