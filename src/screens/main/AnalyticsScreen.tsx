@@ -710,7 +710,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               label="Upgrade to Unlock"
               onPress={() => triggerPaywall("Unlock detailed analytics with a premium plan")}
               variant="primary"
-              fullWidth
+              style={styles.lockedUpgradeButton}
             />
             )}
           </View>
@@ -941,6 +941,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: rf(20),
     marginBottom: rh(28),
+  },
+  // GlassButton's `fullWidth` prop uses flex:1, which is correct for a row
+  // of buttons sharing space but expands to fill all remaining vertical
+  // space when the only child of a centered flex:1 column (lockedContainer)
+  // — alignSelf:'stretch' fills the cross-axis (width, here) without
+  // growing the main axis.
+  lockedUpgradeButton: {
+    alignSelf: "stretch",
   },
 });
 
