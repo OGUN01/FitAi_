@@ -45,7 +45,6 @@ import {
   Meal,
   DayMeal,
   DailyMealPlan,
-  MotivationalContent,
   AIResponse,
   WorkoutSet,
   WeeklyWorkoutPlan,
@@ -90,6 +89,42 @@ export interface AIServiceMetadata {
   tokensUsed?: number;
   costUsd?: number;
   cuisineDetected?: string;
+}
+
+/**
+ * Shape of the raw replacement meal returned by the /diet/swap worker
+ * endpoint (fitai-workers MealSchema). Covers only the fields swapMealInPlan
+ * reads/forwards — replaces the previous `swapMeal<any>()` call, which lost
+ * compile-time safety on the response right at the point it feeds into
+ * transformDietResponseToWeeklyPlan.
+ */
+interface SwapMealResponse {
+  name?: string;
+  mealType?: string;
+  type?: string;
+  foods?: Array<{
+    name?: string;
+    quantity?: number | string;
+    unit?: string;
+    nutrition?: {
+      calories?: number;
+      protein?: number;
+      carbs?: number;
+      carbohydrates?: number;
+      fats?: number;
+      fat?: number;
+      fiber?: number;
+      sugar?: number;
+    };
+  }>;
+  totalNutrition?: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fats?: number;
+    fiber?: number;
+    sugar?: number;
+  };
 }
 
 // ============================================================================
@@ -504,59 +539,6 @@ class UnifiedAIService {
   }
 
   /**
-   * Generate motivational content (placeholder - not critical feature)
-   */
-  async generateMotivationalContent(
-    personalInfo: PersonalInfo,
-    currentStreak: number = 0
-  ): Promise<AIResponse<MotivationalContent>> {
-    // This is a non-critical feature - return placeholder content
-    console.warn('⚠️ [aiService] Motivational content uses placeholder (not yet migrated)');
-    return {
-      success: true,
-      data: {
-        dailyTip: {
-          icon: '💡',
-          title: 'Daily Fitness Tip',
-          content: 'Stay hydrated and remember to warm up before your workout.',
-          category: 'exercise' as const,
-        },
-        encouragement: {
-          message:
-            currentStreak > 0
-              ? `Amazing! You're on a ${currentStreak}-day streak!`
-              : 'Today is a great day to start your fitness journey!',
-          emoji: '💪',
-          tone: 'energetic' as const,
-        },
-        challenge: {
-          title: 'Weekly Consistency Challenge',
-          description: 'Complete all planned workouts this week',
-          reward: 'Achievement unlocked!',
-          duration: '7 days',
-          difficulty: 'medium' as const,
-        },
-        quote: {
-          text: 'Every rep counts! Keep pushing toward your goals.',
-          author: 'FitAI',
-          context: 'fitness motivation',
-        },
-        factOfTheDay: {
-          fact: 'Regular exercise can boost your mood and energy levels throughout the day.',
-          source: 'Health Research',
-        },
-        personalizedMessage: {
-          content:
-            currentStreak > 0
-              ? `You're making great progress! Keep up the ${currentStreak}-day streak!`
-              : 'Start today and build momentum towards your fitness goals!',
-          basedOn: 'current_streak',
-        },
-      },
-    };
-  }
-
-  /**
    * Generate weekly workout plan using backend API
    *
    * IMPORTANT: Requires authenticated user (Supabase login)
@@ -722,9 +704,9 @@ class UnifiedAIService {
       restrictions?: string[];
       excludeIngredients?: string[];
     }
-  ): Promise<DayMeal | null> {
+  ): Promise<AIResponse<DayMeal>> {
     try {
-      const response = await fitaiWorkersClient.swapMeal<any>({
+      const response = await fitaiWorkersClient.swapMeal<SwapMealResponse>({
         meal: {
           name: meal.name,
           type: meal.type,
@@ -744,7 +726,18 @@ class UnifiedAIService {
       });
       if (!response.success || !response.data) {
         console.error('[AIService] Meal swap failed:', response.error || 'Meal swap failed');
-        return null;
+        return {
+          success: false,
+          error: response.error || 'Could not generate a replacement meal. Please try again.',
+          // WorkersResponse carries no statusCode/errorCode on this success:false
+          // shape — the only real retryability signal available is `isOffline`
+          // (set by fitaiWorkersClient after a transient network/transport
+          // fault). Everything else here is a definite non-retryable outcome
+          // (e.g. "Sign up to swap meals", or a server-side validation/business
+          // rejection returned on a 2xx body) — retrying without the user
+          // changing anything would fail identically.
+          retryable: response.isOffline === true,
+        };
       }
       const plan = transformDietResponseToWeeklyPlan(
         {
@@ -764,10 +757,24 @@ class UnifiedAIService {
         1,
         { requestedDaysCount: 1 }
       );
-      return plan?.meals[0] ?? null;
+      if (!plan?.meals[0]) {
+        // Unlike the branch above, the server DID return success:true here — this
+        // is a shape/transform failure on our side of an otherwise-valid AI
+        // generation, not an auth/validation rejection. Re-swapping triggers a
+        // fresh AI generation that is very unlikely to reproduce the same
+        // malformed shape, so retryable:true is accurate for this specific case.
+        return {
+          success: false,
+          error: 'Received replacement meal could not be processed. Please try regenerating.',
+          retryable: true,
+        };
+      }
+      return {
+        success: true,
+        data: plan.meals[0],
+      };
     } catch (error) {
-      console.error('[AIService] swapMealInPlan failed:', error);
-      return null;
+      return this.handleError(error, 'swapMealInPlan');
     }
   }
 
@@ -1136,7 +1143,7 @@ class UnifiedAIService {
  * number or a string range (e.g. "8-12") — preserved as-is per the
  * WorkoutSet.reps union.
  */
-interface RawWorkerExercise {
+export interface RawWorkerExercise {
   exerciseId?: string;
   sets?: number;
   reps?: number | string;
@@ -1153,7 +1160,7 @@ interface RawWorkerExercise {
  * (see fitai-workers SingleWorkoutSchema — no category field), but is read
  * here in case a future backend revision adds it directly.
  */
-interface RawWorkerWorkout {
+export interface RawWorkerWorkout {
   title?: string;
   description?: string;
   difficulty?: string;
@@ -1197,11 +1204,31 @@ const WORKOUT_CATEGORY_WHITELIST: Record<string, WorkoutCategory> = {
  * services/aiRequestTransformers.ts's mapWorkoutCategory for the single-
  * workout path.
  */
-function resolveWorkoutCategory(workoutPlan: RawWorkerWorkout): WorkoutCategory {
+export function resolveWorkoutCategory(workoutPlan: RawWorkerWorkout): WorkoutCategory {
   const explicit = WORKOUT_CATEGORY_WHITELIST[(workoutPlan.category ?? '').toLowerCase()];
   if (explicit) return explicit;
 
   const title = (workoutPlan.title ?? '').toLowerCase();
+  const hasUnambiguousStrengthKeyword =
+    title.includes('strength') ||
+    title.includes('push day') ||
+    title.includes('pull day') ||
+    title.includes('leg day') ||
+    title.includes('push/pull') ||
+    title.includes('powerlifting') ||
+    title.includes('hypertrophy');
+  // Unambiguous strength keywords are checked before the generic 'circuit'/
+  // 'metabolic' → 'hybrid' branch below: a title like "Upper Body Circuit
+  // Strength" or "Metabolic Push Day" would otherwise match 'hybrid' first,
+  // since first-match-wins can't weigh co-occurrence. But when the title ALSO
+  // carries an explicit hiit/cardio cue (e.g. "HIIT Strength Circuit"), that
+  // more specific session-format cue wins instead — matching the ordering
+  // that existed before this strength pre-check was added, so a HIIT session
+  // that happens to use strength moves isn't reclassified as a plain
+  // strength day. See resolveWorkoutCategory.test.ts for both cases pinned.
+  if (hasUnambiguousStrengthKeyword && !title.includes('hiit') && !title.includes('cardio')) {
+    return 'strength';
+  }
   if (title.includes('hiit')) return 'hiit';
   if (title.includes('cardio')) return 'cardio';
   if (title.includes('yoga')) return 'yoga';
@@ -1221,7 +1248,7 @@ function resolveWorkoutCategory(workoutPlan: RawWorkerWorkout): WorkoutCategory 
  * `-1 || 3` evaluates to `-1`). Logs via console.error so corrupted AI
  * output is visible in dev/QA rather than silently reaching the UI.
  */
-function transformRawExercise(
+export function transformRawExercise(
   ex: RawWorkerExercise,
   idPrefix: string,
   idx: number,
@@ -1238,10 +1265,15 @@ function transformRawExercise(
     return null;
   }
   const sets = typeof ex.sets === 'number' && ex.sets > 0 ? ex.sets : defaultSets;
+  // Ternary (not `||`) so a deliberate 0s rest (circuit/superset programming —
+  // see fitai-workers/src/handlers/workoutGenerationRuleBased.ts) survives
+  // instead of being falsy-coerced into defaultRestTime. Mirrors `sets` above.
   const restTime =
-    (typeof ex.restSeconds === 'number' && ex.restSeconds >= 0 && ex.restSeconds) ||
-    (typeof ex.restTime === 'number' && ex.restTime >= 0 && ex.restTime) ||
-    defaultRestTime;
+    typeof ex.restSeconds === 'number' && ex.restSeconds >= 0
+      ? ex.restSeconds
+      : typeof ex.restTime === 'number' && ex.restTime >= 0
+        ? ex.restTime
+        : defaultRestTime;
   return {
     id: `${idPrefix}_${idx}`,
     exerciseId,

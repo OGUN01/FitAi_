@@ -10,13 +10,18 @@
  * catches, callers receive a structured { success, error } result.
  */
 
-import { fitaiWorkersClient } from "../services/fitaiWorkersClient";
+import {
+  fitaiWorkersClient,
+  AuthenticationError,
+  WorkersAPIError,
+  NetworkError,
+} from "../services/fitaiWorkersClient";
 import { useWorkoutBuilderStore } from "../stores/workoutBuilderStore";
 import { useProfileStore } from "../stores/profileStore";
 import type { PersonalInfoData } from "../types/onboarding/personal-info";
 import type { WorkoutPreferencesData } from "../types/onboarding/workout-preferences";
 import type { BodyAnalysisData } from "../types/onboarding/body-analysis";
-import type { WeeklyWorkoutPlan } from "../types/ai";
+import type { WeeklyWorkoutPlan, AIResponse } from "../types/ai";
 import type {
   PlannedExercise,
   AiSuggestion,
@@ -27,13 +32,14 @@ import type {
 // TYPES (client-facing camelCase shapes)
 // ----------------------------------------------------------------------------
 
-export interface AiServiceResult<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  /** When true, the failure was a transient network/transport fault. */
-  retryable?: boolean;
-}
+/**
+ * Re-export of the shared AIResponse<T> envelope (src/types/ai.ts) under the
+ * name already used throughout this file. Previously a hand-rolled duplicate
+ * of the same {success, data, error, retryable} shape — CLAUDE.md single-
+ * source-of-truth: reusing AIResponse means fields added there (timedOut,
+ * confidence, generationTime, tokensUsed) automatically propagate here too.
+ */
+export type AiServiceResult<T> = AIResponse<T>;
 
 export interface SuggestDayParams {
   dayIndex: number;
@@ -255,6 +261,44 @@ function mapExperienceLevel(
 
 function handleError(error: unknown, context: string): AiServiceResult<never> {
   console.error(`[workoutBuilderAi] ${context} failed:`, error);
+
+  // A session-expired user retrying a 401 endlessly can never succeed without
+  // re-authenticating — mark it non-retryable so the UI offers a re-sign-in
+  // affordance instead of a "try again" loop. Mirrors src/ai/index.ts's
+  // handleError, which all six builder-AI endpoints previously did NOT share.
+  if (error instanceof AuthenticationError) {
+    return {
+      success: false,
+      error: "Authentication required. Please sign in to use AI features.",
+      retryable: false,
+    };
+  }
+
+  if (error instanceof WorkersAPIError) {
+    const retryable = error.statusCode >= 500 || error.statusCode === 429;
+    const friendlyMessage =
+      error.statusCode === 401 || error.statusCode === 403
+        ? "Authentication required. Please sign in again."
+        : error.statusCode === 429
+          ? "You're sending requests too quickly. Please wait a moment and try again."
+          : error.statusCode >= 500
+            ? "Our servers are having trouble right now. Please try again shortly."
+            : "Something about that request was invalid. Please try again.";
+    return {
+      success: false,
+      error: friendlyMessage,
+      retryable,
+    };
+  }
+
+  if (error instanceof NetworkError) {
+    return {
+      success: false,
+      error: "Network error. Please check your connection and try again.",
+      retryable: true,
+    };
+  }
+
   const message =
     error instanceof Error ? error.message : "An unexpected error occurred";
   return {

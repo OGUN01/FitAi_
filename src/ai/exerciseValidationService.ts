@@ -19,7 +19,20 @@
  * before they reach the workout builder store.
  */
 export function validateExerciseSafety(
-  exercises: Array<{ id: string; name: string; category?: string; tags?: string[] }>,
+  exercises: Array<{
+    id: string;
+    name: string;
+    category?: string;
+    tags?: string[];
+    /**
+     * Structured muscle-group metadata (e.g. CuratedExercise.muscleGroups),
+     * already present on exercise records. Cross-checked in addition to name
+     * substrings so exercises whose contraindicated nature isn't spelled out
+     * in the literal name — e.g. "Step-Up" or "Leg Press" for a knee injury —
+     * don't silently pass the filter unflagged.
+     */
+    muscleGroups?: string[];
+  }>,
   constraints: {
     pregnancyStatus?: boolean;
     pregnancyTrimester?: 1 | 2 | 3;
@@ -32,6 +45,7 @@ export function validateExerciseSafety(
   for (const exercise of exercises) {
     const name = exercise.name.toLowerCase();
     const tags = (exercise.tags ?? []).map(t => t.toLowerCase());
+    const muscleGroups = (exercise.muscleGroups ?? []).map(m => m.toLowerCase());
 
     // Pregnancy restrictions
     if (constraints.pregnancyStatus) {
@@ -49,20 +63,42 @@ export function validateExerciseSafety(
       }
     }
 
-    // Injury-based restrictions (keyword matching)
+    // Injury-based restrictions. Name/tag keyword matching is the primary
+    // signal (expanded below to cover common real-world naming variants);
+    // structured muscleGroups membership is a secondary cross-check so an
+    // exercise whose name doesn't spell out the movement pattern still gets
+    // caught.
     for (const injury of constraints.injuries ?? []) {
       const injuryLower = injury.toLowerCase();
-      if (injuryLower.includes('knee') && (name.includes('lunge') || name.includes('squat') || name.includes('jump'))) {
-        violations.push({ exerciseId: exercise.id, reason: `Knee injury: ${exercise.name} may aggravate condition` });
-        break;
+      if (injuryLower.includes('knee')) {
+        const kneeKeywords = [
+          'lunge', 'squat', 'jump', 'step-up', 'step up',
+          'split squat', 'bulgarian', 'pistol', 'leg press', 'wall sit',
+        ];
+        const nameMatch = kneeKeywords.some(kw => name.includes(kw));
+        // Quad-dominant leg exercises load the knee joint directly.
+        // Posterior-chain-only movements (leg curl, calf raise, hip thrust,
+        // Romanian deadlift) don't include 'quadriceps' and are intentionally
+        // left unflagged, matching the precision of the name-keyword list.
+        const muscleMatch = muscleGroups.includes('quadriceps');
+        if (nameMatch || muscleMatch) {
+          violations.push({ exerciseId: exercise.id, reason: `Knee injury: ${exercise.name} may aggravate condition` });
+          break;
+        }
       }
       if (injuryLower.includes('back') && (name.includes('deadlift') || name.includes('good morning') || name.includes('hyperextension'))) {
         violations.push({ exerciseId: exercise.id, reason: `Back injury: ${exercise.name} may aggravate condition` });
         break;
       }
-      if (injuryLower.includes('shoulder') && (name.includes('overhead') || name.includes('military press') || name.includes('upright row'))) {
-        violations.push({ exerciseId: exercise.id, reason: `Shoulder injury: ${exercise.name} may aggravate condition` });
-        break;
+      if (injuryLower.includes('shoulder')) {
+        const shoulderKeywords = [
+          'overhead', 'military press', 'upright row',
+          'shoulder press', 'arnold press', 'push press', 'strict press', 'pike push',
+        ];
+        if (shoulderKeywords.some(kw => name.includes(kw))) {
+          violations.push({ exerciseId: exercise.id, reason: `Shoulder injury: ${exercise.name} may aggravate condition` });
+          break;
+        }
       }
     }
   }

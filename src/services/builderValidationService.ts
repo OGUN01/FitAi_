@@ -206,8 +206,8 @@ function validateSafety(
 /** Collect all planned exercises across the week into the safety-validator shape. */
 function collectAllExercises(
   plan: WeeklyWorkoutPlan,
-): Array<{ id: string; name: string; category?: string; tags?: string[] }> {
-  const out: Array<{ id: string; name: string; category?: string; tags?: string[] }> = [];
+): Array<{ id: string; name: string; category?: string; tags?: string[]; muscleGroups?: string[] }> {
+  const out: Array<{ id: string; name: string; category?: string; tags?: string[]; muscleGroups?: string[] }> = [];
   for (const day of plan.workouts) {
     for (const ex of day.plannedExercises ?? []) {
       const curated = CURATED_EXERCISES.find((c) => c.id === ex.exerciseId);
@@ -216,6 +216,7 @@ function collectAllExercises(
         name: ex.name,
         category: curated?.category,
         tags: [], // CuratedExercises have no tags field; safety matcher keys off name.
+        muscleGroups: curated?.muscleGroups,
       });
     }
   }
@@ -233,7 +234,7 @@ function findSafeReplacement(
   for (const candidate of CURATED_EXERCISES) {
     if (!candidate.muscleGroups.includes(muscleGroup)) continue;
     const violations = validateExerciseSafety(
-      [{ id: candidate.id, name: candidate.name, tags: [] }],
+      [{ id: candidate.id, name: candidate.name, tags: [], muscleGroups: candidate.muscleGroups }],
       {
         pregnancyStatus: profile.pregnancyStatus,
         pregnancyTrimester: profile.pregnancyTrimester,
