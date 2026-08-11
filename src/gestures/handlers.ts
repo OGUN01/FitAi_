@@ -1,17 +1,17 @@
 /**
  * Gesture Handlers
- * Reusable gesture logic for swipe, pull-to-refresh, long press, etc.
+ * Reusable gesture logic for pull-to-refresh, drag-to-reorder (within-day and
+ * cross-day), pinch-to-zoom, and double tap.
  * Built on React Native Gesture Handler and Reanimated
  */
 
 import { Gesture } from 'react-native-gesture-handler';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   runOnJS,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { animations } from '../theme/animations';
 import { haptics } from '../utils/haptics';
@@ -20,25 +20,10 @@ import { haptics } from '../utils/haptics';
 // TYPES
 // ============================================================================
 
-export interface SwipeConfig {
-  threshold?: number; // Distance threshold in pixels
-  velocity?: number; // Velocity threshold in px/s
-  onSwipeLeft?: () => void;
-  onSwipeRight?: () => void;
-  onSwipeUp?: () => void;
-  onSwipeDown?: () => void;
-}
-
 export interface PullToRefreshConfig {
   threshold?: number; // Pull distance threshold
   onRefresh: () => Promise<void>;
   refreshingHeight?: number; // Height when refreshing
-}
-
-export interface LongPressConfig {
-  duration?: number; // Long press duration in ms
-  onLongPress: () => void;
-  hapticFeedback?: boolean;
 }
 
 export interface DragToReorderConfig {
@@ -49,93 +34,6 @@ export interface DragToReorderConfig {
   itemHeight: number; // Height of each item for snap calculations
   hapticFeedback?: boolean;
 }
-
-// ============================================================================
-// SWIPE GESTURE
-// ============================================================================
-
-/**
- * Create a swipe gesture handler
- * Detects swipe direction and triggers callbacks
- */
-export const createSwipeGesture = (config: SwipeConfig) => {
-  const {
-    threshold = animations.gesture.swipeDistance,
-    velocity = animations.gesture.swipeVelocity,
-    onSwipeLeft,
-    onSwipeRight,
-    onSwipeUp,
-    onSwipeDown,
-  } = config;
-
-  return Gesture.Pan()
-    .onEnd((event) => {
-      const { translationX, translationY, velocityX, velocityY } = event;
-
-      // Horizontal swipe
-      if (Math.abs(translationX) > Math.abs(translationY)) {
-        if (translationX > threshold || velocityX > velocity) {
-          onSwipeRight && runOnJS(onSwipeRight)();
-        } else if (translationX < -threshold || velocityX < -velocity) {
-          onSwipeLeft && runOnJS(onSwipeLeft)();
-        }
-      }
-      // Vertical swipe
-      else {
-        if (translationY > threshold || velocityY > velocity) {
-          onSwipeDown && runOnJS(onSwipeDown)();
-        } else if (translationY < -threshold || velocityY < -velocity) {
-          onSwipeUp && runOnJS(onSwipeUp)();
-        }
-      }
-    });
-};
-
-// ============================================================================
-// SWIPE TO DELETE
-// ============================================================================
-
-/**
- * Create a swipe-to-delete gesture
- * Returns gesture and animated values
- */
-export const useSwipeToDelete = (
-  onDelete: () => void,
-  options?: {
-    threshold?: number;
-    deleteWidth?: number;
-    hapticFeedback?: boolean;
-  }
-) => {
-  const translateX = useSharedValue(0);
-  const deleteThreshold = options?.threshold ?? -100;
-  const deleteWidth = options?.deleteWidth ?? -200;
-  const hapticFeedback = options?.hapticFeedback ?? true;
-
-  const gesture = Gesture.Pan()
-    .activeOffsetX([-10, 10])
-    .onUpdate((event) => {
-      // Only allow left swipe (negative translation)
-      if (event.translationX < 0) {
-        translateX.value = Math.max(deleteWidth, event.translationX);
-      }
-    })
-    .onEnd(() => {
-      if (translateX.value < deleteThreshold) {
-        // Delete action
-        translateX.value = withTiming(deleteWidth, { duration: 200 });
-        if (hapticFeedback) {
-          runOnJS(haptics.delete)();
-        }
-        runOnJS(onDelete)();
-      } else {
-        // Snap back
-        translateX.value = withSpring(0, animations.spring.default);
-      }
-    });
-
-  return { gesture, translateX };
-};
 
 // ============================================================================
 // PULL TO REFRESH
@@ -155,65 +53,49 @@ export const usePullToRefresh = (config: PullToRefreshConfig) => {
   const translateY = useSharedValue(0);
   const isRefreshing = useSharedValue(false);
 
-  const gesture = Gesture.Pan()
-    .enabled(!isRefreshing.value)
-    .onUpdate((event) => {
-      if (event.translationY > 0 && !isRefreshing.value) {
-        // Apply rubber band effect
-        const damping = event.translationY > threshold ? 2 : 1;
-        translateY.value = Math.max(0, event.translationY / damping);
-      }
-    })
-    .onEnd(async () => {
-      if (translateY.value >= threshold && !isRefreshing.value) {
-        // Trigger refresh
-        isRefreshing.value = true;
-        translateY.value = withSpring(refreshingHeight, animations.spring.gentle);
+  // Note: `isRefreshing` is checked *inside* onUpdate/onEnd (worklet-safe
+  // reads) rather than snapshotted into `.enabled()` — a shared-value read in
+  // `.enabled()` would freeze at whatever isRefreshing.value was when this
+  // gesture object was built and never re-evaluate, since shared-value
+  // mutations don't trigger a re-render/rebuild.
+  const gesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onUpdate((event) => {
+          if (event.translationY > 0 && !isRefreshing.value) {
+            // Apply rubber band effect
+            const damping = event.translationY > threshold ? 2 : 1;
+            translateY.value = Math.max(0, event.translationY / damping);
+          }
+        })
+        .onEnd(() => {
+          if (translateY.value >= threshold && !isRefreshing.value) {
+            // Trigger refresh
+            isRefreshing.value = true;
+            translateY.value = withSpring(refreshingHeight, animations.spring.gentle);
 
-        // Haptic feedback
-        runOnJS(haptics.refreshComplete)();
+            // Haptic feedback
+            runOnJS(haptics.refreshComplete)();
 
-        // Execute refresh callback
-        runOnJS(async () => {
-          try {
-            await onRefresh();
-          } finally {
-            // Reset after refresh completes
-            isRefreshing.value = false;
+            // Execute refresh callback
+            runOnJS(async () => {
+              try {
+                await onRefresh();
+              } finally {
+                // Reset after refresh completes
+                isRefreshing.value = false;
+                translateY.value = withSpring(0, animations.spring.default);
+              }
+            })();
+          } else if (!isRefreshing.value) {
+            // Snap back
             translateY.value = withSpring(0, animations.spring.default);
           }
-        })();
-      } else {
-        // Snap back
-        translateY.value = withSpring(0, animations.spring.default);
-      }
-    });
+        }),
+    [threshold, refreshingHeight, onRefresh, translateY, isRefreshing],
+  );
 
   return { gesture, translateY, isRefreshing };
-};
-
-// ============================================================================
-// LONG PRESS
-// ============================================================================
-
-/**
- * Create a long press gesture
- */
-export const createLongPressGesture = (config: LongPressConfig) => {
-  const {
-    duration = animations.gesture.longPressDuration,
-    onLongPress,
-    hapticFeedback = true,
-  } = config;
-
-  return Gesture.LongPress()
-    .minDuration(duration)
-    .onStart(() => {
-      if (hapticFeedback) {
-        runOnJS(haptics.longPress)();
-      }
-      runOnJS(onLongPress)();
-    });
 };
 
 // ============================================================================
@@ -253,56 +135,72 @@ export const useDragToReorder = (
     }, 100);
   }, [translateY]);
 
-  const longPress = Gesture.LongPress()
-    .minDuration(activationDelay)
-    .onStart(() => {
-      isDragging.value = true;
-      if (hapticFeedback) {
-        runOnJS(haptics.dragStart)();
-      }
-      if (onDragStart) {
-        runOnJS(onDragStart)(itemIndex);
-      }
-    });
+  // Recreating the native gesture recognizer on every parent re-render can
+  // drop an in-progress gesture, so the composition is memoized and only
+  // rebuilt when an input that actually changes its behavior changes.
+  const gesture = useMemo(() => {
+    const longPress = Gesture.LongPress()
+      .minDuration(activationDelay)
+      .onStart(() => {
+        isDragging.value = true;
+        if (hapticFeedback) {
+          runOnJS(haptics.dragStart)();
+        }
+        if (onDragStart) {
+          runOnJS(onDragStart)(itemIndex);
+        }
+      });
 
-  const pan = Gesture.Pan()
-    .onUpdate((event) => {
-      if (!isDragging.value) return;
-      translateY.value = event.translationY;
+    const pan = Gesture.Pan()
+      .onUpdate((event) => {
+        if (!isDragging.value) return;
+        translateY.value = event.translationY;
 
-      // Calculate target index based on translation
-      const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
+        // Calculate target index based on translation
+        const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
 
-      if (onDragMove) {
-        runOnJS(onDragMove)(itemIndex, targetIndex);
-      }
-    })
-    .onEnd((event) => {
-      if (!isDragging.value) return;
+        if (onDragMove) {
+          runOnJS(onDragMove)(itemIndex, targetIndex);
+        }
+      })
+      .onEnd((event) => {
+        if (!isDragging.value) return;
 
-      const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
+        const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
 
-      // Snap to target position
-      const snapPosition = (targetIndex - itemIndex) * itemHeight;
-      translateY.value = withSpring(snapPosition, animations.spring.snappy);
+        // Snap to target position
+        const snapPosition = (targetIndex - itemIndex) * itemHeight;
+        translateY.value = withSpring(snapPosition, animations.spring.snappy);
 
-      if (hapticFeedback) {
-        runOnJS(haptics.dragDrop)();
-      }
+        if (hapticFeedback) {
+          runOnJS(haptics.dragDrop)();
+        }
 
-      if (onDragEnd) {
-        runOnJS(onDragEnd)(itemIndex, targetIndex);
-      }
+        if (onDragEnd) {
+          runOnJS(onDragEnd)(itemIndex, targetIndex);
+        }
 
-      // Reset drag state
-      isDragging.value = false;
+        // Reset drag state
+        isDragging.value = false;
 
-      // Reset position after snap animation completes (runs on JS thread)
-      runOnJS(resetPosition)();
-    });
+        // Reset position after snap animation completes (runs on JS thread)
+        runOnJS(resetPosition)();
+      });
 
-  // Compose as simultaneous so pan tracking works while long-press is active
-  const gesture = Gesture.Simultaneous(longPress, pan);
+    // Compose as simultaneous so pan tracking works while long-press is active
+    return Gesture.Simultaneous(longPress, pan);
+  }, [
+    itemIndex,
+    activationDelay,
+    onDragStart,
+    onDragMove,
+    onDragEnd,
+    itemHeight,
+    hapticFeedback,
+    translateY,
+    isDragging,
+    resetPosition,
+  ]);
 
   return { gesture, translateY, isDragging };
 };
@@ -329,36 +227,40 @@ export const usePinchToZoom = (
 
   const hapticAtLimits = options?.hapticAtLimits ?? true;
 
-  const gesture = Gesture.Pinch()
-    .onUpdate((event) => {
-      const newScale = savedScale.value * event.scale;
+  const gesture = useMemo(
+    () =>
+      Gesture.Pinch()
+        .onUpdate((event) => {
+          const newScale = savedScale.value * event.scale;
 
-      // Clamp scale between min and max
-      scale.value = Math.max(minScale, Math.min(maxScale, newScale));
+          // Clamp scale between min and max
+          scale.value = Math.max(minScale, Math.min(maxScale, newScale));
 
-      // Update focal point
-      focalX.value = event.focalX;
-      focalY.value = event.focalY;
+          // Update focal point
+          focalX.value = event.focalX;
+          focalY.value = event.focalY;
 
-      // Haptic feedback at limits
-      if (hapticAtLimits) {
-        if (scale.value === minScale || scale.value === maxScale) {
-          runOnJS(haptics.boundary)();
-        }
-      }
-    })
-    .onEnd(() => {
-      savedScale.value = scale.value;
+          // Haptic feedback at limits
+          if (hapticAtLimits) {
+            if (scale.value === minScale || scale.value === maxScale) {
+              runOnJS(haptics.boundary)();
+            }
+          }
+        })
+        .onEnd(() => {
+          savedScale.value = scale.value;
 
-      // Snap to min/max if very close
-      if (Math.abs(scale.value - minScale) < 0.1) {
-        scale.value = withSpring(minScale, animations.spring.gentle);
-        savedScale.value = minScale;
-      } else if (Math.abs(scale.value - maxScale) < 0.1) {
-        scale.value = withSpring(maxScale, animations.spring.gentle);
-        savedScale.value = maxScale;
-      }
-    });
+          // Snap to min/max if very close
+          if (Math.abs(scale.value - minScale) < 0.1) {
+            scale.value = withSpring(minScale, animations.spring.gentle);
+            savedScale.value = minScale;
+          } else if (Math.abs(scale.value - maxScale) < 0.1) {
+            scale.value = withSpring(maxScale, animations.spring.gentle);
+            savedScale.value = maxScale;
+          }
+        }),
+    [minScale, maxScale, hapticAtLimits, scale, savedScale, focalX, focalY],
+  );
 
   const resetZoom = () => {
     'worklet';
@@ -421,6 +323,9 @@ export const createDoubleTapGesture = (
  * relative drag offsets. The caller owns the day hit-testing (because day
  * layout positions are a UI concern, not a gesture concern). This keeps the
  * hook reusable and testable.
+ *
+ * Used by WeeklyBuilderScreen for cross-day exercise drag (Phase 8 wiring —
+ * see that screen's file-header doc comment for the integration plan).
  */
 export interface MoveExerciseBetweenDaysConfig {
   /** Long-press activation delay before drag engages. @default 400 */
@@ -484,55 +389,69 @@ export const useMoveExerciseBetweenDays = (
     }, 100);
   }, [translateY, translateX]);
 
-  const longPress = Gesture.LongPress()
-    .minDuration(activationDelay)
-    .onStart(() => {
-      isDragging.value = true;
-      if (hapticFeedback) {
-        runOnJS(haptics.longPress)();
-        runOnJS(haptics.dragStart)();
-      }
-      if (onDragStart) {
-        runOnJS(onDragStart)(itemIndex);
-      }
-    });
+  // Recreating the native gesture recognizer on every parent re-render can
+  // drop an in-progress gesture, so the composition is memoized and only
+  // rebuilt when an input that actually changes its behavior changes.
+  const gesture = useMemo(() => {
+    const longPress = Gesture.LongPress()
+      .minDuration(activationDelay)
+      .onStart(() => {
+        isDragging.value = true;
+        if (hapticFeedback) {
+          runOnJS(haptics.longPress)();
+          runOnJS(haptics.dragStart)();
+        }
+        if (onDragStart) {
+          runOnJS(onDragStart)(itemIndex);
+        }
+      });
 
-  const pan = Gesture.Pan()
-    .onUpdate((event) => {
-      if (!isDragging.value) return;
-      translateY.value = event.translationY;
-      translateX.value = event.translationX;
-      if (onDragMove) {
-        runOnJS(onDragMove)(event.absoluteY, itemIndex);
-      }
-    })
-    .onEnd((event) => {
-      if (!isDragging.value) return;
+    const pan = Gesture.Pan()
+      .onUpdate((event) => {
+        if (!isDragging.value) return;
+        translateY.value = event.translationY;
+        translateX.value = event.translationX;
+        if (onDragMove) {
+          runOnJS(onDragMove)(event.absoluteY, itemIndex);
+        }
+      })
+      .onEnd((event) => {
+        if (!isDragging.value) return;
 
-      // Within-day reorder target (relative offset). The caller decides
-      // whether this is a same-day reorder or a cross-day move via onDragEnd.
-      const targetIndex = Math.round(event.translationY / itemHeight) + itemIndex;
+        if (hapticFeedback) {
+          runOnJS(haptics.dragDrop)();
+        }
 
-      if (hapticFeedback) {
-        runOnJS(haptics.dragDrop)();
-      }
+        if (onDragEnd) {
+          runOnJS(onDragEnd)(
+            itemIndex,
+            event.absoluteY,
+            event.translationX,
+            event.translationY,
+          );
+        }
 
-      if (onDragEnd) {
-        runOnJS(onDragEnd)(
-          itemIndex,
-          event.absoluteY,
-          event.translationX,
-          event.translationY,
-        );
-      }
+        // Reset
+        isDragging.value = false;
+        lastCrossedDay.value = -1;
+        runOnJS(resetPosition)();
+      });
 
-      // Reset
-      isDragging.value = false;
-      lastCrossedDay.value = -1;
-      runOnJS(resetPosition)();
-    });
-
-  const gesture = Gesture.Simultaneous(longPress, pan);
+    return Gesture.Simultaneous(longPress, pan);
+  }, [
+    itemIndex,
+    activationDelay,
+    onDragStart,
+    onDragMove,
+    onDragEnd,
+    itemHeight,
+    hapticFeedback,
+    translateY,
+    translateX,
+    isDragging,
+    lastCrossedDay,
+    resetPosition,
+  ]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -559,7 +478,7 @@ export const useMoveExerciseBetweenDays = (
         runOnJS(onDayCross)(toDay);
       }
     },
-    [onDayCross, hapticFeedback],
+    [onDayCross, hapticFeedback, lastCrossedDay],
   );
 
   return {
@@ -581,10 +500,7 @@ export const useMoveExerciseBetweenDays = (
 // ============================================================================
 
 export const gestures = {
-  swipe: createSwipeGesture,
-  swipeToDelete: useSwipeToDelete,
   pullToRefresh: usePullToRefresh,
-  longPress: createLongPressGesture,
   dragToReorder: useDragToReorder,
   pinchToZoom: usePinchToZoom,
   doubleTap: createDoubleTapGesture,

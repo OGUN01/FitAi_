@@ -59,19 +59,27 @@ export const useScreenReader = (): boolean => {
   const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
 
   useEffect(() => {
+    // Guard: AccessibilityInfo can be undefined in partial RN test mocks or SSR.
+    if (!AccessibilityInfo?.isScreenReaderEnabled) return;
+
+    let cancelled = false;
     AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
-      setScreenReaderEnabled(enabled);
+      if (!cancelled) setScreenReaderEnabled(Boolean(enabled));
+    }).catch(() => {
+      // Probe failed — assume screen reader off (default). Non-fatal.
     });
 
-    const subscription = AccessibilityInfo.addEventListener(
-      "screenReaderChanged",
-      (enabled) => {
-        setScreenReaderEnabled(enabled);
-      },
-    );
+    let subscription: { remove: () => void } | null = null;
+    if (typeof AccessibilityInfo.addEventListener === "function") {
+      subscription = AccessibilityInfo.addEventListener(
+        "screenReaderChanged",
+        (enabled: boolean) => setScreenReaderEnabled(Boolean(enabled)),
+      );
+    }
 
     return () => {
-      subscription.remove();
+      cancelled = true;
+      subscription?.remove?.();
     };
   }, []);
 

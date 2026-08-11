@@ -1,4 +1,4 @@
-import { Platform, AccessibilityInfo } from "react-native";
+import { AccessibilityInfo } from "react-native";
 import type { AccessibilityProps } from "./types";
 
 export const buttonA11yProps = (
@@ -42,17 +42,16 @@ export const imageA11yProps = (
   };
 };
 
+// Note: `level` is accepted for call-site documentation only — there is no
+// reliable cross-platform RN prop to convey heading depth to VoiceOver/TalkBack.
+// Only the generic 'header' role is actually communicated.
 export const headingA11yProps = (
   label: string,
-  level?: number,
+  _level?: number,
 ): AccessibilityProps => ({
   accessibilityLabel: label,
   accessibilityRole: "header",
   accessible: true,
-  ...(Platform.OS === "ios" &&
-    level && {
-      accessibilityTraits: [`header`, `heading${level}`],
-    }),
 });
 
 export const checkboxA11yProps = (
