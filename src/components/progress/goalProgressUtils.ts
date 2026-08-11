@@ -82,9 +82,15 @@ export function getWeightGoalProgress({
 
   const startWeightKg = sortedHistory[0]?.weight ?? fallbackStartWeightKg ?? currentWeightKg;
 
-  const totalToTarget = Math.abs(startWeightKg - targetWeightKg);
-  const progressToDate = Math.abs(startWeightKg - currentWeightKg);
-  const weightProgress = totalToTarget > 0 ? Math.min(1, progressToDate / totalToTarget) : 1;
+  // Signed progress along the (target - start) vector, clamped to [0, 1].
+  // Unsigned distance-traveled would report a rising percentage even when the
+  // user moves away from the goal (e.g. gaining weight while the goal is to
+  // lose) — clamping to 0 means "moved the wrong way" reads as no progress,
+  // not false progress.
+  const signedTotal = targetWeightKg - startWeightKg;
+  const signedProgress =
+    signedTotal !== 0 ? (currentWeightKg - startWeightKg) / signedTotal : 1;
+  const weightProgress = Math.max(0, Math.min(1, signedProgress));
 
   const derivedWeeklyRate =
     targetTimelineWeeks && targetTimelineWeeks > 0

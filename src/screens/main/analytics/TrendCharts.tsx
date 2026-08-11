@@ -75,7 +75,17 @@ export const TrendCharts: React.FC<TrendChartsProps> = React.memo(({
           delay={0}
           onPress={hasWeightData ? handleWeightPress : undefined}
         >
-          <LineChart data={weightData || []} color={chart[1]} unit={weightUnit} />
+          <LineChart
+            data={weightData || []}
+            color={chart[1]}
+            unit={weightUnit}
+            // Matches the "down is good" convention already used by
+            // MetricSummaryGrid and WeightJourneySection for weight —
+            // without this, calculateTrend()'s default (gain = positive)
+            // showed a falling weight as a red/negative trend here while
+            // the rest of the app showed it green.
+            weightLossGoal
+          />
         </ChartCard>
 
         <ChartCard

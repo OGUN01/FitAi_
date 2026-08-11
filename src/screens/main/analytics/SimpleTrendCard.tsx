@@ -23,6 +23,11 @@ interface SimpleTrendCardProps {
   color: string;
   ctaLabel?: string;
   onCtaPress?: () => void;
+  /** When true (e.g. weight), a falling value is the positive/green outcome —
+   * matches the "down is good" convention used by MetricSummaryGrid and
+   * WeightJourneySection so the same data doesn't read as "good" on one
+   * screen and "bad" on another. Defaults to false (higher = positive). */
+  lowerIsBetter?: boolean;
 }
 
 export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
@@ -33,6 +38,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
   color,
   ctaLabel,
   onCtaPress,
+  lowerIsBetter = false,
 }) => {
   return (
     <Animated.View
@@ -87,7 +93,13 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
               <Text
                 style={[
                   styles.statValue,
-                  { color: trend.change >= 0 ? chart[4] : chart[6] },
+                  {
+                    color: (
+                      lowerIsBetter ? trend.change <= 0 : trend.change >= 0
+                    )
+                      ? chart[4]
+                      : chart[6],
+                  },
                 ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit

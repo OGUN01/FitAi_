@@ -41,23 +41,25 @@ interface AchievementsSectionProps {
 const BADGE_SIZE = 64;
 const RING_WIDTH = 2.5;
 
+// Matches the bronze/silver/gold/platinum/diamond/legendary map used by
+// AchievementCard.tsx and AchievementShowcase.tsx. Achievement.tier only ever
+// holds these values (see services/achievements/types.ts) — the previous
+// uncommon/rare/epic/legendary/common switch never matched, so every locked
+// badge fell through to the same flat grey regardless of real tier.
+const TIER_COLOR_MAP: Record<string, string> = {
+  bronze: chart[1],
+  silver: chart[2],
+  gold: chart[5],
+  platinum: chart[3],
+  diamond: chart[6],
+  legendary: chart[4],
+};
+
 const tierColor = (rarity: string | undefined, completed: boolean): string => {
   if (completed) {
     return chart[4];
   }
-  switch (rarity) {
-    case 'uncommon':
-      return chart[2];
-    case 'rare':
-      return chart[3];
-    case 'epic':
-      return chart[1];
-    case 'legendary':
-      return chart[5];
-    case 'common':
-    default:
-      return colors.text.muted;
-  }
+  return (rarity && TIER_COLOR_MAP[rarity]) || colors.text.muted;
 };
 
 export const AchievementsSection: React.FC<AchievementsSectionProps> = ({

@@ -23,7 +23,6 @@ import {
   spacing,
 } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
@@ -113,15 +112,6 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
               />
             </AnimatedPressable>
           )}
-
-          <View
-            style={styles.badge}
-            accessibilityRole="text"
-            accessibilityLabel="AI insights coming soon"
-          >
-            <View style={styles.badgeDot} />
-            <Text style={styles.badgeText}>AI Soon</Text>
-          </View>
         </View>
       </Animated.View>
 
@@ -188,33 +178,6 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.variants.caption,
     color: colors.text.secondary,
-  },
-  badge: {
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: hexToRgba(chart[5], 0.09),
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.sm,
-    gap: spacing.xs,
-    borderWidth: 1,
-    borderColor: hexToRgba(chart[5], 0.19),
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: chart[5],
-  },
-  badgeText: {
-    fontFamily: "Manrope_600SemiBold",
-    fontSize: rf(10),
-    color: chart[5],
-    letterSpacing: 0.2,
-    textAlign: "center",
-    lineHeight: rf(10),
-    ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
   periodSelectorWrapper: {
     alignSelf: "stretch",

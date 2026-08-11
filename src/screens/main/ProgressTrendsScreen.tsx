@@ -124,6 +124,7 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
                 trend={displayWeightTrend}
                 unit={weightUnit}
                 color={colors.success.DEFAULT}
+                lowerIsBetter
               />
 
               <SimpleTrendCard
