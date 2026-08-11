@@ -16,13 +16,17 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 
 const { variants } = typography;
 
 interface ConnectedAccount {
   id: string;
   name: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  // Either a monochrome Ionicons glyph, or a brand SVG icon rendered as-is
+  // (e.g. Google's multi-color "G") — only one of `icon`/`iconElement` is set.
+  icon?: keyof typeof Ionicons.glyphMap;
+  iconElement?: React.ReactNode;
   iconColor: string;
   bgColor: string;
   isConnected: boolean;
@@ -60,7 +64,10 @@ const AccountRow: React.FC<{
     >
       {/* Provider icon */}
       <View style={[styles.iconSquircle, { backgroundColor: account.bgColor }]}>
-        <Ionicons name={account.icon} size={rf(16)} color={account.iconColor} />
+        {account.iconElement ??
+          (account.icon ? (
+            <Ionicons name={account.icon} size={rf(16)} color={account.iconColor} />
+          ) : null)}
       </View>
 
       {/* Info */}
@@ -112,9 +119,13 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
     {
       id: "google",
       name: "Google",
-      icon: "logo-google",
+      // Real multi-color Google "G" (see components/icons/GoogleIcon) on a
+      // neutral white badge — matches the brand convention already used on
+      // WelcomeScreen/GuestSignUpScreen. Never tint this row with a semantic
+      // color (error/success/etc.) — it reads as a broken/alarming state.
+      iconElement: <GoogleIcon size={rf(16)} />,
       iconColor: colors.text.primary,
-      bgColor: colors.error.DEFAULT,
+      bgColor: "#FFFFFF",
       isConnected: isGoogleConnected,
       email: googleEmail,
       onPress: onGooglePress,

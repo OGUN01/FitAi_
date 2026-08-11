@@ -66,9 +66,18 @@ const PlanCard: React.FC<PlanCardProps> = ({
       )}
 
       <View style={styles.titleRow}>
-        <View style={[styles.radio, isSelected && styles.radioSelected]}>
-          {isSelected && <View style={styles.radioDot} />}
-        </View>
+        {isStatic ? (
+          <Ionicons
+            name="checkmark-circle"
+            size={rf(20)}
+            color={colors.textMuted}
+            style={styles.includedIcon}
+          />
+        ) : (
+          <View style={[styles.radio, isSelected && styles.radioSelected]}>
+            {isSelected && <View style={styles.radioDot} />}
+          </View>
+        )}
         <Text style={styles.planName} numberOfLines={1}>
           {name}
         </Text>
@@ -203,6 +212,9 @@ const styles = StyleSheet.create({
     height: rp(10),
     borderRadius: rbr(5),
     backgroundColor: colors.primary,
+  },
+  includedIcon: {
+    marginRight: rp(10),
   },
   planName: {
     fontSize: rf(17),

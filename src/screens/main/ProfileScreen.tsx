@@ -5,7 +5,7 @@
  * Following FitAI UI/UX methodology
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Constants from "expo-constants";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,12 +22,14 @@ import { useProfileLogic } from "../../hooks/useProfileLogic";
 import { useAuthStore } from "../../stores/authStore";
 import { useUserStore } from "../../stores/userStore";
 import { useProfileStore } from "../../stores/profileStore";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 import {
   ProfileHeader,
   ProfileStats,
   GuestPromptCard,
   SettingsSection,
+  ConnectedAccountsCard,
   AppInfoCard,
   LogoutButton,
 } from "./profile";
@@ -82,6 +84,87 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     handleUnitsSelect,
     handleClearCache,
   } = useProfileLogic();
+
+  // Connected accounts (Google identity linking) — lives here rather than in
+  // useProfileLogic because the linking APIs are exposed directly on authStore.
+  const [isGoogleLinked, setIsGoogleLinked] = useState(false);
+  const [isGoogleLinkBusy, setIsGoogleLinkBusy] = useState(false);
+  const authUserEmail = useAuthStore((s) => s.user?.email);
+
+  const refreshGoogleLinkStatus = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const linked = await useAuthStore.getState().isGoogleLinked();
+      setIsGoogleLinked(linked);
+    } catch (error) {
+      console.error("[ProfileScreen] Failed to check Google link status:", error);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    refreshGoogleLinkStatus();
+  }, [refreshGoogleLinkStatus]);
+
+  const handleGooglePress = useCallback(async () => {
+    if (isGoogleLinkBusy) return;
+    if (isGoogleLinked) {
+      crossPlatformAlert(
+        "Unlink Google Account",
+        "Are you sure you want to unlink your Google account? You will no longer be able to sign in with it.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Unlink",
+            style: "destructive",
+            onPress: async () => {
+              setIsGoogleLinkBusy(true);
+              try {
+                const result = await useAuthStore.getState().unlinkGoogleAccount();
+                if (result.success) {
+                  setIsGoogleLinked(false);
+                } else {
+                  crossPlatformAlert(
+                    "Unlink Failed",
+                    result.error || "Could not unlink your Google account. Please try again.",
+                  );
+                }
+              } catch (error) {
+                console.error("[ProfileScreen] Google unlink failed:", error);
+                crossPlatformAlert(
+                  "Unlink Failed",
+                  "Could not unlink your Google account. Please try again.",
+                );
+              } finally {
+                setIsGoogleLinkBusy(false);
+              }
+            },
+          },
+        ],
+      );
+      return;
+    }
+
+    setIsGoogleLinkBusy(true);
+    try {
+      const result = await useAuthStore.getState().linkGoogleAccount();
+      if (result.success) {
+        await refreshGoogleLinkStatus();
+      } else {
+        crossPlatformAlert(
+          "Link Failed",
+          result.error || "Could not link your Google account. Please try again.",
+        );
+      }
+    } catch (error) {
+      console.error("[ProfileScreen] Google link failed:", error);
+      crossPlatformAlert(
+        "Link Failed",
+        "Could not link your Google account. Please try again.",
+      );
+    } finally {
+      setIsGoogleLinkBusy(false);
+    }
+  }, [isGoogleLinkBusy, isGoogleLinked, refreshGoogleLinkStatus]);
 
   React.useEffect(() => {
     const requestedSettingsScreen = route?.params?.settingsScreen;
@@ -194,6 +277,15 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
             onItemPress={handleSettingItemPress}
             animationDelay={200}
           />
+
+          {isAuthenticated && (
+            <ConnectedAccountsCard
+              isGoogleConnected={isGoogleLinked}
+              googleEmail={isGoogleLinked ? authUserEmail || undefined : undefined}
+              onGooglePress={handleGooglePress}
+              animationDelay={250}
+            />
+          )}
 
           <SettingsSection
             title="Preferences"

@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  SafeAreaView,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Switch,
-  Platform,
-} from "react-native";
-import { Card, Button } from "../ui";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+/**
+ * NotificationEditModal - Aurora 'Editorial Dark' edit surface for
+ * workout/meal/sleep reminder settings. Built on SettingsModalWrapper +
+ * GlassFormInput/GlassFormSwitch, matching PersonalInfoEditModal and the
+ * other profile edit modals. Time fields use TimeFieldPicker (tap-to-pick)
+ * instead of free-text "HH:MM" input, and numeric fields validate inline as
+ * the user types instead of only on Save.
+ */
+
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Constants from "expo-constants";
+import { Ionicons } from "@expo/vector-icons";
+
+import { SettingsModalWrapper } from "../../screens/main/profile/components/SettingsModalWrapper";
+import { GlassFormInput } from "../../screens/main/profile/components/GlassFormInput";
+import { GlassFormSwitch } from "../../screens/main/profile/components/GlassFormSwitch";
+import { TimeFieldPicker } from "./TimeFieldPicker";
+import { colors, surface, border, spacing, typography } from "../../theme/aurora-tokens";
+import { rf } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+
+const { variants } = typography;
 
 // Simple Expo Go detection
 const isExpoGo =
@@ -45,6 +51,17 @@ interface NotificationEditModalProps {
   onClose: () => void;
 }
 
+const validateMinutes = (
+  text: string,
+  min: number,
+  max: number,
+): string | undefined => {
+  const minutes = parseInt(text, 10);
+  if (text.trim() === "" || Number.isNaN(minutes)) return "Enter a number";
+  if (minutes < min || minutes > max) return `Must be between ${min} and ${max}`;
+  return undefined;
+};
+
 export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
   visible,
   type,
@@ -67,6 +84,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
 
   // Workout state
   const [workoutReminderMinutes, setWorkoutReminderMinutes] = useState("30");
+  const [workoutError, setWorkoutError] = useState<string | undefined>();
 
   // Meal state
   const [breakfastEnabled, setBreakfastEnabled] = useState(true);
@@ -79,8 +97,9 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
   // Sleep state
   const [bedtime, setBedtime] = useState("22:30");
   const [sleepReminderMinutes, setSleepReminderMinutes] = useState("30");
+  const [sleepError, setSleepError] = useState<string | undefined>();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -90,6 +109,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
           setWorkoutReminderMinutes(
             workoutReminders.config.reminderMinutes.toString(),
           );
+          setWorkoutError(undefined);
           break;
         case "meals":
           setBreakfastEnabled(mealReminders.config.breakfast.enabled);
@@ -104,19 +124,25 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
           setSleepReminderMinutes(
             sleepReminders.config.reminderMinutes.toString(),
           );
+          setSleepError(undefined);
           break;
       }
     }
-  }, [
-    visible,
-    type,
-    workoutReminders.config,
-    mealReminders.config,
-    sleepReminders.config,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, type]);
+
+  const handleWorkoutMinutesChange = (text: string) => {
+    setWorkoutReminderMinutes(text);
+    setWorkoutError(validateMinutes(text, 5, 120));
+  };
+
+  const handleSleepMinutesChange = (text: string) => {
+    setSleepReminderMinutes(text);
+    setSleepError(validateMinutes(text, 5, 60));
+  };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsSaving(true);
 
     try {
       switch (type) {
@@ -133,27 +159,22 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     } catch (error) {
       console.error("Error saving notification settings:", error);
       crossPlatformAlert("Error", "Failed to save settings. Please try again.");
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   const saveWorkoutSettings = async () => {
-    const minutes = parseInt(workoutReminderMinutes);
-
-    if (isNaN(minutes) || minutes < 5 || minutes > 120) {
-      crossPlatformAlert(
-        "Invalid Time",
-        "Please enter a reminder time between 5 and 120 minutes.",
-      );
-      setIsLoading(false);
+    const error = validateMinutes(workoutReminderMinutes, 5, 120);
+    if (error) {
+      setWorkoutError(error);
+      setIsSaving(false);
       return;
     }
+    const minutes = parseInt(workoutReminderMinutes, 10);
 
-    await workoutReminders.updateConfig({
-      reminderMinutes: minutes,
-    });
+    await workoutReminders.updateConfig({ reminderMinutes: minutes });
 
-    setIsLoading(false);
+    setIsSaving(false);
     crossPlatformAlert(
       "Workout Reminders Updated!",
       `You'll be reminded ${minutes} minutes before your scheduled workouts.`,
@@ -162,19 +183,6 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
   };
 
   const saveMealSettings = async () => {
-    // Validate time formats
-    const times = [breakfastTime, lunchTime, dinnerTime];
-    for (const time of times) {
-      if (!isValidTimeFormat(time)) {
-        crossPlatformAlert(
-          "Invalid Time",
-          "Please enter times in HH:MM format (e.g., 08:30).",
-        );
-        setIsLoading(false);
-        return;
-      }
-    }
-
     await mealReminders.updateConfig({
       breakfast: { enabled: breakfastEnabled, time: breakfastTime },
       lunch: { enabled: lunchEnabled, time: lunchTime },
@@ -185,7 +193,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
       Boolean,
     ).length;
 
-    setIsLoading(false);
+    setIsSaving(false);
     crossPlatformAlert(
       "Meal Reminders Updated!",
       `${enabledCount} meal reminder${enabledCount !== 1 ? "s" : ""} ${enabledCount > 0 ? "enabled" : "disabled"}.`,
@@ -194,32 +202,17 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
   };
 
   const saveSleepSettings = async () => {
-    const minutes = parseInt(sleepReminderMinutes);
-
-    if (isNaN(minutes) || minutes < 5 || minutes > 60) {
-      crossPlatformAlert(
-        "Invalid Time",
-        "Please enter a reminder time between 5 and 60 minutes.",
-      );
-      setIsLoading(false);
+    const error = validateMinutes(sleepReminderMinutes, 5, 60);
+    if (error) {
+      setSleepError(error);
+      setIsSaving(false);
       return;
     }
+    const minutes = parseInt(sleepReminderMinutes, 10);
 
-    if (!isValidTimeFormat(bedtime)) {
-      crossPlatformAlert(
-        "Invalid Time",
-        "Please enter bedtime in HH:MM format (e.g., 22:30).",
-      );
-      setIsLoading(false);
-      return;
-    }
+    await sleepReminders.updateConfig({ bedtime, reminderMinutes: minutes });
 
-    await sleepReminders.updateConfig({
-      bedtime,
-      reminderMinutes: minutes,
-    });
-
-    setIsLoading(false);
+    setIsSaving(false);
     crossPlatformAlert(
       "Sleep Reminders Updated!",
       `You'll be reminded ${minutes} minutes before your ${bedtime} bedtime.`,
@@ -227,540 +220,173 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     );
   };
 
-  const isValidTimeFormat = (time: string): boolean => {
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    return timeRegex.test(time);
-  };
-
-  const getPresetTime = (
-    mealType: "breakfast" | "lunch" | "dinner",
-    variant: "early" | "normal" | "late",
-  ) => {
-    const presets = {
-      breakfast: { early: "07:00", normal: "08:00", late: "09:30" },
-      lunch: { early: "12:00", normal: "13:00", late: "14:00" },
-      dinner: { early: "18:00", normal: "19:00", late: "20:30" },
-    };
-    return presets[mealType][variant];
-  };
-
-  const renderWorkoutSettings = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Workout Reminder Time</Text>
-      <Text style={styles.sectionDescription}>
-        How many minutes before your scheduled workout should you be reminded?
-      </Text>
-
-      <Card style={styles.card}>
-        <View style={styles.cardContent}>
-          <Text style={styles.inputLabel}>Minutes Before Workout</Text>
-          <TextInput
-            style={styles.textInput}
-            value={workoutReminderMinutes}
-            onChangeText={setWorkoutReminderMinutes}
-            placeholder="30"
-            keyboardType="number-pad"
-            selectTextOnFocus
-          />
-        </View>
-
-        <View style={styles.presetButtons}>
-          {[15, 30, 45, 60].map((minutes) => (
-            <TouchableOpacity
-              key={minutes}
-              style={[
-                styles.presetButton,
-                workoutReminderMinutes === minutes.toString() &&
-                  styles.presetButtonActive,
-              ]}
-              onPress={() => setWorkoutReminderMinutes(minutes.toString())}
-            >
-              <Text
-                style={[
-                  styles.presetButtonText,
-                  workoutReminderMinutes === minutes.toString() &&
-                    styles.presetButtonTextActive,
-                ]}
-              >
-                {minutes}min
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Card>
-
-      <Card style={styles.infoCard}>
-        <Text style={styles.infoText}>
-          💡 Workout times are automatically detected from your AI-generated
-          fitness plans. You can also manually set custom workout times in the
-          fitness section.
-        </Text>
-      </Card>
-    </View>
-  );
-
-  const renderMealSettings = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Meal Reminder Times</Text>
-      <Text style={styles.sectionDescription}>
-        Customize when you want to be reminded for each meal.
-      </Text>
-
-      {/* Breakfast */}
-      <Card style={styles.card}>
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealTitle}>🍳 Breakfast</Text>
-          <Switch
-            value={breakfastEnabled}
-            onValueChange={setBreakfastEnabled}
-            trackColor={{
-              false: colors.border,
-              true: colors.primary + "50",
-            }}
-            thumbColor={
-              breakfastEnabled ? colors.primary : colors.textMuted
-            }
-          />
-        </View>
-
-        {breakfastEnabled && (
-          <>
-            <View style={styles.cardContent}>
-              <TextInput
-                style={styles.textInput}
-                value={breakfastTime}
-                onChangeText={setBreakfastTime}
-                placeholder="08:00"
-                keyboardType={
-                  Platform.OS === "ios" ? "numbers-and-punctuation" : "default"
-                }
-              />
-            </View>
-            <View style={styles.presetButtons}>
-              {["early", "normal", "late"].map((preset) => {
-                const time = getPresetTime("breakfast", preset as "early" | "normal" | "late");
-                return (
-                  <TouchableOpacity
-                    key={preset}
-                    style={[
-                      styles.presetButton,
-                      breakfastTime === time && styles.presetButtonActive,
-                    ]}
-                    onPress={() => setBreakfastTime(time)}
-                  >
-                    <Text
-                      style={[
-                        styles.presetButtonText,
-                        breakfastTime === time && styles.presetButtonTextActive,
-                      ]}
-                    >
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-        )}
-      </Card>
-
-      {/* Lunch */}
-      <Card style={styles.card}>
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealTitle}>🥙 Lunch</Text>
-          <Switch
-            value={lunchEnabled}
-            onValueChange={setLunchEnabled}
-            trackColor={{
-              false: colors.border,
-              true: colors.primary + "50",
-            }}
-            thumbColor={
-              lunchEnabled ? colors.primary : colors.textMuted
-            }
-          />
-        </View>
-
-        {lunchEnabled && (
-          <>
-            <View style={styles.cardContent}>
-              <TextInput
-                style={styles.textInput}
-                value={lunchTime}
-                onChangeText={setLunchTime}
-                placeholder="13:00"
-                keyboardType={
-                  Platform.OS === "ios" ? "numbers-and-punctuation" : "default"
-                }
-              />
-            </View>
-            <View style={styles.presetButtons}>
-              {["early", "normal", "late"].map((preset) => {
-                const time = getPresetTime("lunch", preset as "early" | "normal" | "late");
-                return (
-                  <TouchableOpacity
-                    key={preset}
-                    style={[
-                      styles.presetButton,
-                      lunchTime === time && styles.presetButtonActive,
-                    ]}
-                    onPress={() => setLunchTime(time)}
-                  >
-                    <Text
-                      style={[
-                        styles.presetButtonText,
-                        lunchTime === time && styles.presetButtonTextActive,
-                      ]}
-                    >
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-        )}
-      </Card>
-
-      {/* Dinner */}
-      <Card style={styles.card}>
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealTitle}>🍽️ Dinner</Text>
-          <Switch
-            value={dinnerEnabled}
-            onValueChange={setDinnerEnabled}
-            trackColor={{
-              false: colors.border,
-              true: colors.primary + "50",
-            }}
-            thumbColor={
-              dinnerEnabled ? colors.primary : colors.textMuted
-            }
-          />
-        </View>
-
-        {dinnerEnabled && (
-          <>
-            <View style={styles.cardContent}>
-              <TextInput
-                style={styles.textInput}
-                value={dinnerTime}
-                onChangeText={setDinnerTime}
-                placeholder="19:00"
-                keyboardType={
-                  Platform.OS === "ios" ? "numbers-and-punctuation" : "default"
-                }
-              />
-            </View>
-            <View style={styles.presetButtons}>
-              {["early", "normal", "late"].map((preset) => {
-                const time = getPresetTime("dinner", preset as "early" | "normal" | "late");
-                return (
-                  <TouchableOpacity
-                    key={preset}
-                    style={[
-                      styles.presetButton,
-                      dinnerTime === time && styles.presetButtonActive,
-                    ]}
-                    onPress={() => setDinnerTime(time)}
-                  >
-                    <Text
-                      style={[
-                        styles.presetButtonText,
-                        dinnerTime === time && styles.presetButtonTextActive,
-                      ]}
-                    >
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-        )}
-      </Card>
-    </View>
-  );
-
-  const renderSleepSettings = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Sleep Reminder Settings</Text>
-      <Text style={styles.sectionDescription}>
-        Set your bedtime and when to be reminded to start winding down.
-      </Text>
-
-      <Card style={styles.card}>
-        <View style={styles.cardContent}>
-          <Text style={styles.inputLabel}>Bedtime</Text>
-          <TextInput
-            style={styles.textInput}
-            value={bedtime}
-            onChangeText={setBedtime}
-            placeholder="22:30"
-            keyboardType={
-              Platform.OS === "ios" ? "numbers-and-punctuation" : "default"
-            }
-          />
-        </View>
-        <View style={styles.presetButtons}>
-          {["21:30", "22:00", "22:30", "23:00"].map((time) => (
-            <TouchableOpacity
-              key={time}
-              style={[
-                styles.presetButton,
-                bedtime === time && styles.presetButtonActive,
-              ]}
-              onPress={() => setBedtime(time)}
-            >
-              <Text
-                style={[
-                  styles.presetButtonText,
-                  bedtime === time && styles.presetButtonTextActive,
-                ]}
-              >
-                {time}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Card>
-
-      <Card style={styles.card}>
-        <View style={styles.cardContent}>
-          <Text style={styles.inputLabel}>
-            Wind Down Reminder (minutes before)
-          </Text>
-          <TextInput
-            style={styles.textInput}
-            value={sleepReminderMinutes}
-            onChangeText={setSleepReminderMinutes}
-            placeholder="30"
-            keyboardType="number-pad"
-            selectTextOnFocus
-          />
-        </View>
-        <View style={styles.presetButtons}>
-          {[15, 30, 45, 60].map((minutes) => (
-            <TouchableOpacity
-              key={minutes}
-              style={[
-                styles.presetButton,
-                sleepReminderMinutes === minutes.toString() &&
-                  styles.presetButtonActive,
-              ]}
-              onPress={() => setSleepReminderMinutes(minutes.toString())}
-            >
-              <Text
-                style={[
-                  styles.presetButtonText,
-                  sleepReminderMinutes === minutes.toString() &&
-                    styles.presetButtonTextActive,
-                ]}
-              >
-                {minutes}min
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Card>
-
-      <Card style={styles.infoCard}>
-        <Text style={styles.infoText}>
-          🌙 You'll receive two notifications: one to start winding down, and
-          another at bedtime. Quality sleep is essential for recovery and
-          performance.
-        </Text>
-      </Card>
-    </View>
-  );
-
   if (!type) return null;
 
+  const icon =
+    type === "workout" ? "barbell-outline" : type === "meals" ? "restaurant-outline" : "moon-outline";
+  const iconColor =
+    type === "workout" ? colors.error.DEFAULT : type === "meals" ? colors.success.DEFAULT : colors.primary.DEFAULT;
+  const saveDisabled =
+    (type === "workout" && !!workoutError) || (type === "sleep" && !!sleepError);
+
   return (
-    <Modal
+    <SettingsModalWrapper
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      title={title}
+      icon={icon}
+      iconColor={iconColor}
+      onClose={onClose}
+      onSave={handleSave}
+      isSaving={isSaving}
+      saveDisabled={saveDisabled}
+      saveLabel="Save Settings"
     >
-      <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={onClose}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Text style={styles.cancelButton}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>{title}</Text>
-          <View style={{ width: 60 }} />
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {type === "workout" && renderWorkoutSettings()}
-          {type === "meals" && renderMealSettings()}
-          {type === "sleep" && renderSleepSettings()}
-
-          <View style={styles.buttonContainer}>
-            <Button
-              title={isLoading ? "Saving..." : "Save Settings"}
-              onPress={handleSave}
-              variant="primary"
-              size="lg"
-              disabled={isLoading}
-            />
+      {type === "workout" && (
+        <>
+          <Text style={styles.sectionDescription}>
+            How many minutes before your scheduled workout should you be reminded?
+          </Text>
+          <GlassFormInput
+            label="Minutes Before Workout"
+            icon="timer-outline"
+            iconColor={colors.error.DEFAULT}
+            value={workoutReminderMinutes}
+            onChangeText={handleWorkoutMinutesChange}
+            placeholder="30"
+            keyboardType="number-pad"
+            error={workoutError}
+          />
+          <View style={styles.infoCard}>
+            <Ionicons name="information-circle-outline" size={rf(14)} color={colors.text.secondary} />
+            <Text style={styles.infoText}>
+              Workout times are automatically detected from your AI-generated fitness
+              plans. You can also manually set custom workout times in the fitness
+              section.
+            </Text>
           </View>
+        </>
+      )}
 
-          <View style={styles.bottomSpacing} />
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+      {type === "meals" && (
+        <>
+          <Text style={styles.sectionDescription}>
+            Customize when you want to be reminded for each meal.
+          </Text>
+
+          <GlassFormSwitch
+            label="Breakfast"
+            icon="cafe-outline"
+            iconColor={colors.warning.DEFAULT}
+            value={breakfastEnabled}
+            onValueChange={setBreakfastEnabled}
+          />
+          {breakfastEnabled && (
+            <TimeFieldPicker
+              label="Breakfast Time"
+              value={breakfastTime}
+              onChange={setBreakfastTime}
+              icon="cafe-outline"
+              iconColor={colors.warning.DEFAULT}
+            />
+          )}
+
+          <GlassFormSwitch
+            label="Lunch"
+            icon="fast-food-outline"
+            iconColor={colors.success.DEFAULT}
+            value={lunchEnabled}
+            onValueChange={setLunchEnabled}
+          />
+          {lunchEnabled && (
+            <TimeFieldPicker
+              label="Lunch Time"
+              value={lunchTime}
+              onChange={setLunchTime}
+              icon="fast-food-outline"
+              iconColor={colors.success.DEFAULT}
+            />
+          )}
+
+          <GlassFormSwitch
+            label="Dinner"
+            icon="restaurant-outline"
+            iconColor={colors.info.DEFAULT}
+            value={dinnerEnabled}
+            onValueChange={setDinnerEnabled}
+          />
+          {dinnerEnabled && (
+            <TimeFieldPicker
+              label="Dinner Time"
+              value={dinnerTime}
+              onChange={setDinnerTime}
+              icon="restaurant-outline"
+              iconColor={colors.info.DEFAULT}
+            />
+          )}
+        </>
+      )}
+
+      {type === "sleep" && (
+        <>
+          <Text style={styles.sectionDescription}>
+            Set your bedtime and when to be reminded to start winding down.
+          </Text>
+
+          <TimeFieldPicker
+            label="Bedtime"
+            value={bedtime}
+            onChange={setBedtime}
+            icon="moon-outline"
+            iconColor={colors.primary.DEFAULT}
+          />
+
+          <GlassFormInput
+            label="Wind Down Reminder (minutes before)"
+            icon="timer-outline"
+            iconColor={colors.primary.DEFAULT}
+            value={sleepReminderMinutes}
+            onChangeText={handleSleepMinutesChange}
+            placeholder="30"
+            keyboardType="number-pad"
+            error={sleepError}
+          />
+
+          <View style={styles.infoCard}>
+            <Ionicons name="information-circle-outline" size={rf(14)} color={colors.text.secondary} />
+            <Text style={styles.infoText}>
+              You'll receive two notifications: one to start winding down, and another
+              at bedtime. Quality sleep is essential for recovery and performance.
+            </Text>
+          </View>
+        </>
+      )}
+    </SettingsModalWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-
-  cancelButton: {
-    fontSize: fontSize.md,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-  },
-
-  content: {
-    flex: 1,
-  },
-
-  section: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-
   sectionDescription: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    ...variants.caption,
+    color: colors.text.secondary,
     marginBottom: spacing.md,
-    lineHeight: 20,
+    lineHeight: rf(18),
   },
-
-  card: {
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-
-  cardContent: {
-    marginBottom: spacing.md,
-  },
-
-  mealHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.md,
-  },
-
-  mealTitle: {
-    fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
-  },
-
-  inputLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-
-  textInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    fontSize: fontSize.md,
-    color: colors.text,
-    backgroundColor: colors.backgroundSecondary,
-  },
-
-  presetButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    gap: spacing.sm,
-  },
-
-  presetButton: {
-    flex: 1,
-    minHeight: 44,
-    justifyContent: "center",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.backgroundSecondary,
-    alignItems: "center",
-  },
-
-  presetButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + "20",
-  },
-
-  presetButtonText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-  },
-
-  presetButtonTextActive: {
-    color: colors.primary,
-  },
-
   infoCard: {
-    padding: spacing.lg,
-    backgroundColor: colors.backgroundTertiary,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: surface[1],
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    padding: spacing.md,
+    marginTop: spacing.sm,
   },
-
   infoText: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    fontStyle: "italic",
-  },
-
-  buttonContainer: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-  },
-
-  bottomSpacing: {
-    height: spacing.xl,
+    ...variants.caption,
+    color: colors.text.secondary,
+    flex: 1,
+    lineHeight: rf(17),
   },
 });
 
