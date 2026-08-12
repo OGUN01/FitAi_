@@ -12,12 +12,26 @@ export class HealthScoring {
     bodyAnalysis: BodyAnalysisData,
     workoutPreferences: WorkoutPreferencesData,
   ): number {
-    let score = 100;
+    // Confidence-weighted scoring: most onboarding fields are non-nullable by
+    // the time this runs (the review tab requires all 4 sections complete),
+    // but bodyAnalysis.bmi and personalInfo.wake_time/sleep_time genuinely can
+    // be absent — e.g. AdvancedReviewService.calculateAndSave can be invoked
+    // for a partially-edited profile. Previously the score started at a flat
+    // 100 and unanswered fields simply contributed nothing, so a profile with
+    // only BMI + activity_level present could land at a misleading 90/100.
+    // Instead we accumulate a delta from a neutral 50 baseline and blend it
+    // toward that baseline by how much of the genuinely-optional data is
+    // actually present, so a low-data profile reports an honestly mediocre
+    // score instead of a falsely precise near-perfect one.
+    let delta = 0;
+    let optionalFieldsPresent = 0;
+    const optionalFieldsTotal = 2; // bmi, sleep window
 
     if (bodyAnalysis.bmi) {
-      if (bodyAnalysis.bmi < 18.5 || bodyAnalysis.bmi > 25) score -= 10;
-      if (bodyAnalysis.bmi > 30) score -= 20;
-      if (bodyAnalysis.bmi >= 18.5 && bodyAnalysis.bmi <= 24.9) score += 5;
+      optionalFieldsPresent++;
+      if (bodyAnalysis.bmi < 18.5 || bodyAnalysis.bmi > 25) delta -= 10;
+      if (bodyAnalysis.bmi > 30) delta -= 20;
+      if (bodyAnalysis.bmi >= 18.5 && bodyAnalysis.bmi <= 24.9) delta += 5;
     }
 
     const activityBonus = {
@@ -28,29 +42,37 @@ export class HealthScoring {
       very_active: 15,
       extreme: 15,
     };
-    score +=
+    delta +=
       activityBonus[
         workoutPreferences.activity_level as keyof typeof activityBonus
       ] || 0;
 
-    if (dietPreferences.drinks_enough_water) score += 5;
-    if (dietPreferences.eats_5_servings_fruits_veggies) score += 10;
-    if (dietPreferences.limits_refined_sugar) score += 5;
-    if (dietPreferences.eats_processed_foods) score -= 10;
-    if (dietPreferences.smokes_tobacco) score -= 25;
-    if (dietPreferences.drinks_alcohol) score -= 5;
+    if (dietPreferences.drinks_enough_water) delta += 5;
+    if (dietPreferences.eats_5_servings_fruits_veggies) delta += 10;
+    if (dietPreferences.limits_refined_sugar) delta += 5;
+    if (dietPreferences.eats_processed_foods) delta -= 10;
+    if (dietPreferences.smokes_tobacco) delta -= 25;
+    if (dietPreferences.drinks_alcohol) delta -= 5;
 
     if (personalInfo.wake_time && personalInfo.sleep_time) {
+      optionalFieldsPresent++;
       const sleepHours = this.calculateSleepDuration(
         personalInfo.wake_time,
         personalInfo.sleep_time,
       );
-      if (sleepHours >= 7 && sleepHours <= 9) score += 10;
-      if (sleepHours < 6) score -= 15;
+      if (sleepHours >= 7 && sleepHours <= 9) delta += 10;
+      if (sleepHours < 6) delta -= 15;
     }
 
-    if (workoutPreferences.workout_experience_years > 0) score += 5;
-    if (workoutPreferences.workout_frequency_per_week >= 3) score += 10;
+    if (workoutPreferences.workout_experience_years > 0) delta += 5;
+    if (workoutPreferences.workout_frequency_per_week >= 3) delta += 10;
+
+    // Confidence ranges 0.5 (neither optional field present) to 1.0 (both
+    // present) — a fully-answered profile keeps its raw computed score, a
+    // sparse one is pulled back toward the neutral 50 baseline instead of
+    // riding an unearned high starting point.
+    const confidence = 0.5 + 0.5 * (optionalFieldsPresent / optionalFieldsTotal);
+    const score = 50 + delta * confidence;
 
     return Math.max(0, Math.min(100, Math.round(score)));
   }

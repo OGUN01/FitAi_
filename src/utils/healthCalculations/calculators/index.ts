@@ -1,82 +1,46 @@
 /**
  * Universal Health Calculator System - All Calculators
  * Export all calculator implementations
+ *
+ * Only lists calculators with a live production consumer (see index.ts at the
+ * package root for the full reachability notes). bmrCalculators, bmiCalculators,
+ * muscleGainCalculator, fatLossValidator, healthScoreCalculator and
+ * vo2MaxCalculator were deleted as dead code — they had zero production
+ * importers (verified via repo-wide grep).
  */
 
-// BMR Calculators
-export {
-  MifflinStJeorBMRCalculator,
-  KatchMcArdleBMRCalculator,
-  CunninghamBMRCalculator,
-  HarrisBenedictBMRCalculator,
-  getBMRCalculator,
-} from './bmrCalculators';
-
-// BMI Calculators
-export {
-  AsianBMICalculator,
-  AfricanBMICalculator,
-  StandardBMICalculator,
-  AthleticBMICalculator,
-  HispanicBMICalculator,
-  getBMICalculator,
-} from './bmiCalculators';
-
-// TDEE Calculator
+// TDEE Calculator (re-export kept for the backward-compat barrel chain in
+// src/utils/healthCalculations.ts; tdeeCalculator itself has no direct
+// production caller today)
 export {
   ClimateAdaptiveTDEECalculator,
   detectClimateSimple,
   tdeeCalculator,
 } from './tdeeCalculator';
 
-// Water Calculator
+// Water Calculator — LIVE (useCalculatedMetrics.ts, useReviewValidation.ts)
 export {
   ClimateAdaptiveWaterCalculator,
   assessDehydration,
   waterCalculator,
 } from './waterCalculator';
 
-// Macro Calculator
+// Macro Calculator — LIVE (services/validation/core.ts)
 export {
   DietAdaptiveMacroCalculator,
   macroCalculator,
 } from './macroCalculator';
 
-// ============================================================================
-// PHASE 3: ADVANCED HEALTH FEATURES
-// ============================================================================
-
-// Muscle Gain Calculator
-export {
-  MuscleGainCalculator,
-  muscleGainCalculator,
-} from './muscleGainCalculator';
-
-// Fat Loss Validator
-export {
-  FatLossValidator,
-  fatLossValidator,
-} from './fatLossValidator';
-
-// Heart Rate Calculator
+// Heart Rate Calculator — properly-cited Karvonen implementation, currently
+// unwired into the live cardiovascular.ts path (no resting-HR field is
+// collected during onboarding yet). Kept for its dedicated test coverage and
+// as the ready-to-wire reference implementation.
 export {
   HeartRateCalculator,
   heartRateCalculator,
 } from './heartRateCalculator';
 
-// VO2 Max Calculator
-export {
-  VO2MaxCalculator,
-  vo2MaxCalculator,
-} from './vo2MaxCalculator';
-
-// Health Score Calculator
-export {
-  HealthScoreCalculator,
-  healthScoreCalculator,
-} from './healthScoreCalculator';
-
-// Step Goal Calculator
+// Step Goal Calculator — LIVE (useOnboardingLogic.ts)
 export {
   calculatePersonalizedStepGoal,
 } from './stepGoalCalculator';

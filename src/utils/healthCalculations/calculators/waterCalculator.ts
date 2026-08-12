@@ -47,8 +47,24 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
 
     waterML += climateBonus[climate];
 
+    // Clamp to a physiologically sane daily range before rounding. Without
+    // this, extreme-but-valid inputs (weight is accepted 30-300kg elsewhere
+    // in the app) produce targets far outside any recognized safe-intake
+    // guidance — e.g. a 300kg very_active/arid user computes to ~13.5L/day,
+    // and a 30kg sedentary/cold user computes to ~850ml/day. Log when the raw
+    // formula falls outside the clamp so extreme inputs stay visible instead
+    // of silently handed to the user as a literal daily target.
+    const MIN_WATER_ML = 1500;
+    const MAX_WATER_ML = 5000;
+    if (waterML < MIN_WATER_ML || waterML > MAX_WATER_ML) {
+      console.warn(
+        `[waterCalculator] Raw computed water target ${Math.round(waterML)}ml (weight=${weight}kg, activity=${activityLevel}, climate=${climate}) is outside the safe range [${MIN_WATER_ML}, ${MAX_WATER_ML}]ml — clamping.`,
+      );
+    }
+    const clampedML = Math.max(MIN_WATER_ML, Math.min(MAX_WATER_ML, waterML));
+
     // Round to nearest 50ml for practical measurement
-    return Math.round(waterML / 50) * 50;
+    return Math.round(clampedML / 50) * 50;
   }
 
   /**
@@ -87,20 +103,23 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
 
     const bonus = activityBonus[activityLevel];
     const climateMl = climateBonus[climate];
-    const totalWater = baseWater + bonus + climateMl;
+    // Route through calculate() so this breakdown can never drift from the
+    // real (clamped) SSOT value — previously totalWater was re-derived by
+    // hand here and could silently disagree with calculate()'s output.
+    const totalWater = this.calculate(weight, activityLevel, climate);
 
     const breakdown = [
       `Base (${weight}kg × 35ml): ${Math.round(baseWater)} ml`,
       `+ Activity (${activityLevel}): ${bonus} ml`,
       `+ Climate (${climate}): ${climateMl} ml`,
-      `= ${Math.round(totalWater)} ml`,
+      `= ${totalWater} ml`,
     ].join('\n');
 
     return {
       baseWater: Math.round(baseWater),
       activityBonus: bonus,
       climateMultiplier: climateMl,
-      totalWater: Math.round(totalWater / 50) * 50,
+      totalWater,
       breakdown,
       cups: Math.round((totalWater / 237) * 10) / 10, // 1 cup = 237ml
       liters: Math.round((totalWater / 1000) * 10) / 10,
