@@ -17,7 +17,6 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -37,6 +36,7 @@ import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ProgressRing } from '../ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { DietTextField } from './DietTextField';
 import { getLocalDateString } from '../../utils/weekUtils';
 
 interface WaterIntakeModalProps {
@@ -271,29 +271,25 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
               {/* Custom Amount Input - always visible for accessibility */}
               <Animated.View entering={FadeInDown.delay(180).duration(400)}>
                 <Text style={styles.sectionTitle}>Custom Amount (Milliliters)</Text>
-                <View style={styles.inputContainer}>
-                  <Ionicons
-                    name="water-outline"
-                    size={20}
-                    color={colors.secondary}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={customAmount}
-                    onChangeText={(text) => {
-                      setCustomAmount(text);
-                      setError(null);
-                    }}
-                    editable={isToday}
-                    placeholder="e.g., 250"
-                    placeholderTextColor={colors.textTertiary}
-                    keyboardType="decimal-pad"
-                    returnKeyType="done"
-                    onSubmitEditing={handleCustomSubmit}
-                  />
-                  <Text style={styles.unitLabel}>ml</Text>
-                </View>
+                <DietTextField
+                  icon="water-outline"
+                  iconColor={colors.secondary}
+                  containerStyle={styles.inputContainer}
+                  inputStyle={styles.input}
+                  value={customAmount}
+                  onChangeText={(text) => {
+                    setCustomAmount(text);
+                    setError(null);
+                  }}
+                  editable={isToday}
+                  placeholder="e.g., 250"
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  onSubmitEditing={handleCustomSubmit}
+                  error={!!error}
+                  accessibilityLabel="Custom water amount in milliliters"
+                  rightElement={<Text style={styles.unitLabel}>ml</Text>}
+                />
 
                 {/* Error Message */}
                 {error && (
@@ -498,24 +494,12 @@ const styles = StyleSheet.create({
     marginTop: rp(8),
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: rp(16),
     marginBottom: rp(16),
-    borderWidth: 1,
-    borderColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
-  },
-  inputIcon: {
-    marginRight: rp(12),
   },
   input: {
-    flex: 1,
     fontSize: rf(18),
     fontWeight: String(typography.fontWeight.semibold) as any,
     color: colors.white,
-    paddingVertical: rp(16),
   },
   unitLabel: {
     fontSize: rf(16),

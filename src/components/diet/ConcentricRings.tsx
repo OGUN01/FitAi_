@@ -321,6 +321,11 @@ const ConcentricRingsComponent: React.FC<ConcentricRingsProps> = ({
           />
         </Animated.View>
       </View>
+
+      {/* Hairline rule anchors the hero block as an intentional card-less
+          section (matching the rule weight used elsewhere) instead of
+          reading as an accidental gap before the bordered cards below. */}
+      <View style={styles.heroRule} />
     </Animated.View>
   );
 };
@@ -460,6 +465,12 @@ const styles = StyleSheet.create({
   legendBarFill: {
     height: '100%',
     borderRadius: 1,
+  },
+  heroRule: {
+    width: '60%',
+    height: 1,
+    backgroundColor: colors.border,
+    marginTop: spacing.lg,
   },
 });
 

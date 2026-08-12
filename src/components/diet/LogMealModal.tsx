@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
+import { DietTextField } from './DietTextField';
 import { flatColors as colors, typography } from '../../theme/aurora-tokens';
 import { MACRO_PILL_COLORS } from './macroColors';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
@@ -690,27 +691,20 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
 
               <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
                 <Text style={styles.label}>Meal Name</Text>
-                <View style={styles.inputRow}>
-                  <Ionicons
-                    name="restaurant-outline"
-                    size={rf(16)}
-                    color={colors.primary}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    ref={mealNameRef}
-                    style={styles.inputField}
-                    value={mealName}
-                    onChangeText={(v) => {
-                      setMealName(v);
-                      setShowSuggestions(true);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
-                    placeholder="e.g. Dal Rice, Chicken Salad"
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                </View>
+                <DietTextField
+                  ref={mealNameRef}
+                  icon="restaurant-outline"
+                  value={mealName}
+                  onChangeText={(v) => {
+                    setMealName(v);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+                  placeholder="e.g. Dal Rice, Chicken Salad"
+                  placeholderTextColor={colors.textSecondary}
+                  accessibilityLabel="Meal name"
+                />
 
                 {/* FEATURE 1: Saved-meals autocomplete dropdown */}
                 {showSuggestions && mealNameSuggestions.length > 0 && (
@@ -1292,24 +1286,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  inputRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    backgroundColor: colors.surface,
-    borderRadius: rbr(12),
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: rp(12),
-  },
-  inputIcon: {
-    marginRight: rw(8),
-  },
-  inputField: {
-    flex: 1,
-    paddingVertical: rh(11),
-    fontSize: rf(15),
-    color: colors.text,
   },
   typeSelector: {
     flexDirection: 'row',

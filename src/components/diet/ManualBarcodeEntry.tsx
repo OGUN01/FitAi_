@@ -14,6 +14,7 @@ import { getCountryFromBarcode } from '@/utils/countryMapping';
 import { flatColors as colors, spacing, borderRadius } from '@/theme/aurora-tokens';
 import { rbr, rf, rp } from '@/utils/responsive';
 import { AnimatedPressable } from '@/components/ui/aurora/AnimatedPressable';
+import { DietTextField } from './DietTextField';
 
 interface ManualBarcodeEntryProps {
   onLookupResolved: (result: ProductLookupResult) => void;
@@ -163,38 +164,39 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
 
         <Text style={styles.subtitle}>Type the barcode number printed on the package.</Text>
 
-        <View style={styles.inputRow}>
-          <TextInput
-            ref={inputRef}
-            style={[styles.input, error ? styles.inputError : null]}
-            value={barcode}
-            onChangeText={handleChangeText}
-            keyboardType="number-pad"
-            maxLength={13}
-            placeholder="Enter barcode number"
-            placeholderTextColor={colors.textMuted}
-            autoFocus
-            returnKeyType="search"
-            onSubmitEditing={handleLookUp}
-            editable={!isLooking}
-            accessibilityLabel="Barcode input"
-          />
-
-          {barcode.length > 0 && (
-            <AnimatedPressable
-              onPress={handleClear}
-              style={styles.clearButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              scaleValue={0.9}
-              springConfig="snappy"
-              hapticType="light"
-              accessibilityLabel="Clear barcode"
-              accessibilityRole="button"
-            >
-              <Ionicons name="close" size={rf(14)} color={colors.textSecondary} />
-            </AnimatedPressable>
-          )}
-        </View>
+        <DietTextField
+          ref={inputRef}
+          icon="barcode-outline"
+          containerStyle={styles.inputRow}
+          inputStyle={styles.input}
+          value={barcode}
+          onChangeText={handleChangeText}
+          keyboardType="number-pad"
+          maxLength={13}
+          placeholder="Enter barcode number"
+          autoFocus
+          returnKeyType="search"
+          onSubmitEditing={handleLookUp}
+          editable={!isLooking}
+          error={!!error}
+          accessibilityLabel="Barcode input"
+          rightElement={
+            barcode.length > 0 ? (
+              <AnimatedPressable
+                onPress={handleClear}
+                style={styles.clearButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                scaleValue={0.9}
+                springConfig="snappy"
+                hapticType="light"
+                accessibilityLabel="Clear barcode"
+                accessibilityRole="button"
+              >
+                <Ionicons name="close" size={rf(14)} color={colors.textSecondary} />
+              </AnimatedPressable>
+            ) : undefined
+          }
+        />
 
         <View style={styles.metaRow}>
           <Text
@@ -334,25 +336,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
     marginBottom: spacing.xs,
   },
   input: {
-    flex: 1,
-    height: 48,
     fontSize: rf(17),
     color: colors.text,
     letterSpacing: 1.5,
     fontVariant: ['tabular-nums'],
-  },
-  inputError: {
-    borderColor: colors.error,
   },
   clearButton: {
     width: 28,

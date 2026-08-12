@@ -81,6 +81,7 @@ interface NotificationItemProps {
    * that need a "this doesn't work yet" explanation must intercept via
    * `onToggle` instead, same as the other guarded toggles. */
   disabled?: boolean;
+  isLast?: boolean;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -94,10 +95,17 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onEdit,
   animationDelay,
   disabled,
+  isLast = false,
 }) => {
   return (
     <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-      <View style={[styles.notificationCard, disabled && styles.notificationCardDisabled]}>
+      <View
+        style={[
+          styles.notificationCard,
+          !isLast && styles.notificationCardBorder,
+          disabled && styles.notificationCardDisabled,
+        ]}
+      >
         <View style={styles.notificationContent}>
           {/* Icon */}
           <View
@@ -340,78 +348,81 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader icon="sparkles-outline" title="Smart Reminders" />
 
-            <NotificationItem
-              icon="water-outline"
-              iconColor={colors.info}
-              title="Water Reminders"
-              description="Smart hydration reminders based on your daily schedule"
-              timeInfo={
-                preferences.water.enabled ? getTimeDisplay("water") : undefined
-              }
-              enabled={preferences.water.enabled}
-              onToggle={() => handleToggleGuarded("water")}
-              onEdit={() => handleEditPress("water", "Water Reminders")}
-              animationDelay={100}
-            />
+            <View style={styles.notificationListSurface}>
+              <NotificationItem
+                icon="water-outline"
+                iconColor={colors.info}
+                title="Water Reminders"
+                description="Smart hydration reminders based on your daily schedule"
+                timeInfo={
+                  preferences.water.enabled ? getTimeDisplay("water") : undefined
+                }
+                enabled={preferences.water.enabled}
+                onToggle={() => handleToggleGuarded("water")}
+                onEdit={() => handleEditPress("water", "Water Reminders")}
+                animationDelay={100}
+              />
 
-            {/* Workout Reminders is intentionally shown as visually dimmed
-                and permanently off: enabling it never actually schedules a
-                notification because nothing in the app populates
-                workout.customTimes or calls scheduleFromWorkoutPlan with
-                real workout times yet (see
-                notificationService.scheduleWorkoutReminders). `disabled`
-                only dims the card — the Switch stays tappable so
-                `onToggle` (showWorkoutRemindersUnavailable) actually fires
-                and explains why, instead of being unreachable like a truly
-                native-disabled Switch would be. Once it's wired up to the
-                generated fitness plan, restore the normal
-                onToggle/onEdit/timeInfo wiring used by the other three
-                items above. */}
-            <NotificationItem
-              icon="barbell-outline"
-              iconColor={colors.errorLight}
-              title="Workout Reminders"
-              description="Coming soon — not yet connected to your fitness plan, so no notifications are sent"
-              enabled={false}
-              disabled
-              onToggle={showWorkoutRemindersUnavailable}
-              animationDelay={150}
-            />
+              {/* Workout Reminders is intentionally shown as visually dimmed
+                  and permanently off: enabling it never actually schedules a
+                  notification because nothing in the app populates
+                  workout.customTimes or calls scheduleFromWorkoutPlan with
+                  real workout times yet (see
+                  notificationService.scheduleWorkoutReminders). `disabled`
+                  only dims the card — the Switch stays tappable so
+                  `onToggle` (showWorkoutRemindersUnavailable) actually fires
+                  and explains why, instead of being unreachable like a truly
+                  native-disabled Switch would be. Once it's wired up to the
+                  generated fitness plan, restore the normal
+                  onToggle/onEdit/timeInfo wiring used by the other three
+                  items above. */}
+              <NotificationItem
+                icon="barbell-outline"
+                iconColor={colors.errorLight}
+                title="Workout Reminders"
+                description="Coming soon — not yet connected to your fitness plan, so no notifications are sent"
+                enabled={false}
+                disabled
+                onToggle={showWorkoutRemindersUnavailable}
+                animationDelay={150}
+              />
 
-            <NotificationItem
-              icon="restaurant-outline"
-              iconColor={colors.success}
-              title="Meal Reminders"
-              description="Never miss breakfast, lunch, or dinner"
-              timeInfo={
-                preferences.meals.enabled ? getTimeDisplay("meals") : undefined
-              }
-              enabled={preferences.meals.enabled}
-              onToggle={() => handleToggleGuarded("meals")}
-              onEdit={() => handleEditPress("meals", "Meal Reminders")}
-              animationDelay={200}
-            />
+              <NotificationItem
+                icon="restaurant-outline"
+                iconColor={colors.success}
+                title="Meal Reminders"
+                description="Never miss breakfast, lunch, or dinner"
+                timeInfo={
+                  preferences.meals.enabled ? getTimeDisplay("meals") : undefined
+                }
+                enabled={preferences.meals.enabled}
+                onToggle={() => handleToggleGuarded("meals")}
+                onEdit={() => handleEditPress("meals", "Meal Reminders")}
+                animationDelay={200}
+              />
 
-            <NotificationItem
-              icon="moon-outline"
-              iconColor={colors.primary}
-              title="Sleep Reminders"
-              description="Smart bedtime notifications for better recovery"
-              timeInfo={
-                preferences.sleep.enabled ? getTimeDisplay("sleep") : undefined
-              }
-              enabled={preferences.sleep.enabled}
-              onToggle={() => handleToggleGuarded("sleep")}
-              onEdit={() => handleEditPress("sleep", "Sleep Reminders")}
-              animationDelay={250}
-            />
+              <NotificationItem
+                icon="moon-outline"
+                iconColor={colors.primary}
+                title="Sleep Reminders"
+                description="Smart bedtime notifications for better recovery"
+                timeInfo={
+                  preferences.sleep.enabled ? getTimeDisplay("sleep") : undefined
+                }
+                enabled={preferences.sleep.enabled}
+                onToggle={() => handleToggleGuarded("sleep")}
+                onEdit={() => handleEditPress("sleep", "Sleep Reminders")}
+                animationDelay={250}
+                isLast
+              />
 
-            {/* "Progress Updates" was removed — the toggle persisted a
-                preference but scheduled no actual weekly-summary
-                notification anywhere in the app (unlike water/workout/meal/
-                sleep, which each call a real schedule*Reminders function).
-                Re-add once a real progress-summary notification is
-                implemented in notificationStore. */}
+              {/* "Progress Updates" was removed — the toggle persisted a
+                  preference but scheduled no actual weekly-summary
+                  notification anywhere in the app (unlike water/workout/meal/
+                  sleep, which each call a real schedule*Reminders function).
+                  Re-add once a real progress-summary notification is
+                  implemented in notificationStore. */}
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -480,13 +491,19 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.lg,
   },
-  notificationCard: {
-    marginBottom: spacing.sm,
+  notificationListSurface: {
     backgroundColor: surface[1],
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
-    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+  },
+  notificationCard: {
     padding: spacing.md,
+  },
+  notificationCardBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: border.DEFAULT,
   },
   notificationCardDisabled: {
     opacity: 0.55,

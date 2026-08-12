@@ -40,6 +40,7 @@ jest.mock("@/services/barcodeService", () => ({
 
 jest.mock("@/utils/responsive", () => ({
   rf: (value: number) => value,
+  rw: (value: number) => value,
   rp: (value: number) => value,
   rbr: (value: number) => value,
 }));

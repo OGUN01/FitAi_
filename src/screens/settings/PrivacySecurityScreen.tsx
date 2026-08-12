@@ -44,6 +44,7 @@ interface SecurityToggleRowProps {
   onToggle: (next: boolean) => void;
   animationDelay: number;
   testID?: string;
+  isLast?: boolean;
 }
 
 const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
@@ -57,9 +58,16 @@ const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
   onToggle,
   animationDelay,
   testID,
+  isLast = false,
 }) => (
   <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-    <View style={[styles.toggleCard, disabled && styles.toggleCardDisabled]}>
+    <View
+      style={[
+        styles.toggleCard,
+        !isLast && styles.toggleCardBorder,
+        disabled && styles.toggleCardDisabled,
+      ]}
+    >
       <View
         style={[
           styles.toggleIconWrap,
@@ -279,39 +287,42 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
               title="App Lock"
             />
 
-            <SecurityToggleRow
-              icon="finger-print-outline"
-              iconColor={colors.primary}
-              title="Biometric App Lock"
-              description={
-                appLockAvailable === false
-                  ? "Requires an app rebuild — native module not bundled"
-                  : "Require biometric or device credential to open FitAI"
-              }
-              value={appLockEnabled && appLockAvailable !== false}
-              disabled={appLockAvailable === false}
-              unavailableHint={
-                appLockAvailable === false ? "Requires app rebuild" : undefined
-              }
-              onToggle={handleAppLockToggle}
-              animationDelay={350}
-              testID="app-lock-toggle"
-            />
+            <View style={styles.toggleListSurface}>
+              <SecurityToggleRow
+                icon="finger-print-outline"
+                iconColor={colors.primary}
+                title="Biometric App Lock"
+                description={
+                  appLockAvailable === false
+                    ? "Requires an app rebuild — native module not bundled"
+                    : "Require biometric or device credential to open FitAI"
+                }
+                value={appLockEnabled && appLockAvailable !== false}
+                disabled={appLockAvailable === false}
+                unavailableHint={
+                  appLockAvailable === false ? "Requires app rebuild" : undefined
+                }
+                onToggle={handleAppLockToggle}
+                animationDelay={350}
+                testID="app-lock-toggle"
+              />
 
-            <SecurityToggleRow
-              icon="time-outline"
-              iconColor={colors.info}
-              title="Auto-Lock on Background"
-              description="Re-lock every time you return to the app"
-              value={autoLockEnabled}
-              disabled={!appLockEnabled || appLockAvailable === false}
-              unavailableHint={
-                !appLockEnabled ? "Enable App Lock first" : undefined
-              }
-              onToggle={handleAutoLockToggle}
-              animationDelay={400}
-              testID="auto-lock-toggle"
-            />
+              <SecurityToggleRow
+                icon="time-outline"
+                iconColor={colors.info}
+                title="Auto-Lock on Background"
+                description="Re-lock every time you return to the app"
+                value={autoLockEnabled}
+                disabled={!appLockEnabled || appLockAvailable === false}
+                unavailableHint={
+                  !appLockEnabled ? "Enable App Lock first" : undefined
+                }
+                onToggle={handleAutoLockToggle}
+                animationDelay={400}
+                testID="auto-lock-toggle"
+                isLast
+              />
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -392,7 +403,7 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rbr(20),
-    backgroundColor: surface[1],
+    backgroundColor: colors.glassBorder,
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
@@ -454,16 +465,22 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: rf(19),
   },
+  toggleListSurface: {
+    backgroundColor: surface[1],
+    borderRadius: borderRadius.card,
+    borderWidth: 1,
+    borderColor: border.subtle,
+    overflow: "hidden",
+  },
   toggleCard: {
     flexDirection: "row",
     alignItems: "center" as const,
-    marginBottom: spacing.sm,
-    backgroundColor: surface[1],
-    borderWidth: 1,
-    borderColor: border.subtle,
-    borderRadius: borderRadius.lg,
     padding: spacing.md,
     minHeight: rp(56),
+  },
+  toggleCardBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: border.DEFAULT,
   },
   toggleCardDisabled: {
     opacity: 0.55,

@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { GlassButton } from '../ui/aurora/GlassButton';
 import {
   borderRadius,
   flatColors as colors,
@@ -84,31 +83,24 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
         </View>
       </View>
       <View style={styles.actionsRow}>
-        <AnimatedPressable
-          style={[styles.logButton, onViewPlan && styles.actionHalf]}
+        <GlassButton
+          label={onViewPlan ? 'Log Meal' : 'Log a Meal / Food'}
           onPress={onLogMeal}
-          accessibilityRole="button"
-          accessibilityLabel="Log a meal or food"
+          icon="add"
+          variant="secondary"
+          fullWidth
           hapticType="light"
-        >
-          <Ionicons name="add" size={20} color={colors.primary} />
-          <Text style={styles.logText} numberOfLines={1}>
-            {onViewPlan ? 'Log Meal' : 'Log a Meal / Food'}
-          </Text>
-        </AnimatedPressable>
+          accessibilityLabel="Log a meal or food"
+        />
         {onViewPlan ? (
-          <AnimatedPressable
-            style={[styles.planButton, styles.actionHalf]}
+          <GlassButton
+            label="View Plan"
             onPress={onViewPlan}
-            accessibilityRole="button"
-            accessibilityLabel={planButtonA11yLabel}
+            variant="primary"
+            fullWidth
             hapticType="light"
-          >
-            <Text style={styles.planText} numberOfLines={1}>
-              View Plan
-            </Text>
-            <Ionicons name="arrow-forward" size={18} color={colors.white} />
-          </AnimatedPressable>
+            accessibilityLabel={planButtonA11yLabel}
+          />
         ) : null}
       </View>
     </View>
@@ -179,42 +171,6 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-  },
-  actionHalf: {
-    flex: 1,
-  },
-  logButton: {
-    minHeight: 44,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  logText: {
-    color: colors.primary,
-    fontSize: fontSize.sm,
-    fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
-  },
-  planButton: {
-    minHeight: 44,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  planText: {
-    color: colors.white,
-    fontSize: fontSize.md,
-    fontFamily: fontFamilyForWeight('800'),
-    fontWeight: '800',
   },
 });
 

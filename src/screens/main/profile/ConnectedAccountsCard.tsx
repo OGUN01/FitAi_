@@ -13,6 +13,7 @@ import {
   border,
   spacing,
   typography,
+  borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
   },
   listSurface: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     overflow: "hidden",

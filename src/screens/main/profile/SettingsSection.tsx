@@ -8,12 +8,15 @@ import React, { useCallback } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   colors,
   surface,
   border,
   spacing,
   typography,
+  borderRadius,
+  flatColors,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
@@ -60,9 +63,12 @@ const SettingRow: React.FC<{
     onPress(item);
   }, [item, onPress]);
 
+  const isPremium = !!item.isPremium;
   const iconColor = item.isDestructive
     ? colors.error.DEFAULT
-    : item.iconColor || colors.primary.DEFAULT;
+    : isPremium
+      ? flatColors.gold
+      : item.iconColor || colors.primary.DEFAULT;
 
   return (
     <Pressable
@@ -74,25 +80,35 @@ const SettingRow: React.FC<{
       accessibilityState={{ disabled: item.disabled }}
       style={({ pressed }) => [
         styles.row,
+        isPremium && styles.rowPremium,
         pressed && !item.disabled && styles.rowPressed,
         item.disabled && styles.rowDisabled,
         !isLast && styles.rowBorder,
       ]}
     >
       {/* Icon squircle */}
-      <View
-        style={[
-          styles.iconSquircle,
-          { backgroundColor: `${iconColor}14` },
-          item.isDestructive && { backgroundColor: `${colors.error.DEFAULT}14` },
-        ]}
-      >
-        <Ionicons
-          name={item.icon}
-          size={rf(18)}
-          color={item.disabled ? colors.text.tertiary : iconColor}
-        />
-      </View>
+      {isPremium ? (
+        <LinearGradient
+          colors={[flatColors.gold, colors.warning.DEFAULT]}
+          style={styles.iconSquircle}
+        >
+          <Ionicons name={item.icon} size={rf(18)} color={colors.text.primary} />
+        </LinearGradient>
+      ) : (
+        <View
+          style={[
+            styles.iconSquircle,
+            { backgroundColor: `${iconColor}14` },
+            item.isDestructive && { backgroundColor: `${colors.error.DEFAULT}14` },
+          ]}
+        >
+          <Ionicons
+            name={item.icon}
+            size={rf(18)}
+            color={item.disabled ? colors.text.tertiary : iconColor}
+          />
+        </View>
+      )}
 
       {/* Text */}
       <View style={styles.textContainer}>
@@ -101,6 +117,7 @@ const SettingRow: React.FC<{
             style={[
               styles.title,
               item.isDestructive && styles.destructiveText,
+              isPremium && styles.premiumTitle,
               item.disabled && styles.disabledTitle,
             ]}
             numberOfLines={1}
@@ -112,6 +129,7 @@ const SettingRow: React.FC<{
               style={[
                 styles.badge,
                 { backgroundColor: item.badgeColor || colors.primary.DEFAULT },
+                isPremium && !item.badgeColor && styles.premiumBadge,
               ]}
             >
               <Text style={styles.badgeText}>{item.badge}</Text>
@@ -135,7 +153,7 @@ const SettingRow: React.FC<{
         <Ionicons
           name="chevron-forward"
           size={rf(18)}
-          color={colors.text.tertiary}
+          color={isPremium ? flatColors.gold : colors.text.tertiary}
           style={styles.chevron}
         />
       )}
@@ -206,7 +224,7 @@ const styles = StyleSheet.create({
   },
   listSurface: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     overflow: "hidden",
@@ -218,6 +236,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     minHeight: 56,
   },
+  rowPremium: {
+    backgroundColor: `${flatColors.gold}0D`,
+  },
   rowPressed: {
     backgroundColor: surface[2],
   },
@@ -225,7 +246,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   rowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: border.DEFAULT,
   },
   iconSquircle: {
@@ -235,6 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
+    overflow: "hidden",
   },
   textContainer: {
     flex: 1,
@@ -253,6 +275,10 @@ const styles = StyleSheet.create({
   destructiveText: {
     color: colors.error.DEFAULT,
   },
+  premiumTitle: {
+    color: flatColors.gold,
+    fontFamily: "Manrope_600SemiBold",
+  },
   disabledTitle: {
     color: colors.text.secondary,
   },
@@ -263,6 +289,9 @@ const styles = StyleSheet.create({
   },
   disabledSubtitle: {
     color: colors.text.tertiary,
+  },
+  premiumBadge: {
+    backgroundColor: flatColors.gold,
   },
   badge: {
     marginLeft: spacing.sm,

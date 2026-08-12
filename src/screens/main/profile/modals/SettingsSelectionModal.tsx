@@ -21,6 +21,7 @@ import {
   border,
   spacing,
   typography,
+  borderRadius,
 } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
 
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     width: "88%",
     maxWidth: 380,
     backgroundColor: surface[2],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     padding: spacing.lg,
