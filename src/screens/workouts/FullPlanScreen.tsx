@@ -226,11 +226,16 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
           <View style={styles.backButton} />
         </View>
 
-        {weeklyWorkoutPlan && scheduledCount > 0 ? (
+        {weeklyWorkoutPlan ? (
           <>
-            {/* Week summary line */}
+            {/* Week summary line — a real plan whose every day resolves to
+                rest (deload week, or an all-rest custom schedule) is NOT the
+                same as no plan at all; say so instead of falling through to
+                the "No Plan Yet" empty state below. */}
             <Text style={styles.summary} numberOfLines={1}>
-              {completedCount} of {scheduledCount} workouts done
+              {scheduledCount > 0
+                ? `${completedCount} of ${scheduledCount} workouts done`
+                : 'Recovery week — no workouts scheduled'}
             </Text>
             <ScrollView
               style={styles.flex}
@@ -319,7 +324,8 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
             </ScrollView>
           </>
         ) : (
-          /* Muted empty state — no plan generated yet */
+          /* Muted empty state — no plan exists at all yet (not to be confused
+             with a real plan that is just all-rest this week — see above). */
           <View style={styles.emptyState} testID="full-plan-empty">
             <Ionicons name="calendar-outline" size={rf(28)} color={colors.textTertiary} />
             <Text style={styles.emptyTitle}>No Plan Yet</Text>

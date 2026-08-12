@@ -140,12 +140,29 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   // Tracks hydration COMPLETION (not just kickoff) so the sourceTemplate
   // seed below never races hydrateFromCustomPlan's draft write.
   const [hydrated, setHydrated] = useState(false);
+  // Explicit error surface: if hydrate throws before `draft` is ever set
+  // (e.g. clonePlan choking on a corrupted persisted customWeeklyPlan), the
+  // screen must not fall back to an indefinite "Loading…" spinner with no
+  // way forward besides backing out entirely.
+  const [hydrateError, setHydrateError] = useState(false);
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
     hydrateFromCustomPlan()
       .catch((err) => {
         console.error("[WeeklyBuilderScreen] hydrate failed:", err);
+        setHydrateError(true);
+      })
+      .finally(() => setHydrated(true));
+  }, [hydrateFromCustomPlan]);
+
+  const handleRetryHydrate = useCallback(() => {
+    setHydrateError(false);
+    setHydrated(false);
+    hydrateFromCustomPlan()
+      .catch((err) => {
+        console.error("[WeeklyBuilderScreen] hydrate retry failed:", err);
+        setHydrateError(true);
       })
       .finally(() => setHydrated(true));
   }, [hydrateFromCustomPlan]);
@@ -233,10 +250,25 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userWeightKg]);
 
-  // ── Validation: re-run on every draft change + when safety profile changes ──
+  // ── Validation: re-run when anything validation-relevant changes ──
   // The store fires computeInsights on every mutation (insights panel reads
   // that), but validation warnings are a separate concern — we compute them
   // here and push to the store so InlineValidationBanner can subscribe.
+  //
+  // The dependency key below excludes each day's `description` (Notes text):
+  // Notes has no bearing on any validation rule (CURATED_EXERCISES safety
+  // scan, volume/clustering analysis), so a Notes keystroke shouldn't pay for
+  // a full validatePlan pass. This lets the Notes TextInput below commit
+  // every keystroke straight to the store (single source of truth, never at
+  // risk of being dropped on Save or Back) while still keeping validatePlan
+  // out of the per-keystroke hot path.
+  const draftValidationKey = useMemo(() => {
+    if (!draft) return null;
+    return JSON.stringify(
+      draft.workouts.map(({ description: _description, ...rest }) => rest),
+    );
+  }, [draft]);
+
   useEffect(() => {
     if (!draft) {
       setValidationWarnings([]);
@@ -249,7 +281,9 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
       console.error("[WeeklyBuilderScreen] validatePlan failed:", err);
       setValidationWarnings([]);
     }
-  }, [draft, safetyProfile, setValidationWarnings]);
+    // draftValidationKey intentionally omits Notes text — see comment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftValidationKey, safetyProfile, setValidationWarnings]);
 
   // Ensure insights compute on mount once a hydrated draft is present. The
   // store's mutations (addExercise, removeExercise, etc.) already call
@@ -366,11 +400,16 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
 
   const handleUpdateNotes = useCallback(
     (dayIndex: number, notes: string) => {
-      const day = draft?.workouts[dayIndex];
-      if (!day) return;
-      updateDay(dayIndex, { ...day, description: notes });
+      // Commits straight to the store on every keystroke — it's the single
+      // source of truth for `day.description`, so Save (BuilderSummaryFooter,
+      // which reads `store.draft` synchronously) and Back both always see the
+      // latest text with no separate flush step required. The validation
+      // effect above excludes `description` from its dependency key, so this
+      // does not trigger a validatePlan re-run per keystroke.
+      const day = useWorkoutBuilderStore.getState().draft?.workouts[dayIndex];
+      if (day) updateDay(dayIndex, { ...day, description: notes });
     },
-    [draft, updateDay],
+    [updateDay],
   );
 
   // ── Day reorder (workout across days) ──
@@ -467,8 +506,26 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
             <View style={styles.topRowSpacer} />
           </View>
           <View style={styles.centered}>
-            <AuroraSpinner size="lg" />
-            <Text style={styles.loadingText}>Loading your weekly schedule…</Text>
+            {hydrateError ? (
+              <>
+                <Ionicons name="alert-circle-outline" size={rf(36)} color={colors.textTertiary} />
+                <Text style={styles.loadingText}>
+                  We couldn't load your weekly schedule.
+                </Text>
+                <GlassButton
+                  label="Retry"
+                  onPress={handleRetryHydrate}
+                  variant="primary"
+                  hapticType="medium"
+                  testID="weekly-builder-hydrate-retry"
+                />
+              </>
+            ) : (
+              <>
+                <AuroraSpinner size="lg" />
+                <Text style={styles.loadingText}>Loading your weekly schedule…</Text>
+              </>
+            )}
           </View>
         </SafeAreaView>
       </AuroraBackground>

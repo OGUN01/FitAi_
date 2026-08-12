@@ -68,6 +68,8 @@ import { FONT_FAMILY } from '../../theme/fonts';
 import { rp, rf, rw, rbr } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
 import { titleCaseExerciseName } from '../../utils/textFormat';
+import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
+import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
 import type { DayWorkout } from '../../types/ai';
 import type { PlannedExercise } from '../../types/workout';
 
@@ -197,8 +199,35 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   testID,
 }) => {
   // ── Progress (sticky ring) — from fitnessStore.workoutProgress ──
-  const progress = useFitnessStore((s) => s.workoutProgress[workout.id]?.progress ?? 0);
+  const progressEntry = useFitnessStore((s) => s.workoutProgress[workout.id]);
+  const progress = progressEntry?.progress ?? 0;
   const startWorkoutSession = useFitnessStore((s) => s.startWorkoutSession);
+
+  // ── Completion — mirrors FullPlanScreen's week-aware check: a real
+  //    completed session wins; a stale 100% progress entry left over from a
+  //    previous week (recurring workout ids repeat week to week) never counts
+  //    as "done" for the current week. Both screens must agree on what
+  //    "completed" means for the same workout (CLAUDE.md §1 SSOT). ──
+  const activePlanSource = useFitnessStore((s) => s.activePlanSource);
+  const aiWeeklyPlan = useFitnessStore((s) => s.weeklyWorkoutPlan);
+  const customWeeklyPlan = useFitnessStore((s) => s.customWeeklyPlan);
+  const weeklyWorkoutPlan = activePlanSource === 'custom' ? customWeeklyPlan : aiWeeklyPlan;
+  const completedSessions = useFitnessStore((s) => s.completedSessions);
+  const currentWeekStart = getCurrentWeekStart();
+  const completedSession = useMemo(
+    () =>
+      findCompletedSessionForWorkout({
+        completedSessions,
+        workout,
+        plan: weeklyWorkoutPlan,
+        weekStart: currentWeekStart,
+      }),
+    [completedSessions, workout, weeklyWorkoutPlan, currentWeekStart]
+  );
+  const hasStaleCompletedProgress =
+    progressEntry?.progress === 100 &&
+    !!progressEntry.completedAt &&
+    getWeekStartForDate(progressEntry.completedAt) !== currentWeekStart;
 
   // ── User weight for MET calorie calc ──
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
@@ -271,7 +300,13 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     });
 
     const calorieResult = calculateWorkoutCalories(calorieInputs, userWeightKg);
-    const calories = calorieResult.totalCalories;
+    // CLAUDE.md §9: prefer the actual burned value — from the completed
+    // session, or an in-progress caloriesBurned snapshot on workoutProgress —
+    // over the pre-workout MET estimate. Mirrors FullPlanScreen's identical
+    // preference for the same plan/workout so both screens show the same
+    // number for the same session.
+    const actualCalories = completedSession?.caloriesBurned ?? progressEntry?.caloriesBurned ?? null;
+    const calories = actualCalories != null ? actualCalories : calorieResult.totalCalories;
     const duration =
       workout.duration && workout.duration > 0
         ? workout.duration
@@ -284,7 +319,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
       duration,
       muscleCounts,
     };
-  }, [planned, workout.duration, userWeightKg]);
+  }, [planned, workout.duration, userWeightKg, completedSession, progressEntry]);
 
   // ── Muscle heatmap data (top groups by set count) ──
   const heatmapData: BarData[] = useMemo(() => {
@@ -374,8 +409,11 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     setCarouselIndex(0);
   }, []);
 
-  const inProgress = progress > 0 && progress < 100;
-  const isCompleted = progress >= 100;
+  const isCompleted = !!completedSession;
+  const inProgress = !isCompleted && !hasStaleCompletedProgress && progress > 0 && progress < 100;
+  // Never render a stale prior-week 100% as a filled ring — show the neutral
+  // "not started this week" state instead (barbell icon, no text).
+  const displayProgress = hasStaleCompletedProgress ? 0 : progress;
 
   // Bottom inset so the sticky Start CTA clears the home indicator on devices
   // without gesture nav (SafeAreaView uses edges={['top']} only — see below).
@@ -486,7 +524,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
             <View style={styles.heroRow}>
                 {/* Progress ring (sticky at top — shows % if in-progress) */}
                 <ProgressRing
-                  progress={progress}
+                  progress={displayProgress}
                   size={rf(72)}
                   strokeWidth={6}
                   gradient
@@ -495,7 +533,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                     colors.secondary[500],
                   ]}
                   showText={inProgress || isCompleted}
-                  text={isCompleted ? '✓' : inProgress ? `${Math.round(progress)}%` : ''}
+                  text={isCompleted ? '✓' : inProgress ? `${Math.round(displayProgress)}%` : ''}
                 >
                   {!(inProgress || isCompleted) ? (
                     <Ionicons name="barbell-outline" size={rf(24)} color={colors.primary.DEFAULT} />
