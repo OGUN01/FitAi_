@@ -547,8 +547,11 @@ class DataBridge {
         "workout_preferences",
         "advanced_review",
       ];
-      const hasPendingProfileAction = PROFILE_TABLES.some(
-        (table) => offlineService.getOfflineDataByTable(table).length > 0,
+      const pendingProfileTableData = await Promise.all(
+        PROFILE_TABLES.map((table) => offlineService.getOfflineDataByTable(table)),
+      );
+      const hasPendingProfileAction = pendingProfileTableData.some(
+        (rows) => rows.length > 0,
       );
       if (hasPendingProfileAction) {
         console.warn('[DataBridge] Skipping profile hydration: a profile-related table has pending offline actions — will hydrate after sync');

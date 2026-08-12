@@ -8,6 +8,12 @@ export interface OfflineAction {
   userId: string;
   retryCount: number;
   maxRetries: number;
+  /** Error message from the most recent failed sync attempt, if any. */
+  lastError?: string;
+  /** Earliest time (ms epoch) this action is eligible to be retried again.
+   * Set on failure using exponential backoff so a persistently-failing
+   * action doesn't burn its retry budget in a single flurry of reconnects. */
+  nextRetryAt?: number;
 }
 
 export interface OfflineData {

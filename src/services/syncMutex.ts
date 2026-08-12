@@ -1,35 +1,42 @@
 /**
- * SyncMutex - Mutex for Dual Sync Engine Coordination
+ * SyncMutex - Mutex for Sync Coordination
  *
- * SYNC ARCHITECTURE:
- * FitAI has two sync engines that can run independently:
+ * CURRENT ARCHITECTURE (as of this file's last audit):
+ * - SyncEngine (src/services/SyncEngine.ts) acquires this mutex before running
+ *   profile-data sync (personalInfo, dietPreferences, bodyAnalysis, etc.).
+ * - src/services/offline/OfflineService.ts (this folder) also acquires this
+ *   mutex before syncOfflineActions(). In production this instance is only
+ *   consumed by DataBridge.ts and useTrackBIntegration.ts.
  *
- * 1. SyncEngine (src/services/SyncEngine.ts)
- *    - Handles profile data sync (personalInfo, dietPreferences, bodyAnalysis, etc.)
- *    - Uses offline queue with AsyncStorage persistence
- *    - Triggers on auth state changes and network reconnection
+ * KNOWN GAP:
+ * `RealTimeSyncService` (formerly src/services/syncService.ts) no longer
+ * exists in the codebase — do not assume this mutex coordinates it.
+ * More importantly, the app's actual highest-traffic offline write path,
+ * `src/services/offline.ts` (used by completionTracking.ts, crudOperations.ts,
+ * fitnessStore.ts, nutritionStore.ts, hydrationStore.ts, offlineStore.ts and
+ * useOffline.ts), is a completely separate module with its own local
+ * `syncInProgress` boolean and is NOT wired into this mutex. This mutex
+ * therefore does NOT protect that module from racing SyncEngine today.
+ * Wiring `src/services/offline.ts` into this mutex (or documenting an
+ * equivalent guarantee) is an open follow-up outside this file's scope.
  *
- * 2. RealTimeSyncService (src/services/syncService.ts)
- *    - Handles real-time sync for workout sessions, meal logs, weight logs, etc.
- *    - Provides bidirectional sync with conflict resolution
- *    - Runs on configurable intervals (default 30s)
- *
- * PROBLEM:
- * Without coordination, both engines can attempt to sync simultaneously,
- * causing race conditions when writing to shared AsyncStorage keys or
- * making overlapping Supabase requests.
- *
- * SOLUTION:
- * This mutex ensures only one sync operation runs at a time.
- * Both engines acquire the mutex before starting sync operations.
+ * SOLUTION (for the engines that DO use it):
+ * This mutex ensures only one sync operation runs at a time among callers
+ * that acquire it.
  */
 
 type ReleaseCallback = () => void;
+type LockTicket = { operationName: string; resolve: () => void };
 
 export class SyncMutex {
   private locked = false;
   private owner: string | null = null;
+  // Bare waitForRelease() callers (no ownership claim) — just want to know the
+  // lock state changed.
   private waitQueue: ReleaseCallback[] = [];
+  // withLock() callers waiting their turn for ownership. Invariant: whenever
+  // this is non-empty, `locked` is true (see release()'s handoff below).
+  private lockQueue: LockTicket[] = [];
 
   isLocked(): boolean {
     return this.locked;
@@ -40,7 +47,11 @@ export class SyncMutex {
   }
 
   tryAcquire(operationName: string): boolean {
-    if (this.locked) {
+    // Also refuse a "walk-up" acquire while withLock() waiters are queued —
+    // otherwise a fresh caller could win the lock in the gap between release()
+    // and a queued waiter's promise continuation running, starving whoever
+    // has been waiting longest.
+    if (this.locked || this.lockQueue.length > 0) {
       return false;
     }
     this.locked = true;
@@ -64,14 +75,24 @@ export class SyncMutex {
       return;
     }
 
-    this.locked = false;
-    this.owner = null;
+    if (this.lockQueue.length > 0) {
+      // Atomic handoff: grant ownership to the longest-waiting withLock()
+      // caller BEFORE resolving its promise. `locked` stays true the whole
+      // time — ownership transfers directly, it is never actually "open" for
+      // a walk-up caller to steal in between.
+      const next = this.lockQueue.shift()!;
+      this.owner = next.operationName;
+      next.resolve();
+    } else {
+      this.locked = false;
+      this.owner = null;
+    }
 
-    if (this.waitQueue.length > 0) {
+    // Best-effort notification for bare waitForRelease() callers, only once
+    // the lock is genuinely free (no withLock waiter took it via handoff).
+    if (!this.locked && this.waitQueue.length > 0) {
       const nextCallback = this.waitQueue.shift();
-      if (nextCallback) {
-        nextCallback();
-      }
+      nextCallback?.();
     }
   }
 
@@ -79,6 +100,7 @@ export class SyncMutex {
     this.locked = false;
     this.owner = null;
     this.waitQueue = [];
+    this.lockQueue = [];
   }
 
   async waitForRelease(): Promise<void> {
@@ -92,8 +114,13 @@ export class SyncMutex {
   }
 
   async withLock<T>(operationName: string, fn: () => Promise<T>): Promise<T> {
-    while (!this.tryAcquire(operationName)) {
-      await this.waitForRelease();
+    if (!this.tryAcquire(operationName)) {
+      // Join the FIFO ticket queue rather than re-racing tryAcquire() in a
+      // loop — release() hands ownership directly to the front ticket, so by
+      // the time this promise resolves the lock is already ours.
+      await new Promise<void>((resolve) => {
+        this.lockQueue.push({ operationName, resolve });
+      });
     }
 
     try {
