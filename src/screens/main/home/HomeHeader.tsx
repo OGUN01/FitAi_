@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, typography } from '../../../theme/aurora-tokens';
 import { rf, rw, rp, rs } from '../../../utils/responsive';
+import { hexToRgba } from '../../../utils/colors';
 
 interface HomeHeaderProps {
   userName: string;
@@ -223,7 +224,10 @@ const styles = StyleSheet.create({
     paddingVertical: rp(6),
     borderRadius: rw(20),
     borderWidth: 1,
-    borderColor: colors.primaryFaded,
+    // Border stays in the same red/flame family as the fill (errorTint) and
+    // icon/number (errorLight) — was previously colors.primaryFaded (orange),
+    // a visible two-hue mismatch on a single small element.
+    borderColor: hexToRgba(colors.errorLight, 0.3),
   },
   streakNumber: {
     fontSize: rf(15),

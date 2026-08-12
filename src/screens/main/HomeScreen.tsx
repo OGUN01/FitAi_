@@ -400,8 +400,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 )}
               </View>
 
-              {/* Bottom Spacing */}
-              <View style={{ height: insets.bottom + rh(100) }} />
+              {/* Bottom spacing — rely on scrollContent.paddingBottom only
+                  (was previously double-counted with an inline spacer View,
+                  same fix already applied on AnalyticsScreen). */}
             </Animated.ScrollView>
           </Animated.View>
         </SafeAreaView>
