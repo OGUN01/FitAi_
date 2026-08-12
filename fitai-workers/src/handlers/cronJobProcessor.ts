@@ -9,7 +9,80 @@
  */
 
 import { Env } from '../utils/types';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// A job orphaned in 'processing' (Worker hit the CPU/wall-clock limit mid
+// AI-call, threw before queueConsumer's own try/catch ran, or the isolate
+// was evicted) is never reclaimed by anything else — queueConsumer.ts only
+// writes 'processing' -> 'completed'/'failed'; nothing sweeps a row that
+// never got that follow-up write. Left alone, createJob()'s dedup check
+// (`status IN ('pending','processing')`) keeps returning that same dead
+// job's id forever, permanently blocking the user from generating a new
+// plan. 5 minutes matches queueConsumer's documented "up to 5 minutes
+// execution time" budget.
+const STALE_PROCESSING_MS = 5 * 60 * 1000;
+
+/**
+ * Reclaim jobs orphaned in status='processing'.
+ *
+ * A job whose retry_count is already >= max_retries is terminated as
+ * 'failed' (so createJob()'s dedup no longer matches it and the user is
+ * unblocked). Otherwise it's reset to 'pending' with retry_count bumped, so
+ * a job that keeps timing out still terminates instead of looping forever.
+ */
+async function reclaimStaleProcessingJobs(supabase: SupabaseClient): Promise<void> {
+	const { data: processingJobs, error: fetchError } = await supabase
+		.from('meal_generation_jobs')
+		.select('id, retry_count, max_retries, started_at, created_at')
+		.eq('status', 'processing')
+		.limit(50);
+
+	if (fetchError) {
+		console.error('[CronJobProcessor] Error fetching processing jobs for staleness sweep:', fetchError);
+		return;
+	}
+
+	const staleJobs = (processingJobs ?? []).filter((job) => {
+		// started_at is set by queueConsumer once it actually begins work; use
+		// created_at as a fallback for the narrow window between claiming a
+		// job (status='processing') and started_at being written.
+		const reference = job.started_at ?? job.created_at;
+		if (!reference) return false;
+		return Date.now() - new Date(reference).getTime() > STALE_PROCESSING_MS;
+	});
+
+	if (staleJobs.length === 0) return;
+
+	for (const job of staleJobs) {
+		const retryCount = job.retry_count ?? 0;
+		const maxRetries = job.max_retries ?? 1;
+
+		if (retryCount >= maxRetries) {
+			console.error(`[CronJobProcessor] Job ${job.id} orphaned in 'processing' and exhausted retries (${retryCount}/${maxRetries}) — marking failed`);
+			const { error } = await supabase
+				.from('meal_generation_jobs')
+				.update({
+					status: 'failed',
+					error_code: 'JOB_TIMEOUT',
+					error_message: `Job orphaned in 'processing' for over ${STALE_PROCESSING_MS / 60000} minutes and exceeded max retries`,
+					completed_at: new Date().toISOString(),
+				})
+				.eq('id', job.id)
+				.eq('status', 'processing'); // guard against a concurrent invocation finishing it first
+
+			if (error) console.error(`[CronJobProcessor] Failed to mark stale job ${job.id} as failed:`, error);
+		} else {
+			console.log(`[CronJobProcessor] Job ${job.id} orphaned in 'processing' — reclaiming to pending (retry ${retryCount + 1}/${maxRetries})`);
+			const { error } = await supabase
+				.from('meal_generation_jobs')
+				.update({ status: 'pending', retry_count: retryCount + 1 })
+				.eq('id', job.id)
+				.eq('status', 'processing');
+
+			if (error) console.error(`[CronJobProcessor] Failed to reclaim stale job ${job.id}:`, error);
+		}
+	}
+}
 
 /**
  * Process pending diet generation jobs (cron fallback)
@@ -26,6 +99,11 @@ export async function processPendingJobs(env: Env): Promise<void> {
 	try {
 		// 1. Create Supabase client
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+
+		// 1b. Reclaim any job orphaned in 'processing' by a prior invocation
+		// before looking for pending work — otherwise those users stay
+		// permanently blocked (see reclaimStaleProcessingJobs doc comment).
+		await reclaimStaleProcessingJobs(supabase);
 
 		// 2. Find oldest pending job (include retry_count so attempts reflects reality)
 		const { data: pendingJobs, error: fetchError } = await supabase
@@ -142,8 +220,9 @@ export async function processPendingJobs(env: Env): Promise<void> {
 /**
  * Manually trigger job processing (admin endpoint)
  *
- * This can be called via API endpoint for manual job processing
- * Useful for testing or forcing job processing
+ * Wired to POST /api/admin/jobs/process-now (see admin.ts handleProcessJobsNow)
+ * so an operator can force a pending backlog through outside the 1-minute
+ * cron tick. Useful for testing or forcing job processing.
  *
  * @param env - Worker environment bindings
  * @param limit - Maximum number of jobs to process (default: 5)
@@ -157,6 +236,10 @@ export async function processJobsManually(env: Env, limit: number = 5): Promise<
 	try {
 		// Create Supabase client
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+
+		// Reclaim any job orphaned in 'processing' before looking for pending
+		// work — see reclaimStaleProcessingJobs doc comment.
+		await reclaimStaleProcessingJobs(supabase);
 
 		// Find pending jobs (include retry_count so attempts reflects reality)
 		const { data: pendingJobs, error: fetchError } = await supabase

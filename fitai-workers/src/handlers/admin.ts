@@ -19,8 +19,46 @@ import {
 	OverrideSubscriptionRequestSchema,
 	CreateAdminRequestSchema,
 } from '../utils/validation';
+import { processJobsManually } from './cronJobProcessor';
 
 type AdminCtx = Context<{ Bindings: Env; Variables: AuthContext }>;
+
+const VALID_PLAN_TIERS = new Set(['free', 'basic', 'pro']);
+
+/**
+ * Best-effort write to admin_audit_log so sensitive admin mutations (plan
+ * pricing/entitlements, subscription overrides, admin grants/removals) are
+ * attributable and reconstructable after the fact. A failed audit write is
+ * logged but never blocks the underlying admin action — the action already
+ * succeeded by the time this is called.
+ */
+async function writeAuditLog(
+	c: AdminCtx,
+	entry: {
+		action: string;
+		targetType: string;
+		targetId?: string | null;
+		before?: unknown;
+		after?: unknown;
+	},
+): Promise<void> {
+	const supabase = getSupabaseClient(c.env);
+	const actor = c.get('user');
+
+	const { error } = await supabase.from('admin_audit_log').insert({
+		actor_id: actor.id,
+		actor_email: actor.email ?? null,
+		action: entry.action,
+		target_type: entry.targetType,
+		target_id: entry.targetId ?? null,
+		before_data: entry.before ?? null,
+		after_data: entry.after ?? null,
+	});
+
+	if (error) {
+		console.error(`[Admin] Failed to write audit log entry for action '${entry.action}':`, error);
+	}
+}
 
 const EDITABLE_PLAN_FIELDS = new Set([
 	'name',
@@ -112,7 +150,7 @@ function parseConfigBoolean(value: unknown, fallback = false): boolean {
 export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 	const supabase = getSupabaseClient(c.env);
 
-	const [usersResult, subsResult, aiCallsResult, maintenanceResult] = await Promise.all([
+	const [usersResult, subsResult, aiCallsResult, maintenanceResult, pendingJobsResult, oldestPendingJobResult] = await Promise.all([
 		supabase.from('profiles').select('id', { count: 'exact', head: true }),
 		supabase.from('subscriptions').select('tier').eq('status', 'active'),
 		supabase
@@ -120,6 +158,10 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 			.select('id', { count: 'exact', head: true })
 			.gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
 		supabase.from('app_config').select('value').eq('key', 'maintenance_mode').maybeSingle(),
+		// Backlog visibility: a growing free-tier cron queue (capped at ~1
+		// job/min) is otherwise invisible until users complain.
+		supabase.from('meal_generation_jobs').select('id', { count: 'exact', head: true }).in('status', ['pending', 'processing']),
+		supabase.from('meal_generation_jobs').select('created_at').eq('status', 'pending').order('created_at', { ascending: true }).limit(1),
 	]);
 
 	if (usersResult.error) {
@@ -138,11 +180,24 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 		console.error('[Admin Dashboard] Failed to fetch maintenance mode:', maintenanceResult.error);
 		handleSupabaseError(maintenanceResult.error, 'Failed to fetch maintenance mode');
 	}
+	if (pendingJobsResult.error) {
+		console.error('[Admin Dashboard] Failed to fetch pending job backlog:', pendingJobsResult.error);
+		handleSupabaseError(pendingJobsResult.error, 'Failed to fetch pending job backlog');
+	}
+	if (oldestPendingJobResult.error) {
+		console.error('[Admin Dashboard] Failed to fetch oldest pending job:', oldestPendingJobResult.error);
+		handleSupabaseError(oldestPendingJobResult.error, 'Failed to fetch oldest pending job');
+	}
 
 	const { count: totalUsers } = usersResult;
 	const { data: subsByTier } = subsResult;
 	const { data: aiCallsToday } = aiCallsResult;
 	const { data: maintenanceRow } = maintenanceResult;
+	const { count: pendingJobCount } = pendingJobsResult;
+	const oldestPendingJobCreatedAt = oldestPendingJobResult.data?.[0]?.created_at ?? null;
+	const oldestPendingJobAgeSeconds = oldestPendingJobCreatedAt
+		? Math.max(0, Math.floor((Date.now() - new Date(oldestPendingJobCreatedAt).getTime()) / 1000))
+		: 0;
 
 	// Aggregate active subs by tier
 	const tierCounts: Record<string, number> = { free: 0, basic: 0, pro: 0 };
@@ -190,6 +245,10 @@ export async function handleAdminDashboard(c: AdminCtx): Promise<Response> {
 			aiCallsToday: (aiCallsToday as unknown as number) ?? 0,
 			revenueInrPaisa: revenuePaisa,
 			maintenanceMode: parseConfigBoolean(maintenanceRow?.value, false),
+			jobsBacklog: {
+				pendingOrProcessing: pendingJobCount ?? 0,
+				oldestPendingAgeSeconds: oldestPendingJobAgeSeconds,
+			},
 		},
 	});
 }
@@ -303,6 +362,16 @@ export async function handleGetPlans(c: AdminCtx): Promise<Response> {
  */
 export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 	const tier = c.req.param('tier');
+	const user = c.get('user');
+
+	// Validate the route param up front — without this, an invalid tier falls
+	// through to `.eq('tier', tier).single()` below, which Postgres resolves
+	// as zero rows and handleSupabaseError turns into a generic 500 instead
+	// of a clear 404.
+	if (!VALID_PLAN_TIERS.has(tier)) {
+		throw new NotFoundError(`Subscription plan tier '${tier}'`);
+	}
+
 	const body = await c.req.json<Record<string, unknown>>();
 
 	// Safety: never allow changing immutable fields
@@ -316,7 +385,7 @@ export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 		}
 	}
 
-	const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+	const updates: Record<string, unknown> = { updated_at: new Date().toISOString(), updated_by: user.id };
 	for (const [key, value] of Object.entries(body)) {
 		if (BOOLEAN_PLAN_FIELDS.has(key)) {
 			updates[key] = parseBooleanLike(value, key);
@@ -335,6 +404,12 @@ export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 	}
 
 	const supabase = getSupabaseClient(c.env);
+
+	// Capture pre-update state for the audit log — this is the single most
+	// money-sensitive read/write pair in the file (unlimited_ai, prices for
+	// an entire tier), so the "before" snapshot matters, not just "after".
+	const { data: beforeRow } = await supabase.from('subscription_plans').select('*').eq('tier', tier).maybeSingle();
+
 	const { data, error } = await supabase
 		.from('subscription_plans')
 		.update(updates)
@@ -343,6 +418,15 @@ export async function handleUpdatePlan(c: AdminCtx): Promise<Response> {
 		.single();
 
 	if (error) handleSupabaseError(error, 'Failed to update subscription plan');
+
+	await writeAuditLog(c, {
+		action: 'update_plan',
+		targetType: 'subscription_plans',
+		targetId: tier,
+		before: beforeRow ?? null,
+		after: data,
+	});
+
 	return c.json({ success: true, data });
 }
 
@@ -462,6 +546,14 @@ export async function handleOverrideSubscription(c: AdminCtx): Promise<Response>
 	const rawBody = await c.req.json();
 	const body = validateRequest(OverrideSubscriptionRequestSchema, rawBody);
 
+	// OverrideSubscriptionRequestSchema leaves `note` optional (it's shared
+	// shape, not endpoint-specific validation) — but granting a paid tier
+	// while bypassing Razorpay is the single most money-sensitive admin
+	// action in this file, so it must always carry a recorded justification.
+	if (!body.note || !body.note.trim()) {
+		throw new ValidationError("Field 'note' is required and must explain the reason for this subscription override");
+	}
+
 	const supabase = getSupabaseClient(c.env);
 
 	// Get the plan id for the tier
@@ -489,6 +581,14 @@ export async function handleOverrideSubscription(c: AdminCtx): Promise<Response>
 		.single();
 
 	if (error) handleSupabaseError(error, 'Failed to override subscription');
+
+	await writeAuditLog(c, {
+		action: 'override_subscription',
+		targetType: 'subscriptions',
+		targetId: userId,
+		after: data,
+	});
+
 	return c.json({ success: true, data }, 201);
 }
 
@@ -662,12 +762,18 @@ export async function handleApproveContribution(c: AdminCtx): Promise<Response> 
  */
 export async function handleRejectContribution(c: AdminCtx): Promise<Response> {
 	const id = c.req.param('id');
-	const body = await c.req.json<{ reason?: string }>().catch(() => ({}));
+	const user = c.get('user');
+	const body = await c.req.json<{ reason?: string }>().catch((): { reason?: string } => ({}));
 	const supabase = getSupabaseClient(c.env);
 
 	const { error } = await supabase
 		.from('user_food_contributions')
-		.update({ is_approved: false, rejection_reason: body.reason ?? '' })
+		.update({
+			is_approved: false,
+			rejection_reason: body.reason ?? '',
+			rejected_by: user.id,
+			rejected_at: new Date().toISOString(),
+		})
 		.eq('id', id);
 
 	if (error) handleSupabaseError(error, 'Failed to reject contribution');
@@ -726,19 +832,49 @@ export async function handleCreateAdmin(c: AdminCtx): Promise<Response> {
 
 	const supabase = getSupabaseClient(c.env);
 
-	// Look up the user by email in auth.users via admin API
-	const { data: found, error: lookupError } = await (supabase.auth.admin as any).listUsers();
-	if (lookupError) handleSupabaseError(lookupError, 'Failed to look up user');
+	// Resolve the target user id. Prefer an exact-match lookup against
+	// profiles.email (UNIQUE + indexed) — this is the fix flagged by the
+	// KNOWN LIMITATION note on handleListUsers above, applied here because
+	// this is the more security-sensitive of the two endpoints: unlike
+	// listUsers()'s default first page (~50 users), a match here is exact
+	// regardless of how many users exist. Not every auth user has a profiles
+	// row yet (created during onboarding, not at signup), so fall back to
+	// paging through listUsers() — instead of only checking page 1 — when
+	// the profiles lookup misses.
+	let targetUserId: string | null = null;
 
-	const targetUser = (found?.users ?? []).find((u: any) => u.email === body.email);
-	if (!targetUser) {
+	const { data: profileMatch, error: profileError } = await supabase.from('profiles').select('id').eq('email', body.email).maybeSingle();
+
+	if (profileError) {
+		console.error('[Admin] Failed to look up user by profile email:', profileError);
+	}
+
+	if (profileMatch) {
+		targetUserId = profileMatch.id;
+	} else {
+		const perPage = 1000;
+		for (let page = 1; page <= 20 && !targetUserId; page++) {
+			const { data: found, error: lookupError } = await (supabase.auth.admin as any).listUsers({ page, perPage });
+			if (lookupError) handleSupabaseError(lookupError, 'Failed to look up user');
+
+			const pageUsers: any[] = found?.users ?? [];
+			const match = pageUsers.find((u: any) => u.email === body.email);
+			if (match) {
+				targetUserId = match.id;
+				break;
+			}
+			if (pageUsers.length < perPage) break; // reached the last page
+		}
+	}
+
+	if (!targetUserId) {
 		throw new NotFoundError('User with that email');
 	}
 
 	const { data, error } = await supabase
 		.from('admin_users')
 		.insert({
-			user_id: targetUser.id,
+			user_id: targetUserId,
 			email: body.email,
 			display_name: body.display_name ?? null,
 			created_by: requestingUser.id,
@@ -753,6 +889,13 @@ export async function handleCreateAdmin(c: AdminCtx): Promise<Response> {
 		console.error('[Admin] Failed to create admin:', error);
 		handleSupabaseError(error, 'Failed to create admin');
 	}
+
+	await writeAuditLog(c, {
+		action: 'create_admin',
+		targetType: 'admin_users',
+		targetId: targetUserId,
+		after: data,
+	});
 
 	return c.json({ success: true, data }, 201);
 }
@@ -770,8 +913,92 @@ export async function handleRemoveAdmin(c: AdminCtx): Promise<Response> {
 	}
 
 	const supabase = getSupabaseClient(c.env);
+
+	// admin_users has no soft-delete/history columns, so the row itself is
+	// permanently gone after the DELETE below — capture it first so who held
+	// admin access (and who revoked it) stays reconstructable via the audit
+	// log even though the row is hard-deleted.
+	const { data: beforeRow } = await supabase.from('admin_users').select('*').eq('user_id', targetUserId).maybeSingle();
+
 	const { error } = await supabase.from('admin_users').delete().eq('user_id', targetUserId);
 
 	if (error) handleSupabaseError(error, 'Failed to remove admin');
+
+	await writeAuditLog(c, {
+		action: 'remove_admin',
+		targetType: 'admin_users',
+		targetId: targetUserId,
+		before: beforeRow ?? null,
+	});
+
 	return c.json({ success: true });
+}
+
+// ============================================================================
+// DIET GENERATION JOBS (meal_generation_jobs)
+// ============================================================================
+
+const VALID_JOB_STATUSES = new Set(['pending', 'processing', 'completed', 'failed', 'cancelled']);
+
+/**
+ * GET /api/admin/jobs?status=failed&page=1
+ *
+ * Failed jobs were previously only visible via a direct DB query — the only
+ * trace of a permanently-failed diet generation was a console.error line,
+ * which is ephemeral on Cloudflare Workers unless a log drain is separately
+ * configured. This surfaces the persisted meal_generation_jobs rows
+ * (including error_code/error_message) so failures are visible in the admin
+ * UI instead.
+ */
+export async function handleListJobs(c: AdminCtx): Promise<Response> {
+	const status = c.req.query('status');
+	const page = Math.max(1, Number(c.req.query('page') ?? 1));
+	const limit = Math.min(100, Math.max(1, Number(c.req.query('limit') ?? 20)));
+
+	if (status && !VALID_JOB_STATUSES.has(status)) {
+		throw new ValidationError(`Invalid status '${status}'`);
+	}
+
+	const supabase = getSupabaseClient(c.env);
+
+	let query = supabase
+		.from('meal_generation_jobs')
+		.select('id, user_id, status, error_code, error_message, retry_count, max_retries, created_at, started_at, completed_at, generation_time_ms', {
+			count: 'exact',
+		})
+		.order('created_at', { ascending: false })
+		.range((page - 1) * limit, page * limit - 1);
+
+	if (status) query = query.eq('status', status);
+
+	const { data, error, count } = await query;
+	if (error) handleSupabaseError(error, 'Failed to fetch diet generation jobs');
+
+	return c.json({ success: true, data: data ?? [], total: count ?? 0, page });
+}
+
+/**
+ * POST /api/admin/jobs/process-now
+ * Body: { limit?: number }
+ *
+ * Forces the pending backlog through immediately instead of waiting on the
+ * next 1-minute cron tick — useful when the free-plan cron fallback (capped
+ * at ~1 job/min) has built up a backlog. Wraps the already-implemented
+ * processJobsManually() from cronJobProcessor.ts, which previously had no
+ * route pointing at it.
+ */
+export async function handleProcessJobsNow(c: AdminCtx): Promise<Response> {
+	const rawBody = await c.req.json().catch(() => ({}));
+	const limitInput = (rawBody as { limit?: unknown })?.limit;
+	const limit = typeof limitInput === 'number' && Number.isFinite(limitInput) ? Math.min(50, Math.max(1, Math.floor(limitInput))) : 5;
+
+	const result = await processJobsManually(c.env, limit);
+
+	await writeAuditLog(c, {
+		action: 'process_jobs_now',
+		targetType: 'meal_generation_jobs',
+		after: result,
+	});
+
+	return c.json({ success: true, data: result });
 }

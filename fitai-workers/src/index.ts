@@ -57,6 +57,8 @@ import {
 	handleListAdmins,
 	handleCreateAdmin,
 	handleRemoveAdmin,
+	handleListJobs,
+	handleProcessJobsNow,
 } from './handlers/admin';
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
@@ -648,7 +650,13 @@ app.delete('/api/account', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHE
 // ADMIN ROUTES — requireRole('admin') guard
 // ============================================================================
 
-const adminMW = [authMiddleware, requireRole('admin')] as const;
+// Defense-in-depth against a leaked/compromised admin token: every other
+// authenticated route in this file stacks rateLimitMiddleware on top of its
+// auth guard (see /api/analytics/usage above, which stacks it on this exact
+// same requireRole('admin') gate) — admin routes were the one group missing
+// it, despite including money-mutating endpoints like handleUpdatePlan and
+// handleOverrideSubscription.
+const adminMW = [authMiddleware, requireRole('admin'), rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED)] as const;
 
 app.get('/api/admin/dashboard',                   ...adminMW, handleAdminDashboard);
 app.get('/api/admin/session',                     ...adminMW, handleAdminSession);
@@ -669,6 +677,8 @@ app.get('/api/admin/webhooks',                    ...adminMW, handleWebhookLogs)
 app.get('/api/admin/admins',                      ...adminMW, handleListAdmins);
 app.post('/api/admin/admins',                     ...adminMW, handleCreateAdmin);
 app.delete('/api/admin/admins/:userId',           ...adminMW, handleRemoveAdmin);
+app.get('/api/admin/jobs',                        ...adminMW, handleListJobs);
+app.post('/api/admin/jobs/process-now',           ...adminMW, handleProcessJobsNow);
 
 // ============================================================================
 // EXPORT WORKER
