@@ -1,13 +1,6 @@
 // 🧮 COMPREHENSIVE HEALTH CALCULATIONS ENGINE
 // 50+ Mathematical Formulas for Fitness and Health Metrics
 
-import {
-  PersonalInfoData,
-  DietPreferencesData,
-  BodyAnalysisData,
-  WorkoutPreferencesData,
-  AdvancedReviewData,
-} from "../types/onboarding";
 import { CALORIE_PER_KG } from "../services/validation/constants";
 import { calculateBMI as calculateBMICore } from "./healthCalculations/core/bmiCalculation";
 import { calculateBMR as calculateBMRCore } from "./healthCalculations/core/bmrCalculation";
@@ -381,15 +374,18 @@ export class MetabolicCalculations {
   static applyAgeModifier(tdee: number, age: number, gender: string): number {
     let modifier = 1.0;
 
+    // Note: Mifflin-St Jeor already accounts for age via -5×age in BMR.
+    // Only apply additional modifier for ages ≥40 where metabolic slowdown
+    // exceeds what the linear age term captures (parity with
+    // healthCalculations/metabolic.ts — the SSOT this delegate chain follows).
     if (age >= 60) {
       modifier = 0.85; // -15% metabolism
     } else if (age >= 50) {
       modifier = 0.9; // -10% metabolism
     } else if (age >= 40) {
       modifier = 0.95; // -5% metabolism
-    } else if (age >= 30) {
-      modifier = 0.98; // -2% metabolism
     }
+    // No modifier for age < 40 — the Mifflin formula covers it.
 
     // Additional adjustment for women in menopause age range
     if (gender === "female" && age >= 45 && age <= 55) {
@@ -497,65 +493,12 @@ export class MetabolicCalculations {
 // ============================================================================
 // NUTRITIONAL CALCULATIONS
 // ============================================================================
-
-export class NutritionalCalculations {
-  /**
-   * Calculate daily calorie needs for weight goal
-   * Formula: TDEE ± calorie deficit/surplus
-   */
-  static calculateDailyCaloriesForGoal(
-    tdee: number,
-    weeklyWeightChangeKg: number,
-    isWeightLoss: boolean = true,
-  ): number {
-    const weeklyCalorieChange = weeklyWeightChangeKg * CALORIE_PER_KG;
-    const dailyCalorieChange = weeklyCalorieChange / 7;
-
-    return isWeightLoss ? tdee - dailyCalorieChange : tdee + dailyCalorieChange;
-  }
-
-  /**
-   * Calculate macronutrient distribution based on goals and diet type
-   */
-  static calculateMacronutrients(
-    dailyCalories: number,
-    primaryGoals: string[],
-    dietReadiness: any,
-  ): { protein: number; carbs: number; fat: number } {
-    let proteinPercent = 0.25; // Default 25%
-    let carbPercent = 0.45; // Default 45%
-    let fatPercent = 0.3; // Default 30%
-
-    // Adjust based on diet readiness
-    if (dietReadiness.keto_ready) {
-      proteinPercent = 0.25;
-      carbPercent = 0.05;
-      fatPercent = 0.7;
-    } else if (dietReadiness.high_protein_ready) {
-      proteinPercent = 0.35;
-      carbPercent = 0.35;
-      fatPercent = 0.3;
-    } else if (dietReadiness.low_carb_ready) {
-      proteinPercent = 0.3;
-      carbPercent = 0.25;
-      fatPercent = 0.45;
-    }
-
-    // Adjust based on goals
-    if (primaryGoals.includes("muscle_gain")) {
-      proteinPercent = Math.max(proteinPercent, 0.3);
-    }
-
-    return {
-      protein: Math.round((dailyCalories * proteinPercent) / 4), // 4 cal/g
-      carbs: Math.round((dailyCalories * carbPercent) / 4), // 4 cal/g
-      fat: Math.round((dailyCalories * fatPercent) / 9), // 9 cal/g
-    };
-  }
-
-  // Removed: calculateDailyWaterNeeds - replaced by calculateWaterIntake (line 206, matches spec)
-  // Removed: calculateDailyFiberNeeds - replaced by calculateFiber (line 214, cleaner name)
-}
+// NutritionalCalculations previously lived here as a hand-copied duplicate of
+// healthCalculations/nutritional.ts and had silently drifted (underscore-only
+// "muscle_gain" goal check that never matched the real "muscle-gain" values
+// onboarding stores). It had zero production callers via this bare-specifier
+// path — every live caller already imports the folder version directly — so
+// it is re-exported below instead of duplicated. See the bottom of this file.
 
 // ============================================================================
 // BODY COMPOSITION CALCULATIONS
@@ -716,590 +659,22 @@ export class BodyCompositionCalculations {
 }
 
 // ============================================================================
-// CARDIOVASCULAR FITNESS CALCULATIONS
+// CARDIOVASCULAR FITNESS CALCULATIONS, FITNESS RECOMMENDATIONS, HEALTH
+// SCORING, SLEEP ANALYSIS, MASTER CALCULATION ENGINE
 // ============================================================================
-
-export class CardiovascularCalculations {
-  /**
-   * Calculate maximum heart rate
-   * Formula: Tanaka (2001) — 208 - 0.7 × age
-   */
-  static calculateMaxHeartRate(age: number): number {
-    return Math.round(208 - 0.7 * age);
-  }
-
-  /**
-   * Calculate heart rate training zones
-   */
-  static calculateHeartRateZones(maxHeartRate: number): {
-    fatBurn: { min: number; max: number };
-    cardio: { min: number; max: number };
-    peak: { min: number; max: number };
-  } {
-    return {
-      fatBurn: {
-        min: Math.round(maxHeartRate * 0.6),
-        max: Math.round(maxHeartRate * 0.7),
-      },
-      cardio: {
-        min: Math.round(maxHeartRate * 0.7),
-        max: Math.round(maxHeartRate * 0.85),
-      },
-      peak: {
-        min: Math.round(maxHeartRate * 0.85),
-        max: Math.round(maxHeartRate * 0.95),
-      },
-    };
-  }
-
-  /**
-   * Estimate VO2 Max based on fitness assessment
-   * Simplified estimation based on running ability and age
-   * Peak VO2 Max typically occurs around age 20-25, then declines
-   */
-  static estimateVO2Max(
-    canRunMinutes: number,
-    age: number,
-    gender: string,
-  ): number {
-    // Base VO2 Max by gender (peak values at age 20)
-    // Male peak: ~50 ml/kg/min, Female peak: ~40 ml/kg/min
-    const peakVO2 = gender === "male" ? 50 : 40;
-
-    // Age-related decline (0.5 ml/kg/min per year for males, 0.4 for females after age 20)
-    // For ages under 20, assume they're at or near peak
-    const ageAdjustment =
-      age >= 20 ? (age - 20) * (gender === "male" ? 0.5 : 0.4) : 0; // No penalty for ages under 20
-
-    const baseVO2 = peakVO2 - ageAdjustment;
-
-    // Adjust based on running ability (clamped to [0,60] min to prevent absurd inputs;
-    // ?? 0: optional field — skipping the assessment yields baseVO2 instead of NaN)
-    const runningBonus = Math.max(0, Math.min(canRunMinutes ?? 0, 60)) * 0.3;
-
-    // Cap between realistic bounds (20-80 ml/kg/min)
-    return Math.max(20, Math.min(80, baseVO2 + runningBonus));
-  }
-}
-
-// ============================================================================
-// FITNESS RECOMMENDATIONS
-// ============================================================================
-
-export class FitnessRecommendations {
-  /**
-   * Calculate recommended workout frequency based on goals and experience
-   */
-  static calculateWorkoutFrequency(
-    primaryGoals: string[],
-    experienceYears: number,
-    currentFrequency: number,
-  ): number {
-    let recommendedFrequency = 3; // Default 3x per week
-
-    // Adjust based on goals
-    if (primaryGoals.includes("weight-loss") || primaryGoals.includes("weight_loss"))
-      recommendedFrequency = Math.max(recommendedFrequency, 4);
-    if (primaryGoals.includes("muscle-gain") || primaryGoals.includes("muscle_gain"))
-      recommendedFrequency = Math.max(recommendedFrequency, 4);
-    if (primaryGoals.includes("endurance"))
-      recommendedFrequency = Math.max(recommendedFrequency, 5);
-
-    // Adjust based on experience
-    if (experienceYears === 0)
-      recommendedFrequency = Math.min(recommendedFrequency, 3);
-    if (experienceYears > 2)
-      recommendedFrequency = Math.min(recommendedFrequency + 1, 6);
-
-    // Don't recommend more than 50% increase from current
-    if (currentFrequency > 0) {
-      const maxIncrease = Math.ceil(currentFrequency * 1.5);
-      recommendedFrequency = Math.min(recommendedFrequency, maxIncrease);
-    }
-
-    return recommendedFrequency;
-  }
-
-  /**
-   * Calculate recommended cardio minutes per week
-   */
-  static calculateCardioMinutes(
-    primaryGoals: string[],
-    intensity: string,
-  ): number {
-    let baseMinutes = 150; // WHO recommendation
-
-    if (primaryGoals.includes("weight-loss") || primaryGoals.includes("weight_loss")) baseMinutes = 250;
-    if (primaryGoals.includes("endurance")) baseMinutes = 300;
-    if (intensity === "advanced") baseMinutes = Math.min(baseMinutes + 50, 400);
-
-    return baseMinutes;
-  }
-
-  /**
-   * Calculate recommended strength training sessions
-   */
-  static calculateStrengthSessions(
-    primaryGoals: string[],
-    experienceYears: number,
-  ): number {
-    let sessions = 2; // Minimum recommendation
-
-    if (primaryGoals.includes("muscle-gain") || primaryGoals.includes("muscle_gain")) sessions = 4;
-    if (primaryGoals.includes("strength")) sessions = 3;
-    if (experienceYears > 2) sessions = Math.min(sessions + 1, 5);
-
-    return sessions;
-  }
-}
-
-// ============================================================================
-// HEALTH SCORING SYSTEM
-// ============================================================================
-
-export class HealthScoring {
-  /**
-   * Calculate overall health score (0-100)
-   */
-  static calculateOverallHealthScore(
-    personalInfo: PersonalInfoData,
-    dietPreferences: DietPreferencesData,
-    bodyAnalysis: BodyAnalysisData,
-    workoutPreferences: WorkoutPreferencesData,
-  ): number {
-    let score = 100;
-
-    // BMI penalty/bonus
-    if (bodyAnalysis.bmi) {
-      if (bodyAnalysis.bmi < 18.5 || bodyAnalysis.bmi > 25) score -= 10;
-      if (bodyAnalysis.bmi > 30) score -= 20;
-      if (bodyAnalysis.bmi >= 18.5 && bodyAnalysis.bmi <= 24.9) score += 5;
-    }
-
-    // Activity level bonus/penalty
-    const activityBonus = {
-      sedentary: -15,
-      light: -5,
-      moderate: 5,
-      active: 10,
-      extreme: 15,
-    };
-    score +=
-      activityBonus[
-        workoutPreferences.activity_level as keyof typeof activityBonus
-      ] || 0;
-
-    // Diet habits
-    if (dietPreferences.drinks_enough_water) score += 5;
-    if (dietPreferences.eats_5_servings_fruits_veggies) score += 10;
-    if (dietPreferences.limits_refined_sugar) score += 5;
-    if (dietPreferences.eats_processed_foods) score -= 10;
-    if (dietPreferences.smokes_tobacco) score -= 25;
-    if (dietPreferences.drinks_alcohol) score -= 5;
-
-    // Sleep quality
-    if (personalInfo.wake_time && personalInfo.sleep_time) {
-      const sleepHours = this.calculateSleepDuration(
-        personalInfo.wake_time,
-        personalInfo.sleep_time,
-      );
-      if (sleepHours >= 7 && sleepHours <= 9) score += 10;
-      if (sleepHours < 6) score -= 15;
-    }
-
-    // Workout experience bonus
-    if (workoutPreferences.workout_experience_years > 0) score += 5;
-    if (workoutPreferences.workout_frequency_per_week >= 3) score += 10;
-
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }
-
-  // Removed: OLD calculateDietReadinessScore - replaced by NEW version (line 177)
-  // NEW version matches VALIDATION_SYSTEM_COMPLETE.md spec exactly with correct weights
-
-  /**
-   * Calculate fitness readiness score (0-100)
-   */
-  static calculateFitnessReadinessScore(
-    workoutPreferences: WorkoutPreferencesData,
-    bodyAnalysis: BodyAnalysisData,
-  ): number {
-    let score = 50; // Base score
-
-    // Experience bonus (?? 0: optional self-assessment — skipping reduces the score instead of NaN)
-    score += Math.min((workoutPreferences.workout_experience_years ?? 0) * 3, 15);
-
-    // Current fitness level
-    score += Math.min((workoutPreferences.can_do_pushups ?? 0) * 0.5, 15);
-    score += Math.min((workoutPreferences.can_run_minutes ?? 0) * 0.3, 15);
-
-    // Activity level
-    const activityBonus = {
-      sedentary: -10,
-      light: 0,
-      moderate: 10,
-      active: 15,
-      extreme: 20,
-    };
-    score +=
-      activityBonus[
-        workoutPreferences.activity_level as keyof typeof activityBonus
-      ] || 0;
-
-    // Medical conditions penalty
-    if (
-      bodyAnalysis.medical_conditions &&
-      bodyAnalysis.medical_conditions.length > 0
-    ) {
-      score -= bodyAnalysis.medical_conditions.length * 5;
-    }
-
-    // Physical limitations penalty
-    if (
-      bodyAnalysis.physical_limitations &&
-      bodyAnalysis.physical_limitations.length > 0
-    ) {
-      score -= bodyAnalysis.physical_limitations.length * 3;
-    }
-
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }
-
-  /**
-   * Calculate goal realistic score (0-100)
-   */
-  static calculateGoalRealisticScore(
-    bodyAnalysis: BodyAnalysisData,
-    workoutPreferences: WorkoutPreferencesData,
-  ): number {
-    let score = 80; // Start optimistic
-
-    // Check weight loss rate
-    if (
-      bodyAnalysis.current_weight_kg &&
-      bodyAnalysis.target_weight_kg &&
-      bodyAnalysis.target_timeline_weeks
-    ) {
-      const weeklyRate =
-        Math.abs(
-          bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
-        ) / bodyAnalysis.target_timeline_weeks;
-
-      if (weeklyRate > 1.5)
-        score -= 30; // Very aggressive
-      else if (weeklyRate > 1)
-        score -= 15; // Slightly aggressive
-      else if (weeklyRate >= 0.5)
-        score += 10; // Perfect range
-      else if (weeklyRate < 0.25) score -= 10; // Too slow
-    }
-
-    // Experience vs goals alignment
-    const hasAmbitiousGoals =
-      workoutPreferences.primary_goals.includes("muscle_gain") ||
-      workoutPreferences.primary_goals.includes("strength");
-    const isExperienced = workoutPreferences.workout_experience_years > 1;
-
-    if (hasAmbitiousGoals && !isExperienced) score -= 15;
-    if (!hasAmbitiousGoals && isExperienced) score += 5;
-
-    // Medical conditions impact
-    if (
-      bodyAnalysis.medical_conditions &&
-      bodyAnalysis.medical_conditions.length > 2
-    ) {
-      score -= 20;
-    }
-
-    return Math.max(20, Math.min(100, Math.round(score)));
-  }
-
-  /**
-   * Calculate sleep duration from wake and sleep times
-   */
-  private static calculateSleepDuration(
-    wakeTime: string,
-    sleepTime: string,
-  ): number {
-    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
-    const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
-    const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
-
-    const wakeMinutes = wakeHour * 60 + wakeMin;
-    const sleepMinutes = sleepHour * 60 + sleepMin;
-
-    let duration = wakeMinutes - sleepMinutes;
-    if (duration <= 0) duration += 24 * 60;
-
-    return duration / 60;
-  }
-}
-
-// ============================================================================
-// SLEEP ANALYSIS
-// ============================================================================
-
-export class SleepAnalysis {
-  /**
-   * Calculate recommended sleep hours by age
-   */
-  static getRecommendedSleepHours(age: number): number {
-    if (age < 18) return 8.5;
-    if (age < 26) return 8.0;
-    if (age < 65) return 7.5;
-    return 7.0;
-  }
-
-  /**
-   * Calculate current sleep duration
-   */
-  static calculateSleepDuration(wakeTime: string, sleepTime: string): number {
-    if (!wakeTime || !sleepTime) return 8; // safe default (normal sleep)
-    const [wakeHour, wakeMin] = wakeTime.split(":").map(Number);
-    const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
-
-    const wakeMinutes = wakeHour * 60 + wakeMin;
-    const sleepMinutes = sleepHour * 60 + sleepMin;
-
-    let duration = wakeMinutes - sleepMinutes;
-    if (duration <= 0) duration += 24 * 60;
-
-    return Math.round((duration / 60) * 10) / 10;
-  }
-
-  /**
-   * Calculate sleep efficiency score
-   */
-  static calculateSleepEfficiencyScore(
-    currentSleep: number,
-    recommendedSleep: number,
-    healthHabits: any,
-  ): number {
-    let score = 50;
-
-    // Sleep duration score
-    const sleepDifference = Math.abs(currentSleep - recommendedSleep);
-    if (sleepDifference <= 0.5) score += 30;
-    else if (sleepDifference <= 1) score += 20;
-    else if (sleepDifference <= 2) score += 10;
-    else score -= 10;
-
-    // Sleep quality factors
-    if (healthHabits.avoids_late_night_eating) score += 10;
-    if (!healthHabits.drinks_coffee) score += 5; // No late caffeine
-    if (!healthHabits.drinks_alcohol) score += 10;
-    if (healthHabits.eats_regular_meals) score += 5;
-
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }
-}
-
-// ============================================================================
-// MASTER CALCULATION ENGINE
-// ============================================================================
-
-export class HealthCalculationEngine {
-  /**
-   * Calculate all health metrics for advanced review
-   */
-  static calculateAllMetrics(
-    personalInfo: PersonalInfoData,
-    dietPreferences: DietPreferencesData,
-    bodyAnalysis: BodyAnalysisData,
-    workoutPreferences: WorkoutPreferencesData,
-  ): AdvancedReviewData {
-    // Basic metabolic calculations
-    const bmi = MetabolicCalculations.calculateBMI(
-      bodyAnalysis.current_weight_kg,
-      bodyAnalysis.height_cm,
-    );
-    const bmr = MetabolicCalculations.calculateBMR(
-      bodyAnalysis.current_weight_kg,
-      bodyAnalysis.height_cm,
-      personalInfo.age,
-      personalInfo.gender,
-    );
-    const tdee = MetabolicCalculations.calculateTDEE(
-      bmr,
-      workoutPreferences.activity_level,
-    );
-    const metabolicAge = MetabolicCalculations.calculateMetabolicAge(
-      bmr,
-      personalInfo.age,
-      personalInfo.gender,
-    );
-
-    // Weight management
-    const idealWeightRange =
-      BodyCompositionCalculations.calculateIdealWeightRange(
-        bodyAnalysis.height_cm,
-        personalInfo.gender,
-        personalInfo.age,
-      );
-    const weeklyWeightLossRate =
-      BodyCompositionCalculations.calculateHealthyWeightLossRate(
-        bodyAnalysis.current_weight_kg,
-        personalInfo.gender,
-      );
-    const isWeightLoss =
-      bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg;
-    const dailyCalories = NutritionalCalculations.calculateDailyCaloriesForGoal(
-      tdee,
-      workoutPreferences.weekly_weight_loss_goal || weeklyWeightLossRate,
-      isWeightLoss,
-    );
-
-    // Nutritional needs
-    const macros = NutritionalCalculations.calculateMacronutrients(
-      dailyCalories,
-      workoutPreferences.primary_goals,
-      dietPreferences,
-    );
-    const dailyWater = MetabolicCalculations.calculateWaterIntake(
-      bodyAnalysis.current_weight_kg,
-    );
-    const dailyFiber = MetabolicCalculations.calculateFiber(dailyCalories);
-
-    // Body composition
-    const bodyFatRange = BodyCompositionCalculations.getHealthyBodyFatRange(
-      personalInfo.age,
-      personalInfo.gender,
-    );
-    const bodyComposition = bodyAnalysis.body_fat_percentage
-      ? BodyCompositionCalculations.calculateBodyComposition(
-          bodyAnalysis.current_weight_kg,
-          bodyAnalysis.body_fat_percentage,
-        )
-      : { leanMass: 0, fatMass: 0 };
-
-    // Cardiovascular metrics
-    const maxHeartRate = CardiovascularCalculations.calculateMaxHeartRate(
-      personalInfo.age,
-    );
-    const heartRateZones =
-      CardiovascularCalculations.calculateHeartRateZones(maxHeartRate);
-    const estimatedVO2Max = CardiovascularCalculations.estimateVO2Max(
-      workoutPreferences.can_run_minutes,
-      personalInfo.age,
-      personalInfo.gender,
-    );
-
-    // Fitness recommendations
-    const recommendedWorkoutFrequency =
-      FitnessRecommendations.calculateWorkoutFrequency(
-        workoutPreferences.primary_goals,
-        workoutPreferences.workout_experience_years,
-        workoutPreferences.workout_frequency_per_week,
-      );
-    const recommendedCardioMinutes =
-      FitnessRecommendations.calculateCardioMinutes(
-        workoutPreferences.primary_goals,
-        workoutPreferences.intensity,
-      );
-    const recommendedStrengthSessions =
-      FitnessRecommendations.calculateStrengthSessions(
-        workoutPreferences.primary_goals,
-        workoutPreferences.workout_experience_years,
-      );
-
-    // Health scores
-    const overallHealthScore = HealthScoring.calculateOverallHealthScore(
-      personalInfo,
-      dietPreferences,
-      bodyAnalysis,
-      workoutPreferences,
-    );
-    const dietReadinessScore =
-      MetabolicCalculations.calculateDietReadinessScore(dietPreferences);
-    const fitnessReadinessScore = HealthScoring.calculateFitnessReadinessScore(
-      workoutPreferences,
-      bodyAnalysis,
-    );
-    const goalRealisticScore = HealthScoring.calculateGoalRealisticScore(
-      bodyAnalysis,
-      workoutPreferences,
-    );
-
-    // Sleep analysis
-    const recommendedSleepHours = SleepAnalysis.getRecommendedSleepHours(
-      personalInfo.age,
-    );
-    const currentSleepDuration = SleepAnalysis.calculateSleepDuration(
-      personalInfo.wake_time,
-      personalInfo.sleep_time,
-    );
-    const sleepEfficiencyScore = SleepAnalysis.calculateSleepEfficiencyScore(
-      currentSleepDuration,
-      recommendedSleepHours,
-      dietPreferences,
-    );
-
-    // Timeline calculations
-    const estimatedTimelineWeeks = bodyAnalysis.target_timeline_weeks;
-    const totalCalorieDeficit = Math.round(weeklyWeightLossRate * CALORIE_PER_KG); // Weekly deficit
-
-    return {
-      // Basic metabolic calculations
-      calculated_bmi: Math.round(bmi * 100) / 100,
-      calculated_bmr: Math.round(bmr),
-      calculated_tdee: Math.round(tdee),
-      metabolic_age: Math.round(metabolicAge),
-
-      // Daily nutritional needs
-      daily_calories: Math.round(dailyCalories),
-      daily_protein_g: macros.protein,
-      daily_carbs_g: macros.carbs,
-      daily_fat_g: macros.fat,
-      daily_water_ml: Math.round(dailyWater),
-      daily_fiber_g: dailyFiber,
-
-      // Weight management
-      healthy_weight_min: idealWeightRange.min,
-      healthy_weight_max: idealWeightRange.max,
-      weekly_weight_loss_rate: weeklyWeightLossRate,
-      estimated_timeline_weeks: estimatedTimelineWeeks,
-      total_calorie_deficit: totalCalorieDeficit,
-
-      // Body composition
-      ideal_body_fat_min: bodyFatRange.min,
-      ideal_body_fat_max: bodyFatRange.max,
-      lean_body_mass: bodyComposition.leanMass,
-      fat_mass: bodyComposition.fatMass,
-
-      // Fitness metrics
-      estimated_vo2_max: Math.round(estimatedVO2Max * 10) / 10,
-      target_hr_fat_burn_min: heartRateZones.fatBurn.min,
-      target_hr_fat_burn_max: heartRateZones.fatBurn.max,
-      target_hr_cardio_min: heartRateZones.cardio.min,
-      target_hr_cardio_max: heartRateZones.cardio.max,
-      target_hr_peak_min: heartRateZones.peak.min,
-      target_hr_peak_max: heartRateZones.peak.max,
-      recommended_workout_frequency: recommendedWorkoutFrequency,
-      recommended_cardio_minutes: recommendedCardioMinutes,
-      recommended_strength_sessions: recommendedStrengthSessions,
-
-      // Health scores
-      overall_health_score: overallHealthScore,
-      diet_readiness_score: dietReadinessScore,
-      fitness_readiness_score: fitnessReadinessScore,
-      goal_realistic_score: goalRealisticScore,
-
-      // Sleep analysis
-      recommended_sleep_hours: recommendedSleepHours,
-      current_sleep_duration: currentSleepDuration,
-      sleep_efficiency_score: sleepEfficiencyScore,
-
-      // Completion metrics (will be calculated by validation)
-      data_completeness_percentage: 0,
-      reliability_score: 0,
-      personalization_level: 0,
-    };
-  }
-}
-
-// Export all calculation classes
-// Note: All classes are already exported with their class declarations above
-// No need for duplicate export statements
+// CardiovascularCalculations, FitnessRecommendations, HealthScoring,
+// SleepAnalysis and HealthCalculationEngine previously lived here as
+// hand-copied duplicates of their healthCalculations/*.ts counterparts.
+// HealthScoring.calculateOverallHealthScore in particular had silently
+// drifted from the fixed folder version: it started from a flat 100 and
+// applied zero confidence weighting for missing optional fields (bmi,
+// sleep window), so a near-empty profile scored near-100 instead of an
+// honest mid-range value. None of these five had a live production caller
+// via this bare-specifier path — every real call site imports the folder
+// versions directly (e.g. useReviewValidation.ts imports
+// HealthCalculationEngine from "./healthCalculations/master-engine") — so
+// they are re-exported from the fixed folder implementations below instead
+// of being duplicated here, eliminating the possibility of future drift.
 
 // ============================================================================
 // RE-EXPORTS FROM UNIVERSAL HEALTH CALCULATION SYSTEM
@@ -1327,3 +702,14 @@ export {
   type ClimateType,
   type ClimateDetectionResult,
 } from "./healthCalculations/index";
+
+// Fixed, single-source implementations — importing from the bare
+// "utils/healthCalculations" specifier now always resolves to the same
+// classes the live app uses, so a new caller can never accidentally
+// reintroduce a fixed bug via this file.
+export { CardiovascularCalculations } from "./healthCalculations/cardiovascular";
+export { FitnessRecommendations } from "./healthCalculations/fitness-recommendations";
+export { HealthScoring } from "./healthCalculations/health-scoring";
+export { SleepAnalysis } from "./healthCalculations/sleep-analysis";
+export { HealthCalculationEngine } from "./healthCalculations/master-engine";
+export { NutritionalCalculations, resolveDietType } from "./healthCalculations/nutritional";

@@ -1,5 +1,6 @@
 import { ValidationResult } from "./types";
 import { CALORIE_PER_KG, MIN_CALORIES_FEMALE, MIN_CALORIES_MALE } from "./constants";
+import { mapActivityLevelForHealthCalc } from "../../utils/typeTransformers";
 
 export function validateMinimumBodyFat(
   bodyFat: number | undefined,
@@ -234,12 +235,21 @@ export function validateTrainingVolume(
   activityLevel: string,
 ): ValidationResult {
   const totalWeeklyHours = (frequency * duration) / 60;
-  // Support both legacy occupation_type and activity_level values
-  const isVeryActive = activityLevel === "very_active" || activityLevel === "extreme" || activityLevel === "active";
-  const isHeavyLabor = activityLevel === "heavy_labor";
+  // Map onboarding's "extreme" onto health-calc's "very_active" via the shared
+  // SSOT (typeTransformers.mapActivityLevelForHealthCalc) instead of a
+  // hand-rolled alias list. Previously "active" (heavy exercise 6-7 days/week,
+  // 1.725 TDEE multiplier) was lumped in with "very_active"/"extreme" (1.9
+  // multiplier), silently granting it the same 20-hour ceiling — more
+  // generous than even heavy_labor occupations get. "active" now gets its
+  // own, still-generous, tier between the default and heavy_labor ceilings.
+  const mappedActivityLevel = mapActivityLevelForHealthCalc(activityLevel);
+  const isVeryActive = mappedActivityLevel === "very_active";
+  const isActive = mappedActivityLevel === "active";
+  const isHeavyLabor = activityLevel === "heavy_labor"; // legacy occupation_type value
   const ABSOLUTE_MAX_HOURS =
     isVeryActive ? 20
     : isHeavyLabor ? 18
+    : isActive ? 17
     : 15;
 
   if (totalWeeklyHours > ABSOLUTE_MAX_HOURS) {

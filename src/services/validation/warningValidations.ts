@@ -180,7 +180,6 @@ export function warnElderlyUser(age: number): ValidationResult {
 
 export function warnTeenAthlete(
   age: number,
-  activityLevel: string,
   goalType: string,
 ): ValidationResult {
   if (age >= 13 && age <= 17 && goalType === "weight-loss") {

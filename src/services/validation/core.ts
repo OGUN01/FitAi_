@@ -7,6 +7,7 @@ import {
 import { MetabolicCalculations, macroCalculator } from "../../utils/healthCalculations";
 import { resolveDietType } from "../../utils/healthCalculations/nutritional";
 import type { Goal, DietType } from "../../utils/healthCalculations/types";
+import { mapActivityLevelForHealthCalc } from "../../utils/typeTransformers";
 import {
   ValidationResult,
   ValidationResults,
@@ -162,9 +163,18 @@ export class ValidationEngine {
       personalInfo.sleep_time,
     );
 
+    // Map the onboarding activity_level ("extreme" → "very_active", others
+    // pass through) once at the boundary, matching useReviewValidation.ts.
+    // Previously this only "worked" because ACTIVITY_MULTIPLIERS happened to
+    // alias "extreme" to the same 1.9 multiplier as "very_active" internally —
+    // relying on that overlap rather than an explicit conversion.
+    const mappedActivityLevel = mapActivityLevelForHealthCalc(
+      workoutPreferences.activity_level ?? "sedentary",
+    );
+
     const baseTDEE = MetabolicCalculations.calculateTDEE(
       bmr,
-      workoutPreferences.activity_level ?? "sedentary",
+      mappedActivityLevel,
     );
     const exerciseBurn = MetabolicCalculations.calculateDailyExerciseBurn(
       workoutPreferences.workout_frequency_per_week,
@@ -477,7 +487,7 @@ export class ValidationEngine {
       workoutPreferences.workout_frequency_per_week,
       workoutPreferences.time_preference,
       workoutPreferences.intensity,
-      workoutPreferences.activity_level ?? "sedentary",
+      mappedActivityLevel,
     );
     if (volumeCheck.status === "BLOCKED") errors.push(volumeCheck);
 
@@ -540,7 +550,6 @@ export class ValidationEngine {
 
       const teenWarn = warnTeenAthlete(
         personalInfo.age,
-        workoutPreferences.activity_level,
         isWeightLoss ? "weight-loss" : "other",
       );
       if (teenWarn.status === "WARNING") warnings.push(teenWarn);
