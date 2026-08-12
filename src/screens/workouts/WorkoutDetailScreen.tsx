@@ -228,6 +228,16 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     progressEntry?.progress === 100 &&
     !!progressEntry.completedAt &&
     getWeekStartForDate(progressEntry.completedAt) !== currentWeekStart;
+  // A partial (<100%) entry has no completedAt, but does get updatedAt
+  // stamped on every write (see fitnessStore.updateWorkoutProgress) — use
+  // that to detect a leftover partial from a prior week the same way.
+  const hasStalePartialProgress =
+    !!progressEntry &&
+    progressEntry.progress > 0 &&
+    progressEntry.progress < 100 &&
+    !!progressEntry.updatedAt &&
+    getWeekStartForDate(progressEntry.updatedAt) !== currentWeekStart;
+  const hasStaleProgress = hasStaleCompletedProgress || hasStalePartialProgress;
 
   // ── User weight for MET calorie calc ──
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
@@ -410,10 +420,11 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   }, []);
 
   const isCompleted = !!completedSession;
-  const inProgress = !isCompleted && !hasStaleCompletedProgress && progress > 0 && progress < 100;
-  // Never render a stale prior-week 100% as a filled ring — show the neutral
-  // "not started this week" state instead (barbell icon, no text).
-  const displayProgress = hasStaleCompletedProgress ? 0 : progress;
+  const inProgress = !isCompleted && !hasStaleProgress && progress > 0 && progress < 100;
+  // Never render a stale prior-week 100% (or a stale leftover partial) as a
+  // filled ring — show the neutral "not started this week" state instead
+  // (barbell icon, no text).
+  const displayProgress = hasStaleProgress ? 0 : progress;
 
   // Bottom inset so the sticky Start CTA clears the home indicator on devices
   // without gesture nav (SafeAreaView uses edges={['top']} only — see below).

@@ -16,6 +16,13 @@ export interface WorkoutProgress {
   // Persisted on partial exit to enable accurate resume
   exerciseIndex?: number; // last active exercise index when user exited
   caloriesBurned?: number; // actual calories burned up to exit point
+  // Set on every partial (<100%) progress write (see
+  // fitnessStore.updateWorkoutProgress). completedAt only exists once a
+  // workout hits 100%, so a leftover partial entry from a prior week had no
+  // timestamp to detect staleness against — this closes that gap for the
+  // same "was this started this week or is it stale leftover" check that
+  // completedAt already enables for the 100% case.
+  updatedAt?: string;
 }
 
 // Computed workout stats — SSOT returned by getCompletedWorkoutStats selectors

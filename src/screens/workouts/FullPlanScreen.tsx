@@ -143,6 +143,16 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
         progressEntry?.progress === 100 &&
         !!progressEntry.completedAt &&
         getWeekStartForDate(progressEntry.completedAt) !== currentWeekStart;
+      // A partial (<100%) entry has no completedAt, but does get updatedAt
+      // stamped on every write (see fitnessStore.updateWorkoutProgress) —
+      // use that to detect a leftover partial from a prior week the same way.
+      const hasStalePartialProgress =
+        !!progressEntry &&
+        progressEntry.progress > 0 &&
+        progressEntry.progress < 100 &&
+        !!progressEntry.updatedAt &&
+        getWeekStartForDate(progressEntry.updatedAt) !== currentWeekStart;
+      const hasStaleProgress = hasStaleCompletedProgress || hasStalePartialProgress;
       const isCompleted = !!completedSession;
 
       let meta: string | null = null;
@@ -158,7 +168,7 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
         ].filter(Boolean);
         meta = parts.join(' • ');
         // Surface live progress for an in-progress (non-stale) workout.
-        if (!isCompleted && !hasStaleCompletedProgress && (progressEntry?.progress ?? 0) > 0) {
+        if (!isCompleted && !hasStaleProgress && (progressEntry?.progress ?? 0) > 0) {
           meta = `${Math.min(progressEntry?.progress ?? 0, 99)}% • ${meta}`;
         }
       }

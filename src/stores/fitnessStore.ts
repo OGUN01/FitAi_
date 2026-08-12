@@ -535,6 +535,10 @@ export const useFitnessStore = create<FitnessState>()(
               ...state.workoutProgress[workoutId],
               workoutId,
               progress,
+              // Stamped on every partial write so a leftover partial entry
+              // from a prior week can be detected as stale the same way a
+              // 100%-complete entry already is via completedAt.
+              updatedAt: new Date().toISOString(),
               ...(metadata?.exerciseIndex !== undefined && {
                 exerciseIndex: metadata.exerciseIndex,
               }),
