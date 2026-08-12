@@ -318,10 +318,3 @@ export const ERROR_CODES = {
   PORTION_ADJUSTED: 'PORTION_ADJUSTED',
   CUISINE_DETECTED: 'CUISINE_DETECTED',
 } as const;
-
-// ==========================================
-// Exports
-// ==========================================
-
-export type { ValidationError, ValidationWarning, ValidationResult };
-export { logToAnalytics, createDetailedError, createValidationErrorResponse, ERROR_CODES };

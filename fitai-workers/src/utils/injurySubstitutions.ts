@@ -108,8 +108,11 @@ export const SUBSTITUTION_RULES: SubstitutionRule[] = [
       'shrug', 'neck_curl',
     ],
     substituteWith: [
+      // overhead_press and lateral_raise removed: both load/stabilize through the
+      // cervical spine and traps — exactly the pattern excludePatterns above
+      // (shrug, upright_row) treats as neck-stressing for this same injury.
       'face_pull', 'lat_pulldown', 'seated_row',
-      'overhead_press', 'lateral_raise',
+      'chest_press', 'incline_dumbbell_press',
     ],
     muscleGroup: 'upper_body',
   },

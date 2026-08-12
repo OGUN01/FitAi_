@@ -51,6 +51,13 @@ export interface MediaProvider {
    * Get media sources (with format/quality info)
    */
   getMediaSources(exercise: Exercise): MediaSource[];
+
+  /**
+   * Manually add an exercise → provider-asset mapping.
+   * Only implemented by providers that back their lookups with an
+   * exerciseId → assetId map (the premium/backup providers below).
+   */
+  setMapping?(exerciseId: string, assetId: string): void;
 }
 
 // ============================================================================
@@ -134,6 +141,10 @@ class GymAnimationsProvider implements MediaProvider {
       },
     ];
   }
+
+  setMapping(exerciseId: string, assetId: string): void {
+    this.exerciseMapping.set(exerciseId, assetId);
+  }
 }
 
 // ============================================================================
@@ -173,6 +184,10 @@ class ExerciseAnimaticProvider implements MediaProvider {
       },
     ];
   }
+
+  setMapping(exerciseId: string, assetId: string): void {
+    this.exerciseMapping.set(exerciseId, assetId);
+  }
 }
 
 // ============================================================================
@@ -211,6 +226,10 @@ class WrkoutProvider implements MediaProvider {
         provider: 'wrkout',
       },
     ];
+  }
+
+  setMapping(exerciseId: string, assetId: string): void {
+    this.exerciseMapping.set(exerciseId, assetId);
   }
 }
 
@@ -403,6 +422,10 @@ export async function loadProviderMappings(library: MediaLibrary): Promise<void>
 
 /**
  * Add manual mapping for exercise
+ *
+ * Throws if the target provider doesn't support manual mappings (e.g. the
+ * built-in ExerciseDB provider, which sources media directly from the
+ * exercise record) instead of silently no-op'ing while logging success.
  */
 export function addExerciseMapping(
   exerciseId: string,
@@ -411,11 +434,14 @@ export function addExerciseMapping(
 ): void {
   const provider = registry.getProvider(library);
   if (!provider) {
-    console.error(`[Media Provider] Provider ${library} not found`);
-    return;
+    throw new Error(`[Media Provider] Provider ${library} not found`);
   }
 
-  // TODO: Store mapping (currently providers use private Maps)
+  if (!provider.setMapping) {
+    throw new Error(`[Media Provider] Provider ${library} does not support manual mappings`);
+  }
+
+  provider.setMapping(exerciseId, assetId);
   console.log(`[Media Provider] Added mapping: ${exerciseId} → ${library}:${assetId}`);
 }
 

@@ -175,11 +175,17 @@ export async function getFromDatabase(
       };
     }
 
-    // Increment hit count (fire and forget - don't wait)
-    supabase.rpc('increment_cache_hit', {
-      p_table: tableName,
-      p_cache_key: cacheKey,
-    }).catch((err: Error) => console.error('[Cache] RPC failed:', err));
+    // Increment hit count (fire and forget - don't wait).
+    // NOTE: Supabase's PostgrestBuilder is a bare thenable — it only implements
+    // `.then()`, not `.catch()`/`.finally()`. Calling `.catch()` directly throws
+    // synchronously, which would be swallowed by the outer try/catch below and
+    // misreport this DB hit as a cache MISS. Use `.then(onFulfilled, onRejected)`.
+    supabase
+      .rpc('increment_cache_hit', {
+        p_table: tableName,
+        p_cache_key: cacheKey,
+      })
+      .then(undefined, (err: Error) => console.error('[Cache] RPC failed:', err));
 
     // Extract the actual data
     const cachedData = type === 'workout'

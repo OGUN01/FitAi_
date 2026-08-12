@@ -54,13 +54,13 @@ export function adjustPortionsToTarget(
         protein: Math.round(food.nutrition.protein * scaleFactor * 10) / 10, // 1 decimal place
         carbs: Math.round(food.nutrition.carbs * scaleFactor * 10) / 10,
         fats: Math.round(food.nutrition.fats * scaleFactor * 10) / 10,
-        fiber: food.nutrition.fiber
-          ? Math.round(food.nutrition.fiber * scaleFactor * 10) / 10
-          : undefined,
-        sugar: food.nutrition.sugar
+        // fiber is a required, non-optional number per NutritionalInfoSchema (default 0) —
+        // always compute it directly, never gate on truthiness (0g fiber is legitimate).
+        fiber: Math.round(food.nutrition.fiber * scaleFactor * 10) / 10,
+        sugar: food.nutrition.sugar != null
           ? Math.round(food.nutrition.sugar * scaleFactor * 10) / 10
           : undefined,
-        sodium: food.nutrition.sodium
+        sodium: food.nutrition.sodium != null
           ? Math.round(food.nutrition.sodium * scaleFactor)
           : undefined,
       },
@@ -78,17 +78,16 @@ export function adjustPortionsToTarget(
       fats: Math.round(
         adjustedFoods.reduce((sum, f) => sum + f.nutrition.fats, 0) * 10
       ) / 10,
-      fiber: adjustedFoods.some((f) => f.nutrition.fiber)
-        ? Math.round(
-            adjustedFoods.reduce((sum, f) => sum + (f.nutrition.fiber || 0), 0) * 10
-          ) / 10
-        : undefined,
-      sugar: adjustedFoods.some((f) => f.nutrition.sugar)
+      // fiber is always a number on every food (required per schema) — sum directly.
+      fiber: Math.round(
+        adjustedFoods.reduce((sum, f) => sum + f.nutrition.fiber, 0) * 10
+      ) / 10,
+      sugar: adjustedFoods.some((f) => f.nutrition.sugar != null)
         ? Math.round(
             adjustedFoods.reduce((sum, f) => sum + (f.nutrition.sugar || 0), 0) * 10
           ) / 10
         : undefined,
-      sodium: adjustedFoods.some((f) => f.nutrition.sodium)
+      sodium: adjustedFoods.some((f) => f.nutrition.sodium != null)
         ? Math.round(adjustedFoods.reduce((sum, f) => sum + (f.nutrition.sodium || 0), 0))
         : undefined,
     };
@@ -112,17 +111,16 @@ export function adjustPortionsToTarget(
     fats: Math.round(
       adjustedMeals.reduce((sum, m) => sum + m.totalNutrition.fats, 0) * 10
     ) / 10,
-    fiber: adjustedMeals.some((m) => m.totalNutrition.fiber)
-      ? Math.round(
-          adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.fiber || 0), 0) * 10
-        ) / 10
-      : undefined,
-    sugar: adjustedMeals.some((m) => m.totalNutrition.sugar)
+    // fiber is always a number on every meal total — sum directly.
+    fiber: Math.round(
+      adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.fiber || 0), 0) * 10
+    ) / 10,
+    sugar: adjustedMeals.some((m) => m.totalNutrition.sugar != null)
       ? Math.round(
           adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.sugar || 0), 0) * 10
         ) / 10
       : undefined,
-    sodium: adjustedMeals.some((m) => m.totalNutrition.sodium)
+    sodium: adjustedMeals.some((m) => m.totalNutrition.sodium != null)
       ? Math.round(adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.sodium || 0), 0))
       : undefined,
   };
@@ -293,19 +291,19 @@ export function adjustForProteinTarget(
           protein: Math.round(food.nutrition.protein * scaleFactor * 10) / 10,
           carbs: Math.round(food.nutrition.carbs * scaleFactor * 10) / 10,
           fats: Math.round(food.nutrition.fats * scaleFactor * 10) / 10,
-          fiber: food.nutrition.fiber
-            ? Math.round(food.nutrition.fiber * scaleFactor * 10) / 10
-            : undefined,
-          sugar: food.nutrition.sugar
+          // fiber is a required, non-optional number per NutritionalInfoSchema (default 0) —
+          // always compute it directly, never gate on truthiness (0g fiber is legitimate).
+          fiber: Math.round(food.nutrition.fiber * scaleFactor * 10) / 10,
+          sugar: food.nutrition.sugar != null
             ? Math.round(food.nutrition.sugar * scaleFactor * 10) / 10
             : undefined,
-          sodium: food.nutrition.sodium
+          sodium: food.nutrition.sodium != null
             ? Math.round(food.nutrition.sodium * scaleFactor)
             : undefined,
         },
       };
     });
-    
+
     // Recalculate meal total nutrition
     const mealTotalNutrition = {
       calories: adjustedFoods.reduce((sum, f) => sum + f.nutrition.calories, 0),
@@ -318,28 +316,27 @@ export function adjustForProteinTarget(
       fats: Math.round(
         adjustedFoods.reduce((sum, f) => sum + f.nutrition.fats, 0) * 10
       ) / 10,
-      fiber: adjustedFoods.some((f) => f.nutrition.fiber)
-        ? Math.round(
-            adjustedFoods.reduce((sum, f) => sum + (f.nutrition.fiber || 0), 0) * 10
-          ) / 10
-        : undefined,
-      sugar: adjustedFoods.some((f) => f.nutrition.sugar)
+      // fiber is always a number on every food (required per schema) — sum directly.
+      fiber: Math.round(
+        adjustedFoods.reduce((sum, f) => sum + f.nutrition.fiber, 0) * 10
+      ) / 10,
+      sugar: adjustedFoods.some((f) => f.nutrition.sugar != null)
         ? Math.round(
             adjustedFoods.reduce((sum, f) => sum + (f.nutrition.sugar || 0), 0) * 10
           ) / 10
         : undefined,
-      sodium: adjustedFoods.some((f) => f.nutrition.sodium)
+      sodium: adjustedFoods.some((f) => f.nutrition.sodium != null)
         ? Math.round(adjustedFoods.reduce((sum, f) => sum + (f.nutrition.sodium || 0), 0))
         : undefined,
     };
-    
+
     return {
       ...meal,
       foods: adjustedFoods,
       totalNutrition: mealTotalNutrition,
     };
   });
-  
+
   // Recalculate plan-level totals
   const totalNutrition = {
     calories: adjustedMeals.reduce((sum, m) => sum + m.totalNutrition.calories, 0),
@@ -352,21 +349,20 @@ export function adjustForProteinTarget(
     fats: Math.round(
       adjustedMeals.reduce((sum, m) => sum + m.totalNutrition.fats, 0) * 10
     ) / 10,
-    fiber: adjustedMeals.some((m) => m.totalNutrition.fiber)
-      ? Math.round(
-          adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.fiber || 0), 0) * 10
-        ) / 10
-      : undefined,
-    sugar: adjustedMeals.some((m) => m.totalNutrition.sugar)
+    // fiber is always a number on every meal total — sum directly.
+    fiber: Math.round(
+      adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.fiber || 0), 0) * 10
+    ) / 10,
+    sugar: adjustedMeals.some((m) => m.totalNutrition.sugar != null)
       ? Math.round(
           adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.sugar || 0), 0) * 10
         ) / 10
       : undefined,
-    sodium: adjustedMeals.some((m) => m.totalNutrition.sodium)
+    sodium: adjustedMeals.some((m) => m.totalNutrition.sodium != null)
       ? Math.round(adjustedMeals.reduce((sum, m) => sum + (m.totalNutrition.sodium || 0), 0))
       : undefined,
   };
-  
+
   const finalProteinDiff = Math.abs(totalNutrition.protein - targetProtein);
   const finalCalorieDiff = Math.abs(totalNutrition.calories - targetCalories);
   

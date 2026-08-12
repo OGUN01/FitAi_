@@ -234,6 +234,12 @@ function applyMedicalModifications(
       modifiedSets = Math.max(2, Math.floor(params.sets * 0.8));
       modifiedRest = Math.max(params.rest, 90);
       warnings.push('Trimester 2: Moderate intensity, avoid supine positions');
+    } else {
+      // Trimester 1: Consistent with safetyFilter.ts's PREGNANCY_TRIMESTER_RULES[1]
+      // (RPE 5-7 cap, heart rate cap 140) — light rest increase + explicit warning
+      // so the sets/reps/rest prescription isn't silently ignoring the pregnancy.
+      modifiedRest = Math.max(params.rest, 75);
+      warnings.push('Trimester 1: Keep intensity to RPE 5-7 max, reduce supine positions and high-impact work');
     }
   }
 
@@ -329,9 +335,7 @@ export function assignWorkoutParameters(
     // Apply mesocycle progressive overload (week-over-week scaling).
     // Cardio keeps its (time-based) reps; only volume scales on deload week.
     const isCardio = exercise.classification === 'cardio';
-    const adjustedSets = isCardio
-      ? Math.max(1, Math.round(goalAdjustedSets * progression.setsMultiplier))
-      : Math.max(1, Math.round(goalAdjustedSets * progression.setsMultiplier));
+    const adjustedSets = Math.max(1, Math.round(goalAdjustedSets * progression.setsMultiplier));
     const adjustedReps = isCardio
       ? goalAdjustedReps
       : applyMesocycleToReps(goalAdjustedReps, progression);

@@ -11,6 +11,16 @@
  * - 15-25% cost savings during burst traffic
  * - Reduces redundant AI API calls
  * - Lower token consumption
+ *
+ * KNOWN LIMITATION: Cloudflare KV is only eventually consistent (propagation
+ * can take up to 60s across edge locations/PoPs). Two near-simultaneous
+ * identical requests landing on different PoPs can both read an empty
+ * `inflight:*` key and both proceed to call the expensive generatorFn(),
+ * silently defeating deduplication for that pair of requests. This is the
+ * exact burst-traffic scenario this module targets, so treat the cost
+ * savings above as a statistical average, not a guarantee. If stronger
+ * consistency is ever required, migrate the in-flight lock to a Durable
+ * Object-based mutex instead of KV.
  */
 
 import { Env } from './types';
@@ -137,7 +147,7 @@ export async function withDeduplication<T>(
       // Fall through to start fresh generation
     } else if (existingRequest.status === 'pending' || existingRequest.status === 'completed') {
       // Valid in-flight or completed request - wait for it
-      return await waitForInFlightRequest<T>(kv, inFlightKey, existingRequest);
+      return await waitForInFlightRequest<T>(kv, inFlightKey, existingRequest, generatorFn);
     } else if (existingRequest.status === 'error') {
       // Previous request failed - clear it and start fresh
       console.log('[Deduplication] Clearing failed request, starting fresh');
@@ -147,7 +157,19 @@ export async function withDeduplication<T>(
   }
 
   // No in-flight request - we're the first one
-  // Mark this request as in-flight
+  return await runGeneratorAndStore<T>(kv, inFlightKey, generatorFn);
+}
+
+/**
+ * Mark a request as in-flight, execute the generator function, and persist
+ * the outcome (completed/error) to KV. Shared by the "first request" path in
+ * withDeduplication and the timeout-recovery path in waitForInFlightRequest.
+ */
+async function runGeneratorAndStore<T>(
+  kv: KVNamespace,
+  inFlightKey: string,
+  generatorFn: () => Promise<T>
+): Promise<DeduplicationResult<T>> {
   const inFlightData: InFlightRequest = {
     status: 'pending',
     timestamp: Date.now(),
@@ -199,7 +221,8 @@ export async function withDeduplication<T>(
 async function waitForInFlightRequest<T>(
   kv: KVNamespace,
   inFlightKey: string,
-  initialRequest: InFlightRequest
+  initialRequest: InFlightRequest,
+  generatorFn: () => Promise<T>
 ): Promise<DeduplicationResult<T>> {
   const startTime = Date.now();
   let currentRequest = initialRequest;
@@ -239,23 +262,23 @@ async function waitForInFlightRequest<T>(
       // Request disappeared from KV - might have expired
       // Fall back to generating fresh
       console.log('[Deduplication] In-flight request disappeared, generating fresh');
-      break;
+      return await runGeneratorAndStore<T>(kv, inFlightKey, generatorFn);
     }
 
     currentRequest = updated;
   }
 
-  // Timeout - generate fresh response
+  // Timeout - the original requester's generation is stuck/too slow.
+  // Regenerate ourselves instead of failing the caller after a 120s wait
+  // (previously threw here, which every caller left uncaught -> hard 500).
   const waitTime = Date.now() - startTime;
   console.log(`[Deduplication] Timeout after ${waitTime}ms, generating fresh`);
 
   // We waited too long - the request might be stuck
-  // Delete the in-flight marker so others don't wait
+  // Delete the in-flight marker so others don't keep waiting on the stuck one
   await kv.delete(inFlightKey);
 
-  // Return a marker that tells caller to generate fresh
-  // This shouldn't happen in normal operation
-  throw new Error('Deduplication timeout - request is being regenerated');
+  return await runGeneratorAndStore<T>(kv, inFlightKey, generatorFn);
 }
 
 /**
