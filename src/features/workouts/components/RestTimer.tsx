@@ -24,7 +24,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Vibration,
 } from "react-native";
@@ -34,9 +33,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { GlassCard, AnimatedPressable, ProgressRing } from "../../../components/ui/aurora";
-import { colors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
+import { colors, flatColors, spacing, borderRadius, typography } from "../../../theme/aurora-tokens";
 import { rp, rf } from "../../../utils/responsive";
 import { animations } from "../../../theme/animations";
+import { hexToRgba } from "../../../utils/colors";
 
 interface RestTimerProps {
   targetEndTime: number | null;
@@ -252,20 +252,26 @@ export function RestTimer({
           {/* Controls row: +10s | Pause/Resume | Skip */}
           <View style={styles.controls}>
             {/* +10s */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.secondaryBtn}
               onPress={handleAddTen}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="light"
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
               accessibilityLabel="Add 10 seconds to rest"
             >
               <Text style={styles.secondaryBtnText}>+10s</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Pause / Resume */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.pauseBtn}
               onPress={handlePauseResume}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="light"
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
               accessibilityLabel={isPaused ? "Resume rest timer" : "Pause rest timer"}
@@ -273,19 +279,22 @@ export function RestTimer({
               <Text style={styles.pauseBtnText}>
                 {isPaused ? "Resume" : "Pause"}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
             {/* Skip */}
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.skipBtn}
               onPress={onSkip}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="selection"
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
               accessibilityLabel="Skip rest timer"
               testID="rest-timer-skip"
             >
               <Text style={styles.skipBtnText}>Skip</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
       </GlassCard>
@@ -302,7 +311,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: hexToRgba(flatColors.black, 0.8),
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
@@ -376,6 +385,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     paddingVertical: rp(spacing.xs),
     paddingHorizontal: rp(spacing.md),
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: 'center',
   },
   presetChipText: {
     color: colors.text.primary,
@@ -437,7 +448,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
   },
   skipBtnText: {
-    color: colors.error.light,
+    color: colors.text.secondary,
     fontSize: rf(typography.fontSize.body),
     fontWeight: String(typography.fontWeight.semibold) as any,
   },

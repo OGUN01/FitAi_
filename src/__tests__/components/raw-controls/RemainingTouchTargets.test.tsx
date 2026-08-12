@@ -234,14 +234,10 @@ describe("remaining raw touch targets", () => {
       StyleSheet.flatten(exercise.getByLabelText("Close").props.style),
     ).toMatchObject({ width: 44, height: 44 });
     expect(
-      StyleSheet.flatten(
-        exercise.getByLabelText("Show instructions tab").props.style,
-      ),
+      StyleSheet.flatten(exercise.getByLabelText("Instructions").props.style),
     ).toMatchObject({ minHeight: 44 });
     expect(
-      StyleSheet.flatten(
-        exercise.getByLabelText("Show details tab").props.style,
-      ),
+      StyleSheet.flatten(exercise.getByLabelText("Details").props.style),
     ).toMatchObject({ minHeight: 44 });
     expect(
       StyleSheet.flatten(progress.getByLabelText("Back").props.style),

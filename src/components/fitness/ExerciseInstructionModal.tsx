@@ -17,7 +17,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheet, AnimatedPressable } from '../ui/aurora';
+import { BottomSheet, AnimatedPressable, EmptyState, SlidingSegmentedControl } from '../ui/aurora';
 import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rf, rp, rh } from '../../utils/responsive';
@@ -58,46 +58,27 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
   };
 
   const renderTabs = () => (
-    <View style={styles.tabContainer}>
-      <AnimatedPressable
-        onPress={() => setActiveTab('instructions')}
-        scaleValue={0.96}
-        springConfig="snappy"
-        hapticType="selection"
-        style={[styles.tab, activeTab === 'instructions' && styles.activeTab]}
-        accessibilityRole="button"
-        accessibilityLabel="Show instructions tab"
-      >
-        <Text style={[styles.tabText, activeTab === 'instructions' && styles.activeTabText]}>
-          Instructions
-        </Text>
-      </AnimatedPressable>
-      <AnimatedPressable
-        onPress={() => setActiveTab('details')}
-        scaleValue={0.96}
-        springConfig="snappy"
-        hapticType="selection"
-        style={[styles.tab, activeTab === 'details' && styles.activeTab]}
-        accessibilityRole="button"
-        accessibilityLabel="Show details tab"
-      >
-        <Text style={[styles.tabText, activeTab === 'details' && styles.activeTabText]}>
-          Details
-        </Text>
-      </AnimatedPressable>
-    </View>
+    <SlidingSegmentedControl
+      options={[
+        { id: 'instructions', label: 'Instructions' },
+        { id: 'details', label: 'Details' },
+      ]}
+      selectedId={activeTab}
+      onSelect={(id) => setActiveTab(id as 'instructions' | 'details')}
+      variant="aurora"
+      style={styles.tabContainer}
+    />
   );
 
   const renderInstructions = () => {
     if (!exercise?.instructions?.length) {
       return (
-        <View style={styles.noDataContainer} accessibilityRole="text">
-          <Ionicons name="information-circle-outline" size={rf(48)} color={colors.text.tertiary} />
-          <Text style={styles.noDataText}>No detailed instructions available</Text>
-          <Text style={styles.noDataSubtext}>
-            Follow the general form shown in the demonstration above
-          </Text>
-        </View>
+        <EmptyState
+          icon="information-circle-outline"
+          iconColor={colors.text.tertiary}
+          title="No detailed instructions available"
+          subtitle="Follow the general form shown in the demonstration above"
+        />
       );
     }
 
@@ -146,12 +127,7 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
 
   const renderDetails = () => {
     if (!exercise) {
-      return (
-        <View style={styles.noDataContainer} accessibilityRole="text">
-          <Ionicons name="help-circle-outline" size={rf(48)} color={colors.text.tertiary} />
-          <Text style={styles.noDataText}>No exercise details available</Text>
-        </View>
-      );
+      return <EmptyState icon="help-circle-outline" iconColor={colors.text.tertiary} title="No exercise details available" />;
     }
 
     return (
@@ -287,30 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
   },
   tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.glass.backgroundDark,
-    borderRadius: borderRadius.lg,
-    padding: rp(spacing.xxs),
     marginBottom: rp(spacing.md),
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: rp(spacing.sm),
-    minHeight: 44,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeTab: {
-    backgroundColor: colors.primary.DEFAULT,
-  },
-  tabText: {
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.secondary,
-  },
-  activeTabText: {
-    color: colors.text.primary,
   },
   tabContent: {
     paddingBottom: rp(spacing.xl),
@@ -419,20 +372,5 @@ const styles = StyleSheet.create({
     fontSize: rf(typography.fontSize.caption),
     fontWeight: String(typography.fontWeight.semibold) as any,
     textTransform: 'capitalize',
-  },
-  noDataContainer: {
-    alignItems: 'center',
-    paddingVertical: rp(spacing.xl),
-  },
-  noDataText: {
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.text.secondary,
-    marginBottom: rp(spacing.sm),
-  },
-  noDataSubtext: {
-    fontSize: rf(typography.fontSize.caption),
-    color: colors.text.secondary,
-    textAlign: 'center',
   },
 });
