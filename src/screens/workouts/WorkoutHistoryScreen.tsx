@@ -19,11 +19,11 @@
  *    render no chevron.
  */
 
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, SectionList, TextInput, type ListRenderItemInfo } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeInRight } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { useFitnessStore } from '../../stores/fitnessStore';
@@ -60,10 +60,12 @@ interface HistoryRow {
   workoutSnapshot?: CompletedSession['workoutSnapshot'];
 }
 
-interface WeekGroup {
+/** SectionList section shape — one week group with the `data` key SectionList expects. */
+interface HistorySection {
   weekStart: string;
-  label: string;
-  rows: HistoryRow[];
+  title: string;
+  count: number;
+  data: HistoryRow[];
 }
 
 // ----------------------------------------------------------------------------
@@ -120,10 +122,10 @@ function getRelativeDate(dateString: string): string {
 
 export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navigation }) => {
   const completedSessions = useFitnessStore((state) => state.completedSessions);
+  const [search, setSearch] = useState('');
 
-  const groups = useMemo<WeekGroup[]>(() => {
-    const currentWeekStart = getCurrentWeekStart();
-    const rows = completedSessions
+  const allRows = useMemo<HistoryRow[]>(() => {
+    return completedSessions
       .filter((s) => s.completedAt)
       .map<HistoryRow>((s) => ({
         sessionId: s.sessionId,
@@ -136,6 +138,14 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
         workoutSnapshot: s.workoutSnapshot,
       }))
       .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  }, [completedSessions]);
+
+  const totalCount = allRows.length;
+
+  const sections = useMemo<HistorySection[]>(() => {
+    const currentWeekStart = getCurrentWeekStart();
+    const q = search.trim().toLowerCase();
+    const rows = q ? allRows.filter((row) => row.title.toLowerCase().includes(q)) : allRows;
 
     const byWeek = new Map<string, HistoryRow[]>();
     for (const row of rows) {
@@ -149,18 +159,16 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
       .sort(([a], [b]) => b.localeCompare(a))
       .map(([weekStart, weekRows]) => {
         const monday = new Date(`${weekStart}T00:00:00`);
-        const label =
+        const title =
           weekStart === currentWeekStart
             ? 'This week'
             : `Week of ${monday.toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
               })}`;
-        return { weekStart, label, rows: weekRows };
+        return { weekStart, title, count: weekRows.length, data: weekRows };
       });
-  }, [completedSessions]);
-
-  const totalCount = useMemo(() => groups.reduce((sum, g) => sum + g.rows.length, 0), [groups]);
+  }, [allRows, search]);
 
   // Row tap — only when the session carries a workout snapshot (see header doc).
   const handleRowPress = useCallback(
@@ -169,6 +177,66 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
       navigation.navigate('WorkoutDetail', { workout: row.workoutSnapshot });
     },
     [navigation]
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: HistorySection }) => (
+      <View style={styles.groupHeader} testID={`workout-history-week-${section.weekStart}`}>
+        <Text style={styles.groupLabel} numberOfLines={1}>
+          {section.title}
+        </Text>
+        <Text style={styles.groupCount} numberOfLines={1}>
+          {section.count} workout{section.count === 1 ? '' : 's'}
+        </Text>
+      </View>
+    ),
+    []
+  );
+
+  const renderItem = useCallback(
+    ({ item: row, index, section }: ListRenderItemInfo<HistoryRow> & { section: HistorySection }) => {
+      const tint = getCategoryTint(row.category);
+      const tappable = !!row.workoutSnapshot;
+      const isLast = index === section.data.length - 1;
+      return (
+        <Animated.View entering={FadeInRight.delay(Math.min(index, 6) * 40).duration(250)}>
+          <AnimatedPressable
+            onPress={tappable ? () => handleRowPress(row) : undefined}
+            disabled={!tappable}
+            scaleValue={0.98}
+            springConfig="smooth"
+            hapticType="light"
+            style={styles.row}
+            accessibilityRole={tappable ? 'button' : undefined}
+            accessibilityLabel={`${row.title}, ${getRelativeDate(row.completedAt)}`}
+            testID={`workout-history-row-${row.sessionId}`}
+          >
+            {/* Category icon square — tinted by category */}
+            <View style={[styles.iconSquare, { backgroundColor: hexToRgba(tint, 0.15) }]}>
+              <Ionicons name={getCategoryIcon(row.category)} size={rf(18)} color={tint} />
+            </View>
+
+            {/* Info */}
+            <View style={styles.infoContainer}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                {row.title}
+              </Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>
+                {getRelativeDate(row.completedAt)} • {row.duration || 0} min • {row.caloriesBurned || 0} kcal
+              </Text>
+            </View>
+
+            {/* Chevron — only when the row is tappable */}
+            {tappable ? (
+              <Ionicons name="chevron-forward" size={rf(16)} color={colors.textTertiary} style={styles.chevron} />
+            ) : null}
+          </AnimatedPressable>
+          {/* Hairline separator — leading-inset to align with row text */}
+          {!isLast ? <View style={styles.separator} /> : null}
+        </Animated.View>
+      );
+    },
+    [handleRowPress]
   );
 
   return (
@@ -206,88 +274,53 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
             <Text style={styles.summary} numberOfLines={1}>
               {totalCount} workout{totalCount === 1 ? '' : 's'} completed
             </Text>
-            <ScrollView
+
+            {/* Search by workout title — filters sections below */}
+            <View style={styles.searchRow}>
+              <Ionicons name="search-outline" size={rf(16)} color={colors.textTertiary} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search history..."
+                placeholderTextColor={colors.textTertiary}
+                value={search}
+                onChangeText={setSearch}
+                autoCapitalize="none"
+                returnKeyType="search"
+                testID="workout-history-search-input"
+              />
+              {search.length > 0 ? (
+                <AnimatedPressable
+                  onPress={() => setSearch('')}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                  scaleValue={0.9}
+                  springConfig="snappy"
+                  hapticType="light"
+                >
+                  <Ionicons name="close-circle" size={rf(16)} color={colors.textTertiary} />
+                </AnimatedPressable>
+              ) : null}
+            </View>
+
+            <SectionList
               style={styles.flex}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               testID="workout-history-list"
-            >
-              {groups.map((group, groupIndex) => (
-                <Animated.View
-                  key={group.weekStart}
-                  entering={FadeInDown.delay(60 + groupIndex * 60).duration(300)}
-                  testID={`workout-history-week-${group.weekStart}`}
-                >
-                  {/* Week group header */}
-                  <View style={styles.groupHeader}>
-                    <Text style={styles.groupLabel} numberOfLines={1}>
-                      {group.label}
-                    </Text>
-                    <Text style={styles.groupCount} numberOfLines={1}>
-                      {group.rows.length} workout{group.rows.length === 1 ? '' : 's'}
-                    </Text>
-                  </View>
-
-                  {/* Flat rows */}
-                  {group.rows.map((row, index) => {
-                    const tint = getCategoryTint(row.category);
-                    const tappable = !!row.workoutSnapshot;
-                    return (
-                      <Animated.View
-                        key={row.sessionId}
-                        entering={FadeInRight.delay(100 + index * 60).duration(300)}
-                      >
-                        <AnimatedPressable
-                          onPress={tappable ? () => handleRowPress(row) : undefined}
-                          disabled={!tappable}
-                          scaleValue={0.98}
-                          springConfig="smooth"
-                          hapticType="light"
-                          style={styles.row}
-                          accessibilityRole={tappable ? 'button' : undefined}
-                          accessibilityLabel={`${row.title}, ${getRelativeDate(row.completedAt)}`}
-                          testID={`workout-history-row-${row.sessionId}`}
-                        >
-                          {/* Category icon square — tinted by category */}
-                          <View
-                            style={[styles.iconSquare, { backgroundColor: hexToRgba(tint, 0.15) }]}
-                          >
-                            <Ionicons
-                              name={getCategoryIcon(row.category)}
-                              size={rf(18)}
-                              color={tint}
-                            />
-                          </View>
-
-                          {/* Info */}
-                          <View style={styles.infoContainer}>
-                            <Text style={styles.rowTitle} numberOfLines={1}>
-                              {row.title}
-                            </Text>
-                            <Text style={styles.rowMeta} numberOfLines={1}>
-                              {getRelativeDate(row.completedAt)} • {row.duration || 0} min •{' '}
-                              {row.caloriesBurned || 0} kcal
-                            </Text>
-                          </View>
-
-                          {/* Chevron — only when the row is tappable */}
-                          {tappable ? (
-                            <Ionicons
-                              name="chevron-forward"
-                              size={rf(16)}
-                              color={colors.textTertiary}
-                              style={styles.chevron}
-                            />
-                          ) : null}
-                        </AnimatedPressable>
-                        {/* Hairline separator — leading-inset to align with row text */}
-                        {index < group.rows.length - 1 ? <View style={styles.separator} /> : null}
-                      </Animated.View>
-                    );
-                  })}
-                </Animated.View>
-              ))}
-            </ScrollView>
+              sections={sections}
+              keyExtractor={(row) => row.sessionId}
+              renderItem={renderItem}
+              renderSectionHeader={renderSectionHeader}
+              stickySectionHeadersEnabled={false}
+              initialNumToRender={12}
+              windowSize={7}
+              ListEmptyComponent={
+                <Text style={styles.emptySearchText}>
+                  {search.trim() ? `No workouts match "${search.trim()}"` : 'No workouts found'}
+                </Text>
+              }
+            />
           </>
         ) : (
           /* Muted empty state */
@@ -347,6 +380,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: rp(spacing.xs),
     marginBottom: rp(spacing.sm),
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xs),
+    marginHorizontal: rp(spacing.md),
+    marginBottom: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xs),
+    borderRadius: rbr(12),
+    backgroundColor: hexToRgba(colors.text, 0.05),
+  },
+  searchIcon: {
+    flexShrink: 0,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: rf(14),
+    color: colors.text,
+    paddingVertical: rp(4),
+  },
+  emptySearchText: {
+    fontSize: rf(13),
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginTop: rp(spacing.xl),
+    paddingHorizontal: rp(spacing.lg),
   },
   listContent: {
     paddingHorizontal: rp(spacing.md),

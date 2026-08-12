@@ -123,9 +123,12 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     barcode?: string;
   }>({ isActive: false });
 
-  // Template Library overlay state
+  // Template Library overlay state. `initialTab` lets callers (e.g.
+  // BuildMethodLandingScreen's "Import Community" row) open the library
+  // directly on a specific tab instead of always landing on "mine".
   const [templateLibrarySession, setTemplateLibrarySession] = useState<{
     isActive: boolean;
+    initialTab?: string;
   }>({ isActive: false });
 
   // Create Workout overlay state
@@ -314,7 +317,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
-        setTemplateLibrarySession({ isActive: true });
+        setTemplateLibrarySession({
+          isActive: true,
+          initialTab: params?.initialTab as string | undefined,
+        });
       } else if (screen === 'CreateWorkout') {
         setTemplateLibrarySession({ isActive: false });
         setExerciseHistorySession({ isActive: false });
@@ -747,7 +753,14 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     } else if (templateLibrarySession.isActive) {
       return (
         <ScreenErrorBoundary screenName="TemplateLibraryScreen" onReset={clearTransientScreens}>
-          <TemplateLibraryScreen navigation={navigation} />
+          <TemplateLibraryScreen
+            navigation={navigation}
+            route={
+              templateLibrarySession.initialTab
+                ? { params: { initialTab: templateLibrarySession.initialTab } }
+                : undefined
+            }
+          />
         </ScreenErrorBoundary>
       );
     } else if (buildMethodLandingSession.isActive) {

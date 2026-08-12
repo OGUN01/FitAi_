@@ -1,13 +1,16 @@
 /**
  * BuildMethodLandingScreen
  *
- * Step 1 of the custom workout builder step-flow. Presents the 4 build
+ * Step 1 of the custom workout builder step-flow. Presents the 3 build
  * methods as flat full-width rows (2026 step-flow aesthetic — no boxed
  * cards, hairline separators, right check circles):
  *  a) Use Templates       — purple accent, "Recommended"
  *  b) Build From Scratch  — orange accent, drag & drop / supersets
- *  c) Duplicate Existing  — copy a previous schedule
- *  d) Import Community    — premium badge, trending templates
+ *  c) Import Community    — premium badge, trending templates
+ *
+ * (A "Duplicate Existing" row previously existed here but routed to the
+ * exact same place as "Use Templates" with no distinct feature behind it —
+ * removed rather than shipping a dead/duplicate choice.)
  *
  * Renders as a full-screen overlay session in MainNavigation (see
  * buildMethodLandingSession). Tapping a row selects it (check circle fills);
@@ -15,12 +18,12 @@
  * AuroraBackground theme="space" sits behind everything.
  *
  * Routing:
- *  - Templates    → navigate("TemplateLibrary")
+ *  - Templates    → navigate("TemplateLibrary", { initialTab: "mine" })
  *  - Scratch      → navigate("WeeklyBuilder")
- *  - Duplicate    → navigate("TemplateLibrary")
- *  - Community    → navigate("TemplateLibrary")  (premium lock badge shown
- *                   when subscriptionStore.isPremium() is false; tapping
- *                   surfaces the paywall instead of selecting)
+ *  - Community    → navigate("TemplateLibrary", { initialTab: "community" })
+ *                   (premium lock badge shown when subscriptionStore
+ *                   .isPremium() is false; tapping surfaces the paywall
+ *                   instead of selecting)
  */
 
 import React, { useState } from "react";
@@ -56,7 +59,7 @@ interface BuildMethodLandingScreenProps {
   };
 }
 
-type BuildMethodId = "templates" | "scratch" | "duplicate" | "community";
+type BuildMethodId = "templates" | "scratch" | "community";
 
 interface BuildMethod {
   id: BuildMethodId;
@@ -72,6 +75,8 @@ interface BuildMethod {
   badgeTint?: string;
   /** Next builder step to route to on continue. */
   nextScreen: string;
+  /** Extra route params to pass alongside `nextScreen` (e.g. initialTab). */
+  nextScreenParams?: Record<string, unknown>;
 }
 
 const METHODS: BuildMethod[] = [
@@ -85,6 +90,7 @@ const METHODS: BuildMethod[] = [
     badge: "Recommended",
     badgeTint: colors.purple,
     nextScreen: "TemplateLibrary",
+    nextScreenParams: { initialTab: "mine" },
   },
   {
     id: "scratch",
@@ -96,14 +102,6 @@ const METHODS: BuildMethod[] = [
     nextScreen: "WeeklyBuilder",
   },
   {
-    id: "duplicate",
-    title: "Duplicate Existing",
-    description: "Copy your previous schedule and tweak the days you want to change.",
-    icon: "copy-outline",
-    accent: colors.secondary,
-    nextScreen: "TemplateLibrary",
-  },
-  {
     id: "community",
     title: "Import Community",
     description: "Trending templates from the community — fork and make them yours.",
@@ -112,6 +110,7 @@ const METHODS: BuildMethod[] = [
     badge: "Premium",
     badgeTint: colors.warningAlt,
     nextScreen: "TemplateLibrary",
+    nextScreenParams: { initialTab: "community" },
   },
 ];
 
@@ -121,8 +120,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
   // Defense-in-depth premium gate. The Community row is locked for free-tier
   // users — tapping it surfaces the paywall via usePaywall().triggerPaywall()
   // instead of selecting. Unlocked rows select normally.
-  const isPremiumFn = useSubscriptionStore((s) => s.isPremium);
-  const isPremium = isPremiumFn();
+  const isPremium = useSubscriptionStore((s) => s.isPremium());
   const { triggerPaywall } = usePaywall();
   const [selectedId, setSelectedId] = useState<BuildMethodId | null>(null);
 
@@ -149,7 +147,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
     const method = METHODS.find((m) => m.id === selectedId);
     if (!method) return;
     haptics.buttonPress();
-    navigation.navigate(method.nextScreen);
+    navigation.navigate(method.nextScreen, method.nextScreenParams);
   };
 
   return (

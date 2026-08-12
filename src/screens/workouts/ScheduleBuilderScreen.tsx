@@ -84,6 +84,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   const [mode, setMode] = useState<BuilderMode>("templates");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [signInRequired, setSignInRequired] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // ── Template mode state ──
@@ -109,7 +110,14 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   // ── Load templates (extracted so the error-state retry can call it) ──
   const loadTemplates = useCallback(() => {
     const userId = getCurrentUserId();
-    if (!userId) { setLoading(false); return; }
+    if (!userId) {
+      // Distinct from a fetch failure — the real problem is an expired/missing
+      // session, so the user needs to sign in again rather than retry.
+      setSignInRequired(true);
+      setLoading(false);
+      return;
+    }
+    setSignInRequired(false);
     setLoadError(false);
     workoutTemplateService.getTemplates(userId)
       .then(setTemplates)
@@ -296,6 +304,38 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
           </View>
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
+  if (signInRequired) {
+    return (
+      <AuroraBackground theme="space" animated intensity={0.3}>
+        <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
+            <View style={styles.topRowSpacer} />
+          </View>
+          <View style={styles.emptyWrap} testID="schedule-sign-in-required">
+            <EmptyState
+              icon="lock-closed-outline"
+              iconColor={colors.warning}
+              title="Sign in required"
+              subtitle="Your session has expired. Sign in again to build your schedule."
+              ctaText="Go Back"
+              onCta={() => navigation.goBack()}
+            />
           </View>
         </SafeAreaView>
       </AuroraBackground>

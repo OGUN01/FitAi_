@@ -27,8 +27,8 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Polyline, Line, Text as SvgText } from "react-native-svg";
 import {

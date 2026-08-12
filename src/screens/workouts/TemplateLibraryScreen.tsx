@@ -93,6 +93,15 @@ const TABS: TabDef[] = [
   { key: "collections", label: "Collections", icon: "albums-outline" },
 ];
 
+const TAB_KEYS = new Set<TabKey>(TABS.map((t) => t.key));
+
+/** Narrow an arbitrary route param into a known TabKey, defaulting to "mine". */
+function resolveInitialTab(initialTab: unknown): TabKey {
+  return typeof initialTab === "string" && TAB_KEYS.has(initialTab as TabKey)
+    ? (initialTab as TabKey)
+    : "mine";
+}
+
 interface CollectionChip {
   id: string;
   label: string;
@@ -177,8 +186,14 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [signInRequired, setSignInRequired] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("mine");
+  // Build-method entry (BuildMethodLandingScreen) passes an `initialTab` route
+  // param so "Use Templates" opens on "mine" and "Import Community" opens
+  // directly on "community" instead of always landing on the default tab.
+  const [activeTab, setActiveTab] = useState<TabKey>(() =>
+    resolveInitialTab(route?.params?.initialTab),
+  );
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
@@ -216,9 +231,13 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
     setLoadError(false);
     const userId = getCurrentUserId();
     if (!userId) {
+      // Distinct from the "no templates yet" empty state — the real problem
+      // here is an expired/missing session, not a first-run user.
+      setSignInRequired(true);
       setLoading(false);
       return;
     }
+    setSignInRequired(false);
     try {
       const result = await workoutTemplateService.getTemplates(userId);
       setTemplates(result);
@@ -621,12 +640,12 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const headerActions = (
     <View style={styles.headerActions}>
       <AnimatedPressable
-        onPress={() => navigation.navigate("ScheduleBuilder")}
+        onPress={() => navigation.navigate("WeeklyBuilder")}
         style={styles.scheduleBtn}
         testID="schedule-builder-button"
         accessibilityRole="button"
         accessibilityLabel="Build schedule"
-        accessibilityHint="Open the schedule builder"
+        accessibilityHint="Open the weekly schedule builder"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <Text style={styles.scheduleBtnText} numberOfLines={1}>Schedule</Text>
@@ -660,6 +679,26 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  if (signInRequired) {
+    return (
+      <AuroraBackground theme="space">
+        <SafeAreaView style={styles.flex} edges={["top"]}>
+          <LibraryHeader onBack={() => navigation.goBack()} />
+          <View style={styles.emptyWrap} testID="template-sign-in-required">
+            <EmptyState
+              icon="lock-closed-outline"
+              iconColor={colors.warning}
+              title="Sign in required"
+              subtitle="Your session has expired. Sign in again to view and manage your workout templates."
+              ctaText="Go Back"
+              onCta={() => navigation.goBack()}
+            />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
   if (loadError) {
     return (
       <AuroraBackground theme="space">

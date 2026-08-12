@@ -157,6 +157,8 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   // create-new path initializes both to false and never renders these branches.
   const [loadingTemplate, setLoadingTemplate] = useState(!!templateId);
   const [loadError, setLoadError] = useState(false);
+  const [signInRequired, setSignInRequired] = useState(false);
+  const [exerciseSearch, setExerciseSearch] = useState("");
 
   // ── Share-to-Community state (Phase 10) ─────────────────────────────────
   // When shareToCommunity is ON, the save flow prompts for category /
@@ -186,9 +188,13 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     if (!templateId) return;
     const userId = getCurrentUserId();
     if (!userId) {
+      // Distinct from a fetch failure — the real problem is an expired/missing
+      // session, so the user needs to sign in again rather than retry.
+      setSignInRequired(true);
       setLoadingTemplate(false);
       return;
     }
+    setSignInRequired(false);
     setLoadError(false);
     try {
       const templates = await workoutTemplateService.getTemplates(userId);
@@ -226,9 +232,16 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
       userEquipment,
       userLocation === "both" ? "any" : userLocation,
     );
-    if (selectedCategory === "all") return all;
-    return all.filter((ex) => ex.category === selectedCategory);
-  }, [selectedCategory, userEquipment, userLocation]);
+    let list =
+      selectedCategory === "all"
+        ? all
+        : all.filter((ex) => ex.category === selectedCategory);
+    const q = exerciseSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter((ex) => ex.name.toLowerCase().includes(q));
+    }
+    return list;
+  }, [selectedCategory, userEquipment, userLocation, exerciseSearch]);
 
   const addExercise = useCallback((exercise: CuratedExercise) => {
     setAddedExercises((prev) => [
@@ -503,6 +516,43 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     );
   }
 
+  // Expired/missing session while hydrating an edit — distinct from a plain
+  // fetch failure so the user knows to sign in again rather than retry.
+  if (signInRequired) {
+    return (
+      <AuroraBackground theme="space" animated intensity={0.3}>
+        <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
+          <View style={styles.topRow}>
+            <AnimatedPressable
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            </AnimatedPressable>
+            <Text style={styles.stepEyebrow}>EDIT WORKOUT</Text>
+            <View style={styles.topRowSpacer} />
+          </View>
+          <View
+            style={styles.emptyWrap}
+            testID="create-workout-sign-in-required"
+          >
+            <EmptyState
+              icon="lock-closed-outline"
+              iconColor={colors.warning}
+              title="Sign in required"
+              subtitle="Your session has expired. Sign in again to edit this workout."
+              ctaText="Go Back"
+              onCta={() => navigation.goBack()}
+            />
+          </View>
+        </SafeAreaView>
+      </AuroraBackground>
+    );
+  }
+
   // Edit-hydration error state — only renders when a template fetch failed.
   // Surfaces a retry CTA instead of leaving the user in a blank editor (which
   // would risk saving an empty template over the existing one).
@@ -723,6 +773,43 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
               </View>
             )}
 
+            {/* Exercise search — filters availableExercises by name */}
+            <View style={styles.exerciseSearchRow}>
+              <Ionicons
+                name="search-outline"
+                size={rf(16)}
+                color={colors.textTertiary}
+                style={styles.exerciseSearchIcon}
+              />
+              <TextInput
+                style={styles.exerciseSearchInput}
+                placeholder="Search exercises..."
+                placeholderTextColor={colors.textTertiary}
+                value={exerciseSearch}
+                onChangeText={setExerciseSearch}
+                autoCapitalize="none"
+                returnKeyType="search"
+                testID="exercise-picker-search-input"
+              />
+              {exerciseSearch.length > 0 ? (
+                <AnimatedPressable
+                  onPress={() => setExerciseSearch("")}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear exercise search"
+                  scaleValue={0.9}
+                  springConfig="snappy"
+                  hapticType="light"
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={rf(16)}
+                    color={colors.textTertiary}
+                  />
+                </AnimatedPressable>
+              ) : null}
+            </View>
+
             {/* Category filter — flat pill chips */}
             <ScrollView
               horizontal
@@ -762,6 +849,13 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                 style={styles.exerciseList}
                 testID="exercise-picker-list"
                 scrollEnabled={false}
+                ListEmptyComponent={
+                  <Text style={styles.pickerEmptyText}>
+                    {exerciseSearch.trim()
+                      ? `No exercises match "${exerciseSearch.trim()}"`
+                      : "No exercises found"}
+                  </Text>
+                }
               />
             </View>
 
@@ -1109,6 +1203,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: Math.max(rw(32), 44),
     height: Math.max(rw(32), 44),
+  },
+  // ── Exercise search ──
+  exerciseSearchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+    backgroundColor: hexToRgba(colors.white, 0.06),
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: rp(spacing.md),
+    minHeight: 44,
+    marginBottom: rp(spacing.sm),
+  },
+  exerciseSearchIcon: {
+    flexShrink: 0,
+  },
+  exerciseSearchInput: {
+    flex: 1,
+    fontSize: rf(14),
+    color: colors.text,
+    paddingVertical: rp(spacing.sm),
+  },
+  pickerEmptyText: {
+    fontSize: rf(13),
+    color: colors.textSecondary,
+    textAlign: "center",
+    paddingVertical: rp(spacing.xl),
   },
   // ── Category tabs ──
   categoryTabs: {
