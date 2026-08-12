@@ -670,13 +670,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       navigation.goBack();
     };
 
+    // "Exit" with zero logged progress shouldn't perform a network write —
+    // savePartialExit is only meaningful when there's something to save.
+    const exitWithoutSaving = () => {
+      navigation.goBack();
+    };
+
     showExitWorkoutAlert(
       hasProgress,
       session.workoutStats.exercisesCompleted,
       session.totalExercises,
       session.workoutStats.setsCompleted,
       saveProgress,
-      saveProgress
+      exitWithoutSaving
     );
   }, [session, workout.id, sessionId, navigation]);
 

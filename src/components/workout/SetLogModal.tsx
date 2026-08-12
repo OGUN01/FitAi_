@@ -206,6 +206,14 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   // Live PR preview — computed from the current weight/reps inputs against the
   // user's existing PRs. Null until history is loaded; null when no PR hit.
   const [prPreview, setPrPreview] = useState<PRCheckResult | null>(null);
+  // Tracks the exercise the `weight` field currently belongs to. SetLogModal
+  // is a single persistent instance reused for every set of every exercise
+  // in the session (no `key` prop in WorkoutSessionScreen), and `isVisible`
+  // cycles false→true for EVERY set (including sets within the same
+  // exercise). We only want to clear `weight` on an actual exercise change —
+  // clearing it on every reopen would also wipe the intentional "carry the
+  // same weight to the next set of this exercise" behavior.
+  const weightExerciseRef = useRef<string | null>(null);
 
   const exerciseData = exerciseFilterService.getExerciseById(exerciseId);
   const isBodyweight =
@@ -224,6 +232,18 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
     const [, maxReps] = parseRepRange(reps);
     setRepsInput(maxReps > 0 ? String(maxReps) : '');
     setSetType('normal');
+    // Reset weight ONLY when the exercise itself has changed since the last
+    // time this field was populated. `isVisible` cycles false→true for every
+    // set (including sets within the same exercise), so gating purely on
+    // `isVisible` would also wipe the intentionally "sticky" weight carried
+    // from set 1 to set 2 of the SAME exercise. Gating on exerciseId here
+    // fixes the critical bug (weight leaking across exercises, e.g. Bench
+    // Press 60kg silently pre-filling Squat/Leg Press/Bicep Curl) while
+    // preserving same-exercise continuity.
+    if (weightExerciseRef.current !== exerciseId) {
+      weightExerciseRef.current = exerciseId;
+      setWeight('');
+    }
     // In calibration mode, seed weight input with the conservative start weight.
     // P2-14: normalize calibrationStartKg to 1 decimal BEFORE display so fp
     // drift (e.g. 2.5000000001 from repeated kg<->lbs round-trips) never leaks
@@ -234,7 +254,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
       const roundedStartKg = Math.round(calibrationStartKg * 10) / 10;
       setWeight(kgToDisplay(roundedStartKg, userUnits));
     }
-  }, [isVisible, reps, calibrationMode, calibrationStartKg, setIndex]);
+  }, [isVisible, exerciseId, reps, calibrationMode, calibrationStartKg, setIndex]);
 
   // Fetch history + suggested weight (skip in calibration mode for Session 1)
   useEffect(() => {
