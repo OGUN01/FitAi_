@@ -64,14 +64,23 @@ const USER_DATA_TABLES = [
 	'weekly_workout_plans',
 	'workout_sessions',
 	'workouts',
-	'workout_exercises',
+	// NOTE: 'workout_exercises' and 'meal_foods' are intentionally NOT listed
+	// here. Neither table has a user_id column (ownership is only derivable
+	// via workout_exercises.workout_id -> workouts.user_id and
+	// meal_foods.meal_id -> meals.user_id — see 20260727000003 and
+	// 20260124000001). A `.eq('user_id', userId)` delete against either table
+	// always fails with PostgREST 42703 (undefined column), which previously
+	// pushed both into failedTables and made every deletion that touched a
+	// workout or a meal report as a false 207 partial-deletion even though
+	// the rows ARE actually removed automatically via
+	// ON DELETE CASCADE when the parent 'workouts' / 'meals' row is deleted
+	// below in this same loop.
 	'exercise_sets',
 	'exercise_prs',
 	'workout_templates',
 	'template_ratings',
 	'meal_generation_jobs',
 	'meals',
-	'meal_foods',
 	'progress_entries',
 	'progress_goals',
 	'user_achievements',

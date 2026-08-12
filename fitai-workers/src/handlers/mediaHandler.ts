@@ -38,6 +38,22 @@ const MEDIA_TYPES: Record<string, string> = {
 const BLOCKED_UPLOAD_CONTENT_TYPES = new Set(['image/svg+xml']);
 
 /**
+ * Allowed media categories. R2 has a flat key namespace (no real directory
+ * traversal against the bucket itself), but without this allowlist a request
+ * like GET /media/../secret-key would still be forwarded to R2 verbatim
+ * instead of being rejected up front by an explicit contract. Mirrors the
+ * allowlist already enforced in handleMediaUpload.
+ */
+const ALLOWED_MEDIA_CATEGORIES = new Set(['exercise', 'diet', 'user']);
+
+/**
+ * Media IDs must be a plain filename: alphanumeric, dash, underscore, dot
+ * only. Blocks path-traversal-shaped input (`..`, `/`) from ever reaching
+ * the R2 key, as defense-in-depth alongside the category allowlist.
+ */
+const MEDIA_ID_PATTERN = /^[a-zA-Z0-9_.-]+$/;
+
+/**
  * Cache configuration for different media types
  */
 const CACHE_DURATIONS = {
@@ -90,6 +106,25 @@ export async function handleMediaServe(
     if (!category || !id) {
       throw new APIError(
         'Missing category or ID parameter',
+        400,
+        ErrorCode.INVALID_PARAMETER
+      );
+    }
+
+    // 1b. Validate category and id shape before building the R2 key. This
+    // route is public/unauthenticated, so it must not forward arbitrary
+    // caller-supplied strings into the key namespace unchecked.
+    if (!ALLOWED_MEDIA_CATEGORIES.has(category)) {
+      throw new APIError(
+        'Invalid category. Must be: exercise, diet, or user',
+        400,
+        ErrorCode.INVALID_PARAMETER
+      );
+    }
+
+    if (!MEDIA_ID_PATTERN.test(id)) {
+      throw new APIError(
+        'Invalid ID format',
         400,
         ErrorCode.INVALID_PARAMETER
       );
@@ -237,6 +272,26 @@ export async function handleMediaUpload(
     const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     const filename = `${fileId}.${extension}`;
     const key = `${category}/${filename}`;
+
+    // 4b. Ownership check on WRITE, not just delete. `id` above can be a
+    // client-supplied customId, and R2 .put() silently overwrites an existing
+    // key — without this check, any authenticated user could pass another
+    // user's known/guessed fileId (or a shared 'exercise'/'diet' key) and
+    // overwrite/deface content they don't own. Fail closed exactly like
+    // handleMediaDelete: if a key already exists, only its original uploader
+    // may overwrite it.
+    const existing = await c.env.FITAI_MEDIA.head(key);
+    if (existing) {
+      const existingOwner = existing.customMetadata?.uploadedBy;
+      if (!existingOwner || existingOwner !== user.id) {
+        throw new APIError(
+          'Unauthorized to overwrite this file',
+          403,
+          ErrorCode.FORBIDDEN,
+          { key }
+        );
+      }
+    }
 
     // 5. Upload to R2
     const arrayBuffer = await file.arrayBuffer();

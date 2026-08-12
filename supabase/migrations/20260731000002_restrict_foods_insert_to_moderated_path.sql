@@ -1,0 +1,36 @@
+-- ============================================================================
+-- Migration: 20260731000002_restrict_foods_insert_to_moderated_path.sql
+-- ============================================================================
+-- Security audit fix (Round 7 — Supabase RLS & Cross-Cutting Security Audit).
+--
+-- The shared `foods` catalog table has had a
+-- "Authenticated users can insert foods" policy (WITH CHECK (true), see
+-- 20260325160000_add_foods_insert_policy.sql) that lets ANY authenticated
+-- user insert rows that immediately become visible to every other user via
+-- the "Authenticated users can read foods" SELECT policy — with zero
+-- moderation gate, unlike the newer 4-tier food system where
+-- `user_food_contributions` requires `is_approved` before becoming visible.
+-- Since `foods` feeds directly into calorie/macro tracking, this is a live
+-- write surface an attacker (or a careless client with a valid user JWT)
+-- could use to poison shared nutrition data that other users' meal logs
+-- silently rely on.
+--
+-- This table already has an `is_verified BOOLEAN DEFAULT FALSE` column, but
+-- no `user_id`/`created_by` column, so a SELECT-side "only show my own
+-- unverified rows" moderation gate isn't possible without a schema change
+-- (out of scope for this fix). Instead, matching the `exercises` table
+-- (which has no INSERT policy for authenticated users at all — writes are
+-- service-role/admin-managed only), authenticated client INSERT access is
+-- removed here. The real, moderated user-contribution path is
+-- `user_food_contributions` (see 20260725000001_add_crowdsource_verification.sql),
+-- which already gates visibility behind `is_approved`.
+--
+-- Idempotent: DROP POLICY IF EXISTS, safe to re-run.
+-- ============================================================================
+
+DROP POLICY IF EXISTS "Authenticated users can insert foods" ON public.foods;
+
+-- No replacement INSERT policy is created: with RLS enabled and no INSERT
+-- policy for `authenticated`, inserts from a user JWT are denied by default.
+-- Service-role clients (seed scripts, admin tooling) bypass RLS entirely and
+-- are unaffected.
