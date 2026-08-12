@@ -36,6 +36,55 @@ export interface AuthSession {
 }
 
 /**
+ * Maps a Supabase signUp() error to a user-friendly, actionable message.
+ * Supabase's raw error text is either too technical or, for the
+ * already-registered case, misses the actionable hint that the account may
+ * have been created via Google Sign-In.
+ */
+function mapRegisterError(error: { message?: string; code?: string }): string {
+  const msg: string = error?.message || '';
+
+  // User already exists — hint that they may have signed up with Google.
+  if (
+    error.code === 'user_already_exists' ||
+    msg.includes('User already registered') ||
+    msg.includes('already registered') ||
+    msg.includes('email_exists') ||
+    msg.includes('already been registered')
+  ) {
+    return 'An account with this email already exists. If you previously signed up with Google, please use the "Continue with Google" button instead.';
+  }
+
+  // Weak password — keep wording consistent with this form's own 8-char
+  // client-side validation (Supabase's default message references its own
+  // 6-char minimum, which would be confusing here).
+  if (error.code === 'weak_password' || msg.includes('Password should be')) {
+    return 'Your password is too weak. Please use at least 8 characters including letters and numbers.';
+  }
+
+  // Invalid email format
+  if (
+    error.code === 'validation_failed' ||
+    msg.includes('invalid email') ||
+    msg.includes('Unable to validate')
+  ) {
+    return 'Please enter a valid email address.';
+  }
+
+  // Rate limiting
+  if (
+    error.code === 'over_request_rate_limit' ||
+    error.code === 'over_email_send_rate_limit' ||
+    msg.includes('too many') ||
+    msg.includes('rate limit')
+  ) {
+    return 'Too many sign-up attempts. Please wait a few minutes and try again.';
+  }
+
+  return msg || 'Account creation failed. Please try again.';
+}
+
+/**
  * P1-7: AsyncStorage key for the cached AuthUser (display data only — NOT tokens).
  *
  * CANONICAL SESSION STORE: Supabase's SecureStore adapter (configured in
@@ -342,7 +391,19 @@ class AuthService {
       if (error) {
         return {
           success: false,
-          error: error.message,
+          error: mapRegisterError(error),
+        };
+      }
+
+      // Supabase may return a user with identities=[] when the email is
+      // already registered (a security measure to prevent user enumeration
+      // via signUp's normally-successful response). Surface the same
+      // actionable message as the explicit error case above.
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        return {
+          success: false,
+          error:
+            'An account with this email already exists. If you previously signed up with Google, please use the "Continue with Google" button instead.',
         };
       }
 
@@ -405,10 +466,13 @@ class AuthService {
 
       if (error) {
 
-        // Check if error is related to email verification
+        // Check if error is related to email verification. Use the specific
+        // Supabase error code as the primary signal — a broad substring match
+        // on 'email' also catches "email rate limit exceeded" and "Unable to
+        // validate email address: invalid format", both of which contain the
+        // word 'email' but have nothing to do with verification.
         if (
           error.code === 'email_not_confirmed' ||
-          error.message?.includes('email') ||
           error.message?.includes('confirm') ||
           error.message?.includes('verify') ||
           error.message?.includes('not confirmed')
@@ -417,6 +481,32 @@ class AuthService {
             success: false,
             error:
               'Please verify your email address before logging in. Check your email for the verification link.',
+          };
+        }
+
+        // Rate limiting — distinct from "check your email" messaging; the
+        // correct instruction here is to wait and retry.
+        if (
+          error.code === 'over_request_rate_limit' ||
+          error.code === 'over_email_send_rate_limit' ||
+          error.message?.includes('rate limit')
+        ) {
+          return {
+            success: false,
+            error: 'Too many attempts. Please wait a few minutes and try again.',
+          };
+        }
+
+        // Invalid email format — distinct from "check your email" messaging;
+        // the correct instruction here is to fix the email address.
+        if (
+          error.code === 'validation_failed' ||
+          error.message?.includes('Unable to validate email') ||
+          error.message?.includes('invalid format')
+        ) {
+          return {
+            success: false,
+            error: 'Please enter a valid email address.',
           };
         }
 

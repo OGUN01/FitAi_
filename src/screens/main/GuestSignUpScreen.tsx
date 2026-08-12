@@ -11,8 +11,12 @@ import { useAuth } from "../../hooks/useAuth";
 import { RegisterCredentials } from "../../types/user";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { BottomSheet } from "../../components/ui/aurora/BottomSheet";
 // Note: Migration is now handled automatically by auth.ts - no manual migration needed in this screen
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { dataBridge } from "../../services/DataBridge";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface GuestSignUpScreenProps {
   onBack: () => void;
@@ -36,6 +40,12 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
+  // Forgot-password in-app sheet (replaces the native browser window.prompt on web).
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null);
+  const [forgotPasswordSubmitting, setForgotPasswordSubmitting] = useState(false);
+
   const { register, login, signInWithGoogle, resetPassword } = useAuth();
 
   const updateField = (field: keyof RegisterCredentials, value: string) => {
@@ -46,26 +56,38 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
     }
   };
 
-  const handleForgotPassword = async () => {
-    let email: string | null = null;
-    if (Platform.OS === 'web') {
-      email = window.prompt('Enter your email address to reset your password:');
-    } else {
-      // On native, pre-fill with current email if available
-      email = formData.email.trim() || null;
-      if (!email) {
-        crossPlatformAlert(
-          'Forgot Password',
-          'Please enter your email address in the Email field first, then tap Forgot Password.',
-        );
-        return;
-      }
+  const handleForgotPassword = () => {
+    // Pre-fill with whatever's already in the Email field (works on both
+    // native and web) and let the in-app sheet handle validation/submission —
+    // no OS-level prompt, matches the Aurora design system.
+    setForgotPasswordEmail(formData.email.trim());
+    setForgotPasswordError(null);
+    setForgotPasswordVisible(true);
+  };
+
+  const closeForgotPasswordSheet = () => {
+    setForgotPasswordVisible(false);
+    setForgotPasswordError(null);
+  };
+
+  const handleForgotPasswordSubmit = async () => {
+    const trimmedEmail = forgotPasswordEmail.trim();
+
+    if (!trimmedEmail) {
+      setForgotPasswordError("Email is required");
+      return;
+    }
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setForgotPasswordError("Please enter a valid email address");
+      return;
     }
 
-    if (!email || !email.trim()) return;
-
+    setForgotPasswordError(null);
+    setForgotPasswordSubmitting(true);
     try {
-      const result = await resetPassword(email.trim().toLowerCase());
+      const result = await resetPassword(trimmedEmail.toLowerCase());
+      setForgotPasswordSubmitting(false);
+      setForgotPasswordVisible(false);
       crossPlatformAlert(
         result.success ? 'Password Reset Email Sent' : 'Reset Failed',
         result.success
@@ -73,6 +95,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
           : result.error || 'Unable to send reset email. Please try again.',
       );
     } catch (err) {
+      setForgotPasswordSubmitting(false);
       crossPlatformAlert('Error', 'Failed to send reset email. Please try again.');
     }
   };
@@ -123,6 +146,9 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
         // after initiating the redirect, but the user hasn't completed sign-in yet.
         // The actual sign-in completes when the browser redirects back to the callback URL.
         // Don't show a failure alert — the redirect is in progress.
+      } else if (response.error === 'Sign-in was cancelled') {
+        // User-initiated cancellation (dismissed the Google account picker) is
+        // not an error — dismiss silently, same as best-in-class apps do.
       } else {
           crossPlatformAlert('Sign Up Failed', response.error || 'Please try again.');
       }
@@ -153,10 +179,18 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
 
       if (result.success) {
         // Email verification required before login
-        // Migration will happen automatically when user logs in after verification
+        // Migration will happen automatically when user logs in after verification.
+        // Only mention syncing when there's actually guest data to sync, and
+        // scope the claim to what migration actually covers today (profile
+        // and onboarding preferences — NOT workout/meal history, which stays
+        // local-only until DataBridge migrates those tables too).
+        const hasGuestData = await dataBridge.hasGuestDataForMigration().catch(() => false);
+        const syncNote = hasGuestData
+          ? ' After verification, you can log in and your saved profile and preferences will be automatically synced.'
+          : '';
           crossPlatformAlert(
             'Account Created Successfully!',
-            'Please check your email and click the verification link to activate your account. After verification, you can log in and your profile data will be automatically synced.',
+            `Please check your email and click the verification link to activate your account.${syncNote}`,
             [
               {
                 text: 'OK',
@@ -453,6 +487,43 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
         </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      <BottomSheet
+        visible={forgotPasswordVisible}
+        onClose={closeForgotPasswordSheet}
+        title="Reset Password"
+        dismissOnDrag={!forgotPasswordSubmitting}
+        closeOnOverlayPress={!forgotPasswordSubmitting}
+      >
+        <Text style={styles.forgotSheetSubtitle}>
+          Enter your email address and we&apos;ll send you a link to reset your password.
+        </Text>
+        <UnderlineInput
+          label="Email Address"
+          placeholder="Enter your email address"
+          value={forgotPasswordEmail}
+          onChangeText={(value) => {
+            setForgotPasswordEmail(value);
+            if (forgotPasswordError) setForgotPasswordError(null);
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          accentColor={forgotPasswordError ? colors.error : undefined}
+          containerStyle={styles.fieldContainer}
+        />
+        {forgotPasswordError ? (
+          <Text style={styles.fieldError}>{forgotPasswordError}</Text>
+        ) : null}
+        <GlassButton
+          label="Send Reset Link"
+          onPress={handleForgotPasswordSubmit}
+          variant="primary"
+          fullWidth
+          loading={forgotPasswordSubmitting}
+          disabled={forgotPasswordSubmitting}
+          style={styles.emailSignUpButton}
+        />
+      </BottomSheet>
     </AuroraBackground>
   );
 };
@@ -645,5 +716,12 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: spacing.xl,
+  },
+
+  forgotSheetSubtitle: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: rf(20),
+    marginBottom: spacing.md,
   },
 });
