@@ -4,17 +4,30 @@ import { Linking, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { haptics } from "../utils/haptics";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
+import { API_CONFIG } from "../config/api";
 
+const MAIL_FALLBACK_MESSAGE =
+  "Could not open your mail app. Please email support@fitai.app directly.";
+
+// Opens a mailto: (or other) URL, guarding against devices with no mail
+// client configured (common on tablets/emulators). On failure, surfaces a
+// fallback alert instead of silently doing nothing — matches the pattern in
+// useAboutFitAILogic.ts and PrivacySecurityScreen.tsx.
 const openUrl = (url: string) => {
-  if (Platform.OS === 'web') {
-    window.open(url, '_blank');
-  } else {
-    Linking.openURL(url);
+  if (Platform.OS === "web") {
+    try {
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("[useHelpSupport] Failed to open URL on web:", error);
+      crossPlatformAlert("Could Not Open", MAIL_FALLBACK_MESSAGE);
+    }
+    return;
   }
+  Linking.openURL(url).catch((error) => {
+    console.error("[useHelpSupport] Failed to open URL:", error);
+    crossPlatformAlert("Could Not Open", MAIL_FALLBACK_MESSAGE);
+  });
 };
-
-// Matches src/services/fitaiWorkersClient.ts default base URL.
-const WORKER_API_BASE_URL = "https://fitai-workers.fitai-prod.workers.dev";
 
 export interface FAQItem {
   id: string;
@@ -52,7 +65,7 @@ export const useHelpSupport = () => {
       id: "4",
       question: "Can I sync with other fitness apps?",
       answer:
-        "Currently, FitAI works as a standalone app with its own comprehensive tracking. We're working on integrations with popular fitness devices and apps for future updates.",
+        "Yes! FitAI syncs with Apple Health on iOS and Health Connect on Android, pulling in steps, heart rate, workouts, sleep, and more from your wearables and other fitness apps. Go to Settings > Connect Wearables to set it up.",
       icon: "sync-outline",
     },
     {
@@ -76,58 +89,26 @@ export const useHelpSupport = () => {
     setExpandedFaq((prev) => (prev === id ? null : id));
   }, []);
 
+  // All mailto actions on this screen (Contact Support, Report Bug, Feature
+  // Request, and the ContactCard email button below) open the mail composer
+  // directly without a confirmation step — it's a non-destructive action
+  // that's trivially cancelled from the composer itself, so a Cancel/Email
+  // alert only adds friction. Kept consistent across all four entry points.
   const handleContactSupport = useCallback(() => {
-    crossPlatformAlert(
-      "Contact Support",
-      "Reach our support team by email:",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Email",
-          onPress: () => {
-            Linking.openURL(
-              "mailto:support@fitai.app?subject=FitAI Support Request",
-            );
-          },
-        },
-      ],
-    );
+    haptics.light();
+    openUrl("mailto:support@fitai.app?subject=FitAI Support Request");
   }, []);
 
 
   const handleReportBug = useCallback(() => {
-    const url = "mailto:bugs@fitai.app?subject=Bug Report - FitAI";
-    crossPlatformAlert(
-      "Report a Bug",
-      "Help us improve FitAI by reporting any issues you encounter.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Report Bug",
-          onPress: () => {
-            Linking.openURL(url);
-          },
-        },
-      ],
-    );
+    haptics.light();
+    openUrl("mailto:bugs@fitai.app?subject=Bug Report - FitAI");
   }, []);
 
 
   const handleFeatureRequest = useCallback(() => {
-    const url = "mailto:features@fitai.app?subject=Feature Request - FitAI";
-    crossPlatformAlert(
-      "Feature Request",
-      "We'd love to hear your ideas for improving FitAI!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Request",
-          onPress: () => {
-            Linking.openURL(url);
-          },
-        },
-      ],
-    );
+    haptics.light();
+    openUrl("mailto:features@fitai.app?subject=Feature Request - FitAI");
   }, []);
 
 
@@ -149,7 +130,7 @@ export const useHelpSupport = () => {
     };
 
     try {
-      const response = await fetch(`${WORKER_API_BASE_URL}/health`);
+      const response = await fetch(`${API_CONFIG.WORKERS_BASE_URL}/health`);
       if (!response.ok && response.status !== 503) {
         throw new Error(`Health check returned HTTP ${response.status}`);
       }

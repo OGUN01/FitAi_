@@ -72,6 +72,26 @@ interface MetricDef {
 const nonNegative = (n: number) =>
   n < 0 ? "Must be 0 or greater" : undefined;
 
+// Validates the free-text date field the same way METRIC_DEFS validate
+// numeric fields: format check, real-calendar-date check, and a "not in the
+// future" guard so a malformed or future date never reaches
+// healthMetricsDataService.saveHealthSnapshot (which would either surface an
+// opaque Postgres error or silently log data under a nonsensical date).
+const validateDateStr = (raw: string): string | undefined => {
+  const trimmed = raw.trim();
+  if (!trimmed) return "Date is required";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return "Use format YYYY-MM-DD";
+  const parsed = new Date(`${trimmed}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "Enter a valid date";
+  // Reject dates that round-trip to a different calendar date (e.g.
+  // 2024-02-30 gets normalized by Date to 2024-03-01 instead of throwing).
+  const roundTrip = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+  if (roundTrip !== trimmed) return "Enter a valid date";
+  const today = new Date(`${getLocalDateString()}T00:00:00`);
+  if (parsed.getTime() > today.getTime()) return "Date cannot be in the future";
+  return undefined;
+};
+
 const METRIC_DEFS: MetricDef[] = [
   {
     key: "steps",
@@ -331,7 +351,9 @@ export const ManualHealthEntryScreen: React.FC<
     return out;
   }, [values]);
 
-  const hasErrors = Object.keys(errors).length > 0;
+  const dateError = useMemo(() => validateDateStr(dateStr), [dateStr]);
+
+  const hasErrors = Object.keys(errors).length > 0 || !!dateError;
   const changedKeys = useMemo(
     () => METRIC_DEFS.filter((d) => values[d.key]?.trim()).map((d) => d.key),
     [values],
@@ -490,13 +512,13 @@ export const ManualHealthEntryScreen: React.FC<
             </View>
           )}
 
-          {/* Date selector — simple local-date TextInput */}
+          {/* Date selector — simple local-date TextInput with inline validation */}
           <View style={styles.dateCard}>
             <View style={styles.dateRow}>
               <Ionicons
                 name="calendar-outline"
                 size={rf(18)}
-                color={colors.primary}
+                color={dateError ? colors.error : colors.primary}
               />
               <View style={styles.dateLabelCol}>
                 <Text style={styles.dateLabel}>Date</Text>
@@ -505,7 +527,7 @@ export const ManualHealthEntryScreen: React.FC<
                 </Text>
               </View>
               <TextInput
-                style={styles.dateInput}
+                style={[styles.dateInput, dateError && styles.dateInputError]}
                 value={dateStr}
                 onChangeText={setDateStr}
                 placeholder="YYYY-MM-DD"
@@ -514,6 +536,12 @@ export const ManualHealthEntryScreen: React.FC<
                 accessibilityLabel="Date for the manual entry"
               />
             </View>
+            {dateError ? (
+              <View style={styles.dateErrorRow}>
+                <Ionicons name="alert-circle" size={rf(13)} color={colors.error} />
+                <Text style={styles.dateErrorText}>{dateError}</Text>
+              </View>
+            ) : null}
           </View>
 
           {METRIC_GROUPS.map((group) => {
@@ -708,6 +736,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(8),
     minWidth: rw(120),
+  },
+  dateInputError: {
+    borderColor: colors.error,
+  },
+  dateErrorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: rp(8),
+    marginLeft: rw(28),
+  },
+  dateErrorText: {
+    fontSize: rf(12),
+    color: colors.error,
+    marginLeft: spacing.xs,
+    flex: 1,
   },
   groupHeader: {
     flexDirection: "row",
