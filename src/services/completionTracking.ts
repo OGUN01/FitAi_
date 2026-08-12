@@ -296,7 +296,14 @@ class CompletionTrackingService {
               }
 
               if (supabaseSessionId) {
-                this._writeExerciseSets(
+                // Awaited (not fire-and-forget): completeWorkout()'s caller
+                // (WorkoutSessionScreen) shows the "Workout Complete!" success
+                // dialog as soon as this promise resolves. _writeExerciseSets
+                // already queues to offlineService on failure, so awaiting it
+                // here guarantees the set-level data is durably saved or
+                // durably queued before the user can background/kill the app
+                // believing their workout was saved.
+                await this._writeExerciseSets(
                   userId,
                   supabaseSessionId,
                   completedExercises,

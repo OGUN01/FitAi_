@@ -118,9 +118,23 @@ export const useFitnessStore = create<FitnessState>()(
           }
         }
 
+        // Do NOT unconditionally wipe an in-progress session just because the
+        // wall-clock date ticked over — RN apps are routinely killed and
+        // relaunched by the OS while backgrounded, and a user mid-workout at
+        // 11:55pm would otherwise lose every logged set on relaunch after
+        // midnight with no warning or recovery. Only clear a session that's
+        // genuinely abandoned (older than any real workout could plausibly
+        // run), not one that's merely "from before today" by the calendar.
+        const STALE_SESSION_MS = 18 * 60 * 60 * 1000; // 18 hours
+        const session = state.currentWorkoutSession;
+        const sessionIsStale =
+          !session ||
+          !session.startedAt ||
+          Date.now() - new Date(session.startedAt).getTime() > STALE_SESSION_MS;
+
         set({
           workoutProgress: cleaned,
-          currentWorkoutSession: null,
+          currentWorkoutSession: sessionIsStale ? null : session,
           lastProgressDate: today,
         });
       },
