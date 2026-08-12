@@ -800,6 +800,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   goalML={waterGoalML ?? 0}
                   onAddWater={hydrationAddWater}
                   onOpenDetails={handleShowWaterIntake}
+                  isToday={isSelectedDateToday}
                 />
 
                 {/* Offline-DB download prompt — kept off the top so the hero rings
@@ -906,6 +907,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             onRequestBarcodeScan={handleLogMealBarcodeScan}
             pendingScanResult={logMealScanResult}
             onScanResultConsumed={handleScanResultConsumed}
+            selectedDate={selectedDateKey}
           />
         )}
 
@@ -917,6 +919,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             onAddWater={hydrationAddWater}
             currentIntakeML={waterIntakeML || 0}
             goalML={waterGoalML ?? 0}
+            isToday={isSelectedDateToday}
           />
         )}
 

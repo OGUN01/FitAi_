@@ -28,6 +28,12 @@ export interface WaterQuickRowProps {
   onAddWater: (ml: number) => void;
   onOpenDetails: () => void;
   testID?: string;
+  // hydrationStore is a single global "today" value with no per-date scoping
+  // (see src/stores/hydrationStore.ts). When the Diet dashboard is browsing a
+  // past/future day via DateStepper, quick-add would silently log water to
+  // TODAY instead of the viewed day. Default true (today) so existing callers
+  // that don't pass this keep full functionality.
+  isToday?: boolean;
 }
 
 const safe = (n: number): number => (Number.isFinite(n) ? n : 0);
@@ -43,6 +49,7 @@ const WaterQuickRowComponent: React.FC<WaterQuickRowProps> = ({
   onAddWater,
   onOpenDetails,
   testID,
+  isToday = true,
 }) => {
   const intake = safe(intakeML);
   const goal = safe(goalML);
@@ -98,17 +105,21 @@ const WaterQuickRowComponent: React.FC<WaterQuickRowProps> = ({
       style={styles.container}
       testID={testID}
     >
-      {/* Body: ring + label/caption. Tapping opens the water tracker modal. */}
+      {/* Body: ring + label/caption. Tapping opens the water tracker modal.
+          hydrationStore always represents TODAY (no per-date scoping), so on
+          a past/future day the ring is dimmed and the numeric value is hidden
+          rather than showing today's total under a different day's context. */}
       <AnimatedPressable
         onPress={onOpenDetails}
+        disabled={!isToday}
         scaleValue={0.99}
         hapticType="light"
         accessibilityRole="button"
-        accessibilityLabel="Open water tracker"
-        style={styles.body}
+        accessibilityLabel={isToday ? 'Open water tracker' : 'Water tracking is available for today only'}
+        style={[styles.body, !isToday && styles.bodyDisabled]}
       >
         <ProgressRing
-          progress={pct}
+          progress={isToday ? pct : 0}
           size={rw(52)}
           strokeWidth={rw(7)}
           color={colors.info}
@@ -121,91 +132,108 @@ const WaterQuickRowComponent: React.FC<WaterQuickRowProps> = ({
           <Text style={styles.label} numberOfLines={1}>
             Water
           </Text>
-          <Text style={styles.caption} numberOfLines={1}>
-            {goal > 0 ? (
-              <>
-                <Text
-                  style={[
-                    styles.captionCurrent,
-                    isGoalReached && styles.captionCurrentReached,
-                  ]}
-                >
-                  {intakeL}
-                </Text>
-                <Text style={styles.captionGoal}> / {goalL} L</Text>
-              </>
-            ) : (
-              <Text style={styles.captionCurrent}>{intakeL} L</Text>
-            )}
-          </Text>
+          {isToday ? (
+            <Text style={styles.caption} numberOfLines={1}>
+              {goal > 0 ? (
+                <>
+                  <Text
+                    style={[
+                      styles.captionCurrent,
+                      isGoalReached && styles.captionCurrentReached,
+                    ]}
+                  >
+                    {intakeL}
+                  </Text>
+                  <Text style={styles.captionGoal}> / {goalL} L</Text>
+                </>
+              ) : (
+                <Text style={styles.captionCurrent}>{intakeL} L</Text>
+              )}
+            </Text>
+          ) : (
+            <Text style={styles.caption} numberOfLines={1}>
+              Not tracked for this day
+            </Text>
+          )}
         </View>
-        <View style={styles.glassesChip}>
+        {isToday && <View style={styles.glassesChip}>
           <Text style={styles.glasses} numberOfLines={1}>
             {glasses} glass{glasses === 1 ? '' : 'es'}
           </Text>
-        </View>
+        </View>}
       </AnimatedPressable>
 
-      {/* Quick-add cluster: default +250 chip + chevron; expands to a row of pills */}
-      <View style={styles.quickAddCluster}>
-        <View style={styles.quickAddTop}>
-          <AnimatedPressable
-            onPress={() => selectAmount(250)}
-            scaleValue={0.94}
-            hapticType="light"
-            accessibilityRole="button"
-            accessibilityLabel="Add 250 ml water"
-            style={styles.quickAdd}
-          >
-            <Text style={styles.quickAddText} numberOfLines={1}>
-              +250
-            </Text>
-          </AnimatedPressable>
-          <AnimatedPressable
-            onPress={toggleExpand}
-            scaleValue={0.94}
-            hapticType="light"
-            accessibilityRole="button"
-            accessibilityLabel={
-              expanded ? 'Collapse quick add options' : 'Expand quick add options'
-            }
-            style={styles.chevron}
-          >
-            <Ionicons
-              name={expanded ? 'chevron-up' : 'chevron-down'}
-              size={rf(16)}
-              color={colors.info}
-            />
-          </AnimatedPressable>
-        </View>
-        <Animated.View
-          style={[styles.expandedRow, expandStyle]}
-          pointerEvents={expanded ? 'auto' : 'none'}
-        >
-          <View style={styles.pillsRow}>
-            {QUICK_AMOUNTS.map((ml, index) => (
-              <Animated.View
-                key={ml}
-                entering={ZoomIn.delay(index * 40).duration(200)}
-                style={styles.pillWrap}
-              >
-                <AnimatedPressable
-                  onPress={() => selectAmount(ml)}
-                  scaleValue={0.94}
-                  hapticType="light"
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add ${ml} ml water`}
-                  style={styles.pill}
-                >
-                  <Text style={styles.pillText} numberOfLines={1}>
-                    {formatAmount(ml)}
-                  </Text>
-                </AnimatedPressable>
-              </Animated.View>
-            ))}
+      {/* Quick-add cluster: default +250 chip + chevron; expands to a row of pills.
+          hydrationStore has no per-date scoping (always "today"), so quick-add
+          is disabled while browsing a past/future day to avoid silently
+          logging water to the wrong date. */}
+      {isToday ? (
+        <View style={styles.quickAddCluster}>
+          <View style={styles.quickAddTop}>
+            <AnimatedPressable
+              onPress={() => selectAmount(250)}
+              scaleValue={0.94}
+              hapticType="light"
+              accessibilityRole="button"
+              accessibilityLabel="Add 250 ml water"
+              style={styles.quickAdd}
+            >
+              <Text style={styles.quickAddText} numberOfLines={1}>
+                +250
+              </Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              onPress={toggleExpand}
+              scaleValue={0.94}
+              hapticType="light"
+              accessibilityRole="button"
+              accessibilityLabel={
+                expanded ? 'Collapse quick add options' : 'Expand quick add options'
+              }
+              style={styles.chevron}
+            >
+              <Ionicons
+                name={expanded ? 'chevron-up' : 'chevron-down'}
+                size={rf(16)}
+                color={colors.info}
+              />
+            </AnimatedPressable>
           </View>
-        </Animated.View>
-      </View>
+          <Animated.View
+            style={[styles.expandedRow, expandStyle]}
+            pointerEvents={expanded ? 'auto' : 'none'}
+          >
+            <View style={styles.pillsRow}>
+              {QUICK_AMOUNTS.map((ml, index) => (
+                <Animated.View
+                  key={ml}
+                  entering={ZoomIn.delay(index * 40).duration(200)}
+                  style={styles.pillWrap}
+                >
+                  <AnimatedPressable
+                    onPress={() => selectAmount(ml)}
+                    scaleValue={0.94}
+                    hapticType="light"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${ml} ml water`}
+                    style={styles.pill}
+                  >
+                    <Text style={styles.pillText} numberOfLines={1}>
+                      {formatAmount(ml)}
+                    </Text>
+                  </AnimatedPressable>
+                </Animated.View>
+              ))}
+            </View>
+          </Animated.View>
+        </View>
+      ) : (
+        <View style={styles.todayOnlyBadge} accessibilityElementsHidden>
+          <Text style={styles.todayOnlyText} numberOfLines={1}>
+            Today only
+          </Text>
+        </View>
+      )}
     </Animated.View>
   );
 };
@@ -236,6 +264,9 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: spacing.sm,
     minHeight: Math.max(rh(44), 44),
+  },
+  bodyDisabled: {
+    opacity: 0.45,
   },
   textBlock: {
     flex: 1,
@@ -276,6 +307,17 @@ const styles = StyleSheet.create({
   },
   quickAddCluster: {
     alignItems: 'flex-end' as const,
+  },
+  todayOnlyBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.textMuted, TINT_ALPHA_LOW),
+  },
+  todayOnlyText: {
+    fontSize: rf(fontSize.micro),
+    fontWeight: '600' as const,
+    color: colors.textMuted,
   },
   quickAddTop: {
     flexDirection: 'row' as const,

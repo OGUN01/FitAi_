@@ -34,6 +34,7 @@ import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 import { completionTrackingService } from '../../services/completionTracking';
 import { useAuth } from '../../hooks/useAuth';
 import { MealLogProvenance } from '../../types/nutritionLogging';
+import { getLocalDateString } from '../../utils/weekUtils';
 
 export interface LogMealScanResult {
   type: 'food' | 'label' | 'barcode';
@@ -94,6 +95,13 @@ interface LogMealModalProps {
   onRequestBarcodeScan?: () => void;
   pendingScanResult?: LogMealScanResult | null;
   onScanResultConsumed?: () => void;
+  // The date the Diet dashboard is currently viewing (via DateStepper), as an
+  // ISO "YYYY-MM-DD" string. addDailyMeal / completionTrackingService.completeMeal
+  // both default to "now" with no date param, so a meal logged while browsing
+  // a past/future day is always attributed to TODAY regardless of this value.
+  // Surfaced as an explicit warning below (rather than silently mislabeling
+  // history) until completeMeal accepts an explicit date.
+  selectedDate?: string;
 }
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
@@ -149,7 +157,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   onRequestBarcodeScan,
   pendingScanResult,
   onScanResultConsumed,
+  selectedDate,
 }) => {
+  const isLoggingToday = !selectedDate || selectedDate === getLocalDateString();
   const [mealName, setMealName] = useState('');
   const [mealType, setMealType] = useState<MealType>('lunch');
   const [mode, setMode] = useState<'ingredients' | 'simple'>('ingredients');
@@ -647,6 +657,22 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled
             >
+              {/* Manual meal logs always attribute to TODAY (addDailyMeal /
+                  completionTrackingService.completeMeal have no date param).
+                  Warn explicitly when the user is browsing a different day so
+                  the mismatch is never silent. */}
+              {!isLoggingToday && (
+                <Animated.View
+                  entering={FadeInDown.delay(40).duration(400)}
+                  style={styles.dateWarningNotice}
+                >
+                  <Ionicons name="alert-circle-outline" size={rf(16)} color={colors.warning} />
+                  <Text style={styles.dateWarningText}>
+                    This meal will be logged for today's date, not the day you're viewing.
+                  </Text>
+                </Animated.View>
+              )}
+
               {/* Meal Name */}
               {scanReviewNote && (
                 <Animated.View
@@ -1446,6 +1472,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     textAlign: 'center' as const,
+  },
+  dateWarningNotice: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: rw(8),
+    backgroundColor: hexToRgba(colors.warning, TINT_ALPHA_LOW),
+    borderRadius: rbr(12),
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.warning, TINT_ALPHA_MEDIUM),
+    paddingHorizontal: rp(12),
+    paddingVertical: rh(10),
+    marginBottom: rh(12),
+  },
+  dateWarningText: {
+    flex: 1,
+    fontSize: rf(12),
+    lineHeight: rf(17),
+    color: colors.text,
   },
   scanNotice: {
     flexDirection: 'row' as const,

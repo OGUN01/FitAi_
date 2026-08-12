@@ -10,7 +10,7 @@
  * - Consistent with app design system
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,7 @@ import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ProgressRing } from '../ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { getLocalDateString } from '../../utils/weekUtils';
 
 interface WaterIntakeModalProps {
   visible: boolean;
@@ -44,7 +45,20 @@ interface WaterIntakeModalProps {
   onAddWater: (amountML: number) => void;
   currentIntakeML: number;
   goalML: number;
+  // hydrationStore always represents TODAY (no per-date scoping). When this
+  // modal is opened while the Diet dashboard is browsing a past/future day,
+  // logging here would silently attribute the amount to today, not the
+  // viewed day. Default true (today) so existing callers keep full function.
+  isToday?: boolean;
 }
+
+// Module-level (not component state): survives re-mounts of the modal so the
+// goal-reached celebration haptic fires once per day, not once per modal
+// open. Modal content unmounts when `visible=false`, so a useRef would reset
+// on every re-open and re-fire the haptic every time the user reopens the
+// modal after already hitting today's goal. Keyed by date string so it
+// naturally "resets" on daily rollover without needing an explicit reset.
+let celebratedDateKey: string | null = null;
 
 export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   visible,
@@ -52,6 +66,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   onAddWater,
   currentIntakeML,
   goalML,
+  isToday = true,
 }) => {
   const insets = useSafeAreaInsets();
   const [customAmount, setCustomAmount] = useState<string>('');
@@ -64,18 +79,23 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   // Guard goalML=0 (no water goal set): 0 >= 0 would falsely show "goal reached".
   const isGoalReached = goalML > 0 && currentIntakeML >= goalML;
 
-  // Celebration: fire haptics.celebration ONCE when goal transitions to reached.
-  // Ref-guard prevents re-firing on re-renders while goal stays reached.
-  const celebratedRef = useRef(false);
+  // Celebration: fire haptics.celebration ONCE per day when the goal is
+  // reached — not on every modal open. The glow border itself still reflects
+  // "goal reached" state every time (harmless visual, not a repeat
+  // celebration), but the haptic is gated by celebratedDateKey (module-level,
+  // date-keyed — see declaration above) so re-opening the modal after
+  // already hitting today's goal doesn't re-fire the celebration haptic.
   const ringGlow = useSharedValue(0);
 
   useEffect(() => {
-    if (isGoalReached && !celebratedRef.current) {
-      celebratedRef.current = true;
-      haptics.celebration();
+    if (isGoalReached) {
       ringGlow.value = withTiming(1, { duration: 600 });
-    } else if (!isGoalReached && celebratedRef.current) {
-      celebratedRef.current = false;
+      const todayKey = getLocalDateString();
+      if (celebratedDateKey !== todayKey) {
+        celebratedDateKey = todayKey;
+        haptics.celebration();
+      }
+    } else {
       ringGlow.value = withTiming(0, { duration: 400 });
     }
   }, [isGoalReached, ringGlow]);
@@ -99,17 +119,21 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
     onClose();
   }, [onClose]);
 
-  // Handle quick add — haptics handled by AnimatedPressable on press-in
+  // Handle quick add — haptics handled by AnimatedPressable on press-in.
+  // hydrationStore has no per-date scoping, so logging is blocked outright
+  // (not just warned) while viewing a past/future day — see isToday above.
   const handleQuickAdd = useCallback(
     (amountML: number) => {
+      if (!isToday) return;
       onAddWater(amountML);
       handleClose();
     },
-    [onAddWater, handleClose]
+    [isToday, onAddWater, handleClose]
   );
 
   // Handle custom amount submit — input is in milliliters
   const handleCustomSubmit = useCallback(() => {
+    if (!isToday) return;
     const amountML = parseFloat(customAmount);
 
     if (!customAmount || isNaN(amountML)) {
@@ -127,7 +151,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
     haptics.success();
     onAddWater(amountML);
     handleClose();
-  }, [customAmount, onAddWater, handleClose]);
+  }, [isToday, customAmount, onAddWater, handleClose]);
 
   const quickOptions = [
     { label: '250ml', amount: 250, icon: 'water-outline' as const },
@@ -171,6 +195,19 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                 </TouchableOpacity>
               </Animated.View>
 
+              {/* hydrationStore is a single global "today" value (no per-date
+                  scoping) — logging is disabled while browsing a past/future
+                  day so a tap here can never silently attribute water to the
+                  wrong date. */}
+              {!isToday && (
+                <Animated.View entering={FadeInDown.delay(40).duration(400)} style={styles.readOnlyBanner}>
+                  <Ionicons name="information-circle-outline" size={rf(16)} color={colors.textSecondary} />
+                  <Text style={styles.readOnlyBannerText}>
+                    Water can only be logged for today. Switch back to today to add water.
+                  </Text>
+                </Animated.View>
+              )}
+
               {/* Current Progress — hero ring */}
               <Animated.View
                 entering={FadeInDown.delay(60).duration(400)}
@@ -212,12 +249,13 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                     <AnimatedPressable
                       key={option.label}
                       onPress={() => handleQuickAdd(option.amount)}
+                      disabled={!isToday}
                       scaleValue={0.94}
                       hapticType="light"
                       accessibilityRole="button"
                       accessibilityLabel={`Add ${option.label} of water`}
                       accessibilityHint="Quickly adds this amount to today's water intake"
-                      style={styles.quickOption}
+                      style={[styles.quickOption, !isToday && styles.disabledControl]}
                     >
                       <View style={styles.quickOptionPill}>
                         <View style={styles.quickOptionIconDisc}>
@@ -247,6 +285,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                       setCustomAmount(text);
                       setError(null);
                     }}
+                    editable={isToday}
                     placeholder="e.g., 250"
                     placeholderTextColor={colors.textTertiary}
                     keyboardType="decimal-pad"
@@ -270,6 +309,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                 <GlassButton
                   label="Add Water"
                   onPress={handleCustomSubmit}
+                  disabled={!isToday}
                   icon="add"
                   fullWidth
                   accessibilityLabel="Add water"
@@ -333,6 +373,27 @@ const styles = StyleSheet.create({
     borderColor: colors.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  readOnlyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(8),
+    marginBottom: rp(16),
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(10),
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  readOnlyBannerText: {
+    flex: 1,
+    fontSize: rf(12),
+    lineHeight: rf(16),
+    color: colors.textSecondary,
+  },
+  disabledControl: {
+    opacity: 0.4,
   },
   progressSection: {
     marginBottom: rp(24),

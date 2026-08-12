@@ -40,6 +40,11 @@ export const DateStepper: React.FC<DateStepperProps> = ({
     () => new Date(selected.getFullYear(), selected.getMonth(), 1, 12)
   );
 
+  // Upper bound: never let the user navigate past today. ISO date strings
+  // ("YYYY-MM-DD") compare correctly with plain string comparison.
+  const todayKey = getLocalDateString();
+  const isViewingToday = selectedDate >= todayKey;
+
   const label = selected.toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
@@ -90,13 +95,19 @@ export const DateStepper: React.FC<DateStepperProps> = ({
           <Ionicons name="chevron-down" size={rf(16)} color={colors.textSecondary} />
         </AnimatedPressable>
         <AnimatedPressable
-          style={styles.arrow}
+          style={[styles.arrow, isViewingToday && styles.arrowDisabled]}
           onPress={onNext}
+          disabled={isViewingToday}
           accessibilityRole="button"
           accessibilityLabel="Next day"
+          accessibilityState={{ disabled: isViewingToday }}
           hapticType="light"
         >
-          <Ionicons name="chevron-forward" size={rf(22)} color={colors.text} />
+          <Ionicons
+            name="chevron-forward"
+            size={rf(22)}
+            color={isViewingToday ? colors.textMuted : colors.text}
+          />
         </AnimatedPressable>
       </View>
 
@@ -144,23 +155,37 @@ export const DateStepper: React.FC<DateStepperProps> = ({
                 const dateKey = getLocalDateString(date);
                 const isSelected = dateKey === selectedDate;
                 const inMonth = date.getMonth() === visibleMonth.getMonth();
+                const isToday = dateKey === todayKey;
+                const isFuture = dateKey > todayKey;
                 return (
                   <AnimatedPressable
                     key={dateKey}
-                    style={[styles.day, isSelected && styles.daySelected]}
+                    style={[
+                      styles.day,
+                      isToday && !isSelected && styles.dayToday,
+                      isSelected && styles.daySelected,
+                    ]}
                     onPress={() => {
+                      if (isFuture) return;
                       onSelectDate(dateKey);
                       setCalendarOpen(false);
                     }}
+                    disabled={isFuture}
                     accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    accessibilityLabel={date.toLocaleDateString()}
+                    accessibilityState={{ selected: isSelected, disabled: isFuture }}
+                    accessibilityLabel={
+                      isToday
+                        ? `Today, ${date.toLocaleDateString()}`
+                        : date.toLocaleDateString()
+                    }
                   >
                     <Text
                       style={[
                         styles.dayText,
                         !inMonth && styles.dayTextMuted,
+                        isFuture && styles.dayTextFuture,
                         isSelected && styles.dayTextSelected,
+                        isToday && !isSelected && styles.dayTextToday,
                       ]}
                     >
                       {date.getDate()}
@@ -198,6 +223,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
+  },
+  arrowDisabled: {
+    opacity: 0.4,
   },
   dateButton: {
     flex: 1,
@@ -265,8 +293,18 @@ const styles = StyleSheet.create({
     borderRadius: TOUCH_TARGET_RADIUS,
   },
   daySelected: { backgroundColor: colors.primary },
+  dayToday: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
   dayText: { color: colors.text, fontSize: fontSize.sm },
   dayTextMuted: { color: colors.textMuted },
+  dayTextFuture: { color: colors.textMuted, opacity: 0.5 },
+  dayTextToday: {
+    color: colors.primary,
+    fontFamily: fontFamilyForWeight('700'),
+    fontWeight: '700',
+  },
   dayTextSelected: {
     color: colors.white,
     fontFamily: fontFamilyForWeight('700'),

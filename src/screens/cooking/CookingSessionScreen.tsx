@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -50,6 +50,13 @@ export default function CookingSessionScreen({
     useCookingVideo(meal.name);
   const { cookingTimer, startTimer, stopTimer, formatTimer } =
     useCookingTimer();
+  // useCookingTimer's countdown is untied to any step index — a timer started
+  // on step N keeps running (and its "Timer Complete!" alert still fires)
+  // after the user navigates to a different step, with no indication which
+  // step it belongs to. Tag the timer with the step that started it here and
+  // auto-stop it when the user navigates away, so a running timer can never
+  // outlive the step it was started for.
+  const timerStepIndexRef = useRef<number | null>(null);
   const {
     cookingFlow,
     currentStepIndex,
@@ -62,6 +69,33 @@ export default function CookingSessionScreen({
     scrollViewRef,
     registerStepRef,
   } = useCookingFlow(meal);
+
+  const handleStartTimer = useCallback(
+    (minutes: number) => {
+      timerStepIndexRef.current = currentStepIndex;
+      startTimer(minutes);
+    },
+    [currentStepIndex, startTimer],
+  );
+
+  const handleStopTimer = useCallback(() => {
+    timerStepIndexRef.current = null;
+    stopTimer();
+  }, [stopTimer]);
+
+  // Auto-stop a running timer the instant the user navigates away from the
+  // step that started it (Next/Previous/tapping a StepsList row) — otherwise
+  // it silently keeps counting down under whichever step is now current.
+  useEffect(() => {
+    if (
+      timerStepIndexRef.current !== null &&
+      timerStepIndexRef.current !== currentStepIndex
+    ) {
+      timerStepIndexRef.current = null;
+      stopTimer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepIndex]);
 
   const handleIngredientPress = useCallback((ingredient: string) => {
     setSelectedIngredient(ingredient);
@@ -210,9 +244,10 @@ export default function CookingSessionScreen({
             currentStepIndex={currentStepIndex}
             meal={meal}
             cookingTimer={cookingTimer}
-            onStartTimer={startTimer}
-            onStopTimer={stopTimer}
+            onStartTimer={handleStartTimer}
+            onStopTimer={handleStopTimer}
             formatTimer={formatTimer}
+            completedSteps={completedSteps}
           />
         )}
         {cookingFlow && (

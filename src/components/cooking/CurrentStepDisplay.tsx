@@ -18,6 +18,12 @@ interface CurrentStepDisplayProps {
   onStartTimer: (minutes: number) => void;
   onStopTimer: () => void;
   formatTimer: (seconds: number) => string;
+  // Steps the user has explicitly marked complete (same Set fed to StepsList's
+  // checkmarks and to completionTrackingService.completeMeal's completedSteps
+  // payload). Progress here MUST be derived from this, not from
+  // currentStepIndex position — otherwise jumping to step 5 via StepsList
+  // shows ~100% progress here while the persisted completion is near 0%.
+  completedSteps: Set<number>;
 }
 
 export default function CurrentStepDisplay({
@@ -28,13 +34,15 @@ export default function CurrentStepDisplay({
   onStartTimer,
   onStopTimer,
   formatTimer,
+  completedSteps,
 }: CurrentStepDisplayProps) {
   if (!cookingFlow || cookingFlow.steps.length === 0) return null;
 
   const currentStep = cookingFlow.steps[currentStepIndex];
   if (!currentStep) return null;
 
-  const progress = ((currentStepIndex + 1) / cookingFlow.steps.length) * 100;
+  const totalSteps = cookingFlow.steps.length;
+  const progress = totalSteps > 0 ? (completedSteps.size / totalSteps) * 100 : 0;
   const encouragement = mealMotivationService.getCookingProgressMessage(
     progress,
     meal,

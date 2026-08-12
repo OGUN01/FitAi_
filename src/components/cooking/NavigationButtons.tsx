@@ -29,6 +29,24 @@ export default function NavigationButtons({
 
   const isLastStep = currentStepIndex === cookingFlow.steps.length - 1;
   const isCurrentStepCompleted = completedSteps.has(currentStepIndex);
+  // goToNextStep (useCookingFlow) unconditionally marks the CURRENT step
+  // complete before advancing — so simply tapping through steps to preview a
+  // recipe marks every prior step "completed" in the same set that feeds
+  // StepsList's checkmarks and the completedSteps sent to
+  // completionTrackingService.completeMeal. Label the button so that's never
+  // a surprise: it only reads plain "Next Step" once this step is already
+  // explicitly marked complete (via "Mark Complete"); otherwise it makes the
+  // auto-complete-on-advance behavior explicit.
+  const nextButtonLabel = isLastStep
+    ? 'Finish Cooking'
+    : isCurrentStepCompleted
+      ? 'Next Step'
+      : 'Complete & Next';
+  const nextButtonA11yLabel = isLastStep
+    ? 'Finish cooking'
+    : isCurrentStepCompleted
+      ? 'Next step'
+      : 'Mark this step complete and go to next step';
 
   return (
     <View style={styles.navigationSection}>
@@ -105,11 +123,11 @@ export default function NavigationButtons({
         springConfig="smooth"
         hapticType="light"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityLabel={isLastStep ? "Finish cooking" : "Next step"}
+        accessibilityLabel={nextButtonA11yLabel}
         accessibilityRole="button"
       >
         <Text style={styles.navButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-          {isLastStep ? "Finish Cooking" : "Next Step"}
+          {nextButtonLabel}
         </Text>
         <Ionicons
           name={isLastStep ? "checkmark-done" : "chevron-forward"}

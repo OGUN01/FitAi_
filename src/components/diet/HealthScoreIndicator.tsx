@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { flatColors as colors, spacing, typography } from '../../theme/aurora-tokens';
 import { rf, rw, rh, rbr } from '../../utils/responsive';
 
@@ -35,20 +36,22 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
     }
   };
 
-  const getIconForCategory = (category: string) => {
+  // Filled-circle Ionicons glyph, colored via getColorForCategory — matches
+  // the vector-icon language used by every other status indicator in this
+  // family (StatusPill, MealsTimeline, DietActionDock) instead of emoji,
+  // which renders inconsistently across OS/font versions.
+  const getIconNameForCategory = (category: string): keyof typeof Ionicons.glyphMap => {
     switch (category) {
       case 'excellent':
-        return '🟢';
       case 'good':
-        return '🟡';
+        return 'checkmark-circle';
       case 'moderate':
-        return '🟠';
+        return 'alert-circle';
       case 'poor':
-        return '🔴';
       case 'unhealthy':
-        return '🔴';
+        return 'close-circle';
       default:
-        return '⚪';
+        return 'ellipse-outline';
     }
   };
 
@@ -76,7 +79,7 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
   };
 
   const color = getColorForCategory(category);
-  const icon = getIconForCategory(category);
+  const iconName = getIconNameForCategory(category);
   const sizeStyles = getSizeStyles(size);
 
   return (
@@ -88,7 +91,7 @@ export const HealthScoreIndicator: React.FC<HealthScoreIndicatorProps> = ({
 
       {showLabel && (
         <View style={styles.labelContainer}>
-          <Text style={styles.iconText}>{icon}</Text>
+          <Ionicons name={iconName} size={rf(12)} color={color} style={styles.iconGlyph} />
           <Text style={[styles.labelText, sizeStyles.labelText, { color }]}>
             {category.toUpperCase()}
           </Text>
@@ -129,8 +132,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  iconText: {
-    fontSize: rf(12),
+  iconGlyph: {
     marginRight: spacing.xs,
   },
 

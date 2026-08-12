@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Modal,
   ScrollView,
   ActivityIndicator,
@@ -20,6 +19,8 @@ import {
   typography,
 } from '../../theme/aurora-tokens';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { GlassCard } from '../ui/aurora/GlassCard';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { RangeSlider } from '../onboarding/aurora/RangeSlider';
 import { RecognizedFood } from '../../services/foodRecognitionService';
 import { rf, rh, rw, rbr } from '../../utils/responsive';
@@ -225,14 +226,16 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Adjust Portion Sizes</Text>
-          <TouchableOpacity
+          <AnimatedPressable
             onPress={onClose}
             style={styles.closeButton}
+            scaleValue={0.9}
+            hapticType="light"
             accessibilityRole="button"
             accessibilityLabel="Close portion adjustment"
           >
             <Ionicons name="close" size={rf(20)} color={colors.text} />
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
         <View style={styles.progressIndicator}>
@@ -253,7 +256,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Current Food Info */}
-          <View style={[styles.section, styles.foodCard]}>
+          <GlassCard padding="lg" borderRadius="lg" showBorder style={styles.foodCard}>
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.originalBadge}>
@@ -283,10 +286,10 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 </View>
               </View>
             </View>
-          </View>
+          </GlassCard>
 
           {/* Portion Size Slider */}
-          <View style={[styles.section, styles.sliderCard]}>
+          <GlassCard padding="lg" borderRadius="lg" showBorder style={styles.sliderCard}>
             <Text style={styles.sectionTitle}>Adjust Portion Size</Text>
 
             <View style={styles.currentPortionDisplay}>
@@ -359,14 +362,14 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                 <Text style={styles.manualInputUnit}>grams</Text>
               </View>
             </View>
-          </View>
+          </GlassCard>
 
           {/* Quick Portion Buttons */}
-          <View style={[styles.section, styles.quickPortionsCard]}>
+          <GlassCard padding="lg" borderRadius="lg" showBorder style={styles.quickPortionsCard}>
             <Text style={styles.sectionTitle}>Common Portions</Text>
             <View style={styles.quickPortionsGrid}>
               {commonPortions.map((portion, index) => (
-                <TouchableOpacity
+                <AnimatedPressable
                   key={index}
                   style={[
                     styles.quickPortionButton,
@@ -374,6 +377,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                       styles.quickPortionButtonActive,
                   ]}
                   onPress={() => updateAdjustment(currentFoodIndex, portion.grams)}
+                  scaleValue={0.96}
+                  hapticType="light"
                   accessibilityRole="button"
                   accessibilityLabel={`${portion.label}, ${portion.grams} grams`}
                   accessibilityState={{
@@ -398,17 +403,19 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   >
                     {portion.grams}g
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               ))}
             </View>
-          </View>
+          </GlassCard>
 
           {/* Reset Button */}
-          <View style={[styles.section, styles.resetCard]}>
-            <TouchableOpacity
+          <GlassCard padding="lg" borderRadius="lg" showBorder style={styles.resetCard}>
+            <AnimatedPressable
               style={styles.resetButton}
               onPress={() => updateAdjustment(currentFoodIndex, currentFood.estimatedGrams)}
               disabled={currentAdjustment.adjustmentRatio === 1.0}
+              scaleValue={0.96}
+              hapticType="light"
               accessibilityRole="button"
               accessibilityLabel="Reset portion to estimated"
               accessibilityState={{
@@ -424,8 +431,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               >
                 Reset to AI Estimate ({currentFood.estimatedGrams}g)
               </Text>
-            </TouchableOpacity>
-          </View>
+            </AnimatedPressable>
+          </GlassCard>
         </ScrollView>
 
         {/* Navigation */}
@@ -528,16 +535,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
 
-  // Editorial Dark section: flat surface + hairline (replaces old ui/Card).
-  section: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
+  // Card sections use GlassCard (padding="lg" + showBorder) directly, so
+  // these style overrides only need to carry inter-card spacing.
   foodCard: {
-    padding: spacing.lg,
     marginBottom: spacing.lg,
   },
 
@@ -605,7 +605,6 @@ const styles = StyleSheet.create({
   },
 
   sliderCard: {
-    padding: spacing.lg,
     marginBottom: spacing.lg,
   },
 
@@ -700,7 +699,6 @@ const styles = StyleSheet.create({
   },
 
   quickPortionsCard: {
-    padding: spacing.lg,
     marginBottom: spacing.lg,
   },
 
@@ -747,7 +745,6 @@ const styles = StyleSheet.create({
   },
 
   resetCard: {
-    padding: spacing.lg,
     marginBottom: spacing.lg,
   },
 
