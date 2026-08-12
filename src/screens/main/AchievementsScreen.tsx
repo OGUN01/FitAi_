@@ -12,7 +12,7 @@ import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { EmptyState } from "../../components/ui/aurora/EmptyState";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { AchievementCategoryTabs } from "../../components/achievements/AchievementCategoryTabs";
 import AchievementCard from "../../components/achievements/AchievementCard";
 import { AchievementDetailModal } from "../../components/achievements/AchievementDetailModal";
@@ -29,24 +29,34 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
 } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
 
 interface AchievementsScreenProps {
-  onNavigateToTab?: (tab: string) => void;
   navigation?: any;
 }
 
 type AchievementSection = {
   title: string;
   subtitle: string;
-  data: Achievement[];
+  data: Achievement[][];
 };
+
+// Chunks a flat list into pairs so each SectionList row can render a
+// 2-column grid of AchievementCard (SectionList has no numColumns support,
+// unlike the FlatList grid pattern in TemplateLibraryScreen).
+function chunkPairs<T>(items: T[]): T[][] {
+  const pairs: T[][] = [];
+  for (let i = 0; i < items.length; i += 2) {
+    pairs.push(items.slice(i, i + 2));
+  }
+  return pairs;
+}
 
 export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
   navigation,
-  onNavigateToTab,
 }) => {
   const { user, guestId } = useAuth();
   const {
@@ -136,21 +146,21 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
       secs.push({
         title: "Unlocked",
         subtitle: `${unlocked.length} earned`,
-        data: unlocked,
+        data: chunkPairs(unlocked),
       });
     }
     if (inProgress.length > 0) {
       secs.push({
         title: "In Progress",
         subtitle: `${inProgress.length} to go`,
-        data: inProgress,
+        data: chunkPairs(inProgress),
       });
     }
     if (locked.length > 0) {
       secs.push({
         title: "Locked",
         subtitle: `${locked.length} available`,
-        data: locked,
+        data: chunkPairs(locked),
       });
     }
     return secs;
@@ -186,14 +196,20 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
   }, [user?.id, guestId, initialize]);
 
   const renderItem = useCallback(
-    ({ item }: { item: Achievement }) => {
-      const userProgress = userAchievements.get(item.id);
+    ({ item }: { item: Achievement[] }) => {
       return (
-        <AchievementCard
-          achievement={item}
-          userProgress={userProgress}
-          onPress={() => handleAchievementPress(item)}
-        />
+        <View style={styles.cardRow}>
+          {item.map((achievement) => (
+            <View style={styles.cardCol} key={achievement.id}>
+              <AchievementCard
+                achievement={achievement}
+                userProgress={userAchievements.get(achievement.id)}
+                onPress={() => handleAchievementPress(achievement)}
+              />
+            </View>
+          ))}
+          {item.length === 1 && <View style={styles.cardCol} />}
+        </View>
       );
     },
     [userAchievements, handleAchievementPress]
@@ -215,25 +231,11 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.header}>
-          {navigation && (
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-              accessibilityRole="button"
-              accessibilityLabel="back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={rf(22)}
-                color={colors.text.primary}
-              />
-            </AnimatedPressable>
-          )}
-          <Text style={styles.headerTitle} numberOfLines={1}>Achievements</Text>
-          <View style={styles.placeholder} />
-        </View>
+        <GlassHeader
+          title="Achievements"
+          onBack={navigation ? () => navigation.goBack() : undefined}
+          backAccessibilityLabel="back"
+        />
 
         {!catalogEmpty && (
           <Animated.View
@@ -278,9 +280,11 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
           </View>
         ) : catalogEmpty ? (
           <EmptyState
-            icon="trophy-outline"
-            title="Your journey starts here"
-            subtitle="Complete your first workout to start unlocking achievements and earning FitCoins!"
+            icon="alert-circle-outline"
+            title="Couldn't load achievements"
+            subtitle="Check your connection and try again."
+            ctaText="Retry"
+            onCta={handleRefresh}
           />
         ) : (
           <Animated.View
@@ -291,7 +295,7 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
               sections={sections}
               renderItem={renderItem}
               renderSectionHeader={renderSectionHeader}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.map((a) => a.id).join("-")}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               stickySectionHeadersEnabled={false}
@@ -336,33 +340,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 12,
-    backgroundColor: surface[1],
-    borderWidth: 1,
-    borderColor: border.subtle,
-  },
-  headerTitle: {
-    ...typography.variants.pageTitle,
-    fontSize: rf(20),
-    color: colors.text.primary,
-    flex: 1,
-    textAlign: "center",
-  },
-  placeholder: {
-    width: 44,
-  },
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
@@ -376,7 +353,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     backgroundColor: surface[1],
-    borderRadius: 12,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: border.subtle,
   },
@@ -406,6 +383,14 @@ const styles = StyleSheet.create({
     width: 1,
     height: "60%",
     backgroundColor: border.subtle,
+  },
+  cardRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  cardCol: {
+    flex: 1,
+    minWidth: 0,
   },
   sectionHeader: {
     flexDirection: "row",
