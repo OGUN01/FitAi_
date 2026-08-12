@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../ui';
 import { GlassButton } from '../ui/aurora/GlassButton';
 import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import {
   flatColors as colors,
   spacing,
@@ -275,21 +276,23 @@ const CameraComponent: React.FC<CameraProps> = ({
     <View style={[styles.container, style]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: headerTopInset }]}>
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.closeButton}
           onPress={onClose}
+          hapticType="light"
           accessibilityLabel="Close camera"
           accessibilityRole="button"
           accessibilityHint="Double tap to close the camera"
         >
           <Ionicons name="close" size={rf(22)} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={styles.title} numberOfLines={1}>
           {getModeTitle()}
         </Text>
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.flashButton}
           onPress={toggleFlash}
+          hapticType="light"
           accessibilityLabel={`Flash ${flashMode === 'on' ? 'on' : 'off'}`}
           accessibilityRole="button"
           accessibilityHint="Double tap to toggle flash"
@@ -299,7 +302,7 @@ const CameraComponent: React.FC<CameraProps> = ({
             size={rf(22)}
             color={flashMode === 'on' ? colors.primary : colors.text}
           />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       {/* Instructions */}
@@ -377,27 +380,37 @@ const CameraComponent: React.FC<CameraProps> = ({
 
       {/* Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.flipButton}
           onPress={toggleCameraType}
+          hapticType="light"
           accessibilityLabel="Flip camera"
           accessibilityRole="button"
           accessibilityHint="Double tap to switch between front and back camera"
         >
           <Ionicons name="camera-reverse-outline" size={rf(24)} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {mode !== 'barcode' ? (
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
             onPress={takePicture}
             disabled={isCapturing}
+            hapticType="medium"
             accessibilityLabel="Take picture"
             accessibilityRole="button"
             accessibilityHint="Double tap to take a photo"
           >
             <View style={styles.captureButtonInner} />
-          </TouchableOpacity>
+          </AnimatedPressable>
+        ) : barcodeSessionState === 'resolved' ? (
+          <View
+            style={styles.scanningStatus}
+            accessible
+            accessibilityLabel="Scan result"
+          >
+            <Ionicons name="information-circle-outline" size={rf(28)} color={colors.primary} />
+          </View>
         ) : (
           <View style={styles.scanningStatus}>
             <Text style={styles.scanningStatusText} numberOfLines={2} adjustsFontSizeToFit>
@@ -409,17 +422,25 @@ const CameraComponent: React.FC<CameraProps> = ({
         <View style={styles.placeholder} />
       </View>
 
+      {mode === 'barcode' && barcodeSessionState === 'resolved' && effectiveBarcodeStatus && (
+        <View style={styles.barcodeResolutionCard}>
+          <Text style={styles.barcodeResolutionText}>{effectiveBarcodeStatus}</Text>
+        </View>
+      )}
+
       {mode === 'barcode' && barcodeActions.length > 0 && (
         <View style={styles.barcodeActionRow}>
           {barcodeActions.map((action) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={action.id}
               style={[
                 styles.barcodeActionButton,
                 action.variant === 'primary' && styles.barcodeActionButtonPrimary,
               ]}
               onPress={action.onPress}
+              hapticType="light"
               accessibilityRole="button"
+              accessibilityLabel={action.label}
             >
               <Text
                 style={[
@@ -431,23 +452,24 @@ const CameraComponent: React.FC<CameraProps> = ({
               >
                 {action.label}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
       )}
 
       {mode === 'label' && onLabelLibraryPick && (
         <View style={styles.labelLibraryRow}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.labelLibraryButton}
             onPress={onLabelLibraryPick}
+            hapticType="light"
             accessibilityRole="button"
             accessibilityLabel="Choose nutrition label from library"
           >
             <Text style={styles.labelLibraryButtonText} numberOfLines={1} adjustsFontSizeToFit>
               Choose From Library
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       )}
 
@@ -483,18 +505,19 @@ const CameraComponent: React.FC<CameraProps> = ({
             />
             <Text style={styles.portionHintUnit}>g</Text>
             {gramsText.length > 0 && (
-              <TouchableOpacity
+              <AnimatedPressable
                 onPress={() => {
                   setGramsText('');
                   onPortionGramsChange(null);
                 }}
                 style={styles.portionClearBtn}
+                hapticType="light"
                 accessibilityLabel="Clear portion size"
                 accessibilityRole="button"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="close-circle" size={rf(16)} color={colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             )}
             {portionGrams != null && portionGrams > 0 && (
               <View style={styles.portionActiveRow}>
@@ -777,7 +800,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: hexToRgba(colors.black, TINT_ALPHA_LOW),
   },
 
   controls: {
@@ -951,7 +974,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.primary,
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: hexToRgba(colors.black, TINT_ALPHA_LOW),
   },
 
   scanningLine: {
@@ -1031,6 +1054,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.primary,
     fontWeight: typography.fontWeight.medium as '500',
+    textAlign: 'center',
+  },
+  // Full-width, unclamped readable container for the barcode-resolution
+  // explanation (retry/not-found/etc.) — mirrors tipItem's card treatment.
+  // The small circular scanningStatus badge above is reserved for short
+  // in-progress copy; long guidance sentences render here instead so they
+  // stay legible ahead of the action buttons below.
+  barcodeResolutionCard: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  barcodeResolutionText: {
+    fontSize: fontSize.sm,
+    color: colors.text,
     textAlign: 'center',
   },
   barcodeActionRow: {

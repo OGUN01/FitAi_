@@ -177,6 +177,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setPortionGrams,
     showWeightPrompt,
     confirmPhotoRecognition,
+    cancelMealGeneration,
     dismissWeightPrompt,
     setLogMealScanCallback,
     scanResult,
@@ -857,14 +858,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         )}
 
         {isProcessingBarcode && !showCamera && (
-          <View style={styles.barcodeLoadingOverlay}>
-            <View style={styles.barcodeLoadingCard}>
-              <AuroraSpinner size="lg" />
-              <Text style={styles.barcodeLoadingText}>
-                {cameraMode === 'label' ? 'Reading nutrition label...' : 'Looking up product...'}
-              </Text>
-            </View>
-          </View>
+          <FoodScanLoadingOverlay
+            visible={true}
+            context={cameraMode === 'label' ? 'label' : 'barcode'}
+          />
         )}
 
         {/* Bottom sheet — consistent with its 3 scan-flow siblings (barcode
@@ -1101,7 +1098,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           />
         )}
 
-        {isGeneratingMeal && !showScanResult && <FoodScanLoadingOverlay visible={true} />}
+        {isGeneratingMeal && !showScanResult && (
+          <FoodScanLoadingOverlay visible={true} onCancel={cancelMealGeneration} />
+        )}
 
         {showScanResult && (
           <ScanResultModal
@@ -1237,25 +1236,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.background,
     zIndex: 200,
-  },
-  barcodeLoadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
-  },
-  barcodeLoadingCard: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  barcodeLoadingText: {
-    fontSize: fontSize.md,
-    color: colors.text,
-    fontWeight: '500' as const,
   },
   // Barcode/Label/Weight scan-flow options (rendered via DietOptionsSheet —
   // src/components/diet/DietOptionsSheet.tsx)

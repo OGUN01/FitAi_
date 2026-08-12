@@ -340,6 +340,7 @@ export const useAIMealGeneration = (options?: {
   } | null>(null);
 
   const cameraTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledMealGenRef = useRef(false);
   const logMealCallbackRef = useRef<
     ((result: LogMealScanResult) => void) | null
   >(null);
@@ -649,6 +650,8 @@ export const useAIMealGeneration = (options?: {
 
     if (!imageUri) return;
 
+    cancelledMealGenRef.current = false;
+
     try {
       setIsGeneratingMeal(true);
       setAiError(null);
@@ -691,6 +694,10 @@ export const useAIMealGeneration = (options?: {
         );
 
         if (logMealCallbackRef.current) {
+          if (cancelledMealGenRef.current) {
+            logMealCallbackRef.current = null;
+            return;
+          }
           try {
             await (logMealCallbackRef.current(
               mapRecognizedFoodsToScanResult(
@@ -724,6 +731,10 @@ export const useAIMealGeneration = (options?: {
           0,
         );
 
+        if (cancelledMealGenRef.current) {
+          return;
+        }
+
         setScanResult({
           recognizedFoods,
           totalCalories,
@@ -743,10 +754,29 @@ export const useAIMealGeneration = (options?: {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       setAiError(errorMessage);
-      crossPlatformAlert("Recognition Failed", errorMessage);
+      if (!cancelledMealGenRef.current) {
+        crossPlatformAlert("Recognition Failed", errorMessage);
+      }
     } finally {
       setIsGeneratingMeal(false);
     }
+  };
+
+  // Dismisses the photo-recognition loading overlay when the user taps
+  // Cancel. This does not abort the in-flight network request (the
+  // underlying service call has no cancellation token yet); it only lets
+  // the user stop waiting and return to the app instead of being stuck on
+  // the loading screen for the full retry/backoff duration. The cancelled
+  // ref suppresses the eventual result of that still-running request so it
+  // cannot force-open ScanResultModal or fire an error alert after the user
+  // has already moved on.
+  const cancelMealGeneration = () => {
+    cancelledMealGenRef.current = true;
+    // Clear any pending "Log Meal -> Scan Food" callback so the in-flight
+    // recognizeFood() promise cannot force-open LogMealModal with a stale
+    // result once it resolves after the user has already cancelled.
+    logMealCallbackRef.current = null;
+    setIsGeneratingMeal(false);
   };
 
   const handleFeedbackSubmit = async (feedback: FoodFeedback[]) => {
@@ -2002,6 +2032,7 @@ export const useAIMealGeneration = (options?: {
     setPortionGrams,
     showWeightPrompt,
     confirmPhotoRecognition,
+    cancelMealGeneration,
     dismissWeightPrompt: () => {
       pendingPhotoUriRef.current = null;
       pendingPhotoGuestRef.current = null;

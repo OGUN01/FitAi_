@@ -14,16 +14,28 @@ import { rf } from '../../utils/responsive';
 // reflects how long the request has actually been running so a 1s request
 // and a 30s request don't show identical, meaningless "still analyzing"
 // copy — the message only changes when there is something honest to say.
-const STATUS_STAGES: Array<{ afterSeconds: number; text: string }> = [
-  { afterSeconds: 0, text: 'Analyzing your meal...' },
+// Only the first ("just started") stage differs per scan context; the
+// escalation copy after that is shared since it no longer references what
+// is being analyzed.
+type ScanContext = 'photo' | 'barcode' | 'label';
+
+const FIRST_STAGE_TEXT: Record<ScanContext, string> = {
+  photo: 'Analyzing your meal...',
+  barcode: 'Looking up product...',
+  label: 'Reading nutrition label...',
+};
+
+const buildStatusStages = (context: ScanContext): Array<{ afterSeconds: number; text: string }> => [
+  { afterSeconds: 0, text: FIRST_STAGE_TEXT[context] },
   { afterSeconds: 10, text: 'Still working — this can take a moment...' },
   { afterSeconds: 20, text: 'Almost there...' },
   { afterSeconds: 30, text: 'Taking longer than usual, hang tight...' },
 ];
 
-const getStatusText = (elapsedSeconds: number): string => {
-  let text = STATUS_STAGES[0].text;
-  for (const stage of STATUS_STAGES) {
+const getStatusText = (elapsedSeconds: number, context: ScanContext): string => {
+  const stages = buildStatusStages(context);
+  let text = stages[0].text;
+  for (const stage of stages) {
     if (elapsedSeconds >= stage.afterSeconds) {
       text = stage.text;
     }
@@ -35,11 +47,14 @@ interface FoodScanLoadingOverlayProps {
   visible: boolean;
   /** Optional cancel callback. When provided, renders a subtle "Cancel" text button below the status text. */
   onCancel?: () => void;
+  /** Which scan flow this overlay is covering — selects the initial status copy. @default 'photo' */
+  context?: ScanContext;
 }
 
 export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
   visible,
   onCancel,
+  context = 'photo',
 }) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -61,7 +76,7 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
     };
   }, [visible]);
 
-  const statusText = getStatusText(elapsedSeconds);
+  const statusText = getStatusText(elapsedSeconds, context);
 
   return (
     <Modal

@@ -2,7 +2,6 @@
 // This file exports all custom React hooks
 
 // Future hooks (implement when needed):
-// export { useCamera } from './useCamera';
 // export { useOfflineSync } from './useOfflineSync';
 // export { usePerformance } from './usePerformance';
 export { useResponsiveTheme } from "./useResponsiveTheme";
