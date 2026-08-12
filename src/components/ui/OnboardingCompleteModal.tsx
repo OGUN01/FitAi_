@@ -31,6 +31,10 @@ interface OnboardingCompleteModalProps {
    * profile value is unavailable. */
   userName?: string;
   onGetStarted: () => void;
+  /** Shows the CTA's loading spinner + disables interaction while the async
+   * handoff to MainNavigation is in flight (mirrors GlassButton's own
+   * `loading` semantics). @default false */
+  loading?: boolean;
   stats?: {
     workoutsPerWeek?: number;
     calorieTarget?: number;
@@ -182,7 +186,7 @@ const FloatingParticle: React.FC<{ delay: number; color: string; reduceMotion: b
 
 export const OnboardingCompleteModal: React.FC<
   OnboardingCompleteModalProps
-> = ({ visible, userName, onGetStarted, stats }) => {
+> = ({ visible, userName, onGetStarted, loading = false, stats }) => {
   const { width: screenWidth } = useWindowDimensions();
   const modalWidth = Math.min(screenWidth - 40, 340);
   const reduceMotion = useReducedMotion();
@@ -371,6 +375,7 @@ export const OnboardingCompleteModal: React.FC<
                   onPress={handleGetStarted}
                   icon="arrow-forward"
                   fullWidth
+                  loading={loading}
                   hapticType="medium"
                   accessibilityLabel="Start Your Journey"
                 />

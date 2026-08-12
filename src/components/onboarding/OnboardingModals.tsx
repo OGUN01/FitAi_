@@ -28,6 +28,9 @@ interface OnboardingModalsProps {
   workoutPreferences: WorkoutPreferencesData | null;
   advancedReview: AdvancedReviewData | null;
   onCompletionGetStarted: () => void;
+  /** True while the awaited async handoff to MainNavigation is in flight —
+   * drives the "Start Your Journey" CTA's loading state. */
+  isCompletingHandoff?: boolean;
   onDismissDialog: () => void;
 }
 
@@ -38,6 +41,7 @@ export const OnboardingModals: React.FC<OnboardingModalsProps> = ({
   workoutPreferences,
   advancedReview,
   onCompletionGetStarted,
+  isCompletingHandoff = false,
   onDismissDialog,
 }) => {
   // No hardcoded user-data fallbacks (principle #8): when a real value is
@@ -83,6 +87,7 @@ export const OnboardingModals: React.FC<OnboardingModalsProps> = ({
         visible={showCompletionModal}
         userName={firstName}
         onGetStarted={onCompletionGetStarted}
+        loading={isCompletingHandoff}
         stats={stats}
       />
 

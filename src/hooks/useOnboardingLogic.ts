@@ -13,7 +13,10 @@ import { useHealthDataStore } from "../stores/healthDataStore";
 // ============================================================================
 
 interface OnboardingLogicProps {
-  onComplete: (data: OnboardingReviewData) => void;
+  // Real contract: the App.tsx caller (handleOnboardingComplete) is async —
+  // handleCompletionGetStarted awaits it so the completion modal stays up
+  // for the full handoff instead of dismissing before MainNavigation mounts.
+  onComplete: (data: OnboardingReviewData) => Promise<void> | void;
   onExit?: () => void;
   startingTab?: number;
   editMode?: boolean;
@@ -90,7 +93,16 @@ export const useOnboardingLogic = ({
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // True while handleCompletionGetStarted's awaited onComplete() (App.tsx's
+  // async handoff: AsyncStorage writes + dataBridge.loadAllData) is in
+  // flight. Drives the "Start Your Journey" CTA's loading state so the tap
+  // gets immediate feedback instead of appearing to do nothing.
+  const [isCompletingHandoff, setIsCompletingHandoff] = useState(false);
   const pendingEditingReset = useRef(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   // Refs to stabilize data values in callbacks without causing re-creation
   const personalInfoRef = useRef(personalInfo);
@@ -519,18 +531,19 @@ export const useOnboardingLogic = ({
     return success;
   }, [completeOnboarding]);
 
-  const handleCompletionGetStarted = useCallback(() => {
-    setShowCompletionModal(false);
-
+  const handleCompletionGetStarted = useCallback(async () => {
     const pi = personalInfoRef.current;
     const ba = bodyAnalysisRef.current;
     const wp = workoutPreferencesRef.current;
     const dp = dietPreferencesRef.current;
     const ar = advancedReviewRef.current;
 
-    // Validate required data — surface error via dialog instead of throwing
+    // Validate required data — surface error via dialog instead of throwing.
+    // This is a genuine failure path (not the async handoff), so dismiss the
+    // completion modal immediately rather than deferring past an await.
     if (!pi?.age || !pi?.gender) {
       console.error("❌ useOnboardingLogic: Missing required personal info");
+      setShowCompletionModal(false);
       setCompletionDialog({
         visible: true,
         title: "Incomplete Information",
@@ -798,7 +811,23 @@ export const useOnboardingLogic = ({
       );
     }
 
-    onComplete(completeData);
+    // Await the real handoff (App.tsx's handleOnboardingComplete: AsyncStorage
+    // writes + dataBridge.loadAllData) before dismissing the completion modal.
+    // The modal is a full-screen, non-transparent native Modal, so keeping it
+    // up for the duration of the await prevents a flash of the underlying
+    // review screen while isOnboardingComplete hasn't flipped yet. On the
+    // success path the parent's state flip unmounts this whole tree shortly
+    // after, so the finally below is a defensive no-flash fallback rather
+    // than the primary dismiss path.
+    setIsCompletingHandoff(true);
+    try {
+      await onComplete(completeData);
+    } finally {
+      if (isMountedRef.current) {
+        setIsCompletingHandoff(false);
+        setShowCompletionModal(false);
+      }
+    }
   }, [onComplete]);
 
 
@@ -830,6 +859,7 @@ export const useOnboardingLogic = ({
     previousTab,
     completionDialog,
     showCompletionModal,
+    isCompletingHandoff,
     isNavigating,
     isSaving,
     pendingEditingReset,

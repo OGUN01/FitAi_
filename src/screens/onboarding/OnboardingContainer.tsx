@@ -14,10 +14,13 @@ import { OnboardingModals } from "../../components/onboarding/OnboardingModals";
 import type { OnboardingReviewData } from "../../types/onboarding";
 
 interface OnboardingContainerProps {
-  onComplete: (data: OnboardingReviewData) => void;
+  // Real contract: App.tsx's handleOnboardingComplete is async (AsyncStorage
+  // writes + dataBridge.loadAllData before flipping isOnboardingComplete).
+  // Typed to allow either so handleCompletionGetStarted can await it and
+  // avoid a flash of the underlying review screen during the handoff.
+  onComplete: (data: OnboardingReviewData) => Promise<void> | void;
   onExit?: () => void;
   startingTab?: number;
-  showProgressIndicator?: boolean;
   editMode?: boolean;
   initialTab?: number;
   onEditComplete?: () => void;
@@ -183,6 +186,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
           workoutPreferences={logic.workoutPreferences}
           advancedReview={logic.advancedReview}
           onCompletionGetStarted={logic.handleCompletionGetStarted}
+          isCompletingHandoff={logic.isCompletingHandoff}
           onDismissDialog={logic.handleDismissDialog}
         />
       </View>

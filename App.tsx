@@ -1314,7 +1314,6 @@ export default function App() {
               ) : shouldResumeAuthenticatedOnboarding ? (
                 <OnboardingContainer
                   onComplete={handleOnboardingComplete}
-                  showProgressIndicator={true}
                 />
               ) : showWelcome ? (
                 <WelcomeScreen
@@ -1337,7 +1336,6 @@ export default function App() {
               ) : (
                 <OnboardingContainer
                   onComplete={handleOnboardingComplete}
-                  showProgressIndicator={true}
                 />
               )}
             </View>

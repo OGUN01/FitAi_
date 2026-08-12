@@ -153,6 +153,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     }
   }, [validationResults, setShowErrorWizard]);
 
+  // Guards the one truly consequential async wait in onboarding — the live
+  // Supabase write via onComplete(). None of the validation flags reflect
+  // "save in flight", so without this a second tap during a slow network
+  // round-trip could fire a second concurrent save (see handleComplete).
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const hasBlockingWarnings =
     (validationResults?.warnings?.length ?? 0) > 0 && !warningsAcknowledged;
   const hasBlockingErrors = (validationResults?.errors?.length ?? 0) > 0;
@@ -161,7 +167,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     isCalculating ||
     !!calculationError ||
     hasBlockingWarnings ||
-    hasBlockingErrors;
+    hasBlockingErrors ||
+    isSubmitting;
 
   // ── Payoff reveal state ──
   // On "Complete Setup": await the real save result, then wash a volt glow
@@ -183,7 +190,13 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   }));
 
   const handleComplete = useCallback(async () => {
-    if (isCompleteDisabled) return;
+    // isSubmitting is folded into isCompleteDisabled above, but re-check it
+    // explicitly here too: isCompleteDisabled is a stale closure value at
+    // the instant this fires from a queued press, and the double-tap this
+    // guard exists to prevent is exactly a press that lands before the
+    // re-render carrying the new isCompleteDisabled has committed.
+    if (isCompleteDisabled || isSubmitting) return;
+    setIsSubmitting(true);
     // Wait for the actual save result before celebrating — firing the glow
     // reveal ahead of a failed save leaves the screen stuck in a "success"
     // tint underneath the error dialog.
@@ -191,6 +204,8 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     if (!success) {
       // Save failed: make sure no stale reveal is left mid-animation and
       // bail without triggering the celebration or the completion modal.
+      // Reset isSubmitting so the user can retry.
+      setIsSubmitting(false);
       setRevealTrigger(false);
       return;
     }
@@ -199,7 +214,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     // deliberately NOT shown yet: mounting it now would cover this
     // celebration the instant it starts. onCelebrationComplete is called
     // once the wash + bloom have had their full on-screen window, handing
-    // off to the parent to present the modal.
+    // off to the parent to present the modal. isSubmitting deliberately
+    // stays true through the celebration — the tab unmounts on this
+    // success path anyway, and staying "disabled" keeps the CTA inert
+    // rather than flickering back to an interactive state mid-celebration.
     setRevealTrigger(true);
     setBloomTrigger(false);
     requestAnimationFrame(() => setBloomTrigger(true));
@@ -208,7 +226,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       setBloomTrigger(false);
       onCelebrationComplete?.();
     }, 900);
-  }, [isCompleteDisabled, onComplete, onCelebrationComplete]);
+  }, [isCompleteDisabled, isSubmitting, onComplete, onCelebrationComplete]);
 
   // Keep the latest callback available to the mount/unmount-only effect
   // below without putting it in that effect's dependency array — the parent
@@ -246,8 +264,13 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         subtext="Everything you told us, turned into a plan. Tap any number to adjust its source."
         onBack={onBack}
         onNext={handleComplete}
-        nextLabel={isLoading || isCalculating ? "Processing..." : "Complete Setup"}
+        nextLabel={
+          isSubmitting || isLoading || isCalculating
+            ? "Processing..."
+            : "Complete Setup"
+        }
         nextDisabled={isCompleteDisabled}
+        nextLoading={isSubmitting}
       >
         {calculationError && (
           <View style={styles.callout}>

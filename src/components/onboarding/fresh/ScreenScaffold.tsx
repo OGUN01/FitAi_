@@ -29,6 +29,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tokens, type as typeScale, font, spacing } from "./tokens";
+import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 
 const PRESS_DURATION = 120;
 
@@ -45,6 +46,14 @@ export interface ScreenScaffoldProps {
   /** @default "Next" */
   nextLabel?: string;
   nextDisabled?: boolean;
+  /**
+   * Shows an inline AuroraSpinner in place of the label and disables
+   * interaction — mirrors GlassButton's `loading` prop (same spinner
+   * component, same disable-on-loading semantics) for the one bespoke
+   * button in the onboarding re-skin that isn't GlassButton itself.
+   * @default false
+   */
+  nextLoading?: boolean;
   /** Optional note rendered above the footer buttons (e.g. caption fine print). */
   footerNote?: React.ReactNode;
   /** Extra container style. */
@@ -60,6 +69,7 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
   onNext,
   nextLabel = "Next",
   nextDisabled = false,
+  nextLoading = false,
   footerNote,
   style,
   testID,
@@ -134,18 +144,18 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
             )}
             {onNext && (
               <Pressable
-                onPress={nextDisabled ? undefined : onNext}
+                onPress={nextDisabled || nextLoading ? undefined : onNext}
                 onPressIn={() => {
-                  if (!nextDisabled) {
+                  if (!nextDisabled && !nextLoading) {
                     nextOpacity.value = withTiming(0.85, { duration: PRESS_DURATION });
                   }
                 }}
                 onPressOut={() => {
                   nextOpacity.value = withTiming(1, { duration: PRESS_DURATION });
                 }}
-                disabled={nextDisabled}
+                disabled={nextDisabled || nextLoading}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: nextDisabled }}
+                accessibilityState={{ disabled: nextDisabled || nextLoading, busy: nextLoading }}
                 accessibilityLabel={nextLabel}
                 style={styles.nextWrap}
               >
@@ -156,14 +166,18 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
                     nextAnimStyle,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.nextLabel,
-                      nextDisabled && styles.nextLabelDisabled,
-                    ]}
-                  >
-                    {nextLabel}
-                  </Text>
+                  {nextLoading ? (
+                    <AuroraSpinner customSize={20} theme="white" />
+                  ) : (
+                    <Text
+                      style={[
+                        styles.nextLabel,
+                        nextDisabled && styles.nextLabelDisabled,
+                      ]}
+                    >
+                      {nextLabel}
+                    </Text>
+                  )}
                 </Animated.View>
               </Pressable>
             )}
