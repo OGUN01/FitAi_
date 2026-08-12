@@ -1123,13 +1123,18 @@ Return the meal only. Use mealType "${target.type === 'snack' ? 'afternoon_snack
 			totalNutrition: replacement.totalNutrition,
 			meals: [replacement],
 		};
+		// Normalized to a flat string[] — checkDietTypeViolations returns
+		// structured DietValidationError objects, but the allergy/exclude-
+		// ingredient checks below produce plain strings. Mixing the two shapes
+		// in the response's `violations` field breaks any client that renders
+		// them uniformly (e.g. `violations.map(v => v.message)`).
 		const violations = [
 			...request.allergies.flatMap((allergen) =>
 				replacement.foods
 					.filter((food) => containsAllergen(food.name, allergen))
 					.map((food) => `${food.name} contains ${allergen}`),
 			),
-			...checkDietTypeViolations([replacement], request.dietType, request.restrictions),
+			...checkDietTypeViolations([replacement], request.dietType, request.restrictions).map((e) => e.message),
 			...request.excludeIngredients.flatMap((excluded) =>
 				replacement.foods
 					.filter((food) => food.name.toLowerCase().includes(excluded.toLowerCase()))
@@ -1319,14 +1324,19 @@ export async function generateFreshDiet(request: DietGenerationRequest, env: Env
 		console.warn('[Diet Generation] Meal image resolution failed (non-fatal):', imageError);
 	}
 
-	// Return diet with metadata for deduplication/caching
+	// Return diet with metadata for deduplication/caching.
+	// Cost/model MUST reflect aiConfig.model (the model actually used above via
+	// createAIProvider) rather than the client-supplied request.model, which is
+	// never wired into model selection at all — using it here would silently
+	// corrupt cost analytics whenever a client sends a model string that
+	// differs from what app_config actually points to.
 	return {
 		diet: adjustedDiet,
 		metadata: {
-			model: request.model || 'google/gemini-3.5-flash-lite',
+			model: aiConfig.model,
 			aiGenerationTime,
 			tokensUsed: result.usage?.totalTokens,
-			costUsd: calculateCost(request.model || 'google/gemini-3.5-flash-lite', result.usage?.totalTokens || 0),
+			costUsd: calculateCost(aiConfig.model, result.usage?.totalTokens || 0),
 			validationPassed: true,
 			warningsCount: validationResult.warnings.length,
 			warnings: validationResult.warnings,

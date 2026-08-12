@@ -341,18 +341,15 @@ export async function handleMediaDelete(
       );
     }
 
-    // Verify ownership for all user-uploaded content
+    // Verify ownership for all user-uploaded content. Fail closed: if
+    // uploadedBy metadata is missing (legacy upload predating this field, or
+    // a partially-failed metadata write) there is no way to prove the
+    // requester owns the file, so deny deletion regardless of category —
+    // previously only 'exercise'/'diet' were denied here, silently allowing
+    // any authenticated user to delete another user's 'user'-category file
+    // (profile picture, progress photo) whose metadata write had failed.
     const uploadedBy = object.customMetadata?.uploadedBy;
-    // If uploadedBy metadata is absent AND the category is a system/shared category
-    // (exercise, diet), deny deletion. Only user-category files are deletable without metadata.
-    if (!uploadedBy && (category === 'exercise' || category === 'diet')) {
-      throw new APIError(
-        'Unauthorized to delete this file',
-        403,
-        ErrorCode.FORBIDDEN
-      );
-    }
-    if (uploadedBy && uploadedBy !== user.id) {
+    if (!uploadedBy || uploadedBy !== user.id) {
       throw new APIError(
         'Unauthorized to delete this file',
         403,

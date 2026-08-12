@@ -9,16 +9,13 @@
  */
 
 import { Context } from 'hono';
-import { z } from 'zod';
 import { Env } from '../utils/types';
 import { AuthContext } from '../middleware/auth';
 import {
   WorkoutGenerationRequest,
   WorkoutGenerationRequestSchema,
-  SingleWorkoutSchema,
   validateRequest,
 } from '../utils/validation';
-import { loadExerciseDatabase, Exercise } from '../utils/exerciseDatabase';
 import { getCachedData, saveCachedData, CacheMetadata } from '../utils/cache';
 import { ValidationError, APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
@@ -31,34 +28,18 @@ import { generateRuleBasedWorkout, generateGentleMovementFallback } from './work
 // ============================================================================
 
 /**
- * Determine if rule-based generation should be used
+ * Determine if rule-based generation should be used.
  *
- * Rollout strategy:
- * - 0%: Feature flag disabled (LLM only)
- * - 10%: Hash-based user selection (deterministic)
- * - 50%: Half of users
- * - 100%: Full rollout
+ * Rule-based generation is the ONLY workout generation strategy in this
+ * handler — the LLM branch was removed (see the `else` below). There is no
+ * second strategy left to gradually roll traffic onto, so this is a plain
+ * on/off switch rather than a percentage rollout: percentage-based hash
+ * bucketing previously left any RULE_BASED_ROLLOUT_PERCENTAGE value other
+ * than exactly 0 or 100 stranding a slice of users permanently on the
+ * `else` branch's hard 503. 0 = disabled (kill switch), anything else = on.
  */
-function shouldUseRuleBasedGeneration(userId?: string, rolloutPercentage: number = 0): boolean {
-  // Feature flag disabled
-  if (rolloutPercentage === 0) return false;
-
-  // Full rollout
-  if (rolloutPercentage >= 100) return true;
-
-  // Hash-based selection for consistent experience
-  if (userId) {
-    // Simple hash function for user ID
-    const hash = userId.split('').reduce((acc, char) => {
-      return ((acc << 5) - acc) + char.charCodeAt(0);
-    }, 0);
-
-    const userPercentile = Math.abs(hash % 100);
-    return userPercentile < rolloutPercentage;
-  }
-
-  // Guest users: Random selection
-  return Math.random() * 100 < rolloutPercentage;
+function shouldUseRuleBasedGeneration(rolloutPercentage: number = 0): boolean {
+  return rolloutPercentage > 0;
 }
 
 // ============================================================================
@@ -302,7 +283,7 @@ async function generateFreshWorkout(
   // ============================================================================
 
   const RULE_BASED_ROLLOUT_PERCENTAGE = parseInt(env.RULE_BASED_ROLLOUT_PERCENTAGE || '0');
-  const useRuleBased = shouldUseRuleBasedGeneration(userId, RULE_BASED_ROLLOUT_PERCENTAGE);
+  const useRuleBased = shouldUseRuleBasedGeneration(RULE_BASED_ROLLOUT_PERCENTAGE);
 
   if (useRuleBased) {
     console.log('[Workout Generation] 🎯 Using RULE-BASED generation', {
@@ -310,28 +291,32 @@ async function generateFreshWorkout(
       rolloutPercentage: RULE_BASED_ROLLOUT_PERCENTAGE,
     });
 
+    // Declared outside the try block (not `const` inside it) so both the
+    // success path AND the catch block's gentle-movement-fallback below can
+    // see them — they were previously scoped inside `try`, which made them
+    // inaccessible (ReferenceError) from `catch`, silently breaking the
+    // fallback safety net on every rule-based generation failure.
+    const startTime = Date.now();
+    // Inject calculated health metrics into the profile so the rule-based engine
+    // can use TDEE for calorie calibration and VO2Max for coaching tips.
+    // These are optional — engine degrades gracefully if missing.
+    // Also inject userId from auth JWT (not present in request body).
+    const enrichedRequest: WorkoutGenerationRequest = {
+      ...request,
+      userId: userId ?? request.userId, // auth-verified userId takes priority
+      ...(calculatedMetrics ? {
+        profile: {
+          ...request.profile,
+          bmr: calculatedMetrics.bmr,
+          tdee: calculatedMetrics.tdee,
+          vo2MaxEstimate: calculatedMetrics.vo2_max_estimate,
+          vo2MaxClassification: calculatedMetrics.vo2_max_classification,
+          heartRateZones: calculatedMetrics.heart_rate_zones,
+        },
+      } : {}),
+    };
+
     try {
-      const startTime = Date.now();
-
-      // Inject calculated health metrics into the profile so the rule-based engine
-      // can use TDEE for calorie calibration and VO2Max for coaching tips.
-      // These are optional — engine degrades gracefully if missing.
-      // Also inject userId from auth JWT (not present in request body).
-      const enrichedRequest: WorkoutGenerationRequest = {
-        ...request,
-        userId: userId ?? request.userId, // auth-verified userId takes priority
-        ...(calculatedMetrics ? {
-          profile: {
-            ...request.profile,
-            bmr: calculatedMetrics.bmr,
-            tdee: calculatedMetrics.tdee,
-            vo2MaxEstimate: calculatedMetrics.vo2_max_estimate,
-            vo2MaxClassification: calculatedMetrics.vo2_max_classification,
-            heartRateZones: calculatedMetrics.heart_rate_zones,
-          },
-        } : {}),
-      };
-
       const ruleBasedResult = await generateRuleBasedWorkout(enrichedRequest);
       const endTime = Date.now();
 
@@ -410,219 +395,23 @@ async function generateFreshWorkout(
       }
     }
   } else {
-    // LLM generation is DISABLED for workout plans — rule-based only.
+    // Rule-based generation is disabled via the kill switch
+    // (RULE_BASED_ROLLOUT_PERCENTAGE=0) and there is no other generation
+    // strategy configured.
     throw new APIError(
       'Workout generation is currently unavailable. Please try again later.',
       503,
       ErrorCode.AI_GENERATION_FAILED,
-      { reason: 'LLM generation disabled for workouts; RULE_BASED_ROLLOUT_PERCENTAGE must be 100' }
+      { reason: 'Rule-based workout generation is disabled (RULE_BASED_ROLLOUT_PERCENTAGE=0)' }
     );
   }
 }
 
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
-
-/**
- * Validation result for exercise IDs
- */
-interface ExerciseValidationResult {
-  isValid: boolean;
-  invalidExercises: Array<{
-    exerciseId: string;
-    section: 'warmup' | 'exercises' | 'cooldown';
-    reason: string;
-  }>;
-  errors: string[];
-  warnings: string[];
-  validatedWorkout: SingleWorkout;
-}
-
-/**
- * CRITICAL: Validate all AI-suggested exercise IDs exist in filtered list
- *
- * This function ensures 100% precision by:
- * 1. Checking all AI-suggested exercises exist in the 1,500 exercise database
- * 2. Verifying exercises are from the filtered list (equipment/experience/injuries)
- * 3. Finding similar replacements if AI hallucinates exercises
- * 4. Logging detailed errors and warnings
- * 5. Never allowing fake/hallucinated exercises through
- *
- * @param aiExerciseIds - Exercise IDs suggested by AI
- * @param filteredExercises - Pre-filtered exercises (equipment, experience, injuries)
- * @param aiWorkout - Original AI workout response
- * @returns Validation result with validated workout or errors
- */
-type SingleWorkout = z.infer<typeof SingleWorkoutSchema>;
-
-async function validateExerciseIds(
-  aiExerciseIds: string[],
-  filteredExercises: Exercise[],
-  aiWorkout: SingleWorkout
-): Promise<ExerciseValidationResult> {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  const invalidExercises: Array<{
-    exerciseId: string;
-    section: 'warmup' | 'exercises' | 'cooldown';
-    reason: string;
-  }> = [];
-
-  // Create lookup sets for O(1) validation
-  const filteredExerciseIds = new Set(filteredExercises.map(ex => ex.exerciseId));
-  const filteredExerciseMap = new Map(filteredExercises.map(ex => [ex.exerciseId, ex]));
-
-  // Load full database for fallback lookup
-  const db = await loadExerciseDatabase();
-  const fullDatabaseMap = new Map(db.exercises.map(ex => [ex.exerciseId, ex]));
-
-  console.log('[Exercise Validation] Starting validation...', {
-    aiExerciseCount: aiExerciseIds.length,
-    filteredExerciseCount: filteredExercises.length,
-    databaseExerciseCount: db.exercises.length,
-  });
-
-  // Helper: Find similar exercise from filtered list
-  const findSimilarExercise = (invalidExercise: Exercise, section: string): Exercise | null => {
-    // Strategy 1: Match by target muscles and body parts
-    const candidates = filteredExercises.filter(ex => {
-      const muscleOverlap = ex.targetMuscles.some(m =>
-        invalidExercise.targetMuscles.includes(m)
-      );
-      const bodyPartOverlap = ex.bodyParts.some(bp =>
-        invalidExercise.bodyParts.includes(bp)
-      );
-      return muscleOverlap && bodyPartOverlap;
-    });
-
-    if (candidates.length > 0) {
-      // Prefer exercises with similar equipment
-      const equipmentMatch = candidates.find(ex =>
-        ex.equipments.some(eq => invalidExercise.equipments.includes(eq))
-      );
-      return equipmentMatch || candidates[0];
-    }
-
-    // Strategy 2: Match by body parts only (more lenient)
-    const bodyPartMatches = filteredExercises.filter(ex =>
-      ex.bodyParts.some(bp => invalidExercise.bodyParts.includes(bp))
-    );
-
-    if (bodyPartMatches.length > 0) {
-      return bodyPartMatches[0];
-    }
-
-    // Strategy 3: Return first exercise from filtered list (last resort)
-    return filteredExercises[0] || null;
-  };
-
-  // Helper: Validate and replace exercise in section
-  const validateSection = (
-    exercises: NonNullable<typeof aiWorkout.warmup> | typeof aiWorkout.exercises | undefined,
-    sectionName: 'warmup' | 'exercises' | 'cooldown'
-  ) => {
-    if (!exercises || exercises.length === 0) return exercises;
-
-    return exercises.map((workoutEx: { exerciseId: string; [key: string]: any }) => {
-      const exerciseId = workoutEx.exerciseId;
-
-      // Check 1: Does exercise exist in filtered list? (IDEAL)
-      if (filteredExerciseIds.has(exerciseId)) {
-        console.log(`[Exercise Validation] ✓ ${sectionName}: ${exerciseId} - VALID (in filtered list)`);
-        return workoutEx;
-      }
-
-      // Check 2: Does exercise exist in full database? (NEED REPLACEMENT)
-      const exerciseInDb = fullDatabaseMap.get(exerciseId);
-      if (exerciseInDb) {
-        console.warn(`[Exercise Validation] ⚠ ${sectionName}: ${exerciseId} - NOT in filtered list, finding replacement...`);
-        console.warn(`   Exercise: "${exerciseInDb.name}"`);
-        console.warn(`   Reason: AI suggested exercise outside filtered list (wrong equipment/difficulty/injury conflict)`);
-
-        // Find similar exercise from filtered list
-        const replacement = findSimilarExercise(exerciseInDb, sectionName);
-
-        if (replacement) {
-          warnings.push(
-            `Replaced "${exerciseInDb.name}" (${exerciseId}) with "${replacement.name}" (${replacement.exerciseId}) in ${sectionName} - original not in filtered list`
-          );
-
-          console.warn(`   Replacement: "${replacement.name}" (${replacement.exerciseId})`);
-          console.warn(`   Reason: Similar muscle groups - ${replacement.targetMuscles.join(', ')}`);
-
-          return {
-            ...workoutEx,
-            exerciseId: replacement.exerciseId,
-          };
-        } else {
-          // No replacement found - this should be rare
-          const error = `No suitable replacement found for "${exerciseInDb.name}" (${exerciseId}) in ${sectionName}`;
-          errors.push(error);
-          invalidExercises.push({
-            exerciseId,
-            section: sectionName,
-            reason: 'Exercise not in filtered list and no suitable replacement found',
-          });
-
-          console.error(`[Exercise Validation] ✗ ${error}`);
-          return workoutEx; // Keep original but mark as invalid
-        }
-      }
-
-      // Check 3: Exercise doesn't exist in database at all (HALLUCINATED)
-      console.error(`[Exercise Validation] ✗ ${sectionName}: ${exerciseId} - HALLUCINATED (not in database)`);
-      errors.push(`AI hallucinated exercise ID "${exerciseId}" in ${sectionName} - does not exist in database`);
-      invalidExercises.push({
-        exerciseId,
-        section: sectionName,
-        reason: 'Exercise ID does not exist in database (AI hallucination)',
-      });
-
-      // Try to find replacement anyway
-      const randomReplacement = filteredExercises[0];
-      if (randomReplacement) {
-        warnings.push(
-          `Replaced hallucinated exercise "${exerciseId}" with "${randomReplacement.name}" (${randomReplacement.exerciseId}) in ${sectionName}`
-        );
-        return {
-          ...workoutEx,
-          exerciseId: randomReplacement.exerciseId,
-        };
-      }
-
-      return workoutEx; // Keep original but mark as invalid
-    });
-  };
-
-  // Validate all sections
-  const validatedWarmup = validateSection(aiWorkout.warmup, 'warmup');
-  const validatedExercises = validateSection(aiWorkout.exercises, 'exercises');
-  const validatedCooldown = validateSection(aiWorkout.cooldown, 'cooldown');
-
-  // Build validated workout
-  const validatedWorkout: SingleWorkout = {
-    ...aiWorkout,
-    warmup: validatedWarmup as SingleWorkout['warmup'],
-    exercises: (validatedExercises ?? aiWorkout.exercises) as SingleWorkout['exercises'],
-    cooldown: validatedCooldown as SingleWorkout['cooldown'],
-  };
-
-  // Determine if validation passed
-  const isValid = errors.length === 0;
-
-  console.log('[Exercise Validation] Validation complete:', {
-    isValid,
-    errorCount: errors.length,
-    warningCount: warnings.length,
-    invalidExerciseCount: invalidExercises.length,
-  });
-
-  return {
-    isValid,
-    invalidExercises,
-    errors,
-    warnings,
-    validatedWorkout,
-  };
-}
+// NOTE: The former LLM-hallucination-repair validation logic
+// (validateExerciseIds/findSimilarExercise, ~250 lines) was removed here.
+// It validated AI-suggested exercise IDs against the filtered/full exercise
+// database and repaired hallucinated IDs — but it was never called from
+// anywhere once generation became rule-based only (rule-based generation
+// only ever selects real exercise IDs from the database, so there is
+// nothing to hallucinate-repair). See git history for the removed
+// implementation if an LLM generation path is reintroduced.

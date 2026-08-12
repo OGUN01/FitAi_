@@ -94,7 +94,7 @@ describe('Health Sync Handler', () => {
 				data_source: 'apple_health',
 				steps: 8500,
 				active_calories: 320,
-				resting_calories: 150,
+				bmr_calories: 150,
 				heart_rate_avg: 72,
 				resting_heart_rate: 68,
 				sleep_hours: 7.5,
@@ -107,7 +107,7 @@ describe('Health Sync Handler', () => {
 
 			expect(response.status).toBe(200);
 			expect(response.data.success).toBe(true);
-			// 6 metrics: steps, active_calories, total_calories, heart_rate,
+			// 6 metrics: steps, active_calories, bmr_calories, heart_rate,
 			// resting_heart_rate, sleep_hours. water_intake_ml has no metric_type.
 			expect(response.data.data.saved).toBe(6);
 			expect(response.data.data.date).toBe('2026-02-05');

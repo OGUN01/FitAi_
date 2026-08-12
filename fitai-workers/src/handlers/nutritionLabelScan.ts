@@ -155,20 +155,30 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 		const model = createAIProvider(c.env, modelId);
 		const prompt = buildLabelPrompt(request.productName);
 
-		const { object } = await generateObject({
-			model,
-			schema: NutritionLabelSchema,
-			messages: [
-				{
-					role: 'user',
-					content: [
-						{ type: 'text', text: prompt },
-						{ type: 'image', image: request.imageBase64 },
-					],
-				},
-			],
-			mode: 'json',
-		});
+		// Timeout guard — same pattern as foodRecognition.ts. Without this, a
+		// hung/slow Vision response has no client-facing timeout error path and
+		// runs until the platform's own hard execution limit instead of failing
+		// fast with a clear, user-facing message.
+		const timeoutPromise = new Promise<never>((_, reject) =>
+			setTimeout(() => reject(new Error('AI generation timed out after 25s')), 25000)
+		);
+		const { object } = await Promise.race([
+			generateObject({
+				model,
+				schema: NutritionLabelSchema,
+				messages: [
+					{
+						role: 'user',
+						content: [
+							{ type: 'text', text: prompt },
+							{ type: 'image', image: request.imageBase64 },
+						],
+					},
+				],
+				mode: 'json',
+			}),
+			timeoutPromise,
+		]) as Awaited<ReturnType<typeof generateObject<typeof NutritionLabelSchema>>>;
 
 		const processingTime = Date.now() - startTime;
 		console.log(`[LabelScan] Done in ${processingTime}ms — confidence ${object.confidence}`);
@@ -253,6 +263,12 @@ export async function handleNutritionLabelScan(c: Context<{ Bindings: Env; Varia
 		}
 
 		if (error instanceof Error) {
+			if (error.message.includes('timed out after 25s')) {
+				return c.json(
+					{ success: false, error: 'Nutrition label scan timed out. Please try again.', code: ErrorCode.AI_GENERATION_FAILED, metadata: { processingTime } },
+					408,
+				);
+			}
 			if (error.message.includes('quota') || error.message.includes('429')) {
 				return c.json(
 					{ success: false, error: 'AI service temporarily unavailable. Please try again in a few minutes.', code: ErrorCode.RATE_LIMIT_EXCEEDED },

@@ -189,10 +189,14 @@ export async function handleChat(
               userMessage,
               { role: 'assistant', content: assistantText },
               {
-                model: request.model,
+                // model comes from aiConfig.model (the model actually used via
+                // createAIProvider above), not request.model — the client-
+                // supplied value is never wired into model selection, so using
+                // it here would silently corrupt cost/model analytics.
+                model: aiConfig.model,
                 tokensUsed: usage?.totalTokens || 0,
                 generationTimeMs,
-                costUsd: calculateCost(request.model, usage?.totalTokens || 0),
+                costUsd: calculateCost(aiConfig.model, usage?.totalTokens || 0),
               }
             );
             console.log('[Chat] Streaming conversation saved to database');
@@ -253,10 +257,10 @@ export async function handleChat(
             content: result.text,
           },
           {
-            model: request.model,
+            model: aiConfig.model,
             tokensUsed: result.usage?.totalTokens || 0,
             generationTimeMs: totalTime,
-            costUsd: calculateCost(request.model, result.usage?.totalTokens || 0),
+            costUsd: calculateCost(aiConfig.model, result.usage?.totalTokens || 0),
           }
         ).then(() => {
           console.log('[Chat] Conversation saved to database');
@@ -280,10 +284,10 @@ export async function handleChat(
           success: true,
           data: response,
           metadata: {
-            model: request.model,
+            model: aiConfig.model,
             generationTime: totalTime,
             tokensUsed: result.usage?.totalTokens,
-            costUsd: calculateCost(request.model, result.usage?.totalTokens || 0),
+            costUsd: calculateCost(aiConfig.model, result.usage?.totalTokens || 0),
             conversationSaved: !conversationSaveError,
             conversationSaveWarning: conversationSaveError ? 'Chat history may not be saved' : undefined,
           },

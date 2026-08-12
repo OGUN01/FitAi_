@@ -50,6 +50,13 @@ const METRIC_UNITS: Record<string, string> = {
 	resting_heart_rate: 'bpm',
 	active_calories: 'kcal',
 	total_calories: 'kcal',
+	// Resting/BMR energy expenditure — distinct from `total_calories`, which
+	// elsewhere in the app (src/stores/healthDataStore.ts, MANUAL_HEALTH_ENTRY.md)
+	// means the Health-Connect-computed active+resting total for the day. This
+	// endpoint previously mapped its `resting_calories` field onto
+	// `total_calories`, which would silently under-represent the day's actual
+	// burn if a real integration ever sent a genuine resting-only value.
+	bmr_calories: 'kcal',
 	distance_km: 'km',
 	weight_kg: 'kg',
 	sleep_hours: 'hours',
@@ -83,7 +90,10 @@ const HealthSyncSchema = z.object({
 	),
 	steps: z.number().int().min(0).max(100000).optional().nullable(),
 	active_calories: z.number().min(0).optional().nullable(),
-	resting_calories: z.number().min(0).optional().nullable(),
+	// Renamed from `resting_calories` — the old name mapped onto the
+	// `total_calories` metric_type below, which everywhere else in the app
+	// means the active+resting daily total, not a resting/BMR-only figure.
+	bmr_calories: z.number().min(0).optional().nullable(),
 	heart_rate_avg: z.number().min(30).max(220).optional().nullable(),
 	resting_heart_rate: z.number().min(20).max(200).optional().nullable(),
 	sleep_hours: z.number().min(0).max(24).optional().nullable(),
@@ -218,8 +228,8 @@ export async function handleHealthSync(c: any): Promise<Response> {
 		if (Number.isFinite(payload.steps)) metricEntries.push({ metric_type: 'steps', value: payload.steps as number });
 		if (Number.isFinite(payload.active_calories))
 			metricEntries.push({ metric_type: 'active_calories', value: payload.active_calories as number });
-		if (Number.isFinite(payload.resting_calories))
-			metricEntries.push({ metric_type: 'total_calories', value: payload.resting_calories as number });
+		if (Number.isFinite(payload.bmr_calories))
+			metricEntries.push({ metric_type: 'bmr_calories', value: payload.bmr_calories as number });
 		if (Number.isFinite(payload.heart_rate_avg))
 			metricEntries.push({ metric_type: 'heart_rate', value: payload.heart_rate_avg as number });
 		if (Number.isFinite(payload.resting_heart_rate))

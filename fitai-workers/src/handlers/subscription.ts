@@ -363,11 +363,22 @@ async function recordWebhookEvent(
 		_event_reason?: string;
 	},
 ): Promise<void> {
-	await supabase.from('webhook_events').insert({
+	const { error } = await supabase.from('webhook_events').insert({
 		id: eventId,
 		event_type: eventType,
 		payload,
 	});
+
+	if (error) {
+		// Surface the DB-level failure to the caller instead of swallowing it —
+		// every call site already wraps this in a try/catch that logs distinctly
+		// (e.g. 'processed' vs 'skipped'), but that only works if this function
+		// actually throws on a failed insert. Without this, a failed idempotency
+		// write (unique-constraint race, transient DB error, schema drift) would
+		// still get a 200 ack to Razorpay while never being recorded, so a
+		// legitimate retry of the same event would be reprocessed as brand-new.
+		throw error;
+	}
 }
 
 function buildWebhookPayload(
@@ -486,12 +497,23 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 	]);
 
 	if (existingSubscription?.id) {
-		if (existingSubscription.status !== 'created') {
+		if (existingSubscription.status !== 'created' && existingSubscription.status !== 'halted') {
 			throw new APIError('User already has an active or pending subscription', 409, ErrorCode.RESOURCE_ALREADY_EXISTS);
 		}
 
-		// Reclaim an abandoned `created` checkout.
-		console.warn('[Subscription] Reclaiming abandoned `created` subscription for user', userId, 'id=', existingSubscription.id);
+		// Reclaim an abandoned `created` checkout, or a `halted` subscription
+		// (payment retries exhausted after a card failure — Razorpay will never
+		// recover it on its own, so without this the user hits a dead end with
+		// no self-service way to start a fresh subscription).
+		console.warn(
+			'[Subscription] Reclaiming',
+			existingSubscription.status,
+			'subscription for user',
+			userId,
+			'id=',
+			existingSubscription.id,
+		);
+		let reclaimCancelFailed = false;
 		try {
 			// Real Razorpay IDs start with `sub_`. Dev/test overrides (e.g.
 			// `dev_pro_unlimited`) have no remote record to cancel — skip them.
@@ -504,12 +526,24 @@ export async function handleCreateSubscription(c: Context<{ Bindings: Env; Varia
 				);
 			}
 		} catch (cancelError) {
-			// Best-effort only — the remote sub may already be gone. Log and proceed.
+			// Best-effort only — the remote sub may already be gone. Log and proceed,
+			// but flag the row so a stray reactivation webhook for this Razorpay
+			// subscription can be recognized as belonging to an already-reclaimed
+			// record instead of silently trusting the payload and flipping it back
+			// to 'active' (see handleWebhook).
+			reclaimCancelFailed = true;
 			console.warn('[Subscription] Best-effort cancel of abandoned subscription failed (non-fatal):', cancelError);
 		}
 		await supabase
 			.from('subscriptions')
-			.update({ status: 'cancelled' satisfies SubscriptionStatus, cancelled_at: Math.floor(Date.now() / 1000) })
+			.update({
+				status: 'cancelled' satisfies SubscriptionStatus,
+				cancelled_at: Math.floor(Date.now() / 1000),
+				notes: mergeNotes(existingSubscription, {
+					reclaimed_at: new Date().toISOString(),
+					...(reclaimCancelFailed ? { reclaim_cancel_failed: true } : {}),
+				}),
+			})
 			.eq('id', existingSubscription.id);
 	}
 
@@ -858,6 +892,28 @@ export async function handleWebhook(c: Context<{ Bindings: Env }>): Promise<Resp
 		return c.json({ success: true, message: 'Stale webhook ignored' }, 200);
 	}
 
+	// A subscription reclaimed during handleCreateSubscription (its stale
+	// Razorpay cancel attempt failed) is intentionally marked terminal locally.
+	// If Razorpay later delivers a reactivating event for that same subscription
+	// id (e.g. a stale checkout page the user still had open), don't silently
+	// flip it back to active — that would resurrect a row we deliberately
+	// retired in favor of a newer subscription. Reject cancel/halt events too
+	// only if they'd otherwise be no-ops; simplest is to just refuse any status
+	// change once reclaimed.
+	if (existingSubscription.status === 'cancelled' && getSubscriptionNotes(existingSubscription).reclaim_cancel_failed === true) {
+		try {
+			await recordWebhookEvent(
+				supabase,
+				eventId,
+				eventType,
+				buildWebhookPayload(eventId, event, 'skipped', 'reclaimed_subscription_reactivation_ignored'),
+			);
+		} catch (recordError) {
+			console.error('[Webhook] Failed to record reclaimed-subscription event', eventId, ':', recordError);
+		}
+		return c.json({ success: true, message: 'Ignored: subscription was reclaimed locally' }, 200);
+	}
+
 	// Resolve tier from the plan ID
 	const tierInfo = await resolvePlanTier(env, razorpayPlanId);
 
@@ -1091,7 +1147,9 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 
 	const supabase = getSupabaseClient(env);
 
-	const subscription = await fetchLatestSubscriptionForUser(supabase, userId, ['active', 'authenticated', 'pending']);
+	// Includes `halted` so a subscription stuck after exhausted payment retries
+	// has a self-service way out instead of a dead end requiring admin support.
+	const subscription = await fetchLatestSubscriptionForUser(supabase, userId, ['active', 'authenticated', 'pending', 'halted']);
 
 	if (!subscription?.id) {
 		throw new APIError('No active subscription found', 404, ErrorCode.SUBSCRIPTION_NOT_FOUND);
@@ -1101,20 +1159,38 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 		throw new APIError('Cannot cancel a free tier subscription', 400, ErrorCode.INVALID_REQUEST);
 	}
 
+	const isHalted = subscription.status === 'halted';
+
+	// A halted subscription has no active billing cycle left to wait out, so
+	// cancel it immediately rather than at cycle end. It's also already dead
+	// on Razorpay's side (retries exhausted) — the cancel call there can
+	// legitimately fail with a "not in cancellable state" style error, which
+	// we treat as non-fatal so the user can still clear the local record and
+	// start fresh. For any other status a failed cancel is a real error.
 	const razorpayResponse = await razorpayFetch(env, `/subscriptions/${subscription.razorpay_subscription_id}/cancel`, 'POST', {
-		cancel_at_cycle_end: true,
+		cancel_at_cycle_end: !isHalted,
 	});
 
 	if (!razorpayResponse.ok) {
 		const errorBody = await razorpayResponse.text();
-		console.error('[Subscription] Razorpay cancel failed:', errorBody);
-		throw new APIError('Failed to cancel subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR);
+		if (isHalted) {
+			console.warn('[Subscription] Razorpay cancel of halted subscription failed (non-fatal, proceeding with local cancel):', errorBody);
+		} else {
+			console.error('[Subscription] Razorpay cancel failed:', errorBody);
+			throw new APIError('Failed to cancel subscription with Razorpay', 502, ErrorCode.INTERNAL_ERROR);
+		}
 	}
 
+	// Halted subscriptions won't receive a `subscription.cancelled` webhook
+	// (Razorpay already gave up on them), so flip the local status to
+	// 'cancelled' immediately instead of waiting on a webhook that never
+	// arrives. Active/authenticated/pending subs keep the existing behavior
+	// of staying visually active until the period-end webhook lands.
 	const { error: updateError } = await supabase
 		.from('subscriptions')
 		.update({
 			cancelled_at: Math.floor(Date.now() / 1000),
+			...(isHalted ? { status: 'cancelled' satisfies SubscriptionStatus } : {}),
 		})
 		.eq('id', subscription.id);
 
@@ -1129,11 +1205,13 @@ export async function handleCancelSubscription(c: Context<{ Bindings: Env; Varia
 		{
 			success: true,
 			data: {
-				message: periodEndDate
-					? `Your subscription will remain active until ${new Date(subscription.current_period_end! * 1000).toLocaleDateString()}`
-					: 'Your subscription has been scheduled for cancellation',
+				message: isHalted
+					? 'Your subscription has been cancelled. You can subscribe again at any time.'
+					: periodEndDate
+						? `Your subscription will remain active until ${new Date(subscription.current_period_end! * 1000).toLocaleDateString()}`
+						: 'Your subscription has been scheduled for cancellation',
 				current_period_end: periodEndDate,
-				status: 'active',
+				status: isHalted ? 'cancelled' : 'active',
 			},
 		},
 		200,

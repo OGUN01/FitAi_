@@ -9,13 +9,18 @@
  *      Supabase SERVICE ROLE client (see getSupabaseClient). Service role is
  *      required because RLS on some tables restricts DELETE for end-users.
  *   3. Delete the profiles row (keyed by id, cascades to remaining children).
- *   4. Call auth.admin.deleteUser to remove the auth credential itself.
+ *   4. Delete the user's uploaded objects from the FITAI_MEDIA R2 bucket
+ *      (profile pictures, progress photos — stored under `user/<id>.<ext>`
+ *      and keyed by `customMetadata.uploadedBy`, see mediaHandler.ts).
+ *   5. Call auth.admin.deleteUser to remove the auth credential itself.
  *
  * Honest degradation:
  *   - If a row-level delete fails for any table, that table is recorded in
  *     `failedTables` and surfaced to the caller — the handler does not
  *     swallow errors. The auth user is still deleted so the credential is
  *     gone; orphaned rows (if any) are flagged for manual cleanup.
+ *   - If an R2 object fails to list or delete, it's recorded in
+ *     `failedMediaKeys` and surfaced the same honest way as `failedTables`.
  *   - If auth.admin.deleteUser is unavailable in this Worker env (service
  *     role secret missing at runtime), the row wipe still completes and the
  *     response carries `authDeletionRequired: true` so the client can
@@ -79,6 +84,66 @@ const USER_DATA_TABLES = [
 	'subscriptions',
 	'feature_usage',
 ] as const;
+
+/**
+ * Delete every object the user uploaded to the FITAI_MEDIA R2 bucket.
+ * User-uploaded content (profile pictures, progress photos) is stored under
+ * the `user/` prefix and keyed by `customMetadata.uploadedBy` (see
+ * mediaHandler.ts's handleMediaUpload). Without this, account deletion left
+ * these objects in R2 permanently with no owner record left to ever clean
+ * them up. Returns the keys that failed to delete so the caller can report
+ * them the same honest way `failedTables` already is.
+ */
+async function deleteUserMediaFromR2(
+	env: Env,
+	userId: string,
+): Promise<{ deletedCount: number; failedKeys: string[] }> {
+	const failedKeys: string[] = [];
+	let deletedCount = 0;
+
+	if (!env.FITAI_MEDIA) {
+		console.warn('[DeleteAccount] FITAI_MEDIA binding not available in this env — skipping R2 media cleanup.');
+		return { deletedCount, failedKeys };
+	}
+
+	try {
+		let cursor: string | undefined;
+		do {
+			const listing = await env.FITAI_MEDIA.list({
+				prefix: 'user/',
+				cursor,
+				include: ['customMetadata'],
+			});
+
+			const ownedKeys = listing.objects
+				.filter((obj) => obj.customMetadata?.uploadedBy === userId)
+				.map((obj) => obj.key);
+
+			for (const key of ownedKeys) {
+				try {
+					await env.FITAI_MEDIA.delete(key);
+					deletedCount++;
+				} catch (err) {
+					failedKeys.push(key);
+					console.error(
+						`[DeleteAccount] Failed to delete R2 object ${key} for user ${userId}:`,
+						err instanceof Error ? err.message : err,
+					);
+				}
+			}
+
+			cursor = listing.truncated ? listing.cursor : undefined;
+		} while (cursor);
+	} catch (err) {
+		console.error(
+			`[DeleteAccount] Failed to list R2 media objects for user ${userId}:`,
+			err instanceof Error ? err.message : err,
+		);
+		failedKeys.push('__list_failed__');
+	}
+
+	return { deletedCount, failedKeys };
+}
 
 export async function handleDeleteAccount(
 	c: Context<{ Bindings: Env; Variables: AuthContext }>,
@@ -146,7 +211,12 @@ export async function handleDeleteAccount(
 		);
 	}
 
-	// 3. Remove the auth credential itself. auth.admin requires the service
+	// 3b. Delete the user's uploaded media from R2 (profile pictures, progress
+	//     photos). Independent of the row wipe above — run regardless of
+	//     whether the DB deletes succeeded, since these are separate storage.
+	const { deletedCount: deletedMediaCount, failedKeys: failedMediaKeys } = await deleteUserMediaFromR2(c.env, userId);
+
+	// 4. Remove the auth credential itself. auth.admin requires the service
 	//    role key — getSupabaseClient is constructed with it. If the admin
 	//    surface is unavailable (secret misconfigured), flag for follow-up
 	//    rather than pretending the credential is gone.
@@ -186,7 +256,7 @@ export async function handleDeleteAccount(
 		);
 	}
 
-	const success = failedTables.length === 0 && !authDeletionRequired;
+	const success = failedTables.length === 0 && failedMediaKeys.length === 0 && !authDeletionRequired;
 
 	return c.json(
 		{
@@ -195,12 +265,14 @@ export async function handleDeleteAccount(
 				userId,
 				deletedTables: deletedTables.length,
 				failedTables,
+				deletedMediaCount,
+				failedMediaKeys,
 				authDeletionRequired,
 				message: authDeletionRequired
 					? 'User data deleted. Auth credential removal requires support follow-up.'
-					: failedTables.length === 0
+					: failedTables.length === 0 && failedMediaKeys.length === 0
 						? 'Account and all associated data permanently deleted.'
-						: 'Account deleted, but some tables could not be wiped — see failedTables.',
+						: 'Account deleted, but some data could not be wiped — see failedTables/failedMediaKeys.',
 			},
 		},
 		success ? 200 : 207, // 207 Multi-Status when partial deletion occurred
