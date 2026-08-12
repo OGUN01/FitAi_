@@ -15,12 +15,17 @@ export { BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
+export { ForgotPasswordSheet } from './ForgotPasswordSheet';
+export type { ForgotPasswordSheetProps } from './ForgotPasswordSheet';
 export { GlassButton } from './GlassButton';
 export type { GlassButtonProps, GlassButtonVariant } from './GlassButton';
 export { DashboardSkeleton } from './DashboardSkeleton';
 export type { DashboardSkeletonProps } from './DashboardSkeleton';
 export { GlassHeader } from './GlassHeader';
 export type { GlassHeaderProps } from './GlassHeader';
+export { useTopSafeAreaInset } from './useTopSafeAreaInset';
+export { SlidingSegmentedControl } from './SlidingSegmentedControl';
+export type { SlidingSegmentedOption, SlidingSegmentedControlProps } from './SlidingSegmentedControl';
 
 // Advanced Components (Phase A - Foundation)
 export { HeroSection } from './HeroSection';

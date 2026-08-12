@@ -226,6 +226,10 @@ export const borderRadius = {
   lg: 12,
   xl: 16,
   xxl: 24,
+  // Grouped-list "surface" cards (Profile's settings list, stat row, etc.) —
+  // one shared token so the 20px radius used across those surfaces doesn't
+  // silently drift into several hardcoded literals.
+  card: 20,
   full: 9999,
 } as const;
 

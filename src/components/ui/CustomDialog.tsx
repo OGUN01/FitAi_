@@ -607,7 +607,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   };
 
   return (
-    <DialogShell visible={visible} animationType="slide" keyboardAvoiding>
+    <DialogShell visible={visible} animationType="fade" keyboardAvoiding>
         <SafeAreaView style={styles.safeArea}>
           <GlassCard padding="xl" contentStyle={styles.dialogContent} elevation={4}>
             {/* Celebration Icon */}

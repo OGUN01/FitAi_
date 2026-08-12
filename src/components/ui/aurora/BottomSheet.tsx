@@ -242,7 +242,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                       >
                         <Ionicons
                           name="close"
-                          size={rf(14)}
+                          size={rf(18)}
                           color={colors.text.secondary}
                         />
                       </Pressable>
