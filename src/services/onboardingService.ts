@@ -550,10 +550,15 @@ export class WorkoutPreferencesService {
       }
 
       const workoutPreferences: WorkoutPreferencesData = {
-        location: data.location || "both",
+        // NOTE: these fallbacks must match save()'s NOT NULL defaults exactly
+        // (location: "home", intensity: "intermediate") so a NULL column —
+        // e.g. a row written before these defaults existed — reads back
+        // identically to a freshly-onboarded user instead of drifting to a
+        // different enum value that silently changes calculated TDEE.
+        location: data.location || "home",
         equipment: data.equipment || [],
         time_preference: data.time_preference ?? 30,
-        intensity: data.intensity || "beginner",
+        intensity: data.intensity || "intermediate",
         workout_types: data.workout_types || [],
         primary_goals: data.primary_goals || [],
         activity_level: data.activity_level || "sedentary",

@@ -71,6 +71,16 @@ describe("typeTransformers", () => {
       const input = { isActive: true, ageCount: 5 };
       expect(toDbFormat(input)).toEqual({ is_active: true, age_count: 5 });
     });
+
+    it("prefers the raw snake_case value over a camelCase alias regardless of key order (camelCase first)", () => {
+      const input = { firstName: "A", first_name: "B" };
+      expect(toDbFormat(input)).toEqual({ first_name: "B" });
+    });
+
+    it("prefers the raw snake_case value over a camelCase alias regardless of key order (snake_case first)", () => {
+      const input = { first_name: "B", firstName: "A" };
+      expect(toDbFormat(input)).toEqual({ first_name: "B" });
+    });
   });
 
   describe("normalizeToSnakeCase", () => {
@@ -209,6 +219,56 @@ describe("typeTransformers", () => {
 
     it("maps 'balanced' to 'omnivore'", () => {
       expect(mapDietTypeForHealthCalc("balanced")).toBe("omnivore");
+    });
+
+    it("maps 'non_veg' (legacy underscore spelling) to 'omnivore'", () => {
+      expect(mapDietTypeForHealthCalc("non_veg")).toBe("omnivore");
+    });
+
+    it("passes 'keto' through unchanged", () => {
+      expect(mapDietTypeForHealthCalc("keto")).toBe("keto");
+    });
+
+    it("passes 'omnivore' through unchanged", () => {
+      expect(mapDietTypeForHealthCalc("omnivore")).toBe("omnivore");
+    });
+
+    it("passes 'mediterranean' through unchanged", () => {
+      expect(mapDietTypeForHealthCalc("mediterranean")).toBe("mediterranean");
+    });
+
+    it("passes 'paleo' through unchanged", () => {
+      expect(mapDietTypeForHealthCalc("paleo")).toBe("paleo");
+    });
+
+    it("maps every value in the live diet_type CHECK constraint to a known health-calc DietType without warning", () => {
+      // Mirrors supabase/migrations/20260729000001_expand_diet_type_check_constraint.sql
+      // and .../20260729000002_align_legacy_diet_type_check.sql — every one of
+      // these values is legal in the live DB and must not fall through to the
+      // 'Unknown onboarding diet_type' default/warn branch.
+      const liveCheckConstraintValues = [
+        "vegetarian",
+        "vegan",
+        "non-veg",
+        "non_veg",
+        "pescatarian",
+        "keto",
+        "omnivore",
+        "balanced",
+        "mediterranean",
+        "paleo",
+      ];
+      const warnSpy = jest
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
+      try {
+        for (const dietType of liveCheckConstraintValues) {
+          expect(() => mapDietTypeForHealthCalc(dietType)).not.toThrow();
+        }
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        warnSpy.mockRestore();
+      }
     });
 
     it("falls back to 'omnivore' for unknown values and warns", () => {

@@ -55,8 +55,12 @@ export function toDbFormat<T extends Record<string, any>>(
     const snakeKey = camelToSnake(key);
     const value = obj[key];
 
-    // Skip duplicate keys (when both snake_case and camelCase exist)
-    if (transformed[snakeKey] !== undefined && key !== snakeKey) {
+    // Skip duplicate keys (when both snake_case and camelCase exist for the
+    // same field). Deterministic regardless of Object.keys() iteration order:
+    // a raw snake_case entry present anywhere on the object always wins over
+    // a camelCase alias, so {a:1,a_b:2} and {a_b:2,a:1} (aliases of the same
+    // snake key) both resolve to the snake_case entry's value.
+    if (key !== snakeKey && snakeKey in obj) {
       continue;
     }
 
@@ -281,7 +285,14 @@ export function normalizeToSnakeCase<T extends Record<string, any>>(
 // Canonical enums:
 //   - Onboarding activity_level: sedentary | light | moderate | active | extreme
 //   - Health-calc ActivityLevel : sedentary | light | moderate | active | very_active | extreme
-//   - Onboarding diet_type     : vegetarian | vegan | non-veg | pescatarian | balanced
+//   - Onboarding diet_type     : vegetarian | vegan | non-veg | non_veg | pescatarian |
+//                                 keto | omnivore | balanced | mediterranean | paleo
+//                                 (full live DB CHECK constraint — see
+//                                 supabase/migrations/20260729000001_expand_diet_type_check_constraint.sql
+//                                 and .../20260729000002_align_legacy_diet_type_check.sql.
+//                                 'non_veg' is a legacy alternate spelling; 'keto' /
+//                                 'mediterranean' / 'paleo' are reserved for future
+//                                 diet-readiness promotion of diet_type.)
 //   - Health-calc DietType     : omnivore | vegetarian | vegan | pescatarian | keto | low_carb | paleo | mediterranean
 
 /**
@@ -331,17 +342,26 @@ export function mapActivityLevelForOnboarding(
 /**
  * Maps onboarding diet_type → health-calc DietType (base diet only).
  *
- *   vegetarian  → vegetarian (pass-through)
- *   vegan       → vegan (pass-through)
- *   pescatarian → pescatarian (pass-through)
- *   non-veg     → omnivore
- *   balanced    → omnivore  (explicit: "balanced" is the onboarding label for a
- *                            mixed/omnivorous diet; there is no separate "balanced"
- *                            DietType in health-calc)
+ *   vegetarian    → vegetarian (pass-through)
+ *   vegan         → vegan (pass-through)
+ *   pescatarian   → pescatarian (pass-through)
+ *   non-veg       → omnivore
+ *   non_veg       → omnivore  (legacy alternate spelling — see migration
+ *                              20260729000001_expand_diet_type_check_constraint.sql)
+ *   balanced      → omnivore  (explicit: "balanced" is the onboarding label for a
+ *                              mixed/omnivorous diet; there is no separate "balanced"
+ *                              DietType in health-calc)
+ *   keto          → keto (pass-through)
+ *   omnivore      → omnivore (pass-through — diet_type can already be stored as the
+ *                              health-calc label directly)
+ *   mediterranean → mediterranean (pass-through)
+ *   paleo         → paleo (pass-through)
  *
- * Unknown values fall back to "omnivore" and are logged. This mapper does NOT
- * apply readiness-flag overrides (keto_ready etc.) — those are handled separately
- * by nutritional.resolveDietType so the override decision is visible and explicit.
+ * All of the above are legal values of the live diet_type CHECK constraint. Unknown
+ * (genuinely malformed) values fall back to "omnivore" and are logged. This mapper
+ * does NOT apply readiness-flag overrides (keto_ready etc.) — those are handled
+ * separately by nutritional.resolveDietType so the override decision is visible
+ * and explicit.
  */
 export function mapDietTypeForHealthCalc(
   onboardingDietType: string,
@@ -352,8 +372,14 @@ export function mapDietTypeForHealthCalc(
     case "pescatarian":
       return onboardingDietType;
     case "non-veg":
+    case "non_veg":
     case "balanced":
       return "omnivore";
+    case "keto":
+    case "omnivore":
+    case "mediterranean":
+    case "paleo":
+      return onboardingDietType;
     default:
       console.warn(
         `[mapDietTypeForHealthCalc] Unknown onboarding diet_type "${onboardingDietType}" — falling back to "omnivore".`,
@@ -365,10 +391,27 @@ export function mapDietTypeForHealthCalc(
 /**
  * Maps health-calc DietType → onboarding diet_type.
  *
- * Inverse of mapDietTypeForHealthCalc for the base diet values. The specialized
- * DietType values (keto, low_carb, paleo, mediterranean) have NO onboarding
- * equivalent — they only arise from readiness flags — so they collapse back to
- * the closest compatible base diet. Unknown values fall back to "balanced".
+ * NOT a lossless inverse of mapDietTypeForHealthCalc: mapDietTypeForHealthCalc
+ * collapses TWO distinct onboarding values ("non-veg" and "balanced") onto the
+ * same health-calc value ("omnivore"), so the reverse direction cannot recover
+ * which one the user originally selected — "omnivore" → "balanced" here always,
+ * never "non-veg". Similarly the specialized DietType values (keto, low_carb,
+ * paleo, mediterranean) have NO distinct onboarding equivalent — they only arise
+ * from readiness flags or diet-readiness promotion — so they collapse to the
+ * closest compatible base diet ("balanced"). Unknown values also fall back to
+ * "balanced".
+ *
+ * This asymmetry is intentional and safe ONLY as long as nothing re-persists
+ * this function's output into a user's diet_type column — doing so would
+ * silently relabel a "non-veg" user as "balanced". As of this writing this
+ * function (and mapActivityLevelForOnboarding) have zero production call
+ * sites — audited via repo-wide grep — so no live write path can trigger that
+ * relabel today. They are kept (rather than deleted) because the diet_type
+ * CHECK constraint migration's comments anticipate a future diet-readiness
+ * promotion feature that would need this boundary crossing; if that feature
+ * is implemented, its write path must NOT feed "omnivore" through this mapper
+ * and persist the result as diet_type without first checking whether the
+ * user's original selection was "non-veg" (which must round-trip losslessly).
  */
 export function mapDietTypeForOnboarding(
   healthCalcDietType: string,
