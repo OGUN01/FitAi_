@@ -1,7 +1,6 @@
 // 🧮 COMPREHENSIVE HEALTH CALCULATIONS ENGINE
 // 50+ Mathematical Formulas for Fitness and Health Metrics
 
-import { CALORIE_PER_KG } from "../services/validation/constants";
 import { calculateBMI as calculateBMICore } from "./healthCalculations/core/bmiCalculation";
 import { calculateBMR as calculateBMRCore } from "./healthCalculations/core/bmrCalculation";
 import {
@@ -168,46 +167,6 @@ export class MetabolicCalculations {
       confidence: "low",
       showWarning: true,
     };
-  }
-
-  /**
-   * Validate that selected activity level matches occupation requirements
-   * Prevents users from selecting activity levels below their occupation's minimum
-   */
-  static validateActivityForOccupation(
-    occupation: string,
-    selectedActivity: string,
-  ): { isValid: boolean; minimumRequired?: string; message?: string } {
-    const OCCUPATION_MIN_ACTIVITY: Record<string, string | null> = {
-      desk_job: null, // No restriction
-      light_active: "light", // Must be at least "light"
-      moderate_active: "moderate", // Must be at least "moderate"
-      heavy_labor: "active", // Must be at least "active"
-      very_active: "extreme", // Must be "extreme"
-    };
-
-    const minRequired = OCCUPATION_MIN_ACTIVITY[occupation];
-    if (!minRequired) return { isValid: true };
-
-    const activityLevels = [
-      "sedentary",
-      "light",
-      "moderate",
-      "active",
-      "extreme",
-    ];
-    const minIndex = activityLevels.indexOf(minRequired);
-    const selectedIndex = activityLevels.indexOf(selectedActivity);
-
-    if (selectedIndex < minIndex) {
-      return {
-        isValid: false,
-        minimumRequired: minRequired,
-        message: `Your occupation (${occupation.replace("_", " ")}) requires at least "${minRequired}" activity level. Please adjust.`,
-      };
-    }
-
-    return { isValid: true };
   }
 
   /**

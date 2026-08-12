@@ -8,7 +8,6 @@ import { getMETValue } from "./core/metValues";
 import type { ActivityLevel } from "./types";
 import {
   BodyFatData,
-  ActivityValidationResult,
   IntensityRecommendation,
 } from "./shared-types";
 
@@ -134,42 +133,6 @@ export class MetabolicCalculations {
       confidence: "low",
       showWarning: true,
     };
-  }
-
-  static validateActivityForOccupation(
-    occupation: string,
-    selectedActivity: string,
-  ): ActivityValidationResult {
-    const OCCUPATION_MIN_ACTIVITY: Record<string, string | null> = {
-      desk_job: null,
-      light_active: "light",
-      moderate_active: "moderate",
-      heavy_labor: "active",
-      very_active: "extreme",
-    };
-
-    const minRequired = OCCUPATION_MIN_ACTIVITY[occupation];
-    if (!minRequired) return { isValid: true };
-
-    const activityLevels = [
-      "sedentary",
-      "light",
-      "moderate",
-      "active",
-      "extreme",
-    ];
-    const minIndex = activityLevels.indexOf(minRequired);
-    const selectedIndex = activityLevels.indexOf(selectedActivity);
-
-    if (selectedIndex < minIndex) {
-      return {
-        isValid: false,
-        minimumRequired: minRequired,
-        message: `Your occupation (${occupation.replace("_", " ")}) requires at least "${minRequired}" activity level. Please adjust.`,
-      };
-    }
-
-    return { isValid: true };
   }
 
   static calculateRecommendedIntensity(
