@@ -401,7 +401,11 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
               </View>
               {errors.password ? (
                 <Text style={styles.fieldError}>{errors.password}</Text>
-              ) : null}
+              ) : (
+                <Text style={styles.fieldHint}>
+                  At least 8 characters, including a number or symbol
+                </Text>
+              )}
 
               <View style={styles.passwordFieldWrap}>
                 <UnderlineInput
@@ -589,6 +593,14 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_500Medium",
     fontSize: fontSize.xs,
     color: colors.error,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
+  },
+
+  fieldHint: {
+    fontFamily: "Manrope_500Medium",
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
     marginTop: -spacing.xs,
     marginBottom: spacing.sm,
   },

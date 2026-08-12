@@ -33,6 +33,11 @@ const GENDER_OPTIONS = [
   { value: "male", label: "Male", icon: "male" as const },
   { value: "female", label: "Female", icon: "female" as const },
   { value: "other", label: "Other", icon: "person" as const },
+  {
+    value: "prefer_not_to_say",
+    label: "Prefer not to say",
+    icon: "help-circle" as const,
+  },
 ];
 
 const ACTIVITY_LEVEL_OPTIONS = [
@@ -258,6 +263,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
 
       // ✅ Sync to Supabase profiles table
       if (user?.id) {
+        let syncFailed = false;
         try {
           const result = await userProfileService.updateProfile(user.id, {
             first_name: firstName,
@@ -266,6 +272,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
           } as Record<string, unknown>);
           if (!result.success) {
+            syncFailed = true;
             console.error(
               "[PersonalInfoModal] Failed to sync to Supabase:",
               result.error,
@@ -279,12 +286,14 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
                 .from("workout_preferences")
                 .upsert({ user_id: user.id, activity_level: activityLevel }, { onConflict: "user_id" });
               if (wpError) {
+                syncFailed = true;
                 console.error(
                   "[PersonalInfoModal] Activity level sync error:",
                   wpError,
                 );
               }
             } catch (activitySyncError) {
+              syncFailed = true;
               console.error(
                 "[PersonalInfoModal] Activity level sync error:",
                 activitySyncError,
@@ -292,8 +301,19 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
             }
           }
         } catch (syncError) {
+          syncFailed = true;
           console.error("[PersonalInfoModal] Sync error:", syncError);
           // Don't fail the save - local update succeeded
+        }
+
+        // Match GoalsPreferencesEditModal/BodyMeasurementsEditModal: never
+        // let a failed server sync be silent (CLAUDE.md rule 5). The local
+        // profileStore write above already succeeded, so this is informational.
+        if (syncFailed) {
+          crossPlatformAlert(
+            "Saved Locally",
+            "Your changes were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
+          );
         }
       }
 

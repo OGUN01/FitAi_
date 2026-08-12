@@ -82,9 +82,17 @@ export const BodyMeasurementsEditModal: React.FC<
     const displayTarget = rawTarget && rawTarget > 0 ? toDisplayWeight(rawTarget, weightUnit) : null;
     setTargetWeight(displayTarget != null ? displayTarget.toFixed(1) : "");
     setBodyFat((bodyAnalysisData?.body_fat_percentage && bodyAnalysisData.body_fat_percentage > 0) ? bodyAnalysisData.body_fat_percentage.toString() : "");
-    setChest((bodyAnalysisData?.chest_cm && bodyAnalysisData.chest_cm > 0) ? bodyAnalysisData.chest_cm.toString() : "");
-    setWaist((bodyAnalysisData?.waist_cm && bodyAnalysisData.waist_cm > 0) ? bodyAnalysisData.waist_cm.toString() : "");
-    setHips((bodyAnalysisData?.hip_cm && bodyAnalysisData.hip_cm > 0) ? bodyAnalysisData.hip_cm.toString() : "");
+    // Chest/waist/hips are stored in cm; display in the user's height unit
+    // (cm/in) so an Imperial user isn't asked to enter metric circumferences.
+    const rawChest = bodyAnalysisData?.chest_cm;
+    const displayChest = rawChest && rawChest > 0 ? toDisplayHeight(rawChest, heightUnit) : null;
+    setChest(displayChest != null ? displayChest.toFixed(1) : "");
+    const rawWaist = bodyAnalysisData?.waist_cm;
+    const displayWaist = rawWaist && rawWaist > 0 ? toDisplayHeight(rawWaist, heightUnit) : null;
+    setWaist(displayWaist != null ? displayWaist.toFixed(1) : "");
+    const rawHips = bodyAnalysisData?.hip_cm;
+    const displayHips = rawHips && rawHips > 0 ? toDisplayHeight(rawHips, heightUnit) : null;
+    setHips(displayHips != null ? displayHips.toFixed(1) : "");
     setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
@@ -154,28 +162,37 @@ export const BodyMeasurementsEditModal: React.FC<
       newErrors.bodyFat = "Enter valid body fat % (3-50)";
     }
 
+    // Chest/waist/hips ranges are authored in cm, then converted to the
+    // user's display unit so validation matches whatever unit is shown.
+    const chestMin = Math.round(convertHeight(50, "cm", heightUnit));
+    const chestMax = Math.round(convertHeight(200, "cm", heightUnit));
+    const waistMin = Math.round(convertHeight(40, "cm", heightUnit));
+    const waistMax = Math.round(convertHeight(200, "cm", heightUnit));
+    const hipsMin = Math.round(convertHeight(50, "cm", heightUnit));
+    const hipsMax = Math.round(convertHeight(200, "cm", heightUnit));
+
     // Chest is optional but must be valid if provided
     if (
       chest &&
-      (isNaN(Number(chest)) || Number(chest) < 50 || Number(chest) > 200)
+      (isNaN(Number(chest)) || Number(chest) < chestMin || Number(chest) > chestMax)
     ) {
-      newErrors.chest = "Enter valid chest measurement in cm (50-200)";
+      newErrors.chest = `Enter valid chest measurement in ${heightUnit} (${chestMin}-${chestMax})`;
     }
 
     // Waist is optional but must be valid if provided
     if (
       waist &&
-      (isNaN(Number(waist)) || Number(waist) < 40 || Number(waist) > 200)
+      (isNaN(Number(waist)) || Number(waist) < waistMin || Number(waist) > waistMax)
     ) {
-      newErrors.waist = "Enter valid waist measurement in cm (40-200)";
+      newErrors.waist = `Enter valid waist measurement in ${heightUnit} (${waistMin}-${waistMax})`;
     }
 
     // Hips is optional but must be valid if provided
     if (
       hips &&
-      (isNaN(Number(hips)) || Number(hips) < 50 || Number(hips) > 200)
+      (isNaN(Number(hips)) || Number(hips) < hipsMin || Number(hips) > hipsMax)
     ) {
-      newErrors.hips = "Enter valid hips measurement in cm (50-200)";
+      newErrors.hips = `Enter valid hips measurement in ${heightUnit} (${hipsMin}-${hipsMax})`;
     }
 
     setErrors(newErrors);
@@ -220,9 +237,9 @@ export const BodyMeasurementsEditModal: React.FC<
         current_weight_kg: canonicalCurrentWeight,
         ...(targetWeightKg != null ? { target_weight_kg: targetWeightKg } : {}),
         body_fat_percentage: bodyFat ? parseLocalFloat(bodyFat) : undefined,
-        chest_cm: chest ? parseLocalFloat(chest) : undefined,
-        waist_cm: waist ? parseLocalFloat(waist) : undefined,
-        hip_cm: hips ? parseLocalFloat(hips) : undefined,
+        chest_cm: chest ? convertHeight(parseLocalFloat(chest), heightUnit, "cm") : undefined,
+        waist_cm: waist ? convertHeight(parseLocalFloat(waist), heightUnit, "cm") : undefined,
+        hip_cm: hips ? convertHeight(parseLocalFloat(hips), heightUnit, "cm") : undefined,
       };
 
       // ✅ Update bodyAnalysis in profileStore
@@ -292,14 +309,18 @@ export const BodyMeasurementsEditModal: React.FC<
       : null;
     // height is in display units (in when imperial); convert to cm before comparing.
     const heightCm = convertHeight(parseLocalFloat(height), heightUnit, "cm");
+    // chest/waist/hips are also in display units; convert to cm before comparing.
+    const chestCm = chest ? convertHeight(parseLocalFloat(chest), heightUnit, "cm") : null;
+    const waistCm = waist ? convertHeight(parseLocalFloat(waist), heightUnit, "cm") : null;
+    const hipsCm = hips ? convertHeight(parseLocalFloat(hips), heightUnit, "cm") : null;
     return (
       floatChanged(String(heightCm), bodyAnalysisData.height_cm) ||
       floatChanged(String(weightKg), bodyAnalysisData.current_weight_kg) ||
       floatChanged(targetKg != null ? String(targetKg) : "", bodyAnalysisData.target_weight_kg) ||
       floatChanged(bodyFat, bodyAnalysisData.body_fat_percentage) ||
-      floatChanged(chest, bodyAnalysisData.chest_cm) ||
-      floatChanged(waist, bodyAnalysisData.waist_cm) ||
-      floatChanged(hips, bodyAnalysisData.hip_cm)
+      floatChanged(chestCm != null ? String(chestCm) : "", bodyAnalysisData.chest_cm) ||
+      floatChanged(waistCm != null ? String(waistCm) : "", bodyAnalysisData.waist_cm) ||
+      floatChanged(hipsCm != null ? String(hipsCm) : "", bodyAnalysisData.hip_cm)
     );
   }, [height, weight, targetWeight, bodyFat, chest, waist, hips, bodyAnalysis, weightUnit, heightUnit]);
 
@@ -472,9 +493,9 @@ export const BodyMeasurementsEditModal: React.FC<
         placeholder="Enter chest measurement"
         keyboardType="decimal-pad"
         maxLength={5}
-        suffix="cm"
+        suffix={heightUnit}
         error={errors.chest}
-        hint="Optional - chest circumference"
+        hint={`Optional - chest circumference in ${heightUnit}`}
       />
 
       {/* Waist Measurement */}
@@ -487,9 +508,9 @@ export const BodyMeasurementsEditModal: React.FC<
         placeholder="Enter waist measurement"
         keyboardType="decimal-pad"
         maxLength={5}
-        suffix="cm"
+        suffix={heightUnit}
         error={errors.waist}
-        hint="Optional - waist circumference"
+        hint={`Optional - waist circumference in ${heightUnit}`}
       />
 
       {/* Hips Measurement */}
@@ -502,9 +523,9 @@ export const BodyMeasurementsEditModal: React.FC<
         placeholder="Enter hips measurement"
         keyboardType="decimal-pad"
         maxLength={5}
-        suffix="cm"
+        suffix={heightUnit}
         error={errors.hips}
-        hint="Optional - hips circumference"
+        hint={`Optional - hips circumference in ${heightUnit}`}
       />
 
       {/* Info footer — flat, no card */}

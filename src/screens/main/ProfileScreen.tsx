@@ -341,26 +341,29 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           <EditOverlay visible={true} onClose={() => setShowOverlay(false)} />
         )}
 
+        {/*
+          NOTE: onClose intentionally does NOT trigger onRefresh() here.
+          Each edit modal already writes its changes directly into
+          profileStore (the runtime source of truth per CLAUDE.md rule 6)
+          before calling onClose, regardless of whether the background
+          Supabase sync inside the modal succeeded. Re-fetching the full
+          profile from Supabase on every close raced with — and could be
+          behind — that just-written local state, silently reverting the
+          user's edit a few seconds after they saved it. Pull-to-refresh
+          (onRefresh via RefreshControl above) remains available for an
+          explicit, user-initiated resync.
+        */}
         <PersonalInfoEditModal
           visible={showEditModal === "personal-info"}
-          onClose={() => {
-            setShowEditModal(null);
-            onRefresh();
-          }}
+          onClose={() => setShowEditModal(null)}
         />
         <GoalsPreferencesEditModal
           visible={showEditModal === "goals"}
-          onClose={() => {
-            setShowEditModal(null);
-            onRefresh();
-          }}
+          onClose={() => setShowEditModal(null)}
         />
         <BodyMeasurementsEditModal
           visible={showEditModal === "measurements"}
-          onClose={() => {
-            setShowEditModal(null);
-            onRefresh();
-          }}
+          onClose={() => setShowEditModal(null)}
         />
 
         {/* Units Selection Modal */}

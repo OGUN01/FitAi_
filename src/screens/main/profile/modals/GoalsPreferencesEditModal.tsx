@@ -26,6 +26,41 @@ interface GoalsPreferencesEditModalProps {
   onClose: () => void;
 }
 
+/**
+ * Goal values are stored with underscores (e.g. "weight_loss") but some
+ * legacy/onboarding sources use hyphens (e.g. "weight-loss"). Normalize to
+ * underscore form so state always matches PRIMARY_GOALS_OPTIONS' values.
+ * Shared by the load effect and hasChanges() so the two never drift apart.
+ */
+const normalizeGoalList = (goals: string[] | undefined | null): string[] =>
+  (goals || []).map((goal) => goal.replace(/-/g, "_"));
+
+/**
+ * Time commitment can arrive either as a range string ("15-30", "60+") or as
+ * raw minutes (a plain number, e.g. from workout_preferences.time_preference).
+ * Normalize both shapes to the range-bucket format TIME_COMMITMENT_OPTIONS
+ * uses. Shared by the load effect and hasChanges() so the Save button's
+ * enabled state can never diverge from what will actually be loaded/saved.
+ */
+const normalizeTimeCommitment = (raw: string | undefined | null): string => {
+  if (!raw) return "";
+  if (/^\d+-/.test(raw) || raw === "60+") {
+    // Already a range format like "15-30", "30-45", "45-60", "60+"
+    return raw;
+  }
+  if (/^\d+$/.test(raw)) {
+    const minutes = parseInt(raw, 10);
+    return minutes <= 30
+      ? "15-30"
+      : minutes <= 45
+        ? "30-45"
+        : minutes <= 60
+          ? "45-60"
+          : "60+";
+  }
+  return raw;
+};
+
 const PRIMARY_GOALS_OPTIONS = [
   {
     value: "weight_loss",
@@ -175,11 +210,11 @@ export const GoalsPreferencesEditModal: React.FC<
       // Goals: prefer profileStore, fall back to userStore
       let loadedGoals: string[] = [];
       if (wpGoals && wpGoals.length > 0) {
-        loadedGoals = wpGoals.map((goal: string) => goal.replace(/-/g, "_"));
+        loadedGoals = normalizeGoalList(wpGoals);
       } else if (profileGoals) {
         const rawGoals =
           profileGoals.primaryGoals || profileGoals.primary_goals || [];
-        loadedGoals = rawGoals.map((goal: string) => goal.replace(/-/g, "_"));
+        loadedGoals = normalizeGoalList(rawGoals);
       }
 
       // Experience: prefer profileStore, fall back to userStore
@@ -194,38 +229,11 @@ export const GoalsPreferencesEditModal: React.FC<
       // Time: prefer profileStore, fall back to userStore
       let loadedTime = "";
       if (wpTime) {
-        // wpTime could be a range string ("15-30") or a number from time_preference
-        if (/^\d+-/.test(wpTime) || wpTime === "60+") {
-          // Already a range format like "15-30", "30-45", "45-60", "60+"
-          loadedTime = wpTime;
-        } else {
-          // Numeric minutes format - convert to range
-          const minutes = parseInt(wpTime);
-          if (!isNaN(minutes)) {
-            loadedTime =
-              minutes <= 30
-                ? "15-30"
-                : minutes <= 45
-                  ? "30-45"
-                  : minutes <= 60
-                    ? "45-60"
-                    : "60+";
-          } else {
-            loadedTime = wpTime;
-          }
-        }
+        loadedTime = normalizeTimeCommitment(wpTime);
       } else if (profileGoals) {
         const rawTime =
           profileGoals.timeCommitment || profileGoals.time_commitment || "";
-        loadedTime = /^\d+$/.test(rawTime)
-          ? parseInt(rawTime) <= 30
-            ? "15-30"
-            : parseInt(rawTime) <= 45
-              ? "30-45"
-              : parseInt(rawTime) <= 60
-                ? "45-60"
-                : "60+"
-          : rawTime;
+        loadedTime = normalizeTimeCommitment(rawTime);
       }
 
       setPrimaryGoals(loadedGoals);
@@ -272,7 +280,13 @@ export const GoalsPreferencesEditModal: React.FC<
         // Also set camelCase aliases for read-back compatibility
         primaryGoals: primaryGoals,
         timeCommitment: timeCommitment,
-        // Preserve existing optional fields
+        // Preserve existing optional fields. NOTE: preferred_equipment and
+        // target_areas have no corresponding columns in the workout_preferences
+        // table (verified against supabase/migrations) — they are intentionally
+        // client-only. updateWorkoutPreferences() merges (spreads) into the
+        // existing store object rather than replacing it, and no server
+        // refetch is wired into this modal's onClose, so these fields survive
+        // both this save and any later pull-to-refresh without being clobbered.
         preferred_equipment: profile?.fitnessGoals?.preferred_equipment,
         target_areas: profile?.fitnessGoals?.target_areas,
       };
@@ -351,7 +365,7 @@ export const GoalsPreferencesEditModal: React.FC<
     let currentTime = "";
 
     if (wpGoals && wpGoals.length > 0) {
-      currentGoals = wpGoals.map((g: string) => g.replace(/-/g, "_"));
+      currentGoals = normalizeGoalList(wpGoals);
       currentExperience =
         (wp?.experience as string) ||
         (wp?.experience_level as string) ||
@@ -362,43 +376,18 @@ export const GoalsPreferencesEditModal: React.FC<
         (workoutPreferences?.time_preference
           ? String(workoutPreferences.time_preference)
           : "");
-      if (wpTime) {
-        if (/^\d+-/.test(wpTime) || wpTime === "60+") {
-          currentTime = wpTime;
-        } else {
-          const minutes = parseInt(wpTime);
-          if (!isNaN(minutes)) {
-            currentTime =
-              minutes <= 30
-                ? "15-30"
-                : minutes <= 45
-                  ? "30-45"
-                  : minutes <= 60
-                    ? "45-60"
-                    : "60+";
-          } else {
-            currentTime = wpTime;
-          }
-        }
-      }
+      currentTime = normalizeTimeCommitment(wpTime);
     } else if (profileGoals) {
       const rawGoals =
         profileGoals.primaryGoals || profileGoals.primary_goals || [];
-      currentGoals = rawGoals.map((g: string) => g.replace(/-/g, "_"));
+      currentGoals = normalizeGoalList(rawGoals);
       currentExperience =
         profileGoals.experience || profileGoals.experience_level || "";
       // Apply the same numeric-to-range conversion used during load so the
       // comparison is apples-to-apples with the timeCommitment state value.
       const rawTime =
         profileGoals.timeCommitment || profileGoals.time_commitment || "";
-      if (/^\d+-/.test(rawTime) || rawTime === "60+") {
-        currentTime = rawTime;
-      } else if (/^\d+$/.test(rawTime)) {
-        const minutes = parseInt(rawTime);
-        currentTime = minutes <= 30 ? "15-30" : minutes <= 45 ? "30-45" : minutes <= 60 ? "45-60" : "60+";
-      } else {
-        currentTime = rawTime;
-      }
+      currentTime = normalizeTimeCommitment(rawTime);
     } else {
       return true; // No saved data yet, always allow save
     }

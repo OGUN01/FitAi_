@@ -6,7 +6,6 @@
 
 export { ProfileHeader } from './ProfileHeader';
 export { ProfileStats } from './ProfileStats';
-export { ProfileCompletionCard } from './ProfileCompletionCard';
 export { SettingsSection, type SettingItem } from './SettingsSection';
 export { ConnectedAccountsCard } from './ConnectedAccountsCard';
 export { AppInfoCard } from './AppInfoCard';
