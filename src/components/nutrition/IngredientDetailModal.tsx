@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rw, rbr, rh } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
+import { MACRO_PILL_COLORS } from "../diet/macroColors";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
@@ -216,28 +217,28 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                 label="Protein"
                 value={ingredientData.macros?.protein || 0}
                 unit="g"
-                color="#4ECDC4"
+                color={MACRO_PILL_COLORS.protein}
                 percentage={macroPercent(ingredientData.macros?.protein || 0, 4)}
               />
               <NutritionRow
                 label="Carbohydrates"
                 value={ingredientData.macros?.carbohydrates || 0}
                 unit="g"
-                color="#45B7D1"
+                color={MACRO_PILL_COLORS.carbs}
                 percentage={macroPercent(ingredientData.macros?.carbohydrates || 0, 4)}
               />
               <NutritionRow
                 label="Fat"
                 value={ingredientData.macros?.fat || 0}
                 unit="g"
-                color="#96CEB4"
+                color={MACRO_PILL_COLORS.fat}
                 percentage={macroPercent(ingredientData.macros?.fat || 0, 9)}
               />
               <NutritionRow
                 label="Fiber"
                 value={ingredientData.macros?.fiber || 0}
                 unit="g"
-                color="#FF8A5C"
+                color={MACRO_PILL_COLORS.fiber}
               />
             </View>
           </View>
@@ -333,7 +334,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             >
               {isCompleting ? (
                 <>
-                  <ActivityIndicator size="small" color={colors.white} />
+                  <AuroraSpinner customSize={rf(14)} theme="white" />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
                   >

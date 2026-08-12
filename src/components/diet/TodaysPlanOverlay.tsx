@@ -9,6 +9,9 @@ import { MealsTimeline } from './MealsTimeline';
 import { CompactIntakeSummary } from './CompactIntakeSummary';
 import { flatColors as colors, flatFontSize as fontSize, spacing } from '../../theme/aurora-tokens';
 import { fontFamilyForWeight } from '../../theme/fonts';
+import { rw } from '../../utils/responsive';
+
+const HEADER_BUTTON_SIZE = Math.max(rw(40), 44);
 
 interface TodaysPlanOverlayProps {
   selectedDate: string;
@@ -109,8 +112,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   headerButton: {
-    width: 44,
-    height: 44,
+    width: HEADER_BUTTON_SIZE,
+    height: HEADER_BUTTON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },

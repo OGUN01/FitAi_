@@ -7,7 +7,6 @@ import {
   Modal,
   ScrollView,
   TextInput,
-  ActivityIndicator,
   SafeAreaView,
   Image,
 } from 'react-native';
@@ -20,6 +19,7 @@ import {
   typography,
 } from '../../theme/aurora-tokens';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import { RecognizedFood } from '../../services/foodRecognitionService';
 import { rf, rh, rw, rbr } from '../../utils/responsive';
 
@@ -287,6 +287,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                 <TextInput
                   style={styles.correctionInput}
                   placeholder="Enter correct food name..."
+                  placeholderTextColor={colors.textSecondary}
                   value={currentFeedback.correctName || ''}
                   onChangeText={(text) => updateFeedback(currentFoodIndex, { correctName: text })}
                   multiline={false}
@@ -301,6 +302,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             <TextInput
               style={styles.notesInput}
               placeholder="Any other feedback about this recognition..."
+              placeholderTextColor={colors.textSecondary}
               value={currentFeedback.userNotes || ''}
               onChangeText={(text) => updateFeedback(currentFoodIndex, { userNotes: text })}
               multiline={true}
@@ -339,7 +341,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
 
           {isSubmitting && (
             <View style={styles.submittingIndicator}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <AuroraSpinner customSize={rf(14)} theme="primary" />
               <Text style={styles.submittingText}>Sending feedback...</Text>
             </View>
           )}

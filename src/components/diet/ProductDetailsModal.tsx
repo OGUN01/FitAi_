@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Platform,
   ScrollView,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { HealthScoreIndicator } from './HealthScoreIndicator';
@@ -496,7 +496,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   accessibilityRole="button"
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator color={colors.white} />
+                    <AuroraSpinner customSize={rf(16)} theme="white" />
                   ) : (
                     <Text style={styles.primaryButtonText}>Add to meal</Text>
                   )}
@@ -555,6 +555,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.full,
     backgroundColor: colors.surface,
+    minHeight: Math.max(rp(44), 44),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeButtonText: {
     fontSize: rf(13),

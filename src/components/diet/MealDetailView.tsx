@@ -861,8 +861,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   backButton: {
-    width: rw(40),
-    height: rw(40),
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
     borderRadius: borderRadius.full,
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     alignItems: 'center' as const,

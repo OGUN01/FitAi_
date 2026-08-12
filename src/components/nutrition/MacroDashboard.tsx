@@ -10,6 +10,7 @@ import {
 import { DayMeal } from "../../types/ai";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
+import { MACRO_PILL_COLORS } from "../diet/macroColors";
 
 interface MacroDashboardProps {
   meal: DayMeal;
@@ -147,7 +148,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalCalories || 0,
       label: "Calories",
       unit: "cal",
-      color: colors.errorLight,
+      color: colors.primary,
       target: dailyTargets?.calories ?? undefined,
       percentage: calculatePercentage(
         meal.totalCalories || 0,
@@ -158,7 +159,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalMacros?.protein || 0,
       label: "Protein",
       unit: "g",
-      color: colors.teal,
+      color: MACRO_PILL_COLORS.protein,
       target: dailyTargets?.protein ?? undefined,
       percentage: calculatePercentage(
         meal.totalMacros?.protein || 0,
@@ -169,7 +170,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalMacros?.carbohydrates || 0,
       label: "Carbs",
       unit: "g",
-      color: "#45B7D1",
+      color: MACRO_PILL_COLORS.carbs,
       target: dailyTargets?.carbs ?? undefined,
       percentage: calculatePercentage(
         meal.totalMacros?.carbohydrates || 0,
@@ -180,7 +181,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       value: meal.totalMacros?.fat || 0,
       label: "Fat",
       unit: "g",
-      color: "#96CEB4",
+      color: MACRO_PILL_COLORS.fat,
       target: dailyTargets?.fat ?? undefined,
       percentage: calculatePercentage(
         meal.totalMacros?.fat || 0,
@@ -229,7 +230,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                   style={[
                     styles.breakdownBar,
                     {
-                      backgroundColor: colors.teal,
+                      backgroundColor: MACRO_PILL_COLORS.protein,
                       flex:
                         (meal.totalMacros.protein * 4) /
                         (meal.totalCalories || 1),
@@ -243,7 +244,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                   style={[
                     styles.breakdownBar,
                     {
-                      backgroundColor: "#45B7D1",
+                      backgroundColor: MACRO_PILL_COLORS.carbs,
                       flex:
                         (meal.totalMacros.carbohydrates * 4) /
                         (meal.totalCalories || 1),
@@ -257,7 +258,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
                   style={[
                     styles.breakdownBar,
                     {
-                      backgroundColor: "#96CEB4",
+                      backgroundColor: MACRO_PILL_COLORS.fat,
                       flex:
                         (meal.totalMacros.fat * 9) / (meal.totalCalories || 1),
                     },

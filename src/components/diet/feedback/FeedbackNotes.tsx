@@ -21,6 +21,7 @@ export const FeedbackNotes: React.FC<FeedbackNotesProps> = ({ feedback, onFeedba
       <TextInput
         style={styles.notesInput}
         placeholder="Any other feedback about this recognition..."
+        placeholderTextColor={colors.textSecondary}
         value={feedback.userNotes || ''}
         onChangeText={(text) => onFeedbackChange({ userNotes: text })}
         multiline={true}
