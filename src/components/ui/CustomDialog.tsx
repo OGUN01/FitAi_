@@ -56,18 +56,27 @@ interface CustomDialogProps {
  * zIndex.modal (1400), above every app-level zIndex (≤1300). Native keeps the
  * real Modal (fade/slide animations, hardware back, accessibility).
  */
-const DialogShell: React.FC<{
+export const DialogShell: React.FC<{
   visible: boolean;
-  animationType: 'fade' | 'slide';
+  animationType: 'fade' | 'slide' | 'none';
   onRequestClose?: () => void;
   keyboardAvoiding?: boolean;
+  /**
+   * Skip DialogShell's own centered dark overlay (styles.overlay) — for
+   * callers that render their own full-screen backdrop (e.g. a Pressable +
+   * BlurView tint) as their first child, so the caller's backdrop doesn't
+   * stack under DialogShell's default rgba(0,0,0,0.5) and double-darken.
+   * Only the Modal + web-scrim wiring is shared in this mode.
+   */
+  bare?: boolean;
   children: React.ReactNode;
-}> = ({ visible, animationType, onRequestClose, keyboardAvoiding, children }) => {
+}> = ({ visible, animationType, onRequestClose, keyboardAvoiding, bare, children }) => {
+  const wrapperStyle = bare ? undefined : styles.overlay;
   if (Platform.OS === 'web') {
     if (!visible) return null;
     const WebWrapper = keyboardAvoiding ? KeyboardAvoidingView : View;
     return (
-      <WebWrapper style={[styles.overlay, styles.webScrim]}>
+      <WebWrapper style={[wrapperStyle, styles.webScrim]}>
         {children}
       </WebWrapper>
     );
@@ -81,13 +90,15 @@ const DialogShell: React.FC<{
     >
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
-          style={styles.overlay}
+          style={wrapperStyle}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           {children}
         </KeyboardAvoidingView>
+      ) : wrapperStyle ? (
+        <View style={wrapperStyle}>{children}</View>
       ) : (
-        <View style={styles.overlay}>{children}</View>
+        children
       )}
     </Modal>
   );

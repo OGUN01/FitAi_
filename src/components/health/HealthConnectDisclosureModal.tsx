@@ -12,19 +12,13 @@
  */
 
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  Modal,
-  Text,
-  Pressable,
-  ScrollView,
-} from "react-native";
+import { View, StyleSheet, Text, Pressable, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { DialogShell } from "../ui/CustomDialog";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { gradients, toLinearGradientProps } from "../../theme/gradients";
@@ -69,12 +63,7 @@ export const HealthConnectDisclosureModal: React.FC<
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
+    <DialogShell visible={visible} animationType="fade" onRequestClose={onDismiss} bare>
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
         <BlurView intensity={80} style={styles.blurContainer} pointerEvents="none" />
@@ -189,7 +178,7 @@ export const HealthConnectDisclosureModal: React.FC<
           </GlassCard>
         </View>
       </View>
-    </Modal>
+    </DialogShell>
   );
 };
 

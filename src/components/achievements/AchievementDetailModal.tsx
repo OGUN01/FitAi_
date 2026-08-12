@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import {
-  Modal,
   View,
   Text,
   StyleSheet,
@@ -38,6 +37,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP } from "../../data/achievements/tierColors";
 import { getReadableTextColor } from "./AchievementCelebration";
+import { DialogShell } from "../ui/CustomDialog";
 
 interface AchievementDetailModalProps {
   visible: boolean;
@@ -119,19 +119,14 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
 
   if (!achievement) {
     return (
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <DialogShell visible={visible} animationType="fade" onRequestClose={onClose} bare>
         <Pressable style={{ flex: 1 }} onPress={onClose} />
-      </Modal>
+      </DialogShell>
     );
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <DialogShell visible={visible} animationType="fade" onRequestClose={onClose} bare>
       <View style={styles.overlay}>
         {Platform.OS === "ios" ? (
           <BlurView intensity={20} style={StyleSheet.absoluteFill} tint="dark" />
@@ -292,7 +287,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
-    </Modal>
+    </DialogShell>
   );
 };
 

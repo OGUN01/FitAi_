@@ -2,16 +2,7 @@
 // Enhanced UI component for selecting meal type before food recognition
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  StyleSheet,
-  Animated,
-  ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MealType } from '../../services/foodRecognitionService';
 import {
@@ -23,7 +14,8 @@ import {
 } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
 import { haptics } from '../../utils/haptics';
-import { rf, rh, rw, rs, rp, rbr, dimensions } from '../../utils/responsive';
+import { rf, rh, rw, rs, rp, rbr } from '../../utils/responsive';
+import { BottomSheet } from '../ui/aurora/BottomSheet';
 
 interface MealTypeSelectorProps {
   visible: boolean;
@@ -81,41 +73,6 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
   onClose,
 }) => {
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
-  const [fadeAnim] = useState(new Animated.Value(0));
-  // Use the clamped screen height from the responsive module so the slide
-  // animation distance stays phone-sized on web/tablet (capped at 900)
-  // instead of the full desktop window height.
-  const [slideAnim] = useState(new Animated.Value(dimensions.screenHeight));
-
-  React.useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: dimensions.screenHeight,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible]);
 
   const handleSelect = (mealType: MealType) => {
     setSelectedType(mealType);
@@ -135,173 +92,140 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
   const suggestedMeal = getCurrentTimeBasedSuggestion();
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-      statusBarTranslucent
+      onClose={onClose}
+      showCloseButton={false}
+      contentStyle={styles.content}
+      testID="meal-type-sheet"
     >
-      <SafeAreaView style={styles.container}>
-        <Animated.View
-          style={[
-            styles.overlay,
-            {
-              opacity: fadeAnim,
-            },
-          ]}
+      {/* ── Header — custom (emoji + title + subtitle + chevron-down close),
+          per the AdjustmentWizard.tsx pattern. This also removes the legacy
+          RN `Animated` API in favor of BottomSheet's standard Reanimated
+          spring motion. ── */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerEmoji}>🍽️</Text>
+          <Text style={styles.headerTitle}>Select Meal Type</Text>
+          <Text style={styles.headerSubtitle}>
+            Choose what type of meal you're scanning for better accuracy
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.closeButton}
+          accessibilityRole="button"
+          accessibilityLabel="Close meal type selector"
         >
-          <TouchableOpacity
-            style={styles.backdropTouchable}
-            activeOpacity={1}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss meal type selector"
-            accessibilityHint="Closes the meal type picker without selecting"
+          <Ionicons name="chevron-down" size={rf(20)} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView bounces={false} showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        {/* Time-based suggestion */}
+        <View style={styles.suggestionBanner}>
+          <Ionicons
+            name="bulb-outline"
+            size={rf(16)}
+            color={colors.primaryLight}
+            style={styles.suggestionIcon}
           />
+          <Text style={styles.suggestionText}>
+            Based on current time, we suggest:{' '}
+            <Text style={styles.suggestionMeal}>
+              {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
+            </Text>
+          </Text>
+        </View>
 
-          <Animated.View
-            style={[
-              styles.modalContent,
-              {
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <Text style={styles.headerEmoji}>🍽️</Text>
-                <Text style={styles.headerTitle}>Select Meal Type</Text>
-                <Text style={styles.headerSubtitle}>
-                  Choose what type of meal you're scanning for better accuracy
-                </Text>
-              </View>
+        {/* Meal type options */}
+        <View style={styles.optionsContainer}>
+          {mealTypeOptions.map((option) => {
+            const isSelected = selectedType === option.type;
+            const isSuggested = option.type === suggestedMeal;
+
+            return (
               <TouchableOpacity
-                onPress={onClose}
-                style={styles.closeButton}
+                key={option.type}
+                style={[
+                  styles.optionCard,
+                  isSelected && styles.optionCardSelected,
+                  isSuggested && styles.optionCardSuggested,
+                ]}
+                onPress={() => handleSelect(option.type)}
+                activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel="Close meal type selector"
+                accessibilityLabel={option.label}
+                accessibilityState={{ selected: isSelected }}
               >
-                <Ionicons name="chevron-down" size={rf(20)} color={colors.text} />
+                <View style={styles.optionContent}>
+                  <View
+                    style={[styles.optionEmoji, { backgroundColor: hexToRgba(option.color, TINT_ALPHA_LOW) }]}
+                  >
+                    <Text style={styles.optionEmojiText}>{option.emoji}</Text>
+                  </View>
+
+                  <View style={styles.optionInfo}>
+                    <View style={styles.optionHeader}>
+                      <Text style={styles.optionLabel}>{option.label}</Text>
+                      {isSuggested && (
+                        <View style={styles.suggestedBadge}>
+                          <Text style={styles.suggestedBadgeText}>Suggested</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.optionDescription}>{option.description}</Text>
+                    <Text style={styles.optionTime}>{option.suggestedTime}</Text>
+                  </View>
+
+                  <View style={[styles.selectIndicator, { borderColor: option.color }]}>
+                    {isSelected && (
+                      <View
+                        style={[
+                          styles.selectIndicatorInner,
+                          { backgroundColor: option.color },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </View>
               </TouchableOpacity>
-            </View>
+            );
+          })}
+        </View>
 
-            <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-              {/* Time-based suggestion */}
-              <View style={styles.suggestionBanner}>
-                <Ionicons
-                  name="bulb-outline"
-                  size={rf(16)}
-                  color={colors.primaryLight}
-                  style={styles.suggestionIcon}
-                />
-                <Text style={styles.suggestionText}>
-                  Based on current time, we suggest:{' '}
-                  <Text style={styles.suggestionMeal}>
-                    {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
-                  </Text>
-                </Text>
-              </View>
-
-              {/* Meal type options */}
-              <View style={styles.optionsContainer}>
-                {mealTypeOptions.map((option) => {
-                  const isSelected = selectedType === option.type;
-                  const isSuggested = option.type === suggestedMeal;
-
-                  return (
-                    <TouchableOpacity
-                      key={option.type}
-                      style={[
-                        styles.optionCard,
-                        isSelected && styles.optionCardSelected,
-                        isSuggested && styles.optionCardSuggested,
-                      ]}
-                      onPress={() => handleSelect(option.type)}
-                      activeOpacity={0.7}
-                      accessibilityRole="button"
-                      accessibilityLabel={option.label}
-                      accessibilityState={{ selected: isSelected }}
-                    >
-                      <View style={styles.optionContent}>
-                        <View
-                          style={[styles.optionEmoji, { backgroundColor: hexToRgba(option.color, TINT_ALPHA_LOW) }]}
-                        >
-                          <Text style={styles.optionEmojiText}>{option.emoji}</Text>
-                        </View>
-
-                        <View style={styles.optionInfo}>
-                          <View style={styles.optionHeader}>
-                            <Text style={styles.optionLabel}>{option.label}</Text>
-                            {isSuggested && (
-                              <View style={styles.suggestedBadge}>
-                                <Text style={styles.suggestedBadgeText}>Suggested</Text>
-                              </View>
-                            )}
-                          </View>
-                          <Text style={styles.optionDescription}>{option.description}</Text>
-                          <Text style={styles.optionTime}>{option.suggestedTime}</Text>
-                        </View>
-
-                        <View style={[styles.selectIndicator, { borderColor: option.color }]}>
-                          {isSelected && (
-                            <View
-                              style={[
-                                styles.selectIndicatorInner,
-                                { backgroundColor: option.color },
-                              ]}
-                            />
-                          )}
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Footer tip */}
-              <View style={styles.footer}>
-                <Ionicons
-                  name="ribbon-outline"
-                  size={rf(16)}
-                  color={colors.primary}
-                  style={styles.footerIcon}
-                />
-                <Text style={styles.footerText}>
-                  Selecting the correct meal type helps our AI provide more accurate nutrition
-                  analysis
-                </Text>
-              </View>
-            </ScrollView>
-          </Animated.View>
-        </Animated.View>
-      </SafeAreaView>
-    </Modal>
+        {/* Footer tip */}
+        <View style={styles.footer}>
+          <Ionicons
+            name="ribbon-outline"
+            size={rf(16)}
+            color={colors.primary}
+            style={styles.footerIcon}
+          />
+          <Text style={styles.footerText}>
+            Selecting the correct meal type helps our AI provide more accurate nutrition
+            analysis
+          </Text>
+        </View>
+      </ScrollView>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  // BottomSheet already supplies the sheet surface, backdrop fade,
+  // drag-to-dismiss, and safe-area padding this modal used to hand-roll —
+  // this sheet's own header/scrollView carry their own padding, so the
+  // shared wrapper's default content padding is zeroed here.
+  content: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
-
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-
-  backdropTouchable: {
-    flex: 1,
-  },
-
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: rs(24),
-    borderTopRightRadius: rs(24),
-    maxHeight: rh(682),
-    paddingBottom: rh(34), // Account for home indicator
+  // Explicit maxHeight so the ScrollView scrolls within a bound instead of
+  // depending on BottomSheet's unconstrained flex chain (mirrors
+  // PaywallModal.tsx's scrollArea).
+  scrollView: {
+    maxHeight: rh(500),
   },
 
   header: {

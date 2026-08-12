@@ -14,18 +14,12 @@
  */
 
 import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  Pressable,
-  TextInput,
-} from "react-native";
+import { View, Text, StyleSheet, Pressable, TextInput } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
+import { DialogShell } from "../ui/CustomDialog";
 import {
   colors,
   surface,
@@ -93,11 +87,11 @@ export const DestructiveConfirmModal: React.FC<
   const isConfirmDisabled = isLoading || !isTypedMatchSatisfied;
 
   return (
-    <Modal
+    <DialogShell
       visible={visible}
-      transparent={true}
       animationType="fade"
       onRequestClose={isLoading ? undefined : onCancel}
+      bare
     >
       {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
           the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
@@ -177,7 +171,7 @@ export const DestructiveConfirmModal: React.FC<
           </View>
         </View>
       </View>
-    </Modal>
+    </DialogShell>
   );
 };
 

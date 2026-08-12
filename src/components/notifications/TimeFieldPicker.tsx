@@ -8,15 +8,7 @@
  */
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  Pressable,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
   colors,
@@ -27,6 +19,7 @@ import {
 } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
 
 const { variants } = typography;
 
@@ -163,69 +156,67 @@ export const TimeFieldPicker: React.FC<TimeFieldPickerProps> = ({
         </Text>
       ) : null}
 
-      <Modal
+      <BottomSheet
         visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setVisible(false)}
+        onClose={() => setVisible(false)}
+        showCloseButton={false}
+        contentStyle={styles.content}
+        testID="time-field-picker-sheet"
       >
-        <View style={styles.overlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
-          <SafeAreaView edges={["bottom"]} style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{label}</Text>
-              <Pressable
-                onPress={() => setVisible(false)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel={`Close ${label} picker`}
-              >
-                <Ionicons name="close" size={rf(20)} color={colors.text.secondary} />
-              </Pressable>
-            </View>
-
-            <ScrollView
-              ref={scrollRef}
-              style={styles.optionsList}
-              showsVerticalScrollIndicator={false}
-            >
-              {TIME_OPTIONS.map((option, index) => {
-                const selected = index === selectedIndex;
-                return (
-                  <Pressable
-                    key={option.value}
-                    onPress={() => handleSelect(option.value)}
-                    style={({ pressed }) => [
-                      styles.optionRow,
-                      selected && styles.optionRowSelected,
-                      pressed && styles.optionRowPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={option.label}
-                    accessibilityState={selected ? { selected: true } : undefined}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selected && styles.optionTextSelected,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                    {selected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={rf(16)}
-                        color={colors.primary.DEFAULT}
-                      />
-                    )}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </SafeAreaView>
+        {/* ── Header — custom (title + close), per the AdjustmentWizard.tsx
+            pattern. ── */}
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>{label}</Text>
+          <Pressable
+            onPress={() => setVisible(false)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Close ${label} picker`}
+          >
+            <Ionicons name="close" size={rf(20)} color={colors.text.secondary} />
+          </Pressable>
         </View>
-      </Modal>
+
+        <ScrollView
+          ref={scrollRef}
+          style={styles.optionsList}
+          showsVerticalScrollIndicator={false}
+        >
+          {TIME_OPTIONS.map((option, index) => {
+            const selected = index === selectedIndex;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => handleSelect(option.value)}
+                style={({ pressed }) => [
+                  styles.optionRow,
+                  selected && styles.optionRowSelected,
+                  pressed && styles.optionRowPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={option.label}
+                accessibilityState={selected ? { selected: true } : undefined}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selected && styles.optionTextSelected,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {selected && (
+                  <Ionicons
+                    name="checkmark"
+                    size={rf(16)}
+                    color={colors.primary.DEFAULT}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </BottomSheet>
     </View>
   );
 };
@@ -275,25 +266,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     marginLeft: spacing.xs,
   },
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-  },
-  sheet: {
-    backgroundColor: surface[0],
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: rh(420),
-    // WEB/TABLET: mirror App.tsx's appColumn 480px phone-width column — this
-    // Modal portals outside that wrapper, so without a cap the sheet
-    // stretches edge-to-edge on wide viewports. No-op on phones.
-    width: "100%",
-    maxWidth: 480,
-    alignSelf: "center",
-    borderWidth: 1,
-    borderColor: border.DEFAULT,
-    borderBottomWidth: 0,
+  // BottomSheet already supplies the sheet surface, backdrop fade,
+  // drag-to-dismiss, safe-area padding, and the 480px web/tablet width cap
+  // this modal used to hand-roll — this sheet's own header/optionsList carry
+  // their own padding, so the shared wrapper's default content padding is
+  // zeroed here.
+  content: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
   sheetHeader: {
     flexDirection: "row",
@@ -308,7 +288,11 @@ const styles = StyleSheet.create({
     ...variants.sectionTitle,
     color: colors.text.primary,
   },
+  // Explicit maxHeight so the list scrolls within a bound instead of
+  // depending on BottomSheet's unconstrained flex chain (mirrors
+  // PaywallModal.tsx's scrollArea).
   optionsList: {
+    maxHeight: rh(340),
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },

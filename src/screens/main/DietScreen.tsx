@@ -6,10 +6,9 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Modal,
   Share,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
@@ -31,6 +30,8 @@ import { GuestSignUpScreen } from './GuestSignUpScreen';
 
 import { MealDetailView } from '../../components/diet/MealDetailView';
 import { WaterIntakeModal } from '../../components/diet/WaterIntakeModal';
+import { DietOptionsSheet } from '../../components/diet/DietOptionsSheet';
+import { BottomSheet } from '../../components/ui/aurora/BottomSheet';
 // Diet dashboard stays summary-only; its meal timeline lives in the dedicated
 // selected-day plan overlay so the home surface never duplicates meal cards.
 import { DietModals } from '../../components/diet/DietModals';
@@ -86,11 +87,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   isActive: _isActive = true,
 }) => {
   const { isAuthenticated } = useAuth();
-  // Bottom safe-area inset — applied to the bottom sheets (Barcode/Label/Weight
-  // options) so their Cancel button clears the gesture/home-indicator area on
-  // notched devices. Without it the sheets' bottom padding is a fixed rp(32)
-  // that sits under the home indicator on iPhone, making Cancel hard to tap.
-  const insets = useSafeAreaInsets();
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -871,31 +867,33 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           </View>
         )}
 
+        {/* Bottom sheet — consistent with its 3 scan-flow siblings (barcode
+            options, label scan prep, weight prompt) instead of a centered
+            overlay, so the "add food" flow doesn't switch presentation
+            style mid-task. */}
         {showManualEntry && (
-          <Modal
+          <BottomSheet
             visible={showManualEntry}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setShowManualEntry(false)}
+            onClose={() => setShowManualEntry(false)}
+            showCloseButton={false}
+            testID="manual-barcode-entry-sheet"
           >
-            <View style={styles.manualEntryOverlay}>
-              <ManualBarcodeEntry
-                onLookupResolved={handleManualProductFound}
-                onRequestLabelScan={async () => {
-                  setShowManualEntry(false);
-                  const started = await handleLabelScanned(setShowGuestSignUp);
-                  if (!started) {
-                    setShowManualEntry(true);
-                  }
-                }}
-                onContributeProduct={(barcode) => {
-                  setShowManualEntry(false);
-                  navigation?.navigate('ContributeFood', { barcode });
-                }}
-                onClose={handleCloseManualEntry}
-              />
-            </View>
-          </Modal>
+            <ManualBarcodeEntry
+              onLookupResolved={handleManualProductFound}
+              onRequestLabelScan={async () => {
+                setShowManualEntry(false);
+                const started = await handleLabelScanned(setShowGuestSignUp);
+                if (!started) {
+                  setShowManualEntry(true);
+                }
+              }}
+              onContributeProduct={(barcode) => {
+                setShowManualEntry(false);
+                navigation?.navigate('ContributeFood', { barcode });
+              }}
+              onClose={handleCloseManualEntry}
+            />
+          </BottomSheet>
         )}
 
         {(showLogMealModal || Boolean(logMealScanResult)) && (
@@ -923,201 +921,176 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           />
         )}
 
-        {/* Barcode sub-options modal */}
+        {/* Barcode sub-options sheet */}
         {showBarcodeOptions && (
-          <Modal
+          <DietOptionsSheet
             visible={showBarcodeOptions}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setShowBarcodeOptions(false)}
+            onClose={() => setShowBarcodeOptions(false)}
+            title="Barcode"
+            testID="barcode-options-sheet"
           >
-            <View style={styles.optionsOverlay}>
-              <View
-                style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}
-              >
-                <Text style={styles.optionsTitle}>Barcode</Text>
-                <AnimatedPressable
-                  style={styles.optionButton}
-                  onPress={() => {
-                    setShowBarcodeOptions(false);
-                    handleScanProduct();
-                  }}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Scan Barcode"
-                >
-                  <Ionicons name="barcode-outline" size={rf(22)} color={colors.teal} />
-                  <Text style={styles.optionText}>Scan Barcode</Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  style={styles.optionButton}
-                  onPress={() => {
-                    setShowBarcodeOptions(false);
-                    setShowManualEntry(true);
-                  }}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Enter barcode manually"
-                >
-                  <Ionicons name="keypad-outline" size={rf(22)} color={colors.text} />
-                  <Text style={styles.optionText}>Enter Manually</Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  style={[styles.optionButton, styles.optionButtonCancel]}
-                  onPress={() => setShowBarcodeOptions(false)}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel"
-                >
-                  <Text style={styles.optionCancelText}>Cancel</Text>
-                </AnimatedPressable>
-              </View>
-            </View>
-          </Modal>
+            <AnimatedPressable
+              style={styles.optionButton}
+              onPress={() => {
+                setShowBarcodeOptions(false);
+                handleScanProduct();
+              }}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Scan Barcode"
+            >
+              <Ionicons name="barcode-outline" size={rf(22)} color={colors.teal} />
+              <Text style={styles.optionText}>Scan Barcode</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={styles.optionButton}
+              onPress={() => {
+                setShowBarcodeOptions(false);
+                setShowManualEntry(true);
+              }}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Enter barcode manually"
+            >
+              <Ionicons name="keypad-outline" size={rf(22)} color={colors.text} />
+              <Text style={styles.optionText}>Enter Manually</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={[styles.optionButton, styles.optionButtonCancel]}
+              onPress={() => setShowBarcodeOptions(false)}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.optionCancelText}>Cancel</Text>
+            </AnimatedPressable>
+          </DietOptionsSheet>
         )}
 
-        {/* Label scan prep modal â€” portion size before scanning */}
+        {/* Label scan prep sheet — portion size before scanning */}
         {showLabelScanPrep && (
-          <Modal
+          <DietOptionsSheet
             visible={showLabelScanPrep}
-            transparent
-            animationType="fade"
-            onRequestClose={() => {
+            onClose={() => {
               setShowLabelScanPrep(false);
               setLabelScanGramsInput('');
             }}
+            title="Scan Nutrition Label"
+            subtitle="Enter the serving size you are eating for exact nutrient calculation"
+            testID="label-scan-prep-sheet"
           >
-            <View style={styles.optionsOverlay}>
-              <View
-                style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}
-              >
-                <Text style={styles.optionsTitle}>Scan Nutrition Label</Text>
-                <Text style={styles.optionsSubtitle}>
-                  Enter the serving size you are eating for exact nutrient calculation
-                </Text>
-                <View style={styles.labelGramsContainer}>
-                  <Text style={styles.labelGramsLabel}>Serving size (optional)</Text>
-                  <View style={styles.labelGramsRow}>
-                    <TextInput
-                      style={styles.labelGramsInputField}
-                      value={labelScanGramsInput}
-                      onChangeText={setLabelScanGramsInput}
-                      placeholder="grams"
-                      placeholderTextColor={colors.textSecondary}
-                      keyboardType="numeric"
-                      maxLength={4}
-                      returnKeyType="done"
-                      accessibilityLabel="Serving size in grams"
-                    />
-                    <Text style={styles.labelGramsUnit}>g</Text>
-                  </View>
-                  <Text style={styles.labelGramsHint}>
-                    AI scales nutrients from the label to your exact portion
-                  </Text>
-                </View>
-                <AnimatedPressable
-                  style={styles.optionButton}
-                  onPress={() => {
-                    const grams = parseFloat(labelScanGramsInput);
-                    const portionG = !isNaN(grams) && grams > 0 ? grams : null;
-                    setShowLabelScanPrep(false);
-                    setLabelScanGramsInput('');
-                    void handleLabelScanned(setShowGuestSignUp, portionG);
-                  }}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Scan Label"
-                >
-                  <Ionicons name="document-text-outline" size={rf(22)} color={colors.purple} />
-                  <Text style={styles.optionText}>Scan Label</Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  style={[styles.optionButton, styles.optionButtonCancel]}
-                  onPress={() => {
-                    setShowLabelScanPrep(false);
-                    setLabelScanGramsInput('');
-                  }}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel"
-                >
-                  <Text style={styles.optionCancelText}>Cancel</Text>
-                </AnimatedPressable>
+            <View style={styles.labelGramsContainer}>
+              <Text style={styles.labelGramsLabel}>Serving size (optional)</Text>
+              <View style={styles.labelGramsRow}>
+                <TextInput
+                  style={styles.labelGramsInputField}
+                  value={labelScanGramsInput}
+                  onChangeText={setLabelScanGramsInput}
+                  placeholder="grams"
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  returnKeyType="done"
+                  accessibilityLabel="Serving size in grams"
+                />
+                <Text style={styles.labelGramsUnit}>g</Text>
               </View>
+              <Text style={styles.labelGramsHint}>
+                AI scales nutrients from the label to your exact portion
+              </Text>
             </View>
-          </Modal>
+            <AnimatedPressable
+              style={styles.optionButton}
+              onPress={() => {
+                const grams = parseFloat(labelScanGramsInput);
+                const portionG = !isNaN(grams) && grams > 0 ? grams : null;
+                setShowLabelScanPrep(false);
+                setLabelScanGramsInput('');
+                void handleLabelScanned(setShowGuestSignUp, portionG);
+              }}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Scan Label"
+            >
+              <Ionicons name="document-text-outline" size={rf(22)} color={colors.purple} />
+              <Text style={styles.optionText}>Scan Label</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={[styles.optionButton, styles.optionButtonCancel]}
+              onPress={() => {
+                setShowLabelScanPrep(false);
+                setLabelScanGramsInput('');
+              }}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.optionCancelText}>Cancel</Text>
+            </AnimatedPressable>
+          </DietOptionsSheet>
         )}
 
-        {/* Photo weight prompt modal â€” asks for optional gram weight before food recognition */}
+        {/* Photo weight prompt sheet — asks for optional gram weight before food recognition */}
         {showWeightPrompt && (
-          <Modal
+          <DietOptionsSheet
             visible={showWeightPrompt}
-            transparent
-            animationType="fade"
-            onRequestClose={() => {
+            onClose={() => {
               dismissWeightPrompt();
               setPhotoWeightInput('');
             }}
+            title="Scan Food"
+            subtitle="Enter the weight of your portion for more accurate calorie tracking"
+            testID="weight-prompt-sheet"
           >
-            <View style={styles.optionsOverlay}>
-              <View
-                style={[styles.optionsSheet, { paddingBottom: Math.max(insets.bottom, rp(32)) }]}
-              >
-                <Text style={styles.optionsTitle}>Scan Food</Text>
-                <Text style={styles.optionsSubtitle}>
-                  Enter the weight of your portion for more accurate calorie tracking
-                </Text>
-                <View style={styles.labelGramsContainer}>
-                  <Text style={styles.labelGramsLabel}>Portion weight (optional)</Text>
-                  <View style={styles.labelGramsRow}>
-                    <TextInput
-                      style={styles.labelGramsInputField}
-                      value={photoWeightInput}
-                      onChangeText={setPhotoWeightInput}
-                      placeholder="grams"
-                      placeholderTextColor={colors.textSecondary}
-                      keyboardType="numeric"
-                      maxLength={4}
-                      returnKeyType="done"
-                      autoFocus
-                      accessibilityLabel="Portion weight in grams"
-                    />
-                    <Text style={styles.labelGramsUnit}>g</Text>
-                  </View>
-                  <Text style={styles.labelGramsHint}>
-                    AI estimates portion size from the photo if left blank
-                  </Text>
-                </View>
-                <AnimatedPressable
-                  style={styles.optionButton}
-                  onPress={() => {
-                    const grams = parseFloat(photoWeightInput);
-                    const portionG = !isNaN(grams) && grams > 0 ? grams : undefined;
-                    setPhotoWeightInput('');
-                    confirmPhotoRecognition(portionG);
-                  }}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Recognise Food"
-                >
-                  <Ionicons name="camera-outline" size={rf(22)} color={colors.teal} />
-                  <Text style={styles.optionText}>Recognise Food</Text>
-                </AnimatedPressable>
-                <AnimatedPressable
-                  style={[styles.optionButton, styles.optionButtonCancel]}
-                  onPress={() => {
-                    dismissWeightPrompt();
-                    setPhotoWeightInput('');
-                  }}
-                  scaleValue={0.96}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancel"
-                >
-                  <Text style={styles.optionCancelText}>Cancel</Text>
-                </AnimatedPressable>
+            <View style={styles.labelGramsContainer}>
+              <Text style={styles.labelGramsLabel}>Portion weight (optional)</Text>
+              <View style={styles.labelGramsRow}>
+                <TextInput
+                  style={styles.labelGramsInputField}
+                  value={photoWeightInput}
+                  onChangeText={setPhotoWeightInput}
+                  placeholder="grams"
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  returnKeyType="done"
+                  autoFocus
+                  accessibilityLabel="Portion weight in grams"
+                />
+                <Text style={styles.labelGramsUnit}>g</Text>
               </View>
+              <Text style={styles.labelGramsHint}>
+                AI estimates portion size from the photo if left blank
+              </Text>
             </View>
-          </Modal>
+            <AnimatedPressable
+              style={styles.optionButton}
+              onPress={() => {
+                const grams = parseFloat(photoWeightInput);
+                const portionG = !isNaN(grams) && grams > 0 ? grams : undefined;
+                setPhotoWeightInput('');
+                confirmPhotoRecognition(portionG);
+              }}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Recognise Food"
+            >
+              <Ionicons name="camera-outline" size={rf(22)} color={colors.teal} />
+              <Text style={styles.optionText}>Recognise Food</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              style={[styles.optionButton, styles.optionButtonCancel]}
+              onPress={() => {
+                dismissWeightPrompt();
+                setPhotoWeightInput('');
+              }}
+              scaleValue={0.96}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.optionCancelText}>Cancel</Text>
+            </AnimatedPressable>
+          </DietOptionsSheet>
         )}
 
         {showPaywall && (
@@ -1284,36 +1257,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '500' as const,
   },
-  manualEntryOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'center',
-  },
-  // Barcode/Label options modals
-  optionsOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlayDark,
-    justifyContent: 'flex-end' as const,
-  },
-  optionsSheet: {
-    backgroundColor: colors.backgroundSecondary,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    padding: spacing.lg,
-    paddingBottom: rp(32),
-    gap: spacing.sm,
-  },
-  optionsTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: '700' as const,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  optionsSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
+  // Barcode/Label/Weight scan-flow options (rendered via DietOptionsSheet —
+  // src/components/diet/DietOptionsSheet.tsx)
   optionButton: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,

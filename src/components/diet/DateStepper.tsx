@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { DialogShell } from '../ui/CustomDialog';
 import {
   borderRadius,
   flatColors as colors,
@@ -111,11 +112,11 @@ export const DateStepper: React.FC<DateStepperProps> = ({
         </AnimatedPressable>
       </View>
 
-      <Modal
+      <DialogShell
         visible={calendarOpen}
-        transparent
         animationType="fade"
         onRequestClose={() => setCalendarOpen(false)}
+        bare
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.calendar}>
@@ -204,7 +205,7 @@ export const DateStepper: React.FC<DateStepperProps> = ({
             </AnimatedPressable>
           </View>
         </View>
-      </Modal>
+      </DialogShell>
     </>
   );
 };

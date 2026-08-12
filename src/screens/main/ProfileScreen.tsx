@@ -12,9 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EditProvider,
   useEditActions,
-  useEditStatus,
 } from "../../contexts/EditContext";
-import { EditOverlay } from "../../components/profile/EditOverlay";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { colors } from "../../theme/aurora-tokens";
 import { rp, rh } from "../../utils/responsive";
@@ -51,7 +49,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
   navigation,
   route,
 }) => {
-  const { showOverlay, setShowOverlay } = useEditStatus();
   const [refreshing, setRefreshing] = useState(false);
   const {
     isAuthenticated,
@@ -336,10 +333,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           onConfirm={confirmUnlinkGoogle}
           onCancel={() => setShowUnlinkGoogleConfirm(false)}
         />
-
-        {showOverlay && (
-          <EditOverlay visible={true} onClose={() => setShowOverlay(false)} />
-        )}
 
         {/*
           NOTE: onClose intentionally does NOT trigger onRefresh() here.

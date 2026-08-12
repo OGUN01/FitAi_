@@ -11,17 +11,8 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
   interpolateColor,
@@ -36,6 +27,7 @@ import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ProgressRing } from '../ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { BottomSheet } from '../ui/aurora/BottomSheet';
 import { DietTextField } from './DietTextField';
 import { getLocalDateString } from '../../utils/weekUtils';
 
@@ -68,7 +60,6 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   goalML,
   isToday = true,
 }) => {
-  const insets = useSafeAreaInsets();
   const [customAmount, setCustomAmount] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -160,179 +151,160 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   ];
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-      <View style={styles.backdrop}>
+    <BottomSheet
+      visible={visible}
+      onClose={handleClose}
+      showCloseButton={false}
+      contentStyle={styles.content}
+      testID="water-intake-sheet"
+    >
+      {/* ── Header — custom (title + chevron-down close), matching current
+          styling/typography, per the AdjustmentWizard.tsx pattern. ── */}
+      <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerIconDisc}>
+            <Ionicons name="water" size={rf(18)} color={colors.secondary} />
+          </View>
+          <Text style={styles.title}>Log Water Intake</Text>
+        </View>
         <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
           onPress={handleClose}
+          style={styles.closeButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss water intake modal"
-          accessibilityHint="Closes the dialog without saving"
-        />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          accessibilityLabel="Close"
+          accessibilityHint="Closes the water intake dialog"
         >
-          <View style={[styles.modalContent, { paddingBottom: insets.bottom + 20 }]}>
-              {/* Header */}
-              <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-                <View style={styles.headerLeft}>
-                  <View style={styles.headerIconDisc}>
-                    <Ionicons name="water" size={rf(18)} color={colors.secondary} />
-                  </View>
-                  <Text style={styles.title}>Log Water Intake</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={handleClose}
-                  style={styles.closeButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  accessibilityHint="Closes the water intake dialog"
-                >
-                  <Ionicons name="chevron-down" size={rf(20)} color={colors.white} />
-                </TouchableOpacity>
-              </Animated.View>
+          <Ionicons name="chevron-down" size={rf(20)} color={colors.white} />
+        </TouchableOpacity>
+      </Animated.View>
 
-              {/* hydrationStore is a single global "today" value (no per-date
-                  scoping) — logging is disabled while browsing a past/future
-                  day so a tap here can never silently attribute water to the
-                  wrong date. */}
-              {!isToday && (
-                <Animated.View entering={FadeInDown.delay(40).duration(400)} style={styles.readOnlyBanner}>
-                  <Ionicons name="information-circle-outline" size={rf(16)} color={colors.textSecondary} />
-                  <Text style={styles.readOnlyBannerText}>
-                    Water can only be logged for today. Switch back to today to add water.
-                  </Text>
-                </Animated.View>
+      {/* hydrationStore is a single global "today" value (no per-date
+          scoping) — logging is disabled while browsing a past/future
+          day so a tap here can never silently attribute water to the
+          wrong date. */}
+      {!isToday && (
+        <Animated.View entering={FadeInDown.delay(40).duration(400)} style={styles.readOnlyBanner}>
+          <Ionicons name="information-circle-outline" size={rf(16)} color={colors.textSecondary} />
+          <Text style={styles.readOnlyBannerText}>
+            Water can only be logged for today. Switch back to today to add water.
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Current Progress — hero ring */}
+      <Animated.View
+        entering={FadeInDown.delay(60).duration(400)}
+        style={styles.progressSection}
+      >
+        <Text style={styles.progressLabel}>Today's Progress</Text>
+        <Animated.View style={[styles.ringWrap, glowStyle]}>
+          <ProgressRing
+            progress={progress}
+            size={rw(150)}
+            strokeWidth={rw(12)}
+            gradient={!isGoalReached}
+            gradientColors={[colors.secondary, colors.primary]}
+            color={colors.successAlt}
+          >
+            <View style={styles.ringCenter}>
+              <View style={styles.ringInnerHighlight} />
+              <Text style={styles.ringValue}>{currentLiters.toFixed(1)}</Text>
+              <Text style={styles.ringUnit}>of {goalLiters.toFixed(1)}L</Text>
+              {progress > 0 && (
+                <Text style={styles.ringPercent}>{Math.round(progress)}%</Text>
               )}
-
-              {/* Current Progress — hero ring */}
-              <Animated.View
-                entering={FadeInDown.delay(60).duration(400)}
-                style={styles.progressSection}
-              >
-                <Text style={styles.progressLabel}>Today's Progress</Text>
-                <Animated.View style={[styles.ringWrap, glowStyle]}>
-                  <ProgressRing
-                    progress={progress}
-                    size={rw(150)}
-                    strokeWidth={rw(12)}
-                    gradient={!isGoalReached}
-                    gradientColors={[colors.secondary, colors.primary]}
-                    color={colors.successAlt}
-                  >
-                    <View style={styles.ringCenter}>
-                      <View style={styles.ringInnerHighlight} />
-                      <Text style={styles.ringValue}>{currentLiters.toFixed(1)}</Text>
-                      <Text style={styles.ringUnit}>of {goalLiters.toFixed(1)}L</Text>
-                      {progress > 0 && (
-                        <Text style={styles.ringPercent}>{Math.round(progress)}%</Text>
-                      )}
-                    </View>
-                  </ProgressRing>
-                </Animated.View>
-                {isGoalReached && (
-                  <View style={styles.goalReachedBadge}>
-                    <Ionicons name="checkmark-circle" size={16} color={colors.successAlt} />
-                    <Text style={styles.goalReachedText}>Daily goal achieved!</Text>
-                  </View>
-                )}
-              </Animated.View>
-
-              {/* Quick Add Options */}
-              <Animated.View entering={FadeInDown.delay(120).duration(400)}>
-                <Text style={styles.sectionTitle}>Quick Add</Text>
-                <View style={styles.quickOptionsContainer}>
-                  {quickOptions.map((option) => (
-                    <AnimatedPressable
-                      key={option.label}
-                      onPress={() => handleQuickAdd(option.amount)}
-                      disabled={!isToday}
-                      scaleValue={0.94}
-                      hapticType="light"
-                      accessibilityRole="button"
-                      accessibilityLabel={`Add ${option.label} of water`}
-                      accessibilityHint="Quickly adds this amount to today's water intake"
-                      style={[styles.quickOption, !isToday && styles.disabledControl]}
-                    >
-                      <View style={styles.quickOptionPill}>
-                        <View style={styles.quickOptionIconDisc}>
-                          <Ionicons name={option.icon} size={rf(20)} color={colors.secondary} />
-                        </View>
-                        <Text style={styles.quickOptionLabel}>{option.label}</Text>
-                      </View>
-                    </AnimatedPressable>
-                  ))}
-                </View>
-              </Animated.View>
-
-              {/* Custom Amount Input - always visible for accessibility */}
-              <Animated.View entering={FadeInDown.delay(180).duration(400)}>
-                <Text style={styles.sectionTitle}>Custom Amount (Milliliters)</Text>
-                <DietTextField
-                  icon="water-outline"
-                  iconColor={colors.secondary}
-                  containerStyle={styles.inputContainer}
-                  inputStyle={styles.input}
-                  value={customAmount}
-                  onChangeText={(text) => {
-                    setCustomAmount(text);
-                    setError(null);
-                  }}
-                  editable={isToday}
-                  placeholder="e.g., 250"
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
-                  onSubmitEditing={handleCustomSubmit}
-                  error={!!error}
-                  accessibilityLabel="Custom water amount in milliliters"
-                  rightElement={<Text style={styles.unitLabel}>ml</Text>}
-                />
-
-                {/* Error Message */}
-                {error && (
-                  <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle" size={16} color={colors.errorLight} />
-                    <Text style={styles.errorText}>{error}</Text>
-                  </View>
-                )}
-              </Animated.View>
-
-              {/* Add Water Button */}
-              <Animated.View entering={FadeInDown.delay(240).duration(400)}>
-                <GlassButton
-                  label="Add Water"
-                  onPress={handleCustomSubmit}
-                  disabled={!isToday}
-                  icon="add"
-                  fullWidth
-                  accessibilityLabel="Add water"
-                />
-              </Animated.View>
             </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
+          </ProgressRing>
+        </Animated.View>
+        {isGoalReached && (
+          <View style={styles.goalReachedBadge}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.successAlt} />
+            <Text style={styles.goalReachedText}>Daily goal achieved!</Text>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Quick Add Options */}
+      <Animated.View entering={FadeInDown.delay(120).duration(400)}>
+        <Text style={styles.sectionTitle}>Quick Add</Text>
+        <View style={styles.quickOptionsContainer}>
+          {quickOptions.map((option) => (
+            <AnimatedPressable
+              key={option.label}
+              onPress={() => handleQuickAdd(option.amount)}
+              disabled={!isToday}
+              scaleValue={0.94}
+              hapticType="light"
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${option.label} of water`}
+              accessibilityHint="Quickly adds this amount to today's water intake"
+              style={[styles.quickOption, !isToday && styles.disabledControl]}
+            >
+              <View style={styles.quickOptionPill}>
+                <View style={styles.quickOptionIconDisc}>
+                  <Ionicons name={option.icon} size={rf(20)} color={colors.secondary} />
+                </View>
+                <Text style={styles.quickOptionLabel}>{option.label}</Text>
+              </View>
+            </AnimatedPressable>
+          ))}
+        </View>
+      </Animated.View>
+
+      {/* Custom Amount Input - always visible for accessibility */}
+      <Animated.View entering={FadeInDown.delay(180).duration(400)}>
+        <Text style={styles.sectionTitle}>Custom Amount (Milliliters)</Text>
+        <DietTextField
+          icon="water-outline"
+          iconColor={colors.secondary}
+          containerStyle={styles.inputContainer}
+          inputStyle={styles.input}
+          value={customAmount}
+          onChangeText={(text) => {
+            setCustomAmount(text);
+            setError(null);
+          }}
+          editable={isToday}
+          placeholder="e.g., 250"
+          keyboardType="decimal-pad"
+          returnKeyType="done"
+          onSubmitEditing={handleCustomSubmit}
+          error={!!error}
+          accessibilityLabel="Custom water amount in milliliters"
+          rightElement={<Text style={styles.unitLabel}>ml</Text>}
+        />
+
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={16} color={colors.errorLight} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Add Water Button */}
+      <Animated.View entering={FadeInDown.delay(240).duration(400)}>
+        <GlassButton
+          label="Add Water"
+          onPress={handleCustomSubmit}
+          disabled={!isToday}
+          icon="add"
+          fullWidth
+          accessibilityLabel="Add water"
+        />
+      </Animated.View>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.overlayDark,
-    justifyContent: 'flex-end',
-  },
-  keyboardView: {
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.backgroundSecondary,
-    borderTopLeftRadius: borderRadius.xxl,
-    borderTopRightRadius: borderRadius.xxl,
+  // BottomSheet already supplies the sheet surface, backdrop fade,
+  // drag-to-dismiss, safe-area padding, and KeyboardAvoidingView wiring
+  // this modal used to hand-roll.
+  content: {
     paddingHorizontal: rp(24),
-    paddingTop: rp(20),
   },
   header: {
     flexDirection: 'row',

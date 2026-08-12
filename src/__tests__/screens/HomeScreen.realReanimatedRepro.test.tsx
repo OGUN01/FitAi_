@@ -66,6 +66,12 @@ jest.mock("react-native-reanimated", () => {
     // pulse for a11y. Not a hook in the React-counting sense here (returns a
     // plain bool) — but must exist on the mock so the component renders.
     useReducedMotion: () => false,
+  // BottomSheet.tsx (now reachable from HomeScreen via WeightEntryModal)
+  // calls this unconditionally for its drag-to-dismiss gesture — not a
+  // conditional hook, so it doesn't need the useRef hook-count treatment
+  // above, but it must exist on the mock or the render throws outright.
+  // Matches jest.setup.js's global reanimated mock.
+  useAnimatedGestureHandler: (handler: any) => handler,
   withTiming: (v: any) => v,
   withSpring: (v: any) => v,
   withRepeat: (v: any) => v,

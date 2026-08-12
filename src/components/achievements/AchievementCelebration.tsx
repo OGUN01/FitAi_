@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
-  Modal,
   Animated,
   useWindowDimensions,
   PanResponder,
@@ -21,6 +20,7 @@ import { hexToRgba } from "../../utils/colors";
 import useAchievementStore from "../../stores/achievementStore";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP as tierColorMap } from "../../data/achievements/tierColors";
+import { DialogShell } from "../ui/CustomDialog";
 
 interface AchievementCelebrationProps {
   visible: boolean;
@@ -224,12 +224,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   });
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="none"
-      onRequestClose={handleClose}
-    >
+    <DialogShell visible={visible} animationType="none" onRequestClose={handleClose} bare>
       <View style={styles.overlay}>
         {/* Confetti particle burst */}
         {confetti.map((item, index) => (
@@ -347,7 +342,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
           </Animated.View>
         </Animated.View>
       </View>
-    </Modal>
+    </DialogShell>
   );
 };
 

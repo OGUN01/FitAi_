@@ -17,27 +17,23 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { haptics } from "../../utils/haptics";
 import {
   colors,
-  surface,
   border as borderTokens,
   spacing,
   borderRadius,
   typography,
   flatColors,
 } from "../../theme/aurora-tokens";
-import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
+import { rf, rs, rh } from "../../utils/responsive";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
 import { DialStepper } from "../onboarding/aurora/DialStepper";
 import { progressDataService } from "../../services/progressData";
 import { BodyAnalysisService } from "../../services/onboardingService";
@@ -78,7 +74,6 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
   currentWeight,
   unit = "kg",
 }) => {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
   // Form state — weight is the primary metric (DialStepper, numeric). Body fat
@@ -253,191 +248,151 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
   const displayUnit = unit === "lbs" ? "lbs" : "kg";
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      showCloseButton={false}
+      contentStyle={styles.content}
+      testID="weight-entry-sheet"
     >
-      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
-          the sheet (never an ancestor) — see AdjustmentWizard.tsx. */}
-      <View style={styles.backdrop}>
+      {/* ── Header — custom (title + close button), per the
+          AdjustmentWizard.tsx pattern. ── */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Log Weight</Text>
         <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
           onPress={handleClose}
+          style={styles.closeButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss weight entry"
-        />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardView}
+          accessibilityLabel="Close weight entry"
         >
-          <View>
-            {/* Flat sheet surface + hairline top border (Editorial Dark) —
-                replaces the expo-blur BlurView glass wrapper. */}
-            <View style={styles.sheetContainer}>
-              <View
-                style={[
-                  styles.modalContent,
-                  { paddingBottom: insets.bottom + 20 },
-                ]}
-              >
-                {/* Header */}
-                <View style={styles.header}>
-                  <Text style={styles.title}>Log Weight</Text>
-                  <TouchableOpacity
-                    onPress={handleClose}
-                    style={styles.closeButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close weight entry"
-                  >
-                    <Ionicons
-                      name="close"
-                      size={rf(24)}
-                      color={colors.text.primary}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView
-                  style={styles.scrollContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {/* Weight — primary metric, DialStepper (single-metric entry). */}
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>
-                      Weight ({displayUnit}) <Text style={styles.required}>*</Text>
-                    </Text>
-                    <DialStepper
-                      value={weight}
-                      min={range.min}
-                      max={range.max}
-                      step={WEIGHT_STEP}
-                      onChange={setWeight}
-                      unit={displayUnit}
-                      format={(v) => v.toFixed(1)}
-                      testID="weight-dial"
-                    />
-                  </View>
-
-                  {/* Body Fat Input (Optional) — underline, stays blank when omitted. */}
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Body Fat % (optional)</Text>
-                    <View style={styles.inputContainer}>
-                      <Ionicons
-                        name="fitness-outline"
-                        size={rs(20)}
-                        color={colors.text.muted}
-                        style={styles.inputIcon}
-                      />
-                      <TextInput
-                        style={styles.input}
-                        value={bodyFat}
-                        onChangeText={setBodyFat}
-                        placeholder="e.g., 18.5"
-                        placeholderTextColor={colors.text.muted}
-                        keyboardType="decimal-pad"
-                        returnKeyType="done"
-                        editable={!isSubmitting}
-                      />
-                      <Text style={styles.unitLabel}>%</Text>
-                    </View>
-                  </View>
-
-                  {/* Notes Input (Optional) */}
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Notes (optional)</Text>
-                    <View
-                      style={[styles.inputContainer, styles.notesContainer]}
-                    >
-                      <TextInput
-                        style={[styles.input, styles.notesInput]}
-                        value={notes}
-                        onChangeText={setNotes}
-                        placeholder="How are you feeling?"
-                        placeholderTextColor={colors.text.muted}
-                        multiline
-                        numberOfLines={3}
-                        textAlignVertical="top"
-                        editable={!isSubmitting}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Error Message */}
-                  {error && (
-                    <View style={styles.errorContainer}>
-                      <Ionicons
-                        name="alert-circle"
-                        size={rf(16)}
-                        color={colors.error.light}
-                      />
-                      <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                  )}
-                </ScrollView>
-
-                {/* Submit Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    isSubmitting && styles.submitButtonDisabled,
-                  ]}
-                  onPress={handleSubmit}
-                  disabled={isSubmitting}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Save weight entry"
-                >
-                  {isSubmitting ? (
-                    <AuroraSpinner customSize={rf(14)} theme="white" />
-                  ) : (
-                    <>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={rs(20)}
-                        color={colors.text.primary}
-                      />
-                      <Text style={styles.submitButtonText}>Save Entry</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                {/* Info Text */}
-                <Text style={styles.infoText}>
-                  Your weight is tracked in Progress → Analytics
-                </Text>
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+          <Ionicons
+            name="close"
+            size={rf(24)}
+            color={colors.text.primary}
+          />
+        </TouchableOpacity>
       </View>
-    </Modal>
+
+      <ScrollView
+        style={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Weight — primary metric, DialStepper (single-metric entry). */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>
+            Weight ({displayUnit}) <Text style={styles.required}>*</Text>
+          </Text>
+          <DialStepper
+            value={weight}
+            min={range.min}
+            max={range.max}
+            step={WEIGHT_STEP}
+            onChange={setWeight}
+            unit={displayUnit}
+            format={(v) => v.toFixed(1)}
+            testID="weight-dial"
+          />
+        </View>
+
+        {/* Body Fat Input (Optional) — underline, stays blank when omitted. */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Body Fat % (optional)</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="fitness-outline"
+              size={rs(20)}
+              color={colors.text.muted}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              value={bodyFat}
+              onChangeText={setBodyFat}
+              placeholder="e.g., 18.5"
+              placeholderTextColor={colors.text.muted}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              editable={!isSubmitting}
+            />
+            <Text style={styles.unitLabel}>%</Text>
+          </View>
+        </View>
+
+        {/* Notes Input (Optional) */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Notes (optional)</Text>
+          <View
+            style={[styles.inputContainer, styles.notesContainer]}
+          >
+            <TextInput
+              style={[styles.input, styles.notesInput]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="How are you feeling?"
+              placeholderTextColor={colors.text.muted}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              editable={!isSubmitting}
+            />
+          </View>
+        </View>
+
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Ionicons
+              name="alert-circle"
+              size={rf(16)}
+              color={colors.error.light}
+            />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Submit Button */}
+      <TouchableOpacity
+        style={[
+          styles.submitButton,
+          isSubmitting && styles.submitButtonDisabled,
+        ]}
+        onPress={handleSubmit}
+        disabled={isSubmitting}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Save weight entry"
+      >
+        {isSubmitting ? (
+          <AuroraSpinner customSize={rf(14)} theme="white" />
+        ) : (
+          <>
+            <Ionicons
+              name="checkmark-circle"
+              size={rs(20)}
+              color={colors.text.primary}
+            />
+            <Text style={styles.submitButtonText}>Save Entry</Text>
+          </>
+        )}
+      </TouchableOpacity>
+
+      {/* Info Text */}
+      <Text style={styles.infoText}>
+        Your weight is tracked in Progress → Analytics
+      </Text>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: flatColors.overlay,
-    justifyContent: "flex-end",
-  },
-  keyboardView: {
-    width: "100%",
-  },
-  sheetContainer: {
-    borderTopLeftRadius: borderRadius.xxl,
-    borderTopRightRadius: borderRadius.xxl,
-    overflow: "hidden",
-  },
-  modalContent: {
-    padding: spacing.lg,
-    backgroundColor: surface[1],
-    borderTopWidth: 1,
-    borderColor: borderTokens.subtle,
+  // BottomSheet already supplies the sheet surface, backdrop fade,
+  // drag-to-dismiss, and safe-area padding this modal used to hand-roll.
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   header: {
     flexDirection: "row",

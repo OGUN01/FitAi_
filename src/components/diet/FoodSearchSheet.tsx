@@ -18,16 +18,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Modal,
   FlatList,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
+import { BottomSheet } from '../ui/aurora/BottomSheet';
 import {
   flatColors as colors,
   spacing,
@@ -35,7 +32,7 @@ import {
   flatFontSize as fontSize,
   typography,
 } from '../../theme/aurora-tokens';
-import { rf, rh, rw, rp, rbr } from '../../utils/responsive';
+import { rf, rh, rw, rp } from '../../utils/responsive';
 import { sqliteFood, type SQLiteFoodResult } from '../../services/sqliteFood';
 import { INDIAN_FOOD_DATABASE, type IndianFoodData } from '../../data/indianFoodDatabase';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
@@ -123,7 +120,6 @@ function fromSQLite(row: SQLiteFoodResult): FoodSearchHit {
 }
 
 export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClose, onSelect }) => {
-  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<FoodSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -226,176 +222,176 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
   }, [query, loading, hits.length, dbReady]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.overlay}
-      >
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing.sm }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.searchWrap}>
-              <Ionicons
-                name="search-outline"
-                size={rf(fontSize.lg)}
-                color={colors.textSecondary}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                ref={inputRef}
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search food by name"
-                placeholderTextColor={colors.textSecondary}
-                style={styles.input}
-                returnKeyType="search"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              {query.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setQuery('')}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  style={styles.clearBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear search"
-                >
-                  <Ionicons
-                    name="close-circle"
-                    size={rf(fontSize.md)}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      showCloseButton={false}
+      contentStyle={styles.content}
+      testID="food-search-sheet"
+    >
+      {/* ── Header — custom (not BottomSheet's default title row) so the
+          search input + clear button sit inline with the close button,
+          per the AdjustmentWizard.tsx pattern. ── */}
+      <View style={styles.header}>
+        <View style={styles.searchWrap}>
+          <Ionicons
+            name="search-outline"
+            size={rf(fontSize.lg)}
+            color={colors.textSecondary}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            ref={inputRef}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search food by name"
+            placeholderTextColor={colors.textSecondary}
+            style={styles.input}
+            returnKeyType="search"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {query.length > 0 && (
             <TouchableOpacity
-              onPress={onClose}
+              onPress={() => setQuery('')}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={styles.closeBtn}
+              style={styles.clearBtn}
               accessibilityRole="button"
-              accessibilityLabel="Close food search"
+              accessibilityLabel="Clear search"
             >
-              <Ionicons name="close" size={rf(fontSize.xl)} color={colors.textSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={rf(fontSize.md)}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
-          </View>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={onClose}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={styles.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Close food search"
+        >
+          <Ionicons name="close" size={rf(fontSize.xl)} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
 
-          {/* Status row */}
-          {(loading || resultsFooter !== '') && (
-            <View style={styles.statusRow}>
-              {loading ? (
-                <>
-                  <AuroraSpinner customSize={rf(14)} theme="primary" />
-                  <Text style={styles.statusText} numberOfLines={1}>
-                    Searching…
-                  </Text>
-                </>
-              ) : (
+      {/* Status row */}
+      {(loading || resultsFooter !== '') && (
+        <View style={styles.statusRow}>
+          {loading ? (
+            <>
+              <AuroraSpinner customSize={rf(14)} theme="primary" />
+              <Text style={styles.statusText} numberOfLines={1}>
+                Searching…
+              </Text>
+            </>
+          ) : (
+            <Text
+              style={styles.statusText}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {resultsFooter}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Results — explicit maxHeight so the list scrolls within a bound
+          instead of depending on BottomSheet's unconstrained flex chain
+          (mirrors PaywallModal.tsx's scrollArea). */}
+      <FlatList
+        data={hits}
+        keyExtractor={(item) => item.key}
+        keyboardShouldPersistTaps="handled"
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        renderItem={({ item }) => (
+          <AnimatedPressable
+            onPress={() => handleSelect(item)}
+            scaleValue={0.98}
+            hapticFeedback
+            hapticType="light"
+            accessibilityRole="button"
+            accessibilityLabel={`Select ${item.name}`}
+            style={styles.card}
+          >
+            <View style={styles.row}>
+              <View
+                style={[
+                  styles.sourceTag,
+                  item.source === 'sqlite' ? styles.sqliteTag : styles.indianTag,
+                ]}
+              >
+                <Text style={styles.sourceTagText} numberOfLines={1}>
+                  {item.source === 'sqlite' ? 'Packaged' : 'Dish'}
+                </Text>
+              </View>
+              <View style={styles.nameWrap}>
                 <Text
-                  style={styles.statusText}
+                  style={styles.name}
                   numberOfLines={2}
                   adjustsFontSizeToFit
                   minimumFontScale={0.85}
                 >
-                  {resultsFooter}
+                  {item.name}
                 </Text>
-              )}
-            </View>
-          )}
-
-          {/* Results */}
-          <FlatList
-            data={hits}
-            keyExtractor={(item) => item.key}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.listContent}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            renderItem={({ item }) => (
-              <AnimatedPressable
-                onPress={() => handleSelect(item)}
-                scaleValue={0.98}
-                hapticFeedback
-                hapticType="light"
-                accessibilityRole="button"
-                accessibilityLabel={`Select ${item.name}`}
-                style={styles.card}
-              >
-                <View style={styles.row}>
-                  <View
-                    style={[
-                      styles.sourceTag,
-                      item.source === 'sqlite' ? styles.sqliteTag : styles.indianTag,
-                    ]}
+                {item.subtitle ? (
+                  <Text
+                    style={styles.subtitle}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
                   >
-                    <Text style={styles.sourceTagText} numberOfLines={1}>
-                      {item.source === 'sqlite' ? 'Packaged' : 'Dish'}
-                    </Text>
-                  </View>
-                  <View style={styles.nameWrap}>
-                    <Text
-                      style={styles.name}
-                      numberOfLines={2}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.85}
-                    >
-                      {item.name}
-                    </Text>
-                    {item.subtitle ? (
-                      <Text
-                        style={styles.subtitle}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.85}
-                      >
-                        {item.subtitle}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <View style={styles.calsWrap}>
-                    <Text
-                      style={styles.cals}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.8}
-                    >
-                      {Math.round(item.per100g.calories)}
-                    </Text>
-                    <Text
-                      style={styles.calsUnit}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.85}
-                    >
-                      kcal/100g
-                    </Text>
-                  </View>
-                </View>
-              </AnimatedPressable>
-            )}
-          />
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+                    {item.subtitle}
+                  </Text>
+                ) : null}
+              </View>
+              <View style={styles.calsWrap}>
+                <Text
+                  style={styles.cals}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {Math.round(item.per100g.calories)}
+                </Text>
+                <Text
+                  style={styles.calsUnit}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  kcal/100g
+                </Text>
+              </View>
+            </View>
+          </AnimatedPressable>
+        )}
+      />
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: colors.overlay,
-  },
-  sheet: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: rbr(28),
-    borderTopRightRadius: rbr(28),
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    maxHeight: '85%',
+  // BottomSheet already supplies horizontal/bottom padding and the
+  // KeyboardAvoidingView wiring this sheet used to hand-roll — this sheet's
+  // own header/list carry their own horizontal padding, so the shared
+  // wrapper's default content padding is zeroed here.
+  content: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   searchWrap: {
@@ -434,14 +430,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
   statusText: {
     color: colors.textSecondary,
     fontSize: rf(fontSize.sm),
   },
+  // Explicit maxHeight so the FlatList scrolls within a bound instead of
+  // depending on BottomSheet's unconstrained flex chain to size it
+  // (mirrors PaywallModal.tsx's scrollArea).
+  list: {
+    maxHeight: rh(420),
+  },
   listContent: {
+    paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
     gap: spacing.xs,
   },

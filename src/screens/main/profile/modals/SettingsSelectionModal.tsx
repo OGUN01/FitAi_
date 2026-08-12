@@ -5,16 +5,11 @@
  */
 
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  Pressable,
-} from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
+import { DialogShell } from "../../../../components/ui/CustomDialog";
 import {
   colors,
   surface,
@@ -62,12 +57,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
   footerNote,
 }) => {
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <DialogShell visible={visible} animationType="fade" onRequestClose={onClose} bare>
       {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
           the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
       <View style={styles.root}>
@@ -214,7 +204,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
               )}
             </View>
       </View>
-    </Modal>
+    </DialogShell>
   );
 };
 

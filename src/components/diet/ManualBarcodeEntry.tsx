@@ -1,12 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import barcodeService, { ProductLookupResult } from '@/services/barcodeService';
 import { getCountryFromBarcode } from '@/utils/countryMapping';
@@ -141,11 +134,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
   const showFallbackActions = lastOutcome === 'not_found' || lastOutcome === 'transient_failure';
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.keyboardAvoid}
-    >
-      <View style={styles.container}>
+    <>
         <View style={styles.header}>
           <Text style={styles.title}>Enter Barcode</Text>
           <AnimatedPressable
@@ -288,22 +277,11 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </AnimatedPressable>
-      </View>
-    </KeyboardAvoidingView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardAvoid: {
-    flex: 1,
-  },
-  container: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginHorizontal: spacing.md,
-    marginVertical: spacing.md,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
