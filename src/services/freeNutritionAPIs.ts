@@ -5,7 +5,9 @@
  * Supported APIs:
  * - USDA FoodData Central (720K requests/month - completely free)
  * - Open Food Facts (unlimited - open source)
- * - FatSecret Basic (150K requests/month - free tier)
+ * - FatSecret Basic: NOT live. searchFatSecret() is a stub — FatSecret
+ *   requires OAuth 1.0 request signing, which is not implemented. It always
+ *   returns null and contributes nothing to enhanceNutritionData().
  */
 
 import { getCountryFromBarcode } from "@/utils/countryMapping";
@@ -130,9 +132,14 @@ export class FreeNutritionAPIs {
       const results = await Promise.allSettled(promises);
       const nutritionData: NutritionData[] = [];
 
-      // Process results
+      // Process results — drop anything that fails the sanity/range check
+      // before it ever reaches the weighted average or the caller.
       results.forEach((result) => {
-        if (result.status === "fulfilled" && result.value) {
+        if (
+          result.status === "fulfilled" &&
+          result.value &&
+          this.validateNutritionData(result.value)
+        ) {
           nutritionData.push(result.value);
         }
       });
@@ -143,6 +150,9 @@ export class FreeNutritionAPIs {
 
       // Calculate weighted average based on confidence scores
       const enhancedData = this.calculateWeightedAverage(nutritionData);
+      if (!enhancedData) {
+        return null;
+      }
 
       // Cache the result
       this.cache.set(cacheKey, enhancedData);
@@ -317,9 +327,12 @@ export class FreeNutritionAPIs {
    */
   private calculateWeightedAverage(
     nutritionData: NutritionData[],
-  ): NutritionData {
+  ): NutritionData | null {
     if (nutritionData.length === 1) {
-      return nutritionData[0];
+      // A lone source with a weak word-overlap match (as low as 30) has no
+      // second source to corroborate it — don't hand that out as usable
+      // nutrition. Mirrors barcodeService's <85-confidence => 'weak_data' bar.
+      return nutritionData[0].confidence >= 50 ? nutritionData[0] : null;
     }
 
     const totalWeight = nutritionData.reduce(
@@ -460,7 +473,7 @@ export class FreeNutritionAPIs {
         fetch(offUrl, {
           headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" },
         }),
-        8000,
+        5000,
       );
 
       if (!response.ok) {
@@ -470,27 +483,34 @@ export class FreeNutritionAPIs {
         if (data.status === 1 && data.product) {
           const product = data.product as OFFv2Product;
           const nutrients = product.nutriments || {};
-          const hasNutrition = Boolean(
+          const rawHasNutrition = Boolean(
             nutrients["energy-kcal_100g"] || nutrients["energy-kcal"],
           );
+          const offNutritionCandidate: NutritionData | null = rawHasNutrition
+            ? {
+                calories:
+                  nutrients["energy-kcal_100g"] ||
+                  nutrients["energy-kcal"] ||
+                  0,
+                protein: nutrients["proteins_100g"] || 0,
+                carbs: nutrients["carbohydrates_100g"] || 0,
+                fat: nutrients["fat_100g"] || 0,
+                fiber: nutrients["fiber_100g"] || 0,
+                sugar: nutrients["sugars_100g"] || 0,
+                sodium: (nutrients["salt_100g"] || 0) * 0.4, // salt (g/100g) → sodium (g/100g): NaCl is 39.3% Na by mass
+                source: "OpenFoodFacts",
+                confidence: 90,
+              }
+            : null;
+          // Reject malformed/corrupted crowd-sourced nutriments (e.g. a
+          // units mix-up producing 5000 kcal/100g) before it's trusted as
+          // "hasNutrition" and cached for every future user of this barcode.
+          const hasNutrition =
+            offNutritionCandidate !== null &&
+            this.validateNutritionData(offNutritionCandidate);
 
           offResult = {
-            nutrition: hasNutrition
-              ? {
-                  calories:
-                    nutrients["energy-kcal_100g"] ||
-                    nutrients["energy-kcal"] ||
-                    0,
-                  protein: nutrients["proteins_100g"] || 0,
-                  carbs: nutrients["carbohydrates_100g"] || 0,
-                  fat: nutrients["fat_100g"] || 0,
-                  fiber: nutrients["fiber_100g"] || 0,
-                  sugar: nutrients["sugars_100g"] || 0,
-                  sodium: (nutrients["salt_100g"] || 0) * 0.4, // salt (g/100g) → sodium (g/100g): NaCl is 39.3% Na by mass
-                  source: "OpenFoodFacts",
-                  confidence: 90,
-                }
-              : null,
+            nutrition: hasNutrition ? offNutritionCandidate : null,
             productInfo: {
               name:
                 product.product_name_en || product.product_name || undefined,
@@ -531,7 +551,7 @@ export class FreeNutritionAPIs {
         const nameNutrition = await this.searchOpenFoodFacts(
           offResult.productInfo.name,
         );
-        if (nameNutrition) {
+        if (nameNutrition && this.validateNutritionData(nameNutrition)) {
           lookupPath.push("off_name_search");
           offResult.nutrition = nameNutrition;
           offResult.needsNutritionEstimate = false;
@@ -562,7 +582,7 @@ export class FreeNutritionAPIs {
         fetch(offIndiaUrl, {
           headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" },
         }),
-        8000,
+        5000,
       );
       if (!offIndiaResponse.ok) {
         transientErrors.push(`OFF India HTTP ${offIndiaResponse.status}`);
@@ -571,11 +591,11 @@ export class FreeNutritionAPIs {
         if (offIndiaData.status === 1 && offIndiaData.product) {
           const p = offIndiaData.product as OFFv2Product;
           const n = p.nutriments || {};
-          const hasNutrition = Boolean(
+          const rawHasNutrition = Boolean(
             n["energy-kcal_100g"] || n["energy-kcal"],
           );
-          offIndiaResult = {
-            nutrition: hasNutrition
+          const offIndiaNutritionCandidate: NutritionData | null =
+            rawHasNutrition
               ? {
                   calories: n["energy-kcal_100g"] || n["energy-kcal"] || 0,
                   protein: n["proteins_100g"] || 0,
@@ -587,7 +607,14 @@ export class FreeNutritionAPIs {
                   source: "OpenFoodFacts-India",
                   confidence: 90,
                 }
-              : null,
+              : null;
+          // Same sanity check as OFF world — don't trust a malformed
+          // crowd-sourced value as "hasNutrition".
+          const hasNutrition =
+            offIndiaNutritionCandidate !== null &&
+            this.validateNutritionData(offIndiaNutritionCandidate);
+          offIndiaResult = {
+            nutrition: hasNutrition ? offIndiaNutritionCandidate : null,
             productInfo: {
               name: p.product_name_en || p.product_name || undefined,
               brand: p.brands || undefined,
@@ -627,7 +654,7 @@ export class FreeNutritionAPIs {
         const nameNutrition = await this.searchOpenFoodFacts(
           offIndiaResult.productInfo.name,
         );
-        if (nameNutrition) {
+        if (nameNutrition && this.validateNutritionData(nameNutrition)) {
           lookupPath.push("off_name_search");
           offIndiaResult.nutrition = nameNutrition;
           offIndiaResult.needsNutritionEstimate = false;
@@ -703,8 +730,13 @@ export class FreeNutritionAPIs {
     if (data.fat < 0 || data.fat > 100) return false;
     if (data.fiber < 0 || data.fiber > 50) return false;
 
-    // Macro consistency check (calories should roughly match macros)
+    // Macro consistency check (calories should roughly match macros).
+    // Guard div-by-zero: a genuinely near-zero-calorie item (e.g. water)
+    // is only valid if its macros are also ~0.
     const calculatedCalories = data.protein * 4 + data.carbs * 4 + data.fat * 9;
+    if (data.calories === 0) {
+      return calculatedCalories < 5;
+    }
     const variance =
       Math.abs(data.calories - calculatedCalories) / data.calories;
 

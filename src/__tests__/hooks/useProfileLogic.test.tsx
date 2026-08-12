@@ -1,5 +1,35 @@
 import { act, renderHook } from "@testing-library/react-native";
 import { userProfileService } from "../../services/userProfile";
+import { crudOperations } from "../../services/crudOperations";
+import { Platform, Share } from "react-native";
+import * as FileSystem from "expo-file-system";
+
+const mockShare = jest.fn().mockResolvedValue({ action: "sharedAction" });
+const mockWriteAsStringAsync = jest.fn().mockResolvedValue(undefined);
+const mockDeleteAsync = jest.fn().mockResolvedValue(undefined);
+const mockRequestDirectoryPermissionsAsync = jest.fn();
+const mockCreateFileAsync = jest.fn();
+
+// Jest's hoist plugin permits referencing out-of-scope identifiers whose
+// name starts with "mock" from inside a jest.mock() factory, so the
+// module-level mock*/jest.fn() consts above can be used directly here.
+jest.mock("react-native", () => ({
+  Linking: { openURL: jest.fn().mockResolvedValue(true) },
+  Share: { share: (...args: unknown[]) => mockShare(...args) },
+  Platform: { OS: "ios" },
+}));
+
+jest.mock("expo-file-system", () => ({
+  cacheDirectory: "file:///cache/",
+  EncodingType: { UTF8: "utf8" },
+  writeAsStringAsync: (...args: unknown[]) => mockWriteAsStringAsync(...args),
+  deleteAsync: (...args: unknown[]) => mockDeleteAsync(...args),
+  StorageAccessFramework: {
+    requestDirectoryPermissionsAsync: (...args: unknown[]) =>
+      mockRequestDirectoryPermissionsAsync(...args),
+    createFileAsync: (...args: unknown[]) => mockCreateFileAsync(...args),
+  },
+}));
 
 const mockProfileStoreState = {
   bodyAnalysis: { height_cm: 180, current_weight_kg: 78 },
@@ -117,6 +147,131 @@ describe("useProfileLogic", () => {
     mockSetProfile.mockClear();
     (userProfileService.updateProfile as jest.Mock).mockClear();
     mockCrossPlatformAlert.mockClear();
+    (crudOperations.exportAllData as jest.Mock).mockReset();
+    mockShare.mockClear();
+    mockWriteAsStringAsync.mockClear();
+    mockDeleteAsync.mockClear();
+    mockRequestDirectoryPermissionsAsync.mockReset();
+    mockCreateFileAsync.mockReset();
+    (Platform as any).OS = "ios";
+  });
+
+  async function triggerExport() {
+    const { result } = renderHook(() => useProfileLogic());
+    await act(async () => {
+      await result.current.handleSettingItemPress({ id: "export" } as any);
+    });
+    const confirmCall = mockCrossPlatformAlert.mock.calls.find(
+      (call) => call[0] === "Export Your Data",
+    );
+    const buttons = confirmCall?.[2] as Array<{
+      text: string;
+      onPress?: () => Promise<void>;
+    }>;
+    const exportButton = buttons.find((b) => b.text === "Export");
+    await act(async () => {
+      await exportButton?.onPress?.();
+    });
+  }
+
+  describe("export data", () => {
+    it("shares small exports inline as a JSON message without touching the filesystem", async () => {
+      const smallData = { profile: { name: "Alex" } };
+      (crudOperations.exportAllData as jest.Mock).mockResolvedValue(
+        smallData,
+      );
+
+      await triggerExport();
+
+      expect(mockShare).toHaveBeenCalledWith({
+        message: JSON.stringify(smallData, null, 2),
+        title: "FitAI Data Export",
+      });
+      expect(mockWriteAsStringAsync).not.toHaveBeenCalled();
+    });
+
+    it("routes large exports through a temp file on iOS and deletes it after sharing", async () => {
+      (Platform as any).OS = "ios";
+      const largeData = { blob: "a".repeat(600 * 1024) };
+      (crudOperations.exportAllData as jest.Mock).mockResolvedValue(
+        largeData,
+      );
+
+      await triggerExport();
+
+      expect(mockWriteAsStringAsync).toHaveBeenCalledWith(
+        expect.stringContaining("file:///cache/fitai-export-"),
+        JSON.stringify(largeData, null, 2),
+        { encoding: "utf8" },
+      );
+      expect(mockShare).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringContaining("file:///cache/fitai-export-"),
+          title: "FitAI Data Export",
+        }),
+      );
+      // The cache copy is a hand-off for the share sheet, not a delivery
+      // location — it must be cleaned up afterward.
+      expect(mockDeleteAsync).toHaveBeenCalledWith(
+        expect.stringContaining("file:///cache/fitai-export-"),
+        { idempotent: true },
+      );
+    });
+
+    it("saves large exports on Android via the Storage Access Framework picker", async () => {
+      (Platform as any).OS = "android";
+      const largeData = { blob: "a".repeat(600 * 1024) };
+      (crudOperations.exportAllData as jest.Mock).mockResolvedValue(
+        largeData,
+      );
+      mockRequestDirectoryPermissionsAsync.mockResolvedValue({
+        granted: true,
+        directoryUri: "content://tree/primary:Download",
+      });
+      mockCreateFileAsync.mockResolvedValue(
+        "content://tree/primary:Download/fitai-export-123.json",
+      );
+
+      await triggerExport();
+
+      expect(mockRequestDirectoryPermissionsAsync).toHaveBeenCalled();
+      expect(mockCreateFileAsync).toHaveBeenCalledWith(
+        "content://tree/primary:Download",
+        expect.stringContaining("fitai-export-"),
+        "application/json",
+      );
+      expect(mockWriteAsStringAsync).toHaveBeenCalledWith(
+        "content://tree/primary:Download/fitai-export-123.json",
+        JSON.stringify(largeData, null, 2),
+        { encoding: "utf8" },
+      );
+      // Never falls back to the app-private cache dir on Android.
+      expect(mockShare).not.toHaveBeenCalled();
+      expect(mockCrossPlatformAlert).toHaveBeenCalledWith(
+        "Export Saved",
+        expect.stringContaining("saved to the folder you selected"),
+      );
+    });
+
+    it("does not save anywhere on Android when the user cancels the folder picker", async () => {
+      (Platform as any).OS = "android";
+      const largeData = { blob: "a".repeat(600 * 1024) };
+      (crudOperations.exportAllData as jest.Mock).mockResolvedValue(
+        largeData,
+      );
+      mockRequestDirectoryPermissionsAsync.mockResolvedValue({
+        granted: false,
+      });
+
+      await triggerExport();
+
+      expect(mockCreateFileAsync).not.toHaveBeenCalled();
+      expect(mockWriteAsStringAsync).not.toHaveBeenCalled();
+      expect(mockCrossPlatformAlert).toHaveBeenCalledWith(
+        "Export Cancelled",
+        expect.stringContaining("was not saved"),
+      );
+    });
   });
 
   it("opens the subscription management surface for the subscription item", async () => {

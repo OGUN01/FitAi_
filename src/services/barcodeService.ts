@@ -461,23 +461,51 @@ class BarcodeService {
         this.cacheProduct(normalizedBarcode, scannedProduct);
         this.updateRecentScans(normalizedBarcode);
 
+        // Only persist real nutrition numbers into the shared, cross-user
+        // cache when the source actually validated them (needsNutritionEstimate
+        // === false) and confidence clears a minimum bar — otherwise a bad
+        // single-source/low-confidence match would be cached as 90%-confidence
+        // "truth" for every future scanner of this barcode. When nutrition is
+        // unknown, persist NULL (not 0) so a future lookup correctly
+        // reconstructs needsNutritionEstimate=true instead of reading a
+        // stored 0 as validated zero-value nutrition.
+        const hasValidatedNutrition =
+          !scannedProduct.needsNutritionEstimate &&
+          scannedProduct.confidence >= 50;
+
         supabase
           .rpc("upsert_barcode_cache", {
             p_barcode: normalizedBarcode,
             p_product_name: scannedProduct.name,
             p_brand: scannedProduct.brand ?? null,
-            p_energy_kcal_100g: scannedProduct.nutrition.calories,
-            p_proteins_100g: scannedProduct.nutrition.protein,
-            p_carbohydrates_100g: scannedProduct.nutrition.carbs,
-            p_sugars_100g: scannedProduct.nutrition.sugar ?? null,
-            p_fat_100g: scannedProduct.nutrition.fat,
-            p_fiber_100g: scannedProduct.nutrition.fiber,
-            p_sodium_100g: scannedProduct.nutrition.sodium ?? null,
+            p_energy_kcal_100g: hasValidatedNutrition
+              ? scannedProduct.nutrition.calories
+              : null,
+            p_proteins_100g: hasValidatedNutrition
+              ? scannedProduct.nutrition.protein
+              : null,
+            p_carbohydrates_100g: hasValidatedNutrition
+              ? scannedProduct.nutrition.carbs
+              : null,
+            p_sugars_100g: hasValidatedNutrition
+              ? (scannedProduct.nutrition.sugar ?? null)
+              : null,
+            p_fat_100g: hasValidatedNutrition
+              ? scannedProduct.nutrition.fat
+              : null,
+            p_fiber_100g: hasValidatedNutrition
+              ? scannedProduct.nutrition.fiber
+              : null,
+            p_sodium_100g: hasValidatedNutrition
+              ? (scannedProduct.nutrition.sodium ?? null)
+              : null,
             p_nutriscore_grade: scannedProduct.nutriScore ?? null,
             p_nova_group: scannedProduct.novaGroup ?? null,
             p_image_url: scannedProduct.additionalInfo?.imageUrl ?? null,
             p_source: scannedProduct.source,
-            p_confidence: scannedProduct.confidence,
+            p_confidence: hasValidatedNutrition
+              ? scannedProduct.confidence
+              : 50,
             p_is_ai_estimated: scannedProduct.isAIEstimated ?? false,
           })
           .then(undefined, (e: unknown) =>

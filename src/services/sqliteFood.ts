@@ -54,9 +54,22 @@ const DB_FILE_NAME = "fitai-foods.sqlite";
 const DB_FILE_NAME_GZ = "fitai-foods.sqlite.gz";
 const DB_REMOTE_URL =
   "https://mqfrwtmkokivoxgukgsz.supabase.co/storage/v1/object/public/food-databases/fitai-foods-latest.sqlite.gz";
+/**
+ * Small JSON manifest expected alongside the .gz snapshot, e.g.
+ * `{ "version": "2026-08-01" }`. checkForUpdate() compares this against the
+ * version stamped locally at download time. If this manifest doesn't exist
+ * yet server-side, checkForUpdate() fails closed (status: 'check_failed')
+ * rather than throwing.
+ */
+const DB_MANIFEST_URL =
+  "https://mqfrwtmkokivoxgukgsz.supabase.co/storage/v1/object/public/food-databases/fitai-foods-latest.manifest.json";
 const ASYNC_STORAGE_DOWNLOAD_KEY = "fitai_sqlite_download_state";
+/** Locally-stamped { version, downloadedAt } for the currently installed DB */
+const ASYNC_STORAGE_VERSION_KEY = "fitai_sqlite_db_version_meta";
 /** Minimum expected file size of the decompressed .sqlite (50 MB) */
 const MIN_DB_SIZE_BYTES = 50 * 1024 * 1024;
+/** Bound on ensureDbReady()'s poll so callers can never hang forever */
+const ENSURE_READY_TIMEOUT_MS = 120_000;
 
 // ---------------------------------------------------------------------------
 // Service
@@ -93,18 +106,33 @@ class SqliteFoodService {
    * Async readiness guard — resolves once the database is in the 'ready'
    * state. Used by callers (e.g. FoodSearchSheet) that need to wait for the
    * DB before issuing queries. If the DB is already ready, resolves
-   * immediately.
+   * immediately. Resolves `false` (rather than hanging forever) if the
+   * state lands in 'error', or after `timeoutMs` if the download stalls
+   * (e.g. a stuck network connection that never reports progress).
    */
-  async ensureDbReady(): Promise<void> {
-    if (this.state === "ready") return;
-    // Poll until ready (the download/init flow flips state to 'ready').
-    await new Promise<void>((resolve) => {
+  async ensureDbReady(
+    timeoutMs: number = ENSURE_READY_TIMEOUT_MS,
+  ): Promise<boolean> {
+    if (this.state === "ready") return true;
+    if (this.state === "error") return false;
+
+    return new Promise<boolean>((resolve) => {
       const interval = setInterval(() => {
         if (this.state === "ready") {
           clearInterval(interval);
-          resolve();
+          clearTimeout(timeoutHandle);
+          resolve(true);
+        } else if (this.state === "error") {
+          clearInterval(interval);
+          clearTimeout(timeoutHandle);
+          resolve(false);
         }
       }, 200);
+
+      const timeoutHandle = setTimeout(() => {
+        clearInterval(interval);
+        resolve(false);
+      }, timeoutMs);
     });
   }
 
@@ -197,6 +225,21 @@ class SqliteFoodService {
 
       await this.openDb();
       this.state = "ready";
+
+      // Stamp the installed version/build date so checkForUpdate() and
+      // getStats() callers can tell how stale this snapshot is.
+      try {
+        const { version } = await this.getStats();
+        await AsyncStorage.setItem(
+          ASYNC_STORAGE_VERSION_KEY,
+          JSON.stringify({ version, downloadedAt: new Date().toISOString() }),
+        );
+      } catch (metaErr) {
+        console.error(
+          "[sqliteFood] Failed to persist DB version metadata:",
+          metaErr,
+        );
+      }
     } catch (err) {
       if (this.state !== "not_downloaded") {
         this.state = "error";
@@ -284,6 +327,67 @@ class SqliteFoodService {
       withNutrition: nutritionRow?.cnt ?? 0,
       version: versionRow?.value ?? "unknown",
     };
+  }
+
+  /**
+   * Locally-stamped version/download-date for the installed DB, or null if
+   * no download has ever completed (or it predates this field being added).
+   */
+  async getLocalVersionMeta(): Promise<{
+    version: string;
+    downloadedAt: string;
+  } | null> {
+    try {
+      const raw = await AsyncStorage.getItem(ASYNC_STORAGE_VERSION_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (err) {
+      console.error("[sqliteFood] Failed to read local DB version meta:", err);
+      return null;
+    }
+  }
+
+  /**
+   * Compares the locally-installed DB version against the remote manifest
+   * (a small JSON file published alongside the .gz snapshot) so callers
+   * (e.g. a "Database update available" banner) can surface staleness
+   * instead of silently scanning against a snapshot that may be months old.
+   * Fails closed — network/parse errors resolve to 'check_failed' rather
+   * than throwing or claiming the DB is up to date.
+   */
+  async checkForUpdate(): Promise<{
+    status: "up_to_date" | "update_available" | "check_failed" | "not_downloaded";
+    localVersion: string | null;
+    remoteVersion: string | null;
+  }> {
+    if (this.state !== "ready") {
+      return { status: "not_downloaded", localVersion: null, remoteVersion: null };
+    }
+
+    const localMeta = await this.getLocalVersionMeta();
+    const localVersion = localMeta?.version ?? null;
+
+    try {
+      const response = await fetch(DB_MANIFEST_URL, { method: "GET" });
+      if (!response.ok) {
+        return { status: "check_failed", localVersion, remoteVersion: null };
+      }
+      const manifest = await response.json();
+      const remoteVersion: string | null = manifest?.version ?? null;
+
+      if (!localVersion || !remoteVersion) {
+        return { status: "check_failed", localVersion, remoteVersion };
+      }
+
+      return {
+        status: remoteVersion === localVersion ? "up_to_date" : "update_available",
+        localVersion,
+        remoteVersion,
+      };
+    } catch (err) {
+      console.error("[sqliteFood] Remote DB version check failed:", err);
+      return { status: "check_failed", localVersion, remoteVersion: null };
+    }
   }
 
   // -------------------------------------------------------------------------

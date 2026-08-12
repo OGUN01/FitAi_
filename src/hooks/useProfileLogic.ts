@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Linking, Share } from "react-native";
+import { Linking, Share, Platform } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { crossPlatformAlert } from "../utils/crossPlatformAlert";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
@@ -279,17 +280,81 @@ export const useProfileLogic = () => {
               onPress: async () => {
                 try {
                   const data = await crudOperations.exportAllData();
-                  if (data) {
-                    const json = JSON.stringify(data, null, 2);
-                    await Share.share({
-                      message: json,
-                      title: "FitAI Data Export",
-                    });
-                  } else {
+                  if (!data) {
                     crossPlatformAlert(
                       "Export Data",
                       "No data found to export.",
                     );
+                    return;
+                  }
+
+                  const json = JSON.stringify(data, null, 2);
+                  // Native share sheets have platform text-size limits —
+                  // Android's Binder transaction can throw
+                  // TransactionTooLargeException around ~1MB of combined
+                  // intent extras, and some iOS share targets truncate long
+                  // text messages. A user with a non-trivial history can hit
+                  // that ceiling, so route large exports through a real file
+                  // instead of embedding raw JSON as the share message.
+                  const MAX_INLINE_SHARE_BYTES = 500 * 1024;
+                  if (json.length > MAX_INLINE_SHARE_BYTES) {
+                    if (Platform.OS === "ios") {
+                      // RN's Share module supports a file `url` on iOS.
+                      // The cache dir is only a hand-off point for the
+                      // share sheet, not a delivery location, so remove
+                      // the copy once the share sheet has been presented
+                      // instead of letting timestamped files accumulate.
+                      const fileUri = `${FileSystem.cacheDirectory}fitai-export-${Date.now()}.json`;
+                      await FileSystem.writeAsStringAsync(fileUri, json, {
+                        encoding: FileSystem.EncodingType.UTF8,
+                      });
+                      try {
+                        await Share.share({
+                          url: fileUri,
+                          title: "FitAI Data Export",
+                        });
+                      } finally {
+                        await FileSystem.deleteAsync(fileUri, {
+                          idempotent: true,
+                        });
+                      }
+                    } else {
+                      // RN's built-in Share module (no FileProvider
+                      // configured here) can't hand Android a file URI, and
+                      // the app-private cache dir isn't reachable from a
+                      // file manager or USB without root — writing there
+                      // and telling the user to "find" it is a dead end.
+                      // Use the Storage Access Framework so the user picks
+                      // a real, accessible location (e.g. Downloads) via
+                      // the system picker.
+                      const permissions =
+                        await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+                      if (!permissions.granted) {
+                        crossPlatformAlert(
+                          "Export Cancelled",
+                          "No save location was selected, so the export was not saved.",
+                        );
+                        return;
+                      }
+                      const safUri =
+                        await FileSystem.StorageAccessFramework.createFileAsync(
+                          permissions.directoryUri,
+                          `fitai-export-${Date.now()}`,
+                          "application/json",
+                        );
+                      await FileSystem.writeAsStringAsync(safUri, json, {
+                        encoding: FileSystem.EncodingType.UTF8,
+                      });
+                      crossPlatformAlert(
+                        "Export Saved",
+                        `Your data export (${Math.round(json.length / 1024)} KB) was saved to the folder you selected.`,
+                      );
+                    }
+                  } else {
+                    await Share.share({
+                      message: json,
+                      title: "FitAI Data Export",
+                    });
                   }
                 } catch (exportError) {
                   console.error(
