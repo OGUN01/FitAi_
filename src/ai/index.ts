@@ -28,7 +28,6 @@ export * from '../types/ai';
 
 // Data (static data - not AI-related)
 export * from '../data/exercises';
-export * from '../data/achievements';
 
 // ============================================================================
 // IMPORTS
