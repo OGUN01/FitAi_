@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import barcodeService, { ProductLookupResult } from '@/services/barcodeService';
 import { getCountryFromBarcode } from '@/utils/countryMapping';
 import { flatColors as colors, spacing, borderRadius } from '@/theme/aurora-tokens';
@@ -23,6 +24,24 @@ interface ManualBarcodeEntryProps {
 
 const SUPPORTED_LENGTHS = new Set([6, 8, 12, 13]);
 
+// EAN/UPC check-digit (mod-10) validation. Every supported length (EAN-8,
+// UPC-E treated as 6/8, UPC-A/EAN-13) uses the same weighted mod-10 scheme:
+// starting from the rightmost digit (the check digit itself), digits
+// alternate weight 1 and 3, and the check digit must make the total a
+// multiple of 10. Catches transposed-digit typos before a network round trip.
+const isValidBarcodeChecksum = (digits: string): boolean => {
+  if (!/^\d+$/.test(digits) || digits.length === 0) return false;
+  const checkDigit = Number(digits[digits.length - 1]);
+  let sum = 0;
+  // Iterate right-to-left starting at the digit before the check digit.
+  for (let i = digits.length - 2, weightIndex = 0; i >= 0; i -= 1, weightIndex += 1) {
+    const digit = Number(digits[i]);
+    sum += weightIndex % 2 === 0 ? digit * 3 : digit;
+  }
+  const expectedCheckDigit = (10 - (sum % 10)) % 10;
+  return expectedCheckDigit === checkDigit;
+};
+
 export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
   onLookupResolved,
   onRequestLabelScan,
@@ -37,15 +56,27 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
 
   const cleanBarcode = barcode.trim();
   const countryName = cleanBarcode.length >= 3 ? getCountryFromBarcode(cleanBarcode) : 'Unknown';
-  const canLookUp =
-    SUPPORTED_LENGTHS.has(cleanBarcode.length) && !isLooking && cleanBarcode.length > 0;
+  const hasSupportedLength = SUPPORTED_LENGTHS.has(cleanBarcode.length);
+  // The standard mod-10 weighted checksum only applies to full GTIN forms
+  // (EAN-8, UPC-A, EAN-13). The bare 6-digit UPC-E compressed form has no
+  // check digit of its own to verify against, so it's left ungated here.
+  const hasValidChecksum =
+    hasSupportedLength &&
+    (cleanBarcode.length === 6 || isValidBarcodeChecksum(cleanBarcode));
+  const canLookUp = hasValidChecksum && !isLooking && cleanBarcode.length > 0;
 
   const helperCopy = useMemo(() => {
     if (cleanBarcode.length === 0) {
       return 'Supported lengths: 6, 8, 12, or 13 digits.';
     }
+    if (!hasSupportedLength) {
+      return 'Barcode length not recognized — must be 6, 8, 12, or 13 digits.';
+    }
+    if (!hasValidChecksum) {
+      return 'That number does not look right — check for a typo.';
+    }
     return `${cleanBarcode.length} digits entered`;
-  }, [cleanBarcode.length]);
+  }, [cleanBarcode.length, hasSupportedLength, hasValidChecksum]);
 
   const handleChangeText = (value: string) => {
     const numeric = value.replace(/[^0-9]/g, '');
@@ -126,7 +157,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
-            <Text style={styles.closeButtonText}>X</Text>
+            <Ionicons name="close" size={rf(16)} color={colors.textSecondary} />
           </AnimatedPressable>
         </View>
 
@@ -160,13 +191,20 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
               accessibilityLabel="Clear barcode"
               accessibilityRole="button"
             >
-              <Text style={styles.clearButtonText}>X</Text>
+              <Ionicons name="close" size={rf(14)} color={colors.textSecondary} />
             </AnimatedPressable>
           )}
         </View>
 
         <View style={styles.metaRow}>
-          <Text style={styles.helperText}>{helperCopy}</Text>
+          <Text
+            style={[
+              styles.helperText,
+              cleanBarcode.length > 0 && !hasValidChecksum && styles.helperTextWarning,
+            ]}
+          >
+            {helperCopy}
+          </Text>
           {countryName !== 'Unknown' ? (
             <Text style={styles.countryText}>Origin: {countryName}</Text>
           ) : null}
@@ -340,6 +378,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(11),
     color: colors.textMuted,
+  },
+  helperTextWarning: {
+    color: colors.error,
   },
   countryText: {
     fontSize: rf(12),

@@ -81,6 +81,12 @@ const sanitizeGramInput = (value: string): string => {
   return `${wholePart}.${decimalParts.join('')}`;
 };
 
+// A packaged-food serving beyond this is almost always a fat-finger typo
+// (e.g. "1000" instead of "100") rather than a real single amount eaten.
+// It doesn't block logging outright, but requires an explicit confirmation
+// so an obvious typo can't silently 10x the day's calorie/macro totals.
+const LARGE_AMOUNT_WARNING_THRESHOLD_G = 1000;
+
 const isVisionLabelProduct = (product: ScannedProduct): boolean =>
   product.source === 'vision-label';
 
@@ -146,11 +152,13 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const defaultGrams = useMemo(() => getDefaultPackagedFoodGrams(product), [product]);
   const [amountText, setAmountText] = useState(formatInputGrams(defaultGrams));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [largeAmountConfirmed, setLargeAmountConfirmed] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
     setAmountText(formatInputGrams(defaultGrams));
     setIsSubmitting(false);
+    setLargeAmountConfirmed(false);
   }, [defaultGrams, product.barcode, visible]);
 
   const parsedAmount = useMemo(() => {
@@ -168,6 +176,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const amountValue = Number(amountText.trim());
   const amountIsInvalid =
     amountText.trim().length > 0 && (!Number.isFinite(amountValue) || amountValue <= 0);
+  const amountIsSuspiciouslyLarge =
+    !amountIsInvalid && parsedAmount > LARGE_AMOUNT_WARNING_THRESHOLD_G;
   const handleClose = () => {
     if (!isSubmitting) {
       onClose();
@@ -176,6 +186,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
   const handleAddToMeal = async () => {
     if (!onAddToMeal || isSubmitting || amountIsInvalid) return;
+    if (amountIsSuspiciouslyLarge && !largeAmountConfirmed) return;
     try {
       setIsSubmitting(true);
       await onAddToMeal(product, parsedAmount);
@@ -406,7 +417,10 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 <TextInput
                   style={[styles.amountInput, amountIsInvalid && styles.amountInputInvalid]}
                   value={amountText}
-                  onChangeText={(value) => setAmountText(sanitizeGramInput(value))}
+                  onChangeText={(value) => {
+                    setAmountText(sanitizeGramInput(value));
+                    setLargeAmountConfirmed(false);
+                  }}
                   keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
                   placeholder="100"
                   placeholderTextColor={colors.textMuted}
@@ -420,6 +434,28 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               <Text style={styles.amountError}>
                 Enter a positive amount to calculate nutrients.
               </Text>
+            ) : null}
+
+            {amountIsSuspiciouslyLarge ? (
+              <AnimatedPressable
+                style={styles.largeAmountWarning}
+                onPress={() => setLargeAmountConfirmed((prev) => !prev)}
+                scaleValue={0.98}
+                springConfig="smooth"
+                hapticType="light"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: largeAmountConfirmed }}
+                accessibilityLabel="Confirm this large amount is correct"
+              >
+                <Text style={styles.largeAmountWarningTitle}>
+                  {formatInputGrams(parsedAmount)}g is a large amount for one serving
+                </Text>
+                <Text style={styles.largeAmountWarningText}>
+                  {largeAmountConfirmed
+                    ? 'Confirmed — tap to undo.'
+                    : 'Double-check for a typo, or tap to confirm this is correct.'}
+                </Text>
+              </AnimatedPressable>
             ) : null}
 
             <View style={styles.footerButtons}>
@@ -441,9 +477,16 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   containerStyle={styles.primaryButtonContainer}
                   style={[
                     styles.primaryButton,
-                    (isSubmitting || amountIsInvalid) && styles.primaryButtonDisabled,
+                    (isSubmitting ||
+                      amountIsInvalid ||
+                      (amountIsSuspiciouslyLarge && !largeAmountConfirmed)) &&
+                      styles.primaryButtonDisabled,
                   ]}
-                  disabled={isSubmitting || amountIsInvalid}
+                  disabled={
+                    isSubmitting ||
+                    amountIsInvalid ||
+                    (amountIsSuspiciouslyLarge && !largeAmountConfirmed)
+                  }
                   scaleValue={0.97}
                   springConfig="smooth"
                   hapticType="medium"
@@ -775,6 +818,24 @@ const styles = StyleSheet.create({
   amountError: {
     fontSize: rf(12),
     color: colors.errorAlt,
+  },
+  largeAmountWarning: {
+    backgroundColor: hexToRgba(colors.warningAlt, 0.14),
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.warningAlt, 0.32),
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xxs,
+  },
+  largeAmountWarningTitle: {
+    fontSize: rf(13),
+    fontWeight: '700',
+    color: colors.text,
+  },
+  largeAmountWarningText: {
+    fontSize: rf(12),
+    color: colors.textSecondary,
   },
   footerButtons: {
     flexDirection: 'row',

@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -52,7 +53,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
   recognizedFoods,
   onClose,
   onSubmitFeedback,
-  originalImageUri: _originalImageUri,
+  originalImageUri,
 }) => {
   const [feedback, setFeedback] = useState<FoodFeedback[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -164,6 +165,17 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {originalImageUri ? (
+            <View style={styles.photoWrap}>
+              <Image
+                source={{ uri: originalImageUri }}
+                style={styles.photo}
+                resizeMode="cover"
+                accessibilityLabel="Photo you captured for this scan"
+              />
+            </View>
+          ) : null}
+
           <View style={[styles.section, styles.foodCard]}>
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
@@ -403,6 +415,18 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+
+  photoWrap: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+    backgroundColor: colors.backgroundSecondary,
+  },
+
+  photo: {
+    width: '100%',
+    height: rh(200),
   },
 
   foodCard: {

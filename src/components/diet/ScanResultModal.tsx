@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -50,6 +50,8 @@ const getConfidenceLabel = (confidence: number) => {
   return 'Low';
 };
 
+const LOW_CONFIDENCE_THRESHOLD = 60;
+
 export const ScanResultModal: React.FC<ScanResultModalProps> = ({
   visible,
   scanResult,
@@ -58,6 +60,17 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
   onFeedback,
   onDismiss,
 }) => {
+  // Low-confidence scans get an extra acknowledgement gate before "Accept &
+  // Log" is enabled, so an unreliable scan isn't as easy to blindly accept
+  // as a clean one. Reset whenever a new result comes in.
+  const [lowConfidenceAcknowledged, setLowConfidenceAcknowledged] = useState(false);
+  const scanResultKey = scanResult?.imageUri ?? null;
+  const prevKeyRef = React.useRef<string | null>(null);
+  if (scanResultKey !== prevKeyRef.current) {
+    prevKeyRef.current = scanResultKey;
+    if (lowConfidenceAcknowledged) setLowConfidenceAcknowledged(false);
+  }
+
   if (!scanResult) return null;
 
   const {
@@ -66,12 +79,15 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
     totalProtein,
     totalCarbs,
     totalFat,
+    totalFiber,
     confidence,
     mealType,
   } = scanResult;
 
   const confColor = getConfidenceColor(confidence);
   const confLabel = getConfidenceLabel(confidence);
+  const isLowConfidence = confidence < LOW_CONFIDENCE_THRESHOLD;
+  const acceptDisabled = isLowConfidence && !lowConfidenceAcknowledged;
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -173,6 +189,11 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                 value={`${Math.round(totalFat * 10) / 10}g`}
                 color={MACRO_COLORS.fat}
               />
+              <TotalItem
+                label="Fiber"
+                value={`${Math.round(totalFiber * 10) / 10}g`}
+                color={MACRO_COLORS.fiber}
+              />
             </View>
 
             {/* AI disclaimer */}
@@ -186,6 +207,31 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
             </View>
           </Animated.View>
 
+          {/* Low-confidence acknowledgement gate */}
+          {isLowConfidence && (
+            <Animated.View entering={FadeInDown.delay(150).duration(400)}>
+              <AnimatedPressable
+                style={styles.ackRow}
+                scaleValue={0.98}
+                springConfig="smooth"
+                hapticType="light"
+                onPress={() => setLowConfidenceAcknowledged((prev) => !prev)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: lowConfidenceAcknowledged }}
+                accessibilityLabel="Confirm you reviewed this low-confidence scan"
+              >
+                <Ionicons
+                  name={lowConfidenceAcknowledged ? 'checkbox' : 'square-outline'}
+                  size={rf(18)}
+                  color={lowConfidenceAcknowledged ? colors.primary : colors.textSecondary}
+                />
+                <Text style={styles.ackText}>
+                  This is a low-confidence scan. I reviewed the foods and amounts above.
+                </Text>
+              </AnimatedPressable>
+            </Animated.View>
+          )}
+
           {/* Action buttons */}
           <Animated.View entering={FadeInDown.delay(180).duration(400)}>
             <GlassButton
@@ -194,6 +240,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               variant="primary"
               icon="checkmark-circle-outline"
               fullWidth
+              disabled={acceptDisabled}
               style={styles.acceptButton}
               accessibilityLabel="Accept and log"
             />
@@ -446,6 +493,24 @@ const styles = StyleSheet.create({
   disclaimerText: {
     fontSize: rf(11),
     color: colors.textSecondary,
+  },
+  ackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: hexToRgba(colors.warningAlt, TINT_ALPHA_LOW),
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.warningAlt, TINT_ALPHA_MEDIUM),
+    borderRadius: borderRadius.md,
+    paddingHorizontal: rp(10),
+    paddingVertical: rp(9),
+    marginBottom: spacing.sm,
+  },
+  ackText: {
+    flex: 1,
+    fontSize: rf(12),
+    color: colors.text,
+    lineHeight: rf(16),
   },
   acceptButton: {
     marginBottom: spacing.sm,

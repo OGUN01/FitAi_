@@ -10,12 +10,26 @@ import {
 } from '../../theme/aurora-tokens';
 import { rf } from '../../utils/responsive';
 
-const CYCLING_TEXTS = [
-  'Analyzing your meal...',
-  'Identifying foods...',
-  'Calculating nutrition...',
-  'Estimating portions...',
+// Elapsed-time based status copy. Unlike a fixed-interval text cycle, this
+// reflects how long the request has actually been running so a 1s request
+// and a 30s request don't show identical, meaningless "still analyzing"
+// copy — the message only changes when there is something honest to say.
+const STATUS_STAGES: Array<{ afterSeconds: number; text: string }> = [
+  { afterSeconds: 0, text: 'Analyzing your meal...' },
+  { afterSeconds: 10, text: 'Still working — this can take a moment...' },
+  { afterSeconds: 20, text: 'Almost there...' },
+  { afterSeconds: 30, text: 'Taking longer than usual, hang tight...' },
 ];
+
+const getStatusText = (elapsedSeconds: number): string => {
+  let text = STATUS_STAGES[0].text;
+  for (const stage of STATUS_STAGES) {
+    if (elapsedSeconds >= stage.afterSeconds) {
+      text = stage.text;
+    }
+  }
+  return text;
+};
 
 interface FoodScanLoadingOverlayProps {
   visible: boolean;
@@ -27,15 +41,15 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
   visible,
   onCancel,
 }) => {
-  const [textIndex, setTextIndex] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (visible) {
-      setTextIndex(0);
+      setElapsedSeconds(0);
       intervalRef.current = setInterval(() => {
-        setTextIndex((prev) => (prev + 1) % CYCLING_TEXTS.length);
-      }, 2000);
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -47,13 +61,15 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
     };
   }, [visible]);
 
+  const statusText = getStatusText(elapsedSeconds);
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <AuroraSpinner size="lg" theme="primary" />
-          <Animated.Text key={textIndex} entering={FadeIn.duration(400)} style={styles.text}>
-            {CYCLING_TEXTS[textIndex]}
+          <Animated.Text key={statusText} entering={FadeIn.duration(400)} style={styles.text}>
+            {statusText}
           </Animated.Text>
           {onCancel && (
             <TouchableOpacity
