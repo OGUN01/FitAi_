@@ -1,18 +1,14 @@
 import React from "react";
 import {
-  View,
-  Text,
   ScrollView,
   RefreshControl,
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
-import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
-import { haptics } from "../../utils/haptics";
+import { rp } from "../../utils/responsive";
 import { useWearableConnection } from "../../hooks/useWearableConnection";
 import { WarningBanner } from "../../components/wearable/WarningBanner";
 import { ConnectionCard } from "../../components/wearable/ConnectionCard";
@@ -63,30 +59,11 @@ export const WearableConnectionScreen: React.FC<
   return (
     <AuroraBackground>
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => {
-              haptics.light();
-              onBack?.();
-            }}
-            scaleValue={0.9}
-            hapticFeedback={false}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
-            </View>
-          </AnimatedPressable>
-          <View style={styles.headerCenter}>
-            <Ionicons
-              name="watch-outline"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.headerTitle}>Connect Wearables</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
+        <GlassHeader
+          title="Connect Wearables"
+          titleIcon="watch-outline"
+          onBack={onBack}
+        />
 
         <ScrollView
           style={styles.scrollView}
@@ -163,34 +140,6 @@ export const WearableConnectionScreen: React.FC<
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rbr(20),
-    backgroundColor: colors.glassBorder,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSpacer: {
-    width: rw(40),
   },
   scrollView: {
     flex: 1,

@@ -16,11 +16,11 @@ import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
-import { NotificationsHeader } from "./components/NotificationsHeader";
 import { ExpoGoMessage } from "./components/ExpoGoMessage";
 import { DescriptionCard } from "./components/DescriptionCard";
-import { SectionHeader } from "./components/SectionHeader";
+import { SectionHeader } from "../../components/settings/SectionHeader";
 import { ResetButton } from "./components/ResetButton";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { useNotificationsScreen } from "./hooks/useNotificationsScreen";
 
 const isExpoGo =
@@ -218,7 +218,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-          <NotificationsHeader onBack={onBack} />
+          <GlassHeader
+            title="Notifications"
+            titleIcon="notifications-outline"
+            onBack={onBack}
+          />
           {isWeb ? (
             <View style={styles.unavailableContainer}>
               <View style={styles.unavailableCard}>
@@ -319,7 +323,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <NotificationsHeader onBack={onBack} />
+        <GlassHeader
+          title="Notifications"
+          titleIcon="notifications-outline"
+          onBack={onBack}
+        />
 
         <ScrollView
           style={styles.scrollView}

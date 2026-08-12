@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { VitalsCard } from "../health/VitalsCard";
@@ -35,7 +34,7 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
 
   return (
     <>
-      <GlassCard elevation={1} style={styles.card}>
+      <View style={styles.card}>
         <Text style={styles.title}>Today's Health Data</Text>
         <View style={styles.grid}>
           <View style={styles.item}>
@@ -63,7 +62,7 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
             <Text style={styles.label}>Sleep</Text>
           </View>
         </View>
-      </GlassCard>
+      </View>
 
       {/*
         Wave 5A: surface the advanced vitals (HRV / SpO2 / Body Fat /
@@ -93,6 +92,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   title: {
     fontSize: rf(16),

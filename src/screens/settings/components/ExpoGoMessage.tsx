@@ -3,21 +3,14 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { GlassCard } from "../../../components/ui/aurora/GlassCard";
-import { flatColors as colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../../utils/responsive";
 
 export const ExpoGoMessage: React.FC = () => {
   return (
     <View style={styles.expoGoContainer}>
       <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-        <GlassCard
-          elevation={2}
-          padding="xl"
-          blurIntensity="default"
-          borderRadius="xl"
-          style={styles.expoGoCard}
-        >
+        <View style={styles.expoGoCard}>
           <View style={styles.expoGoIconContainer}>
             <LinearGradient
               colors={[colors.warning, colors.primaryDark]}
@@ -39,7 +32,7 @@ export const ExpoGoMessage: React.FC = () => {
               </Text>
             </View>
           </View>
-        </GlassCard>
+        </View>
       </Animated.View>
     </View>
   );
@@ -53,7 +46,11 @@ const styles = StyleSheet.create({
   },
   expoGoCard: {
     alignItems: "center" as const,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
+    padding: spacing.xl,
   },
   expoGoIconContainer: {
     marginBottom: spacing.lg,

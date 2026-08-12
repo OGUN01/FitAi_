@@ -9,11 +9,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Linking, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { ActionItem } from "../../components/settings/ActionItem";
 import { SectionHeader } from "../../components/settings/SectionHeader";
 import {
@@ -172,30 +172,11 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
-          <AnimatedPressable
-            onPress={() => {
-              haptics.light();
-              onBack?.();
-            }}
-            scaleValue={0.9}
-            hapticFeedback={false}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
-            </View>
-          </AnimatedPressable>
-          <View style={styles.headerCenter}>
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.headerTitle}>Privacy & Security</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </Animated.View>
+        <GlassHeader
+          title="Privacy & Security"
+          titleIcon="shield-checkmark-outline"
+          onBack={onBack}
+        />
 
         <ScrollView
           style={styles.scrollView}
@@ -391,34 +372,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rbr(20),
-    backgroundColor: colors.glassBorder,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    gap: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSpacer: {
-    width: rw(40),
   },
   scrollView: {
     flex: 1,

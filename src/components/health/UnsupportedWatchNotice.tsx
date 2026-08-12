@@ -13,9 +13,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface UnsupportedWatchNoticeProps {
@@ -32,7 +31,7 @@ export const UnsupportedWatchNotice: React.FC<UnsupportedWatchNoticeProps> = ({
   onEnterManually,
 }) => {
   return (
-    <GlassCard elevation={1} style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.iconWrap}>
           <Ionicons
@@ -77,7 +76,7 @@ export const UnsupportedWatchNotice: React.FC<UnsupportedWatchNoticeProps> = ({
         />
         <Text style={styles.ctaText}>Enter manually</Text>
       </AnimatedPressable>
-    </GlassCard>
+    </View>
   );
 };
 
@@ -85,6 +84,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   header: {
     flexDirection: "row",

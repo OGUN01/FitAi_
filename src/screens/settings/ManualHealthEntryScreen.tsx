@@ -31,6 +31,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { ManualMetricEntry } from "../../components/health/ManualMetricEntry";
 import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
@@ -460,30 +461,11 @@ export const ManualHealthEntryScreen: React.FC<
   return (
     <AuroraBackground>
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => {
-              haptics.light();
-              onBack?.();
-            }}
-            scaleValue={0.9}
-            hapticFeedback={false}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
-            </View>
-          </AnimatedPressable>
-          <View style={styles.headerCenter}>
-            <Ionicons
-              name="create-outline"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.headerTitle}>Log Health Data</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </View>
+        <GlassHeader
+          title="Log Health Data"
+          titleIcon="create-outline"
+          onBack={onBack}
+        />
 
         <ScrollView
           style={styles.scrollView}
@@ -647,34 +629,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rbr(20),
-    backgroundColor: surface[1],
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSpacer: {
-    width: rw(40),
-  },
   scrollView: {
     flex: 1,
   },
@@ -705,7 +659,7 @@ const styles = StyleSheet.create({
     backgroundColor: surface[1],
     borderWidth: 1,
     borderColor: border.subtle,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.card,
   },
   dateRow: {
     flexDirection: "row",
@@ -772,7 +726,7 @@ const styles = StyleSheet.create({
     backgroundColor: surface[1],
     borderWidth: 1,
     borderColor: border.subtle,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.card,
   },
   advancedToggle: {
     flexDirection: "row",

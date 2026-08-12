@@ -1,30 +1,26 @@
 /**
  * HelpSupportScreen - Help & Support Center
  *
- * Redesigned following UI/UX Methodology:
- * - GlassCard for all cards
- * - Ionicons instead of emojis
- * - AnimatedPressable with haptics
- * - aurora-tokens for spacing/colors
- * - FadeInDown entry animations
+ * Editorial Dark: shared GlassHeader + SectionHeader (no GlassCard/gradient
+ * on this screen's own header/section chrome — satellite cards below still
+ * own their individual styling), Ionicons instead of emojis, aurora-tokens
+ * for spacing/colors.
  */
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeIn } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
 
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { QuickAction } from "../../components/help/QuickAction";
 import { ResourceItem } from "../../components/help/ResourceItem";
 import { FAQList } from "../../components/help/FAQList";
 import { ContactCard } from "../../components/help/ContactCard";
+import { SectionHeader } from "../../components/settings/SectionHeader";
 
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
-import { rf, rw, rp, rbr, rh } from "../../utils/responsive";
-import { haptics } from "../../utils/haptics";
+import { rp, rh } from "../../utils/responsive";
 import { useHelpSupport } from "../../hooks/useHelpSupport";
 
 interface HelpSupportScreenProps {
@@ -48,30 +44,11 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
-          <AnimatedPressable
-            onPress={() => {
-              haptics.light();
-              onBack?.();
-            }}
-            scaleValue={0.9}
-            hapticFeedback={false}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color={colors.text} />
-            </View>
-          </AnimatedPressable>
-          <View style={styles.headerCenter}>
-            <Ionicons
-              name="help-circle-outline"
-              size={rf(18)}
-              color={colors.primary}
-            />
-            <Text style={styles.headerTitle}>Help & Support</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </Animated.View>
+        <GlassHeader
+          title="Help & Support"
+          titleIcon="help-circle-outline"
+          onBack={onBack}
+        />
 
         <ScrollView
           style={styles.scrollView}
@@ -79,14 +56,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
           contentContainerStyle={styles.scrollContent}
         >
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="flash-outline"
-                size={rf(14)}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
-            </View>
+            <SectionHeader icon="flash-outline" title="Quick Actions" />
 
             <View style={styles.quickActionsGrid}>
               <QuickAction
@@ -117,16 +87,10 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
           </View>
 
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="help-outline"
-                size={rf(14)}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.sectionTitle}>
-                Frequently Asked Questions
-              </Text>
-            </View>
+            <SectionHeader
+              icon="help-outline"
+              title="Frequently Asked Questions"
+            />
 
             <FAQList
               faqs={faqs}
@@ -136,14 +100,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
           </View>
 
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="book-outline"
-                size={rf(14)}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.sectionTitle}>Resources</Text>
-            </View>
+            <SectionHeader icon="book-outline" title="Resources" />
 
             <ResourceItem
               icon="pulse-outline"
@@ -168,34 +125,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rbr(20),
-    backgroundColor: colors.glassBorder,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    gap: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.text,
-  },
-  headerSpacer: {
-    width: rw(40),
-  },
   scrollView: {
     flex: 1,
   },
@@ -206,20 +135,6 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  sectionTitle: {
-    fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
   quickActionsGrid: {
     flexDirection: "row",

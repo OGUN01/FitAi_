@@ -2,9 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -42,13 +41,7 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
         accessibilityHint={description}
         testID={testID}
       >
-        <GlassCard
-          elevation={1}
-          padding="md"
-          blurIntensity="light"
-          borderRadius="lg"
-          style={styles.actionCard}
-        >
+        <View style={styles.actionCard}>
           <View style={styles.actionContent}>
             <View
               style={[
@@ -68,7 +61,7 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
               color={colors.textMuted}
             />
           </View>
-        </GlassCard>
+        </View>
       </AnimatedPressable>
     </Animated.View>
   );
@@ -77,7 +70,11 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
 const styles = StyleSheet.create({
   actionCard: {
     marginBottom: spacing.sm,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
+    padding: spacing.md,
   },
   actionContent: {
     flexDirection: "row",

@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, Switch, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 export interface HealthDataType {
@@ -98,7 +97,7 @@ export const DataTypesCard: React.FC<DataTypesCardProps> = ({
   onDataTypeToggle,
 }) => {
   return (
-    <GlassCard elevation={1} style={styles.card}>
+    <View style={styles.card}>
       <Text style={styles.title}>Data to Sync</Text>
       <Text style={styles.hint}>
         Sets your sync preferences. Turning a switch off stops FitAI from
@@ -127,12 +126,15 @@ export const DataTypesCard: React.FC<DataTypesCardProps> = ({
           <Switch
             value={dataTypesToSync[dataType.key]}
             onValueChange={(value) => onDataTypeToggle(dataType.key, value)}
-            trackColor={{ false: colors.border, true: dataType.color }}
-            thumbColor={colors.white}
+            trackColor={{ false: surface[2], true: `${dataType.color}50` }}
+            thumbColor={
+              dataTypesToSync[dataType.key] ? dataType.color : colors.textMuted
+            }
+            ios_backgroundColor={surface[2]}
           />
         </View>
       ))}
-    </GlassCard>
+    </View>
   );
 };
 
@@ -140,6 +142,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   title: {
     fontSize: rf(16),

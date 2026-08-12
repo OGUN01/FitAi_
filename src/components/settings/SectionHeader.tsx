@@ -6,14 +6,15 @@ import { rf } from "../../utils/responsive";
 
 interface SectionHeaderProps {
   icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
+  /** @default colors.textSecondary */
+  iconColor?: string;
   title: string;
   isDanger?: boolean;
 }
 
 export const SectionHeader: React.FC<SectionHeaderProps> = ({
   icon,
-  iconColor,
+  iconColor = colors.textSecondary,
   title,
   isDanger = false,
 }) => {

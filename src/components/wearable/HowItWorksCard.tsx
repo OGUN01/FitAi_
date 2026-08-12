@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 interface HowItWorksCardProps {
@@ -12,7 +11,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
   platformName,
 }) => {
   return (
-    <GlassCard elevation={1} style={styles.card}>
+    <View style={styles.card}>
       <Text style={styles.title}>How It Works</Text>
       <View style={styles.step}>
         <View style={styles.stepNumber}>
@@ -38,7 +37,7 @@ export const HowItWorksCard: React.FC<HowItWorksCardProps> = ({
           Your progress updates automatically in the app
         </Text>
       </View>
-    </GlassCard>
+    </View>
   );
 };
 
@@ -46,6 +45,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   title: {
     fontSize: rf(16),

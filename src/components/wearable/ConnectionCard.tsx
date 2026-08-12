@@ -7,9 +7,8 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 interface ConnectionCardProps {
@@ -46,7 +45,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
   onReauthorize,
 }) => {
   return (
-    <GlassCard elevation={2} style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.info}>
           <View
@@ -73,8 +72,13 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
             isConnected && (isIOS ? healthKitEnabled : healthConnectEnabled)
           }
           onValueChange={onConnectionToggle}
-          trackColor={{ false: colors.border, true: colors.success }}
-          thumbColor={colors.white}
+          trackColor={{ false: surface[2], true: `${colors.primary}50` }}
+          thumbColor={
+            isConnected && (isIOS ? healthKitEnabled : healthConnectEnabled)
+              ? colors.primary
+              : colors.textMuted
+          }
+          ios_backgroundColor={surface[2]}
         />
       </View>
 
@@ -135,7 +139,7 @@ export const ConnectionCard: React.FC<ConnectionCardProps> = ({
           <Text style={styles.errorText}>{syncError}</Text>
         </View>
       )}
-    </GlassCard>
+    </View>
   );
 };
 
@@ -143,6 +147,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   header: {
     flexDirection: "row",

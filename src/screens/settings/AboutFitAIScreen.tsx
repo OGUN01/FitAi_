@@ -13,7 +13,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { AboutFitAIHeader } from "../../components/settings/AboutFitAIHeader";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { AboutFitAIActionItem } from "../../components/settings/AboutFitAIActionItem";
 import { AboutFitAIFeatureCard } from "../../components/settings/AboutFitAIFeatureCard";
 import { AboutFitAISocialButtons } from "../../components/settings/AboutFitAISocialButtons";
@@ -44,7 +44,11 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        <AboutFitAIHeader onBack={onBack} />
+        <GlassHeader
+          title="About FitAI"
+          titleIcon="information-circle-outline"
+          onBack={onBack}
+        />
 
         <ScrollView
           style={styles.scrollView}

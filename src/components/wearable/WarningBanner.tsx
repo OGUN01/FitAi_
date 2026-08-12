@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 
 interface WarningBannerProps {
@@ -13,7 +12,7 @@ export const WarningBanner: React.FC<WarningBannerProps> = ({
   platformName,
 }) => {
   return (
-    <GlassCard elevation={1} style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.content}>
         <Ionicons name="information-circle" size={rf(24)} color={colors.warning} />
         <View style={styles.text}>
@@ -24,7 +23,7 @@ export const WarningBanner: React.FC<WarningBannerProps> = ({
           </Text>
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 };
 
@@ -33,6 +32,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     padding: spacing.md,
     backgroundColor: colors.warningTint,
+    borderWidth: 1,
+    borderColor: `${colors.warning}40`,
+    borderRadius: borderRadius.card,
   },
   content: {
     flexDirection: "row",

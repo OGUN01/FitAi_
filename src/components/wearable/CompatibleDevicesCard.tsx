@@ -1,8 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 
 const COMPATIBLE_DEVICES = {
@@ -35,7 +34,7 @@ export const CompatibleDevicesCard: React.FC<CompatibleDevicesCardProps> = ({
   const devices = isIOS ? COMPATIBLE_DEVICES.ios : COMPATIBLE_DEVICES.android;
 
   return (
-    <GlassCard elevation={1} style={styles.card}>
+    <View style={styles.card}>
       <Text style={styles.title}>Compatible Devices</Text>
       <Text style={styles.subtitle}>
         {platformName} automatically syncs data from these devices:
@@ -56,7 +55,7 @@ export const CompatibleDevicesCard: React.FC<CompatibleDevicesCardProps> = ({
         Third-party devices sync via their own app connected to {platformName}
         — FitAI doesn't talk to them directly.
       </Text>
-    </GlassCard>
+    </View>
   );
 };
 
@@ -64,6 +63,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   title: {
     fontSize: rf(16),

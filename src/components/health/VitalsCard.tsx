@@ -15,16 +15,15 @@
  * vitals have a value, renders null (the parent HealthSummaryCard decides
  * whether to show the section at all).
  *
- * Styling mirrors HealthSummaryCard's tile layout exactly: same GlassCard
- * wrapper, same row/grid flex, same icon/value/label typography. No new
- * design tokens introduced.
+ * Styling mirrors HealthSummaryCard's tile layout exactly: same flat
+ * surface[1] + hairline border wrapper, same row/grid flex, same
+ * icon/value/label typography. No new design tokens introduced.
  */
 
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rw } from "../../utils/responsive";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import type { HealthMetrics } from "../../stores/healthDataStore";
@@ -107,7 +106,7 @@ export const VitalsCard: React.FC = () => {
   if (!anyValue) return null;
 
   return (
-    <GlassCard elevation={1} style={styles.card}>
+    <View style={styles.card}>
       <Text style={styles.title}>Vitals</Text>
       <View style={styles.grid}>
         {tiles.map(({ def, display }) => (
@@ -123,7 +122,7 @@ export const VitalsCard: React.FC = () => {
           </View>
         ))}
       </View>
-    </GlassCard>
+    </View>
   );
 };
 
@@ -131,6 +130,10 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: spacing.md,
     padding: spacing.lg,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+    borderRadius: borderRadius.card,
   },
   title: {
     fontSize: rf(16),
