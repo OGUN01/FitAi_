@@ -52,7 +52,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: "💪",
     color: "#C0C0C0",
     requirements: [{ type: "workout_count", target: 50, timeframe: "all_time" }],
-    reward: { type: "fitcoins", value: 500, description: "500 FitCoins" },
+    reward: { type: "fitcoins", value: 300, description: "300 FitCoins" },
   },
   {
     id: "workout-100",
@@ -63,7 +63,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: "🏆",
     color: "#FFD700",
     requirements: [{ type: "workout_count", target: 100, timeframe: "all_time" }],
-    reward: { type: "fitcoins", value: 1000, description: "1000 FitCoins" },
+    reward: { type: "fitcoins", value: 700, description: "700 FitCoins" },
   },
   {
     id: "early-bird",
@@ -167,7 +167,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     requirements: [
       { type: "calories_burned", target: 25000, timeframe: "all_time" },
     ],
-    reward: { type: "fitcoins", value: 750, description: "750 FitCoins" },
+    reward: { type: "fitcoins", value: 700, description: "700 FitCoins" },
   },
 
   // ──────────────────────────────────────────────────────────────────────
@@ -405,16 +405,25 @@ export const ACHIEVEMENTS: Achievement[] = [
   // ──────────────────────────────────────────────────────────────────────
   {
     id: "balanced-week",
-    title: "Balanced Week",
-    description: "In one week: 3 workouts, log 3 meals, hit water goal once.",
+    title: "Balanced Start",
+    description:
+      "Complete 3 workouts, log 3 meals, and hit your water goal at least once. A well-rounded foundation.",
     category: "challenge",
     tier: "silver",
     icon: "⚖️",
     color: "#C0C0C0",
+    // NOTE: these are evaluated against all-time cumulative totals (see
+    // achievementEngine.evaluateRequirementValue), not a real 7-day window —
+    // `timeframe` is declared for UI/copy purposes only and is not read by
+    // the evaluator. Kept as "all_time" here (rather than "weekly") so the
+    // declared timeframe matches what is actually measured; title/description
+    // were changed for the same reason (see audit: real time-windowed
+    // aggregation would be a separate, larger change to achievementEngine.ts,
+    // outside this fix's scope).
     requirements: [
-      { type: "workout_count", target: 3, timeframe: "weekly" },
-      { type: "nutrition_log", target: 3, timeframe: "weekly" },
-      { type: "water_intake", target: 1, timeframe: "weekly" },
+      { type: "workout_count", target: 3, timeframe: "all_time" },
+      { type: "nutrition_log", target: 3, timeframe: "all_time" },
+      { type: "water_intake", target: 1, timeframe: "all_time" },
     ],
     reward: { type: "fitcoins", value: 300, description: "300 FitCoins" },
   },

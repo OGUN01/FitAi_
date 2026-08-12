@@ -19,6 +19,10 @@ import {
 } from "../services/achievementEngine";
 import { achievementDataService } from "../services/achievementData";
 import { analyticsDataService } from "../services/analyticsData";
+import {
+  loadWaterGoalDaysHit,
+  persistWaterGoalDaysHit,
+} from "../services/achievements/waterGoalPersistence";
 import { getCurrentUserId } from "../services/authUtils";
 import { resolveCurrentWeightFromStores } from "../services/currentWeight";
 import { CompletedSession } from "./fitness/types";
@@ -53,44 +57,62 @@ const normalizeWorkoutType = (value?: string | null): string => {
 };
 
 // Exported so other weight-entry flows (e.g. WeightEntryModal) can compute
-// "goal achieved" the same way the engine does. This only ever sees a single
-// (currentWeight, targetWeight) snapshot — it has no record of which side of
-// the target the user started on — so it cannot tell a true "crossed toward
-// the goal" from "still on the wrong side of it" for a non-exact match.
-// Achieved = at the target within a small tolerance, which is direction-
-// agnostic and correct for both weight-loss and weight-gain goals.
-// (A previous version tried to be "direction-aware" by branching on
-// `targetWeight < currentWeight` and then re-testing that same relationship —
-// that branch could only ever be true on exact equality, i.e. it silently
-// never fired for any real-world non-equal reading.)
+// "goal achieved" the same way the engine does — this is the SINGLE source of
+// truth for "has the user reached their weight goal" (every trigger path,
+// including reconcileWithCurrentData, must call this rather than inlining its
+// own formula — see audit: two disagreeing inline formulas previously existed).
+//
+// With only (currentWeight, targetWeight) it cannot tell a true "crossed
+// toward the goal" from "still on the wrong side of it" for a non-exact
+// match, so it falls back to tolerance-only: achieved = at the target within
+// a small tolerance (direction-agnostic, correct for both weight-loss and
+// weight-gain goals).
+//
+// When `baselineWeight` (the user's starting weight, e.g. weightHistory[0])
+// is available, it is additionally used for a direction-aware check: the
+// user achieved their goal if they've crossed from their baseline side of
+// the target to the target side, even before landing exactly within
+// tolerance (e.g. baseline 90kg, target 70kg, current 69kg — goal reached
+// even though |69-70| > tolerance).
 const WEIGHT_GOAL_TOLERANCE_KG = 0.25;
 export const isWeightGoalAchieved = (
   currentWeight?: number | null,
   targetWeight?: number | null,
+  baselineWeight?: number | null,
 ): boolean => {
   if (!currentWeight || !targetWeight) {
     return false;
   }
 
-  return Math.abs(currentWeight - targetWeight) <= WEIGHT_GOAL_TOLERANCE_KG;
+  if (Math.abs(currentWeight - targetWeight) <= WEIGHT_GOAL_TOLERANCE_KG) {
+    return true;
+  }
+
+  if (typeof baselineWeight === "number" && Number.isFinite(baselineWeight)) {
+    if (baselineWeight > targetWeight) {
+      return currentWeight <= targetWeight;
+    }
+    if (baselineWeight < targetWeight) {
+      return currentWeight >= targetWeight;
+    }
+  }
+
+  return false;
 };
 
 const buildAchievementActivityData = ({
   completedSessions,
   mealProgress,
   dailyMeals,
-  hydrationState,
   healthMetrics,
   currentStreak,
   bodyAnalysis,
+  baselineWeight,
+  totalWaterGoalDaysHit,
 }: {
   completedSessions: CompletedSession[];
   mealProgress: Record<string, any>;
   dailyMeals: any[];
-  hydrationState: {
-    dailyGoalML: number | null;
-    waterIntakeML: number;
-  };
   healthMetrics?: {
     steps?: number;
     sleepHours?: number;
@@ -100,6 +122,16 @@ const buildAchievementActivityData = ({
     current_weight_kg?: number | null;
     target_weight_kg?: number | null;
   } | null;
+  // The user's starting weight (e.g. weightHistory[0]) — enables the
+  // direction-aware branch of isWeightGoalAchieved. Optional: falls back to
+  // tolerance-only when not supplied.
+  baselineWeight?: number | null;
+  // Lifetime count of distinct days the water intake goal was hit — the true
+  // cumulative metric "hydration-week" (target: 7) needs. Must be a running
+  // counter (see achievementStore.recordWaterGoalHit), NOT a same-day
+  // hit/miss snapshot — that would only ever reflect "today", so a target
+  // > ~2 could never be reached.
+  totalWaterGoalDaysHit: number;
 }) => {
   const workoutTypeCounts: Record<string, number> = {};
   const completedWorkoutDays = new Set<string>();
@@ -151,17 +183,14 @@ const buildAchievementActivityData = ({
   );
   const activeDays = new Set([...completedWorkoutDays, ...completedMealDates])
     .size;
-  const waterGoalsHit =
-    hydrationState.dailyGoalML &&
-    hydrationState.waterIntakeML >= hydrationState.dailyGoalML
-      ? 1
-      : 0;
 
   return {
     totalWorkouts: completedSessions.length,
     totalCalories,
     nutritionLogs,
-    waterGoalsHit,
+    // Lifetime cumulative count (see param doc above), not a same-day
+    // boolean — required for "hydration-week" (target: 7) to be reachable.
+    waterGoalsHit: totalWaterGoalDaysHit,
     consistentDays: currentStreak,
     workoutStreak: currentStreak,
     currentStreak,
@@ -189,6 +218,7 @@ const buildAchievementActivityData = ({
         bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
       }).value,
       bodyAnalysis?.target_weight_kg,
+      baselineWeight,
     ),
   };
 };
@@ -197,6 +227,14 @@ interface AchievementStore {
   // State
   isLoading: boolean;
   isInitialized: boolean;
+  // Set when initialize()'s try block throws (network error, engine init
+  // failure, etc). isInitialized is ALSO set true in that case so isLoading/
+  // isInitialized keep one consistent meaning ("done attempting to load")
+  // across every consumer — initError is the dedicated signal for "it failed"
+  // so a screen can show a real error + retry instead of an infinite spinner
+  // or a misleading "you have zero achievements" empty state. Cleared on the
+  // next successful initialize().
+  initError: string | null;
   achievements: Achievement[];
   // NOTE: Map causes all subscribers to re-render on any mutation because Zustand
   // compares by reference. This is a known limitation; a Record<string,...> would
@@ -213,6 +251,12 @@ interface AchievementStore {
   // Diet redesign: nutrition streak (consecutive days with >=1 logged meal).
   nutritionStreak: number;
   longestNutritionStreak: number;
+  // Lifetime count of distinct calendar days the water intake goal was hit —
+  // the real cumulative metric "hydration-week" (target: 7) needs. Feeds
+  // water_intake requirements instead of the same-day hit/miss snapshot the
+  // rest of the app naturally produces (see recordWaterGoalHit).
+  totalWaterGoalDaysHit: number;
+  lastWaterGoalHitDate: string | null;
 
   // Actions
   initialize: (userId: string) => Promise<void>;
@@ -287,6 +331,20 @@ interface AchievementStore {
   updateNutritionStreak: (persistedMealDates?: string[]) => void;
   updateNutritionStreakFromCount: (count: number, longest?: number) => void;
 
+  // Records that the water intake goal was hit "today" (idempotent per local
+  // calendar day) and returns the updated lifetime total. SSOT writer for
+  // totalWaterGoalDaysHit — the only place this counter is incremented.
+  recordWaterGoalHit: (dateStr?: string) => number;
+
+  // Bootstraps totalWaterGoalDaysHit from the Supabase-persisted counter on
+  // init (see waterGoalPersistence). Only ever raises the local value — a
+  // cumulative counter must never regress, so a stale/short cloud read can't
+  // roll back progress already recorded on this device this session.
+  hydrateWaterGoalDaysHitFromCloud: (
+    count: number,
+    dateStr: string | null,
+  ) => void;
+
   // Reset store (for logout)
   reset: () => void;
 }
@@ -348,6 +406,7 @@ export const useAchievementStore = create<AchievementStore>()(
       // Initial State
       isLoading: false,
       isInitialized: false,
+      initError: null,
       achievements: [],
       userAchievements: new Map(),
       unlockedToday: [],
@@ -358,6 +417,8 @@ export const useAchievementStore = create<AchievementStore>()(
       currentStreak: 0,
       nutritionStreak: 0,
       longestNutritionStreak: 0,
+      totalWaterGoalDaysHit: 0,
+      lastWaterGoalHitDate: null,
 
       // Initialize the achievement system
       initialize: async (userId: string) => {
@@ -377,7 +438,7 @@ export const useAchievementStore = create<AchievementStore>()(
           return achievementInitializationPromise;
         }
 
-        set({ isLoading: true });
+        set({ isLoading: true, initError: null });
         initializedAchievementUserId = userId;
 
         // P1-20: remember guest userIds so their earned progress can be
@@ -467,6 +528,20 @@ export const useAchievementStore = create<AchievementStore>()(
               await analyticsDataService.loadNutritionMealDates(userId);
             get().updateNutritionStreak(persistedMealDates);
 
+            // Seed the durable, Supabase-persisted totalWaterGoalDaysHit
+            // counter before any water-triggered achievement check runs.
+            // Local AsyncStorage-only persistence let a reinstall/device
+            // switch silently reset "Water Week" progress to 0 (and, because
+            // checkAchievements overwrites in-progress `progress` on every
+            // check, visibly roll an already-progressed bar backward) — this
+            // closes that gap the same way nutritionStreak is backed above.
+            const persistedWaterGoalDaysHit =
+              await loadWaterGoalDaysHit(userId);
+            get().hydrateWaterGoalDaysHitFromCloud(
+              persistedWaterGoalDaysHit.totalWaterGoalDaysHit,
+              persistedWaterGoalDaysHit.lastWaterGoalHitDate,
+            );
+
             // Workout history is already available here; nutritionStore invokes
             // updateNutritionStreak after its own persisted/remote hydration.
             get().updateCurrentStreak();
@@ -477,7 +552,22 @@ export const useAchievementStore = create<AchievementStore>()(
             get().loadFromSupabase(userId);
           } catch (error) {
             console.error("❌ Error initializing achievement store:", error);
-            set({ isLoading: false });
+            // CRITICAL FIX: isInitialized must still flip to true on a hard
+            // failure. Consumers read isLoading/isInitialized with different
+            // boolean logic (some OR, some AND) — leaving isInitialized false
+            // forever makes one screen spin indefinitely and another render a
+            // misleading "you have zero achievements" empty state. initError
+            // carries the actual failure so a consumer can show a real error
+            // + retry UI instead of overloading isInitialized for both
+            // "not yet loaded" and "failed to load".
+            set({
+              isLoading: false,
+              isInitialized: true,
+              initError:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to load achievements",
+            });
           } finally {
             achievementInitializationPromise = null;
           }
@@ -550,6 +640,23 @@ export const useAchievementStore = create<AchievementStore>()(
           // checkAchievements pass that doesn't re-evaluate this row.
           if (userId) {
             achievementEngine.setUserAchievement(userId, updated);
+
+            // Push to Supabase (fire-and-forget, matching the pattern used
+            // elsewhere in this file) so celebration_shown is durable across
+            // devices/reinstalls. Without this, a stale cloud row's
+            // celebration_shown stays false forever and loadFromSupabase's
+            // merge would otherwise replay the celebration modal for an
+            // achievement the user already dismissed (the merge above now
+            // also OR-guards against that, but the write closes the gap at
+            // the source instead of only masking it on read).
+            achievementDataService
+              .saveUserAchievement(userId, updated)
+              .catch((err) =>
+                console.error(
+                  "[achievementStore] Failed to sync celebrationShown to Supabase:",
+                  err,
+                ),
+              );
           }
         }
       },
@@ -822,6 +929,66 @@ export const useAchievementStore = create<AchievementStore>()(
         }
       },
 
+      // Records a water-goal hit for "today" (local date), incrementing the
+      // lifetime totalWaterGoalDaysHit counter exactly once per distinct
+      // calendar day. Guarded by lastWaterGoalHitDate so a caller invoking
+      // this more than once on the same day (e.g. a re-fired event) can never
+      // double-count. This is the SSOT writer for totalWaterGoalDaysHit —
+      // mirrors the currentStreak/nutritionStreak "one writer" pattern.
+      recordWaterGoalHit: (dateStr?: string) => {
+        const date = dateStr || getLocalDateString(new Date());
+        const state = get();
+        if (state.lastWaterGoalHitDate === date) {
+          return state.totalWaterGoalDaysHit;
+        }
+        const updated = state.totalWaterGoalDaysHit + 1;
+        set({ totalWaterGoalDaysHit: updated, lastWaterGoalHitDate: date });
+
+        // Persist to Supabase (fire-and-forget) so the counter survives
+        // reinstalls / device switches instead of only living in the local
+        // AsyncStorage `persist` middleware — mirrors updateNutritionStreak's
+        // persistNutritionStreaks call, the established pattern in this file
+        // for a cumulative metric that can't be recomputed from a bounded
+        // local window alone.
+        try {
+          const userId = getCurrentUserId();
+          if (userId && !userId.startsWith("guest") && userId !== "local-user") {
+            persistWaterGoalDaysHit(userId, updated, date).catch((err) =>
+              console.error(
+                "[achievementStore] persistWaterGoalDaysHit failed:",
+                err,
+              ),
+            );
+          }
+        } catch (err) {
+          console.error(
+            "[achievementStore] recordWaterGoalHit persist failed:",
+            err,
+          );
+        }
+
+        return updated;
+      },
+
+      // Bootstraps totalWaterGoalDaysHit from the Supabase-persisted counter
+      // (see waterGoalPersistence, called from initialize()). Only raises the
+      // value, never lowers it: the local AsyncStorage-persisted count may
+      // already be ahead of the last cloud write (e.g. the fire-and-forget
+      // push from a previous recordWaterGoalHit hasn't landed yet), and a
+      // cumulative lifetime counter must never visibly regress.
+      hydrateWaterGoalDaysHitFromCloud: (
+        count: number,
+        dateStr: string | null,
+      ) => {
+        const state = get();
+        if (count > state.totalWaterGoalDaysHit) {
+          set({
+            totalWaterGoalDaysHit: count,
+            lastWaterGoalHitDate: dateStr || state.lastWaterGoalHitDate,
+          });
+        }
+      },
+
       // Sync achievements to Supabase for cloud persistence
       syncWithSupabase: async (userId: string) => {
         try {
@@ -913,11 +1080,25 @@ export const useAchievementStore = create<AchievementStore>()(
                 cloudAchievement.isCompleted ||
                 cloudAchievement.progress > (localAchievement.progress || 0)
               ) {
-                mergedAchievements.set(key, cloudAchievement);
+                // celebrationShown is monotonic (once dismissed locally it
+                // must never be un-dismissed) and markCelebrationShown's
+                // Supabase push is fire-and-forget, so a stale cloud row can
+                // legitimately still read celebrationShown:false after the
+                // user already dismissed it locally. OR the two rather than
+                // blindly taking the cloud value so a stale cloud read can
+                // never replay an already-dismissed celebration modal.
+                const merged: UserAchievement = {
+                  ...cloudAchievement,
+                  celebrationShown:
+                    cloudAchievement.celebrationShown ||
+                    localAchievement?.celebrationShown ||
+                    false,
+                };
+                mergedAchievements.set(key, merged);
                 // SSOT: push into the engine's in-memory map too, so the next
                 // checkAchievements pass treats this as already-completed
                 // (idempotency) instead of re-emitting + re-rewarding it.
-                achievementEngine.setUserAchievement(userId, cloudAchievement);
+                achievementEngine.setUserAchievement(userId, merged);
               }
             });
 
@@ -978,7 +1159,6 @@ export const useAchievementStore = create<AchievementStore>()(
         try {
           const fitnessModule = require("./fitnessStore");
           const nutritionModule = require("./nutritionStore");
-          const hydrationModule = require("./hydrationStore");
           const healthModule = require("./healthDataStore");
           const profileModule = require("./profileStore");
           const analyticsModule = require("./analyticsStore");
@@ -986,7 +1166,6 @@ export const useAchievementStore = create<AchievementStore>()(
           const completedSessions: CompletedSession[] =
             fitnessModule.useFitnessStore.getState().completedSessions || [];
           const nutritionState = nutritionModule.useNutritionStore.getState();
-          const hydrationState = hydrationModule.useHydrationStore.getState();
           const healthState = healthModule.useHealthDataStore.getState();
           const bodyAnalysis =
             profileModule.useProfileStore.getState().bodyAnalysis;
@@ -1053,28 +1232,28 @@ export const useAchievementStore = create<AchievementStore>()(
             ).length,
             (nutritionState.dailyMeals || []).length,
           );
-          const waterGoalsHit =
-            hydrationState.dailyGoalML &&
-            hydrationState.waterIntakeML >= hydrationState.dailyGoalML
-              ? 1
-              : 0;
+          // Lifetime cumulative count (see recordWaterGoalHit), not a
+          // same-day boolean — required for "hydration-week" (target: 7) to
+          // be reachable. reconcileWithCurrentData doesn't have a source for
+          // "today's" crossing event (that's fired by hydrationStore.addWater
+          // at threshold-crossing), so it just reads the SSOT counter.
+          const waterGoalsHit = useAchievementStore.getState().totalWaterGoalDaysHit;
           const consistentDays = useAchievementStore.getState().currentStreak;
           const currentWeight = resolveCurrentWeightFromStores({
             bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
           }).value;
           const targetWeight = bodyAnalysis?.target_weight_kg;
           const baselineWeight = weightHistory[0]?.weight ?? currentWeight;
-          const weightGoalAchieved =
-            typeof currentWeight === "number" &&
-            typeof targetWeight === "number" &&
-            typeof baselineWeight === "number"
-              ? Math.abs(currentWeight - targetWeight) <= 0.25 ||
-                (baselineWeight > targetWeight
-                  ? currentWeight <= targetWeight
-                  : baselineWeight < targetWeight
-                    ? currentWeight >= targetWeight
-                    : false)
-              : false;
+          // SSOT fix: call the exported isWeightGoalAchieved (same function
+          // buildAchievementActivityData uses) instead of an inline formula —
+          // the two previously disagreed for identical input, violating
+          // single-source-of-truth for "has the user reached their weight
+          // goal" (see audit).
+          const weightGoalAchieved = isWeightGoalAchieved(
+            currentWeight,
+            targetWeight,
+            baselineWeight,
+          );
 
           await achievementEngine.checkAchievements(userId, {
             totalWorkouts,
@@ -1201,6 +1380,43 @@ export const useAchievementStore = create<AchievementStore>()(
         ) {
           achievementEngine.removeAllListeners();
         }
+
+        // MEDIUM FIX: achievementEngine.userAchievements is a module-level
+        // singleton Map with no exposed clear()/reset() method, so it
+        // otherwise survives logout for the entire JS process lifetime. If
+        // the app re-initializes within the same session under a reused ID
+        // (most plausibly the literal "guest" fallback before authStore's
+        // real per-device guestId populates), the previous session's
+        // unlocked achievements + FitCoins would reappear immediately from
+        // the stale in-memory Map with no Supabase round-trip. The engine
+        // has no delete API, so we neutralize every row it holds for this
+        // session's userId via its existing public setUserAchievement setter
+        // — functionally equivalent to a clear() for that user. Real users'
+        // durable progress is unaffected: it lives in Supabase and is
+        // re-merged in by the next loadFromSupabase on sign-in.
+        if (
+          initializedAchievementUserId &&
+          typeof achievementEngine !== "undefined" &&
+          achievementEngine.getUserAchievementProgress &&
+          achievementEngine.setUserAchievement
+        ) {
+          const staleUserId = initializedAchievementUserId;
+          const staleProgress =
+            achievementEngine.getUserAchievementProgress(staleUserId);
+          staleProgress.forEach((ua, achievementId) => {
+            achievementEngine.setUserAchievement(staleUserId, {
+              ...ua,
+              achievementId,
+              progress: 0,
+              maxProgress: ua.maxProgress,
+              isCompleted: false,
+              unlockedAt: "",
+              celebrationShown: false,
+              fitCoinsEarned: 0,
+            });
+          });
+        }
+
         achievementListenerAttached = false;
         achievementInitializationPromise = null;
         initializedAchievementUserId = null;
@@ -1209,6 +1425,7 @@ export const useAchievementStore = create<AchievementStore>()(
         set({
           isLoading: false,
           isInitialized: false,
+          initError: null,
           achievements: [],
           userAchievements: new Map(),
           unlockedToday: [],
@@ -1219,6 +1436,8 @@ export const useAchievementStore = create<AchievementStore>()(
           currentStreak: 0,
           nutritionStreak: 0,
           longestNutritionStreak: 0,
+          totalWaterGoalDaysHit: 0,
+          lastWaterGoalHitDate: null,
         });
       },
     })),
@@ -1233,6 +1452,8 @@ export const useAchievementStore = create<AchievementStore>()(
         currentStreak: state.currentStreak,
         nutritionStreak: state.nutritionStreak,
         longestNutritionStreak: state.longestNutritionStreak,
+        totalWaterGoalDaysHit: state.totalWaterGoalDaysHit,
+        lastWaterGoalHitDate: state.lastWaterGoalHitDate,
         isInitialized: state.isInitialized,
       }),
       onRehydrateStorage: () => (state) => {
@@ -1264,15 +1485,20 @@ export const trackAchievementActivity = {
   workoutCompleted: (userId: string, workoutData: any) => {
     const fitnessModule = require("./fitnessStore");
     const nutritionModule = require("./nutritionStore");
-    const hydrationModule = require("./hydrationStore");
     const healthModule = require("./healthDataStore");
     const profileModule = require("./profileStore");
+    const analyticsModule = require("./analyticsStore");
     const completedSessions: CompletedSession[] =
       fitnessModule.useFitnessStore.getState().completedSessions || [];
     const nutritionState = nutritionModule.useNutritionStore.getState();
-    const hydrationState = hydrationModule.useHydrationStore.getState();
     const healthState = healthModule.useHealthDataStore.getState();
     const bodyAnalysis = profileModule.useProfileStore.getState().bodyAnalysis;
+    const weightHistory =
+      analyticsModule.useAnalyticsStore.getState().weightHistory || [];
+    const resolvedCurrentWeight = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
+    const baselineWeight = weightHistory[0]?.weight ?? resolvedCurrentWeight;
     const now = new Date();
     const projectedDuration = workoutData.duration || 0;
     const projectedSession: CompletedSession = {
@@ -1294,10 +1520,11 @@ export const trackAchievementActivity = {
       completedSessions: [...completedSessions, projectedSession],
       mealProgress: nutritionState.mealProgress || {},
       dailyMeals: nutritionState.dailyMeals || [],
-      hydrationState,
       healthMetrics: healthState.metrics,
       currentStreak: useAchievementStore.getState().currentStreak,
       bodyAnalysis,
+      baselineWeight,
+      totalWaterGoalDaysHit: useAchievementStore.getState().totalWaterGoalDaysHit,
     });
 
     useAchievementStore.getState().checkProgress(userId, activityData);
@@ -1327,9 +1554,15 @@ export const trackAchievementActivity = {
   },
 
   // Water Activities
+  // HIGH FIX: previously fed a same-instant boolean-ish value
+  // ((goalsHit||0)+1, always evaluating to ~2) as if it were the lifetime
+  // total, making "hydration-week" (target: 7) structurally unreachable.
+  // recordWaterGoalHit is the SSOT lifetime counter (idempotent per calendar
+  // day) — feed its running total instead.
   waterGoalHit: (userId: string, waterData: any) => {
+    const totalDaysHit = useAchievementStore.getState().recordWaterGoalHit();
     const activityData = {
-      waterGoalsHit: (waterData.goalsHit || 0) + 1,
+      waterGoalsHit: totalDaysHit,
       waterIntake: waterData.amount || 0,
     };
 
