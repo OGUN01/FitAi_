@@ -211,6 +211,11 @@ const FREE_FEATURES: FeatureLimits = {
 const EMPTY_USAGE: UsageSummary = deriveUsageFromFeatures(FREE_FEATURES);
 let subscriptionInitializationPromise: Promise<void> | null = null;
 
+// C8-3 boot-grace: how long after an optimistic purchase the boot-time fetch
+// should skip downgrades, to cover a same-session app restart before the
+// Razorpay webhook has been processed server-side.
+const OPTIMISTIC_PURCHASE_GRACE_MS = 2 * 60 * 1000; // 2 minutes
+
 // Track the calendar month in which usage was last reset ("YYYY-MM" format)
 // so we can auto-reset counts at the start of each new billing month.
 function getCurrentMonthKey(): string {
@@ -242,6 +247,11 @@ interface SubscriptionState {
   // Usage reset tracking — persisted to detect a new billing month on restart
   usageResetMonth: string | null;
   usageResetDay: string | null;
+
+  // C8-3 boot-grace: persisted timestamp of the last optimistic purchase, so
+  // a same-second app restart can't undo the optimistic entitlement before
+  // the webhook lands (see initializeSubscription).
+  lastOptimisticPurchaseAt: string | null;
 
   // Actions
   fetchSubscriptionStatus: (options?: {
@@ -296,6 +306,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         paywallReason: null,
         usageResetMonth: null,
         usageResetDay: null,
+        lastOptimisticPurchaseAt: null,
         // ----- Actions -----
 
         fetchSubscriptionStatus: async (options) => {
@@ -345,9 +356,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
               usage = data.usage;
               usageIsFresh = true;
             } else if (shouldResetMonthly) {
-              // New billing month or tier change — reset counts, mark fresh so
-              // features are not blocked while waiting for a dedicated usage endpoint
-              usage = get().usage;
+              // New billing month or tier change — actually zero the counters
+              // (shouldResetDaily is implied whenever shouldResetMonthly is
+              // true, so daily buckets reset too). Previously this copied
+              // get().usage verbatim, which left monthly/daily counts stuck
+              // at their prior values forever — permanently blocking a
+              // free-tier user's 1/month AI generation after they used it once.
+              usage = deriveUsageFromFeatures(features);
               usageIsFresh = true;
             } else {
               // Server omitted usage — keep persisted counts, mark fresh so
@@ -469,11 +484,24 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             // entitlement is periodically rechecked when the user returns to
             // the app (catches cancellations made on another device).
             setupAppFocusRevalidation();
+            // C8-3 boot-grace: if the app was force-quit/restarted within a
+            // short grace window after a fresh optimistic purchase, the
+            // Razorpay webhook may not have landed server-side yet. Without
+            // skipDowngrade, this boot fetch would silently overwrite the
+            // just-purchased currentPlan back to free. Persisted (unlike the
+            // in-session-only guard used by setOptimisticSubscription's other
+            // callers), so it survives the restart itself.
+            const { lastOptimisticPurchaseAt } = get();
+            const withinPurchaseGrace =
+              !!lastOptimisticPurchaseAt &&
+              Date.now() - new Date(lastOptimisticPurchaseAt).getTime() <
+                OPTIMISTIC_PURCHASE_GRACE_MS;
             // P2-12/P0-9: Boot/login path must preserve existing (persisted)
             // subscription state on transient network errors so a paying user
             // is never flipped to free-tier UI by a momentary blip.
             await get().fetchSubscriptionStatus({
               preserveExistingOnError: true,
+              skipDowngrade: withinPurchaseGrace,
             });
             set({ isInitialized: true });
           })().finally(() => {
@@ -620,6 +648,7 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             isLoading: false,
             usageResetMonth: null,
             usageResetDay: null,
+            lastOptimisticPurchaseAt: null,
           });
         },
         setOptimisticSubscription: (snapshot) => {
@@ -641,6 +670,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             currentPeriodEnd: normalizePeriodEnd(snapshot.current_period_end),
             usageResetMonth: currentMonth,
             usageResetDay: currentDay,
+            // C8-3 boot-grace: stamp so a boot fetch shortly after this purchase
+            // (e.g. force-quit right after payment) skips the downgrade guard.
+            lastOptimisticPurchaseAt: new Date().toISOString(),
           });
         },
         applyLifecycleUpdate: ({ status, current_period_end }) => {
@@ -657,6 +689,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
             usageIsFresh: accessContinues,
             currentPeriodEnd: normalizedEnd,
           }));
+          // NOTE: `features` is untouched by the update above. The current
+          // (and only) caller, SubscriptionManagement.tsx, always follows
+          // this call with an immediate `await fetchSubscriptionStatus()`
+          // to re-derive features/usage from the server, so this action
+          // does not duplicate that fetch itself. A future caller that
+          // does not already refetch would need to trigger its own
+          // fetchSubscriptionStatus() after calling this.
         },
       }),
       {
@@ -670,7 +709,13 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           usage: state.usage,
           usageResetMonth: state.usageResetMonth,
           usageResetDay: state.usageResetDay,
-          // features intentionally excluded — always recomputed from server on fetch
+          // Persisted with the same trust model as currentPlan: refreshed on
+          // every successful fetch, but seeded from cache on cold boot so an
+          // offline-boot paying user (currentPlan says premium) doesn't also
+          // see every AI-gated action throw the paywall while features is
+          // still at FREE_FEATURES defaults waiting for the network fetch.
+          features: state.features,
+          lastOptimisticPurchaseAt: state.lastOptimisticPurchaseAt,
           // isInitialized intentionally excluded — must always start false on app restart
         }),
         onRehydrateStorage: () => (state) => {

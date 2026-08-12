@@ -39,6 +39,76 @@ import {
 
 let mealLogsChannel: RealtimeChannel | null = null;
 
+// Serializes the "look up active plan then create/update it" critical
+// section of saveWeeklyMealPlan so two concurrent calls (e.g. a double-tap
+// on "Generate New Plan", or the AI generation completion handler firing
+// twice) can't both see "no active plan" and each queue a distinct CREATE,
+// leaving two "active" rows for the same user. The same in-flight-promise
+// pattern subscriptionStore uses for subscriptionInitializationPromise.
+let saveWeeklyMealPlanLock: Promise<void> = Promise.resolve();
+async function withSaveWeeklyMealPlanLock<T>(fn: () => Promise<T>): Promise<T> {
+  const previous = saveWeeklyMealPlanLock;
+  let release!: () => void;
+  saveWeeklyMealPlanLock = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous.catch(() => {});
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
+/**
+ * Persist meal_logs.is_completed=true to Supabase, and — on failure — queue
+ * it via offlineService so the write is retried instead of silently lost.
+ *
+ * Previously completeMeal/endMealSession each wrapped this update in their
+ * own nested try/catch that only console.error'd on failure and never
+ * reached the outer catch that queues via offlineService. Since mealProgress
+ * is already optimistically set to progress:100 locally before this runs,
+ * a failed write here (with no retry) meant loadData()'s reconciliation
+ * treated Supabase as authoritative and silently reverted the meal to
+ * incomplete on the next reload — with zero retry ever attempted.
+ */
+async function persistMealLogCompletion(logId: string, context: string): Promise<void> {
+  const queueForRetry = async (cause: unknown) => {
+    console.error(
+      `[nutritionStore.${context}] Failed to set meal_logs.is_completed, queuing for offline retry:`,
+      cause
+    );
+    const syncableUserId = getSyncableUserId();
+    if (!syncableUserId) return;
+    try {
+      await offlineService.queueAction({
+        type: 'UPDATE',
+        table: 'meal_logs',
+        data: { id: logId, is_completed: true },
+        userId: syncableUserId,
+        maxRetries: 3,
+      });
+    } catch (queueError) {
+      console.error(
+        `[nutritionStore.${context}] Failed to queue offline retry for meal_logs.is_completed:`,
+        queueError
+      );
+    }
+  };
+
+  try {
+    const { error: completeUpdateError } = await supabase
+      .from('meal_logs')
+      .update({ is_completed: true })
+      .eq('id', logId);
+    if (completeUpdateError) {
+      await queueForRetry(completeUpdateError);
+    }
+  } catch (supabaseErr) {
+    await queueForRetry(supabaseErr);
+  }
+}
+
 function recomputeNutritionStreak(): void {
   try {
     // Lazy resolution keeps achievementStore as the sole streak writer without
@@ -362,65 +432,71 @@ export const useNutritionStore = create<NutritionState>()(
             throw new Error('Invalid plan UUID format');
           }
 
-          let activePlanRowId = plan.databaseId || null;
-          if (!activePlanRowId) {
-            try {
-              const { data: activePlans, error: activePlansError } = await supabase
-                .from('weekly_meal_plans')
-                .select('id')
-                .eq('user_id', userId)
-                .eq('is_active', true)
-                .order('created_at', { ascending: false })
-                .limit(1);
-              if (activePlansError) {
-                console.error(
-                  '[nutritionStore] Failed to look up active meal plan:',
-                  activePlansError
+          // C8-nutrition-race: serialize the "look up active plan, then
+          // create/update it" section so two concurrent saveWeeklyMealPlan
+          // calls can't both see "no active plan" and each queue a distinct
+          // CREATE, leaving two active rows for the same user.
+          await withSaveWeeklyMealPlanLock(async () => {
+            let activePlanRowId = plan.databaseId || null;
+            if (!activePlanRowId) {
+              try {
+                const { data: activePlans, error: activePlansError } = await supabase
+                  .from('weekly_meal_plans')
+                  .select('id')
+                  .eq('user_id', userId)
+                  .eq('is_active', true)
+                  .order('created_at', { ascending: false })
+                  .limit(1);
+                if (activePlansError) {
+                  console.error(
+                    '[nutritionStore] Failed to look up active meal plan:',
+                    activePlansError
+                  );
+                }
+                activePlanRowId = activePlans?.[0]?.id || null;
+              } catch (activePlanLookupError) {
+                console.warn(
+                  'Failed to look up active weekly meal plan before queueing save; falling back to queued create:',
+                  activePlanLookupError
                 );
               }
-              activePlanRowId = activePlans?.[0]?.id || null;
-            } catch (activePlanLookupError) {
-              console.warn(
-                'Failed to look up active weekly meal plan before queueing save; falling back to queued create:',
-                activePlanLookupError
-              );
             }
-          }
 
-          const planRowId = activePlanRowId || planId;
-          const hasConfirmedDatabaseId = Boolean(activePlanRowId || plan.databaseId);
-          const planDataWithDbId = hasConfirmedDatabaseId
-            ? {
-                ...plan,
-                databaseId: activePlanRowId || plan.databaseId,
-              }
-            : plan;
+            const planRowId = activePlanRowId || planId;
+            const hasConfirmedDatabaseId = Boolean(activePlanRowId || plan.databaseId);
+            const planDataWithDbId = hasConfirmedDatabaseId
+              ? {
+                  ...plan,
+                  databaseId: activePlanRowId || plan.databaseId,
+                }
+              : plan;
 
-          set({ weeklyMealPlan: planDataWithDbId });
+            set({ weeklyMealPlan: planDataWithDbId });
 
-          const weeklyMealPlanData = {
-            id: planRowId,
-            user_id: userId,
-            plan_title: planDataWithDbId.planTitle || `Week ${plan.weekNumber} Plan`,
-            plan_description:
-              planDataWithDbId.planDescription || `${plan.meals.length} meals planned`,
-            week_number: plan.weekNumber || 1,
-            total_meals: plan.meals.length,
-            total_calories:
-              planDataWithDbId.totalEstimatedCalories ||
-              plan.meals.reduce((sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0), 0),
-            plan_data: planDataWithDbId, // Store complete plan as JSONB
-            is_active: true,
-          };
+            const weeklyMealPlanData = {
+              id: planRowId,
+              user_id: userId,
+              plan_title: planDataWithDbId.planTitle || `Week ${plan.weekNumber} Plan`,
+              plan_description:
+                planDataWithDbId.planDescription || `${plan.meals.length} meals planned`,
+              week_number: plan.weekNumber || 1,
+              total_meals: plan.meals.length,
+              total_calories:
+                planDataWithDbId.totalEstimatedCalories ||
+                plan.meals.reduce((sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0), 0),
+              plan_data: planDataWithDbId, // Store complete plan as JSONB
+              is_active: true,
+            };
 
-          await offlineService.queueAction({
-            type: activePlanRowId ? 'UPDATE' : 'CREATE',
-            table: 'weekly_meal_plans',
-            data: weeklyMealPlanData,
-            // P1-6: Use the validated syncable userId, not getUserIdOrGuest()
-            // which would fabricate "guest" and be rejected by RLS on every retry.
-            userId,
-            maxRetries: 3,
+            await offlineService.queueAction({
+              type: activePlanRowId ? 'UPDATE' : 'CREATE',
+              table: 'weekly_meal_plans',
+              data: weeklyMealPlanData,
+              // P1-6: Use the validated syncable userId, not getUserIdOrGuest()
+              // which would fabricate "guest" and be rejected by RLS on every retry.
+              userId,
+              maxRetries: 3,
+            });
           });
         } catch (weeklyMealPlanError) {
           console.error('âŒ Failed to save weekly meal plan to database:', weeklyMealPlanError);
@@ -577,23 +653,10 @@ export const useNutritionStore = create<NutritionState>()(
             // Persist completion to Supabase so loadData can restore progress=100
             // (crudOperations.updateMealLog only writes AsyncStorage; the DB column
             // must be updated or reload/other-device sees the meal as incomplete.)
-            try {
-              const { error: completeUpdateError } = await supabase
-                .from('meal_logs')
-                .update({ is_completed: true })
-                .eq('id', logId);
-              if (completeUpdateError) {
-                console.error(
-                  '[nutritionStore.completeMeal] Failed to set meal_logs.is_completed:',
-                  completeUpdateError
-                );
-              }
-            } catch (supabaseErr) {
-              console.error(
-                '[nutritionStore.completeMeal] Supabase is_completed update threw:',
-                supabaseErr
-              );
-            }
+            // On failure this queues an offline retry (see persistMealLogCompletion)
+            // instead of only logging, so the optimistic progress:100 set above
+            // doesn't silently revert on the next loadData() reconciliation.
+            await persistMealLogCompletion(logId, 'completeMeal');
           }
         } catch (error) {
           console.error(`âŒ Failed to complete meal ${mealId}:`, error);
@@ -762,23 +825,9 @@ export const useNutritionStore = create<NutritionState>()(
           // Persist completion to Supabase so loadData can restore progress=100
           // (crudOperations.updateMealLog only writes AsyncStorage; the DB column
           // must be updated or reload/other-device sees the meal as incomplete.)
-          try {
-            const { error: completeUpdateError } = await supabase
-              .from('meal_logs')
-              .update({ is_completed: true })
-              .eq('id', logId);
-            if (completeUpdateError) {
-              console.error(
-                '[nutritionStore.endMealSession] Failed to set meal_logs.is_completed:',
-                completeUpdateError
-              );
-            }
-          } catch (supabaseErr) {
-            console.error(
-              '[nutritionStore.endMealSession] Supabase is_completed update threw:',
-              supabaseErr
-            );
-          }
+          // On failure this queues an offline retry (see persistMealLogCompletion)
+          // instead of only logging.
+          await persistMealLogCompletion(logId, 'endMealSession');
 
           // Complete the meal
           await get().completeMeal(currentSession.mealId, logId);

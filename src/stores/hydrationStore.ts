@@ -282,6 +282,11 @@ export const useHydrationStore = create<HydrationState>()(
 
         if (state.lastResetDate !== today) {
           // It's a new day - reset water intake
+          // Clear the in-flight add accumulator (mirrors reset()) so an
+          // addWater() call still resolving from just before midnight can't
+          // leak yesterday's amount into today's freshly-reset counter via
+          // the post-reset syncWithSupabase's `reconciled = total + pendingAddML`.
+          pendingAddML = 0;
           set({
             waterIntakeML: 0,
             lastResetDate: today,

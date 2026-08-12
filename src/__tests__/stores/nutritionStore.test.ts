@@ -19,6 +19,7 @@ function mockCreateSupabaseQuery(table: string) {
 
   const query: any = {
     select: jest.fn(() => query),
+    update: jest.fn(() => query),
     eq: jest.fn(() => query),
     in: jest.fn(() => query),
     order: jest.fn(() => query),
@@ -35,15 +36,24 @@ function mockCreateSupabaseQuery(table: string) {
   return query;
 }
 
-jest.mock("../../services/crudOperations", () => ({
-  __esModule: true,
-  default: {
+jest.mock("../../services/crudOperations", () => {
+  // The real module exports both `export const crudOperations = ...` and
+  // `export default crudOperations` (same instance). nutritionStore.ts uses
+  // the NAMED import (`import { crudOperations } from '../services/crudOperations'`),
+  // so the mock must expose the same object under both keys or the store's
+  // named-import binding resolves to undefined at runtime.
+  const mockCrudOperations = {
     readMealLogs: (...args: unknown[]) => mockReadMealLogs(...args),
     createMealLog: jest.fn(),
     readMealLog: jest.fn(),
     updateMealLog: jest.fn(),
-  },
-}));
+  };
+  return {
+    __esModule: true,
+    crudOperations: mockCrudOperations,
+    default: mockCrudOperations,
+  };
+});
 
 jest.mock("../../services/offline", () => ({
   offlineService: {
@@ -100,6 +110,8 @@ jest.mock("../../stores/nutrition/legacyScanShadowCleanup", () => ({
 }));
 
 import { useNutritionStore } from "../../stores/nutritionStore";
+import { crudOperations } from "../../services/crudOperations";
+import { offlineService } from "../../services/offline";
 
 describe("nutritionStore SSOT hydration", () => {
   beforeEach(async () => {
@@ -470,5 +482,84 @@ describe("nutritionStore SSOT hydration", () => {
 
     // planError state is set so a future UI subscriber can surface it
     expect(useNutritionStore.getState().planError).toBeTruthy();
+  });
+
+  // Regression for the persistMealLogCompletion offline-retry fix: when the
+  // meal_logs.is_completed Supabase write fails, the failure must be queued
+  // via offlineService.queueAction (not just console.error'd and dropped),
+  // so the optimistically-completed meal isn't silently reverted by the next
+  // loadData() reconciliation.
+  describe("persistMealLogCompletion offline retry (completeMeal / endMealSession)", () => {
+    beforeEach(() => {
+      mockGetCurrentUserId.mockReturnValue("user-1");
+      (crudOperations.readMealLog as jest.Mock).mockResolvedValue({
+        notes: "",
+        syncMetadata: { syncVersion: 0 },
+      });
+      (crudOperations.updateMealLog as jest.Mock).mockResolvedValue(undefined);
+      (offlineService.queueAction as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    it("completeMeal queues an offline retry when the meal_logs Supabase update fails", async () => {
+      queueTableResponse("meal_logs", {
+        data: null,
+        error: { message: "network error" },
+      });
+
+      await useNutritionStore.getState().completeMeal("meal-1", "log-1");
+
+      expect(offlineService.queueAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "UPDATE",
+          table: "meal_logs",
+          data: { id: "log-1", is_completed: true },
+          userId: "user-1",
+        }),
+      );
+      // Optimistic local progress must still be applied even though the
+      // remote write failed and was queued for retry.
+      expect(useNutritionStore.getState().mealProgress["meal-1"]).toMatchObject({
+        progress: 100,
+        logId: "log-1",
+      });
+    });
+
+    it("completeMeal does not queue a retry when the Supabase update succeeds", async () => {
+      queueTableResponse("meal_logs", { data: [{ id: "log-1" }], error: null });
+
+      await useNutritionStore.getState().completeMeal("meal-1", "log-1");
+
+      expect(offlineService.queueAction).not.toHaveBeenCalled();
+    });
+
+    it("endMealSession queues an offline retry when the meal_logs Supabase update fails", async () => {
+      useNutritionStore.setState({
+        currentMealSession: {
+          mealId: "meal-2",
+          ingredients: [],
+        } as any,
+      });
+      // endMealSession calls persistMealLogCompletion directly, then also
+      // calls completeMeal() (which calls it again) — queue two failures.
+      queueTableResponse("meal_logs", {
+        data: null,
+        error: { message: "network error" },
+      });
+      queueTableResponse("meal_logs", {
+        data: null,
+        error: { message: "network error" },
+      });
+
+      await useNutritionStore.getState().endMealSession("log-2");
+
+      expect(offlineService.queueAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "UPDATE",
+          table: "meal_logs",
+          data: { id: "log-2", is_completed: true },
+          userId: "user-1",
+        }),
+      );
+    });
   });
 });

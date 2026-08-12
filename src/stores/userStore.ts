@@ -559,6 +559,19 @@ export const useUserStore = create<UserState>()(
        *
        * @deprecated fitness_goals (fitnessGoals) is legacy and should not be
        * used for completeness checks. workout_preferences is the new system.
+       *
+       * IMPORTANT — `profile` param is a FALLBACK ONLY, not the authoritative
+       * input: whenever profileStore is hydrated (the normal case at runtime),
+       * this reads personalInfo/workoutPreferences from
+       * `useProfileStore.getState()` — the current logged-in user's SSOT —
+       * and ignores the passed-in `profile` entirely. The parameter is only
+       * consulted when profileStore hasn't hydrated yet (early boot/tests).
+       * Callers passing a specific profile object (e.g. `getProfile(userId)`
+       * inspecting a DIFFERENT user's profile than the one currently logged
+       * in) will NOT get that object evaluated — they'll get profileStore's
+       * current-user data instead. Do not rely on this function's return
+       * value reflecting an arbitrary passed-in profile; it reflects the
+       * CURRENT session's profileStore state whenever that's hydrated.
        */
       checkProfileComplete: (profile: UserProfile): boolean => {
         // Guard: Check if profile exists
