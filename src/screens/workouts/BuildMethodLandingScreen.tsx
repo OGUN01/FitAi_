@@ -162,7 +162,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
             accessibilityLabel="Back to workout tab"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="chevron-back" size={rf(24)} color={colors.text} />
+            <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
           </AnimatedPressable>
           <Text style={styles.stepEyebrow}>STEP 1 OF 3</Text>
           <View style={styles.topRowSpacer} />
@@ -321,13 +321,16 @@ const styles = StyleSheet.create({
     paddingVertical: rp(spacing.sm),
   },
   backBtn: {
-    width: rw(44),
-    height: rw(44),
+    // Math.max(rw(40), 44) floors the touch target at 44px — matches the
+    // sibling "flat header" screens (WorkoutHistoryScreen, FullPlanScreen,
+    // TemplateLibraryScreen, ExerciseHistoryScreen).
+    width: Math.max(rw(40), 44),
+    height: Math.max(rw(40), 44),
     alignItems: "center",
     justifyContent: "center",
   },
   topRowSpacer: {
-    width: rw(44),
+    width: Math.max(rw(40), 44),
   },
   stepEyebrow: {
     fontSize: rf(11),

@@ -8,7 +8,7 @@
  *
  * Layout:
  *  - AuroraBackground theme="space"
- *  - Flat header: transparent back circle + workout title + "Start" pill
+ *  - Flat header: transparent back circle + workout title (centered)
  *  - Sticky progress indicator (ProgressRing) — shows completion % when a
  *    session is in-progress (workoutProgress[workout.id].progress)
  *  - Stats bar: volume, calories (MET calc), duration, difficulty
@@ -55,6 +55,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { ProgressRing } from '../../components/ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { GlassHeader } from '../../components/ui/aurora/GlassHeader';
 import { type BarData } from '../../components/ui/GradientBarChart';
 import { BuilderAnalyticsPanel } from '../../components/fitness/builder/BuilderAnalyticsPanel';
 import { useFitnessStore } from '../../stores/fitnessStore';
@@ -478,50 +479,44 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={['top']}>
-        {/* ── Flat header — transparent back circle + plain title + gradient pill ── */}
-        <View style={styles.header}>
-          <AnimatedPressable
-            onPress={handleBack}
-            accessibilityRole="button"
-            accessibilityLabel="Go back to previous screen"
-            style={styles.backBtn}
-            scaleValue={0.9}
-            springConfig="snappy"
-            hapticType="light"
-          >
-            <Ionicons name="chevron-back" size={rf(26)} color={colors.text.primary} />
-          </AnimatedPressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {workout.title || 'Workout'}
-          </Text>
-          <AnimatedPressable
-            onPress={handleStartWorkout}
-            disabled={starting || planned.length === 0}
-            accessibilityRole="button"
-            accessibilityLabel={starting ? 'Starting workout' : 'Start workout'}
-            testID={`${testID ?? 'workout-detail'}-start`}
-            style={[styles.headerStartBtn, (starting || planned.length === 0) && styles.headerStartDisabled]}
-            scaleValue={0.95}
-            springConfig="snappy"
-            hapticType="medium"
-          >
-            <LinearGradient
-              colors={
-                starting
-                  ? [colors.primary.dark, colors.primary.dark]
-                  : [colors.primary.DEFAULT, colors.primary.dark]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.headerStartGradient}
+        {/* Shared Aurora header — back chevron + centered title + Start pill in
+            the rightAction slot. BottomStartBar (below) also offers Start,
+            but it's gated on `!isCompleted`; this header pill has no such
+            gate, so a completed workout still has a restart affordance. */}
+        <GlassHeader
+          title={workout.title || 'Workout'}
+          onBack={handleBack}
+          backAccessibilityLabel="Go back to previous screen"
+          rightAction={
+            <AnimatedPressable
+              onPress={handleStartWorkout}
+              disabled={starting || planned.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel={starting ? 'Starting workout' : 'Start workout'}
+              testID={`${testID ?? 'workout-detail'}-start`}
+              style={[styles.headerStartBtn, (starting || planned.length === 0) && styles.headerStartDisabled]}
+              scaleValue={0.95}
+              springConfig="snappy"
+              hapticType="medium"
             >
-              <Ionicons name="play-circle-outline" size={rf(14)} color={colors.text.primary} />
-              <Text style={styles.headerStartText} numberOfLines={1}>
-                {starting ? 'Starting…' : 'Start'}
-              </Text>
-            </LinearGradient>
-          </AnimatedPressable>
-        </View>
+              <LinearGradient
+                colors={
+                  starting
+                    ? [colors.primary.dark, colors.primary.dark]
+                    : [colors.primary.DEFAULT, colors.primary.dark]
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.headerStartGradient}
+              >
+                <Ionicons name="play-circle-outline" size={rf(14)} color={colors.text.primary} />
+                <Text style={styles.headerStartText} numberOfLines={1}>
+                  {starting ? 'Starting…' : 'Start'}
+                </Text>
+              </LinearGradient>
+            </AnimatedPressable>
+          }
+        />
 
         <ScrollView
           style={styles.scroll}
@@ -1114,32 +1109,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.sm),
   },
-  // Flat header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: rp(spacing.sm),
-    paddingHorizontal: rp(spacing.md),
-    minHeight: rf(52),
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: hexToRgba(colors.text.primary, 0.08),
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.h3),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-    marginHorizontal: rp(spacing.xs),
-  },
+  // Header "Start" pill — rendered in GlassHeader's rightAction slot.
   headerStartBtn: {
     borderRadius: rbr(16),
     overflow: 'hidden',

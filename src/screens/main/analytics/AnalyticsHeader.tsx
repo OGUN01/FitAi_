@@ -4,16 +4,9 @@
  */
 
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-  StatusBar,
-} from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   surface,
   border,
@@ -26,6 +19,7 @@ import { rf } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { useTopSafeAreaInset } from "../../../components/ui/aurora/useTopSafeAreaInset";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
@@ -38,21 +32,15 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   onPeriodChange,
   onProgressPress,
 }) => {
-  const insets = useSafeAreaInsets();
-
   // Top spacing so the title clears the status bar. The wrapping SafeAreaView
   // in AnalyticsScreen owns only the bottom edge (edges={["bottom"]}) — earlier
   // relying on its top edge left the title overlapping the status bar on some
   // devices, so the header is the sole owner of top padding here.
   //
-  // Robustness: useSafeAreaInsets().top can report 0 (e.g. before
-  // SafeAreaProvider measures, or certain Expo Go / device configs), which let
-  // the title render behind the status bar. Fall back to StatusBar.currentHeight
-  // (Android) and a 24px floor so the title always clears the bar even when the
-  // inset is unavailable. Same approach as FitnessHeader.
-  const statusBarHeight =
-    Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0;
-  const topInset = Math.max(insets.top, statusBarHeight, 24);
+  // useTopSafeAreaInset is the single shared source for this fallback formula
+  // (insets.top -> StatusBar.currentHeight -> 24px floor) — FitnessHeader
+  // should use the same hook (see cross-domain follow-up).
+  const topInset = useTopSafeAreaInset();
   const topPadding = topInset + spacing.md;
 
   const getPeriodLabel = () => {
