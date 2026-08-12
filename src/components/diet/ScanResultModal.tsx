@@ -90,7 +90,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
   const acceptDisabled = isLowConfidence && !lowConfidenceAcknowledged;
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           {/* Header */}

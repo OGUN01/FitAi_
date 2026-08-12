@@ -64,7 +64,12 @@ export const FoodScanLoadingOverlay: React.FC<FoodScanLoadingOverlayProps> = ({
   const statusText = getStatusText(elapsedSeconds);
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <AuroraSpinner size="lg" theme="primary" />

@@ -114,7 +114,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
 
   if (!ingredientData) {
     return (
-      <Modal visible={visible} animationType="slide" transparent>
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <TouchableOpacity
@@ -149,6 +149,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
         {/* Header */}
