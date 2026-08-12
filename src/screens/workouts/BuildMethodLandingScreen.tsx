@@ -22,8 +22,8 @@
  *  - Scratch      → navigate("WeeklyBuilder")
  *  - Community    → navigate("TemplateLibrary", { initialTab: "community" })
  *                   (premium lock badge shown when subscriptionStore
- *                   .isPremium() is false; tapping surfaces the paywall
- *                   instead of selecting)
+ *                   .isPremium() is false; tapping surfaces an upgrade
+ *                   alert instead of selecting)
  */
 
 import React, { useState } from "react";
@@ -50,7 +50,6 @@ import { rf, rw, rp } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 import { haptics } from "../../utils/haptics";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
-import { usePaywall } from "../../hooks/usePaywall";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface BuildMethodLandingScreenProps {
@@ -119,18 +118,19 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
   navigation,
 }) => {
   // Defense-in-depth premium gate. The Community row is locked for free-tier
-  // users — tapping it surfaces the paywall via usePaywall().triggerPaywall()
-  // instead of selecting. Unlocked rows select normally.
+  // users — tapping it surfaces an upgrade alert instead of selecting.
+  // Unlocked rows select normally.
   const isPremium = useSubscriptionStore((s) => s.isPremium());
-  const { triggerPaywall } = usePaywall();
   const [selectedId, setSelectedId] = useState<BuildMethodId | null>(null);
 
   const handleSelect = (method: BuildMethod) => {
     haptics.buttonPress();
     if (method.id === "community" && !isPremium) {
-      // Free-tier user tapped the locked Community row — surface the paywall
-      // instead of selecting.
-      triggerPaywall("community_templates");
+      // Free-tier user tapped the locked Community row — surface the upgrade
+      // path via the alert below. This screen doesn't mount <PaywallModal>,
+      // so triggerPaywall() must not be called here — it would only leave
+      // global paywall state (showPaywall/paywallReason) dangling until the
+      // user next visits a screen that does render the modal.
       crossPlatformAlert(
         "Premium feature",
         "Import community templates is available with a Premium subscription. Upgrade to browse, fork, and rate community templates.",

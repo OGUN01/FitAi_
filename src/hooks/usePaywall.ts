@@ -321,7 +321,7 @@ export const usePaywall = () => {
       if (!isMountedRef.current) return true;
       dismiss();
       crossPlatformAlert(
-        "🎉 Welcome to Premium!",
+        "Welcome to Premium!",
         "Your subscription is now active. Enjoy all premium features!",
         [{ text: "Get Started" }],
       );

@@ -167,15 +167,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     opacity: interpolate(translateY.value, [0, DISMISS_THRESHOLD], [1, 0.4]),
   }));
 
-  return (
-    <RNModal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={handleClose}
-      testID={testID}
-      statusBarTranslucent
-    >
+  const sheetBody = (
       <GestureHandlerRootView style={styles.gestureRoot}>
         {/* Animated backdrop. */}
         <Pressable
@@ -261,6 +253,30 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           </GlassCard>
         </Animated.View>
       </GestureHandlerRootView>
+  );
+
+  // Web scrim-layering fix (mirrors CustomDialog.tsx's DialogShell): RN's
+  // <Modal> portals into a body-level wrapper with z-index:auto on
+  // react-native-web, so other in-app elements with zIndex>0 (RestTimer,
+  // achievement toasts, builder chrome) can paint above a plain
+  // Modal-based overlay. On web, bypass RNModal in favor of a fixed,
+  // zIndex.modal wrapper; native keeps the real Modal (hardware back,
+  // accessibility, hidden-until-shown a11y tree).
+  if (Platform.OS === "web") {
+    if (!visible) return null;
+    return <View style={styles.webScrim}>{sheetBody}</View>;
+  }
+
+  return (
+    <RNModal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
+      testID={testID}
+      statusBarTranslucent
+    >
+      {sheetBody}
     </RNModal>
   );
 };
@@ -269,6 +285,16 @@ const styles = StyleSheet.create({
   gestureRoot: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  // Web-only (see the Platform.OS === "web" branch above). RN's ViewStyle
+  // lacks 'fixed' — react-native-web passes it through to CSS untouched.
+  webScrim: {
+    position: "fixed" as unknown as ViewStyle["position"],
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: zIndex.modal,
   },
   backdrop: {
     position: "absolute",

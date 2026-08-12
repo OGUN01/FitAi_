@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import {
   flatColors as colors,
   spacing,
@@ -495,11 +496,15 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                       style={styles.actionButton}
                       disabled={actionLoading !== null}
                     >
-                      <Ionicons
-                        name="pause-circle-outline"
-                        size={rf(20)}
-                        color={colors.warningAlt}
-                      />
+                      {actionLoading === "pause" ? (
+                        <AuroraSpinner customSize={rf(20)} theme="white" />
+                      ) : (
+                        <Ionicons
+                          name="pause-circle-outline"
+                          size={rf(20)}
+                          color={colors.warningAlt}
+                        />
+                      )}
                       <Text style={styles.actionText}>
                         {actionLoading === "pause"
                           ? "Pausing..."
@@ -512,11 +517,15 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                       style={[styles.actionButton, styles.destructiveButton]}
                       disabled={actionLoading !== null}
                     >
-                      <Ionicons
-                        name="close-circle-outline"
-                        size={rf(20)}
-                        color={colors.errorAlt}
-                      />
+                      {actionLoading === "cancel" ? (
+                        <AuroraSpinner customSize={rf(20)} theme="white" />
+                      ) : (
+                        <Ionicons
+                          name="close-circle-outline"
+                          size={rf(20)}
+                          color={colors.errorAlt}
+                        />
+                      )}
                       <Text style={[styles.actionText, styles.destructiveText]}>
                         {actionLoading === "cancel"
                           ? "Cancelling..."
@@ -532,11 +541,15 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                     style={[styles.actionButton, styles.resumeButton]}
                     disabled={actionLoading !== null}
                   >
-                    <Ionicons
-                      name="play-circle-outline"
-                      size={rf(20)}
-                      color={colors.successAlt}
-                    />
+                    {actionLoading === "resume" ? (
+                      <AuroraSpinner customSize={rf(20)} theme="white" />
+                    ) : (
+                      <Ionicons
+                        name="play-circle-outline"
+                        size={rf(20)}
+                        color={colors.successAlt}
+                      />
+                    )}
                     <Text style={[styles.actionText, { color: colors.successAlt }]}>
                       {actionLoading === "resume"
                         ? "Resuming..."
@@ -707,7 +720,7 @@ const styles = StyleSheet.create({
     backgroundColor: surface[1],
     borderWidth: 1,
     borderColor: border.subtle,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.card,
   },
 
   // Plan section

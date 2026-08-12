@@ -28,6 +28,7 @@ import {
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { usePaywall } from "../../hooks/usePaywall";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
 import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
@@ -39,6 +40,7 @@ import {
   GlassHeader,
 } from "../../components/ui/aurora";
 import { CommunityTemplatesTab } from "../../components/fitness/builder/CommunityTemplatesTab";
+import PaywallModal from "../../components/subscription/PaywallModal";
 import {
   getBookmarks,
   toggleBookmark,
@@ -190,6 +192,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   // WorkoutSessionScreen's selector — see that screen for the canonical read).
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const isPremium = useSubscriptionStore((s) => s.isPremium());
+  const { triggerPaywall, showPaywall, paywallReason, dismiss } = usePaywall();
 
   const userWeightKg = bodyAnalysis?.current_weight_kg ?? null;
 
@@ -911,8 +914,9 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 ctaText="Upgrade"
                 onCta={() => {
                   haptics.light();
-                  // Navigate to profile where the upgrade flow lives.
-                  navigation.navigate("Profile");
+                  triggerPaywall(
+                    "Upgrade to browse, fork, and rate community workout templates",
+                  );
                 }}
               />
             </View>
@@ -1057,6 +1061,16 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
           />
         </Suspense>
       ) : null}
+
+      {/* PaywallModal is NOT mounted globally (only DietScreen +
+          SubscriptionManagement + AnalyticsScreen mount it) — without this
+          local mount the Community tab's Upgrade CTA would set showPaywall
+          in the store but render nothing on this screen. */}
+      <PaywallModal
+        visible={showPaywall}
+        onClose={dismiss}
+        reason={paywallReason ?? undefined}
+      />
     </AuroraBackground>
   );
 }

@@ -32,6 +32,15 @@ jest.mock("react-native", () => {
     SafeAreaView: ({ children, ...props }: any) =>
       RealReact.createElement("View", props, children),
     ActivityIndicator: () => null,
+    // BottomSheet (mounted unconditionally via PaywallModal at the screen
+    // root, per the bottom-sheet-modal-sweep cycle) uses Modal +
+    // KeyboardAvoidingView regardless of `visible` — sheetBody's JSX is
+    // constructed on every render, and the native branch always wraps it in
+    // <Modal>. Matches the MockModal pattern in DietScreen.barcodeWeakData.test.tsx.
+    Modal: ({ visible = true, children, ...props }: any) =>
+      visible ? RealReact.createElement("Modal", props, children) : null,
+    KeyboardAvoidingView: ({ children, ...props }: any) =>
+      RealReact.createElement("KeyboardAvoidingView", props, children),
     StyleSheet: {
       create: (s: any) => s,
       flatten: (style: any) =>
@@ -58,6 +67,40 @@ jest.mock("../../../stores/subscriptionStore", () => ({
     const state = { isPremium: () => false };
     return selector ? selector(state) : state;
   },
+}));
+
+// PaywallModal (now mounted unconditionally at TemplateLibraryScreen's root)
+// reads useAuthStore. The real store uses zustand/persist against
+// AsyncStorage, which rehydrates asynchronously after mount and can update
+// state after this test's render/cleanup window — mocked out for the same
+// live-async-store reason as profileStore/subscriptionStore above.
+jest.mock("../../../stores/authStore", () => ({
+  useAuthStore: (selector?: (state: any) => any) => {
+    const state = { isAuthenticated: false };
+    return selector ? selector(state) : state;
+  },
+}));
+
+// TemplateLibraryScreen now mounts <PaywallModal> at its root and calls
+// usePaywall() unconditionally to gate the Community tab. The real hook
+// fires a live Supabase fetch on mount — mocked out here for the same
+// reason as profileStore/subscriptionStore above (no live Supabase call).
+jest.mock("../../../hooks/usePaywall", () => ({
+  usePaywall: () => ({
+    isLoading: false,
+    showPaywall: false,
+    paywallReason: null,
+    currentPlan: null,
+    plans: [],
+    plansSource: "fallback",
+    planLoadError: null,
+    usage: null,
+    subscribe: jest.fn(),
+    dismiss: jest.fn(),
+    reloadPlans: jest.fn(),
+    triggerPaywall: jest.fn(),
+    planFeaturesByTier: {},
+  }),
 }));
 
 // expo-linear-gradient + reanimated are not part of the minimal RN mock above.
@@ -100,6 +143,7 @@ jest.mock("react-native-reanimated", () => {
     createAnimatedComponent: (Comp: any) => Comp,
     FadeIn: chainable,
     FadeInDown: chainable,
+    FadeInUp: chainable,
     Easing,
     // Hooks used by Aurora primitives at module-eval/render time. All no-ops
     // in the node test env — they return stubs so the components render

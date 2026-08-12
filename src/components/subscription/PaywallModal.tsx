@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
-  Modal,
   ScrollView,
   Pressable,
   StyleSheet,
@@ -15,6 +14,9 @@ import { rf, rp, rh, rbr } from "../../utils/responsive";
 import { getPaywallPrimaryLabel, TIER_FEATURES } from "../../utils/subscriptionUi";
 import { useAuthStore } from "../../stores/authStore";
 import { GlassButton } from "../ui/aurora/GlassButton";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
+import { SlidingSegmentedControl } from "../ui/aurora/SlidingSegmentedControl";
+import { SkeletonLoader } from "../ui/aurora/SkeletonLoader";
 import PlanCard from "./paywall/PlanCard";
 import TrustRow from "./paywall/TrustRow";
 import haptics from "../../utils/haptics";
@@ -139,273 +141,223 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     isCurrentPlan: selectedIsCurrentPlan,
   });
 
-  if (!visible) return null;
-
   return (
-    <Modal
-      transparent
+    <BottomSheet
       visible={visible}
-      animationType="slide"
-      onRequestClose={handleDismiss}
-      statusBarTranslucent
+      onClose={handleDismiss}
+      showCloseButton={false}
+      contentStyle={styles.content}
+      testID="paywall-sheet"
     >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          {/* ── Aurora Header ─────────────────────────────── */}
-          <View style={styles.header}>
-            <View style={styles.heroRow}>
-              <View style={styles.crownBadge}>
-                <Ionicons name="diamond" size={rf(26)} color={colors.primaryLight} />
-              </View>
-
-              <View style={styles.headerTextWrap}>
-                <Text style={styles.headerTitle}>Go Premium</Text>
-                <Text style={styles.headerSubtitle}>
-                  Unlock the full FitAI experience
-                </Text>
-              </View>
-
-              <Pressable
-                onPress={handleDismiss}
-                accessibilityRole="button"
-                accessibilityLabel="Close paywall"
-                accessibilityHint="Dismisses the subscription screen"
-                style={styles.closeBtn}
-              >
-                <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
-              </Pressable>
-            </View>
-
-            {displayReason ? (
-              <Animated.View entering={FadeIn.duration(200)} style={styles.reasonRow}>
-                <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primaryLight} />
-                <Text style={styles.headerReason}>{displayReason}</Text>
-              </Animated.View>
-            ) : null}
+      {/* ── Aurora Header — custom (not BottomSheet's default title row) so
+          the Manrope font/typography and the "Go Premium" visual identity
+          are preserved, per the AdjustmentWizard.tsx pattern. ── */}
+      <View style={styles.header}>
+        <View style={styles.heroRow}>
+          <View style={styles.crownBadge}>
+            <Ionicons name="diamond" size={rf(26)} color={colors.primaryLight} />
           </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={styles.scrollArea}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {/* ── Banners ─────────────────────────────────── */}
-            {plansUnavailable && didAttemptLoad && (
-              <Animated.View entering={FadeInUp.duration(250)} style={styles.warningBanner}>
-                <Ionicons name="cloud-offline-outline" size={rf(18)} color={colors.errorLight} style={styles.bannerIcon} />
-                <View style={styles.bannerTextWrap}>
-                  <Text style={styles.warningBannerTitle}>Plans unavailable</Text>
-                  <Text style={styles.warningBannerText}>
-                    {planLoadError ??
-                      "We couldn't load live pricing right now. Please try again in a moment."}
-                  </Text>
-                  <Pressable
-                    onPress={() => { haptics.light(); reloadPlans(); }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Retry loading plans"
-                    style={styles.bannerRetryBtn}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={styles.bannerRetryText}>Retry</Text>
-                  </Pressable>
-                </View>
-              </Animated.View>
-            )}
-
-            {!isAuthenticated && (
-              <Animated.View entering={FadeInUp.duration(250)} style={styles.authBanner}>
-                <Ionicons name="person-circle-outline" size={rf(18)} color={colors.blue} style={styles.bannerIcon} />
-                <View style={styles.bannerTextWrap}>
-                  <Text style={styles.authBannerTitle}>Sign in required</Text>
-                  <Text style={styles.authBannerText}>
-                    Compare plans freely — sign in only when you're ready to subscribe.
-                  </Text>
-                </View>
-              </Animated.View>
-            )}
-
-            {/* ── Billing Toggle ──────────────────────────── */}
-            <View style={styles.toggleRow}>
-              <Pressable
-                onPress={() => { haptics.selection(); setBillingCycle("monthly"); setSelectedPlanId(null); }}
-                accessibilityRole="button"
-                accessibilityLabel="Monthly billing"
-                accessibilityState={{ selected: billingCycle === "monthly" }}
-                style={[
-                  styles.toggleBtn,
-                  billingCycle === "monthly" && styles.toggleBtnActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    billingCycle === "monthly" && styles.toggleTextActive,
-                  ]}
-                >
-                  Monthly
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => { haptics.selection(); setBillingCycle("yearly"); setSelectedPlanId(null); }}
-                accessibilityRole="button"
-                accessibilityLabel="Yearly billing"
-                accessibilityState={{ selected: billingCycle === "yearly" }}
-                style={[
-                  styles.toggleBtn,
-                  billingCycle === "yearly" && styles.toggleBtnActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.toggleText,
-                    billingCycle === "yearly" && styles.toggleTextActive,
-                  ]}
-                >
-                  Yearly
-                </Text>
-                {yearlySavingsLabel && (
-                  <View style={styles.savingsBadge}>
-                    <Text style={styles.savingsBadgeText}>{yearlySavingsLabel}</Text>
-                  </View>
-                )}
-              </Pressable>
-            </View>
-
-            {/* ── Plans Skeleton (initial load) ───────────── */}
-            {isInitialLoading ? (
-              <View style={styles.skeletonWrap} accessibilityLabel="Loading plans">
-                <View style={[styles.skeletonCard, { height: rh(170) }]} />
-                <View style={[styles.skeletonCard, { height: rh(190) }]} />
-              </View>
-            ) : (
-              /* ── Plan Cards ────────────────────────────── */
-              <View style={styles.plansList}>
-                {/* Free tier (static) */}
-                <PlanCard
-                  key="free"
-                  index={0}
-                  isStatic
-                  name="Free Plan"
-                  pricePerMonth={0}
-                  billingCycle="monthly"
-                  features={planFeaturesByTier.free ?? TIER_FEATURES.free ?? []}
-                  isSelected={false}
-                  isCurrent={isCurrentPlan("free")}
-                  onSelect={() => {}}
-                />
-
-                {displayPlans.map((plan, i) => {
-                  if (!plan) return null;
-                  const isSelected = effectiveSelectedId === plan.id;
-                  const isCurrent = isCurrentPlan(plan.tier, plan.billing_cycle);
-                  const features =
-                    planFeaturesByTier[plan.tier] ??
-                    TIER_FEATURES[plan.tier] ??
-                    [];
-                  const isPro = plan.tier === "pro";
-                  const badgeLabel = isPro
-                    ? billingCycle === "yearly" && yearlySavingsLabel
-                      ? "BEST VALUE"
-                      : "MOST POPULAR"
-                    : undefined;
-
-                  return (
-                    <PlanCard
-                      key={plan.id}
-                      index={i + 1}
-                      name={plan.name}
-                      pricePerMonth={plan.price_monthly}
-                      billingCycle={plan.billing_cycle}
-                      features={features}
-                      isSelected={isSelected}
-                      isCurrent={isCurrent}
-                      recommended={isPro && !isCurrent}
-                      badgeLabel={isCurrent ? undefined : badgeLabel}
-                      monthlyOnly={billingCycle === "yearly" && plan.billing_cycle === "monthly"}
-                      onSelect={() => { haptics.selection(); setSelectedPlanId(plan.id); }}
-                    />
-                  );
-                })}
-              </View>
-            )}
-
-            {/* ── Trust row ───────────────────────────────── */}
-            {!isInitialLoading && (
-              <Animated.View entering={FadeIn.duration(300)} style={styles.trustWrap}>
-                <TrustRow />
-              </Animated.View>
-            )}
-          </ScrollView>
-
-          {/* ── Bottom Actions ────────────────────────────── */}
-          <View style={styles.actions}>
-            <GlassButton
-              label={subscribeLabel}
-              onPress={handleSubscribe}
-              variant="primary"
-              fullWidth
-              loading={isLoading}
-              disabled={
-                !effectiveSelectedId ||
-                plansUnavailable ||
-                isInitialLoading ||
-                selectedIsCurrentPlan
-              }
-              accessibilityLabel={subscribeLabel}
-              style={styles.subscribeBtn}
-            />
-
-            {/* Legal auto-renew disclosure only — the trust phrases
-                (secure/cancel/auto-renew) are already shown by TrustRow. */}
-            <Text style={styles.termsText}>
-              Recurring billing: your subscription renews automatically each
-              period until you cancel it from Profile → Subscription.
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.headerTitle}>Go Premium</Text>
+            <Text style={styles.headerSubtitle}>
+              Unlock the full FitAI experience
             </Text>
           </View>
+
+          <Pressable
+            onPress={handleDismiss}
+            accessibilityRole="button"
+            accessibilityLabel="Close paywall"
+            accessibilityHint="Dismisses the subscription screen"
+            style={styles.closeBtn}
+          >
+            <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
+          </Pressable>
         </View>
+
+        {displayReason ? (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.reasonRow}>
+            <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primaryLight} />
+            <Text style={styles.headerReason}>{displayReason}</Text>
+          </Animated.View>
+        ) : null}
       </View>
-    </Modal>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* ── Banners ─────────────────────────────────── */}
+        {plansUnavailable && didAttemptLoad && (
+          <Animated.View entering={FadeInUp.duration(250)} style={styles.warningBanner}>
+            <Ionicons name="cloud-offline-outline" size={rf(18)} color={colors.errorLight} style={styles.bannerIcon} />
+            <View style={styles.bannerTextWrap}>
+              <Text style={styles.warningBannerTitle}>Plans unavailable</Text>
+              <Text style={styles.warningBannerText}>
+                {planLoadError ??
+                  "We couldn't load live pricing right now. Please try again in a moment."}
+              </Text>
+              <Pressable
+                onPress={() => { haptics.light(); reloadPlans(); }}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading plans"
+                style={styles.bannerRetryBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.bannerRetryText}>Retry</Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        )}
+
+        {!isAuthenticated && (
+          <Animated.View entering={FadeInUp.duration(250)} style={styles.authBanner}>
+            <Ionicons name="person-circle-outline" size={rf(18)} color={colors.blue} style={styles.bannerIcon} />
+            <View style={styles.bannerTextWrap}>
+              <Text style={styles.authBannerTitle}>Sign in required</Text>
+              <Text style={styles.authBannerText}>
+                Compare plans freely — sign in only when you're ready to subscribe.
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* ── Billing Toggle ──────────────────────────── */}
+        <View style={styles.toggleWrap}>
+          <SlidingSegmentedControl
+            options={[
+              { id: "monthly", label: "Monthly" },
+              { id: "yearly", label: "Yearly" },
+            ]}
+            selectedId={billingCycle}
+            onSelect={(id) => {
+              setBillingCycle(id as "monthly" | "yearly");
+              setSelectedPlanId(null);
+            }}
+            variant="flat"
+            style={styles.toggleRow}
+            testIDPrefix="paywall-billing-toggle"
+          />
+          {/* "Save X%" pill floats over the Yearly (right) segment — the
+              shared control's options don't carry a child badge natively. */}
+          {yearlySavingsLabel && (
+            <View style={styles.savingsBadge} pointerEvents="none">
+              <Text style={styles.savingsBadgeText}>{yearlySavingsLabel}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ── Plans Skeleton (initial load) ───────────── */}
+        {isInitialLoading ? (
+          <View style={styles.skeletonWrap} accessibilityLabel="Loading plans">
+            <SkeletonLoader variant="card" height={rh(170)} borderRadius={rbr(16)} />
+            <SkeletonLoader variant="card" height={rh(190)} borderRadius={rbr(16)} />
+          </View>
+        ) : (
+          /* ── Plan Cards ────────────────────────────── */
+          <View style={styles.plansList}>
+            {/* Free tier (static) */}
+            <PlanCard
+              key="free"
+              index={0}
+              isStatic
+              name="Free Plan"
+              pricePerMonth={0}
+              billingCycle="monthly"
+              features={planFeaturesByTier.free ?? TIER_FEATURES.free ?? []}
+              isSelected={false}
+              isCurrent={isCurrentPlan("free")}
+              onSelect={() => {}}
+            />
+
+            {displayPlans.map((plan, i) => {
+              if (!plan) return null;
+              const isSelected = effectiveSelectedId === plan.id;
+              const isCurrent = isCurrentPlan(plan.tier, plan.billing_cycle);
+              const features =
+                planFeaturesByTier[plan.tier] ??
+                TIER_FEATURES[plan.tier] ??
+                [];
+              const isPro = plan.tier === "pro";
+              const badgeLabel = isPro
+                ? billingCycle === "yearly" && yearlySavingsLabel
+                  ? "BEST VALUE"
+                  : "MOST POPULAR"
+                : undefined;
+
+              return (
+                <PlanCard
+                  key={plan.id}
+                  index={i + 1}
+                  name={plan.name}
+                  pricePerMonth={plan.price_monthly}
+                  billingCycle={plan.billing_cycle}
+                  features={features}
+                  isSelected={isSelected}
+                  isCurrent={isCurrent}
+                  recommended={isPro && !isCurrent}
+                  badgeLabel={isCurrent ? undefined : badgeLabel}
+                  monthlyOnly={billingCycle === "yearly" && plan.billing_cycle === "monthly"}
+                  onSelect={() => { haptics.selection(); setSelectedPlanId(plan.id); }}
+                />
+              );
+            })}
+          </View>
+        )}
+
+        {/* ── Trust row ───────────────────────────────── */}
+        {!isInitialLoading && (
+          <Animated.View entering={FadeIn.duration(300)} style={styles.trustWrap}>
+            <TrustRow />
+          </Animated.View>
+        )}
+      </ScrollView>
+
+      {/* ── Bottom Actions ────────────────────────────── */}
+      <View style={styles.actions}>
+        <GlassButton
+          label={subscribeLabel}
+          onPress={handleSubscribe}
+          variant="primary"
+          fullWidth
+          loading={isLoading}
+          disabled={
+            !effectiveSelectedId ||
+            plansUnavailable ||
+            isInitialLoading ||
+            selectedIsCurrentPlan
+          }
+          accessibilityLabel={subscribeLabel}
+          style={styles.subscribeBtn}
+        />
+
+        {/* Legal auto-renew disclosure only — the trust phrases
+            (secure/cancel/auto-renew) are already shown by TrustRow. */}
+        <Text style={styles.termsText}>
+          Recurring billing: your subscription renews automatically each
+          period until you cancel it from Profile → Subscription.
+        </Text>
+      </View>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlayDark,
-    justifyContent: "flex-end",
-  },
-  container: {
-    backgroundColor: colors.backgroundSecondary,
-    borderTopLeftRadius: rbr(24),
-    borderTopRightRadius: rbr(24),
-    // Constrain to the viewport: the old rh(2208) cap (~1813px on a 700px web
-    // viewport) let tall content push the header — and its "Close paywall"
-    // button — above the visible area (overlay aligns to flex-end). A
-    // percentage cap keeps the sheet inside the window on every platform and
-    // lets scrollArea flex + scroll within it.
-    maxHeight: "94%",
-    minHeight: rh(420),
-    // WEB/TABLET: mirror App.tsx's appColumn 480px phone-width column — this
-    // Modal portals outside that wrapper, so without a cap the sheet
-    // stretches edge-to-edge on wide viewports. No-op on phones (width is
-    // already under 480 there).
-    width: "100%",
-    maxWidth: 480,
-    alignSelf: "center",
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: border.subtle,
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
+  // BottomSheet already supplies the sheet surface (GlassCard), backdrop
+  // fade, drag-to-dismiss, and safe-area padding — this sheet's own
+  // header/scrollArea/actions carry their own horizontal padding below, so
+  // BottomSheet's default content padding is zeroed out here.
+  content: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
 
   /* Header */
   header: {
     paddingHorizontal: rp(16),
-    paddingTop: rp(18),
+    paddingTop: rp(2),
     paddingBottom: rp(14),
     borderBottomWidth: 1,
     borderBottomColor: border.subtle,
@@ -471,6 +423,12 @@ const styles = StyleSheet.create({
   scrollArea: {
     flex: 1,
     minHeight: 200,
+    // Explicit cap (mirrors SearchSheet.tsx's `list` style) so the scroll
+    // region has a deterministic bound instead of depending on BottomSheet's
+    // ancestor maxHeight propagating through an unconstrained flex chain —
+    // this content is taller (banners + 2 plan cards + trust row) than the
+    // other BottomSheet consumers audited alongside this one.
+    maxHeight: rh(460),
   },
   scrollContent: {
     paddingHorizontal: rp(16),
@@ -539,37 +497,18 @@ const styles = StyleSheet.create({
   },
 
   /* Toggle */
-  toggleRow: {
-    flexDirection: "row",
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: rbr(12),
-    padding: rp(4),
+  toggleWrap: {
+    position: "relative",
     marginTop: rp(16),
     marginBottom: rp(20),
   },
-  toggleBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: rp(10),
-    borderRadius: rbr(8),
-  },
-  toggleBtnActive: {
-    backgroundColor: colors.backgroundSecondary,
-    boxShadow: "0px 1px 2px rgba(0,0,0,0.3)",
-    elevation: 2,
-  },
-  toggleText: {
-    fontSize: rf(14),
-    fontWeight: "600",
-    color: colors.textSecondary,
-  },
-  toggleTextActive: {
-    color: colors.text,
+  toggleRow: {
+    width: "100%",
   },
   savingsBadge: {
-    marginLeft: rp(6),
+    position: "absolute",
+    top: -rp(8),
+    right: rp(4),
     backgroundColor: colors.successTint,
     borderRadius: rbr(4),
     paddingHorizontal: rp(6),
@@ -590,12 +529,6 @@ const styles = StyleSheet.create({
   skeletonWrap: {
     gap: rp(14),
   },
-  skeletonCard: {
-    borderRadius: rbr(16),
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: border.subtle,
-  },
 
   /* Trust */
   trustWrap: {
@@ -606,10 +539,9 @@ const styles = StyleSheet.create({
   actions: {
     paddingHorizontal: rp(16),
     paddingTop: rp(14),
-    paddingBottom: rp(20),
+    paddingBottom: rp(6),
     borderTopWidth: 1,
     borderTopColor: border.subtle,
-    backgroundColor: colors.backgroundSecondary,
   },
   subscribeBtn: {
     marginBottom: rp(10),
