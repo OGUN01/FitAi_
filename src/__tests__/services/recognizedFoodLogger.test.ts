@@ -66,6 +66,13 @@ describe("recognizedFoodLogger", () => {
     });
   });
 
+  afterEach(() => {
+    // jest.clearAllMocks() does not restore spyOn()'d implementations —
+    // without this, the createOrFindFoods spy below would leak into later
+    // tests and silently skip the real implementation they exercise.
+    jest.restoreAllMocks();
+  });
+
   it("preserves fiber while omitting secondary micronutrients for estimated meal-photo logs", async () => {
     await recognizedFoodLogger.logRecognizedFoods(
       "user-1",
@@ -183,7 +190,7 @@ describe("recognizedFoodLogger", () => {
         {
           recognizedFood: baseFood,
           databaseFoodId: "catalog-food-1",
-          isNewFood: true,
+          isNewFood: false,
         },
       ]);
 
@@ -205,13 +212,83 @@ describe("recognizedFoodLogger", () => {
       },
     );
 
-    expect(createOrFindFoodsSpy).toHaveBeenCalledWith([baseFood]);
+    expect(createOrFindFoodsSpy).toHaveBeenCalledWith("user-1", [baseFood]);
     expect(nutritionDataService.logMeal).toHaveBeenCalledWith(
       "user-1",
       expect.objectContaining({
         foods: [
           expect.objectContaining({
             food_id: "catalog-food-1",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("submits a brand-new food to the moderated contributions queue, not the foods table, and leaves food_id unset", async () => {
+    const { supabase } = jest.requireMock("../../services/supabase");
+    const insertMock = jest.fn(() => ({
+      select: jest.fn(() => ({
+        single: jest.fn(() =>
+          Promise.resolve({ data: { id: "contribution-1" }, error: null }),
+        ),
+      })),
+    }));
+    supabase.from.mockImplementation((table: string) => {
+      if (table === "user_food_contributions") {
+        return { insert: insertMock };
+      }
+      // findExistingFood: no catalog match.
+      return {
+        select: jest.fn(() => ({
+          eq: jest.fn(() => ({
+            limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
+          })),
+          ilike: jest.fn(() => ({
+            limit: jest.fn(() => Promise.resolve({ data: [], error: null })),
+          })),
+        })),
+        insert: jest.fn(() => ({
+          select: jest.fn(() => ({
+            single: jest.fn(() =>
+              Promise.resolve({ data: null, error: null }),
+            ),
+          })),
+        })),
+      };
+    });
+
+    await recognizedFoodLogger.logRecognizedFoods(
+      "user-1",
+      [baseFood],
+      "lunch",
+      undefined,
+      {
+        provenance: {
+          mode: "meal_photo",
+          truthLevel: "estimated",
+          confidence: 84,
+          countryContext: "IN",
+          requiresReview: true,
+          source: "food-recognition",
+        },
+        persistCatalogFoods: true,
+      },
+    );
+
+    expect(supabase.from).toHaveBeenCalledWith("user_food_contributions");
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-1",
+        product_name: baseFood.name,
+      }),
+    );
+    expect(nutritionDataService.logMeal).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({
+        foods: [
+          expect.objectContaining({
+            food_id: undefined,
           }),
         ],
       }),

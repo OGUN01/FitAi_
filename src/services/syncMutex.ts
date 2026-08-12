@@ -97,10 +97,28 @@ export class SyncMutex {
   }
 
   forceRelease(): void {
-    this.locked = false;
-    this.owner = null;
+    // Discarding lockQueue without resolving orphans any caller currently
+    // awaiting its turn inside withLock() (line ~134) — that promise would
+    // never settle, hanging the caller forever with no timeout. But resolving
+    // every parked ticket at once would let all of them proceed into their
+    // critical sections concurrently — exactly the race this mutex exists to
+    // prevent. Instead, hand off to only the next-in-line ticket (the same
+    // single-owner handoff release() performs) so at most one withLock()
+    // caller ever holds the lock; the rest stay queued and will be handed
+    // off in turn as each holder's `finally` calls release().
+    if (this.lockQueue.length > 0) {
+      const next = this.lockQueue.shift()!;
+      this.locked = true;
+      this.owner = next.operationName;
+      next.resolve();
+    } else {
+      this.locked = false;
+      this.owner = null;
+    }
+
+    const staleWaiters = this.waitQueue;
     this.waitQueue = [];
-    this.lockQueue = [];
+    staleWaiters.forEach((callback) => callback());
   }
 
   async waitForRelease(): Promise<void> {

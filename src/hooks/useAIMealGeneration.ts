@@ -511,7 +511,7 @@ export const useAIMealGeneration = (options?: {
         options?.successMessage ||
         `${recognizedFoods.length} food item${recognizedFoods.length !== 1 ? "s" : ""} logged` +
           (persistCatalogFoods
-            ? `\n\nSaved as reusable foods for future logging.`
+            ? `\n\nSubmitted for review — new foods appear in your catalog once approved.`
             : "");
 
       crossPlatformAlert("Meal Logged Successfully!", successMessage);
@@ -560,7 +560,7 @@ export const useAIMealGeneration = (options?: {
               persistCatalogFoods: true,
               successMessage:
                 options?.successMessage &&
-                `${options.successMessage}\n\nSaved as reusable foods for future logging.`,
+                `${options.successMessage}\n\nSubmitted for review — new foods appear in your catalog once approved.`,
             });
           },
         },

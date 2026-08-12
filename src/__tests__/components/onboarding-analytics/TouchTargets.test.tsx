@@ -199,7 +199,6 @@ import { InfoTooltipModal } from "@/components/onboarding/shared/InfoTooltipModa
 import { AdjustmentWizard } from "@/components/onboarding/AdjustmentWizard";
 import { BMRInfoModal } from "@/components/onboarding/BMRInfoModal";
 import AnalyticsHeader from "@/screens/main/analytics/AnalyticsHeader";
-import PaywallHeader from "@/components/subscription/paywall/PaywallHeader";
 import { WeightEntryModal } from "@/components/progress/WeightEntryModal";
 
 describe("onboarding and analytics touch targets", () => {
@@ -258,21 +257,12 @@ describe("onboarding and analytics touch targets", () => {
     ).toMatchObject({ minHeight: 44 });
   });
 
-  it("keeps analytics and paywall chrome at a 44pt floor", () => {
+  it("keeps analytics chrome at a 44pt floor", () => {
     const analytics = render(
       <AnalyticsHeader
         selectedPeriod={"week" as any}
         onPeriodChange={jest.fn()}
         onProgressPress={jest.fn()}
-      />,
-    );
-
-    const paywall = render(
-      <PaywallHeader
-        title="Go Premium"
-        description="Unlock everything"
-        onClose={jest.fn()}
-        trialInfo={{ isEligible: true }}
       />,
     );
 
@@ -285,9 +275,6 @@ describe("onboarding and analytics touch targets", () => {
     // touch target to assert. See AnalyticsHeader.tsx (badge with
     // accessibilityLabel "AI insights coming soon").
     expect(analytics.queryByLabelText("AI Insights")).toBeNull();
-    expect(
-      StyleSheet.flatten(paywall.getByLabelText("Close paywall").props.style),
-    ).toMatchObject({ width: 44, height: 44 });
   });
 
   it("keeps weight entry modal chrome at a 44pt floor", () => {

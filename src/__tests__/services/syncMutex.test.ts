@@ -229,5 +229,90 @@ describe("syncMutex", () => {
       expect(syncMutex.isLocked()).toBe(false);
       expect(syncMutex.getOwner()).toBeNull();
     });
+
+    it("should unblock a withLock() caller parked in the queue instead of orphaning it forever", async () => {
+      await syncMutex.acquire("holder");
+
+      let parkedRan = false;
+      const parkedPromise = syncMutex
+        .withLock("parked", async () => {
+          parkedRan = true;
+          return "parked-result";
+        })
+        .catch((err: unknown) => {
+          console.error("parked withLock failed:", err);
+        });
+
+      // Force-release while "parked" is still sitting in lockQueue.
+      syncMutex.forceRelease();
+
+      await jest.advanceTimersByTimeAsync(0);
+      await parkedPromise;
+
+      expect(parkedRan).toBe(true);
+      // The parked caller's own release() ran in its `finally`, so the
+      // mutex ends up unlocked rather than stuck "locked" forever.
+      expect(syncMutex.isLocked()).toBe(false);
+    });
+
+    it("should hand off to only the next-in-line waiter, not run all queued withLock() callers concurrently", async () => {
+      await syncMutex.acquire("holder");
+
+      const executionOrder: string[] = [];
+      let secondStartedBeforeFirstEnded = false;
+
+      const makeParked = (name: string, delayMs: number) =>
+        syncMutex
+          .withLock(name, async () => {
+            executionOrder.push(`${name}-start`);
+            if (name === "second" && executionOrder.includes("first-start") && !executionOrder.includes("first-end")) {
+              secondStartedBeforeFirstEnded = true;
+            }
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            executionOrder.push(`${name}-end`);
+            return name;
+          })
+          .catch((err: unknown) => {
+            console.error(`parked withLock '${name}' failed:`, err);
+          });
+
+      // Two callers queue up behind "holder" before it is force-released.
+      const firstPromise = makeParked("first", 50);
+      const secondPromise = makeParked("second", 10);
+
+      // Force-release while both "first" and "second" are still parked in lockQueue.
+      syncMutex.forceRelease();
+
+      await jest.advanceTimersByTimeAsync(200);
+      await Promise.all([firstPromise, secondPromise]);
+
+      // "second" must not start until "first" has finished — forceRelease()
+      // must hand off ownership to one queued caller at a time, exactly like
+      // the normal release() path, not resolve every queued ticket at once.
+      expect(secondStartedBeforeFirstEnded).toBe(false);
+      expect(executionOrder).toEqual([
+        "first-start",
+        "first-end",
+        "second-start",
+        "second-end",
+      ]);
+      expect(syncMutex.isLocked()).toBe(false);
+    });
+
+    it("should notify bare waitForRelease() callers instead of orphaning them", async () => {
+      await syncMutex.acquire("holder");
+
+      let notified = false;
+      const waitPromise = syncMutex.waitForRelease().then(() => {
+        notified = true;
+      });
+
+      syncMutex.forceRelease();
+
+      await jest.advanceTimersByTimeAsync(0);
+      await waitPromise;
+
+      expect(notified).toBe(true);
+    });
   });
 });

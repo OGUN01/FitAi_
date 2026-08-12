@@ -8,13 +8,27 @@ import { useProfileStore } from "../stores/profileStore";
 
 export interface RecognizedFoodLoggingOptions {
   provenance?: MealLogProvenance;
+  /**
+   * When true, foods with no existing catalog match are submitted to the
+   * moderated `user_food_contributions` queue (Tier-4 crowd-source path).
+   * They are NOT immediately usable/reusable — they only join the shared
+   * `foods` catalog once approved (or cross-user verified). Callers must
+   * not tell users the food is "saved for future logging" yet; it is
+   * pending review.
+   */
   persistCatalogFoods?: boolean;
   notes?: string;
 }
 
 type FoodMapping = {
   recognizedFood: RecognizedFood;
-  databaseFoodId: string;
+  // Only set for an existing `foods` catalog match (findExistingFood). A
+  // brand-new food goes through the moderated `user_food_contributions`
+  // queue instead (see createFoodFromRecognized) and has no `foods.id` yet
+  // — its `food_id` is intentionally left unset so the meal log falls back
+  // to the embedded nutrition values rather than pointing at a non-catalog
+  // row.
+  databaseFoodId?: string;
   isNewFood: boolean;
 };
 
@@ -59,7 +73,7 @@ export class RecognizedFoodLogger {
       );
       const shouldPersistCatalogFoods = options?.persistCatalogFoods ?? false;
       const foodMappings = shouldPersistCatalogFoods
-        ? await this.createOrFindFoods(recognizedFoods)
+        ? await this.createOrFindFoods(userId, recognizedFoods)
         : [];
 
       const mealName =
@@ -111,6 +125,7 @@ export class RecognizedFoodLogger {
    * Create or find foods in the database from recognized foods
    */
   private async createOrFindFoods(
+    userId: string,
     recognizedFoods: RecognizedFood[],
   ): Promise<FoodMapping[]> {
     const foodMappings: FoodMapping[] = [];
@@ -131,12 +146,16 @@ export class RecognizedFoodLogger {
           continue;
         }
 
-        const newFood = await this.createFoodFromRecognized(recognizedFood);
+        const submitted = await this.createFoodFromRecognized(
+          userId,
+          recognizedFood,
+        );
 
-        if (newFood) {
+        if (submitted) {
+          // Intentionally no databaseFoodId: the contribution is pending
+          // moderation and is not yet a row in `foods`. See FoodMapping.
           foodMappings.push({
             recognizedFood,
-            databaseFoodId: newFood.id,
             isNewFood: true,
           });
         }
@@ -215,11 +234,25 @@ export class RecognizedFoodLogger {
   }
 
   /**
-   * Create new food entry from recognized food
+   * Submit a brand-new recognized food to the moderated
+   * `user_food_contributions` queue (Tier-4 crowd-sourced path — see
+   * crowdFoodDb.ts's submitContribution for the barcode-scan counterpart).
+   *
+   * The shared `foods` catalog table has no client INSERT policy as of
+   * migration 20260731000002_restrict_foods_insert_to_moderated_path.sql —
+   * writing to it directly from here always failed with a permission error.
+   * `user_food_contributions` is the real moderated path: it gates catalog
+   * visibility behind `is_approved` (or the cross-user `verified` trigger),
+   * matching the rest of the 4-tier food system. Contributions submitted
+   * here are name-based (no barcode), which the table supports natively.
+   *
+   * Returns the created contribution row, or null on failure (never throws
+   * — the caller treats a failed submission the same as "food not saved").
    */
   private async createFoodFromRecognized(
+    userId: string,
     recognizedFood: RecognizedFood,
-  ): Promise<Food | null> {
+  ): Promise<{ id: string } | null> {
     try {
       const safeGrams = Math.max(recognizedFood.estimatedGrams, 1);
       const per100g = recognizedFood.nutritionPer100g ?? {
@@ -248,29 +281,29 @@ export class RecognizedFoodLogger {
         }
       }
 
-      const foodData = {
-        name: recognizedFood.name,
-        category: recognizedFood.category,
-        calories_per_100g: per100g.calories,
-        protein_per_100g: per100g.protein,
-        carbs_per_100g: per100g.carbs,
-        fat_per_100g: per100g.fat,
-        fiber_per_100g: per100g.fiber || null,
-        sugar_per_100g: recognizedFood.nutritionPer100g?.sugar ?? null,
-        sodium_per_100g: recognizedFood.nutritionPer100g?.sodium ?? null,
+      const contributionData = {
+        user_id: userId,
         barcode: (recognizedFood as RecognizedFood & { barcode?: string }).barcode ?? null,
-        verified: false,
-        created_at: new Date().toISOString(),
+        product_name: recognizedFood.name,
+        energy_kcal_100g: per100g.calories,
+        proteins_100g: per100g.protein,
+        carbohydrates_100g: per100g.carbs,
+        fat_100g: per100g.fat,
+        fiber_100g: per100g.fiber || null,
+        sugars_100g: recognizedFood.nutritionPer100g?.sugar ?? null,
+        sodium_100g: recognizedFood.nutritionPer100g?.sodium ?? null,
+        contribution_type: "new_product" as const,
+        notes: "Submitted via AI meal-photo recognition — pending moderation.",
       };
 
       const { data, error } = await supabase
-        .from("foods")
-        .insert(foodData)
-        .select()
+        .from("user_food_contributions")
+        .insert(contributionData)
+        .select("id")
         .single();
 
       if (error) {
-        console.error("Error creating food:", error);
+        console.error("Error submitting food contribution:", error);
         return null;
       }
 

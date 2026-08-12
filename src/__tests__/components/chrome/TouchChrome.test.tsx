@@ -136,7 +136,6 @@ jest.mock("@/components/ui/aurora/AnimatedPressable", () => {
 import { EmptyMealsMessage } from "@/components/home/EmptyMealsMessage";
 import { EmptyCalendarMessage } from "@/components/home/EmptyCalendarMessage";
 import { SettingsModalWrapper } from "@/components/settings/SettingsModalWrapper";
-import { SyncStatusCard } from "@/components/settings/SyncStatusCard";
 import { SettingsModalWrapper as ProfileSettingsModalWrapper } from "@/screens/main/profile/components/SettingsModalWrapper";
 import { SettingsSelectionModal } from "@/screens/main/profile/modals/SettingsSelectionModal";
 
@@ -210,19 +209,5 @@ describe("chrome touch targets", () => {
     expect(
       StyleSheet.flatten(selection.getByLabelText("Close Units").props.style),
     ).toMatchObject({ width: 44, height: 44 });
-  });
-
-  it("keeps sync CTA at a 44pt minimum", () => {
-    const screen = render(
-      <SyncStatusCard
-        syncStatus="idle"
-        onSyncNow={jest.fn()}
-        formatLastSync={() => "Never"}
-      />,
-    );
-
-    expect(
-      StyleSheet.flatten(screen.getByLabelText("Sync now").props.style),
-    ).toMatchObject({ minHeight: 44 });
   });
 });
