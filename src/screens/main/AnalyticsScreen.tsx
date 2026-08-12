@@ -10,7 +10,7 @@
  * 4. TrendCharts (detailed analytics charts)
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -127,7 +127,6 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     initialize: initializeAnalytics,
     refreshAnalytics,
     isInitialized,
-    isLoading: isAnalyticsLoading,
     // SSOT fix: selectedPeriod persisted in store — survives tab switches
     selectedPeriod,
     setPeriod: setSelectedPeriod,
@@ -183,6 +182,65 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   const isHistoryCurrent = loadedHistoryPeriodDays === periodDays;
 
+  // Cross-screen data-integrity guard (critical fix): analyticsStore.weightHistory
+  // / calorieHistory are shared, untagged fields that ProgressTrendsScreen's
+  // useProgressTrendsLogic also writes to (via setDailyMetricsHistory) using its
+  // own independently-selected period. Since ProgressTrends is an overlay mounted
+  // on top of this screen (not a replacement), it can silently overwrite these
+  // arrays with a different period's data while this screen stays mounted
+  // underneath — and this screen's local loadedHistoryPeriodDays state has no way
+  // to know that happened, so isHistoryCurrent stays (wrongly) true. Track the
+  // exact array references this screen itself wrote; if the store's arrays ever
+  // diverge from what we last wrote, a foreign writer touched them — mark our
+  // cache stale so the effect below re-fetches OUR selected period and restores
+  // the correct data instead of silently rendering the foreign period's data.
+  const ownWeightHistoryRef = useRef<typeof weightHistory | null>(null);
+  const ownCalorieHistoryRef = useRef<typeof calorieHistory | null>(null);
+  // Set synchronously right before this screen's own setHistoryData() call so
+  // the effect below can tell "the store just changed because WE wrote it"
+  // apart from "something else wrote it while we were mounted".
+  const pendingOwnWriteRef = useRef(false);
+  // Tracks the periodDays value we've already fired a fetch for, independent
+  // of React state churn. loadHistoryData's identity depends on
+  // loadedHistoryPeriodDays (which the fetch itself sets on completion), so
+  // the settling re-render after a successful fetch used to give the
+  // "load history" effect below a new callback identity and fire it a SECOND
+  // time for the exact same period — a wasted duplicate network call whose
+  // own setHistoryData() re-armed pendingOwnWriteRef without a guaranteed
+  // subsequent re-render to consume it, leaving the foreign-write guard above
+  // permanently "stuck" thinking the next store write (own or foreign) was
+  // just our own write settling in. Gating on this ref instead of on
+  // dependency-array identity makes "have we already requested this period"
+  // explicit and immune to that churn.
+  const requestedPeriodDaysRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (pendingOwnWriteRef.current) {
+      // This change is our own write settling in — capture the post-write
+      // references (setHistoryData sorts weightHistory internally, so the
+      // stored array isn't the same object we passed in) as the new baseline.
+      pendingOwnWriteRef.current = false;
+      ownWeightHistoryRef.current = weightHistory;
+      ownCalorieHistoryRef.current = calorieHistory;
+      return;
+    }
+    if (ownWeightHistoryRef.current === null) {
+      // Haven't written to the store yet (first mount, or a fresh guest/login
+      // reset) — nothing to compare against.
+      return;
+    }
+    const foreignWrite =
+      weightHistory !== ownWeightHistoryRef.current ||
+      calorieHistory !== ownCalorieHistoryRef.current;
+    if (foreignWrite) {
+      setLoadedHistoryPeriodDays(null);
+      // Force the fetch effect below to re-request OUR period even though
+      // periodDays itself didn't change — without this it would stay silent
+      // until the user manually switches periods.
+      requestedPeriodDaysRef.current = null;
+    }
+  }, [weightHistory, calorieHistory]);
+
   // Shared data loader used by both useEffect and handleRefresh
   const loadHistoryData = useCallback(async (options?: { showLoading?: boolean }) => {
     if (!user?.id) {
@@ -207,6 +265,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
       // SSOT fix: write fetched history into the store instead of local state
       // so the Analytics tab shows cached data immediately on the next mount.
+      pendingOwnWriteRef.current = true;
       setHistoryData(weightData, calorieData);
       setLoadedHistoryPeriodDays(periodDays);
     } catch (error) {
@@ -225,8 +284,18 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     user?.id,
   ]);
 
-  // Load weight and calorie history from Supabase
+  // Load weight and calorie history from Supabase. Gated on
+  // requestedPeriodDaysRef (not just the dependency array) so a settling
+  // re-render after our own fetch completes — which changes loadHistoryData's
+  // identity because it depends on loadedHistoryPeriodDays — can't trigger a
+  // redundant second fetch for the period we already just requested. The
+  // foreign-write guard above resets the ref to null when a real re-fetch of
+  // our own period is needed (period change, or a foreign write detected).
   useEffect(() => {
+    if (requestedPeriodDaysRef.current === periodDays) {
+      return;
+    }
+    requestedPeriodDaysRef.current = periodDays;
     loadHistoryData({
       showLoading: !hasCachedHistory || loadedHistoryPeriodDays !== periodDays,
     });
@@ -281,13 +350,19 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
     });
 
-    // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
-    // Weight: prefer calculatedMetrics, then profileStore.bodyAnalysis (source of truth from onboarding)
+    // Weight data - prefer the just-fetched analyticsStore.weightHistory (via
+    // resolveCurrentWeight, which already falls back to bodyAnalysis) over
+    // calculatedMetrics.currentWeightKg. calculatedMetrics is derived by
+    // useCalculatedMetrics from a one-time effect that only re-runs on
+    // profileStore changes — it does NOT re-run when this screen's own
+    // loadHistoryData fetches fresh weightHistory, so it can lag behind and
+    // disagree with the Weight Progress chart (which reads weightHistory
+    // directly) until something unrelated touches profileStore.bodyAnalysis.
     const currentWeight =
-      calculatedMetrics?.currentWeightKg &&
-      calculatedMetrics.currentWeightKg > 0
+      resolvedCurrentWeight.value ??
+      (calculatedMetrics?.currentWeightKg && calculatedMetrics.currentWeightKg > 0
         ? calculatedMetrics.currentWeightKg
-        : resolvedCurrentWeight.value ?? undefined;
+        : undefined);
     const targetWeight =
       calculatedMetrics?.targetWeightKg ||
       (bodyAnalysis?.target_weight_kg && bodyAnalysis.target_weight_kg > 0
@@ -627,13 +702,29 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     try {
       await refreshAnalytics();
       await loadHistoryData({ showLoading: false });
+      // Also retry the achievement catalog: initialize()'s early-return guard
+      // requires BOTH isInitialized AND achievements.length > 0, so this is a
+      // real retry (not a no-op) whenever a prior init failed outright
+      // (isInitialized stuck false) or came back with an empty catalog
+      // (isInitialized true but achievements.length === 0, the exact case
+      // AchievementShowcase's "Couldn't load achievements / pull to refresh"
+      // empty state tells the user to fix). Cheap no-op once achievements are
+      // actually loaded, so it's safe to call on every pull-to-refresh.
+      if (user?.id) {
+        await initializeAchievements(user.id).catch((error) => {
+          console.error(
+            "[AnalyticsScreen] Failed to re-initialize achievements on refresh:",
+            error,
+          );
+        });
+      }
     } catch (error) {
       console.error("Refresh error:", error);
       setDataError("Failed to refresh data. Please try again.");
     } finally {
       setRefreshing(false);
     }
-  }, [refreshAnalytics, loadHistoryData]);
+  }, [refreshAnalytics, loadHistoryData, user?.id, initializeAchievements]);
 
   const handleMetricPress = useCallback(
     (metric: string) => {
@@ -679,9 +770,31 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     navigation?.navigate("Progress");
   }, [navigation]);
 
-  // Show loading state for initial load
+  // Show loading state for the period-dependent widgets (metric grid, calorie
+  // breakdown, trend charts) only. Intentionally NOT gated on
+  // analyticsStore.isLoading: that flag reflects
+  // setPeriod()'s analyticsEngine.generateAnalytics() computation over a
+  // separate metricsHistory pipeline whose output (currentAnalytics/chartData)
+  // this screen never reads or renders — coupling to it only added latency and
+  // full-screen flicker to every period-pill tap for no visible benefit.
   const showLoading =
-    !refreshing && !dataError && (isDataLoading || isAnalyticsLoading || !isHistoryCurrent);
+    !refreshing && !dataError && (isDataLoading || !isHistoryCurrent);
+
+  // AchievementShowcase is period-independent, so it stays mounted across
+  // period-pill taps instead of unmounting/reshowing (see showLoading comment
+  // above). But rendering it unconditionally means the very first mount (no
+  // content has ever painted yet) shows the full-screen loading spinner
+  // stacked directly above a fully-rendered Achievement section — a
+  // half-loaded-looking layout. Only suppress it during that genuine first
+  // load; once content has painted once, keep it visible through subsequent
+  // period-switch reloads (the flicker this was built to avoid).
+  const hasShownContentOnceRef = useRef(false);
+  useEffect(() => {
+    if (!showLoading) {
+      hasShownContentOnceRef.current = true;
+    }
+  }, [showLoading]);
+  const showAchievementShowcase = !showLoading || hasShownContentOnceRef.current;
 
   if (!analyticsEnabled) {
     return (
@@ -757,10 +870,18 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
               onProgressPress={navigation ? handleProgressPress : undefined}
             />
 
-            {/* Loading State */}
+            {/* Loading State — full-height on the true first load (nothing has
+                painted yet); compact once content has already shown once
+                (period-switch reload) so it doesn't read as a giant spinner
+                stacked on top of the still-visible Achievement Showcase. */}
             {showLoading && (
-              <View style={styles.loadingContainer}>
-                <AuroraSpinner size="lg" />
+              <View
+                style={[
+                  styles.loadingContainer,
+                  hasShownContentOnceRef.current && styles.loadingContainerCompact,
+                ]}
+              >
+                <AuroraSpinner size={hasShownContentOnceRef.current ? "md" : "lg"} />
                 <Text style={styles.loadingText} numberOfLines={1}>Loading analytics...</Text>
               </View>
             )}
@@ -819,27 +940,39 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                     </View>
                   </View>
                 )}
-
-                {/* 3. Achievement Showcase */}
-                <View style={styles.sectionContainer}>
-                  <AchievementShowcase
-                    isLoading={areAchievementsLoading}
-                    isInitialized={areAchievementsInitialized}
-                  />
-                </View>
-
-                {/* 4. Trend Charts */}
-                <View style={styles.sectionContainer}>
-                  <TrendCharts
-                    weightData={chartData.weightData}
-                    calorieData={chartData.calorieData}
-                    workoutData={chartData.workoutData}
-                    period={selectedPeriod}
-                    weightUnit={weightUnit}
-                    onChartPress={handleChartPress}
-                  />
-                </View>
               </>
+            )}
+
+            {/* 3. Achievement Showcase — period-independent (a static
+                achievement catalog + the user's own progress, unrelated to
+                the selected week/month/quarter/year window), so once shown it
+                stays mounted across period-pill taps instead of unmounting
+                and re-showing a spinner along with the period-scoped widgets.
+                Suppressed only during the true first load (showAchievementShowcase
+                is false until content has painted once) so the initial loading
+                state reads as a clean full-screen spinner rather than a
+                spinner stacked above a fully-rendered section. */}
+            {showAchievementShowcase && (
+              <View style={styles.sectionContainer}>
+                <AchievementShowcase
+                  isLoading={areAchievementsLoading}
+                  isInitialized={areAchievementsInitialized}
+                />
+              </View>
+            )}
+
+            {/* 4. Trend Charts */}
+            {!showLoading && (
+              <View style={styles.sectionContainer}>
+                <TrendCharts
+                  weightData={chartData.weightData}
+                  calorieData={chartData.calorieData}
+                  workoutData={chartData.workoutData}
+                  period={selectedPeriod}
+                  weightUnit={weightUnit}
+                  onChartPress={handleChartPress}
+                />
+              </View>
             )}
 
             {/* Bottom spacing — rely on scrollContent.paddingBottom only
@@ -874,6 +1007,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.xxl,
     gap: spacing.md,
+  },
+  // Period-switch reload (content already painted once, e.g. Achievement
+  // Showcase is still visible below) — a short inline indicator instead of
+  // the full-height first-load spinner.
+  loadingContainerCompact: {
+    minHeight: rh(80),
+    paddingVertical: spacing.lg,
   },
   loadingText: {
     fontSize: typography.fontSize.caption,

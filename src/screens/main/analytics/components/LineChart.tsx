@@ -164,7 +164,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   }
 
-  const { trend, trendPercent, isPositiveTrend } = calculateTrend(data, weightLossGoal);
+  const { trend, trendPercent, isPositiveTrend, hasTrend } = calculateTrend(data, weightLossGoal);
 
   return (
     <View style={styles.container} onLayout={handleLayout}>
@@ -184,36 +184,56 @@ export const LineChart: React.FC<LineChartProps> = ({
             </Text>
           </View>
           <View style={styles.trendWrap}>
-            <View
-              style={[
-                styles.trendBadge,
-                {
-                  // Tint the badge with the trend's own color so positive
-                  // (green) and negative (pink) trends read as distinct chips,
-                  // matching the InsightCard accent pattern. The prior code set
-                  // surface[2] for both branches — a no-op with no signal.
-                  backgroundColor: isPositiveTrend
-                    ? `${chartColors[4]}22`
-                    : `${chartColors[6]}22`,
-                },
-              ]}
-            >
-              <Ionicons
-                name={isPositiveTrend ? "trending-up" : "trending-down"}
-                size={rf(12)}
-                color={isPositiveTrend ? chartColors[4] : chartColors[6]}
-              />
-              <Text
+            {hasTrend ? (
+              <View
                 style={[
-                  styles.trendText,
-                  { color: isPositiveTrend ? chartColors[4] : chartColors[6] },
+                  styles.trendBadge,
+                  {
+                    // Tint the badge with the trend's own color so positive
+                    // (green) and negative (pink) trends read as distinct chips,
+                    // matching the InsightCard accent pattern. The prior code set
+                    // surface[2] for both branches — a no-op with no signal.
+                    backgroundColor: isPositiveTrend
+                      ? `${chartColors[4]}22`
+                      : `${chartColors[6]}22`,
+                  },
                 ]}
-                numberOfLines={1}
               >
-                {Math.abs(parseFloat(trendPercent))}%
-              </Text>
-            </View>
-            <Text style={styles.trendPeriod} numberOfLines={1}>vs start</Text>
+                <Ionicons
+                  name={isPositiveTrend ? "trending-up" : "trending-down"}
+                  size={rf(12)}
+                  color={isPositiveTrend ? chartColors[4] : chartColors[6]}
+                />
+                <Text
+                  style={[
+                    styles.trendText,
+                    { color: isPositiveTrend ? chartColors[4] : chartColors[6] },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {Math.abs(parseFloat(trendPercent))}%
+                </Text>
+              </View>
+            ) : (
+              // Single-point series (e.g. a brand-new user's first weight
+              // entry, no history rows yet): there's nothing to trend against,
+              // so show a neutral chip instead of hard-coding a red
+              // "trending-down / 0%" badge that contradicts the insight strip
+              // below (which correctly says "stable" for this same case).
+              <View
+                style={[styles.trendBadge, { backgroundColor: `${chartColors[3]}22` }]}
+              >
+                <Text
+                  style={[styles.trendText, { color: chartColors[3] }]}
+                  numberOfLines={1}
+                >
+                  New
+                </Text>
+              </View>
+            )}
+            <Text style={styles.trendPeriod} numberOfLines={1}>
+              {hasTrend ? "vs start" : "first entry"}
+            </Text>
           </View>
         </View>
       )}
@@ -298,11 +318,13 @@ export const LineChart: React.FC<LineChartProps> = ({
       <View style={styles.insightStrip}>
         <View style={[styles.insightDot, { backgroundColor: color }]} />
         <Text style={styles.insightText} numberOfLines={2}>
-          {trend > 0
-            ? `Gained ${Math.abs(trend).toFixed(1)}${unit} over this period`
-            : trend < 0
-              ? `Lost ${Math.abs(trend).toFixed(1)}${unit} over this period`
-              : "Weight stable over this period"}
+          {!hasTrend
+            ? "Log another entry to see your trend"
+            : trend > 0
+              ? `Gained ${Math.abs(trend).toFixed(1)}${unit} over this period`
+              : trend < 0
+                ? `Lost ${Math.abs(trend).toFixed(1)}${unit} over this period`
+                : "Weight stable over this period"}
         </Text>
       </View>
     </View>

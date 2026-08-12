@@ -42,6 +42,20 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
   const containerHeight =
     ITEM_HEIGHT * VISIBLE_COUNT + rp(8) * (VISIBLE_COUNT - 1);
   const showLoadingState = isLoading || !isInitialized;
+  // achievementItems is derived from achievementStore.achievements, a static
+  // catalog of definitions that buildAchievementViewModels always maps over
+  // regardless of the user's actual progress — a brand-new user with zero
+  // completions still gets a full list of locked achievements, not an empty
+  // array. This branch therefore fires only when isInitialized is true but
+  // the catalog itself came back empty (the engine returned zero
+  // definitions) — NOT on a hard init failure: achievementStore.initialize()
+  // never sets isInitialized on a thrown error (see its catch block), so a
+  // hard failure instead leaves showLoadingState (above) stuck true rather
+  // than reaching this branch. AnalyticsScreen's handleRefresh re-invokes
+  // initializeAchievements() on every pull-to-refresh — its early-return
+  // guard requires achievements.length > 0 to skip, which isn't true in
+  // either failure mode — so "pull to refresh" below is a real retry that
+  // also covers the stuck-loading case, not a dead-end instruction.
   const showEmptyState = isInitialized && achievementItems.length === 0;
 
   return (
@@ -77,15 +91,15 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = ({
         ) : showEmptyState ? (
           <View style={styles.stateContainer}>
             <Ionicons
-              name="trophy-outline"
+              name="alert-circle-outline"
               size={rf(24)}
               color={colors.text.muted}
             />
             <Text style={styles.stateTitle} numberOfLines={1}>
-              No achievements yet
+              Couldn't load achievements
             </Text>
             <Text style={styles.stateSubtitle} numberOfLines={2}>
-              Complete workouts and log meals to start unlocking milestones.
+              Check your connection and pull to refresh.
             </Text>
           </View>
         ) : (

@@ -46,6 +46,16 @@ const CHART_HEIGHT = 160;
 const LABEL_HEIGHT = 28;
 const BAR_AREA_HEIGHT = CHART_HEIGHT - LABEL_HEIGHT;
 const TOOLTIP_OFFSET = 52;
+// Unlike LineChart's DataPoints (which thins to ~30 dots past 60 points),
+// BarChart previously rendered one AnimatedBar per data point with no cap —
+// a Quarter/Year calorie chart could mount up to 90-365 Reanimated shared
+// values, each staggered by index*40ms (a fully-logged year didn't finish
+// animating in until ~14.5s after mount). Cap and bucket-average dense
+// series down to at most MAX_BARS bars.
+const MAX_BARS = 45;
+// Cap the animation stagger too — with MAX_BARS bars the last bar now starts
+// by MAX_BAR_STAGGER_INDEX * 40ms regardless of how many bars are rendered.
+const MAX_BAR_STAGGER_INDEX = 30;
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -61,7 +71,7 @@ const AnimatedBar: React.FC<{
 
   useEffect(() => {
     progress.value = withDelay(
-      index * 40,
+      Math.min(index, MAX_BAR_STAGGER_INDEX) * 40,
       withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) })
     );
   }, []);
@@ -92,12 +102,29 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
+  // Downsample dense (Quarter/Year, up to 90-365 point) series into at most
+  // MAX_BARS bars by bucket-averaging consecutive points, mirroring
+  // LineChart's DataPoints thinning. Bars that are already bucketed upstream
+  // (e.g. AnalyticsScreen's month/quarter/year workout buckets, always <= 6
+  // points) pass through unchanged.
+  const chartData = useMemo(() => {
+    if (data.length <= MAX_BARS) return data;
+    const bucketSize = Math.ceil(data.length / MAX_BARS);
+    const buckets: ChartData[] = [];
+    for (let i = 0; i < data.length; i += bucketSize) {
+      const chunk = data.slice(i, i + bucketSize);
+      const avg = chunk.reduce((sum, d) => sum + d.value, 0) / chunk.length;
+      buckets.push({ label: chunk[0].label, value: avg });
+    }
+    return buckets;
+  }, [data]);
+
   const max = useMemo(() => {
     if (maxValue) return maxValue;
     const values: number[] = [1];
-    for (const d of data) values.push(d.value);
+    for (const d of chartData) values.push(d.value);
     return Math.max(...values);
-  }, [data, maxValue]);
+  }, [chartData, maxValue]);
 
   const handleLayout = (e: LayoutChangeEvent) => {
     const { width } = e.nativeEvent.layout;
@@ -106,31 +133,31 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
 
   useEffect(() => {
     setSelectedIndex(null);
-  }, [data]);
+  }, [chartData]);
 
   // Month/quarter/year periods feed 30-365 daily entries into a fixed-width
   // SVG — scale gap/width density down instead of clamping to a min width
   // that pushes the rightmost bars off the canvas.
-  const dense = data.length > 14;
-  const barGap = dense ? rw(2) : data.length > 7 ? rw(4) : rw(8);
+  const dense = chartData.length > 14;
+  const barGap = dense ? rw(2) : chartData.length > 7 ? rw(4) : rw(8);
 
   const barWidth = useMemo(() => {
-    if (containerWidth <= 0 || data.length === 0) return 0;
-    const totalGap = barGap * (data.length + 1);
-    return Math.max((containerWidth - totalGap) / data.length, dense ? rw(2) : rw(8));
-  }, [containerWidth, data.length, barGap, dense]);
+    if (containerWidth <= 0 || chartData.length === 0) return 0;
+    const totalGap = barGap * (chartData.length + 1);
+    return Math.max((containerWidth - totalGap) / chartData.length, dense ? rw(2) : rw(8));
+  }, [containerWidth, chartData.length, barGap, dense]);
 
   const barTopY = useMemo(() => {
-    if (selectedIndex === null || !data[selectedIndex]) return 0;
+    if (selectedIndex === null || !chartData[selectedIndex]) return 0;
     const barHeight = Math.max(
-      (data[selectedIndex].value / max) * BAR_AREA_HEIGHT,
+      (chartData[selectedIndex].value / max) * BAR_AREA_HEIGHT,
       rh(4)
     );
     return BAR_AREA_HEIGHT - barHeight;
-  }, [selectedIndex, data, max]);
+  }, [selectedIndex, chartData, max]);
 
   const handleBarSelect = (index: number) => {
-    if (index < 0 || index >= data.length) return;
+    if (index < 0 || index >= chartData.length) return;
     if (selectedIndex !== index) {
       haptics.light();
     }
@@ -153,17 +180,17 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
   const clearSelection = () => setSelectedIndex(null);
 
   const tapGesture = Gesture.Tap().onEnd((e) => {
-    if (barWidth <= 0 || data.length === 0) return;
+    if (barWidth <= 0 || chartData.length === 0) return;
     const idx = Math.floor((e.x - barGap / 2) / (barWidth + barGap));
-    runOnJS(handleBarPress)(Math.max(0, Math.min(idx, data.length - 1)), e.x);
+    runOnJS(handleBarPress)(Math.max(0, Math.min(idx, chartData.length - 1)), e.x);
   });
 
   const longPressGesture = Gesture.LongPress()
     .minDuration(200)
     .onStart((e) => {
-      if (barWidth <= 0 || data.length === 0) return;
+      if (barWidth <= 0 || chartData.length === 0) return;
       const idx = Math.floor((e.x - barGap / 2) / (barWidth + barGap));
-      runOnJS(handleBarSelect)(Math.max(0, Math.min(idx, data.length - 1)));
+      runOnJS(handleBarSelect)(Math.max(0, Math.min(idx, chartData.length - 1)));
     })
     .onEnd(() => {
       runOnJS(clearSelection)();
@@ -171,7 +198,7 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
 
   const composedGesture = Gesture.Exclusive(longPressGesture, tapGesture);
 
-  const selectedData = selectedIndex !== null ? data[selectedIndex] : null;
+  const selectedData = selectedIndex !== null ? chartData[selectedIndex] : null;
   const tooltipX = Math.max(
     0,
     Math.min(tooltipPos.x, containerWidth - rw(60))
@@ -192,15 +219,15 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
                 strokeWidth={1}
               />
 
-              {data.map((item, index) => {
+              {chartData.map((item, index) => {
                 const barHeight = Math.max((item.value / max) * BAR_AREA_HEIGHT, rh(4));
                 const x = barGap + index * (barWidth + barGap);
                 const isSelected = selectedIndex === index;
                 const showLabel =
-                  data.length <= 5 ||
+                  chartData.length <= 5 ||
                   index === 0 ||
-                  index === data.length - 1 ||
-                  index % Math.ceil(data.length / 4) === 0;
+                  index === chartData.length - 1 ||
+                  index % Math.ceil(chartData.length / 4) === 0;
 
                 return (
                   <React.Fragment key={`bar-${index}`}>

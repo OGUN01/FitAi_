@@ -87,12 +87,20 @@ export const calculateTrend = (
   trend: number;
   trendPercent: string;
   isPositiveTrend: boolean;
+  // False for a single-point (or empty) series — there is no "before" to
+  // compare against yet, so callers must not render a directional up/down
+  // badge in that case. `isPositiveTrend` is meaningless when this is false;
+  // it's kept `false` only so existing callers that don't check `hasTrend`
+  // degrade to the neutral/negative-styled state rather than a false-positive
+  // green one.
+  hasTrend: boolean;
 } => {
   if (!data || data.length < 2) {
     return {
       trend: 0,
       trendPercent: "0",
       isPositiveTrend: false,
+      hasTrend: false,
     };
   }
 
@@ -102,5 +110,5 @@ export const calculateTrend = (
   // Goal-aware: for weight-loss contexts, a downward trend is good.
   const isPositiveTrend = lowerIsBetter ? trend <= 0 : trend >= 0;
 
-  return { trend, trendPercent, isPositiveTrend };
+  return { trend, trendPercent, isPositiveTrend, hasTrend: true };
 };
