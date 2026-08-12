@@ -53,6 +53,7 @@ import { WorkoutCompleteDialog } from '../../components/ui/CustomDialog';
 import { getCalibrationStatus, CalibrationStatus } from '../../services/calibrationService';
 import { generateWarmupSets, classifyExercise, WarmupSet } from '../../services/warmupService';
 import { totalVolume } from '../../utils/volumeCalculator';
+import { exerciseHistoryOverlayFlag } from '../../navigation/exerciseHistoryOverlayFlag';
 
 // P1 type-hole fix: the navigation object handed to this screen is the custom
 // plain-JS navigation defined in MainNavigation.tsx (NOT React Navigation's
@@ -686,10 +687,17 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     );
   }, [session, workout.id, sessionId, navigation]);
 
-  // Android hardware back button — show exit dialog instead of default nav
+  // Android hardware back button — show exit dialog instead of default nav.
+  // Exception: if ExerciseHistory is open on top of this session (module-level
+  // flag set by MainNavigation), defer to MainNavigation's own back handler by
+  // returning false — that handler closes only the ExerciseHistory overlay and
+  // keeps this workout session alive. See exerciseHistoryOverlayFlag.ts.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (exerciseHistoryOverlayFlag.isOpen) {
+        return false; // unhandled — let MainNavigation's listener close ExerciseHistory
+      }
       exitWorkout();
       return true; // prevent default back
     });

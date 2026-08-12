@@ -1033,8 +1033,13 @@ export default function App() {
                   setInitialNotificationTabParams({ openWaterModal: true });
                 } else if (data?.type === 'workout') {
                   setInitialNotificationTab('fitness');
+                  // Always set a fresh params object (even empty) so identity
+                  // changes on every tap — MainNavigation's deep-link effect
+                  // only fires when initialTabParams is present/changed.
+                  setInitialNotificationTabParams({});
                 } else if (data?.type === 'meal') {
                   setInitialNotificationTab('diet');
+                  setInitialNotificationTabParams({});
                 }
               }
             } catch (coldStartError) {
@@ -1065,8 +1070,13 @@ export default function App() {
           setInitialNotificationTabParams({ openWaterModal: true });
         } else if (data?.type === 'workout') {
           setInitialNotificationTab('fitness');
+          // Always set a fresh params object (even empty) so identity changes
+          // on every tap — MainNavigation's deep-link effect only fires when
+          // initialTabParams is present/changed.
+          setInitialNotificationTabParams({});
         } else if (data?.type === 'meal') {
           setInitialNotificationTab('diet');
+          setInitialNotificationTabParams({});
         }
       });
     }

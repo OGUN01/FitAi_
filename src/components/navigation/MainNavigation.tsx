@@ -32,8 +32,18 @@ import type { WorkoutTemplate } from '../../services/workoutTemplateService';
 import { useAppConfig } from '../../hooks/useAppConfig';
 import { ScreenErrorBoundary } from '../errors/ScreenErrorBoundary';
 import { isTemplateLink, parseTemplateLink } from '../../services/templateShareService';
+import { exerciseHistoryOverlayFlag } from '../../navigation/exerciseHistoryOverlayFlag';
 
 type MainTabKey = 'home' | 'fitness' | 'diet' | 'profile' | 'analytics';
+
+// Linking.getInitialURL() reflects the process's original launch intent and
+// keeps returning the same value for the life of the app process (it is not
+// cleared after first read). MainNavigation itself can mount/unmount within a
+// single process (e.g. sign-out then sign-in without killing the app), so a
+// per-instance ref isn't enough — this must be module-level to prevent a
+// remount from re-opening an already-handled template-share deep link and
+// silently clobbering whatever the user is currently doing.
+let hasConsumedInitialURL = false;
 
 const DEFAULT_TAB: MainTabKey = 'home';
 const isMainTabKey = (value: string): value is MainTabKey =>
@@ -317,6 +327,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setTemplateLibrarySession({
           isActive: true,
           initialTab: params?.initialTab as string | undefined,
@@ -327,6 +338,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setCreateWorkoutSession({
           isActive: true,
           templateId: params?.templateId,
@@ -337,6 +349,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setExerciseHistorySession({
           isActive: true,
           exerciseId: params?.exerciseId,
@@ -348,6 +361,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setExerciseHistorySession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setScheduleBuilderSession({ isActive: true });
       } else if (screen === 'WeeklyBuilder') {
         setTemplateLibrarySession({ isActive: false });
@@ -355,6 +369,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setWeeklyBuilderSession({
           isActive: true,
           sourceTemplate: params?.sourceTemplate as WorkoutTemplate | undefined,
@@ -365,6 +380,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setExerciseHistorySession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: true });
       } else if (screen === 'WorkoutDetail') {
         // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
@@ -376,6 +392,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setScheduleBuilderSession({ isActive: false });
         setWeeklyBuilderSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: false });
+        setTemplateShareSession({ isActive: false });
         setWorkoutDetailSession({
           isActive: true,
           workout: params?.workout as DayWorkout | undefined,
@@ -408,6 +425,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       }));
     },
   };
+
+  // Keep the shared module-level flag in sync so WorkoutSessionScreen's own
+  // hardware-back listener knows to defer to MainNavigation when
+  // ExerciseHistory is open on top of an active workout session. See
+  // exerciseHistoryOverlayFlag.ts for why this is needed (BackHandler LIFO
+  // ordering).
+  useEffect(() => {
+    exerciseHistoryOverlayFlag.isOpen = exerciseHistorySession.isActive && workoutSession.isActive;
+    return () => {
+      exerciseHistoryOverlayFlag.isOpen = false;
+    };
+  }, [exerciseHistorySession.isActive, workoutSession.isActive]);
 
   // Handle Android back button
   useEffect(() => {
@@ -503,15 +532,19 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   }, []);
 
   useEffect(() => {
-    // Cold start: the URL that launched the app (if any).
-    Linking.getInitialURL()
-      .then((url) => {
-        if (url) handleTemplateDeepLink(url);
-      })
-      .catch((error) => {
-        // Swallow — a transient getInitialURL failure must not crash on launch.
-        console.error('[MainNavigation] getInitialURL failed:', error);
-      });
+    // Cold start: the URL that launched the app (if any). Only consume it
+    // once per app process — see hasConsumedInitialURL above.
+    if (!hasConsumedInitialURL) {
+      hasConsumedInitialURL = true;
+      Linking.getInitialURL()
+        .then((url) => {
+          if (url) handleTemplateDeepLink(url);
+        })
+        .catch((error) => {
+          // Swallow — a transient getInitialURL failure must not crash on launch.
+          console.error('[MainNavigation] getInitialURL failed:', error);
+        });
+    }
 
     // Runtime: links tapped while the app is open.
     const subscription = Linking.addEventListener('url', ({ url }) => {
@@ -847,13 +880,6 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Hidden accessibility marker for guest-mode detection */}
-      <View
-        testID="guest-option"
-        accessibilityLabel="Continue as guest"
-        accessible={false}
-        style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
-      />
       <View style={styles.screenContainer}>
         {renderRootScreens()}
         {hasActiveOverlay ? (

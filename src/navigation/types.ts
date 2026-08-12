@@ -1,5 +1,15 @@
 // Navigation Types
-// This file contains TypeScript definitions for navigation
+//
+// NOTE: FitAI does NOT use React Navigation. The app shell is a hand-rolled
+// boolean-flag state machine implemented in
+// src/components/navigation/MainNavigation.tsx (tabs + overlay "sessions"
+// like workoutSession, mealSession, templateLibrarySession, etc., each
+// toggled via plain useState). There is no generated stack/tab navigator, so
+// most React-Navigation-style param-list types have no real consumer.
+//
+// RootStackParamList is kept below only because WorkoutSessionScreen.tsx
+// references it in a comment for context; if that reference goes away this
+// file can be deleted along with the barrel export in index.ts.
 
 import { DayWorkout, DayMeal } from "../types/ai";
 
@@ -17,55 +27,3 @@ export type RootStackParamList = {
    */
   PasswordReset: { token?: string };
 };
-
-export type OnboardingStackParamList = {
-  PersonalInfo: undefined;
-  WorkoutPreferences: undefined;
-  DietPreferences: undefined;
-  BodyAnalysis: undefined;
-  Review: undefined;
-};
-
-export type MainTabParamList = {
-  Home: undefined;
-  Workout: undefined;
-  Analytics: undefined;
-  Diet: undefined;
-  Profile: undefined;
-};
-
-export type AnalyticsStackParamList = {
-  AnalyticsMain: undefined;
-  PredictiveInsights: undefined;
-  ProgressTrends: undefined;
-  BodyTransformation: undefined;
-  PerformanceMetrics: undefined;
-  AchievementDetails: { category?: string };
-};
-
-export type WorkoutStackParamList = {
-  WorkoutMain: undefined;
-  WorkoutDetails: { workoutId: string };
-  Exercise: { exerciseId: string };
-  WorkoutHistory: undefined;
-};
-
-export type DietStackParamList = {
-  DietMain: undefined;
-  MealLog: { mealType?: string };
-  FoodDetails: { foodId: string };
-  Nutrition: undefined;
-  CookingSession: { meal: DayMeal };
-};
-
-export type ProfileStackParamList = {
-  ProfileMain: undefined;
-  Settings: { screen?: string };
-  Progress: undefined;
-  BodyAnalysisHistory: undefined;
-  HealthKitSettings: undefined;
-  ManualHealthEntry: undefined;
-};
-
-// Main tab names for type-safe navigation
-export type MainTabName = "Home" | "Workout" | "Analytics" | "Diet" | "Profile";
