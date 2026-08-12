@@ -106,7 +106,6 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   onNext,
   onBack,
   onUpdate,
-  isAutoSaving = false,
   isEditingFromReview = false,
   onReturnToReview,
   activityLevel,
@@ -164,13 +163,6 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         onNext={handleNext}
         nextLabel={isEditingFromReview ? "Review" : "Next"}
         nextDisabled={isDisabled}
-        footerNote={
-          isAutoSaving ? (
-            <Text style={styles.autoSaveText} numberOfLines={1}>
-              Saving…
-            </Text>
-          ) : undefined
-        }
       >
         <Animated.View entering={FadeInDown.duration(MOUNT_DURATION)}>
           <PersonalInfoFields formData={formData} actions={actions} />
@@ -301,9 +293,6 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 const styles = StyleSheet.create({
   keyboardAvoidingView: {
     flex: 1,
-  },
-  autoSaveText: {
-    ...typeScale.caption,
   },
   /** Section label + "why we ask" caption, 12px above the content. */
   labelWrap: {

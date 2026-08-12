@@ -69,7 +69,6 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   onNext,
   onBack,
   onUpdate,
-  isAutoSaving = false,
   isEditingFromReview = false,
   onReturnToReview,
 }) => {
@@ -202,13 +201,6 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         onNext={handleNext}
         nextLabel={isEditingFromReview ? "Review" : "Next"}
         nextDisabled={isDisabled}
-        footerNote={
-          isAutoSaving ? (
-            <Text style={styles.autoSaveText} testID="auto-save-indicator">
-              Saving…
-            </Text>
-          ) : undefined
-        }
       >
         {/* Visible — primary goals (the focal input) */}
         <Mount index={0}>
@@ -374,12 +366,6 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
 };
 
 const styles = StyleSheet.create({
-  autoSaveText: {
-    fontFamily: "Manrope_400Regular",
-    fontSize: 12,
-    lineHeight: 16,
-    color: tokens.ink3,
-  },
   sectionGap: {
     marginTop: 36,
   },

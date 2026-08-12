@@ -138,12 +138,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   onNext,
   onBack,
   onUpdate,
-  isAutoSaving = false,
   isEditingFromReview = false,
   onReturnToReview,
   country = null,
 }) => {
   const isSubmittingRef = useRef(false);
+
+  // Match PersonalInfoTab/WorkoutPreferencesTab: block Next/Review while the
+  // tab's own data is invalid so invalid data (e.g. all meal toggles off)
+  // can never be pushed back to Review silently via the isEditingFromReview
+  // shortcut below (audit fix — this tab previously left nextDisabled
+  // defaulted to false).
+  const isDisabled = !!(validationResult && !validationResult.is_valid);
 
   const {
     formData,
@@ -219,11 +225,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         onBack={onBack}
         onNext={handleNext}
         nextLabel={isEditingFromReview ? "Review" : "Next"}
-        footerNote={
-          isAutoSaving ? (
-            <Text style={styles.autoSaveText}>Saving…</Text>
-          ) : undefined
-        }
+        nextDisabled={isDisabled}
       >
         <View style={styles.sections}>
           {/* Default visible — diet_type (the focal question) */}
@@ -349,9 +351,6 @@ const styles = StyleSheet.create({
   },
   receiptSep: {
     color: tokens.ink3,
-  },
-  autoSaveText: {
-    ...typeScale.caption,
   },
 });
 

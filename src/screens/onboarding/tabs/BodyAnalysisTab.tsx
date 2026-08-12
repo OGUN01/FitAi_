@@ -117,6 +117,12 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
 
   const isSubmittingRef = useRef(false);
 
+  // Match PersonalInfoTab/WorkoutPreferencesTab: block Next/Review while the
+  // tab's own data is invalid so invalid data can never be pushed back to
+  // Review silently via the isEditingFromReview shortcut below (audit fix —
+  // this tab previously left nextDisabled defaulted to false).
+  const isDisabled = !!(validationResult && !validationResult.is_valid);
+
   const handleNext = () => {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
@@ -174,6 +180,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           onBack={onBack}
           onNext={handleNext}
           nextLabel={isEditingFromReview ? "Review" : "Next"}
+          nextDisabled={isDisabled}
         >
           <View style={styles.sections}>
             {/* Default visible: measurements + live BMI ring */}

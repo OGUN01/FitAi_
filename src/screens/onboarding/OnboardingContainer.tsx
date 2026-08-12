@@ -1,9 +1,8 @@
 import React, { useMemo, useEffect } from "react";
 import { View, StyleSheet, StatusBar } from "react-native";
-import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { useOnboardingLogic } from "../../hooks/useOnboardingLogic";
-import OnboardingProgressIndicator from "../../components/onboarding/OnboardingProgressIndicator";
 
 import PersonalInfoTab from "./tabs/PersonalInfoTab";
 import DietPreferencesTab from "./tabs/DietPreferencesTab";
@@ -159,21 +158,6 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
         return null;
     }
   };
-
-  if (logic.showProgressModal) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <OnboardingProgressIndicator
-          currentTab={logic.currentTab}
-          totalTabs={5}
-          completedTabs={Array.from(logic.completedTabs)}
-          tabValidationStatus={logic.tabValidationStatus}
-          overallCompletion={logic.overallCompletion}
-          showDetails={true}
-        />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <>
