@@ -15,6 +15,13 @@ const WORKER_START_TIME = Date.now();
 let healthCheckCache: { result: HealthCheckResponse; timestamp: number } | null = null;
 const HEALTH_CACHE_TTL = 30000; // 30 seconds
 
+// FIX: de-duplicate concurrent cache-miss requests behind a single in-flight
+// promise. Without this, every request that lands in the same cache-miss
+// window (e.g. several uptime-monitor pings arriving right as the 30s TTL
+// expires) independently re-runs the KV put/get/delete, R2 list, and a real
+// Supabase query before the first one finishes and repopulates the cache.
+let inFlightHealthCheck: Promise<HealthCheckResponse> | null = null;
+
 /**
  * Check Cloudflare KV health
  */
@@ -112,24 +119,11 @@ async function checkSupabaseHealth(env: Env): Promise<ServiceStatus> {
 }
 
 /**
- * Health check endpoint handler
+ * Run the live KV/R2/Supabase checks and populate the cache.
+ * Factored out so concurrent cache-miss callers can share one in-flight
+ * promise instead of each re-running the underlying service checks.
  */
-export async function handleHealthCheck(c: Context<{ Bindings: Env }>): Promise<Response> {
-  const env = c.env;
-  const now = Date.now();
-
-  // Return cached result if still valid
-  if (healthCheckCache && (now - healthCheckCache.timestamp) < HEALTH_CACHE_TTL) {
-    // Update uptime in cached response
-    const cachedResponse = {
-      ...healthCheckCache.result,
-      uptime: Math.floor((now - WORKER_START_TIME) / 1000),
-      timestamp: new Date().toISOString(),
-    };
-    return c.json(cachedResponse, cachedResponse.status === 'healthy' ? 200 : 503);
-  }
-
-  // Check all services in parallel (cache miss)
+async function runHealthChecks(env: Env): Promise<HealthCheckResponse> {
   const [kvStatus, r2Status, supabaseStatus] = await Promise.all([
     checkKVHealth(env),
     checkR2Health(env),
@@ -150,13 +144,10 @@ export async function handleHealthCheck(c: Context<{ Bindings: Env }>): Promise<
       ? 'degraded'
       : 'healthy';
 
-  // Calculate uptime in seconds
-  const uptimeSeconds = Math.floor((Date.now() - WORKER_START_TIME) / 1000);
-
   const response: HealthCheckResponse = {
     status: overallStatus,
     version: '2.0.0',
-    uptime: uptimeSeconds,
+    uptime: Math.floor((Date.now() - WORKER_START_TIME) / 1000),
     timestamp: new Date().toISOString(),
     services: {
       cloudflare_kv: kvStatus,
@@ -171,8 +162,41 @@ export async function handleHealthCheck(c: Context<{ Bindings: Env }>): Promise<
     timestamp: Date.now(),
   };
 
+  return response;
+}
+
+/**
+ * Health check endpoint handler
+ */
+export async function handleHealthCheck(c: Context<{ Bindings: Env }>): Promise<Response> {
+  const env = c.env;
+  const now = Date.now();
+
+  let result: HealthCheckResponse;
+
+  if (healthCheckCache && (now - healthCheckCache.timestamp) < HEALTH_CACHE_TTL) {
+    // Cache hit — reuse the last computed status.
+    result = healthCheckCache.result;
+  } else if (inFlightHealthCheck) {
+    // Another request already triggered a fresh check for this cache-miss
+    // window — await the same promise instead of re-running the checks.
+    result = await inFlightHealthCheck;
+  } else {
+    inFlightHealthCheck = runHealthChecks(env).finally(() => {
+      inFlightHealthCheck = null;
+    });
+    result = await inFlightHealthCheck;
+  }
+
+  // Stamp uptime/timestamp fresh for this specific request/response.
+  const response = {
+    ...result,
+    uptime: Math.floor((Date.now() - WORKER_START_TIME) / 1000),
+    timestamp: new Date().toISOString(),
+  };
+
   // Return appropriate HTTP status code
-  const httpStatus = overallStatus === 'healthy' ? 200 : overallStatus === 'degraded' ? 200 : 503;
+  const httpStatus = response.status === 'healthy' ? 200 : response.status === 'degraded' ? 200 : 503;
 
   return c.json(response, httpStatus);
 }

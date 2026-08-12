@@ -32,10 +32,84 @@ import {
 	generateCooldown,
 	estimateCalories,
 	type StructuredWorkout,
+	type WorkoutExercise,
 } from '../utils/workoutStructure';
 import { shouldExcludeExercise, findSubstitute } from '../utils/injurySubstitutions';
 
 // Note: We handle filtering manually since we already have safety-filtered exercises
+
+// ============================================================================
+// LIMITATION VOCABULARY NORMALIZATION
+// ============================================================================
+
+/**
+ * SUBSTITUTION_RULES (injurySubstitutions.ts) uses an underscored vocabulary
+ * ('knee_pain', 'lower_back_pain', 'shoulder_pain', 'wrist_pain', 'elbow_pain',
+ * 'hip_pain', 'neck_pain') that does NOT match the app's actual onboarding
+ * values from PHYSICAL_LIMITATIONS_OPTIONS ('back-pain', 'knee-problems',
+ * 'shoulder-issues', 'neck-problems', 'wrist-problems', etc — hyphenated and
+ * differently worded). Without this mapping, shouldExcludeExercise/
+ * findSubstitute never match any real onboarding value and Step 3b never
+ * fires for any real user.
+ */
+const LIMITATION_ALIASES: Record<string, string> = {
+	'back-pain': 'lower_back_pain',
+	'back_pain': 'lower_back_pain',
+	'knee-problems': 'knee_pain',
+	'knee_problems': 'knee_pain',
+	'shoulder-issues': 'shoulder_pain',
+	'shoulder_issues': 'shoulder_pain',
+	'neck-problems': 'neck_pain',
+	'neck_problems': 'neck_pain',
+	'wrist-problems': 'wrist_pain',
+	'wrist_problems': 'wrist_pain',
+	'hip-pain': 'hip_pain',
+	'hip-groin': 'hip_pain',
+	'elbow-pain': 'elbow_pain',
+};
+
+function canonicalizeLimitation(raw: string): string {
+	const key = raw.trim().toLowerCase();
+	return LIMITATION_ALIASES[key] ?? key.replace(/-/g, '_');
+}
+
+/**
+ * FIX I: Per-day minimum-exercise fallback. selectExercisesForDay() has no
+ * guard for a day whose targeted body parts/muscles have zero surviving
+ * candidates after safety filtering (e.g. a dedicated "Legs" day for a user
+ * with a knee injury, since the coarse knee_problems rule excludes ALL
+ * "upper legs"/"lower legs"/"legs" bodyParts wholesale). The aggregate
+ * Step 4 pool-size guard (`exercises.length < 20`) doesn't catch this — a
+ * 300-exercise upper-body-heavy pool clears it easily while one specific day
+ * still ships with `exercises: []`. Used when a day resolves to 0 exercises
+ * after selection so we never ship a workout with only warmup/cooldown.
+ */
+const GENTLE_DAY_FALLBACK_EXERCISES: WorkoutExercise[] = [
+	{
+		exerciseId: 'gentle_003',
+		name: 'Seated Mobility Work',
+		sets: 2,
+		reps: '10',
+		restSeconds: 30,
+		notes: 'Arm circles, neck rolls, ankle rotations — gentle range-of-motion work',
+	},
+	{
+		exerciseId: 'gentle_001',
+		name: 'Walking (Light Pace)',
+		sets: 1,
+		reps: '15-20 minutes',
+		restSeconds: 0,
+		notes: 'Maintain a comfortable pace, stop if any discomfort',
+	},
+	{
+		exerciseId: 'gentle_002',
+		name: 'Gentle Full-Body Stretching',
+		sets: 1,
+		reps: '10 minutes',
+		restSeconds: 0,
+		notes: 'Hold each stretch 20-30 seconds, never force',
+	},
+];
 
 // ============================================================================
 // MAIN GENERATION FUNCTION
@@ -122,44 +196,94 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	// here we ensure a safe equivalent is available for every excluded exercise.
 	// ============================================================================
 
+	// FIX H: Canonicalize onboarding's hyphenated limitation values to the
+	// underscored vocabulary SUBSTITUTION_RULES expects (see LIMITATION_ALIASES
+	// above) — otherwise shouldExcludeExercise/findSubstitute never match.
 	const userLimitations = [
 		...(request.profile.injuries ?? []),
 		...(request.profile.restrictions ?? []),
-	].map((s) => s.toLowerCase());
+	].map((s) => canonicalizeLimitation(s));
 
 	if (userLimitations.length > 0) {
 		const exerciseIdsInPool = new Set(exercises.map((e) => e.exerciseId));
 		const substitutesAdded: string[] = [];
 
-		// FIX F: Build a Set of all safety-excluded IDs so we can guard against
-		// circular substitution (substitute is itself contraindicated).
-		const safetyExcludedIds = new Set(
-			safetyResult.excludedExercises
-				.map((ex) => ex.exercise?.exerciseId ?? (ex as any))
-				.filter((id): id is string => typeof id === 'string'),
+		// FIX F: Build a Set of all safety-excluded IDs (and why they were
+		// excluded) so we can guard against circular substitution while still
+		// allowing curated, injury-specific substitutes through.
+		const excludedReasonsById = new Map<string, string[]>();
+		for (const excluded of safetyResult.excludedExercises) {
+			const id = excluded.exercise?.exerciseId;
+			if (typeof id === 'string') {
+				excludedReasonsById.set(id, excluded.reasons ?? []);
+			}
+		}
+		const safetyExcludedIds = new Set(excludedReasonsById.keys());
+
+		// A substitute that was ALSO excluded by the safety filter is only a
+		// problem if it was excluded for a reason unrelated to this specific
+		// injury's coarse body-part category (e.g. pregnancy, a medical
+		// condition, or a different injury). safetyFilter.ts's per-injury
+		// bodyPart exclusion is intentionally coarse (e.g. "knee_problems"
+		// excludes ALL "upper legs"/"lower legs" exercises), which is exactly
+		// why SUBSTITUTION_RULES exists as a curated, more specific safe list —
+		// so a "Targets <bodyPart> (injured area)" exclusion reason alone must
+		// NOT block a curated substitute, or Step 3b can never add anything
+		// back for the injury it's designed to serve.
+		const isBlockedForUnrelatedReason = (candidateId: string): boolean => {
+			const reasons = excludedReasonsById.get(candidateId);
+			if (!reasons || reasons.length === 0) return false;
+			return reasons.some((r) => !/: Targets .+\(injured area\)$/.test(r));
+		};
+
+		// FIX G: shouldExcludeExercise/findSubstitute match SUBSTITUTION_RULES'
+		// excludePatterns/substituteWith (underscored slugs like 'leg_curl',
+		// 'romanian_deadlift') against whatever id string they're given. The
+		// real exercise database (exercisedb.dev) uses opaque random
+		// exerciseId hashes ('VPPtusI') that never contain these patterns —
+		// only the exercise NAME does ('lever lying leg curl'). Slugify the
+		// name (spaces → underscores) for matching, and search the
+		// equipment-filtered FULL exercise database (not the already
+		// safety-filtered `exercises` pool) so a genuinely new substitute is
+		// reachable — searching within `exercises` made the
+		// `!exerciseIdsInPool.has(sub)` guard below permanently false, since
+		// anything found there was, by construction, already present.
+		const nameSlug = (name: string) => name.toLowerCase().trim().replace(/[\s-]+/g, '_');
+
+		const equipmentFilteredFull = db.exercises.filter((ex) =>
+			ex.equipments.some((eq) => availableEquipmentLC.has(eq.toLowerCase())),
 		);
+		const slugToExercise = new Map<string, (typeof equipmentFilteredFull)[number]>();
+		for (const ex of equipmentFilteredFull) {
+			const slug = nameSlug(ex.name);
+			if (!slugToExercise.has(slug)) slugToExercise.set(slug, ex);
+		}
+		const equipmentFilteredSlugs = Array.from(slugToExercise.keys());
 
 		for (const excluded of safetyResult.excludedExercises) {
-			const excludedId = excluded.exercise?.exerciseId ?? (excluded as any);
-			if (typeof excludedId !== 'string') continue;
-			if (!shouldExcludeExercise(excludedId, userLimitations)) continue;
-			// Find a substitute in the full DB that's also safe (not excluded by safety filter)
-			const safeIds = exercises.map((e) => e.exerciseId);
-			const sub = findSubstitute(excludedId, userLimitations, safeIds);
+			const excludedExercise = excluded.exercise;
+			const excludedId = excludedExercise?.exerciseId;
+			if (typeof excludedId !== 'string' || !excludedExercise) continue;
 
-			// FIX F: Skip if the substitute is itself in the excluded set (circular substitution guard)
-			if (sub && safetyExcludedIds.has(sub)) {
-				console.warn(`[Rule-Based] Step 3b: Substitute "${sub}" for "${excludedId}" is also contraindicated — skipping`);
+			const excludedSlug = nameSlug(excludedExercise.name);
+			if (!shouldExcludeExercise(excludedSlug, userLimitations)) continue;
+
+			const subSlug = findSubstitute(excludedSlug, userLimitations, equipmentFilteredSlugs);
+			if (!subSlug) continue;
+
+			const subExercise = slugToExercise.get(subSlug);
+			if (!subExercise) continue;
+			const sub = subExercise.exerciseId;
+
+			if (safetyExcludedIds.has(sub) && isBlockedForUnrelatedReason(sub)) {
+				console.warn(`[Rule-Based] Step 3b: Substitute "${subExercise.name}" for "${excludedExercise.name}" is contraindicated for an unrelated reason — skipping`);
 				continue;
 			}
 
-			if (sub && !exerciseIdsInPool.has(sub)) {
-				const subExercise = db.exercises.find((e) => e.exerciseId === sub);
-				if (subExercise) {
-					exercises.push(subExercise);
-					exerciseIdsInPool.add(sub);
-					substitutesAdded.push(`${excludedId} → ${sub}`);
-				}
+			if (!exerciseIdsInPool.has(sub)) {
+				exercises.push(subExercise);
+				exerciseIdsInPool.add(sub);
+				substitutesAdded.push(`${excludedExercise.name} → ${subExercise.name}`);
 			}
 		}
 
@@ -231,6 +355,37 @@ export async function generateRuleBasedWorkout(request: WorkoutGenerationRequest
 	// ============================================================================
 
 	const structuredWorkouts: StructuredWorkout[] = weeklyPlan.workouts.map((workoutDay) => {
+		// FIX I: per-day 0-exercise guard — see GENTLE_DAY_FALLBACK_EXERCISES
+		// comment above. This can happen even though the aggregate Step 4
+		// pool-size check passed, because that check only looks at the total
+		// pool, not each day's specific targeted body parts/muscles.
+		if (workoutDay.exercises.length === 0) {
+			console.warn(
+				`[Rule-Based] Step 7: "${workoutDay.dayName}" (${workoutDay.workoutType}) resolved to 0 exercises after selection — substituting gentle-movement block`,
+			);
+			allWarnings.push(
+				`Your ${workoutDay.workoutType} day had no exercises available given your current safety constraints, so we substituted a gentle mobility & movement block for that day. Consider consulting a physical therapist for a tailored program.`,
+			);
+
+			return {
+				title: `Gentle Movement - ${selectedSplit.name}`,
+				description: `⚠️ SAFETY NOTICE: Your usual ${workoutDay.workoutType} exercises were all excluded by your current safety constraints. This day focuses on gentle, low-risk movement instead.`,
+				totalDuration: enrichedProfile.workoutDuration,
+				difficulty: enrichedProfile.experienceLevel,
+				estimatedCalories: 100,
+				warmup: generateWarmup(workoutDay.workoutType, 5),
+				exercises: GENTLE_DAY_FALLBACK_EXERCISES.map((ex) => ({ ...ex })),
+				cooldown: generateCooldown(workoutDay.workoutType, 5),
+				coachingTips: [
+					'⚠️ Exercises for this day were substituted due to your current safety profile',
+					'👨‍⚕️ Consider consulting a physical therapist for a tailored program covering this muscle group',
+					'🛑 Stop immediately if you experience any pain or discomfort',
+				],
+				progressionNotes:
+					'Focus on comfort and consistency for this day. Revisit with your healthcare provider as your condition improves.',
+			};
+		}
+
 		// Assign parameters to exercises — pass weekNumber so mesocycle progressive
 		// overload (week-over-week sets/reps/rest scaling) is actually applied.
 		const exercises = assignWorkoutParameters(workoutDay, enrichedProfile, safetyProfile, weekNumber);

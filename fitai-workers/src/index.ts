@@ -11,6 +11,14 @@ import { Env, DietJobMessage } from './utils/types';
 import { createErrorResponse, logError, APIError } from './utils/errors';
 import { handleHealthCheck } from './handlers/health';
 import { handleWorkoutGeneration } from './handlers/workoutGeneration';
+import {
+	handleSuggestDay,
+	handleValidatePlan,
+	handleEditNaturalLanguage,
+	handleGenerateFullWeek,
+	handleApplyProgression,
+	handleDeload,
+} from './handlers/workoutBuilderAi';
 import { handleDietGeneration, handleMealSwap } from './handlers/dietGeneration';
 import { handleChat, handleGetConversationHistory, handleGetConversations } from './handlers/chatHandler';
 import { handleExerciseSearch } from './handlers/exerciseSearch';
@@ -251,7 +259,12 @@ app.get('/api', (c) => {
 app.get('/health', handleHealthCheck);
 
 // Analytics endpoint (protected - requires authentication)
-app.get('/api/analytics/usage', authMiddleware, requireFeatureFlag('featureAnalytics'), rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleAnalytics);
+// SECURITY: handleAnalytics returns platform-wide aggregate AI spend/model
+// economics (never filtered by caller's own user id) — it must be admin-gated
+// the same as the near-duplicate /api/admin/analytics route below.
+// requireFeatureFlag alone let any user with the flag enabled see FitAI's
+// aggregate cost data.
+app.get('/api/analytics/usage', authMiddleware, requireRole('admin'), requireFeatureFlag('featureAnalytics'), rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleAnalytics);
 
 // ============================================================================
 // AUTHENTICATION TEST ENDPOINTS
@@ -331,6 +344,61 @@ app.post(
 	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
 	subscriptionGateMiddleware('ai_generation'),
 	handleWorkoutGeneration,
+);
+
+// ============================================================================
+// WORKOUT BUILDER AI (Phase 9) — custom workout builder assists
+// These were fully implemented in handlers/workoutBuilderAi.ts but never
+// wired up, so the client (fitaiWorkersClient.ts suggestDay/validateWorkoutPlan/
+// editWorkoutNaturalLanguage/generateFullWeek/applyProgression/deloadWorkoutPlan)
+// was 404ing on every call. AI-calling endpoints get the same
+// auth + rate-limit + subscription-gate stack as /workout/generate; the
+// rule-based endpoints (validate/apply-progression/deload) don't call the AI
+// provider so they're gated on auth + standard authenticated rate limit only.
+// ============================================================================
+app.post(
+	'/workout/suggest-day',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleSuggestDay,
+);
+
+app.post(
+	'/workout/validate',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED),
+	handleValidatePlan,
+);
+
+app.post(
+	'/workout/edit-natural-language',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleEditNaturalLanguage,
+);
+
+app.post(
+	'/workout/generate-full-week',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleGenerateFullWeek,
+);
+
+app.post(
+	'/workout/apply-progression',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED),
+	handleApplyProgression,
+);
+
+app.post(
+	'/workout/deload',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED),
+	handleDeload,
 );
 
 /**

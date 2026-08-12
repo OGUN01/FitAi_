@@ -11,7 +11,7 @@
 import { Context } from 'hono';
 import { Env } from '../utils/types';
 import { getSupabaseClient } from '../utils/supabase';
-import { APIError } from '../utils/errors';
+import { APIError, ValidationError } from '../utils/errors';
 
 // ============================================================================
 // TYPES
@@ -61,10 +61,13 @@ export async function handleAnalytics(
   try {
     // Get time range from query params
     const hoursParam = c.req.query('hours');
-    const hours = Math.min(
-      Math.max(parseInt(hoursParam || '24', 10), 1),
-      168 // Max 7 days
-    );
+    const parsedHours = hoursParam === undefined ? 24 : Number(hoursParam);
+
+    if (!Number.isFinite(parsedHours) || !Number.isInteger(parsedHours)) {
+      throw new ValidationError('Query param "hours" must be an integer', { hours: hoursParam });
+    }
+
+    const hours = Math.min(Math.max(parsedHours, 1), 168); // Max 7 days
 
     const endTime = new Date();
     const startTime = new Date(endTime.getTime() - hours * 60 * 60 * 1000);

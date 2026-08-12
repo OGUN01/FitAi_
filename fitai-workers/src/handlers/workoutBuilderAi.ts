@@ -86,6 +86,44 @@ function dayLabel(dayIndex: number): string {
 }
 
 /**
+ * Build a stable fingerprint of the user's safety-relevant profile fields
+ * (injuries, restrictions, medical conditions, pregnancy/breastfeeding status).
+ * MUST be included in every cache key that's derived from a request carrying
+ * a UserProfileSchema — otherwise two users with identical
+ * equipment/experience/goal but different injury profiles collide on the same
+ * KV/DB cache entry, and an AI suggestion generated for an uninjured user
+ * (e.g. containing overhead press, barbell squats) gets served verbatim to a
+ * user who disclosed a shoulder or knee injury, silently bypassing the
+ * "respect injuries" prompt guidance that only applied at generation time.
+ */
+function profileSafetyFingerprint(profile?: {
+  injuries?: string[];
+  restrictions?: string[];
+  medicalConditions?: string[];
+  pregnancyStatus?: boolean;
+  pregnancyTrimester?: string | number;
+  breastfeedingStatus?: boolean;
+}): string {
+  if (!profile) return 'none';
+
+  const limitations = [
+    ...(profile.injuries ?? []),
+    ...(profile.restrictions ?? []),
+    ...(profile.medicalConditions ?? []),
+  ]
+    .map((s) => s.toLowerCase().trim())
+    .filter(Boolean)
+    .sort()
+    .join(',');
+
+  const pregnancy = profile.pregnancyStatus ? `preg:${profile.pregnancyTrimester ?? 1}` : '';
+  const breastfeeding = profile.breastfeedingStatus ? 'bf' : '';
+
+  const fingerprint = [limitations, pregnancy, breastfeeding].filter(Boolean).join('|');
+  return fingerprint || 'none';
+}
+
+/**
  * Build a stable cache-key params object for a builder endpoint. We only hash
  * the semantically-relevant fields (not the entire plan blob) so equivalent
  * inputs collide regardless of irrelevant metadata (timestamps, ids).
@@ -234,6 +272,7 @@ export async function handleSuggestDay(
       fitnessGoal: request.profile.fitnessGoal,
       goals: (request.goals ?? []).sort().join(','),
       weekNumber: request.weekNumber ?? 1,
+      safety: profileSafetyFingerprint(request.profile),
     };
 
     return await runWithCacheAndDedup(
@@ -333,6 +372,7 @@ export async function handleValidatePlan(
     const cacheParams = {
       endpoint: 'validate',
       plan: planCacheFingerprint(request.plan as unknown as BuilderPlan),
+      safety: profileSafetyFingerprint(request.profile),
     };
 
     return await runWithCacheAndDedup(
@@ -548,6 +588,7 @@ export async function handleEditNaturalLanguage(
       instruction: request.instruction,
       plan: planCacheFingerprint(request.plan as unknown as BuilderPlan),
       experienceLevel: request.profile?.experienceLevel ?? 'intermediate',
+      safety: profileSafetyFingerprint(request.profile),
     };
 
     return await runWithCacheAndDedup(
@@ -654,6 +695,7 @@ export async function handleGenerateFullWeek(
       experienceLevel: request.profile.experienceLevel,
       equipment: request.profile.availableEquipment.sort().join(','),
       fitnessGoal: request.profile.fitnessGoal,
+      safety: profileSafetyFingerprint(request.profile),
     };
 
     return await runWithCacheAndDedup(

@@ -264,7 +264,19 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
 				);
 			}
 
-			if (error.message.includes('image') || error.message.includes('vision')) {
+			// Narrowed to specific "your input was bad" phrases rather than the
+			// generic words 'image'/'vision', which also appear inside unrelated
+			// provider/outage errors (e.g. "Gemini Vision service unavailable")
+			// and would otherwise get misclassified as a client input problem.
+			const invalidImagePhrases = [
+				'invalid image',
+				'unsupported image',
+				'unsupported mime type',
+				'could not decode image',
+				'image format',
+				'corrupt image',
+			];
+			if (invalidImagePhrases.some((phrase) => error.message.toLowerCase().includes(phrase))) {
 				throw new APIError(
 					'Could not process image. Please ensure the image is clear and try again.',
 					400,
