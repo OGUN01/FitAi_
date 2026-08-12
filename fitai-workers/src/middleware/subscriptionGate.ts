@@ -52,6 +52,13 @@ export interface SubscriptionContext {
 
 // Grace period: 'active', 'authenticated', 'pending' all grant access
 const ACCESS_GRANTING_STATUSES: readonly SubscriptionStatus[] = ['active', 'authenticated', 'pending'];
+// Last-resort fallback only — used when the 'free' row is somehow missing
+// from subscription_plans entirely (DB error or misconfiguration). Every
+// free-tier user hits this path (handleCreateSubscription never inserts a
+// subscriptions row for the free tier), so the normal case must read the
+// live plan row below instead of this constant, or admin edits to the free
+// plan's limits (via PATCH /api/admin/plans/free) would silently never take
+// effect here despite being reflected in /api/subscription/status.
 const FALLBACK_FREE_FEATURES: FeatureLimitConfig = {
 	ai_generations_per_day: undefined,
 	ai_generations_per_month: 1,
@@ -166,8 +173,35 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		}
 
 		if (!subscription) {
-			planRow = null;
-			planFeatures = FALLBACK_FREE_FEATURES;
+			// No access-granting subscription row — the normal case for every
+			// free-tier user. Read the live 'free' plan row (same lookup pattern
+			// as the paid-tier path above) so admin-edited free-tier limits are
+			// actually enforced here, not just reflected in /subscription/status.
+			try {
+				const { data: freePlanData, error: freePlanError } = await supabase
+					.from('subscription_plans')
+					.select('*')
+					.eq('tier', 'free')
+					.eq('active', true)
+					.maybeSingle();
+
+				if (freePlanError) {
+					console.error('[SubscriptionGate] Free plan query error, using hardcoded fallback:', freePlanError);
+					planRow = null;
+					planFeatures = FALLBACK_FREE_FEATURES;
+				} else if (freePlanData) {
+					planRow = freePlanData as SubscriptionPlanRow;
+					planFeatures = extractFeatures(planRow);
+				} else {
+					console.error('[SubscriptionGate] No active free plan row found, using hardcoded fallback');
+					planRow = null;
+					planFeatures = FALLBACK_FREE_FEATURES;
+				}
+			} catch (freePlanError) {
+				console.error('[SubscriptionGate] Free plan lookup threw, using hardcoded fallback:', freePlanError);
+				planRow = null;
+				planFeatures = FALLBACK_FREE_FEATURES;
+			}
 		}
 
 		let limitCheck: UsageLimitResult;

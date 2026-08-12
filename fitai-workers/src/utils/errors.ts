@@ -321,8 +321,14 @@ export function createErrorResponse(error: Error | APIError): Response {
 
   if (error instanceof RateLimitError) {
     headers['X-RateLimit-Limit'] = error.limit.toString();
+    headers['X-RateLimit-Remaining'] = '0';
     headers['X-RateLimit-Reset'] = error.resetAt.toString();
-    headers['Retry-After'] = Math.ceil((error.resetAt - Date.now()) / 1000).toString();
+    // error.resetAt is a Unix timestamp in SECONDS (set in rateLimit.ts as
+    // windowStart + windowSeconds); Date.now() is in MILLISECONDS. Both sides
+    // must be in seconds or this produces a huge negative Retry-After, which
+    // is an invalid HTTP header value per RFC 9110 (must be non-negative
+    // delta-seconds or an HTTP-date).
+    headers['Retry-After'] = Math.max(0, error.resetAt - Math.floor(Date.now() / 1000)).toString();
   }
 
   // Add retry-after header for retryable errors

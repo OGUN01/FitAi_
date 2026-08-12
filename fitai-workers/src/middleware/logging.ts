@@ -2,10 +2,12 @@
  * FitAI Workers - Request/Response Logging Middleware
  *
  * Logs all API requests to Supabase api_logs table:
- * - Request details (method, path, headers, body)
- * - Response details (status, time, size)
+ * - Request details (method, path)
+ * - Response details (status, time)
  * - User information (if authenticated)
  * - Error tracking
+ *
+ * Note: headers and request body are NOT captured — only method/path.
  */
 
 import { Context, Next } from 'hono';
@@ -51,14 +53,18 @@ interface ApiLog {
 // ============================================================================
 
 /**
- * Get client IP address from request
+ * Get client IP address from request.
+ *
+ * Only `CF-Connecting-IP` is trusted here — it is set by the Cloudflare edge
+ * itself and cannot be forwarded or spoofed by the client. `X-Forwarded-For`
+ * and `X-Real-IP` are arbitrary request headers any caller can set; since
+ * this value is persisted to `api_logs` as the audit trail used for abuse
+ * investigation, trusting a client-controllable header would let an attacker
+ * freely spoof the recorded IP for their own requests or plant another
+ * user's real IP in the log trail.
  */
 function getClientIP(c: Context): string | null {
-  // Cloudflare Workers provides CF-Connecting-IP header
-  return c.req.header('CF-Connecting-IP') ||
-         c.req.header('X-Forwarded-For') ||
-         c.req.header('X-Real-IP') ||
-         null;
+  return c.req.header('CF-Connecting-IP') || null;
 }
 
 /**
@@ -186,29 +192,4 @@ export async function loggingMiddleware(
       user: user?.id || 'anonymous',
     });
   }
-}
-
-/**
- * Log custom event (for specific tracking needs)
- */
-export async function logCustomEvent(
-  env: Env,
-  userId: string | null,
-  eventType: string,
-  metadata?: Record<string, any>
-): Promise<void> {
-  const logData: ApiLog = {
-    user_id: userId,
-    endpoint: `/${eventType}`,
-    method: 'EVENT',
-    status_code: 200,
-    response_time_ms: 0,
-    error_code: null,
-    error_message: null,
-    user_agent: null,
-    ip_address: null,
-    request_id: crypto.randomUUID(),
-  };
-
-  await logToSupabase(env, logData);
 }

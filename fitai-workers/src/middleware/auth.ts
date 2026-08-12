@@ -202,8 +202,15 @@ export function requireRole(...allowedRoles: string[]) {
       }
     }
 
+    // Only `appRole` (sourced from admin-controlled `app_metadata.role`) is a
+    // real app permission. `user.role` is Supabase's generic session role
+    // claim — it is the literal string 'authenticated' for virtually every
+    // logged-in user, so falling back to it would let any future
+    // requireRole('authenticated') call (or any custom role name colliding
+    // with a Supabase built-in) silently grant access to every signed-in
+    // user regardless of their actual app role.
     const fallbackRoles = allowedRoles.filter((role) => role !== 'admin');
-    const effectiveRole = user.appRole || user.role;
+    const effectiveRole = user.appRole;
     if (!effectiveRole || !fallbackRoles.includes(effectiveRole)) {
       throw new ForbiddenError('Insufficient permissions', {
         required: allowedRoles,
