@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
-import { rbr, rh } from "../../../utils/responsive";
+import { rbr, rf, rh } from "../../../utils/responsive";
 
 interface ActionButtonsProps {
   isCompleted: boolean;
@@ -49,7 +49,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         >
           {isCompleting ? (
             <>
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <AuroraSpinner customSize={rf(14)} theme="white" />
               <Text style={[styles.navButtonText, styles.completeButtonText]}>
                 Completing...
               </Text>

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   Modal,
   StyleProp,
   ViewStyle,
@@ -17,6 +16,7 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../ui';
 import { GlassButton } from '../ui/aurora/GlassButton';
+import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import {
   flatColors as colors,
   spacing,
@@ -172,7 +172,7 @@ const CameraComponent: React.FC<CameraProps> = ({
   if (!permission) {
     return (
       <View style={styles.permissionContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <AuroraSpinner size="lg" theme="primary" />
         <Text style={styles.permissionText} numberOfLines={2}>
           Requesting camera permission...
         </Text>

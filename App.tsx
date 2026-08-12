@@ -4,7 +4,7 @@ enableScreens();
 
 import React, { useState, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, View, ActivityIndicator, Text, TextInput, Platform } from "react-native";
+import { StyleSheet, View, Text, TextInput, Platform } from "react-native";
 
 // react-native-reanimated's web renderer injects `transform-origin` (kebab-case)
 // as an inline DOM style, which React warns about. React passes the property name
@@ -53,6 +53,7 @@ import { ThemeProvider } from "./src/theme/ThemeProvider";
 import { colors, spacing, typography } from "./src/theme/aurora-tokens";
 import { FONT_FAMILY } from "./src/theme/fonts";
 import { useAppFonts } from "./src/hooks/useAppFonts";
+import { AuroraSpinner } from "./src/components/ui/aurora/AuroraSpinner";
 
 // Apply the Manrope brand typeface app-wide: every <Text> / <TextInput> in the
 // app inherits this base family (display-level text overrides per-weight via
@@ -1213,7 +1214,7 @@ export default function App() {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" translucent />
-        <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+        <AuroraSpinner size="lg" theme="primary" />
         <Text style={styles.loadingText}>
           {!fontsLoaded
             ? "Loading..."

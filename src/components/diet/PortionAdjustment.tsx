@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
-  ActivityIndicator,
   TextInput,
   Keyboard,
   SafeAreaView,
@@ -21,6 +20,7 @@ import {
 import { GlassButton } from '../ui/aurora/GlassButton';
 import { GlassCard } from '../ui/aurora/GlassCard';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import { RangeSlider } from '../onboarding/aurora/RangeSlider';
 import { RecognizedFood } from '../../services/foodRecognitionService';
 import { rf, rh, rw, rbr } from '../../utils/responsive';
@@ -465,7 +465,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
           {isProcessing && (
             <View style={styles.processingIndicator}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <AuroraSpinner customSize={rf(14)} theme="primary" />
               <Text style={styles.processingText}>Recalculating nutrition...</Text>
             </View>
           )}

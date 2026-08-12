@@ -23,11 +23,11 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import {
   flatColors as colors,
   spacing,
@@ -284,7 +284,7 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
             <View style={styles.statusRow}>
               {loading ? (
                 <>
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <AuroraSpinner customSize={rf(14)} theme="primary" />
                   <Text style={styles.statusText} numberOfLines={1}>
                     Searching…
                   </Text>

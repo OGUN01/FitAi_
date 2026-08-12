@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -14,6 +13,7 @@ import { getCountryFromBarcode } from '@/utils/countryMapping';
 import { flatColors as colors, spacing, borderRadius } from '@/theme/aurora-tokens';
 import { rbr, rf, rp } from '@/utils/responsive';
 import { AnimatedPressable } from '@/components/ui/aurora/AnimatedPressable';
+import { AuroraSpinner } from '@/components/ui/aurora/AuroraSpinner';
 import { DietTextField } from './DietTextField';
 
 interface ManualBarcodeEntryProps {
@@ -267,7 +267,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         >
           {isLooking ? (
             <View style={styles.loadingRow}>
-              <ActivityIndicator size="small" color={colors.white} />
+              <AuroraSpinner customSize={rf(14)} theme="white" />
               <Text style={styles.lookUpButtonText}>Looking up...</Text>
             </View>
           ) : (

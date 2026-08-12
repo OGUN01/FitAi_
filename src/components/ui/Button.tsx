@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ViewStyle,
   TextStyle,
-  ActivityIndicator,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -19,6 +18,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
+import { AuroraSpinner } from "./aurora/AuroraSpinner";
+import { rf } from "../../utils/responsive";
 
 // Hoist outside component — expensive factory should only run once
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -117,13 +118,9 @@ export const Button: React.FC<ButtonProps> = React.memo(({
   };
 
   const buttonContent = loading ? (
-    <ActivityIndicator
-      color={
-        variant === "outline" || variant === "ghost"
-          ? colors.primary
-          : colors.white
-      }
-      size="small"
+    <AuroraSpinner
+      customSize={rf(16)}
+      theme={variant === "outline" || variant === "ghost" ? "primary" : "white"}
     />
   ) : (
     <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>

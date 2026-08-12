@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { flatColors as colors, typography } from "../theme/aurora-tokens";
 import { rf, rp } from "../utils/responsive";
+import { AuroraSpinner } from "./ui/aurora/AuroraSpinner";
 import { initializeBackend } from "../utils/integration";
 import { googleAuthService } from "../services/googleAuth";
 import { migrationService } from "../services/migrationService";
@@ -103,7 +104,7 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" color={colors.primary} />
+        <AuroraSpinner size="lg" theme="primary" />
         <Text style={styles.loadingText}>Initializing FitAI...</Text>
         {initializationError && (
           <Text style={styles.errorText}>Warning: {initializationError}</Text>

@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
+import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rp, rbr, rs } from "../../../utils/responsive";
@@ -64,7 +64,7 @@ export const GifPlayerContent: React.FC<GifPlayerContentProps> = ({
     >
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <AuroraSpinner size="lg" theme="primary" />
           <Text style={styles.loadingText}>Loading demonstration...</Text>
         </View>
       )}

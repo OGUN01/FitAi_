@@ -1,10 +1,11 @@
 import React, { useEffect } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
 import { initializeBackend } from "../../utils/integration";
 import { rf, rp } from "../../utils/responsive";
 import { flatColors as colors, typography } from "../../theme/aurora-tokens";
+import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -52,7 +53,7 @@ export const AuthWrapper: React.FC<AuthWrapperProps> = ({
           accessibilityRole="progressbar"
           accessibilityLabel="Initializing FitAI"
         >
-          <ActivityIndicator size="large" color={colors.primary} />
+          <AuroraSpinner size="lg" theme="primary" />
           <Text
             style={styles.loadingText}
             numberOfLines={1}
@@ -87,7 +88,7 @@ const AuthenticationPlaceholder: React.FC = () => {
       accessibilityRole="header"
       accessibilityLabel="Welcome to FitAI, please sign in to continue"
     >
-      <ActivityIndicator size="large" color={colors.primary} />
+      <AuroraSpinner size="lg" theme="primary" />
       <Text
         style={styles.authTitle}
         numberOfLines={1}

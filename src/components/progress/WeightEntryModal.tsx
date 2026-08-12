@@ -22,7 +22,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,6 +37,7 @@ import {
   flatColors,
 } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rs, rh } from "../../utils/responsive";
+import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
 import { DialStepper } from "../onboarding/aurora/DialStepper";
 import { progressDataService } from "../../services/progressData";
 import { BodyAnalysisService } from "../../services/onboardingService";
@@ -393,10 +393,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                   accessibilityLabel="Save weight entry"
                 >
                   {isSubmitting ? (
-                    <ActivityIndicator
-                      color={colors.text.primary}
-                      size="small"
-                    />
+                    <AuroraSpinner customSize={rf(14)} theme="white" />
                   ) : (
                     <>
                       <Ionicons
