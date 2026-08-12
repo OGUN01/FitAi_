@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import {
   tokens,
@@ -30,6 +30,7 @@ import {
   EQUIPMENT_OPTIONS,
   WORKOUT_TYPE_OPTIONS,
 } from "./WorkoutPreferencesConstants";
+import { onboardingStagger } from "./onboardingAnimation";
 
 interface WorkoutPreferencesTabProps {
   data: WorkoutPreferencesData | null;
@@ -48,13 +49,14 @@ interface WorkoutPreferencesTabProps {
   aiBodyType?: string;
 }
 
-/** Staggered mount wrapper — one quiet FadeInDown per section. */
+/** Staggered mount wrapper — one quiet FadeInDown per section, shared rhythm
+ * (onboardingStagger) with every other onboarding tab. */
 const Mount: React.FC<{ index: number; children: React.ReactNode }> = ({
   index,
   children,
 }) => (
   <Animated.View
-    entering={FadeInDown.duration(280).delay(60 + index * 50)}
+    entering={onboardingStagger(index)}
     style={index > 0 ? styles.sectionGap : undefined}
   >
     {children}

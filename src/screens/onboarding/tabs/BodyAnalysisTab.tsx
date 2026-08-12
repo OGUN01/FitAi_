@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
+import Animated from "react-native-reanimated";
+import { onboardingStagger } from "./onboardingAnimation";
 import { Camera } from "../../../components/advanced/Camera";
 import { ImagePicker } from "../../../components/advanced/ImagePicker";
 import {
@@ -183,70 +185,84 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           nextDisabled={isDisabled}
         >
           <View style={styles.sections}>
-            {/* Default visible: measurements + live BMI ring */}
-            <MeasurementsSection
-              formData={formData}
-              updateField={updateField}
-              getBMICategory={getBMICategory}
-              getFieldError={getFieldError}
-              hasFieldError={hasFieldError}
-              units={personalInfoData?.units ?? null}
-            />
+            {/* Default visible: measurements + live BMI ring.
+                Staggered FadeInDown entrance (shared onboardingStagger rhythm)
+                — matches the sibling tabs (Personal Info, Diet, Workout,
+                Review); this tab previously had zero mount motion, which read
+                as a jarring flicker stepping through the funnel. */}
+            <Animated.View entering={onboardingStagger(0)}>
+              <MeasurementsSection
+                formData={formData}
+                updateField={updateField}
+                getBMICategory={getBMICategory}
+                getFieldError={getFieldError}
+                hasFieldError={hasFieldError}
+                units={personalInfoData?.units ?? null}
+              />
+            </Animated.View>
 
             {/* Default visible: goal ring (target_weight) + timeline */}
-            <GoalVisualizationSection
-              formData={formData}
-              updateField={updateField}
-              updateFields={updateFields}
-              personalInfoData={personalInfoData}
-            />
+            <Animated.View entering={onboardingStagger(1)}>
+              <GoalVisualizationSection
+                formData={formData}
+                updateField={updateField}
+                updateFields={updateFields}
+                personalInfoData={personalInfoData}
+              />
+            </Animated.View>
 
             {/* Collapsed — "Body composition" (Add details) */}
-            <CollapsibleSection
-              title="Body composition"
-              subtitle="Add details for a sharper analysis"
-              expanded={showComposition}
-              onToggle={() => setShowComposition((v) => !v)}
-              testID="body-composition-section"
-            >
-              <BodyCompositionSection
-                formData={formData}
-                updateField={updateField}
-                showMeasurementGuide={showMeasurementGuide}
-                setShowMeasurementGuide={setShowMeasurementGuide}
-                personalInfoData={personalInfoData}
-              />
-            </CollapsibleSection>
+            <Animated.View entering={onboardingStagger(2)}>
+              <CollapsibleSection
+                title="Body composition"
+                subtitle="Add details for a sharper analysis"
+                expanded={showComposition}
+                onToggle={() => setShowComposition((v) => !v)}
+                testID="body-composition-section"
+              >
+                <BodyCompositionSection
+                  formData={formData}
+                  updateField={updateField}
+                  showMeasurementGuide={showMeasurementGuide}
+                  setShowMeasurementGuide={setShowMeasurementGuide}
+                  personalInfoData={personalInfoData}
+                />
+              </CollapsibleSection>
+            </Animated.View>
 
             {/* Collapsed — "Progress photos" (Optional) */}
-            <CollapsibleSection
-              title="Progress photos"
-              subtitle="Optional — for your own reference"
-              expanded={showPhotos}
-              onToggle={() => setShowPhotos((v) => !v)}
-              testID="progress-photos-section"
-            >
-              <PhotoAnalysisSection
-                formData={formData}
-                openPhotoOptions={openPhotoOptions}
-                removePhoto={removePhoto}
-              />
-            </CollapsibleSection>
+            <Animated.View entering={onboardingStagger(3)}>
+              <CollapsibleSection
+                title="Progress photos"
+                subtitle="Optional — for your own reference"
+                expanded={showPhotos}
+                onToggle={() => setShowPhotos((v) => !v)}
+                testID="progress-photos-section"
+              >
+                <PhotoAnalysisSection
+                  formData={formData}
+                  openPhotoOptions={openPhotoOptions}
+                  removePhoto={removePhoto}
+                />
+              </CollapsibleSection>
+            </Animated.View>
 
             {/* Collapsed — "Medical & safety" (Add details) */}
-            <CollapsibleSection
-              title="Medical & safety"
-              subtitle="Add details so we keep recommendations safe"
-              expanded={showMedical}
-              onToggle={() => setShowMedical((v) => !v)}
-              testID="medical-section"
-            >
-              <MedicalSection
-                formData={formData}
-                updateField={updateField}
-                personalInfoData={personalInfoData}
-              />
-            </CollapsibleSection>
+            <Animated.View entering={onboardingStagger(4)}>
+              <CollapsibleSection
+                title="Medical & safety"
+                subtitle="Add details so we keep recommendations safe"
+                expanded={showMedical}
+                onToggle={() => setShowMedical((v) => !v)}
+                testID="medical-section"
+              >
+                <MedicalSection
+                  formData={formData}
+                  updateField={updateField}
+                  personalInfoData={personalInfoData}
+                />
+              </CollapsibleSection>
+            </Animated.View>
           </View>
 
           {/* Validation summary — matches Diet/Workout tabs (fresh design). */}

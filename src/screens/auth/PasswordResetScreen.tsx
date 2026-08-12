@@ -32,10 +32,11 @@ import { supabase } from "../../services/supabase";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
+import { EmptyState } from "../../components/ui/aurora/EmptyState";
 import { GlassButton } from "../../components/ui/aurora/GlassButton";
 import { UnderlineInput } from "../../components/onboarding/aurora/UnderlineInput";
 import { rf, rh, rw } from "../../utils/responsive";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, border, surface } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 
 interface PasswordResetScreenProps {
@@ -222,6 +223,24 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
     </View>
   );
 
+  // Back-button-only header, used by the "invalid" EmptyState below —
+  // EmptyState now owns the title/subtitle, so the header no longer needs
+  // to duplicate them.
+  const renderBackButton = (onBack: () => void) => (
+    <View style={styles.header}>
+      <AnimatedPressable
+        style={styles.backButton}
+        onPress={onBack}
+        scaleValue={0.97}
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
+        <Ionicons name="arrow-back" size={rf(22)} color={colors.primary} />
+      </AnimatedPressable>
+    </View>
+  );
+
   if (state === "loading") {
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
@@ -246,36 +265,22 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
     return (
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+          {renderBackButton(onBackToLogin)}
           <ScrollView
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {renderHeader(
-              "Link Invalid or Expired",
-              "This password reset link is no longer valid. Reset links can only be used once and expire after a short time.",
-              onBackToLogin,
-            )}
+            <EmptyState
+              icon="alert-circle-outline"
+              iconColor={colors.error}
+              title="Link Invalid or Expired"
+              subtitle="This password reset link is no longer valid. Reset links can only be used once and expire after a short time."
+              ctaText="Request New Reset Link"
+              onCta={onRequestNewReset}
+            />
+
             <View style={styles.form}>
-              <View style={styles.noticeCard}>
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={rf(40)}
-                  color={colors.error}
-                />
-                <Text style={styles.noticeText}>
-                  Please request a new password reset link to continue.
-                </Text>
-              </View>
-
-              <GlassButton
-                label="Request New Reset Link"
-                onPress={onRequestNewReset}
-                variant="primary"
-                fullWidth
-                style={styles.actionButton}
-              />
-
               <View style={styles.footerRow}>
                 <Text
                   style={styles.footerText}
@@ -319,30 +324,14 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
           >
-            {renderHeader(
-              "Password Updated",
-              "Your password has been changed successfully. You can now sign in with your new password.",
-            )}
-            <View style={styles.form}>
-              <View style={styles.noticeCard}>
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={rf(48)}
-                  color={colors.primary}
-                />
-                <Text style={styles.noticeText}>
-                  For your security, please sign in again with your new password.
-                </Text>
-              </View>
-
-              <GlassButton
-                label="Back to Login"
-                onPress={onBackToLogin}
-                variant="primary"
-                fullWidth
-                style={styles.actionButton}
-              />
-            </View>
+            <EmptyState
+              icon="checkmark-circle-outline"
+              iconColor={colors.primary}
+              title="Password Updated"
+              subtitle="Your password has been changed successfully. For your security, please sign in again with your new password."
+              ctaText="Back to Login"
+              onCta={onBackToLogin}
+            />
           </ScrollView>
         </SafeAreaView>
       </AuroraBackground>
@@ -613,25 +602,6 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  noticeCard: {
-    alignItems: "center",
-    backgroundColor: surface[1],
-    borderWidth: 1,
-    borderColor: border.subtle,
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-    marginBottom: spacing.lg,
-  },
-
-  noticeText: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(22),
   },
 
   submitErrorContainer: {

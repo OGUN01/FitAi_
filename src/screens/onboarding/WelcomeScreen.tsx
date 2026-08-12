@@ -7,11 +7,14 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { onboardingStagger } from "./tabs/onboardingAnimation";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GlassButton } from "../../components/ui/aurora/GlassButton";
+import { ForgotPasswordSheet } from "../../components/ui/aurora/ForgotPasswordSheet";
 import { UnderlineInput } from "../../components/onboarding/aurora/UnderlineInput";
 import { useAuth } from "../../hooks/useAuth";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
@@ -76,6 +79,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+
+  // Forgot-password in-app sheet (replaces the native browser window.prompt
+  // on web) — shared ForgotPasswordSheet component, same implementation
+  // GuestSignUpScreen uses.
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
 
   const { login, signInWithGoogle, resetPassword } = useAuth();
 
@@ -152,35 +160,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     }
   };
 
-  const handleForgotPassword = async () => {
-    let email: string | null = null;
-    if (Platform.OS === 'web') {
-      email = window.prompt('Enter your email address to reset your password:');
-    } else {
-      // On native, pre-fill with current email if available
-      email = formData.email.trim() || null;
-      if (!email) {
-        crossPlatformAlert(
-          'Forgot Password',
-          'Please enter your email address in the Email field first, then tap Forgot Password.',
-        );
-        return;
-      }
-    }
-
-    if (!email || !email.trim()) return;
-
-    try {
-      const result = await resetPassword(email.trim().toLowerCase());
-      crossPlatformAlert(
-        result.success ? 'Password Reset Email Sent' : 'Reset Failed',
-        result.success
-          ? 'Check your inbox for a link to reset your password.'
-          : result.error || 'Unable to send reset email. Please try again.',
-      );
-    } catch (err) {
-      crossPlatformAlert('Error', 'Failed to send reset email. Please try again.');
-    }
+  const handleForgotPassword = () => {
+    setForgotPasswordVisible(true);
   };
 
   const switchToSignIn = () => {
@@ -363,6 +344,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
+
+        <ForgotPasswordSheet
+          visible={forgotPasswordVisible}
+          onClose={() => setForgotPasswordVisible(false)}
+          initialEmail={formData.email}
+          resetPassword={resetPassword}
+        />
       </AuroraBackground>
     );
   }
@@ -376,7 +364,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           contentContainerStyle={styles.welcomeScrollContent}
         >
           <View style={styles.brandingSection}>
-            <View style={styles.logoContainer}>
+            {/* Staggered entrance (logo → name → tagline), shared
+                onboardingStagger rhythm — the app's first-impression screen
+                previously rendered fully static while every tab after it
+                animates in. entering= handles reduced-motion automatically
+                (Reanimated respects the OS "Reduce Motion" setting). */}
+            <Animated.View
+              style={styles.logoContainer}
+              entering={onboardingStagger(0)}
+            >
               <View style={styles.logoIconWrapper}>
                 <Ionicons
                   name="fitness"
@@ -384,20 +380,35 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   color={colors.primary.DEFAULT}
                 />
               </View>
-            </View>
+            </Animated.View>
 
-            <Text style={styles.appName}>FitAI</Text>
-            <Text style={styles.tagline}>
+            <Animated.Text
+              style={styles.appName}
+              entering={onboardingStagger(1)}
+            >
+              FitAI
+            </Animated.Text>
+            <Animated.Text
+              style={styles.tagline}
+              entering={onboardingStagger(2)}
+            >
               Your AI-Powered Fitness Companion
-            </Text>
-            <Text style={styles.taglineSecondary}>
+            </Animated.Text>
+            <Animated.Text
+              style={styles.taglineSecondary}
+              entering={onboardingStagger(3)}
+            >
               Workouts, nutrition, and insights — all personalized just for you.
-            </Text>
+            </Animated.Text>
           </View>
 
           <View style={styles.featuresSection}>
             {FEATURE_HIGHLIGHTS.map((feature, index) => (
-              <View key={index} style={styles.featureCard}>
+              <Animated.View
+                key={index}
+                style={styles.featureCard}
+                entering={onboardingStagger(4 + index)}
+              >
                 <View style={styles.featureIconWrap}>
                   <Ionicons
                     name={feature.icon}
@@ -411,7 +422,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     {feature.description}
                   </Text>
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </ScrollView>

@@ -52,6 +52,7 @@ import { MetabolicProfileSection } from "../../../components/onboarding/review/M
 import { NutritionalNeedsSection } from "../../../components/onboarding/review/NutritionalNeedsSection";
 import { WeightManagementSection } from "../../../components/onboarding/review/WeightManagementSection";
 import { WarningCard } from "../../../components/onboarding/WarningCard";
+import { ONBOARDING_ENTER_DURATION } from "./onboardingAnimation";
 import { AdjustmentWizard } from "../../../components/onboarding/AdjustmentWizard";
 
 interface AdvancedReviewTabProps {
@@ -352,7 +353,15 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         ) && (
           <Animated.View
             style={styles.warningWrap}
-            entering={FadeInDown.duration(300).delay(600)}
+            // Duration drawn from the shared onboardingStagger() rhythm
+            // (theme/animations.ts's canonical duration.normal) so this
+            // still shares one entrance duration with the rest of the
+            // onboarding funnel. Delay stays a literal 600ms — it continues
+            // the cascade after the preceding sections' internal per-row
+            // staggers (enterDelay 0/140/300/460 above), which live in
+            // src/components/onboarding/review/* and aren't a simple
+            // index-based sequence this helper can compute.
+            entering={FadeInDown.duration(ONBOARDING_ENTER_DURATION).delay(600)}
           >
             <WarningCard
               warnings={validationResults?.warnings ?? []}

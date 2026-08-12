@@ -11,12 +11,10 @@ import { useAuth } from "../../hooks/useAuth";
 import { RegisterCredentials } from "../../types/user";
 import { GoogleIcon } from "../../components/icons/GoogleIcon";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { BottomSheet } from "../../components/ui/aurora/BottomSheet";
+import { ForgotPasswordSheet } from "../../components/ui/aurora/ForgotPasswordSheet";
 // Note: Migration is now handled automatically by auth.ts - no manual migration needed in this screen
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { dataBridge } from "../../services/DataBridge";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface GuestSignUpScreenProps {
   onBack: () => void;
@@ -40,11 +38,10 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  // Forgot-password in-app sheet (replaces the native browser window.prompt on web).
+  // Forgot-password in-app sheet (replaces the native browser window.prompt
+  // on web) — shared ForgotPasswordSheet component, same implementation
+  // WelcomeScreen uses.
   const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
-  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null);
-  const [forgotPasswordSubmitting, setForgotPasswordSubmitting] = useState(false);
 
   const { register, login, signInWithGoogle, resetPassword } = useAuth();
 
@@ -57,49 +54,8 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
   };
 
   const handleForgotPassword = () => {
-    // Pre-fill with whatever's already in the Email field (works on both
-    // native and web) and let the in-app sheet handle validation/submission —
-    // no OS-level prompt, matches the Aurora design system.
-    setForgotPasswordEmail(formData.email.trim());
-    setForgotPasswordError(null);
     setForgotPasswordVisible(true);
   };
-
-  const closeForgotPasswordSheet = () => {
-    setForgotPasswordVisible(false);
-    setForgotPasswordError(null);
-  };
-
-  const handleForgotPasswordSubmit = async () => {
-    const trimmedEmail = forgotPasswordEmail.trim();
-
-    if (!trimmedEmail) {
-      setForgotPasswordError("Email is required");
-      return;
-    }
-    if (!EMAIL_REGEX.test(trimmedEmail)) {
-      setForgotPasswordError("Please enter a valid email address");
-      return;
-    }
-
-    setForgotPasswordError(null);
-    setForgotPasswordSubmitting(true);
-    try {
-      const result = await resetPassword(trimmedEmail.toLowerCase());
-      setForgotPasswordSubmitting(false);
-      setForgotPasswordVisible(false);
-      crossPlatformAlert(
-        result.success ? 'Password Reset Email Sent' : 'Reset Failed',
-        result.success
-          ? 'Check your inbox for a link to reset your password.'
-          : result.error || 'Unable to send reset email. Please try again.',
-      );
-    } catch (err) {
-      setForgotPasswordSubmitting(false);
-      crossPlatformAlert('Error', 'Failed to send reset email. Please try again.');
-    }
-  };
-
 
   const validateForm = (): boolean => {
     const newErrors: Partial<RegisterCredentials> = {};
@@ -488,42 +444,12 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      <BottomSheet
+      <ForgotPasswordSheet
         visible={forgotPasswordVisible}
-        onClose={closeForgotPasswordSheet}
-        title="Reset Password"
-        dismissOnDrag={!forgotPasswordSubmitting}
-        closeOnOverlayPress={!forgotPasswordSubmitting}
-      >
-        <Text style={styles.forgotSheetSubtitle}>
-          Enter your email address and we&apos;ll send you a link to reset your password.
-        </Text>
-        <UnderlineInput
-          label="Email Address"
-          placeholder="Enter your email address"
-          value={forgotPasswordEmail}
-          onChangeText={(value) => {
-            setForgotPasswordEmail(value);
-            if (forgotPasswordError) setForgotPasswordError(null);
-          }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          accentColor={forgotPasswordError ? colors.error : undefined}
-          containerStyle={styles.fieldContainer}
-        />
-        {forgotPasswordError ? (
-          <Text style={styles.fieldError}>{forgotPasswordError}</Text>
-        ) : null}
-        <GlassButton
-          label="Send Reset Link"
-          onPress={handleForgotPasswordSubmit}
-          variant="primary"
-          fullWidth
-          loading={forgotPasswordSubmitting}
-          disabled={forgotPasswordSubmitting}
-          style={styles.emailSignUpButton}
-        />
-      </BottomSheet>
+        onClose={() => setForgotPasswordVisible(false)}
+        initialEmail={formData.email}
+        resetPassword={resetPassword}
+      />
     </AuroraBackground>
   );
 };
@@ -716,12 +642,5 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: spacing.xl,
-  },
-
-  forgotSheetSubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    lineHeight: rf(20),
-    marginBottom: spacing.md,
   },
 });

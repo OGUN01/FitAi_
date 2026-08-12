@@ -8,8 +8,8 @@
  * labels + rows + hairlines via the fresh primitive kit.
  *
  * PEAK layer (presentation-only):
- *  - Sections stagger in (FadeInDown, 60ms steps) so the dense form arrives
- *    as a sequence, not a wall.
+ *  - Sections stagger in (FadeInDown, via the shared onboardingStagger()
+ *    helper) so the dense form arrives as a sequence, not a wall.
  *  - A quiet "receipt" line between the always-visible zone and the
  *    collapsible zone reflects the choices made so far (diet · meals ·
  *    time · budget · exclusions) — the form talks back without adding fields.
@@ -27,7 +27,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import {
   DietPreferencesData,
   TabValidationResult,
@@ -54,10 +54,7 @@ import { HealthHabitsSection } from "../../../components/onboarding/diet/HealthH
 import { AllergiesAndRestrictionsSection } from "../../../components/onboarding/diet/AllergiesAndRestrictionsSection";
 import { InfoTooltipModal } from "../../../components/onboarding/shared/InfoTooltipModal";
 import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
-
-/** Section entrance stagger (ms) — dense form arrives as a sequence. */
-const STAGGER_MS = 60;
-const ENTER_DURATION = 420;
+import { onboardingStagger } from "./onboardingAnimation";
 
 /** One segment of the live "receipt" line. */
 interface ReceiptSegment {
@@ -229,9 +226,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       >
         <View style={styles.sections}>
           {/* Default visible — diet_type (the focal question) */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(0)}
-          >
+          <Animated.View entering={onboardingStagger(0)}>
             <CurrentDietSection
               formData={formData}
               updateField={updateField}
@@ -241,9 +236,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </Animated.View>
 
           {/* Default visible — meal-enable toggles */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS)}
-          >
+          <Animated.View entering={onboardingStagger(1)}>
             <MealPreferencesSection
               formData={formData}
               getEnabledMealsCount={getEnabledMealsCount}
@@ -253,9 +246,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
 
           {/* Default visible — cooking_skill_level, max_prep_time, budget_level.
               Collapsed inside — cooking_methods (§5). */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 2)}
-          >
+          <Animated.View entering={onboardingStagger(2)}>
             <CookingPreferencesSection
               formData={formData}
               updateField={updateField}
@@ -265,9 +256,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
 
           {/* Live receipt — the visible zone reflected back, one hairline
               and one quiet line, before the collapsed zone begins. */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 3)}
-          >
+          <Animated.View entering={onboardingStagger(3)}>
             <Rule />
             <Text
               style={styles.receipt}
@@ -290,9 +279,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </Animated.View>
 
           {/* Collapsed — Diet readiness (§5) */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 4)}
-          >
+          <Animated.View entering={onboardingStagger(4)}>
             <DietReadinessSection
               formData={formData}
               toggleDietReadiness={toggleDietReadiness}
@@ -301,9 +288,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </Animated.View>
 
           {/* Collapsed — Allergies & restrictions, with custom entry (§5) */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 5)}
-          >
+          <Animated.View entering={onboardingStagger(5)}>
             <AllergiesAndRestrictionsSection
               formData={formData}
               updateField={updateField}
@@ -311,9 +296,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </Animated.View>
 
           {/* Collapsed — Lifestyle habits (§5) */}
-          <Animated.View
-            entering={FadeInDown.duration(ENTER_DURATION).delay(STAGGER_MS * 6)}
-          >
+          <Animated.View entering={onboardingStagger(6)}>
             <HealthHabitsSection
               formData={formData}
               toggleHealthHabit={toggleHealthHabit}

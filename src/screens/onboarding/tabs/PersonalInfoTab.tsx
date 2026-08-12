@@ -7,7 +7,8 @@
  * (Wake / Sleep) + a SleepInsight row — the one computed key-number of the tab
  * (accent, tabular-nums, opacity pulse on change).
  * Activity level: OptionRows (single-select).
- * Mount motion: FadeInDown stagger (360ms, 70ms steps) — micro-motion only.
+ * Mount motion: FadeInDown stagger via the shared onboardingStagger() helper
+ * (./onboardingAnimation) — micro-motion only, same rhythm as every other tab.
  *
  * Presentation/layout only — props, hooks, validation, and data wiring stay
  * identical to the previous implementation.
@@ -21,7 +22,6 @@ import {
   Platform,
 } from "react-native";
 import Animated, {
-  FadeInDown,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -46,9 +46,7 @@ import {
 } from "../../../components/onboarding/PersonalInfoFields";
 import { LocationFields } from "../../../components/onboarding/LocationFields";
 import { ValidationSection } from "../../../components/onboarding/shared/ValidationSection";
-
-const MOUNT_DURATION = 360;
-const STAGGER = 70;
+import { onboardingStagger } from "./onboardingAnimation";
 
 // ---------------------------------------------------------------------------
 // SleepInsight — the tab's one computed key-number. Caption left, accent value
@@ -164,19 +162,15 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         nextLabel={isEditingFromReview ? "Review" : "Next"}
         nextDisabled={isDisabled}
       >
-        <Animated.View entering={FadeInDown.duration(MOUNT_DURATION)}>
+        <Animated.View entering={onboardingStagger(0)}>
           <PersonalInfoFields formData={formData} actions={actions} />
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER)}
-        >
+        <Animated.View entering={onboardingStagger(1)}>
           <DemographicsFields formData={formData} actions={actions} />
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 2)}
-        >
+        <Animated.View entering={onboardingStagger(2)}>
           <LocationFields
             formData={formData}
             availableStates={availableStates}
@@ -188,9 +182,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
         {/* Sleep schedule — two compact TimeRow steppers + the SleepInsight
             key-number row. NO dials, NO filled circles (docs/onboarding-fresh-design.md). */}
-        <Animated.View
-          entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 3)}
-        >
+        <Animated.View entering={onboardingStagger(3)}>
           <View style={styles.labelWrap}>
             <SectionLabel>Sleep Schedule</SectionLabel>
             <Text style={styles.sectionCaption}>
@@ -220,9 +212,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         {/* activity_level — relocated from S4 (blueprint §8 rule 18).
             Rendered only when the parent wires the optional props. */}
         {showActivitySection && (
-          <Animated.View
-            entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 4)}
-          >
+          <Animated.View entering={onboardingStagger(4)}>
             <View style={styles.labelWrap}>
               <SectionLabel>Daily Activity</SectionLabel>
               <Text style={styles.sectionCaption}>
@@ -247,9 +237,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
         {/* Units — hidden unless detected ≠ metric (blueprint §6). */}
         {detectedNonMetric && (
-          <Animated.View
-            entering={FadeInDown.duration(MOUNT_DURATION).delay(STAGGER * 5)}
-          >
+          <Animated.View entering={onboardingStagger(5)}>
             <View style={styles.labelWrap}>
               <SectionLabel>Units</SectionLabel>
               <Text style={styles.sectionCaption}>
