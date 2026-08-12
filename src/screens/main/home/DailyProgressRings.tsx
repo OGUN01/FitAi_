@@ -76,9 +76,17 @@ const Ring: React.FC<{
   delay?: number;
 }> = ({ progress, size, strokeWidth, color, delay = 0 }) => {
   const animatedProgress = useSharedValue(0);
-  const radius = (size - strokeWidth) / 2;
+  // Sanitize inputs (prevents NaN/0-length strokeDasharray crash on Android
+  // native — same DashPathEffect ArrayIndexOutOfBoundsException guarded
+  // against in ProgressRing.tsx/LiveVolumeRing.tsx/CheckmarkMorph.tsx).
+  // outerSize/strokeWidth are normally healthy rw()-derived constants, but a
+  // transient Dimensions glitch (backgrounding, foldable fold/unfold) can
+  // momentarily yield 0, which collapses radius/circumference to 0.
+  const safeSize = Number.isFinite(size) ? size : 120;
+  const safeStrokeWidth = Number.isFinite(strokeWidth) ? strokeWidth : 10;
+  const radius = Math.max(2, (safeSize - safeStrokeWidth) / 2);
   const circumference = radius * 2 * Math.PI;
-  const center = size / 2;
+  const center = safeSize / 2;
   // Honor reduce-motion: skip the staggered spring sweep and snap straight to
   // the target value, matching the breathing pulse + count-up text below.
   const reduceMotion = useReducedMotion();
