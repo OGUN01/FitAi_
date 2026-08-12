@@ -3,7 +3,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, Switch, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Switch, Platform, Linking, AppState } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +14,7 @@ import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable"
 import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 import { NotificationsHeader } from "./components/NotificationsHeader";
 import { ExpoGoMessage } from "./components/ExpoGoMessage";
@@ -73,6 +74,13 @@ interface NotificationItemProps {
   onToggle: () => void;
   onEdit?: () => void;
   animationDelay: number;
+  /** Visually dims the row (e.g. a feature that isn't actually wired up to
+   * send notifications yet). Intentionally NOT forwarded to the native
+   * Switch's `disabled` prop — RN blocks onValueChange for disabled
+   * switches, which would make `onToggle` unreachable by tapping. Callers
+   * that need a "this doesn't work yet" explanation must intercept via
+   * `onToggle` instead, same as the other guarded toggles. */
+  disabled?: boolean;
 }
 
 const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -85,10 +93,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onToggle,
   onEdit,
   animationDelay,
+  disabled,
 }) => {
   return (
     <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-      <View style={styles.notificationCard}>
+      <View style={[styles.notificationCard, disabled && styles.notificationCardDisabled]}>
         <View style={styles.notificationContent}>
           {/* Icon */}
           <View
@@ -177,6 +186,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   : colors.textMuted
               }
               ios_backgroundColor={surface[2]}
+              accessibilityRole="switch"
+              accessibilityLabel={title}
+              accessibilityState={{ checked: enabled }}
             />
           </View>
         </View>
@@ -250,6 +262,52 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   const mealReminders = useMealReminders?.();
   const sleepReminders = useSleepReminders?.();
 
+  // Re-check notification permission when the app returns to the foreground.
+  // If the user granted permission from OS Settings while the app was
+  // backgrounded, isInitialized would otherwise stay false (and every
+  // toggle/save a silent no-op — see handleToggleGuarded below) until the
+  // next full app restart, since nothing else re-invokes initialize().
+  React.useEffect(() => {
+    if (!useNotificationStore) return;
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && !useNotificationStore.getState().isInitialized) {
+        useNotificationStore.getState().initialize();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const openNotificationSettings = () => {
+    haptics.light();
+    Linking.openSettings();
+  };
+
+  // Toggling/editing while notifications are uninitialized (permission
+  // denied, or not yet requested) is a silent no-op deeper in the store —
+  // intercept here so the user gets an actionable explanation instead of a
+  // haptic tap with no visible effect.
+  const handleToggleGuarded = (type: "water" | "meals" | "sleep") => {
+    if (!isInitialized) {
+      crossPlatformAlert(
+        "Notifications Disabled",
+        "Notifications are disabled for FitAI. Enable them in Settings to use reminders.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ],
+      );
+      return;
+    }
+    handleToggle(type);
+  };
+
+  const showWorkoutRemindersUnavailable = () => {
+    crossPlatformAlert(
+      "Coming Soon",
+      "Workout reminders aren't wired up to your fitness plan yet, so this toggle doesn't send any notifications. We're working on connecting it.",
+    );
+  };
+
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -261,9 +319,20 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
           contentContainerStyle={styles.scrollContent}
         >
           {!isInitialized && error ? (
-            <Text style={styles.permissionWarning}>
-              Notification permission denied. Enable in device Settings.
-            </Text>
+            <View style={styles.permissionBanner}>
+              <Text style={styles.permissionWarning}>
+                Notification permission denied. Enable in device Settings.
+              </Text>
+              <AnimatedPressable
+                onPress={openNotificationSettings}
+                scaleValue={0.95}
+                hapticFeedback={false}
+              >
+                <View style={styles.openSettingsButton}>
+                  <Text style={styles.openSettingsText}>Open Settings</Text>
+                </View>
+              </AnimatedPressable>
+            </View>
           ) : null}
 
           <DescriptionCard scheduledCount={scheduledCount} />
@@ -280,24 +349,32 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                 preferences.water.enabled ? getTimeDisplay("water") : undefined
               }
               enabled={preferences.water.enabled}
-              onToggle={() => handleToggle("water")}
+              onToggle={() => handleToggleGuarded("water")}
               onEdit={() => handleEditPress("water", "Water Reminders")}
               animationDelay={100}
             />
 
+            {/* Workout Reminders is intentionally shown as visually dimmed
+                and permanently off: enabling it never actually schedules a
+                notification because nothing in the app populates
+                workout.customTimes or calls scheduleFromWorkoutPlan with
+                real workout times yet (see
+                notificationService.scheduleWorkoutReminders). `disabled`
+                only dims the card — the Switch stays tappable so
+                `onToggle` (showWorkoutRemindersUnavailable) actually fires
+                and explains why, instead of being unreachable like a truly
+                native-disabled Switch would be. Once it's wired up to the
+                generated fitness plan, restore the normal
+                onToggle/onEdit/timeInfo wiring used by the other three
+                items above. */}
             <NotificationItem
               icon="barbell-outline"
               iconColor={colors.errorLight}
               title="Workout Reminders"
-              description="Get notified before your scheduled workouts"
-              timeInfo={
-                preferences.workout.enabled
-                  ? getTimeDisplay("workout")
-                  : undefined
-              }
-              enabled={preferences.workout.enabled}
-              onToggle={() => handleToggle("workout")}
-              onEdit={() => handleEditPress("workout", "Workout Reminders")}
+              description="Coming soon — not yet connected to your fitness plan, so no notifications are sent"
+              enabled={false}
+              disabled
+              onToggle={showWorkoutRemindersUnavailable}
               animationDelay={150}
             />
 
@@ -310,7 +387,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                 preferences.meals.enabled ? getTimeDisplay("meals") : undefined
               }
               enabled={preferences.meals.enabled}
-              onToggle={() => handleToggle("meals")}
+              onToggle={() => handleToggleGuarded("meals")}
               onEdit={() => handleEditPress("meals", "Meal Reminders")}
               animationDelay={200}
             />
@@ -324,7 +401,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                 preferences.sleep.enabled ? getTimeDisplay("sleep") : undefined
               }
               enabled={preferences.sleep.enabled}
-              onToggle={() => handleToggle("sleep")}
+              onToggle={() => handleToggleGuarded("sleep")}
               onEdit={() => handleEditPress("sleep", "Sleep Reminders")}
               animationDelay={250}
             />
@@ -411,6 +488,9 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.md,
   },
+  notificationCardDisabled: {
+    opacity: 0.55,
+  },
   notificationContent: {
     flexDirection: "row",
     alignItems: "center" as const,
@@ -471,11 +551,30 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: rh(80),
   },
+  permissionBanner: {
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   permissionWarning: {
+    flex: 1,
     color: colors.warning,
     fontSize: rf(13),
-    textAlign: "center" as const,
-    marginBottom: spacing.sm,
+  },
+  openSettingsButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: rp(6),
+    borderRadius: borderRadius.sm,
+    backgroundColor: `${colors.warning}20`,
+    borderWidth: 1,
+    borderColor: `${colors.warning}50`,
+  },
+  openSettingsText: {
+    fontSize: rf(12),
+    fontWeight: "600",
+    color: colors.warning,
   },
 });
 

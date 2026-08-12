@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../../screens/main/profile/components/SettingsModalWrapper";
 import { GlassFormInput } from "../../screens/main/profile/components/GlassFormInput";
 import { TimeFieldPicker } from "./TimeFieldPicker";
+import { calculateWaterIntervals } from "../../services/notificationService";
 import { colors, surface, border, spacing, typography } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
@@ -107,9 +108,15 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
     const awakeHours = calculateAwakeHours();
     const goalLiters = parseFloat(dailyGoal);
 
-    if (isNaN(goalLiters) || awakeHours <= 0) return "N/A";
+    if (isNaN(goalLiters) || goalLiters <= 0 || awakeHours <= 0) return "N/A";
 
-    const avgInterval = awakeHours / Math.ceil(goalLiters * 4); // Assuming 4 reminders per liter
+    // Reuse the exact same interval calculation notificationService uses to
+    // schedule reminders, so this preview always matches what actually gets
+    // scheduled on Save instead of drifting from an independent heuristic.
+    const intervals = calculateWaterIntervals(wakeUpTime, sleepTime, goalLiters);
+    if (intervals.length === 0) return "N/A";
+
+    const avgInterval = awakeHours / intervals.length;
 
     if (avgInterval < 1) return "Every 30-60 min";
     if (avgInterval < 2) return "Every 1-2 hours";
@@ -143,8 +150,13 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
     try {
       const wakeMinutes = timeToMinutes(wakeUpTime);
       const sleepMinutes = timeToMinutes(sleepTime);
+      // "00:00" as a sleep/bedtime means end-of-day midnight, not the very
+      // start of the day — treat it as 1440 minutes so the comparison below
+      // is wraparound-aware instead of special-casing (and silently
+      // bypassing the conflict check for) exactly midnight.
+      const sleepMinutesForCompare = sleepMinutes === 0 ? 1440 : sleepMinutes;
 
-      if (wakeMinutes >= sleepMinutes && sleepMinutes !== 0) {
+      if (wakeMinutes >= sleepMinutesForCompare) {
         setIsSaving(false);
         crossPlatformAlert(
           "Time Conflict",

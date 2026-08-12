@@ -23,6 +23,102 @@ const ensureNotificationHandlerSet = () => {
   }
 };
 
+// Configure the foreground notification handler at module load, independent
+// of permission grant or NotificationService.initialize(). Presentation
+// behavior (shouldShowAlert/shouldPlaySound) doesn't require permission to be
+// granted, and gating it behind initialize() meant it silently never (re-)ran
+// once `isInitialized` was persisted true from a prior app session.
+if (Platform.OS !== "web") {
+  ensureNotificationHandlerSet();
+}
+
+// Pure calculation, exported so UI (e.g. WaterReminderEditModal's "Smart
+// Schedule Preview") can compute the exact same intervals that will actually
+// be scheduled, instead of maintaining an independent, drifting heuristic.
+export function calculateWaterIntervals(
+  wakeUpTime: string,
+  sleepTime: string,
+  dailyGoalLiters: number,
+): Array<{ time: string; liters: number }> {
+  const [wakeHour, wakeMin] = wakeUpTime.split(":").map(Number);
+  const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
+
+  // Calculate awake minutes
+  const wakeMinutes = wakeHour * 60 + wakeMin;
+  const sleepMinutes = sleepHour * 60 + sleepMin;
+  const awakeMinutes =
+    sleepMinutes > wakeMinutes
+      ? sleepMinutes - wakeMinutes
+      : 24 * 60 - wakeMinutes + sleepMinutes;
+
+  // Smart distribution: more water in morning/afternoon, less in evening
+  const totalHours = Math.floor(awakeMinutes / 60);
+  const intervals: Array<{ time: string; liters: number }> = [];
+
+  if (totalHours <= 8) {
+    // Short day - every 2 hours
+    const intervalHours = Math.max(1, Math.floor(totalHours / 4));
+    const litersPerInterval =
+      dailyGoalLiters / Math.ceil(totalHours / intervalHours);
+
+    for (let i = 0; i < totalHours; i += intervalHours) {
+      const hour = (wakeHour + i) % 24;
+      intervals.push({
+        time: `${hour.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
+        liters: Math.round(litersPerInterval * 100) / 100,
+      });
+    }
+  } else {
+    // Regular day - smart distribution
+    const morningEnd = Math.min(wakeHour + 4, 12);
+    const afternoonEnd = Math.min(morningEnd + 6, 18);
+
+    // Morning: 40% of water (more frequent)
+    const morningIntervals = Math.max(
+      2,
+      Math.floor((morningEnd - wakeHour) / 1.5),
+    );
+    const morningLiters = (dailyGoalLiters * 0.4) / morningIntervals;
+
+    for (let i = 0; i < morningIntervals; i++) {
+      const hour = wakeHour + i * 1.5;
+      if (hour < morningEnd) {
+        intervals.push({
+          time: `${Math.floor(hour).toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
+          liters: Math.round(morningLiters * 100) / 100,
+        });
+      }
+    }
+
+    // Afternoon: 50% of water
+    const afternoonIntervals = Math.max(
+      2,
+      Math.floor((afternoonEnd - morningEnd) / 2),
+    );
+    const afternoonLiters = (dailyGoalLiters * 0.5) / afternoonIntervals;
+
+    for (let i = 0; i < afternoonIntervals; i++) {
+      const hour = morningEnd + i * 2;
+      if (hour < afternoonEnd) {
+        intervals.push({
+          time: `${hour.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
+          liters: Math.round(afternoonLiters * 100) / 100,
+        });
+      }
+    }
+
+    // Evening: 10% of water (minimal to avoid sleep disruption)
+    if (sleepHour > afternoonEnd) {
+      intervals.push({
+        time: `${afternoonEnd.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
+        liters: Math.round(dailyGoalLiters * 0.1 * 100) / 100,
+      });
+    }
+  }
+
+  return intervals;
+}
+
 export interface NotificationData {
   id: string;
   type:
@@ -243,127 +339,35 @@ class NotificationService {
     await this.cancelNotificationsByType("water");
 
     // Calculate intervals based on awake hours
-    const intervals = this.calculateWaterIntervals(
+    const intervals = calculateWaterIntervals(
       config.wakeUpTime,
       config.sleepTime,
       config.dailyGoalLiters,
     );
 
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+    // One daily-repeating trigger per interval slot. This fires indefinitely
+    // at the same local wall-clock time every day until explicitly cancelled
+    // or rescheduled — replacing the old 7-day unroll of absolute-date
+    // one-offs, which silently stopped firing after a week and could drift
+    // to the wrong local hour across a timezone change.
+    for (let index = 0; index < intervals.length; index++) {
+      const interval = intervals[index];
+      const [hours, minutes] = interval.time.split(":").map(Number);
+      const identifier = `water_${index}`;
+      const litersPerReminder = interval.liters;
 
-    // Schedule reminders for today and next few days
-    for (let day = 0; day < 7; day++) {
-      const targetDate = new Date(today);
-      targetDate.setDate(today.getDate() + day);
-
-      for (let index = 0; index < intervals.length; index++) {
-        const interval = intervals[index];
-        const [hours, minutes] = interval.time.split(":").map(Number);
-        const reminderTime = new Date(targetDate);
-        reminderTime.setHours(hours, minutes, 0, 0);
-
-        // Only schedule if time is in the future
-        if (reminderTime > new Date()) {
-          const identifier = `water_${day}_${index}`;
-          const litersPerReminder = interval.liters;
-
-          await this.scheduleNotification(
-            identifier,
-            "💧 Hydration Time!",
-            `Time to drink ${litersPerReminder}L of water. Stay hydrated for better performance!`,
-            { date: reminderTime } as Notifications.NotificationTriggerInput,
-            { type: "water", liters: litersPerReminder },
-          );
-        }
-      }
-    }
-  }
-
-  // Calculate smart water intervals
-  private calculateWaterIntervals(
-    wakeUpTime: string,
-    sleepTime: string,
-    dailyGoalLiters: number,
-  ): Array<{ time: string; liters: number }> {
-    const [wakeHour, wakeMin] = wakeUpTime.split(":").map(Number);
-    const [sleepHour, sleepMin] = sleepTime.split(":").map(Number);
-
-    // Calculate awake minutes
-    const wakeMinutes = wakeHour * 60 + wakeMin;
-    const sleepMinutes = sleepHour * 60 + sleepMin;
-    const awakeMinutes =
-      sleepMinutes > wakeMinutes
-        ? sleepMinutes - wakeMinutes
-        : 24 * 60 - wakeMinutes + sleepMinutes;
-
-    // Smart distribution: more water in morning/afternoon, less in evening
-    const totalHours = Math.floor(awakeMinutes / 60);
-    const intervals: Array<{ time: string; liters: number }> = [];
-
-    if (totalHours <= 8) {
-      // Short day - every 2 hours
-      const intervalHours = Math.max(1, Math.floor(totalHours / 4));
-      const litersPerInterval =
-        dailyGoalLiters / Math.ceil(totalHours / intervalHours);
-
-      for (let i = 0; i < totalHours; i += intervalHours) {
-        const hour = (wakeHour + i) % 24;
-        intervals.push({
-          time: `${hour.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
-          liters: Math.round(litersPerInterval * 100) / 100,
-        });
-      }
-    } else {
-      // Regular day - smart distribution
-      const morningEnd = Math.min(wakeHour + 4, 12);
-      const afternoonEnd = Math.min(morningEnd + 6, 18);
-
-      // Morning: 40% of water (more frequent)
-      const morningIntervals = Math.max(
-        2,
-        Math.floor((morningEnd - wakeHour) / 1.5),
+      await this.scheduleNotification(
+        identifier,
+        "💧 Hydration Time!",
+        `Time to drink ${litersPerReminder}L of water. Stay hydrated for better performance!`,
+        {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: hours,
+          minute: minutes,
+        },
+        { type: "water", liters: litersPerReminder },
       );
-      const morningLiters = (dailyGoalLiters * 0.4) / morningIntervals;
-
-      for (let i = 0; i < morningIntervals; i++) {
-        const hour = wakeHour + i * 1.5;
-        if (hour < morningEnd) {
-          intervals.push({
-            time: `${Math.floor(hour).toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
-            liters: Math.round(morningLiters * 100) / 100,
-          });
-        }
-      }
-
-      // Afternoon: 50% of water
-      const afternoonIntervals = Math.max(
-        2,
-        Math.floor((afternoonEnd - morningEnd) / 2),
-      );
-      const afternoonLiters = (dailyGoalLiters * 0.5) / afternoonIntervals;
-
-      for (let i = 0; i < afternoonIntervals; i++) {
-        const hour = morningEnd + i * 2;
-        if (hour < afternoonEnd) {
-          intervals.push({
-            time: `${hour.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
-            liters: Math.round(afternoonLiters * 100) / 100,
-          });
-        }
-      }
-
-      // Evening: 10% of water (minimal to avoid sleep disruption)
-      if (sleepHour > afternoonEnd) {
-        intervals.push({
-          time: `${afternoonEnd.toString().padStart(2, "0")}:${wakeMin.toString().padStart(2, "0")}`,
-          liters: Math.round(dailyGoalLiters * 0.1 * 100) / 100,
-        });
-      }
     }
-
-    return intervals;
   }
 
   // Schedule workout reminders
@@ -379,34 +383,34 @@ class NotificationService {
     await this.cancelNotificationsByType("workout");
 
     const times = workoutTimes || config.customTimes || [];
-    const today = new Date();
 
-    // Schedule for next 7 days
-    for (let day = 0; day < 7; day++) {
-      for (let index = 0; index < times.length; index++) {
-        const workoutTime = times[index];
-        const [hours, minutes] = workoutTime.split(":").map(Number);
-        const reminderTime = new Date(today);
-        reminderTime.setDate(today.getDate() + day);
-        reminderTime.setHours(hours, minutes, 0, 0);
+    // One daily-repeating trigger per configured workout time. See
+    // scheduleWaterReminders above for why DAILY replaces the 7-day unroll.
+    for (let index = 0; index < times.length; index++) {
+      const workoutTime = times[index];
+      const [hours, minutes] = workoutTime.split(":").map(Number);
 
-        // Subtract reminder minutes
-        reminderTime.setMinutes(
-          reminderTime.getMinutes() - config.reminderMinutes,
-        );
+      // Use a throwaway Date purely for wraparound-safe minute arithmetic
+      // (subtracting reminderMinutes may roll back across midnight).
+      const reminderDate = new Date();
+      reminderDate.setHours(hours, minutes, 0, 0);
+      reminderDate.setMinutes(
+        reminderDate.getMinutes() - config.reminderMinutes,
+      );
 
-        if (reminderTime > new Date()) {
-          const identifier = `workout_${day}_${index}`;
+      const identifier = `workout_${index}`;
 
-          await this.scheduleNotification(
-            identifier,
-            "🏋️ Workout Time Coming Up!",
-            `Your workout starts in ${config.reminderMinutes} minutes. Get ready to crush it! 💪`,
-            { date: reminderTime } as Notifications.NotificationTriggerInput,
-            { type: "workout", originalTime: workoutTime },
-          );
-        }
-      }
+      await this.scheduleNotification(
+        identifier,
+        "🏋️ Workout Time Coming Up!",
+        `Your workout starts in ${config.reminderMinutes} minutes. Get ready to crush it! 💪`,
+        {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: reminderDate.getHours(),
+          minute: reminderDate.getMinutes(),
+        },
+        { type: "workout", originalTime: workoutTime },
+      );
     }
   }
 
@@ -427,29 +431,23 @@ class NotificationService {
       { key: "dinner", config: config.dinner, emoji: "🍽️", name: "Dinner" },
     ];
 
-    const today = new Date();
+    for (const meal of meals) {
+      if (!meal.config.enabled) continue;
 
-    for (let day = 0; day < 7; day++) {
-      for (const meal of meals) {
-        if (!meal.config.enabled) continue;
+      const [hours, minutes] = meal.config.time.split(":").map(Number);
+      const identifier = `meal_${meal.key}`;
 
-        const [hours, minutes] = meal.config.time.split(":").map(Number);
-        const mealTime = new Date(today);
-        mealTime.setDate(today.getDate() + day);
-        mealTime.setHours(hours, minutes, 0, 0);
-
-        if (mealTime > new Date()) {
-          const identifier = `meal_${meal.key}_${day}`;
-
-          await this.scheduleNotification(
-            identifier,
-            `${meal.emoji} ${meal.name} Time!`,
-            `Time for a nutritious ${meal.name.toLowerCase()}. Fuel your body right! 🌟`,
-            { date: mealTime } as Notifications.NotificationTriggerInput,
-            { type: "meal", mealType: meal.key },
-          );
-        }
-      }
+      await this.scheduleNotification(
+        identifier,
+        `${meal.emoji} ${meal.name} Time!`,
+        `Time for a nutritious ${meal.name.toLowerCase()}. Fuel your body right! 🌟`,
+        {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: hours,
+          minute: minutes,
+        },
+        { type: "meal", mealType: meal.key },
+      );
     }
   }
 
@@ -463,47 +461,38 @@ class NotificationService {
     await this.cancelNotificationsByType("sleep");
 
     const [hours, minutes] = config.bedtime.split(":").map(Number);
-    const today = new Date();
 
-    // Schedule for next 7 days
-    for (let day = 0; day < 7; day++) {
-      // Pre-sleep reminder
-      const preReminderTime = new Date(today);
-      preReminderTime.setDate(today.getDate() + day);
-      preReminderTime.setHours(hours, minutes, 0, 0);
-      preReminderTime.setMinutes(
-        preReminderTime.getMinutes() - config.reminderMinutes,
-      );
+    // Pre-sleep reminder
+    const preReminderDate = new Date();
+    preReminderDate.setHours(hours, minutes, 0, 0);
+    preReminderDate.setMinutes(
+      preReminderDate.getMinutes() - config.reminderMinutes,
+    );
 
-      if (preReminderTime > new Date()) {
-        const identifier = `sleep_pre_${day}`;
+    await this.scheduleNotification(
+      "sleep_pre",
+      "😴 Wind Down Time",
+      `Bedtime in ${config.reminderMinutes} minutes. Start your relaxation routine! 🌙`,
+      {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: preReminderDate.getHours(),
+        minute: preReminderDate.getMinutes(),
+      },
+      { type: "sleep", phase: "pre" },
+    );
 
-        await this.scheduleNotification(
-          identifier,
-          "😴 Wind Down Time",
-          `Bedtime in ${config.reminderMinutes} minutes. Start your relaxation routine! 🌙`,
-          { date: preReminderTime } as Notifications.NotificationTriggerInput,
-          { type: "sleep", phase: "pre" },
-        );
-      }
-
-      // Bedtime reminder
-      const bedTime = new Date(today);
-      bedTime.setDate(today.getDate() + day);
-      bedTime.setHours(hours, minutes, 0, 0);
-
-      if (bedTime > new Date()) {
-        const identifier = `sleep_bedtime_${day}`;
-
-        await this.scheduleNotification(
-          identifier,
-          "🌙 Time for Bed",
-          "Good night! Quality sleep is essential for recovery and performance. Sweet dreams! 😴",
-          { date: bedTime } as Notifications.NotificationTriggerInput,
-          { type: "sleep", phase: "bedtime" },
-        );
-      }
-    }
+    // Bedtime reminder
+    await this.scheduleNotification(
+      "sleep_bedtime",
+      "🌙 Time for Bed",
+      "Good night! Quality sleep is essential for recovery and performance. Sweet dreams! 😴",
+      {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hours,
+        minute: minutes,
+      },
+      { type: "sleep", phase: "bedtime" },
+    );
   }
 
   // Get all scheduled notifications for debugging

@@ -259,9 +259,9 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
           <View style={styles.infoCard}>
             <Ionicons name="information-circle-outline" size={rf(14)} color={colors.text.secondary} />
             <Text style={styles.infoText}>
-              Workout times are automatically detected from your AI-generated fitness
-              plans. You can also manually set custom workout times in the fitness
-              section.
+              Workout reminder scheduling isn't wired up to your fitness plan yet, so
+              this setting doesn't currently trigger notifications. We're working on
+              connecting it to your AI-generated workout times.
             </Text>
           </View>
         </>
