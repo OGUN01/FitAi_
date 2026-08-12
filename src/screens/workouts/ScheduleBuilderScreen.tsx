@@ -966,7 +966,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
               contentContainerStyle={styles.pickerList}
               ListEmptyComponent={
                 <View style={styles.pickerEmpty}>
-                  <Text style={styles.pickerEmptyText}>No exercises found</Text>
+                  <EmptyState icon="search-outline" iconSize={rf(32)} title="No exercises found" />
                 </View>
               }
             />
@@ -1387,10 +1387,6 @@ const styles = StyleSheet.create({
   },
 
   pickerEmpty: { padding: rp(spacing.xxl), alignItems: "center" },
-  pickerEmptyText: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-  },
 
   // ── Exercise picker extras ──
   pickerKav: { flex: 1 },

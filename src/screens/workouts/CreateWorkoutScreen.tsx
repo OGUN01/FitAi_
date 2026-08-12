@@ -806,11 +806,15 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                 testID="exercise-picker-list"
                 scrollEnabled={false}
                 ListEmptyComponent={
-                  <Text style={styles.pickerEmptyText}>
-                    {exerciseSearch.trim()
-                      ? `No exercises match "${exerciseSearch.trim()}"`
-                      : "No exercises found"}
-                  </Text>
+                  <EmptyState
+                    icon="search-outline"
+                    iconSize={rf(32)}
+                    title={
+                      exerciseSearch.trim()
+                        ? `No exercises match "${exerciseSearch.trim()}"`
+                        : "No exercises found"
+                    }
+                  />
                 }
               />
             </View>
@@ -1155,12 +1159,6 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: colors.text,
     paddingVertical: rp(spacing.sm),
-  },
-  pickerEmptyText: {
-    fontSize: rf(13),
-    color: colors.textSecondary,
-    textAlign: "center",
-    paddingVertical: rp(spacing.xl),
   },
   // ── Category tabs ──
   categoryTabs: {

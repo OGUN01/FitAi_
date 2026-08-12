@@ -56,6 +56,7 @@ import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { ProgressRing } from '../../components/ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { GlassHeader } from '../../components/ui/aurora/GlassHeader';
+import { EmptyState } from '../../components/ui/aurora/EmptyState';
 import { type BarData } from '../../components/ui/GradientBarChart';
 import { BuilderAnalyticsPanel } from '../../components/fitness/builder/BuilderAnalyticsPanel';
 import { useFitnessStore } from '../../stores/fitnessStore';
@@ -648,11 +649,11 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
           {/* ── Empty state ── */}
           {planned.length === 0 && sections.cooldown.length === 0 && (
             <View style={styles.emptyState}>
-              <Ionicons name="barbell-outline" size={rf(48)} color={colors.text.tertiary} />
-              <Text style={styles.emptyTitle}>No exercises yet</Text>
-              <Text style={styles.emptyHint}>
-                This workout has no planned exercises. Add some via the builder.
-              </Text>
+              <EmptyState
+                icon="barbell-outline"
+                title="No exercises yet"
+                subtitle="This workout has no planned exercises. Add some via the builder."
+              />
             </View>
           )}
 
@@ -1491,19 +1492,6 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: rp(spacing.xxl),
-    gap: rp(spacing.sm),
-  },
-  emptyTitle: {
-    color: colors.text.secondary,
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
-  emptyHint: {
-    color: colors.text.tertiary,
-    fontSize: rf(typography.fontSize.caption),
-    textAlign: 'center',
-    paddingHorizontal: rp(spacing.xl),
   },
   footerSpacer: {
     height: rp(120),

@@ -27,6 +27,7 @@ import Animated, { FadeInRight } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { GlassHeader } from '../../components/ui/aurora/GlassHeader';
+import { EmptyState } from '../../components/ui/aurora/EmptyState';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 import { rf, rw, rp, rbr } from '../../utils/responsive';
@@ -293,20 +294,22 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
               initialNumToRender={12}
               windowSize={7}
               ListEmptyComponent={
-                <Text style={styles.emptySearchText}>
-                  {search.trim() ? `No workouts match "${search.trim()}"` : 'No workouts found'}
-                </Text>
+                <EmptyState
+                  icon="search-outline"
+                  iconSize={rf(32)}
+                  title={search.trim() ? `No workouts match "${search.trim()}"` : 'No workouts found'}
+                />
               }
             />
           </>
         ) : (
           /* Muted empty state */
           <View style={styles.emptyState} testID="workout-history-empty">
-            <Ionicons name="barbell-outline" size={rf(28)} color={colors.textTertiary} />
-            <Text style={styles.emptyTitle}>No Workouts Yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Complete your first workout to start tracking your progress. Every rep counts!
-            </Text>
+            <EmptyState
+              icon="barbell-outline"
+              title="No Workouts Yet"
+              subtitle="Complete your first workout to start tracking your progress. Every rep counts!"
+            />
           </View>
         )}
       </SafeAreaView>
@@ -346,13 +349,6 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: colors.text,
     paddingVertical: rp(4),
-  },
-  emptySearchText: {
-    fontSize: rf(13),
-    color: colors.textTertiary,
-    textAlign: 'center',
-    marginTop: rp(spacing.xl),
-    paddingHorizontal: rp(spacing.lg),
   },
   listContent: {
     paddingHorizontal: rp(spacing.md),
@@ -420,19 +416,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
     paddingHorizontal: rp(spacing.lg),
-  },
-  emptyTitle: {
-    fontSize: rf(16),
-    fontWeight: '700',
-    color: colors.text,
-  },
-  emptySubtitle: {
-    fontSize: rf(12),
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: rf(18),
   },
 });
 
