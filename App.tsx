@@ -66,7 +66,7 @@ const _textInputDefaults = TextInput as any;
 _textInputDefaults.defaultProps = _textInputDefaults.defaultProps || {};
 _textInputDefaults.defaultProps.style = { fontFamily: FONT_FAMILY.regular };
 import { initializeBackend } from "./src/utils/integration";
-import { offlineService } from "./src/services/offline/OfflineService";
+import { offlineService } from "./src/services/offline";
 import { useAuth } from "./src/hooks/useAuth";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { useUserStore } from "./src/stores/userStore";

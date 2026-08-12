@@ -10,7 +10,7 @@ import {
 } from '../services/trackIntegrationService';
 import { useMigration } from './useMigration';
 import { backupRecoveryService, BackupStatus } from '../services/backupRecoveryService';
-import { offlineService } from '../services/offline/OfflineService';
+import { offlineService } from '../services/offline';
 
 // ============================================================================
 // TYPES AND INTERFACES

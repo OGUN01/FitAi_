@@ -31,7 +31,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useProfileStore } from "../stores/profileStore";
 import { syncEngine } from "./SyncEngine";
-import { offlineService } from "./offline/OfflineService";
+// NOTE: was importing from ./offline/OfflineService — a parallel, dead
+// offline-queue implementation with zero production writers, so the
+// pending-profile-action check below always read an empty queue and this
+// hydration guard never actually fired. ./offline (this flat module) is the
+// real queue every store/service that actually queues writes uses.
+import { offlineService } from "./offline";
 import { resolveCurrentWeightForUser } from "./currentWeight";
 import { weightTrackingService } from "./WeightTrackingService";
 // Type transformation utilities for snake_case/camelCase conversion.

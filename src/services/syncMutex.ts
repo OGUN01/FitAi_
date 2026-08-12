@@ -1,26 +1,23 @@
 /**
  * SyncMutex - Mutex for Sync Coordination
  *
- * CURRENT ARCHITECTURE (as of this file's last audit):
+ * CURRENT ARCHITECTURE:
  * - SyncEngine (src/services/SyncEngine.ts) acquires this mutex before running
  *   profile-data sync (personalInfo, dietPreferences, bodyAnalysis, etc.).
- * - src/services/offline/OfflineService.ts (this folder) also acquires this
- *   mutex before syncOfflineActions(). In production this instance is only
- *   consumed by DataBridge.ts and useTrackBIntegration.ts.
+ * - src/services/offline.ts — the app's real offline write queue (used by
+ *   completionTracking.ts, crudOperations.ts, fitnessStore.ts,
+ *   nutritionStore.ts, hydrationStore.ts, offlineStore.ts, useOffline.ts,
+ *   useTrackBIntegration.ts, DataBridge.ts) — also acquires this mutex
+ *   before syncOfflineActions(), since its queue can contain writes to the
+ *   same profile tables SyncEngine syncs.
  *
- * KNOWN GAP:
- * `RealTimeSyncService` (formerly src/services/syncService.ts) no longer
- * exists in the codebase — do not assume this mutex coordinates it.
- * More importantly, the app's actual highest-traffic offline write path,
- * `src/services/offline.ts` (used by completionTracking.ts, crudOperations.ts,
- * fitnessStore.ts, nutritionStore.ts, hydrationStore.ts, offlineStore.ts and
- * useOffline.ts), is a completely separate module with its own local
- * `syncInProgress` boolean and is NOT wired into this mutex. This mutex
- * therefore does NOT protect that module from racing SyncEngine today.
- * Wiring `src/services/offline.ts` into this mutex (or documenting an
- * equivalent guarantee) is an open follow-up outside this file's scope.
+ * HISTORY: a parallel, dead offline-queue module used to live at
+ * src/services/offline/ with zero production writers and its own
+ * independent (also unwired) mutex acquisition; it was deleted after
+ * confirming its only two "consumers" only ever read network status or a
+ * permanently-empty queue. There is now exactly one offline write queue.
  *
- * SOLUTION (for the engines that DO use it):
+ * SOLUTION:
  * This mutex ensures only one sync operation runs at a time among callers
  * that acquire it.
  */

@@ -2,6 +2,7 @@ import * as crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { supabase } from "./supabase";
+import { syncMutex } from "./syncMutex";
 
 // Types for offline operations
 export interface OfflineAction {
@@ -391,6 +392,19 @@ class OfflineService {
       };
     }
 
+    // Acquired for the same reason SyncEngine.processQueue acquires it: this
+    // queue can contain writes to the exact profile tables (personalInfo,
+    // dietPreferences, bodyAnalysis, etc. — see DataBridge's PROFILE_TABLES)
+    // that SyncEngine's own profile sync also writes. Without a shared lock,
+    // a queued profile write flushing here could race a concurrent
+    // SyncEngine profile sync on the same rows. See syncMutex.ts's header
+    // comment (now updated) for the fuller architecture note.
+    return syncMutex.withLock("OfflineService.syncOfflineActions", () =>
+      this.syncOfflineActionsLocked(),
+    );
+  }
+
+  private async syncOfflineActionsLocked(): Promise<SyncResult> {
     this.syncInProgress = true;
     const result: SyncResult = {
       success: true,
