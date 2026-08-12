@@ -15,13 +15,11 @@ import {
   Pressable,
   View,
   Text,
-  Modal,
   FlatList,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BottomSheet } from "../../ui/aurora/BottomSheet";
 import {
   surface,
   border,
@@ -30,6 +28,7 @@ import {
   borderRadius,
   typography,
 } from "../../../theme/aurora-tokens";
+import { rh } from "../../../utils/responsive";
 
 export interface SearchSheetOption {
   id: string;
@@ -100,62 +99,64 @@ export const SearchSheet: React.FC<SearchSheetProps> = ({
         <View style={styles.underline} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            style={styles.sheetWrap}
-          >
-            <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-              <View style={styles.handle} />
-              <Text style={styles.sheetTitle}>{fieldLabel}</Text>
-              <View style={styles.searchRow}>
-                <Ionicons name="search" size={18} color={colors.text.tertiary} />
-                <TextInput
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search…"
-                  placeholderTextColor={colors.text.tertiary}
-                  style={styles.searchInput}
-                  autoFocus
-                />
-                {query ? (
-                  <Pressable onPress={() => setQuery("")} hitSlop={8}>
-                    <Ionicons name="close-circle" size={18} color={colors.text.tertiary} />
-                  </Pressable>
-                ) : null}
-              </View>
-              <FlatList
-                data={filtered}
-                keyExtractor={(o) => o.id}
-                renderItem={({ item }) => (
-                  <Pressable
-                    onPress={() => handleSelect(item.id)}
-                    style={[
-                      styles.option,
-                      item.id === value && styles.optionSelected,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        item.id === value && styles.optionLabelSelected,
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                    {item.id === value ? (
-                      <Ionicons name="checkmark" size={18} color={colors.primary.DEFAULT} />
-                    ) : null}
-                  </Pressable>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.sep} />}
-                style={styles.list}
-              />
+      <BottomSheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        showCloseButton={false}
+        contentStyle={styles.content}
+      >
+        {/* Custom header — not BottomSheet's default `title` prop — so the
+            sheet title keeps this screen's own Manrope sectionTitle token.
+            BottomSheet's built-in title renders via Animated.Text, which does
+            not inherit the app's global Manrope Text.defaultProps override,
+            so it would fall back to the platform system font. Also omits the
+            close (X) button, matching the original design (search sheets are
+            dismissed via backdrop tap or selection, same as AdjustmentWizard). */}
+        <Text style={styles.sheetTitle}>{fieldLabel}</Text>
+        <View style={styles.searchRow}>
+          <Ionicons name="search" size={18} color={colors.text.tertiary} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search…"
+            placeholderTextColor={colors.text.tertiary}
+            style={styles.searchInput}
+            autoFocus
+          />
+          {query ? (
+            <Pressable onPress={() => setQuery("")} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.text.tertiary} />
             </Pressable>
-          </KeyboardAvoidingView>
-        </Pressable>
-      </Modal>
+          ) : null}
+        </View>
+        <FlatList
+          data={filtered}
+          keyExtractor={(o) => o.id}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => handleSelect(item.id)}
+              style={[
+                styles.option,
+                item.id === value && styles.optionSelected,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.optionLabel,
+                  item.id === value && styles.optionLabelSelected,
+                ]}
+              >
+                {item.label}
+              </Text>
+              {item.id === value ? (
+                <Ionicons name="checkmark" size={18} color={colors.primary.DEFAULT} />
+              ) : null}
+            </Pressable>
+          )}
+          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          style={styles.list}
+        />
+      </BottomSheet>
     </>
   );
 };
@@ -190,30 +191,9 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: colors.text.tertiary,
   },
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  sheetWrap: {
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: surface[2],
-    borderTopLeftRadius: borderRadius.xxl,
-    borderTopRightRadius: borderRadius.xxl,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
+  content: {
     paddingHorizontal: spacing.lg,
-    maxHeight: "80%",
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 9999,
-    backgroundColor: colors.text.tertiary,
-    alignSelf: "center",
-    marginBottom: spacing.md,
+    paddingBottom: spacing.lg,
   },
   sheetTitle: {
     fontFamily: typography.variants.sectionTitle.fontFamily,
@@ -241,7 +221,9 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     padding: 0,
   },
-  list: {},
+  list: {
+    maxHeight: rh(400),
+  },
   option: {
     flexDirection: "row",
     alignItems: "center",

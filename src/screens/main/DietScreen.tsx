@@ -875,7 +875,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           <Modal
             visible={showManualEntry}
             transparent
-            animationType="slide"
+            animationType="fade"
             onRequestClose={() => setShowManualEntry(false)}
           >
             <View style={styles.manualEntryOverlay}>

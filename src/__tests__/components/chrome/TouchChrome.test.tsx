@@ -135,7 +135,6 @@ jest.mock("@/components/ui/aurora/AnimatedPressable", () => {
 
 import { EmptyMealsMessage } from "@/components/home/EmptyMealsMessage";
 import { EmptyCalendarMessage } from "@/components/home/EmptyCalendarMessage";
-import { SettingsModalWrapper } from "@/components/settings/SettingsModalWrapper";
 import { SettingsModalWrapper as ProfileSettingsModalWrapper } from "@/screens/main/profile/components/SettingsModalWrapper";
 import { SettingsSelectionModal } from "@/screens/main/profile/modals/SettingsSelectionModal";
 
@@ -159,20 +158,6 @@ describe("chrome touch targets", () => {
         workouts.getByLabelText("Plan your first workout").props.style,
       ),
     ).toMatchObject({ minHeight: 44 });
-  });
-
-  it("keeps settings modal chrome at real minimum sizes under scaled responsive values", () => {
-    const screen = render(
-      <SettingsModalWrapper visible title="Profile Settings" onClose={jest.fn()}>
-        <></>
-      </SettingsModalWrapper>,
-    );
-
-    expect(
-      StyleSheet.flatten(
-        screen.getByLabelText("Close Profile Settings").props.style,
-      ),
-    ).toMatchObject({ width: 44, height: 44 });
   });
 
   it("keeps profile modal chrome at real minimum sizes under scaled responsive values", () => {

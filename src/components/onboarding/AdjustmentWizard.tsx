@@ -1,17 +1,13 @@
 /**
- * AdjustmentWizard — validation-error bottom sheet ("Editorial Dark", no glass)
+ * AdjustmentWizard — validation-error bottom sheet ("Editorial Dark" content
+ * on the shared BottomSheet chrome)
  *
- * Rebuilt on the fresh pattern: plain dim backdrop (no BlurView), transparent
- * sheet chrome on tokens.bg, hairline separators only, ink type scale. The ONE
- * solid accent element is the "Apply Changes" primary CTA (the allowed CTA
- * fill). No gradients, no glass surfaces, no elevation, no fontWeight hacks.
- *
- * DOM structure (web-safe): the backdrop Pressable is an absolute-fill SIBLING
- * rendered BEHIND the sheet — never an ancestor of sheet content. Nesting it
- * around the sheet produced <button> inside <button> on react-native-web
- * ("Dismiss goal adjustment" wrapping "Close goal adjustment"), which broke
- * HTML hydration. Sheet taps can't hit the backdrop because the sheet paints
- * above it in z-order, so no stopPropagation wrapper is needed either.
+ * Built on the shared `BottomSheet` (src/components/ui/aurora/BottomSheet.tsx)
+ * for the sheet shell — backdrop, spring slide-up, drag-to-dismiss, haptics —
+ * matching every other onboarding sheet (BMRInfoModal, InfoTooltipModal,
+ * OnboardingModals). Content keeps the "Editorial Dark" fresh-pattern styling:
+ * transparent chrome on tokens.bg, hairline separators only, ink type scale.
+ * The ONE solid accent element is the "Apply Changes" primary CTA.
  *
  * Selection / save / close logic — UNCHANGED.
  */
@@ -20,7 +16,6 @@ import React from "react";
 import {
   View,
   Text,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,6 +26,7 @@ import { useAdjustmentWizard } from "../../hooks/adjustment-wizard";
 import type { Alternative } from "../../hooks/adjustment-wizard/types";
 import { AlternativeCard } from "./wizard/AlternativeCard";
 import { SectionLabel, tokens, font, type as typeScale } from "./fresh";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
 
 interface AdjustmentWizardProps {
   visible: boolean;
@@ -69,140 +65,123 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = (props) => {
   const applyEnabled = selectedIndex !== null;
 
   return (
-    <Modal
+    <BottomSheet
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-      statusBarTranslucent
+      onClose={onClose}
+      showCloseButton={false}
+      dismissOnDrag
+      contentStyle={styles.content}
+      testID="adjustment-wizard-sheet"
     >
-      {/* Root lays the sheet at the bottom; the backdrop is a sibling BEHIND
-          it (absolute-fill), never an ancestor — see header note. */}
-      <View style={styles.root}>
-        {/* Dim backdrop — fills screen, tap to dismiss (plain dim, no blur) */}
+      {/* ── Header — custom (not BottomSheet's default title row) so it keeps
+          the "fresh" Editorial Dark type scale and the per-dialog close
+          label the onboarding touch-target tests rely on. ── */}
+      <View style={styles.header}>
         <Pressable
-          style={[StyleSheet.absoluteFill, styles.backdrop]}
+          style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
           onPress={onClose}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss goal adjustment"
-          accessibilityHint="Closes the adjustment wizard without saving"
-        />
-        <View style={styles.modalContainer}>
-          {/* ── Header ── */}
-          <View style={styles.header}>
-            <Pressable
-              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
-              onPress={onClose}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Close goal adjustment"
-            >
-              <Ionicons name="close" size={20} color={tokens.ink2} />
-            </Pressable>
+          accessibilityLabel="Close goal adjustment"
+        >
+          <Ionicons name="close" size={20} color={tokens.ink2} />
+        </Pressable>
 
-            <SectionLabel>Goal adjustment</SectionLabel>
-            <Text style={styles.subtitle}>
-              Your current plan needs optimization for safe, sustainable
-              results
-            </Text>
+        <SectionLabel>Goal adjustment</SectionLabel>
+        <Text style={styles.subtitle}>
+          Your current plan needs optimization for safe, sustainable results
+        </Text>
 
-            {/* Error — hairline callout, not a tinted alert box */}
-            <View style={styles.errorCallout}>
-              <Ionicons name="warning" size={16} color={tokens.danger} />
-              <Text style={styles.errorMessage} numberOfLines={2}>
-                {error.message}
-              </Text>
-            </View>
-          </View>
-
-          {/* ── Alternatives List ── */}
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <SectionLabel style={styles.sectionLabel}>
-              Choose a safe alternative
-            </SectionLabel>
-
-            {alternatives.map((alt, index) => (
-              <AlternativeCard
-                key={index}
-                alternative={alt}
-                index={index}
-                isSelected={selectedIndex === index}
-                isRecommended={index === 0}
-                onSelect={() => setSelectedIndex(index)}
-              />
-            ))}
-
-            <View style={styles.scrollPadding} />
-          </ScrollView>
-
-          {/* ── Footer ── */}
-          <View style={styles.footer}>
-            <Pressable
-              style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel goal adjustment"
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.applyButton,
-                applyEnabled
-                  ? styles.applyButtonEnabled
-                  : styles.applyButtonDisabled,
-                pressed && applyEnabled && styles.pressed,
-              ]}
-              onPress={handleSelectAlternative}
-              disabled={!applyEnabled}
-              accessibilityRole="button"
-              accessibilityLabel="Apply goal adjustment"
-            >
-              <Text
-                style={[
-                  styles.applyButtonText,
-                  !applyEnabled && styles.applyButtonTextDisabled,
-                ]}
-              >
-                {isSaving ? "Saving..." : "Apply Changes"}
-              </Text>
-              {!isSaving && applyEnabled && (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={18}
-                  color={tokens.bg}
-                />
-              )}
-            </Pressable>
-          </View>
+        {/* Error — hairline callout, not a tinted alert box */}
+        <View style={styles.errorCallout}>
+          <Ionicons name="warning" size={16} color={tokens.danger} />
+          <Text style={styles.errorMessage} numberOfLines={2}>
+            {error.message}
+          </Text>
         </View>
       </View>
-    </Modal>
+
+      {/* ── Alternatives List ── */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <SectionLabel style={styles.sectionLabel}>
+          Choose a safe alternative
+        </SectionLabel>
+
+        {alternatives.map((alt, index) => (
+          <AlternativeCard
+            key={index}
+            alternative={alt}
+            index={index}
+            isSelected={selectedIndex === index}
+            isRecommended={index === 0}
+            onSelect={() => setSelectedIndex(index)}
+          />
+        ))}
+
+        <View style={styles.scrollPadding} />
+      </ScrollView>
+
+      {/* ── Footer ── */}
+      <View style={styles.footer}>
+        <Pressable
+          style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel goal adjustment"
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.applyButton,
+            applyEnabled
+              ? styles.applyButtonEnabled
+              : styles.applyButtonDisabled,
+            pressed && applyEnabled && styles.pressed,
+          ]}
+          onPress={handleSelectAlternative}
+          disabled={!applyEnabled}
+          accessibilityRole="button"
+          accessibilityLabel="Apply goal adjustment"
+        >
+          <Text
+            style={[
+              styles.applyButtonText,
+              !applyEnabled && styles.applyButtonTextDisabled,
+            ]}
+          >
+            {isSaving ? "Saving..." : "Apply Changes"}
+          </Text>
+          {!isSaving && applyEnabled && (
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={tokens.bg}
+            />
+          )}
+        </Pressable>
+      </View>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
   pressed: {
     opacity: 0.6,
   },
 
-  modalContainer: {
-    maxHeight: "85%",
-    backgroundColor: tokens.bg,
-    borderTopWidth: 1,
-    borderTopColor: tokens.hairline,
+  // BottomSheet already supplies horizontal/bottom padding — this sheet's
+  // header/scrollContent/footer each carry their own 24px horizontal
+  // padding, so the shared wrapper's default padding is zeroed here to
+  // avoid doubling up.
+  content: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
   },
 
   // Header
