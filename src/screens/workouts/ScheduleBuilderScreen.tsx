@@ -28,6 +28,7 @@ import {
   AuroraSpinner,
   EmptyState,
   AnimatedPressable,
+  GlassHeader,
 } from "../../components/ui/aurora";
 import {
   flatColors as colors,
@@ -289,19 +290,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
     return (
       <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          <GlassHeader eyebrow="SCHEDULE BUILDER" onBack={() => navigation.goBack()} />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -314,19 +303,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
     return (
       <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          <GlassHeader eyebrow="SCHEDULE BUILDER" onBack={() => navigation.goBack()} />
           <View style={styles.emptyWrap} testID="schedule-sign-in-required">
             <EmptyState
               icon="lock-closed-outline"
@@ -346,19 +323,7 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
     return (
       <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          <GlassHeader eyebrow="SCHEDULE BUILDER" onBack={() => navigation.goBack()} />
           <View style={styles.emptyWrap} testID="schedule-load-error">
             <EmptyState
               icon="cloud-offline-outline"
@@ -377,20 +342,8 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
   return (
     <AuroraBackground theme="space" animated intensity={0.3}>
       <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-        {/* Compact top row — plain back + eyebrow */}
-        <View style={styles.topRow}>
-          <AnimatedPressable
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={styles.stepEyebrow}>SCHEDULE BUILDER</Text>
-          <View style={styles.topRowSpacer} />
-        </View>
+        {/* Shared Aurora header — eyebrow-only */}
+        <GlassHeader eyebrow="SCHEDULE BUILDER" onBack={() => navigation.goBack()} />
 
         <ScrollView
           style={styles.scroll}
@@ -1026,33 +979,6 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
-  },
-  backBtn: {
-    // Math.max(rw(40), 44) floors the touch target at 44px — matches the
-    // sibling "flat header" screens (WorkoutHistoryScreen, FullPlanScreen,
-    // TemplateLibraryScreen, ExerciseHistoryScreen).
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topRowSpacer: {
-    width: Math.max(rw(40), 44),
-  },
-  stepEyebrow: {
-    fontSize: rf(11),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.6,
-  },
   scroll: {
     flex: 1,
   },

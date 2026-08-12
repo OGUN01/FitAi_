@@ -27,10 +27,10 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { GlassHeader } from '../../components/ui/aurora/GlassHeader';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
-import { FONT_FAMILY } from '../../theme/fonts';
-import { rf, rw, rp, rbr } from '../../utils/responsive';
+import { rf, rp } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
 import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
 import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
@@ -209,32 +209,8 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={['top']} testID="full-plan-screen">
-        {/* Flat header — back + eyebrow + title */}
-        <View style={styles.header}>
-          <AnimatedPressable
-            onPress={navigation.goBack}
-            scaleValue={0.9}
-            springConfig="snappy"
-            hapticType="light"
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            testID="full-plan-back"
-          >
-            <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-          </AnimatedPressable>
-          <View style={styles.headerText}>
-            <Text style={styles.eyebrow} numberOfLines={1}>
-              {eyebrow}
-            </Text>
-            <Text style={styles.title} numberOfLines={1}>
-              Full Plan
-            </Text>
-          </View>
-          {/* Spacer balances the back button so the title block stays put */}
-          <View style={styles.backButton} />
-        </View>
+        {/* Shared Aurora header — back + eyebrow + title */}
+        <GlassHeader title="Full Plan" eyebrow={eyebrow} onBack={navigation.goBack} backAccessibilityLabel="Go back" />
 
         {weeklyWorkoutPlan ? (
           <>
@@ -355,39 +331,6 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: rp(spacing.lg),
-    paddingTop: rp(spacing.sm),
-    paddingBottom: rp(spacing.xs),
-  },
-  backButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    borderRadius: rbr(22),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  eyebrow: {
-    fontSize: rf(11),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  title: {
-    fontSize: rf(22),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: '700',
-    color: colors.text,
-    marginTop: rp(2),
-  },
   summary: {
     fontSize: rf(12),
     color: colors.textTertiary,

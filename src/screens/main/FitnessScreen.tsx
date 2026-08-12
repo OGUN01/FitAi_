@@ -6,8 +6,8 @@
  */
 
 import React, { useMemo, useCallback } from 'react';
-import { View, StyleSheet, RefreshControl, Text, Platform, StatusBar } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, StyleSheet, RefreshControl, Text, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -15,7 +15,8 @@ import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable'
 import { DetentBottomSheet } from '../../components/ui/aurora/DetentBottomSheet';
 import { GlassButton } from '../../components/ui/aurora/GlassButton';
 import { GlassCard } from '../../components/ui/aurora/GlassCard';
-import { Pill } from '../../components/onboarding/fresh/Pill';
+import { SlidingSegmentedControl } from '../../components/ui/aurora/SlidingSegmentedControl';
+import { useTopSafeAreaInset } from '../../components/ui/aurora/useTopSafeAreaInset';
 import { colors, spacing } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rh, rf, rp, rbr } from '../../utils/responsive';
@@ -136,6 +137,12 @@ interface FitnessScreenProps {
   navigation: FitnessNavigation;
 }
 
+/** Static options for the AI Plan / My Plan exclusive toggle (SlidingSegmentedControl). */
+const PLAN_TOGGLE_OPTIONS = [
+  { id: 'ai', label: 'AI Plan' },
+  { id: 'custom', label: 'My Plan' },
+];
+
 const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   // Top safe-area inset — applied explicitly to FitnessHeader so the greeting
   // clears the status bar the same way Diet/Home do. SafeAreaView edges={
@@ -143,16 +150,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   // rendered behind the status bar), so we mirror the WorkoutSessionScreen
   // pattern: SafeAreaView keeps only the bottom edge, and the top inset is
   // handed to the header as explicit paddingTop.
-  const insets = useSafeAreaInsets();
-  // Robust top inset for FitnessHeader. useSafeAreaInsets().top can report 0
-  // (before SafeAreaProvider measures, or certain Expo Go / device configs),
-  // which previously let the greeting render behind the status bar. Fall back to
-  // StatusBar.currentHeight (Android) and a 24px floor so the greeting always
-  // clears the bar. SafeAreaView owns only the bottom edge (edges={['bottom']}),
-  // so this header is the sole owner of top padding — no double-pad risk.
-  const statusBarHeight =
-    Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
-  const headerPaddingTop = Math.max(insets.top, statusBarHeight, 24);
+  const headerPaddingTop = useTopSafeAreaInset();
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
   const setPlanError = useFitnessStore((s) => s.setPlanError);
@@ -176,14 +174,6 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   // Derive which plan to display based on toggle
   const activePlan = getActivePlan();
-
-  const PLAN_TOGGLE_OPTIONS = useMemo(
-    () => [
-      { id: 'ai', label: 'AI Plan', value: 'ai' },
-      { id: 'custom', label: 'My Plan', value: 'custom' },
-    ],
-    []
-  );
 
   // Weekly progress for WeekProgressCard — mirrors the stats computation
   // previously inside WeeklyPlanOverview's stats row, now hoisted here so the
@@ -277,17 +267,16 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             )}
 
             {/* 1.6 Plan Source Toggle — no subtitle per spec §6.4.
-                Editorial Dark: option sets of 4 or fewer use fresh/Pill. */}
+                Exclusive single-select toggle: shared SlidingSegmentedControl
+                (same component/variant as AnalyticsScreen's PeriodSelector). */}
             <View style={styles.planToggleContainer}>
-              {PLAN_TOGGLE_OPTIONS.map((opt) => (
-                <Pill
-                  key={opt.id}
-                  label={opt.label}
-                  selected={activePlanSource === opt.id}
-                  onPress={() => setActivePlanSource(opt.id as 'ai' | 'custom')}
-                  testID={`plan-toggle-${opt.id}`}
-                />
-              ))}
+              <SlidingSegmentedControl
+                options={PLAN_TOGGLE_OPTIONS}
+                selectedId={activePlanSource}
+                onSelect={(id) => setActivePlanSource(id as 'ai' | 'custom')}
+                variant="aurora"
+                testIDPrefix="plan-toggle"
+              />
             </View>
 
             {/* 2. Selected Day's Workout Card (syncs with calendar selection) */}
@@ -649,9 +638,6 @@ const styles = StyleSheet.create({
     elevation: 100,
   },
   planToggleContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: rp(spacing.sm),
     paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.xs),
     marginBottom: rp(spacing.lg),

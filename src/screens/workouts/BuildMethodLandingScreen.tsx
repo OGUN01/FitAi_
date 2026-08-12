@@ -39,6 +39,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import {
   flatColors as colors,
   spacing,
@@ -153,20 +154,12 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
   return (
     <AuroraBackground theme="space" animated intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-        {/* Compact top row — plain back + step eyebrow */}
-        <View style={styles.topRow}>
-          <AnimatedPressable
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Back to workout tab"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-          </AnimatedPressable>
-          <Text style={styles.stepEyebrow}>STEP 1 OF 3</Text>
-          <View style={styles.topRowSpacer} />
-        </View>
+        {/* Shared Aurora header — eyebrow-only */}
+        <GlassHeader
+          eyebrow="STEP 1 OF 3"
+          onBack={() => navigation.goBack()}
+          backAccessibilityLabel="Back to workout tab"
+        />
 
         <ScrollView
           style={styles.scrollView}
@@ -312,33 +305,6 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
-  },
-  backBtn: {
-    // Math.max(rw(40), 44) floors the touch target at 44px — matches the
-    // sibling "flat header" screens (WorkoutHistoryScreen, FullPlanScreen,
-    // TemplateLibraryScreen, ExerciseHistoryScreen).
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topRowSpacer: {
-    width: Math.max(rw(40), 44),
-  },
-  stepEyebrow: {
-    fontSize: rf(11),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
   },
   scrollView: {
     flex: 1,

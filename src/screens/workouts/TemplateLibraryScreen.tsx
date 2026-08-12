@@ -12,6 +12,7 @@ import {
   FlatList,
   StyleSheet,
   TextInput,
+  RefreshControl,
   type TextStyle,
   type ViewStyle,
 } from "react-native";
@@ -35,6 +36,7 @@ import {
   AuroraSpinner,
   EmptyState,
   AnimatedPressable,
+  GlassHeader,
 } from "../../components/ui/aurora";
 import { CommunityTemplatesTab } from "../../components/fitness/builder/CommunityTemplatesTab";
 import {
@@ -142,43 +144,6 @@ const DIFFICULTY_LABEL: Record<
 };
 
 // ============================================================================
-// FLAT HEADER
-// ============================================================================
-
-const LibraryHeader: React.FC<{
-  onBack: () => void;
-  rightAction?: React.ReactNode;
-}> = ({ onBack, rightAction }) => (
-  <View style={styles.header}>
-    <AnimatedPressable
-      onPress={onBack}
-      scaleValue={0.9}
-      springConfig="snappy"
-      hapticType="light"
-      style={styles.backButton}
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-    >
-      <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-    </AnimatedPressable>
-    <View style={styles.headerText}>
-      <Text style={styles.eyebrow} numberOfLines={1}>
-        Workouts
-      </Text>
-      <Text style={styles.title} numberOfLines={1}>
-        Template Library
-      </Text>
-    </View>
-    {/* Right side: action slot (fixed minWidth so the title stays put when
-        there are no actions, e.g. loading/error states). */}
-    <View style={styles.headerSide}>
-      {rightAction}
-    </View>
-  </View>
-);
-
-// ============================================================================
 // COMPONENT
 // ============================================================================
 
@@ -207,6 +172,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   // Loaded once on mount + refreshed after every toggle so card icons stay
   // in sync. Stored as a Set for O(1) lookup during card render.
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
   // ── Phase 10: incoming shared template (deep-link import) ─────────────────
   // When the screen is opened via a fitai://template/{id} deep link, the
@@ -259,6 +225,12 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       console.error("Failed to load bookmarks:", err);
     }
   }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([loadTemplates(), loadBookmarks()]);
+    setRefreshing(false);
+  }, [loadTemplates, loadBookmarks]);
 
   useEffect(() => {
     loadTemplates();
@@ -669,7 +641,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
-          <LibraryHeader onBack={() => navigation.goBack()} />
+          <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -683,7 +655,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
-          <LibraryHeader onBack={() => navigation.goBack()} />
+          <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} />
           <View style={styles.emptyWrap} testID="template-sign-in-required">
             <EmptyState
               icon="lock-closed-outline"
@@ -703,7 +675,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
-          <LibraryHeader onBack={() => navigation.goBack()} />
+          <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} />
           <View style={styles.emptyWrap} testID="template-load-error">
             <EmptyState
               icon="cloud-offline-outline"
@@ -725,7 +697,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={["top"]}>
-        <LibraryHeader onBack={() => navigation.goBack()} rightAction={headerActions} />
+        <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} rightAction={headerActions} />
 
         {/* Search bar + view toggle — slim tinted field, no border box */}
         <View style={styles.searchRow}>
@@ -1037,6 +1009,14 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
                 : undefined
             }
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
+              />
+            }
           />
         )}
       </SafeAreaView>
@@ -1759,44 +1739,6 @@ const styles = StyleSheet.create({
     elevation: 1300,
   },
   // ── Flat header ─────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: rp(spacing.lg),
-    paddingTop: rp(spacing.sm),
-    paddingBottom: rp(spacing.xs),
-  },
-  backButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    borderRadius: rbr(22),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerText: {
-    flex: 1,
-    alignItems: "center",
-  },
-  eyebrow: {
-    fontSize: rf(11),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  title: {
-    fontSize: rf(22),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: rp(2),
-  },
-  headerSide: {
-    minWidth: Math.max(rw(40), 44),
-    alignItems: "center",
-    justifyContent: "center",
-  },
   headerActions: {
     flexDirection: "row",
     alignItems: "center",

@@ -37,6 +37,7 @@ import {
   EmptyState,
   AuroraSpinner,
   AnimatedPressable,
+  GlassHeader,
 } from "../../components/ui/aurora";
 import {
   flatColors as colors,
@@ -493,21 +494,10 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>
-              {isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
-            </Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          <GlassHeader
+            eyebrow={isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
+            onBack={() => navigation.goBack()}
+          />
           <View style={styles.loader}>
             <AuroraSpinner size="lg" />
           </View>
@@ -522,19 +512,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>EDIT WORKOUT</Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          <GlassHeader eyebrow="EDIT WORKOUT" onBack={() => navigation.goBack()} />
           <View
             style={styles.emptyWrap}
             testID="create-workout-sign-in-required"
@@ -560,19 +538,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     return (
       <AuroraBackground theme="space" animated intensity={0.3}>
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>EDIT WORKOUT</Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          <GlassHeader eyebrow="EDIT WORKOUT" onBack={() => navigation.goBack()} />
           <View
             style={styles.emptyWrap}
             testID="create-workout-load-error"
@@ -601,22 +567,12 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          {/* Compact top row — plain back + eyebrow */}
-          <View style={styles.topRow}>
-            <AnimatedPressable
-              onPress={() => navigation.goBack()}
-              style={styles.backBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-            </AnimatedPressable>
-            <Text style={styles.stepEyebrow}>
-              {isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
-            </Text>
-            <View style={styles.topRowSpacer} />
-          </View>
+          {/* Shared Aurora header — eyebrow-only (no title/right action here;
+              Save/Update is a separate sticky bottom bar). */}
+          <GlassHeader
+            eyebrow={isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
+            onBack={() => navigation.goBack()}
+          />
 
           <ScrollView
             style={styles.scrollView}
@@ -1051,33 +1007,6 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
-  },
-  backBtn: {
-    // Math.max(rw(40), 44) floors the touch target at 44px — matches the
-    // sibling "flat header" screens (WorkoutHistoryScreen, FullPlanScreen,
-    // TemplateLibraryScreen, ExerciseHistoryScreen).
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topRowSpacer: {
-    width: Math.max(rw(40), 44),
-  },
-  stepEyebrow: {
-    fontSize: rf(11),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
   scrollView: {
     flex: 1,
   },

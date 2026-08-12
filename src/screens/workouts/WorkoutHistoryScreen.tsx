@@ -26,6 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { GlassHeader } from '../../components/ui/aurora/GlassHeader';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 import { rf, rw, rp, rbr } from '../../utils/responsive';
@@ -242,32 +243,8 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={['top']} testID="workout-history-screen">
-        {/* Flat header — back + eyebrow + title */}
-        <View style={styles.header}>
-          <AnimatedPressable
-            onPress={navigation.goBack}
-            scaleValue={0.9}
-            springConfig="snappy"
-            hapticType="light"
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            testID="workout-history-back"
-          >
-            <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-          </AnimatedPressable>
-          <View style={styles.headerText}>
-            <Text style={styles.eyebrow} numberOfLines={1}>
-              Workout Log
-            </Text>
-            <Text style={styles.title} numberOfLines={1}>
-              History
-            </Text>
-          </View>
-          {/* Spacer balances the back button so the title block stays put */}
-          <View style={styles.backButton} />
-        </View>
+        {/* Shared Aurora header — back + eyebrow + title */}
+        <GlassHeader title="History" eyebrow="Workout Log" onBack={navigation.goBack} backAccessibilityLabel="Go back" />
 
         {totalCount > 0 ? (
           <>
@@ -343,37 +320,6 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: rp(spacing.md),
-    paddingTop: rp(spacing.sm),
-    paddingBottom: rp(spacing.xs),
-  },
-  backButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    borderRadius: rbr(22),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  eyebrow: {
-    fontSize: rf(11),
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  title: {
-    fontSize: rf(22),
-    fontWeight: '700',
-    color: colors.text,
-    marginTop: rp(2),
-  },
   summary: {
     fontSize: rf(12),
     color: colors.textTertiary,

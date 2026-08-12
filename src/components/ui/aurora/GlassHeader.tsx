@@ -17,8 +17,20 @@ import { colors, spacing, typography, borderRadius } from "../../../theme/aurora
 import { rp, rf } from "../../../utils/responsive";
 
 export interface GlassHeaderProps {
-  /** Title shown centered (or left-aligned). */
-  title: string;
+  /**
+   * Title shown centered (or left-aligned). Optional so "eyebrow-only"
+   * headers (e.g. CreateWorkoutScreen's compact top row: back chevron +
+   * uppercase step label, no title line) can render via this same component
+   * instead of hand-rolling their own header.
+   */
+  title?: string;
+  /**
+   * Small uppercase/letter-spaced label rendered above `title` (or standalone
+   * when `title` is omitted). Reuses the typography previously duplicated
+   * identically across WorkoutHistoryScreen/FullPlanScreen/
+   * ExerciseHistoryScreen/TemplateLibraryScreen's local header components.
+   */
+  eyebrow?: string;
   /** Optional Ionicons icon next to the title. */
   titleIcon?: keyof typeof Ionicons.glyphMap;
   /** Back handler. When omitted, no back chevron renders (top-level screens). */
@@ -31,18 +43,22 @@ export interface GlassHeaderProps {
   style?: ViewStyle;
   /** Title text style override. */
   titleStyle?: TextStyle;
+  /** Eyebrow text style override. */
+  eyebrowStyle?: TextStyle;
   /** Align title left (with a back chevron) instead of centered. @default false */
   leftAlignTitle?: boolean;
 }
 
 export const GlassHeader: React.FC<GlassHeaderProps> = ({
   title,
+  eyebrow,
   titleIcon,
   onBack,
   backAccessibilityLabel = "Go back",
   rightAction,
   style,
   titleStyle,
+  eyebrowStyle,
   leftAlignTitle = false,
 }) => {
   const showBack = typeof onBack === "function";
@@ -90,12 +106,23 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({
             style={styles.titleIcon}
           />
         ) : null}
-        <Text
-          numberOfLines={1}
-          style={[styles.title, titleStyle]}
+        <View
+          style={[
+            styles.textColumn,
+            leftAlignTitle ? styles.textColumnLeft : styles.textColumnCenter,
+          ]}
         >
-          {title}
-        </Text>
+          {eyebrow ? (
+            <Text numberOfLines={1} style={[styles.eyebrow, eyebrowStyle]}>
+              {eyebrow}
+            </Text>
+          ) : null}
+          {title ? (
+            <Text numberOfLines={1} style={[styles.title, titleStyle]}>
+              {title}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       {/* Right: action slot (fixed width = left side for centering) */}
@@ -147,6 +174,23 @@ const styles = StyleSheet.create({
   },
   titleIcon: {
     marginRight: rp(spacing.xs),
+  },
+  textColumn: {
+    flexShrink: 1,
+  },
+  textColumnCenter: {
+    alignItems: "center",
+  },
+  textColumnLeft: {
+    alignItems: "flex-start",
+  },
+  eyebrow: {
+    color: colors.text.secondary,
+    fontSize: rf(11),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: rp(2),
   },
   title: {
     color: colors.text.primary,

@@ -27,6 +27,7 @@ import {
   Text,
   FlatList,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,7 +36,7 @@ import {
   AuroraBackground,
   AuroraSpinner,
   EmptyState,
-  AnimatedPressable,
+  GlassHeader,
 } from "../../components/ui/aurora";
 import {
   flatColors as colors,
@@ -44,7 +45,7 @@ import {
 } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
 import { hexToRgba } from "../../utils/colors";
-import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 import {
   exerciseHistoryService,
   ExerciseHistoryEntry,
@@ -279,47 +280,13 @@ function PersonalRecordsSection({
   );
 }
 
-// ── Flat header — back chevron + eyebrow + title ─────────────────────────────
-const ScreenHeader: React.FC<{
-  title: string;
-  onBack?: () => void;
-}> = ({ title, onBack }) => (
-  <View style={styles.header}>
-    {onBack ? (
-      <AnimatedPressable
-        onPress={onBack}
-        scaleValue={0.9}
-        springConfig="snappy"
-        hapticType="light"
-        style={styles.backButton}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Ionicons name="chevron-back" size={rf(26)} color={colors.text} />
-      </AnimatedPressable>
-    ) : (
-      <View style={styles.backButton} />
-    )}
-    <View style={styles.headerText}>
-      <Text style={styles.eyebrow} numberOfLines={1}>
-        History
-      </Text>
-      <Text style={styles.title} numberOfLines={1}>
-        {title}
-      </Text>
-    </View>
-    {/* Spacer balances the back button so the title block stays put */}
-    <View style={styles.backButton} />
-  </View>
-);
-
 export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   const { exerciseId, exerciseName } = route.params;
   const [history, setHistory] = useState<ExerciseHistoryEntry[]>([]);
   const [prs, setPrs] = useState<ExercisePR[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   // Stored values are kg; display converts for imperial users (matches
   // WorkoutSessionScreen). Two-step select → derive (jest profileStore
   // mock ignores selectors).
@@ -402,6 +369,24 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     // No cleanup setter needed — component re-renders replace this closure.
   }, [exerciseId]);
 
+  const handleRefresh = useCallback(async () => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    setRefreshing(true);
+    try {
+      const [h, p] = await Promise.all([
+        exerciseHistoryService.getHistory(exerciseId, userId, 90),
+        exerciseHistoryService.getPersonalRecords(exerciseId, userId),
+      ]);
+      setHistory(h);
+      setPrs(p);
+    } catch (err) {
+      console.error("[ExerciseHistoryScreen] Failed to refresh history:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [exerciseId]);
+
   const renderGroup = useCallback(
     ({ item }: { item: DateGroup }) => (
       <View style={styles.group}>
@@ -463,7 +448,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.container}>
-          <ScreenHeader title={exerciseName} onBack={navigation?.goBack} />
+          <GlassHeader title={exerciseName} eyebrow="History" onBack={navigation?.goBack} />
           <View style={styles.loadingWrap}>
             <AuroraSpinner size="lg" theme="primary" />
           </View>
@@ -476,7 +461,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
     return (
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.container}>
-          <ScreenHeader title={exerciseName} onBack={navigation?.goBack} />
+          <GlassHeader title={exerciseName} eyebrow="History" onBack={navigation?.goBack} />
           <View style={styles.errorWrap}>
             <EmptyState
               icon="cloud-offline-outline"
@@ -495,7 +480,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.container}>
-        <ScreenHeader title={exerciseName} onBack={navigation?.goBack} />
+        <GlassHeader title={exerciseName} eyebrow="History" onBack={navigation?.goBack} />
 
         <FlatList
           testID="history-list"
@@ -522,6 +507,14 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
             />
           }
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         />
       </SafeAreaView>
     </AuroraBackground>
@@ -531,39 +524,6 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: rp(spacing.md),
-    paddingTop: rp(spacing.sm),
-    paddingBottom: rp(spacing.xs),
-  },
-  backButton: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
-    borderRadius: rbr(22),
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerText: {
-    flex: 1,
-    alignItems: "center",
-  },
-  eyebrow: {
-    fontSize: rf(11),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  title: {
-    fontSize: rf(22),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: rp(2),
   },
   loadingWrap: {
     flex: 1,
