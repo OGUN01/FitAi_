@@ -87,7 +87,15 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
   const selectedPlanData = plans.find((p) => p.id === effectiveSelectedId);
   const displayReason = reason ?? paywallReason;
-  const isCurrentTier = (tier: string) => currentPlan?.tier === tier;
+  // Compares tier AND billing_cycle — a Pro-monthly subscriber must NOT see
+  // the Pro-yearly card (which the modal defaults to) marked "Current Plan",
+  // since that silently blocks the monthly→yearly upsell. Free has no
+  // billing cycle, so tier alone is sufficient there.
+  const isCurrentPlan = (tier: string, billingCycle?: string) => {
+    if (!currentPlan || currentPlan.tier !== tier) return false;
+    if (tier === "free") return true;
+    return currentPlan.billing_cycle === billingCycle;
+  };
   const plansUnavailable = plansSource !== "server";
   const isInitialLoading = !didAttemptLoad && plansSource === "fallback";
 
@@ -111,8 +119,12 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     onClose();
   };
 
+  const selectedIsCurrentPlan = selectedPlanData
+    ? isCurrentPlan(selectedPlanData.tier, selectedPlanData.billing_cycle)
+    : false;
+
   const handleSubscribe = async () => {
-    if (!effectiveSelectedId) return;
+    if (!effectiveSelectedId || selectedIsCurrentPlan) return;
     const success = await subscribe(effectiveSelectedId);
     if (success) {
       onClose();
@@ -124,6 +136,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     isAuthenticated,
     selectedPlanPrice: selectedPlanData?.price_monthly,
     billingCycle: selectedPlanData?.billing_cycle,
+    isCurrentPlan: selectedIsCurrentPlan,
   });
 
   if (!visible) return null;
@@ -278,14 +291,14 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   billingCycle="monthly"
                   features={planFeaturesByTier.free ?? TIER_FEATURES.free ?? []}
                   isSelected={false}
-                  isCurrent={isCurrentTier("free")}
+                  isCurrent={isCurrentPlan("free")}
                   onSelect={() => {}}
                 />
 
                 {displayPlans.map((plan, i) => {
                   if (!plan) return null;
                   const isSelected = effectiveSelectedId === plan.id;
-                  const isCurrent = isCurrentTier(plan.tier);
+                  const isCurrent = isCurrentPlan(plan.tier, plan.billing_cycle);
                   const features =
                     planFeaturesByTier[plan.tier] ??
                     TIER_FEATURES[plan.tier] ??
@@ -333,7 +346,12 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               variant="primary"
               fullWidth
               loading={isLoading}
-              disabled={!effectiveSelectedId || plansUnavailable || isInitialLoading}
+              disabled={
+                !effectiveSelectedId ||
+                plansUnavailable ||
+                isInitialLoading ||
+                selectedIsCurrentPlan
+              }
               accessibilityLabel={subscribeLabel}
               style={styles.subscribeBtn}
             />

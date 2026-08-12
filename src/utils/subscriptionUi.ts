@@ -13,8 +13,14 @@ type SubscriptionStatus =
  * (paywall, management screen) must read from here — never re-hardcode lists.
  */
 export const TIER_FEATURES: Record<string, string[]> = {
+  // NOTE: the free-tier AI generation count here MUST match
+  // FREE_FEATURES.ai_generations_per_month in src/stores/subscriptionStore.ts
+  // (the entitlement actually enforced client-side) and the backend defaults
+  // in fitai-workers (subscriptionGate.ts / subscription.ts). This is the
+  // copy shown on the Free Plan card on every paywall open — it must never
+  // claim more than what is actually granted.
   free: [
-    "10 AI generations per month",
+    "1 AI generation per month",
     "10 AI food scans per day",
     "Basic progress tracking",
   ],
@@ -83,12 +89,17 @@ export function getPaywallPrimaryLabel(options: {
   isAuthenticated: boolean;
   selectedPlanPrice?: number;
   billingCycle?: "monthly" | "yearly";
+  /** True when the selected plan's tier AND billing cycle exactly match the
+   * user's active subscription — subscribing again would be a duplicate
+   * purchase, so the CTA must say so instead of offering to "Subscribe". */
+  isCurrentPlan?: boolean;
 }): string {
   const {
     plansUnavailable,
     isAuthenticated,
     selectedPlanPrice,
     billingCycle,
+    isCurrentPlan,
   } = options;
 
   if (plansUnavailable) {
@@ -101,6 +112,10 @@ export function getPaywallPrimaryLabel(options: {
 
   if (selectedPlanPrice == null || !billingCycle) {
     return "Select a Plan";
+  }
+
+  if (isCurrentPlan) {
+    return "Current Plan";
   }
 
   const priceLabel =

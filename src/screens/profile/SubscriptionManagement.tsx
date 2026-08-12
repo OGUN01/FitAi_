@@ -195,7 +195,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     haptics.medium();
     crossPlatformAlert(
       "Pause Subscription?",
-      "Your subscription will be paused immediately. You can resume anytime.",
+      "Billing pauses immediately and you'll lose premium access until you resume. You can resume anytime.",
       [
         { text: "Keep Active", style: "cancel" },
         {
@@ -207,6 +207,10 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
               applyLifecycleUpdate({
                 status: normalizeLifecycleStatus(result.status),
               });
+              // Mirror handleCancel/handleResume: re-derive features/usage from
+              // the server immediately instead of leaving canUseFeature() out
+              // of sync with isPremium() until the 5-minute focus revalidation.
+              await fetchSubscriptionStatus();
               crossPlatformAlert(
                 "Subscription Paused",
                 result.message ?? "Your subscription has been paused. Resume anytime to continue.",
@@ -224,7 +228,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         },
       ],
     );
-  }, [applyLifecycleUpdate]);
+  }, [applyLifecycleUpdate, fetchSubscriptionStatus]);
 
   const handleResume = useCallback(async () => {
     haptics.medium();
