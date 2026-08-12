@@ -18,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { springConfig } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 type AnimationType = "scale" | "bounce" | "pulse" | "rotate" | "none";
 
@@ -108,10 +109,12 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
 
-  // Setup continuous animations
+  // Setup continuous animations — gated behind Reduce Motion like every
+  // other infinite withRepeat loop in aurora/ (Confetti, AnimatedPressable).
   useEffect(() => {
-    if (continuous) {
+    if (continuous && !reduceMotion) {
       if (animationType === "pulse") {
         // Pulse animation: scale up and down
         scale.value = withRepeat(
@@ -170,7 +173,7 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
       cancelAnimation(rotation);
       cancelAnimation(opacity);
     };
-  }, [continuous, animationType, animationDuration]);
+  }, [continuous, animationType, animationDuration, reduceMotion]);
 
   // Handle press with animation
   const handlePress = () => {
@@ -266,6 +269,8 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: "center",
     alignItems: "center",
+    minWidth: 44,
+    minHeight: 44,
   },
   iconWrapper: {
     justifyContent: "center",

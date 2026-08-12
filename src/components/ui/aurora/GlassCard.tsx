@@ -69,6 +69,14 @@ interface GlassCardProps {
   onPress?: () => void;
 
   /**
+   * Disables the pressable interaction (used when `pressable` is true).
+   * Mirrors GlassButton's `disabled` prop for parity across the card/button
+   * primitives.
+   * @default false
+   */
+  disabled?: boolean;
+
+  /**
    * Accessibility label for screen readers (used when `pressable` is true).
    */
   accessibilityLabel?: string;
@@ -144,6 +152,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   showBorder = false,
   pressable = false,
   onPress,
+  disabled = false,
   accessibilityLabel,
   accessibilityHint,
   children,
@@ -188,6 +197,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     return (
       <AnimatedPressable
         onPress={onPress}
+        disabled={disabled}
         scaleValue={0.98}
         springConfig="smooth"
         hapticType="light"

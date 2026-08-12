@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { StyleSheet, View, Text, ViewStyle, TextStyle } from "react-native";
+import { StyleSheet, View, Text, ViewStyle, TextStyle, AccessibilityActionEvent } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -256,8 +256,32 @@ export const GestureCard: React.FC<GestureCardProps> = ({
     );
   };
 
+  // Screen-reader (VoiceOver/TalkBack) equivalent for the swipe gestures —
+  // a11y users cannot perform the pan gesture, so expose the same actions
+  // as named accessibility actions on the card.
+  const accessibilityActions = [
+    onSwipeLeft ? { name: "swipeLeft", label: onSwipeLeft.label } : null,
+    onSwipeRight ? { name: "swipeRight", label: onSwipeRight.label } : null,
+  ].filter((a): a is { name: string; label: string } => a !== null);
+
+  const handleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    switch (event.nativeEvent.actionName) {
+      case "swipeLeft":
+        handleSwipeAction(onSwipeLeft);
+        break;
+      case "swipeRight":
+        handleSwipeAction(onSwipeRight);
+        break;
+    }
+  };
+
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[styles.container, style]}
+      accessible={accessibilityActions.length > 0}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={handleAccessibilityAction}
+    >
       {/* Action Backgrounds */}
       {renderAction(onSwipeLeft, "left")}
       {renderAction(onSwipeRight, "right")}

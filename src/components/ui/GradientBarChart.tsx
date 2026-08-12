@@ -16,10 +16,13 @@ export interface BarData {
   maxValue: number;
   /**
    * @deprecated Bars render with a flat fill (de-gradient initiative) — only
-   * the first color is used. Kept in the contract so existing callers compile
-   * unchanged.
+   * the first color is used, and only when `color` is not supplied. Now
+   * optional so callers no longer have to pass an array whose contents are
+   * thrown away; prefer `color` instead.
    */
-  gradient: string[];
+  gradient?: string[];
+  /** Flat fill color for the bar. Preferred over the deprecated `gradient`. */
+  color?: string;
   unit?: string;
 }
 
@@ -109,7 +112,7 @@ const BarItem: React.FC<BarItemProps> = ({
         <Animated.View
           style={[
             styles.barFill,
-            { backgroundColor: data.gradient[0] ?? colors.primary },
+            { backgroundColor: data.color ?? data.gradient?.[0] ?? colors.primary },
             animatedBarStyle,
           ]}
         />

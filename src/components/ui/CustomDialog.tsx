@@ -447,7 +447,8 @@ export const WorkoutDetailsDialog: React.FC<WorkoutDetailsDialogProps> = ({
   exerciseCount,
   onClose,
 }) => {
-  if (!visible) return null;
+  // NOTE: do NOT early-return on !visible — see CustomDialog above. DialogShell
+  // needs the true→false render pass to play its fade-out.
   return (
     <DialogShell visible={visible} animationType="fade" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>

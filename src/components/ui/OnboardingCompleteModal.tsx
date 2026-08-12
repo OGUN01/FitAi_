@@ -23,6 +23,7 @@ import { GlassButton } from "./aurora/GlassButton";
 import { flatColors as colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { useReducedMotion, getAccessibleDuration } from "../../utils/accessibility/hooks";
 
 interface OnboardingCompleteModalProps {
   visible: boolean;
@@ -38,11 +39,20 @@ interface OnboardingCompleteModalProps {
 }
 
 // Animated checkmark component
-const AnimatedCheckmark: React.FC = () => {
-  const scale = useRef(new Animated.Value(0)).current;
-  const rotation = useRef(new Animated.Value(0)).current;
+const AnimatedCheckmark: React.FC<{ reduceMotion: boolean }> = ({ reduceMotion }) => {
+  const scale = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const rotation = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
 
   useEffect(() => {
+    // Reduce Motion: skip the spring/rotate spin and land straight on the
+    // settled end state (scale=1, rotation=1) — see aurora/Confetti and
+    // aurora/AnimatedPressable for the same skip-to-end-state pattern.
+    if (reduceMotion) {
+      scale.setValue(1);
+      rotation.setValue(1);
+      return;
+    }
+
     // Delay start for entrance animation
     const timeout = setTimeout(() => {
       Animated.parallel([
@@ -62,7 +72,7 @@ const AnimatedCheckmark: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [reduceMotion]);
 
   return (
     <Animated.View
@@ -89,15 +99,21 @@ const AnimatedCheckmark: React.FC = () => {
 };
 
 // Floating particle effect
-const FloatingParticle: React.FC<{ delay: number; color: string }> = ({
+const FloatingParticle: React.FC<{ delay: number; color: string; reduceMotion: boolean }> = ({
   delay,
   color,
+  reduceMotion,
 }) => {
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Reduce Motion: skip the infinite float/fade/drift loop entirely —
+    // particles are a purely decorative celebration flourish, so under
+    // Reduce Motion they simply stay at their settled (invisible) state.
+    if (reduceMotion) return;
+
     let animationRef: Animated.CompositeAnimation | null = null;
     const timeout = setTimeout(() => {
       animationRef = Animated.loop(
@@ -148,7 +164,7 @@ const FloatingParticle: React.FC<{ delay: number; color: string }> = ({
       clearTimeout(timeout);
       animationRef?.stop();
     };
-  }, [delay]);
+  }, [delay, reduceMotion]);
 
   return (
     <Animated.View
@@ -169,6 +185,11 @@ export const OnboardingCompleteModal: React.FC<
 > = ({ visible, userName, onGetStarted, stats }) => {
   const { width: screenWidth } = useWindowDimensions();
   const modalWidth = Math.min(screenWidth - 40, 340);
+  const reduceMotion = useReducedMotion();
+  // Reduce Motion: land immediately (no staggered delay) with a short,
+  // near-instant fade instead of the full 400ms entrance.
+  const entranceDelay = (ms: number) => (reduceMotion ? 0 : ms);
+  const entranceDuration = getAccessibleDuration(400, reduceMotion);
 
   useEffect(() => {
     if (visible) {
@@ -184,8 +205,10 @@ export const OnboardingCompleteModal: React.FC<
 
   };
 
-  if (!visible) return null;
-
+  // NOTE: do NOT early-return on !visible — see CustomDialog's DialogShell
+  // for the same pattern. The native Modal relies on its `visible` prop
+  // transitioning true→false to play animationType="fade"'s fade-out;
+  // unmounting on that same render pass skips the fade-out entirely.
   return (
     <Modal
       visible={visible}
@@ -204,6 +227,7 @@ export const OnboardingCompleteModal: React.FC<
                 key={i}
                 delay={i * 200}
                 color={[colors.successAlt, colors.primary, colors.errorLight, colors.teal][i % 4]}
+                reduceMotion={reduceMotion}
               />
             ))}
           </View>
@@ -212,17 +236,17 @@ export const OnboardingCompleteModal: React.FC<
           <View style={[styles.modalContainer, { width: modalWidth }]}>
             <View style={styles.surface}>
               {/* Success Icon with Animation */}
-              <AnimatedRN.View entering={ZoomIn.delay(200).duration(400)}>
-                <AnimatedCheckmark />
+              <AnimatedRN.View entering={ZoomIn.delay(entranceDelay(200)).duration(entranceDuration)}>
+                <AnimatedCheckmark reduceMotion={reduceMotion} />
               </AnimatedRN.View>
 
               {/* Title */}
-              <AnimatedRN.View entering={FadeInUp.delay(400).duration(400)}>
+              <AnimatedRN.View entering={FadeInUp.delay(entranceDelay(400)).duration(entranceDuration)}>
                 <Text style={styles.title}>You're All Set!</Text>
               </AnimatedRN.View>
 
               {/* Subtitle */}
-              <AnimatedRN.View entering={FadeInUp.delay(500).duration(400)}>
+              <AnimatedRN.View entering={FadeInUp.delay(entranceDelay(500)).duration(entranceDuration)}>
                 <Text style={styles.subtitle}>
                   Welcome to FitAI
                   {userName ? (
@@ -240,7 +264,7 @@ export const OnboardingCompleteModal: React.FC<
               {/* Stats Preview */}
               {stats && (
                 <AnimatedRN.View
-                  entering={FadeInUp.delay(600).duration(400)}
+                  entering={FadeInUp.delay(entranceDelay(600)).duration(entranceDuration)}
                   style={styles.statsContainer}
                 >
                   <View style={styles.statsRow}>
@@ -306,7 +330,7 @@ export const OnboardingCompleteModal: React.FC<
 
               {/* Features Preview */}
               <AnimatedRN.View
-                entering={FadeInUp.delay(700).duration(400)}
+                entering={FadeInUp.delay(entranceDelay(700)).duration(entranceDuration)}
                 style={styles.featuresContainer}
               >
                 {[
@@ -339,7 +363,7 @@ export const OnboardingCompleteModal: React.FC<
 
               {/* CTA Button */}
               <AnimatedRN.View
-                entering={FadeInUp.delay(800).duration(400)}
+                entering={FadeInUp.delay(entranceDelay(800)).duration(entranceDuration)}
                 style={styles.buttonContainer}
               >
                 <GlassButton

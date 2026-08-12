@@ -147,7 +147,16 @@ export const Input: React.FC<InputProps> = ({
         )}
       </Animated.View>
 
-      {error && <Text style={styles.errorText} numberOfLines={3}>{error}</Text>}
+      {error && (
+        <Text
+          style={styles.errorText}
+          numberOfLines={3}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
+      )}
     </View>
   );
 };

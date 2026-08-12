@@ -15,6 +15,17 @@ interface CardProps {
   onPress?: () => void;
   variant?: "default" | "elevated" | "outlined";
   padding?: "none" | "sm" | "md" | "lg";
+  /**
+   * Disables the pressable interaction (only relevant when `onPress` is
+   * supplied). Mirrors Button/GlassCard/GlassButton's `disabled` prop so
+   * Card matches the rest of the library's prop contract.
+   * @default false
+   */
+  disabled?: boolean;
+  /** Accessibility label for screen readers (used when `onPress` is supplied). */
+  accessibilityLabel?: string;
+  /** Accessibility hint for screen readers (used when `onPress` is supplied). */
+  accessibilityHint?: string;
 }
 
 export const Card: React.FC<CardProps> = (props) => {
@@ -24,6 +35,9 @@ export const Card: React.FC<CardProps> = (props) => {
     onPress,
     variant = "default",
     padding = "md",
+    disabled = false,
+    accessibilityLabel,
+    accessibilityHint,
   } = props;
 
   const getCardStyle = (): ViewStyle => {
@@ -42,7 +56,7 @@ export const Card: React.FC<CardProps> = (props) => {
     }
   };
 
-  const cardStyle = [getCardStyle(), style];
+  const cardStyle = [getCardStyle(), disabled && styles.disabled, style];
 
   // Only wrap top-level string/number children in <Text>. The previous
   // recursion descended into nested <Text> children and could break inline
@@ -62,8 +76,12 @@ export const Card: React.FC<CardProps> = (props) => {
       <TouchableOpacity
         style={cardStyle}
         onPress={onPress}
+        disabled={disabled}
         activeOpacity={0.8}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
       >
         {renderChildrenSafely(children)}
       </TouchableOpacity>
@@ -110,5 +128,12 @@ const styles = StyleSheet.create({
 
   lg: {
     padding: spacing.lg,
+  },
+
+  disabled: {
+    // 0.6 (not 0.5) keeps disabled label/content above the WCAG AA 4.5:1
+    // contrast threshold — see aurora/GlassButton's disabled style for the
+    // same fix; 0.5 was proven to drop contrast below AA there.
+    opacity: 0.6,
   },
 });

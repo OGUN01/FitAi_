@@ -18,6 +18,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 // Hoist outside component — expensive factory should only run once
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -50,10 +51,13 @@ export const Button: React.FC<ButtonProps> = React.memo(({
   accessibilityLabel,
 }) => {
   const pulseAnimation = useSharedValue(1);
+  const reduceMotion = useReducedMotion();
 
-  // Continuous pulse animation
+  // Continuous pulse animation — gated behind Reduce Motion like every other
+  // infinite withRepeat loop in the design system (AnimatedPressable,
+  // DragHandleRow, Confetti).
   useEffect(() => {
-    if (pulse && !disabled && !loading) {
+    if (pulse && !disabled && !loading && !reduceMotion) {
       pulseAnimation.value = withRepeat(
         withSequence(
           withTiming(1.05, { duration: 600 }),
@@ -66,7 +70,7 @@ export const Button: React.FC<ButtonProps> = React.memo(({
       pulseAnimation.value = withTiming(1, { duration: 200 });
     }
     return () => { cancelAnimation(pulseAnimation); };
-  }, [pulse, disabled, loading]);
+  }, [pulse, disabled, loading, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseAnimation.value }],

@@ -4,21 +4,13 @@
  * Used for displaying metrics like BMI, calories, steps, etc.
  */
 
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, View, Text, ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withTiming,
-  useDerivedValue,
-} from "react-native-reanimated";
 import { GlassCard } from "./GlassCard";
+import { AnimatedNumber } from "../AnimatedNumber";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
-import { easingFunctions } from "../../../theme/animations";
 import { rbr, rf } from "../../../utils/responsive";
-
-const AnimatedText = Animated.createAnimatedComponent(Text);
 
 type TrendType = "up" | "down" | "neutral";
 
@@ -112,32 +104,6 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   style,
   size = "medium",
 }) => {
-  // Animated value for count-up effect
-  const animatedValue = useSharedValue(animateValue ? 0 : value);
-
-  useEffect(() => {
-    if (animateValue) {
-      animatedValue.value = withTiming(value, {
-        duration: animationDuration,
-        easing: easingFunctions.easeOutCubic,
-      });
-    } else {
-      animatedValue.value = value;
-    }
-  }, [value, animateValue, animationDuration]);
-
-  // Format the animated number
-  const formattedValue = useDerivedValue(() => {
-    return animatedValue.value.toFixed(decimals);
-  });
-
-  // Animated props for the value text
-  const animatedTextProps = useAnimatedProps(() => {
-    return {
-      text: formattedValue.value,
-    } as { text: string };
-  });
-
   // Get trend indicator icon name and color
   const getTrendIndicator = () => {
     switch (trend) {
@@ -211,14 +177,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         <View style={styles.metricsContainer}>
           {/* Value Row */}
           <View style={styles.valueRow}>
-            <AnimatedText
-              // @ts-ignore - Reanimated AnimatedProps type issue
-              animatedProps={animatedTextProps}
+            <AnimatedNumber
+              value={value}
+              decimals={decimals}
+              duration={animateValue ? animationDuration : 0}
               style={[styles.value, { fontSize: sizeStyles.valueFontSize }]}
               accessibilityLabel={`${label}: ${value.toFixed(decimals)}${unit || ""}`}
-            >
-              {value.toFixed(decimals)}
-            </AnimatedText>
+            />
             {unit && (
               <Text
                 style={[styles.unit, { fontSize: sizeStyles.labelFontSize }]}
