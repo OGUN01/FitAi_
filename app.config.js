@@ -10,7 +10,7 @@ export default {
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: false,
+    newArchEnabled: true,
     scheme: "fitai",
     developmentClient: {
       silentLaunch: true
