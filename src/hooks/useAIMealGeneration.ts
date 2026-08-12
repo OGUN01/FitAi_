@@ -35,6 +35,7 @@ import {
 } from "../utils/packagedFoodNutrition";
 import { imageAssetToDataUrl, imageUriToDataUrl } from "../utils/imageDataUrl";
 import { normalizeMealLogFiberValue } from "../utils/mealLogNutrition";
+import { buildLegacyPersonalInfo } from "../utils/profileLegacyAdapter";
 import {
   buildPackagedFoodProvenance as buildSharedPackagedFoodProvenance,
   generatePackagedFoodHealthAssessment,
@@ -243,6 +244,7 @@ export const useAIMealGeneration = (options?: {
   const profileDietPreferencesStore = useProfileStore(
     (state) => state.dietPreferences,
   );
+  const profileBodyAnalysis = useProfileStore((state) => state.bodyAnalysis);
   const { loadDailyNutrition, refreshAll } = useNutritionData({
     autoRefresh: false,
   });
@@ -250,6 +252,16 @@ export const useAIMealGeneration = (options?: {
   const canUseFeature = useSubscriptionStore((state) => state.canUseFeature);
   const incrementUsage = useSubscriptionStore((state) => state.incrementUsage);
   const triggerPaywall = useSubscriptionStore((state) => state.triggerPaywall);
+
+  // SSOT: Build merged personalInfo via the shared legacy adapter so
+  // activityLevel is correctly mapped from workoutPreferences.activity_level
+  // (the real activity_level enum) instead of leaking workout-intensity
+  // ("beginner"/"intermediate"/"advanced") into the activity_level field.
+  const mergedPersonalInfo = buildLegacyPersonalInfo({
+    personalInfo: profilePersonalInfo,
+    bodyAnalysis: profileBodyAnalysis,
+    workoutPreferences: profileWorkoutPreferences,
+  });
 
   // SSOT: Build merged fitnessGoals â€” profileStore.workoutPreferences is authoritative
   const mergedFitnessGoals = profileWorkoutPreferences
@@ -664,6 +676,12 @@ export const useAIMealGeneration = (options?: {
       setPortionGrams(null);
 
       if (result.success && result.foods) {
+        // Quota: AI food-photo recognition consumes the same scan allowance
+        // as barcode/label scans (mirrors those paths — see barcode
+        // authoritative_hit and label-scan success branches in this file).
+        // Without this, free-tier users get unlimited photo scans.
+        incrementUsage("barcode_scan");
+
         const recognizedFoods = requestedGrams
           ? scaleRecognizedFoodsToGrams(result.foods, requestedGrams)
           : result.foods;
@@ -1332,9 +1350,13 @@ export const useAIMealGeneration = (options?: {
     }
   };
 
-  // Post-generation allergen safety check — called after any AI meal response
-  const checkAllergenViolations = (meals: AllergenCheckMeal[]): void => {
-    if (!mergedDietPrefs?.allergies?.length || !meals?.length) return;
+  // Post-generation allergen safety check — called after any AI meal response.
+  // Returns the warning message when a potential violation is found (null
+  // otherwise) so callers can gate the "meal added" success flow behind an
+  // explicit user acknowledgment instead of only setting a passive
+  // `generationWarning` string a screen may or may not render.
+  const checkAllergenViolations = (meals: AllergenCheckMeal[]): string | null => {
+    if (!mergedDietPrefs?.allergies?.length || !meals?.length) return null;
     const allergyKeywords = mergedDietPrefs.allergies.map((a: string) => a.toLowerCase());
     const violations: string[] = [];
 
@@ -1359,10 +1381,15 @@ export const useAIMealGeneration = (options?: {
 
     if (violations.length > 0) {
       console.warn('[useAIMealGeneration] Potential allergen violations in generated meals:', violations);
-      setGenerationWarning(
-        `Generated meal may conflict with your dietary restrictions. Please review: ${violations.slice(0, 3).join('; ')}`
-      );
+      const message = `Generated meal may conflict with your dietary restrictions. Please review: ${violations.slice(0, 3).join('; ')}`;
+      setGenerationWarning(message);
+      return message;
     }
+
+    // Clear a stale warning from a previous generation now that this one
+    // passed the allergen check.
+    setGenerationWarning(null);
+    return null;
   };
 
   const generateAIMeal = async (
@@ -1391,7 +1418,7 @@ export const useAIMealGeneration = (options?: {
       return;
     }
 
-    if (!profilePersonalInfo || !mergedFitnessGoals?.primary_goals?.length) {
+    if (!mergedPersonalInfo || !mergedFitnessGoals?.primary_goals?.length) {
       crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
     }
@@ -1444,32 +1471,63 @@ export const useAIMealGeneration = (options?: {
       }
 
       const response = await aiService.generateMeal(
-        profilePersonalInfo!,
+        mergedPersonalInfo!,
         mergedFitnessGoals as FitnessGoals,
         actualMealType as "breakfast" | "lunch" | "dinner" | "snack",
         preferences as Parameters<typeof aiService.generateMeal>[3],
       );
 
       if (response.success && response.data) {
-        // Post-generation allergen check
-        checkAllergenViolations([response.data as unknown as AllergenCheckMeal]);
+        const generatedMeal = response.data;
 
         // Push generated meal to Zustand nutrition store so DietScreen renders it
-        const currentMeals = weeklyMealPlan?.meals || [];
-        const updatedPlan: WeeklyMealPlan = {
-          id: weeklyMealPlan?.id || `meal_plan_${Date.now()}`,
-          weekNumber:
-            weeklyMealPlan?.weekNumber || Math.ceil(new Date().getDate() / 7),
-          meals: [...currentMeals, response.data],
-          planTitle: weeklyMealPlan?.planTitle || "AI Generated Meals",
+        const addGeneratedMeal = () => {
+          const currentMeals = weeklyMealPlan?.meals || [];
+          const updatedPlan: WeeklyMealPlan = {
+            id: weeklyMealPlan?.id || `meal_plan_${Date.now()}`,
+            weekNumber:
+              weeklyMealPlan?.weekNumber || Math.ceil(new Date().getDate() / 7),
+            meals: [...currentMeals, generatedMeal],
+            planTitle: weeklyMealPlan?.planTitle || "AI Generated Meals",
+          };
+          setWeeklyMealPlan(updatedPlan);
+          incrementUsage("ai_generation");
         };
-        setWeeklyMealPlan(updatedPlan);
 
-        crossPlatformAlert(
-          "Meal Generated!",
-          `Your personalized ${mealType} is ready!`,
-        );
-        incrementUsage("ai_generation");
+        // Post-generation allergen check. When a potential violation is
+        // detected, block the "meal added" success flow behind an explicit
+        // acknowledgment rather than silently adding the meal and showing a
+        // celebratory alert the user could tap through without noticing.
+        const allergenWarning = checkAllergenViolations([
+          generatedMeal as unknown as AllergenCheckMeal,
+        ]);
+
+        if (allergenWarning) {
+          crossPlatformAlert(
+            "Possible Allergen Warning",
+            `${allergenWarning}\n\nDo you still want to add this meal to your plan?`,
+            [
+              { text: "Discard", style: "cancel" },
+              {
+                text: "Add Anyway",
+                style: "destructive",
+                onPress: () => {
+                  addGeneratedMeal();
+                  crossPlatformAlert(
+                    "Meal Added",
+                    `Your personalized ${mealType} was added despite the allergen warning. Please review it before eating.`,
+                  );
+                },
+              },
+            ],
+          );
+        } else {
+          addGeneratedMeal();
+          crossPlatformAlert(
+            "Meal Generated!",
+            `Your personalized ${mealType} is ready!`,
+          );
+        }
       } else {
         const errMsg = response.error || "Failed to generate meal";
         if (
@@ -1518,7 +1576,7 @@ export const useAIMealGeneration = (options?: {
       return;
     }
 
-    if (!profilePersonalInfo || !mergedFitnessGoals?.primary_goals?.length) {
+    if (!mergedPersonalInfo || !mergedFitnessGoals?.primary_goals?.length) {
       crossPlatformAlert("Profile Incomplete", "Please complete your profile.");
       return;
     }
@@ -1551,7 +1609,7 @@ export const useAIMealGeneration = (options?: {
       };
 
       const response = await aiService.generateDailyMealPlan(
-        profilePersonalInfo!,
+        mergedPersonalInfo!,
         mergedFitnessGoals as FitnessGoals,
         preferences as Parameters<typeof aiService.generateDailyMealPlan>[2],
       );
@@ -1559,25 +1617,53 @@ export const useAIMealGeneration = (options?: {
       if (response.success && response.data) {
         const generatedMeals = response.data.meals as unknown as DayMeal[];
 
-        // Post-generation allergen check
-        checkAllergenViolations(generatedMeals as unknown as AllergenCheckMeal[]);
-
         // Push to weeklyMealPlan store so MealPlanView renders the new meals immediately
-        const currentPlan = weeklyMealPlan || {
-          id: `plan_${Date.now()}`,
-          weekNumber: Math.ceil(new Date().getDate() / 7),
-          meals: [],
-          planTitle: "Daily Meal Plan",
+        const addGeneratedMeals = () => {
+          const currentPlan = weeklyMealPlan || {
+            id: `plan_${Date.now()}`,
+            weekNumber: Math.ceil(new Date().getDate() / 7),
+            meals: [],
+            planTitle: "Daily Meal Plan",
+          };
+          const updatedPlan: WeeklyMealPlan = {
+            ...currentPlan,
+            meals: [...currentPlan.meals, ...generatedMeals],
+            planTitle: currentPlan.planTitle || "Daily Meal Plan",
+          };
+          setWeeklyMealPlan(updatedPlan);
+          incrementUsage("ai_generation");
         };
-        const updatedPlan: WeeklyMealPlan = {
-          ...currentPlan,
-          meals: [...currentPlan.meals, ...generatedMeals],
-          planTitle: currentPlan.planTitle || "Daily Meal Plan",
-        };
-        setWeeklyMealPlan(updatedPlan);
 
-        crossPlatformAlert("Daily Meal Plan Generated!", "Your plan is ready!");
-        incrementUsage("ai_generation");
+        // Post-generation allergen check. Block the "plan added" success
+        // flow behind an explicit acknowledgment when a potential violation
+        // is detected (see generateAIMeal for the single-meal equivalent).
+        const allergenWarning = checkAllergenViolations(
+          generatedMeals as unknown as AllergenCheckMeal[],
+        );
+
+        if (allergenWarning) {
+          crossPlatformAlert(
+            "Possible Allergen Warning",
+            `${allergenWarning}\n\nDo you still want to add this plan?`,
+            [
+              { text: "Discard", style: "cancel" },
+              {
+                text: "Add Anyway",
+                style: "destructive",
+                onPress: () => {
+                  addGeneratedMeals();
+                  crossPlatformAlert(
+                    "Plan Added",
+                    "Your plan was added despite the allergen warning. Please review it before eating.",
+                  );
+                },
+              },
+            ],
+          );
+        } else {
+          addGeneratedMeals();
+          crossPlatformAlert("Daily Meal Plan Generated!", "Your plan is ready!");
+        }
       } else {
         const errMsg = response.error || "Failed to generate plan";
         if (
@@ -1716,10 +1802,18 @@ export const useAIMealGeneration = (options?: {
       );
 
       if (!response.success || !response.data) {
-        crossPlatformAlert(
-          "Label Not Read",
-          "Could not extract nutrition data. Ensure the label is well-lit and the entire nutrition facts table is visible.",
-        );
+        if (response.isOffline) {
+          crossPlatformAlert(
+            "You're Offline",
+            response.offlineReason ??
+              "You appear to be offline. Check your connection and try scanning again.",
+          );
+        } else {
+          crossPlatformAlert(
+            "Label Not Read",
+            "Could not extract nutrition data. Ensure the label is well-lit and the entire nutrition facts table is visible.",
+          );
+        }
         return;
       }
 

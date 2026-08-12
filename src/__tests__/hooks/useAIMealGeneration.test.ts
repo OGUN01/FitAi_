@@ -14,6 +14,27 @@ const mockImageUriToDataUrl = jest.fn();
 const mockLaunchCameraAsync = jest.fn();
 const mockLaunchImageLibraryAsync = jest.fn();
 const mockRequestMediaLibraryPermissionsAsync = jest.fn();
+const mockRecognizeFood = jest.fn();
+const mockGenerateMeal = jest.fn();
+const mockGenerateDailyMealPlan = jest.fn();
+const mockCanUseFeature = jest.fn(() => true);
+const mockIncrementUsage = jest.fn();
+const mockTriggerPaywall = jest.fn();
+
+// Mutable so individual tests can opt into a populated profile (needed for
+// the allergen-check flow, which requires mergedPersonalInfo/mergedFitnessGoals
+// to be non-null). Defaults match the previous fixed-null mock.
+const mockProfileState: {
+  personalInfo: any;
+  workoutPreferences: any;
+  dietPreferences: any;
+  bodyAnalysis: any;
+} = {
+  personalInfo: null,
+  workoutPreferences: null,
+  dietPreferences: null,
+  bodyAnalysis: null,
+};
 
 jest.mock("../../utils/crossPlatformAlert", () => ({
   crossPlatformAlert: jest.fn(),
@@ -30,17 +51,24 @@ jest.mock("../../stores", () => ({
 }));
 
 jest.mock("../../stores/profileStore", () => {
-  const state = {
-    personalInfo: null,
-    workoutPreferences: null,
-    dietPreferences: null,
-  };
   const fn = jest.fn((selector?: (state: any) => unknown) =>
-    selector ? selector(state) : state,
+    selector ? selector(mockProfileState) : mockProfileState,
   );
-  (fn as any).getState = jest.fn(() => state);
+  (fn as any).getState = jest.fn(() => mockProfileState);
   return { useProfileStore: fn };
 });
+
+// buildLegacyPersonalInfo (unmodified) resolves current weight via this
+// service, which itself reads analyticsStore/weightTrackingService. Stub it
+// so tests that populate mockProfileState.personalInfo don't need to wire up
+// those unrelated stores too.
+jest.mock("../../services/currentWeight", () => ({
+  resolveCurrentWeightFromStores: () => ({
+    value: 65,
+    source: "body_analysis",
+    asOf: null,
+  }),
+}));
 
 jest.mock("../../hooks/useAuth", () => ({
   useAuth: () => ({
@@ -65,9 +93,9 @@ jest.mock("../../hooks/useCalculatedMetrics", () => ({
 jest.mock("../../stores/subscriptionStore", () => ({
   useSubscriptionStore: jest.fn((selector?: (state: any) => unknown) => {
     const state = {
-      canUseFeature: jest.fn(() => true),
-      incrementUsage: jest.fn(),
-      triggerPaywall: jest.fn(),
+      canUseFeature: (...args: unknown[]) => mockCanUseFeature(...args),
+      incrementUsage: (...args: unknown[]) => mockIncrementUsage(...args),
+      triggerPaywall: (...args: unknown[]) => mockTriggerPaywall(...args),
     };
     return selector ? selector(state) : state;
   }),
@@ -80,7 +108,9 @@ jest.mock("../../services/recognizedFoodLogger", () => ({
 }));
 
 jest.mock("../../services/foodRecognitionService", () => ({
-  foodRecognitionService: null,
+  foodRecognitionService: {
+    recognizeFood: (...args: unknown[]) => mockRecognizeFood(...args),
+  },
 }));
 
 jest.mock("../../services/foodRecognitionFeedbackService", () => ({
@@ -100,7 +130,10 @@ jest.mock("../../services/fitaiWorkersClient", () => ({
 }));
 
 jest.mock("../../ai", () => ({
-  aiService: {},
+  aiService: {
+    generateMeal: (...args: unknown[]) => mockGenerateMeal(...args),
+    generateDailyMealPlan: (...args: unknown[]) => mockGenerateDailyMealPlan(...args),
+  },
 }));
 
 jest.mock("../../utils/packagedFoodNutrition", () => ({
@@ -163,6 +196,16 @@ describe("useAIMealGeneration", () => {
     mockLaunchCameraAsync.mockReset();
     mockLaunchImageLibraryAsync.mockReset();
     mockRequestMediaLibraryPermissionsAsync.mockReset();
+    mockRecognizeFood.mockReset();
+    mockGenerateMeal.mockReset();
+    mockGenerateDailyMealPlan.mockReset();
+    mockCanUseFeature.mockReset().mockReturnValue(true);
+    mockIncrementUsage.mockReset();
+    mockTriggerPaywall.mockReset();
+    mockProfileState.personalInfo = null;
+    mockProfileState.workoutPreferences = null;
+    mockProfileState.dietPreferences = null;
+    mockProfileState.bodyAnalysis = null;
     (crossPlatformAlert as jest.Mock).mockClear();
   });
 
@@ -458,5 +501,120 @@ describe("useAIMealGeneration", () => {
         brand: "FitAI",
       },
     });
+  });
+
+  it("charges a barcode_scan usage credit after a successful AI photo recognition", async () => {
+    mockRecognizeFood.mockResolvedValue({
+      success: true,
+      foods: [
+        {
+          id: "recognized-1",
+          name: "Banana",
+          nutrition: { calories: 105, protein: 1.3, carbs: 27, fat: 0.4 },
+        },
+      ],
+      overallConfidence: 88,
+    });
+
+    const { result } = renderHook(() => useAIMealGeneration());
+
+    await act(async () => {
+      await result.current.handleCameraCapture("file:///photo.jpg", jest.fn());
+    });
+
+    expect(result.current.showWeightPrompt).toBe(true);
+
+    await act(async () => {
+      await result.current.confirmPhotoRecognition();
+    });
+
+    expect(mockRecognizeFood).toHaveBeenCalled();
+    expect(mockIncrementUsage).toHaveBeenCalledWith("barcode_scan");
+    expect(result.current.showScanResult).toBe(true);
+  });
+
+  it("shows an offline message instead of the lighting hint when a label scan fails offline", async () => {
+    mockImageUriToDataUrl.mockResolvedValue("data:image/jpeg;base64,label");
+    mockScanNutritionLabel.mockResolvedValue({
+      success: false,
+      isOffline: true,
+      offlineReason: "Network unavailable",
+    });
+
+    const { result } = renderHook(() => useAIMealGeneration());
+
+    await act(async () => {
+      await result.current.handleLabelScanned();
+    });
+
+    await act(async () => {
+      await result.current.handleLabelCameraCapture("file:///label.jpg");
+    });
+
+    expect(crossPlatformAlert).toHaveBeenCalledWith(
+      "You're Offline",
+      "Network unavailable",
+    );
+    expect(result.current.showProductModal).toBe(false);
+    expect(mockIncrementUsage).not.toHaveBeenCalledWith("barcode_scan");
+  });
+
+  it("blocks a generated meal behind an allergen warning and only adds it on Add Anyway", async () => {
+    mockProfileState.personalInfo = { name: "Ann", country: "US" };
+    mockProfileState.workoutPreferences = {
+      primary_goals: ["muscle_gain"],
+      activity_level: "moderate",
+      intensity: "beginner",
+      time_preference: 45,
+      equipment: [],
+    };
+    mockProfileState.dietPreferences = {
+      allergies: ["peanut"],
+      diet_type: "vegetarian",
+      restrictions: [],
+    };
+    mockProfileState.bodyAnalysis = { height_cm: 170, current_weight_kg: 65 };
+    mockGenerateMeal.mockResolvedValue({
+      success: true,
+      data: {
+        name: "Peanut Butter Toast",
+        ingredients: ["bread", "peanut butter"],
+        calories: 300,
+      },
+    });
+
+    const { result } = renderHook(() => useAIMealGeneration());
+
+    await act(async () => {
+      await result.current.generateAIMeal("breakfast", jest.fn());
+    });
+
+    expect(crossPlatformAlert).toHaveBeenCalledWith(
+      "Possible Allergen Warning",
+      expect.stringContaining("peanut"),
+      expect.any(Array),
+    );
+    expect(mockSetWeeklyMealPlan).not.toHaveBeenCalled();
+
+    const warningCall = (crossPlatformAlert as jest.Mock).mock.calls.find(
+      (call) => call[0] === "Possible Allergen Warning",
+    )!;
+    const buttons = warningCall[2] as Array<{
+      text?: string;
+      onPress?: () => void;
+    }>;
+    const addAnyway = buttons.find((button) => button.text === "Add Anyway");
+    expect(addAnyway).toBeDefined();
+
+    await act(async () => {
+      addAnyway?.onPress?.();
+    });
+
+    expect(mockSetWeeklyMealPlan).toHaveBeenCalled();
+    expect(mockIncrementUsage).toHaveBeenCalledWith("ai_generation");
+    expect(crossPlatformAlert).toHaveBeenCalledWith(
+      "Meal Added",
+      expect.stringContaining("allergen warning"),
+    );
   });
 });

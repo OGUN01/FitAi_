@@ -66,6 +66,17 @@ function clampInt(
   return Math.min(max, Math.max(min, Math.round(value as number)));
 }
 
+/**
+ * Defensive array guard for AI/worker response fields that are expected to
+ * be arrays but can drift to a non-array truthy value (e.g. `{}` instead of
+ * `[]` for an empty section) on a malformed/schema-drifted LLM response.
+ * Prevents a spread (`[...x]`) or `.map`/`.forEach` call from throwing a
+ * TypeError that would otherwise crash the whole response transform.
+ */
+function asArray<T = any>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 function getRequestedMealsPerDay(dietPreferences?: DietPreferences): number {
   if (!dietPreferences) {
     return 3;
@@ -705,53 +716,64 @@ export function transformWorkoutResponseToWeeklyPlan(
 
   const workoutPlan = response.data;
 
-  // Create workout for multiple days based on the generated workout
-  const workouts: Workout[] = [];
-  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week ?? 3;
-  const workoutDays = getWorkoutDaysFromPreferences(
-    workoutPreferences,
-    workoutsPerWeek,
-  );
+  try {
+    // Create workout for multiple days based on the generated workout
+    const workouts: Workout[] = [];
+    const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week ?? 3;
+    const workoutDays = getWorkoutDaysFromPreferences(
+      workoutPreferences,
+      workoutsPerWeek,
+    );
 
-  const daySlotCounts = new Map<string, number>();
-  for (let i = 0; i < workoutDays.length; i++) {
-    const day = workoutDays[i];
-    const slotIndex = daySlotCounts.get(day) ?? 0;
-    daySlotCounts.set(day, slotIndex + 1);
-    workouts.push({
-      id: `${day}_workout_${slotIndex}`,
-      title: workoutPlan.title || "AI Generated Workout",
-      description: workoutPlan.description || "",
-      category: resolveWorkoutCategory(workoutPlan),
-      difficulty: mapDifficulty(workoutPlan.difficulty),
-      duration: workoutPlan.totalDuration ?? workoutPlan.duration ?? 0,
-      estimatedCalories: calculateEstimatedCalories(workoutPlan, userWeightKg),
-      exercises: transformExercises(workoutPlan),
-      equipment: extractEquipment(workoutPlan),
-      targetMuscleGroups: extractTargetMuscles(workoutPlan),
-      icon: getWorkoutIcon(workoutPlan),
-      tags: ["ai-generated", workoutPlan.difficulty || "intermediate"],
-      isPersonalized: true,
-      aiGenerated: true,
-      dayOfWeek: day,
-      warmup: workoutPlan.warmup?.map(transformExerciseItem) || [],
-      cooldown: workoutPlan.cooldown?.map(transformExerciseItem) || [],
-      createdAt: new Date().toISOString(),
-    } as Workout);
+    const daySlotCounts = new Map<string, number>();
+    for (let i = 0; i < workoutDays.length; i++) {
+      const day = workoutDays[i];
+      const slotIndex = daySlotCounts.get(day) ?? 0;
+      daySlotCounts.set(day, slotIndex + 1);
+      workouts.push({
+        id: `${day}_workout_${slotIndex}`,
+        title: workoutPlan.title || "AI Generated Workout",
+        description: workoutPlan.description || "",
+        category: resolveWorkoutCategory(workoutPlan),
+        difficulty: mapDifficulty(workoutPlan.difficulty),
+        duration: workoutPlan.totalDuration ?? workoutPlan.duration ?? 0,
+        estimatedCalories: calculateEstimatedCalories(workoutPlan, userWeightKg),
+        exercises: transformExercises(workoutPlan),
+        equipment: extractEquipment(workoutPlan),
+        targetMuscleGroups: extractTargetMuscles(workoutPlan),
+        icon: getWorkoutIcon(workoutPlan),
+        tags: ["ai-generated", workoutPlan.difficulty || "intermediate"],
+        isPersonalized: true,
+        aiGenerated: true,
+        dayOfWeek: day,
+        warmup: asArray(workoutPlan.warmup).map(transformExerciseItem),
+        cooldown: asArray(workoutPlan.cooldown).map(transformExerciseItem),
+        createdAt: new Date().toISOString(),
+      } as Workout);
+    }
+
+    return {
+      id: workoutPlan.id || `weekly_workout_week_${weekNumber}`,
+      weekNumber,
+      workouts: workouts as WeeklyWorkoutPlan["workouts"],
+      planTitle: workoutPlan.title || "Your Personalized Workout Plan",
+      planDescription: workoutPlan.description,
+      restDays: [1, 3, 5], // Tuesday, Thursday, Saturday, Sunday indices
+      totalEstimatedCalories: workouts.reduce(
+        (sum, w) => sum + (w.estimatedCalories || 0),
+        0,
+      ),
+    };
+  } catch (error) {
+    // Malformed/schema-drifted worker response (e.g. a non-array value for
+    // warmup/exercises/cooldown) should degrade to a retryable "no plan"
+    // result instead of crashing the workout screen.
+    console.error(
+      "[Transformer] Failed to transform workout response — returning null:",
+      error,
+    );
+    return null;
   }
-
-  return {
-    id: workoutPlan.id || `weekly_workout_week_${weekNumber}`,
-    weekNumber,
-    workouts: workouts as WeeklyWorkoutPlan["workouts"],
-    planTitle: workoutPlan.title || "Your Personalized Workout Plan",
-    planDescription: workoutPlan.description,
-    restDays: [1, 3, 5], // Tuesday, Thursday, Saturday, Sunday indices
-    totalEstimatedCalories: workouts.reduce(
-      (sum, w) => sum + (w.estimatedCalories || 0),
-      0,
-    ),
-  };
 }
 
 // ============================================================================
@@ -801,10 +823,18 @@ export function transformDietResponseToWeeklyPlan(
       ? Math.max(1, Math.ceil(meals.length / requestedDaysCount))
       : meals.length;
 
-  const dayMeals: DayMeal[] = meals.map(
-    (meal: any, index: number): DayMeal => {
-      // Map backend foods[] to frontend MealItem[]
-      const items: MealItem[] = (meal.foods || meal.items || []).map(
+  // Built via an explicit loop (not .map) with a per-meal try/catch so one
+  // malformed meal in a schema-drifted worker response (e.g. `foods` coming
+  // back as a non-array object) is skipped and logged rather than throwing
+  // and losing the entire generated plan.
+  const dayMeals: DayMeal[] = [];
+  for (let index = 0; index < meals.length; index++) {
+    const meal: any = meals[index];
+    try {
+      // Map backend foods[] to frontend MealItem[]. Guarded with asArray —
+      // a non-array `foods`/`items` value degrades to an empty item list
+      // instead of throwing.
+      const items: MealItem[] = asArray<any>(meal?.foods ?? meal?.items).map(
         (food: any, foodIndex: number): MealItem => {
           const nutrition = food.nutrition || {};
           const calories =
@@ -866,7 +896,7 @@ export function transformDietResponseToWeeklyPlan(
         sugar: totalNutrition.sugar || 0,
       };
 
-      return {
+      dayMeals.push({
         id: meal.id || `meal_${Date.now()}_${index}`,
         type: mapMealType(meal.mealType || meal.type || "lunch"),
         name: meal.name || `Meal ${index + 1}`,
@@ -895,9 +925,19 @@ export function transformDietResponseToWeeklyPlan(
         isPersonalized: true,
         aiGenerated: true,
         createdAt: now,
-      };
-    },
-  );
+      });
+    } catch (error) {
+      console.error(
+        `[Transformer] Skipping malformed meal at index ${index} — response shape did not match expected DayMeal fields:`,
+        error,
+      );
+    }
+  }
+
+  if (dayMeals.length === 0) {
+    console.error("[Transformer] Every meal in the diet response was malformed — returning null");
+    return null;
+  }
 
   return {
     id: dietPlan.id || `weekly_meal_plan_${Date.now()}`,
@@ -977,9 +1017,9 @@ function calculateEstimatedCalories(workout: WorkoutPlan, userWeightKg?: number)
 
 function transformExercises(workout: WorkoutPlan): any[] {
   const allExercises = [
-    ...(workout.warmup || []),
-    ...(workout.exercises || []),
-    ...(workout.cooldown || []),
+    ...asArray(workout.warmup),
+    ...asArray(workout.exercises),
+    ...asArray(workout.cooldown),
   ];
 
   return allExercises.map((ex, index) => ({
@@ -1005,9 +1045,9 @@ function transformExerciseItem(ex: any) {
 function extractEquipment(workout: WorkoutPlan): string[] {
   const equipment = new Set<string>();
   const allExercises = [
-    ...(workout.warmup || []),
-    ...(workout.exercises || []),
-    ...(workout.cooldown || []),
+    ...asArray(workout.warmup),
+    ...asArray(workout.exercises),
+    ...asArray(workout.cooldown),
   ];
 
   for (const ex of allExercises) {
@@ -1022,9 +1062,9 @@ function extractEquipment(workout: WorkoutPlan): string[] {
 function extractTargetMuscles(workout: WorkoutPlan): string[] {
   const muscles = new Set<string>();
   const allExercises = [
-    ...(workout.warmup || []),
-    ...(workout.exercises || []),
-    ...(workout.cooldown || []),
+    ...asArray(workout.warmup),
+    ...asArray(workout.exercises),
+    ...asArray(workout.cooldown),
   ];
 
   for (const ex of allExercises) {

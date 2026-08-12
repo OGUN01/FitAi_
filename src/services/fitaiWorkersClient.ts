@@ -89,6 +89,13 @@ export interface WorkersClientConfig {
   timeout?: number;
   maxRetries?: number;
   retryDelay?: number;
+  /**
+   * Hard cap (ms) on the total wall-clock time spent across retry attempts for
+   * a single logical request (initial attempt + all retries). Without this, a
+   * slow/degraded worker can compound retryCount * timeout + backoff delays
+   * into ~150s of hung UI with no way for the caller to know when to give up.
+   */
+  maxRetryWallClockMs?: number;
 }
 
 export interface WorkersRequestMetadata {
@@ -422,13 +429,22 @@ export class FitAIWorkersClient {
   private timeout: number;
   private maxRetries: number;
   private retryDelay: number;
+  private maxRetryWallClockMs: number;
 
   constructor(config: WorkersClientConfig = {}) {
     this.baseUrl = config.baseUrl || 'https://fitai-workers.fitai-prod.workers.dev';
     // Cloudflare Workers Free plan has 30s hard limit; 35s gives a small buffer
-    this.timeout = config.timeout || 35000; // 35 seconds
-    this.maxRetries = config.maxRetries || 3;
-    this.retryDelay = config.retryDelay || 1000; // 1 second
+    // `??` (not `||`) below: an explicit 0 (e.g. tests disabling retries via
+    // `maxRetries: 0`) is a valid config value and must not be coerced back to
+    // the default just because 0 is falsy.
+    this.timeout = config.timeout ?? 35000; // 35 seconds
+    this.maxRetries = config.maxRetries ?? 3;
+    this.retryDelay = config.retryDelay ?? 1000; // 1 second
+    // Cap total retry wall-clock so a degraded worker can't compound
+    // retries into ~150s of hung UI (initial 35s + up to 3 more 35s
+    // attempts + backoff). 90s gives one full retry's worth of headroom
+    // beyond the initial attempt before we give up.
+    this.maxRetryWallClockMs = config.maxRetryWallClockMs ?? 90000;
   }
 
   /**
@@ -498,13 +514,30 @@ export class FitAIWorkersClient {
     endpoint: string,
     options: RequestInit,
     retryCount = 0,
-    retryOnAuthFailure = true
+    retryOnAuthFailure = true,
+    attemptStartedAt?: number
   ): Promise<WorkersResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
+    // Wall-clock anchor for the whole logical request (initial attempt +
+    // retries). Set once on the first call and threaded through every
+    // recursive retry so the cap below applies cumulatively, not per-attempt.
+    const startedAt = attemptStartedAt ?? Date.now();
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+      // Let the caller cancel mid-flight (e.g. a "Cancel" button) by passing
+      // an AbortSignal via options.signal — combine it with the internal
+      // per-attempt timeout controller rather than letting fetch's own signal
+      // handling silently drop the timeout behavior.
+      const externalSignal = options.signal;
+      if (externalSignal) {
+        if (externalSignal.aborted) {
+          controller.abort();
+        } else {
+          externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+        }
+      }
 
       const response = await fetch(url, {
         ...options,
@@ -543,7 +576,7 @@ export class FitAIWorkersClient {
                 },
               };
               // retryOnAuthFailure=false prevents an infinite 401 loop.
-              return this.makeRequest<T>(endpoint, refreshedOptions, retryCount, false);
+              return this.makeRequest<T>(endpoint, refreshedOptions, retryCount, false, startedAt);
             }
           } catch (refreshErr) {
             // Refresh threw — classify before falling through so a transient
@@ -588,8 +621,14 @@ export class FitAIWorkersClient {
           throw new AuthenticationError('Session expired. Please sign in again.');
         }
 
-        // Check if we should retry
-        if (this.shouldRetry(response.status) && retryCount < this.maxRetries) {
+        // Check if we should retry — also bail out once the cumulative
+        // wall-clock budget is spent, even if retryCount hasn't hit the cap
+        // yet (a slow worker can otherwise compound retries to ~150s).
+        if (
+          this.shouldRetry(response.status) &&
+          retryCount < this.maxRetries &&
+          Date.now() - startedAt < this.maxRetryWallClockMs
+        ) {
           let delay = this.retryDelay * Math.pow(2, retryCount);
           // Parse Retry-After header for 429 responses
           if (response.status === 429) {
@@ -602,7 +641,7 @@ export class FitAIWorkersClient {
             }
           }
           await this.sleep(delay);
-          return this.makeRequest(endpoint, options, retryCount + 1);
+          return this.makeRequest(endpoint, options, retryCount + 1, retryOnAuthFailure, startedAt);
         }
 
         // Handle error message - could be string or object
@@ -631,10 +670,10 @@ export class FitAIWorkersClient {
     } catch (error) {
       // Network errors (timeout, no connection, etc.)
       if (error instanceof TypeError || (error instanceof Error && error.name === 'AbortError')) {
-        if (retryCount < this.maxRetries) {
+        if (retryCount < this.maxRetries && Date.now() - startedAt < this.maxRetryWallClockMs) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
           await this.sleep(delay);
-          return this.makeRequest(endpoint, options, retryCount + 1);
+          return this.makeRequest(endpoint, options, retryCount + 1, retryOnAuthFailure, startedAt);
         }
         // Retry budget exhausted — don't surface a raw thrown NetworkError
         // (callers like the diet/workout AI wrappers would translate it to a
@@ -702,7 +741,10 @@ export class FitAIWorkersClient {
   /**
    * Generate personalized diet plan (synchronous mode)
    */
-  async generateDietPlan(request: DietGenerationRequest): Promise<WorkersResponse<DietPlan>> {
+  async generateDietPlan(
+    request: DietGenerationRequest,
+    options?: { signal?: AbortSignal }
+  ): Promise<WorkersResponse<DietPlan>> {
     if (!(await this.isAuthenticated())) {
       return { success: false, error: 'Sign up to generate AI diet plans' };
     }
@@ -715,6 +757,7 @@ export class FitAIWorkersClient {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ ...request, async: false }),
+      signal: options?.signal,
     });
   }
 
@@ -739,7 +782,8 @@ export class FitAIWorkersClient {
    * Returns either cached DietPlan (cache hit) or AsyncJobCreatedResponse (new job)
    */
   async generateDietPlanAsync(
-    request: Omit<DietGenerationRequest, 'async'>
+    request: Omit<DietGenerationRequest, 'async'>,
+    options?: { signal?: AbortSignal }
   ): Promise<WorkersResponse<AsyncDietGenerationResponse>> {
     if (!(await this.isAuthenticated())) {
       return { success: false, error: 'Sign up to generate AI diet plans' };
@@ -753,6 +797,7 @@ export class FitAIWorkersClient {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ ...request, async: true }),
+      signal: options?.signal,
     });
   }
 
@@ -760,7 +805,8 @@ export class FitAIWorkersClient {
    * Generate personalized workout plan
    */
   async generateWorkoutPlan(
-    request: WorkoutGenerationRequest
+    request: WorkoutGenerationRequest,
+    options?: { signal?: AbortSignal }
   ): Promise<WorkersResponse<WorkoutPlan>> {
     if (!(await this.isAuthenticated())) {
       return { success: false, error: 'Sign up to generate AI workout plans' };
@@ -774,6 +820,7 @@ export class FitAIWorkersClient {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(request),
+      signal: options?.signal,
     });
   }
 
