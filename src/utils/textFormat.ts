@@ -40,6 +40,25 @@ const TITLE_CASE_SMALL_WORDS = new Set([
   'yet',
 ]);
 
+/**
+ * Normalize a raw muscle-group token for display.
+ *
+ * `CuratedExercise.muscleGroups` (src/data/curatedExercises.ts) mixes plain
+ * words ("core", "back") with underscore_case values ("full_body",
+ * "rear_delts", "hip_flexors"). CSS/RN `textTransform: 'capitalize'` does not
+ * treat `_` as a word boundary, so applying it directly to these values
+ * renders broken strings like "Full_body". This helper replaces underscores
+ * with spaces first so any capitalize/title-case applied on top of it (or the
+ * raw lowercase string, if the caller wants it unstyled) reads correctly.
+ *
+ * @param muscleGroup Raw muscle-group token (any case, may contain `_`).
+ * @returns Space-separated, display-safe string.
+ */
+export function formatMuscleGroup(muscleGroup: string | null | undefined): string {
+  if (!muscleGroup) return '';
+  return muscleGroup.replace(/_/g, ' ').trim();
+}
+
 export function titleCaseExerciseName(name: string | null | undefined): string {
   if (!name) return '';
   const trimmed = name.trim();

@@ -32,6 +32,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { hexToRgba } from "../../../utils/colors";
 import { rp, rf, rw } from "../../../utils/responsive";
+import { formatMuscleGroup } from "../../../utils/textFormat";
 import type { CuratedExercise } from "../../../data/curatedExercises";
 
 // ----------------------------------------------------------------------------
@@ -140,18 +141,23 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
         <View style={styles.chipRow}>
           {primaryMuscles.map((m) => (
             <View key={m} style={styles.muscleChip}>
-              <Text style={styles.muscleChipText}>{m}</Text>
+              <Text style={styles.muscleChipText}>{formatMuscleGroup(m)}</Text>
             </View>
           ))}
         </View>
         <View style={styles.metaRow}>
           {exercise.equipment.length > 0 && (
-            <Text style={styles.metaText} numberOfLines={1}>
+            <Text
+              style={[styles.metaText, styles.metaTextCapitalize]}
+              numberOfLines={1}
+            >
               {exercise.equipment[0]}
             </Text>
           )}
           <Text style={styles.metaDot}>·</Text>
-          <Text style={styles.metaText}>{exercise.difficulty}</Text>
+          <Text style={[styles.metaText, styles.metaTextCapitalize]}>
+            {exercise.difficulty}
+          </Text>
           <Text style={styles.metaDot}>·</Text>
           <Text style={styles.metaText}>{estTime}</Text>
         </View>
@@ -255,6 +261,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.medium) as TextStyleWeight,
+    textTransform: "capitalize",
   } as TextStyle,
   metaRow: {
     flexDirection: "row",
@@ -265,6 +272,9 @@ const styles = StyleSheet.create({
   metaText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
+  },
+  metaTextCapitalize: {
+    textTransform: "capitalize",
   },
   metaDot: {
     color: colors.text.secondary,

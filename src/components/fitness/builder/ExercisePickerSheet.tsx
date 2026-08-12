@@ -25,7 +25,6 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  Pressable,
   FlatList,
   ScrollView,
   type ListRenderItemInfo,
@@ -36,6 +35,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { GlassButton } from "../../ui/aurora/GlassButton";
+import { AnimatedPressable, EmptyState } from "../../ui/aurora";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { haptics } from "../../../utils/haptics";
 import {
@@ -46,6 +46,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
+import { formatMuscleGroup } from "../../../utils/textFormat";
 import { CURATED_EXERCISES, type CuratedExercise } from "../../../data/curatedExercises";
 import type { PlannedExercise } from "../../../types/workout";
 import {
@@ -346,7 +347,6 @@ export const ExercisePickerSheet: React.FC = () => {
         return next;
       });
       setAllPageCount(1);
-      haptics.selection();
     },
     [],
   );
@@ -363,7 +363,6 @@ export const ExercisePickerSheet: React.FC = () => {
       if (!next) {
         setSelectedIds(new Set());
       }
-      haptics.selection();
       return next;
     });
   }, []);
@@ -398,7 +397,6 @@ export const ExercisePickerSheet: React.FC = () => {
   const handleRecentTap = useCallback((q: string) => {
     setQuery(q);
     inputRef.current?.focus();
-    haptics.selection();
   }, []);
 
   // ── Render helpers ──
@@ -451,21 +449,13 @@ export const ExercisePickerSheet: React.FC = () => {
   const renderEmpty = () => {
     if (!hasQuery && !hasActiveFilters) return null;
     return (
-      <View style={styles.emptyWrap}>
-        <Ionicons name="search-outline" size={rf(36)} color={colors.text.tertiary} />
-        <Text style={styles.emptyTitle}>No exercises found</Text>
-        <Text style={styles.emptyHint}>
-          Try a different search term or clear filters.
-        </Text>
-        {hasActiveFilters && (
-          <GlassButton
-            label="Clear filters"
-            onPress={handleClearFilters}
-            variant="secondary"
-            style={styles.emptyBtn}
-          />
-        )}
-      </View>
+      <EmptyState
+        icon="search-outline"
+        title="No exercises found"
+        subtitle="Try a different search term or clear filters."
+        ctaText={hasActiveFilters ? "Clear filters" : undefined}
+        onCta={hasActiveFilters ? handleClearFilters : undefined}
+      />
     );
   };
 
@@ -480,11 +470,14 @@ export const ExercisePickerSheet: React.FC = () => {
       {/* ── HEADER: title + multi-select toggle ── */}
       <View style={styles.headerRow}>
         <Text style={styles.headerTitle}>Add Exercise</Text>
-        <Pressable
+        <AnimatedPressable
           hitSlop={10}
           onPress={handleToggleMultiSelect}
           accessibilityRole="button"
           accessibilityLabel={multiSelectMode ? "Exit multi-select" : "Enter multi-select"}
+          hapticFeedback
+          hapticType="selection"
+          scaleValue={0.9}
           style={styles.multiToggle}
         >
           <Ionicons
@@ -492,7 +485,7 @@ export const ExercisePickerSheet: React.FC = () => {
             size={rf(22)}
             color={multiSelectMode ? colors.primary.DEFAULT : colors.text.secondary}
           />
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {/* ── SEARCH BAR + filter button ── */}
@@ -512,31 +505,31 @@ export const ExercisePickerSheet: React.FC = () => {
             accessibilityLabel="Search exercises"
           />
           {query.length > 0 && (
-            <Pressable
+            <AnimatedPressable
               hitSlop={10}
-              onPress={() => {
-                setQuery("");
-                haptics.selection();
-              }}
+              onPress={() => setQuery("")}
               accessibilityRole="button"
               accessibilityLabel="Clear search"
+              hapticFeedback
+              hapticType="selection"
+              scaleValue={0.85}
               style={styles.clearBtn}
             >
               <Ionicons name="close-circle" size={rf(16)} color={colors.text.tertiary} />
-            </Pressable>
+            </AnimatedPressable>
           )}
         </View>
         {/* Voice search placeholder removed — TODO(Phase 4): wire real voice
             search before re-enabling this control. */}
         {/* Filter toggle */}
-        <Pressable
+        <AnimatedPressable
           hitSlop={10}
-          onPress={() => {
-            setFilterRowOpen((v) => !v);
-            haptics.selection();
-          }}
+          onPress={() => setFilterRowOpen((v) => !v)}
           accessibilityRole="button"
           accessibilityLabel="Toggle filters"
+          hapticFeedback
+          hapticType="selection"
+          scaleValue={0.9}
           style={[styles.iconBtn, hasActiveFilters && styles.iconBtnActive]}
         >
           <Ionicons
@@ -544,7 +537,7 @@ export const ExercisePickerSheet: React.FC = () => {
             size={rf(20)}
             color={hasActiveFilters ? colors.primary.DEFAULT : colors.text.secondary}
           />
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {/* ── MULTI-SELECT ADD BAR (when active) ── */}
@@ -592,14 +585,16 @@ export const ExercisePickerSheet: React.FC = () => {
             onToggle={(v) => handleToggleFilter("category", v)}
           />
           {hasActiveFilters && (
-            <Pressable
+            <AnimatedPressable
               onPress={handleClearFilters}
               accessibilityRole="button"
               accessibilityLabel="Clear all filters"
+              hapticFeedback={false}
+              scaleValue={0.94}
               style={styles.clearFiltersBtn}
             >
               <Text style={styles.clearFiltersText}>Clear all filters</Text>
-            </Pressable>
+            </AnimatedPressable>
           )}
         </View>
       )}
@@ -639,16 +634,19 @@ export const ExercisePickerSheet: React.FC = () => {
                 <Section title="Recent searches">
                   <View style={styles.chipFlow}>
                     {recents.map((q) => (
-                      <Pressable
+                      <AnimatedPressable
                         key={q}
                         style={styles.recentChip}
                         onPress={() => handleRecentTap(q)}
                         accessibilityRole="button"
                         accessibilityLabel={`Search ${q}`}
+                        hapticFeedback
+                        hapticType="selection"
+                        scaleValue={0.94}
                       >
                         <Ionicons name="time-outline" size={rf(11)} color={colors.text.tertiary} />
                         <Text style={styles.recentChipText} numberOfLines={1}>{q}</Text>
-                      </Pressable>
+                      </AnimatedPressable>
                     ))}
                   </View>
                 </Section>
@@ -703,12 +701,15 @@ export const ExercisePickerSheet: React.FC = () => {
                         nestedScrollEnabled
                       >
                         {aiSuggestions.map((s, i) => (
-                          <Pressable
+                          <AnimatedPressable
                             key={`ai-${s.exerciseId}-${i}`}
                             onPress={() => handleAddAiSuggestion(s)}
                             accessibilityRole="button"
                             accessibilityLabel={`Add AI suggestion: ${s.name}`}
                             style={styles.aiSuggestionCard}
+                            hapticFeedback
+                            hapticType="selection"
+                            scaleValue={0.97}
                           >
                             <View style={styles.aiSuggestionHeader}>
                               <Text style={styles.aiSuggestionName} numberOfLines={1}>
@@ -726,7 +727,7 @@ export const ExercisePickerSheet: React.FC = () => {
                             <Text style={styles.aiSuggestionMeta}>
                               {s.sets} sets · {s.reps} reps · {s.muscleGroup}
                             </Text>
-                          </Pressable>
+                          </AnimatedPressable>
                         ))}
                       </ScrollView>
                       {aiSuggestions.length > 1 && (
@@ -788,12 +789,15 @@ const FilterChipRow: React.FC<{
       {options.map((opt) => {
         const active = selected.includes(opt);
         return (
-          <Pressable
+          <AnimatedPressable
             key={opt}
             onPress={() => onToggle(opt)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: active }}
             accessibilityLabel={`${label}: ${opt}`}
+            hapticFeedback
+            hapticType="selection"
+            scaleValue={0.94}
             style={[styles.filterChip, active && styles.filterChipActive]}
           >
             <Text
@@ -802,9 +806,9 @@ const FilterChipRow: React.FC<{
                 active && styles.filterChipTextActive,
               ]}
             >
-              {opt}
+              {formatMuscleGroup(opt)}
             </Text>
-          </Pressable>
+          </AnimatedPressable>
         );
       })}
     </View>
@@ -945,10 +949,12 @@ const styles = StyleSheet.create({
   filterChipText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
+    textTransform: "capitalize",
   },
   filterChipTextActive: {
     color: colors.text.primary,
     fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
+    textTransform: "capitalize",
   } as TextStyle,
   clearFiltersBtn: {
     alignSelf: "flex-end",
@@ -992,31 +998,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.sm),
     paddingVertical: rp(spacing.xxs),
     maxWidth: rw(160),
+    minHeight: Math.max(rp(36), 44),
   },
   recentChipText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
     flexShrink: 1,
-  },
-  // Empty state
-  emptyWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: rp(spacing.xl),
-    gap: rp(spacing.sm),
-  },
-  emptyTitle: {
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.body),
-    fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
-  } as TextStyle,
-  emptyHint: {
-    color: colors.text.tertiary,
-    fontSize: rf(typography.fontSize.caption),
-    textAlign: "center",
-  },
-  emptyBtn: {
-    marginTop: rp(spacing.sm),
   },
   // Phase 9 — AI suggestions
   aiSection: {

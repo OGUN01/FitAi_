@@ -78,6 +78,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw, rs } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
+import { formatMuscleGroup } from "../../../utils/textFormat";
 import type { PlannedExercise, PlannedSet } from "../../../types/workout";
 
 // ============================================================================
@@ -532,7 +533,7 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
             <View style={styles.chipRow}>
               {muscleGroups.slice(0, 3).map((m) => (
                 <View key={`mg_${m}`} style={styles.muscleChip}>
-                  <Text style={styles.muscleChipText} numberOfLines={1}>{m}</Text>
+                  <Text style={styles.muscleChipText} numberOfLines={1}>{formatMuscleGroup(m)}</Text>
                 </View>
               ))}
               {muscleGroups.length > 3 && (
