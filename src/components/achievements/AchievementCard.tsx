@@ -12,6 +12,7 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
 } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
@@ -129,7 +130,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
 const styles = StyleSheet.create({
   tile: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     padding: spacing.md,

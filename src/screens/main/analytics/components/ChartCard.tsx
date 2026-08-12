@@ -9,6 +9,7 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
 } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
 import { hexToRgba } from "../../../../utils/colors";
@@ -82,7 +83,7 @@ export const ChartCard: React.FC<ChartCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     padding: spacing.lg,

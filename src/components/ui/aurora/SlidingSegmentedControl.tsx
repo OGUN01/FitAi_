@@ -220,7 +220,7 @@ const flatStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 0,
-    minHeight: rp(36),
+    minHeight: 44,
     includeFontPadding: false,
   } as ViewStyle,
   text: {

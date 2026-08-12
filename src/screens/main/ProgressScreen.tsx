@@ -140,9 +140,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
                 error={combinedError || null}
                 isAuthenticated={isAuthenticated}
                 hasCalculatedMetrics={hasCalculatedMetrics}
-                progressEntriesLength={progressEntries.length}
                 onRefresh={onRefresh}
-                onAddEntry={() => setShowWeightModal(true)}
               />
 
               {(isAuthenticated || hasCalculatedMetrics) && !progressError && (

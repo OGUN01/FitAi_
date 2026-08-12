@@ -11,7 +11,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { colors, spacing, typography } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 
 interface SectionHeaderProps {
@@ -26,7 +26,7 @@ interface SectionHeaderProps {
 export const SectionHeader: React.FC<SectionHeaderProps> = ({
   title,
   icon,
-  iconColor = colors.primary,
+  iconColor = colors.primary.DEFAULT,
   actionText,
   onActionPress,
   accessibilityLabel,
@@ -84,14 +84,12 @@ const styles = StyleSheet.create({
     marginRight: spacing.xs,
   },
   title: {
-    fontSize: fontSize.lg,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.text,
+    ...typography.variants.sectionTitle,
+    color: colors.text.primary,
   },
   actionText: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
+    ...typography.variants.caption2,
+    color: colors.primary.DEFAULT,
   },
 });
 

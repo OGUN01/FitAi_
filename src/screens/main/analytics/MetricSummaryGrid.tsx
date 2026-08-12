@@ -5,10 +5,11 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, Platform, Modal, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, StyleSheet, Platform, TouchableOpacity, Pressable } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { DialogShell } from "../../../components/ui/CustomDialog";
 import {
   surface,
   border as borderTokens,
@@ -438,12 +439,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
       )}
 
       {/* Metric info sheet — explains what BMI/BMR/TDEE/Water Goal mean. */}
-      <Modal
-        visible={!!activeInfo}
-        transparent
-        animationType="fade"
-        onRequestClose={closeInfo}
-      >
+      <DialogShell visible={!!activeInfo} animationType="fade" onRequestClose={closeInfo} bare>
         <View style={styles.infoOverlay}>
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -466,7 +462,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
             <Text style={styles.infoDescription}>{activeInfo?.description}</Text>
           </View>
         </View>
-      </Modal>
+      </DialogShell>
     </View>
   );
 });
@@ -480,7 +476,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: borderTokens.subtle,
     overflow: "hidden",

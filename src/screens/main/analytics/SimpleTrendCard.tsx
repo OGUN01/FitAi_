@@ -9,6 +9,7 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rh } from "../../../utils/responsive";
 import { TrendData } from "../../../hooks/useProgressTrendsLogic";
@@ -160,7 +161,7 @@ export const SimpleTrendCard: React.FC<SimpleTrendCardProps> = ({
 const styles = StyleSheet.create({
   panel: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     padding: spacing.lg,

@@ -294,6 +294,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           color={color}
           selectedPoint={selectedPoint}
           onPointPress={(idx) => handlePointSelect(idx === -1 ? null : idx)}
+          chartAreaWidth={chartAreaWidth}
         />
 
         <XAxisLabels

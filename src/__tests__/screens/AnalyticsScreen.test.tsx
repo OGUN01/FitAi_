@@ -189,6 +189,7 @@ jest.mock("../../utils/responsive", () => ({
   rw: (value: number) => value,
   rp: (value: number) => value,
   rf: (value: number) => value,
+  rs: (value: number) => value,
   rbr: (value: number) => value,
 }));
 

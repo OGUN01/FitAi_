@@ -9,6 +9,7 @@ import {
   colors,
   typography,
   spacing,
+  borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
@@ -165,7 +166,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
 const styles = StyleSheet.create({
   panel: {
     backgroundColor: surface[1],
-    borderRadius: 20,
+    borderRadius: borderRadius.card,
     borderWidth: 1,
     borderColor: border.subtle,
     padding: spacing.lg,

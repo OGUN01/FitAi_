@@ -238,7 +238,7 @@ describe("analytics and fitness touch targets", () => {
       StyleSheet.flatten(journey.getByLabelText("Log weight").props.style),
     ).toMatchObject({ minHeight: 44 });
     expect(
-      StyleSheet.flatten(journey.getByLabelText("1W period").props.style),
+      StyleSheet.flatten(journey.getByLabelText("1W").props.style),
     ).toMatchObject({ minHeight: 44 });
   });
 });

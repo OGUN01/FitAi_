@@ -1,18 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { rf } from "../../utils/responsive";
 import {
   colors,
-  surface,
-  border as borderTokens,
   spacing,
-  borderRadius,
   typography,
   flatColors,
 } from "../../theme/aurora-tokens";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
-import { GlassButton } from "../../components/ui/aurora/GlassButton";
+import { EmptyState } from "../../components/ui/aurora/EmptyState";
 
 interface ProgressErrorStatesProps {
   isLoading: boolean;
@@ -21,9 +16,7 @@ interface ProgressErrorStatesProps {
   error: string | null;
   isAuthenticated: boolean;
   hasCalculatedMetrics: boolean;
-  progressEntriesLength: number;
   onRefresh: () => void;
-  onAddEntry: () => void;
 }
 
 export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
@@ -32,9 +25,7 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
   error,
   isAuthenticated,
   hasCalculatedMetrics,
-  progressEntriesLength,
   onRefresh,
-  onAddEntry,
 }) => {
   if (progressLoading || statsLoading) {
     return (
@@ -49,16 +40,14 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
 
   if (error) {
     return (
-      <View style={styles.panel}>
-        <View style={styles.row}>
-          <Ionicons name="warning-outline" size={rf(22)} color={colors.error.DEFAULT} />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-        <GlassButton
-          label="Retry"
-          onPress={onRefresh}
-          variant="secondary"
-          style={styles.actionButton}
+      <View style={styles.wrap}>
+        <EmptyState
+          icon="cloud-offline-outline"
+          iconColor={colors.error.DEFAULT}
+          title="Couldn't load progress"
+          subtitle={error}
+          ctaText="Retry"
+          onCta={onRefresh}
         />
       </View>
     );
@@ -66,35 +55,20 @@ export const ProgressErrorStates: React.FC<ProgressErrorStatesProps> = ({
 
   if (!isAuthenticated && !hasCalculatedMetrics) {
     return (
-      <View style={styles.panel}>
-        <View style={styles.row}>
-          <Ionicons name="lock-closed-outline" size={rf(22)} color={colors.error.DEFAULT} />
-          <Text style={styles.errorText}>Please sign in to track your progress</Text>
-        </View>
-      </View>
-    );
-  }
-
-  // Empty state: authenticated user with zero weigh-ins. Applies even when the
-  // user has calculatedMetrics from onboarding — stats still have no entries,
-  // so show the friendly CTA instead of an error or nothing.
-  if (isAuthenticated && progressEntriesLength === 0 && !progressLoading) {
-    return (
-      <View style={styles.panel}>
-        <View style={styles.row}>
-          <Ionicons name="stats-chart-outline" size={rf(22)} color={colors.text.secondary} />
-          <Text style={styles.bodyText}>No body measurements yet</Text>
-        </View>
-        <Text style={styles.subText}>Add your first measurement to start tracking!</Text>
-        <GlassButton
-          label="Add Entry"
-          onPress={onAddEntry}
-          variant="primary"
-          style={styles.actionButton}
+      <View style={styles.wrap}>
+        <EmptyState
+          icon="lock-closed-outline"
+          title="Please sign in to track your progress"
         />
       </View>
     );
   }
+
+  // No standalone empty state for zero weigh-ins: WeightJourneySection's own
+  // empty-chart copy ("Log at least 2 entries to see your journey") + its
+  // "Log" button, and GoalProgressSection's own empty-goal copy, already
+  // cover this case with section-local CTAs. A generic panel here duplicated
+  // that messaging with a second, differently-labeled "Add Entry" button.
 
   return null;
 };
@@ -114,42 +88,9 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.md,
   },
-  panel: {
+  wrap: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: surface[1],
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: borderTokens.subtle,
-    alignItems: "center",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  errorText: {
-    ...typography.variants.body,
-    color: colors.error.DEFAULT,
-    textAlign: "center",
-    flex: 1,
-  },
-  bodyText: {
-    ...typography.variants.body,
-    color: colors.text.secondary,
-    textAlign: "center",
-    flex: 1,
-  },
-  subText: {
-    ...typography.variants.caption2,
-    color: colors.text.secondary,
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  actionButton: {
-    paddingHorizontal: spacing.lg,
   },
 });
 

@@ -15,6 +15,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { SlidingSegmentedControl } from '../ui/aurora/SlidingSegmentedControl';
 import Svg, {
   Path,
   Circle,
@@ -325,24 +326,13 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
 
       {/* Period selector */}
       <View style={styles.periodRow}>
-        {PERIODS.map((item) => {
-          const active = period === item.key;
-          return (
-            <AnimatedPressable
-              key={item.key}
-              style={[styles.periodTab, active && styles.periodTabActive]}
-              onPress={() => onPeriodPress(item.key)}
-              scaleValue={0.97}
-              hapticFeedback={false}
-              accessibilityRole="button"
-              accessibilityLabel={`${item.label} period`}
-            >
-              <Text style={[styles.periodLabel, active && styles.periodLabelActive]}>
-                {item.label}
-              </Text>
-            </AnimatedPressable>
-          );
-        })}
+        <SlidingSegmentedControl
+          options={PERIODS.map((item) => ({ id: item.key, label: item.label }))}
+          selectedId={period}
+          onSelect={(id) => onPeriodPress(id as Period)}
+          variant="aurora"
+          testIDPrefix="weight-journey-period"
+        />
       </View>
     </Animated.View>
   );
@@ -446,31 +436,7 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
   },
   periodRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
     marginTop: spacing.md,
-  },
-  periodTab: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-    backgroundColor: surface[1],
-    borderWidth: 1,
-    borderColor: borderTokens.subtle,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  periodTabActive: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.DEFAULT,
-  },
-  periodLabel: {
-    ...typography.variants.caption,
-    fontFamily: 'Manrope_600SemiBold',
-    color: colors.text.muted,
-  },
-  periodLabelActive: {
-    color: colors.text.primary,
   },
 });
 

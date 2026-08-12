@@ -119,6 +119,10 @@ interface DataPointsProps {
   color: string;
   selectedPoint: number | null;
   onPointPress: (index: number | null) => void;
+  /** Plottable chart width (excludes padding) — used to scale the invisible
+   * tap-target radius so sparse series get a touch target closer to the
+   * app's 44px floor without adjacent points' hit areas overlapping. */
+  chartAreaWidth?: number;
 }
 
 export const DataPoints: React.FC<DataPointsProps> = ({
@@ -128,9 +132,19 @@ export const DataPoints: React.FC<DataPointsProps> = ({
   color,
   selectedPoint,
   onPointPress,
-}) => (
-  <>
-    {data.map((item, index) => {
+  chartAreaWidth,
+}) => {
+  // Half the per-point spacing, capped at rw(22) (~44px diameter). Falls
+  // back to the previous fixed rw(15) when spacing is unknown or data has
+  // only one point (spacing would be Infinity/undefined).
+  const touchRadius =
+    chartAreaWidth != null && data.length > 1
+      ? Math.min(rw(22), chartAreaWidth / (data.length - 1) / 2)
+      : rw(15);
+
+  return (
+    <>
+      {data.map((item, index) => {
       const isLast = index === data.length - 1;
       // Year-period charts carry up to 365 daily points: a dot per point
       // smears into a solid band and the rw(15) touch circles overlap into
@@ -162,7 +176,7 @@ export const DataPoints: React.FC<DataPointsProps> = ({
           <Circle
             cx={x}
             cy={y}
-            r={rw(15)}
+            r={touchRadius}
             fill="transparent"
             {...(Platform.OS === 'web'
               ? { onClick: () => onPointPress(selectedPoint === index ? -1 : index) }
@@ -171,9 +185,10 @@ export const DataPoints: React.FC<DataPointsProps> = ({
           />
         </G>
       );
-    })}
-  </>
-);
+      })}
+    </>
+  );
+};
 
 interface XAxisLabelsProps {
   data: Array<{ label: string; value: number }>;
