@@ -28,14 +28,12 @@ import {
   FlatList,
   ScrollView,
   type ListRenderItemInfo,
-  type NativeSyntheticEvent,
-  type TextInputChangeEventData,
   type TextStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { GlassButton } from "../../ui/aurora/GlassButton";
-import { AnimatedPressable, EmptyState } from "../../ui/aurora";
+import { AnimatedPressable, AuroraSearchField, EmptyState } from "../../ui/aurora";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { haptics } from "../../../utils/haptics";
 import {
@@ -45,7 +43,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
-import { hexToRgba } from "../../../utils/colors";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import { formatMuscleGroup } from "../../../utils/textFormat";
 import { CURATED_EXERCISES, type CuratedExercise } from "../../../data/curatedExercises";
 import type { PlannedExercise } from "../../../types/workout";
@@ -250,8 +248,7 @@ export const ExercisePickerSheet: React.FC = () => {
   }, [closePicker]);
 
   const handleQueryChange = useCallback(
-    (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
-      const value = e.nativeEvent.text;
+    (value: string) => {
       setQuery(value);
       // Persist non-trivial queries into recents (debounced by the user — we
       // only commit on blur / submit to avoid spamming AsyncStorage).
@@ -399,6 +396,11 @@ export const ExercisePickerSheet: React.FC = () => {
     inputRef.current?.focus();
   }, []);
 
+  const handleClearSearch = useCallback(() => {
+    setQuery("");
+    inputRef.current?.focus();
+  }, []);
+
   // ── Render helpers ──
   const hasQuery = query.trim().length > 0;
   const hasActiveFilters =
@@ -453,8 +455,8 @@ export const ExercisePickerSheet: React.FC = () => {
         icon="search-outline"
         title="No exercises found"
         subtitle="Try a different search term or clear filters."
-        ctaText={hasActiveFilters ? "Clear filters" : undefined}
-        onCta={hasActiveFilters ? handleClearFilters : undefined}
+        ctaText={hasQuery ? "Clear search" : "Clear filters"}
+        onCta={hasQuery ? handleClearSearch : handleClearFilters}
       />
     );
   };
@@ -490,35 +492,17 @@ export const ExercisePickerSheet: React.FC = () => {
 
       {/* ── SEARCH BAR + filter button ── */}
       <View style={styles.searchRow}>
-        <View style={styles.searchInputWrap}>
-          <Ionicons name="search-outline" size={rf(16)} color={colors.text.tertiary} style={styles.searchIcon} />
-          <TextInput
-            ref={inputRef}
-            style={styles.searchInput}
-            value={query}
-            onChange={handleQueryChange}
-            onBlur={commitRecent}
-            onSubmitEditing={commitRecent}
-            placeholder="Search exercises, muscles, equipment…"
-            placeholderTextColor={colors.text.tertiary}
-            returnKeyType="search"
-            accessibilityLabel="Search exercises"
-          />
-          {query.length > 0 && (
-            <AnimatedPressable
-              hitSlop={10}
-              onPress={() => setQuery("")}
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-              hapticFeedback
-              hapticType="selection"
-              scaleValue={0.85}
-              style={styles.clearBtn}
-            >
-              <Ionicons name="close-circle" size={rf(16)} color={colors.text.tertiary} />
-            </AnimatedPressable>
-          )}
-        </View>
+        <AuroraSearchField
+          ref={inputRef}
+          value={query}
+          onChangeText={handleQueryChange}
+          onClear={handleClearSearch}
+          onBlur={commitRecent}
+          onSubmitEditing={commitRecent}
+          placeholder="Search exercises, muscles, equipment…"
+          accessibilityLabel="Search exercises"
+          containerStyle={styles.searchField}
+        />
         {/* Voice search placeholder removed — TODO(Phase 4): wire real voice
             search before re-enabling this control. */}
         {/* Filter toggle */}
@@ -853,31 +837,12 @@ const styles = StyleSheet.create({
     gap: rp(spacing.sm),
     marginBottom: rp(spacing.sm),
   },
-  searchInputWrap: {
+  searchField: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.glass.background,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: rp(spacing.sm),
-  },
-  searchIcon: {
-    marginRight: rp(spacing.xs),
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.text.primary,
-    fontSize: rf(typography.fontSize.caption),
-    paddingVertical: rp(spacing.sm),
-  },
-  clearBtn: {
-    padding: rp(spacing.xxs),
   },
   iconBtn: {
-    width: Math.max(rw(40), 44),
-    height: Math.max(rw(40), 44),
+    width: Math.max(rw(48), 48),
+    height: Math.max(rw(48), 48),
     borderRadius: borderRadius.lg,
     backgroundColor: colors.glass.background,
     borderWidth: 1,
@@ -886,6 +851,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   iconBtnActive: {
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW),
     borderColor: colors.primary.DEFAULT,
   },
   multiBar: {
@@ -943,8 +909,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   filterChipActive: {
-    backgroundColor: colors.primary.DEFAULT,
-    borderColor: colors.primary.dark,
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW),
+    borderColor: colors.primary.DEFAULT,
   },
   filterChipText: {
     color: colors.text.secondary,
@@ -952,7 +918,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   filterChipTextActive: {
-    color: colors.text.primary,
+    color: colors.primary.DEFAULT,
     fontWeight: String(typography.fontWeight.semibold) as TextStyleWeight,
     textTransform: "capitalize",
   } as TextStyle,

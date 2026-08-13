@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 const mockGetTemplates = jest.fn();
 const mockIncrementUsageCount = jest.fn();
@@ -250,6 +250,24 @@ describe("TemplateLibraryScreen", () => {
 
     await waitFor(() => {
       expect(getByTestId("template-list")).toBeTruthy();
+    });
+  });
+
+  it("shows a search-specific empty state when templates do not match", async () => {
+    mockGetTemplates.mockResolvedValue([sampleTemplate]);
+
+    const { getByTestId } = render(
+      <TemplateLibraryScreen navigation={mockNavigation} />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId("template-list")).toBeTruthy();
+    });
+
+    fireEvent.changeText(getByTestId("template-search-input"), "no match");
+
+    await waitFor(() => {
+      expect(getByTestId("template-search-empty")).toBeTruthy();
     });
   });
 

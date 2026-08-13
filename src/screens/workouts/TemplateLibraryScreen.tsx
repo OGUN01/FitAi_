@@ -11,7 +11,6 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  TextInput,
   RefreshControl,
   type TextStyle,
   type ViewStyle,
@@ -35,9 +34,11 @@ import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
 import {
   AuroraBackground,
   AuroraSpinner,
+  AuroraSearchField,
   EmptyState,
   AnimatedPressable,
   GlassHeader,
+  SkeletonLoader,
 } from "../../components/ui/aurora";
 import { CommunityTemplatesTab } from "../../components/fitness/builder/CommunityTemplatesTab";
 import PaywallModal from "../../components/subscription/PaywallModal";
@@ -144,6 +145,42 @@ const DIFFICULTY_LABEL: Record<
   intermediate: "Intermediate",
   advanced: "Advanced",
 };
+
+const TemplateLibraryLoadingSkeleton: React.FC = () => (
+  <View style={styles.loadingSkeleton} accessibilityLabel="Loading template library">
+    <View style={styles.loadingSearchRow}>
+      <SkeletonLoader
+        variant="button"
+        width={1}
+        height={rh(48)}
+        borderRadius={rbr(12)}
+        style={styles.loadingSearchField}
+      />
+      <SkeletonLoader variant="button" width={rw(48)} height={rh(48)} borderRadius={rbr(12)} />
+    </View>
+    <View style={styles.loadingTabs}>
+      {[0, 1, 2].map((item) => (
+        <SkeletonLoader
+          key={`loading-tab-${item}`}
+          variant="button"
+          width={rw(92)}
+          height={rh(44)}
+        />
+      ))}
+    </View>
+    <View style={styles.loadingGrid}>
+      {[0, 1, 2, 3].map((item) => (
+        <SkeletonLoader
+          key={`loading-template-${item}`}
+          variant="card"
+          width="48%"
+          height={rh(188)}
+          style={styles.loadingCard}
+        />
+      ))}
+    </View>
+  </View>
+);
 
 // ============================================================================
 // COMPONENT
@@ -354,6 +391,12 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   );
 
   // ── Derived: filtered templates for the current tab ──────────────────────
+  const isSearchAvailable =
+    activeTab !== "community" &&
+    activeTab !== "ai" &&
+    (activeTab !== "collections" || Boolean(activeCollection));
+  const hasSearch = search.trim().length > 0;
+
   const filteredTemplates = useMemo(() => {
     let list = templates;
     if (activeTab === "recent") {
@@ -376,7 +419,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       }
     }
     // "mine" tab = all user templates (no extra filter)
-    if (search.trim()) {
+    if (isSearchAvailable && search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
         (t) =>
@@ -385,7 +428,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       );
     }
     return list;
-  }, [templates, activeTab, activeCollection, search, bookmarks]);
+  }, [templates, activeTab, activeCollection, search, bookmarks, isSearchAvailable]);
 
   const hasContent = filteredTemplates.length > 0;
 
@@ -499,6 +542,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   const handleTabChange = useCallback((key: TabKey) => {
     haptics.selection();
     setActiveTab(key);
+    setSearch("");
     setActiveCollection(null);
     setMultiSelect(false);
     setSelectedIds(new Set());
@@ -512,6 +556,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
 
   const handleCollectionChip = useCallback((chip: CollectionChip) => {
     haptics.selection();
+    setSearch("");
     setActiveCollection((prev) => (prev === chip.category ? null : chip.category));
   }, []);
 
@@ -599,7 +644,8 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       const { shareTemplate } = await import(
         "../../services/templateShareService"
       );
-      await shareTemplate(firstTemplate.id, firstTemplate.name);
+      const sharedLink = await shareTemplate(firstTemplate.id, firstTemplate.name);
+      if (!sharedLink) return;
       handleExitMultiSelect();
     } catch (err) {
       console.error("[TemplateLibraryScreen] bulk share failed:", err);
@@ -645,9 +691,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       <AuroraBackground theme="space">
         <SafeAreaView style={styles.flex} edges={["top"]}>
           <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} />
-          <View style={styles.loader}>
-            <AuroraSpinner size="lg" />
-          </View>
+          <TemplateLibraryLoadingSkeleton />
         </SafeAreaView>
       </AuroraBackground>
     );
@@ -702,63 +746,36 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
       <SafeAreaView style={styles.flex} edges={["top"]}>
         <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} rightAction={headerActions} />
 
-        {/* Search bar + view toggle — slim tinted field, no border box */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchWrap}>
-            <Ionicons
-              name="search-outline"
-              size={rf(18)}
-              color={colors.textTertiary}
-              style={styles.searchIcon}
-            />
-            <TextInput
+        {/* Search is local to the user's library and selected collection. */}
+        {isSearchAvailable ? (
+          <View style={styles.searchRow}>
+            <AuroraSearchField
               value={search}
               onChangeText={setSearch}
+              onClear={() => setSearch("")}
               placeholder="Search templates"
-              placeholderTextColor={colors.textTertiary}
-              style={styles.searchInput}
               accessibilityLabel="Search templates"
               testID="template-search-input"
+              containerStyle={styles.searchField}
             />
-            {search.length > 0 ? (
-              <AnimatedPressable
-                onPress={() => {
-                  haptics.light();
-                  setSearch("");
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-                accessibilityHint="Remove the search query"
-                scaleValue={0.9}
-                springConfig="snappy"
-                hapticType="light"
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={rf(18)}
-                  color={colors.textTertiary}
-                />
-              </AnimatedPressable>
-            ) : null}
-          </View>
 
-          <AnimatedPressable
-            onPress={handleViewToggle}
-            style={styles.viewToggle}
-            testID="view-toggle-button"
-            accessibilityRole="button"
-            accessibilityLabel={`Switch to ${viewMode === "grid" ? "list" : "grid"} view`}
-            accessibilityHint="Toggle between grid and list layouts"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons
-              name={viewMode === "grid" ? "list-outline" : "grid-outline"}
-              size={rf(20)}
-              color={colors.textSecondary}
-            />
-          </AnimatedPressable>
-        </View>
+            <AnimatedPressable
+              onPress={handleViewToggle}
+              style={styles.viewToggle}
+              testID="view-toggle-button"
+              accessibilityRole="button"
+              accessibilityLabel={`Switch to ${viewMode === "grid" ? "list" : "grid"} view`}
+              accessibilityHint="Toggle between grid and list layouts"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={viewMode === "grid" ? "list-outline" : "grid-outline"}
+                size={rf(20)}
+                color={colors.textSecondary}
+              />
+            </AnimatedPressable>
+          </View>
+        ) : null}
 
         {/* Folder tabs — plain pill text toggles (selected = primary 12% tint) */}
         <View style={styles.tabsRow}>
@@ -942,6 +959,16 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
               title="Pick a collection"
               subtitle="Choose a category above to browse templates in that collection."
               iconColor={colors.secondary}
+            />
+          </View>
+        ) : hasSearch && !hasContent ? (
+          <View style={styles.emptyWrap} testID="template-search-empty">
+            <EmptyState
+              icon="search-outline"
+              title="No templates found"
+              subtitle="Try a different template name or muscle group."
+              ctaText="Clear search"
+              onCta={() => setSearch("")}
             />
           </View>
         ) : !hasContent ? (
@@ -1743,7 +1770,36 @@ const LIST_MENU_BTN_W = Math.max(rw(44), 44);
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingSkeleton: {
+    flex: 1,
+    paddingTop: rp(spacing.sm),
+    gap: rp(spacing.md),
+  },
+  loadingSearchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.lg),
+  },
+  loadingSearchField: {
+    flex: 1,
+  },
+  loadingTabs: {
+    flexDirection: "row",
+    gap: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.lg),
+    overflow: "hidden",
+  },
+  loadingGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: rp(spacing.lg),
+  },
+  loadingCard: {
+    marginBottom: rp(spacing.md),
+  },
   sheetFallback: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
@@ -1788,27 +1844,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.lg),
     paddingBottom: rp(spacing.sm),
   },
-  searchWrap: {
+  searchField: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: hexToRgba(colors.text, 0.06),
-    borderRadius: rbr(12),
-    paddingHorizontal: rp(spacing.md),
-    paddingVertical: rp(spacing.sm),
-    gap: rp(spacing.xs),
-    minHeight: 44,
-  },
-  searchIcon: {},
-  searchInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: rf(typography.fontSize.body),
-    padding: 0,
   },
   viewToggle: {
-    width: Math.max(rw(44), 44),
-    height: Math.max(rw(44), 44),
+    width: Math.max(rw(48), 48),
+    height: Math.max(rw(48), 48),
     borderRadius: rbr(12),
     backgroundColor: hexToRgba(colors.text, 0.06),
     alignItems: "center",

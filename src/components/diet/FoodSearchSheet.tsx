@@ -17,14 +17,15 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   FlatList,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { AuroraSearchField } from '../ui/aurora/AuroraSearchField';
 import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import { BottomSheet } from '../ui/aurora/BottomSheet';
+import { EmptyState } from '../ui/aurora/EmptyState';
 import {
   flatColors as colors,
   spacing,
@@ -215,11 +216,10 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
         ? 'Search packaged products + Indian dishes'
         : 'Indian dishes available · download offline DB for millions more';
     }
-    if (!loading && hits.length === 0) {
-      return 'No matches — try a shorter or different name';
-    }
     return '';
-  }, [query, loading, hits.length, dbReady]);
+  }, [query, dbReady]);
+
+  const showNoResults = query.trim().length >= MIN_QUERY && !loading && hits.length === 0;
 
   return (
     <BottomSheet
@@ -233,49 +233,26 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
           search input + clear button sit inline with the close button,
           per the AdjustmentWizard.tsx pattern. ── */}
       <View style={styles.header}>
-        <View style={styles.searchWrap}>
-          <Ionicons
-            name="search-outline"
-            size={rf(fontSize.lg)}
-            color={colors.textSecondary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            ref={inputRef}
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search food by name"
-            placeholderTextColor={colors.textSecondary}
-            style={styles.input}
-            returnKeyType="search"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {query.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setQuery('')}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={styles.clearBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-            >
-              <Ionicons
-                name="close-circle"
-                size={rf(fontSize.md)}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity
+        <AuroraSearchField
+          ref={inputRef}
+          value={query}
+          onChangeText={setQuery}
+          onClear={() => setQuery('')}
+          placeholder="Search food by name"
+          containerStyle={styles.searchField}
+          clearAccessibilityHint="Show food search suggestions"
+        />
+        <AnimatedPressable
           onPress={onClose}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          scaleValue={0.9}
+          springConfig="snappy"
+          hapticType="light"
           style={styles.closeBtn}
           accessibilityRole="button"
           accessibilityLabel="Close food search"
         >
           <Ionicons name="close" size={rf(fontSize.xl)} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       {/* Status row */}
@@ -311,6 +288,19 @@ export const FoodSearchSheet: React.FC<FoodSearchSheetProps> = ({ visible, onClo
         style={styles.list}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={
+          showNoResults ? (
+            <EmptyState
+              icon="search-outline"
+              iconSize={rf(36)}
+              title="No foods found"
+              subtitle="Try a shorter or different food name."
+              ctaText="Clear search"
+              onCta={() => setQuery('')}
+              delay={0}
+            />
+          ) : null
+        }
         renderItem={({ item }) => (
           <AnimatedPressable
             onPress={() => handleSelect(item)}
@@ -394,31 +384,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  searchWrap: {
+  searchField: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundTertiary,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
-    height: rh(48),
-    gap: spacing.xs,
-  },
-  searchIcon: {
-    marginRight: spacing.xs,
-  },
-  input: {
-    flex: 1,
-    color: colors.text,
-    fontSize: rf(fontSize.md),
-    padding: 0,
-  },
-  // 44px touch floor for icon-only buttons (icons themselves are ~18-20px).
-  clearBtn: {
-    minWidth: Math.max(rw(44), 44),
-    minHeight: Math.max(rw(44), 44),
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   closeBtn: {
     minWidth: Math.max(rw(44), 44),
