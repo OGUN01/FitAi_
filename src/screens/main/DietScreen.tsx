@@ -122,6 +122,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     waterIntakeML,
     waterGoalML,
     hydrationAddWater,
+    handleRemoveWater,
     calculatedMetrics,
     getCalorieTarget,
     getMacroTargets,
@@ -912,6 +913,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             visible={showWaterIntakeModal}
             onClose={handleCloseWaterIntake}
             onAddWater={hydrationAddWater}
+            onRemoveWater={handleRemoveWater}
             currentIntakeML={waterIntakeML || 0}
             goalML={waterGoalML ?? 0}
             isToday={isSelectedDateToday}

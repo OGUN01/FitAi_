@@ -42,6 +42,11 @@ interface WaterIntakeModalProps {
   // logging here would silently attribute the amount to today, not the
   // viewed day. Default true (today) so existing callers keep full function.
   isToday?: boolean;
+  // Optional: removes the most recent water log for today (deletes the
+  // underlying row and decrements local state by the exact deleted amount).
+  // When omitted, no undo affordance is shown — callers that don't wire this
+  // up keep the modal's prior behavior exactly.
+  onRemoveWater?: () => void | Promise<void>;
 }
 
 // Module-level (not component state): survives re-mounts of the modal so the
@@ -59,9 +64,11 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
   currentIntakeML,
   goalML,
   isToday = true,
+  onRemoveWater,
 }) => {
   const [customAmount, setCustomAmount] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Calculate progress
   const currentLiters = currentIntakeML / 1000;
@@ -144,6 +151,18 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
     handleClose();
   }, [isToday, customAmount, onAddWater, handleClose]);
 
+  // Undo last add — removes the most recent water log for today. Guarded by
+  // isRemoving so a double-tap can't fire two deletes for the same row.
+  const handleUndoLastAdd = useCallback(async () => {
+    if (!isToday || !onRemoveWater || isRemoving) return;
+    setIsRemoving(true);
+    try {
+      await onRemoveWater();
+    } finally {
+      setIsRemoving(false);
+    }
+  }, [isToday, onRemoveWater, isRemoving]);
+
   const quickOptions = [
     { label: '250ml', amount: 250, icon: 'water-outline' as const },
     { label: '500ml', amount: 500, icon: 'water' as const },
@@ -163,7 +182,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.headerIconDisc}>
-            <Ionicons name="water" size={rf(18)} color={colors.secondary} />
+            <Ionicons name="water" size={rf(18)} color={colors.info} />
           </View>
           <Text style={styles.title}>Log Water Intake</Text>
         </View>
@@ -204,7 +223,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
             size={rw(150)}
             strokeWidth={rw(12)}
             gradient={!isGoalReached}
-            gradientColors={[colors.secondary, colors.primary]}
+            gradientColors={[colors.info, colors.primary]}
             color={colors.successAlt}
           >
             <View style={styles.ringCenter}>
@@ -222,6 +241,27 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
             <Ionicons name="checkmark-circle" size={16} color={colors.successAlt} />
             <Text style={styles.goalReachedText}>Daily goal achieved!</Text>
           </View>
+        )}
+        {/* Undo affordance — corrects an accidental over-tap (e.g. tapping
+            "1L" instead of "250ml") by removing the most recent water log.
+            Only shown when there's something to undo and a handler was
+            supplied by the caller. */}
+        {isToday && currentIntakeML > 0 && onRemoveWater && (
+          <AnimatedPressable
+            onPress={handleUndoLastAdd}
+            disabled={isRemoving}
+            scaleValue={0.96}
+            hapticType="light"
+            accessibilityRole="button"
+            accessibilityLabel="Undo last water log"
+            accessibilityHint="Removes the most recently logged water amount"
+            style={styles.undoButton}
+          >
+            <Ionicons name="arrow-undo-outline" size={rf(14)} color={colors.textSecondary} />
+            <Text style={styles.undoButtonText}>
+              {isRemoving ? 'Undoing...' : 'Undo last add'}
+            </Text>
+          </AnimatedPressable>
         )}
       </Animated.View>
 
@@ -243,7 +283,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
             >
               <View style={styles.quickOptionPill}>
                 <View style={styles.quickOptionIconDisc}>
-                  <Ionicons name={option.icon} size={rf(20)} color={colors.secondary} />
+                  <Ionicons name={option.icon} size={rf(20)} color={colors.info} />
                 </View>
                 <Text style={styles.quickOptionLabel}>{option.label}</Text>
               </View>
@@ -257,7 +297,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
         <Text style={styles.sectionTitle}>Custom Amount (Milliliters)</Text>
         <DietTextField
           icon="water-outline"
-          iconColor={colors.secondary}
+          iconColor={colors.info}
           containerStyle={styles.inputContainer}
           inputStyle={styles.input}
           value={customAmount}
@@ -321,9 +361,9 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_LOW),
+    backgroundColor: hexToRgba(colors.info, TINT_ALPHA_LOW),
     borderWidth: 1,
-    borderColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
+    borderColor: hexToRgba(colors.info, TINT_ALPHA_MEDIUM),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -409,7 +449,7 @@ const styles = StyleSheet.create({
   ringPercent: {
     fontSize: rf(12),
     fontWeight: String(typography.fontWeight.semibold) as any,
-    color: colors.secondary,
+    color: colors.info,
     marginTop: rh(4),
     fontVariant: ['tabular-nums'],
   },
@@ -424,6 +464,22 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     color: colors.successAlt,
     fontWeight: String(typography.fontWeight.medium) as any,
+  },
+  undoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: rp(6),
+    alignSelf: 'center',
+    marginTop: rp(12),
+    minHeight: 44,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(6),
+  },
+  undoButtonText: {
+    fontSize: rf(13),
+    fontWeight: String(typography.fontWeight.medium) as any,
+    color: colors.textSecondary,
   },
   sectionTitle: {
     fontSize: rf(11),
@@ -448,14 +504,14 @@ const styles = StyleSheet.create({
     paddingVertical: rp(16),
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
-    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_LOW),
+    borderColor: hexToRgba(colors.info, TINT_ALPHA_MEDIUM),
+    backgroundColor: hexToRgba(colors.info, TINT_ALPHA_LOW),
   },
   quickOptionIconDisc: {
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    backgroundColor: hexToRgba(colors.secondary, TINT_ALPHA_MEDIUM),
+    backgroundColor: hexToRgba(colors.info, TINT_ALPHA_MEDIUM),
     justifyContent: 'center',
     alignItems: 'center',
   },
