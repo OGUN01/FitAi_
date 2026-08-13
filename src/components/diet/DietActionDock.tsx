@@ -191,7 +191,17 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
 
       <Animated.View
         pointerEvents="box-none"
-        style={[styles.container, containerStyle]}
+        style={[
+          styles.container,
+          // Collapsed: shrink the touchable footprint down to the FAB itself
+          // instead of relying solely on pointerEvents="box-none" across the
+          // full 220px-tall radial-menu bounds — Android has a known history
+          // of animated/elevated views not reliably forwarding touches
+          // through a box-none dead zone, which would otherwise swallow taps
+          // on whatever dashboard content sits underneath.
+          !isOpen && styles.containerCollapsed,
+          containerStyle,
+        ]}
         testID={testID}
       >
         {actions.map((action) => (
@@ -212,7 +222,7 @@ export const DietActionDock: React.FC<DietActionDockProps> = ({
           accessibilityLabel={isOpen ? 'Close diet actions' : 'Open diet actions'}
           accessibilityState={{ expanded: isOpen }}
           testID="diet-dock-more"
-          containerStyle={styles.fabPosition}
+          containerStyle={[styles.fabPosition, !isOpen && styles.fabPositionCollapsed]}
           style={[styles.fab, isOpen && styles.fabOpen]}
         >
           <Animated.View style={fabIconStyle}>
@@ -243,6 +253,12 @@ const styles = StyleSheet.create({
     marginLeft: -MENU_WIDTH / 2,
     zIndex: 11,
     elevation: 11,
+  },
+  containerCollapsed: {
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    marginLeft: -FAB_SIZE / 2,
+    bottom: FAB_BOTTOM,
   },
   actionPosition: {
     position: 'absolute' as const,
@@ -281,6 +297,12 @@ const styles = StyleSheet.create({
     bottom: FAB_BOTTOM,
     zIndex: 12,
     elevation: 12,
+  },
+  // Collapsed: the parent container itself is now exactly FAB_SIZE wide
+  // (see containerCollapsed), so the FAB fills it edge-to-edge instead of
+  // using the expanded-state offset that assumes a MENU_WIDTH-wide parent.
+  fabPositionCollapsed: {
+    left: 0,
   },
   fab: {
     width: FAB_SIZE,

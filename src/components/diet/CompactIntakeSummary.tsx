@@ -110,7 +110,11 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
           label={onViewPlan ? 'Log Meal' : 'Log a Meal / Food'}
           onPress={onLogMeal}
           icon="add"
-          variant="secondary"
+          // "primary" (brand orange) — matches Log Meal's CTA color on Home
+          // (EmptyMealsMessage). This button previously used "secondary"
+          // (cyan) while View Plan used "primary", so the same action read
+          // as a different color depending on which screen you were on.
+          variant="primary"
           fullWidth
           hapticType="light"
           accessibilityLabel="Log a meal or food"
@@ -119,7 +123,7 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
           <GlassButton
             label="View Plan"
             onPress={onViewPlan}
-            variant="primary"
+            variant="secondary"
             fullWidth
             hapticType="light"
             accessibilityLabel={planButtonA11yLabel}
