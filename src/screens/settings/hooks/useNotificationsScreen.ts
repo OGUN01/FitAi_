@@ -96,7 +96,7 @@ export const useNotificationsScreen = ({
                 .getState()
                 .getScheduledCount();
               setScheduledCount(count);
-              crossPlatformAlert("Success", "Settings reset to defaults!");
+              crossPlatformAlert("Settings Reset!", "Notification settings are back to their defaults.");
             } catch (error) {
               crossPlatformAlert("Error", "Failed to reset settings");
             }

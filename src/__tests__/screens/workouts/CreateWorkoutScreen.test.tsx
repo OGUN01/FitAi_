@@ -35,6 +35,16 @@ jest.mock("react-native", () => {
     // suite fails with "Element type is invalid: got undefined".
     Switch: (props: any) =>
       RealReact.createElement("Switch", props),
+    // Modal backs CustomDialog's DialogShell (the discard-changes-confirm
+    // dialog, always mounted in the render tree even while closed — see
+    // DialogShell's "do NOT early-return on !visible" contract). Without
+    // this export DialogShell resolves to undefined and the whole screen
+    // fails to render with "Element type is invalid... DialogShell".
+    // Render unconditionally like the other passthrough mocks above; no
+    // test in this suite opens the dialog, so visibility gating isn't
+    // exercised here.
+    Modal: (props: any) =>
+      RealReact.createElement("Modal", props, props.children),
     StyleSheet: {
       create: (s: any) => s,
       flatten: (style: any) =>

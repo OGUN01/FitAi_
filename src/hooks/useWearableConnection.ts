@@ -78,7 +78,7 @@ export const useWearableConnection = () => {
       haptics.light();
       if (isGuestMode) {
         crossPlatformAlert(
-          "Sign in to save health data",
+          "Sign In Required",
           "Manual health entries are saved to your account. Please sign in or create an account to log health data.",
           [
             { text: "Cancel", style: "cancel" },
@@ -131,7 +131,7 @@ export const useWearableConnection = () => {
 
     if (isWeb) {
       crossPlatformAlert(
-        "Not available on web",
+        "Not Available on Web",
         `${platformName} sync works in the FitAI mobile app. Connect your watch or fitness tracker there and your health data will appear here.`,
         [{ text: "OK" }],
       );

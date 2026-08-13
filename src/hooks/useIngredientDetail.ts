@@ -52,9 +52,9 @@ export const useIngredientDetail = ({
           {},
         );
 
-        crossPlatformAlert("🎉 Meal Completed!", completionMessage, [
+        crossPlatformAlert("Meal Completed!", completionMessage, [
           {
-            text: "Awesome! 🍽️",
+            text: "Awesome!",
             onPress: () => {
 
               // Call the completion callback
@@ -74,7 +74,7 @@ export const useIngredientDetail = ({
     } catch (error) {
       logger.error('Failed to complete meal from ingredient modal', { error: String(error) });
       crossPlatformAlert(
-        "❌ Error",
+        "Error",
         "Failed to mark meal as completed. Please try again.",
         [{ text: "OK" }],
       );

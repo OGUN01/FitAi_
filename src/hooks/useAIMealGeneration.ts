@@ -526,7 +526,11 @@ export const useAIMealGeneration = (options?: {
       await loadDailyNutrition();
       await refreshAll();
     } catch (error) {
-      crossPlatformAlert("Meal Logging Failed", String(error));
+      logger.error("[useAIMealGeneration] log meal failed", { error: String(error) });
+      crossPlatformAlert(
+        "Meal Logging Failed",
+        "We couldn't log that meal. Please check your connection and try again.",
+      );
     }
   };
 
@@ -1778,7 +1782,11 @@ export const useAIMealGeneration = (options?: {
       const imageBase64 = await imageUriToDataUrl(imageUri);
       await _processLabelImage(imageBase64, pendingScan?.productNameHint);
     } catch (err) {
-      crossPlatformAlert("Label Scan Failed", String(err));
+      logger.error("[useAIMealGeneration] label camera capture failed", { error: String(err) });
+      crossPlatformAlert(
+        "Label Scan Failed",
+        "We couldn't read that label. Please make sure it's well-lit and try again.",
+      );
     }
   };
 
@@ -1813,7 +1821,11 @@ export const useAIMealGeneration = (options?: {
       const imageBase64 = await imageAssetToDataUrl(galleryResult.assets[0]);
       await _processLabelImage(imageBase64, pendingScan?.productNameHint);
     } catch (err) {
-      crossPlatformAlert("Label Scan Failed", String(err));
+      logger.error("[useAIMealGeneration] label library pick failed", { error: String(err) });
+      crossPlatformAlert(
+        "Label Scan Failed",
+        "We couldn't read that label. Please make sure it's well-lit and try again.",
+      );
     }
   };
 
@@ -1895,7 +1907,11 @@ export const useAIMealGeneration = (options?: {
       incrementUsage("barcode_scan");
       finishPackagedFoodRoute(product, "label");
     } catch (err) {
-      crossPlatformAlert("Label Scan Error", String(err));
+      logger.error("[useAIMealGeneration] process label image failed", { error: String(err) });
+      crossPlatformAlert(
+        "Label Scan Failed",
+        "We couldn't read that label. Please make sure it's well-lit and try again.",
+      );
     } finally {
       setIsProcessingBarcode(false);
       clearPendingLabelScan();

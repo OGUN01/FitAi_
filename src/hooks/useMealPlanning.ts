@@ -266,7 +266,11 @@ export const useMealPlanning = (navigation: any) => {
               ? error
               : ((error as any)?.message ?? 'Meal plan generation failed');
           setAiError(errMsg);
-          crossPlatformAlert('Generation Failed', errMsg);
+          console.error('[DIET] meal plan generation failed:', errMsg);
+          crossPlatformAlert(
+            'Generation Failed',
+            "We couldn't generate your plan this time. Please try again in a moment."
+          );
           cleanupPolling();
           return;
         }
@@ -296,7 +300,10 @@ export const useMealPlanning = (navigation: any) => {
     const handlePollTimeout = () => {
       setAiError('Generation is taking longer than expected.');
       setAsyncJob(null);
-      crossPlatformAlert('Taking Longer Than Expected', 'Check back later.');
+      crossPlatformAlert(
+        'Still Cooking',
+        "Your plan is taking a little longer than usual — we'll keep working on it. Check back soon."
+      );
       cleanupPolling();
     };
 

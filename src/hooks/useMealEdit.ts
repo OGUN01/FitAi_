@@ -109,12 +109,12 @@ export const useMealEdit = (
   // Save changes
   const handleSave = async () => {
     if (!meal || !mealName.trim()) {
-      crossPlatformAlert("Error", "Please enter a meal name");
+      crossPlatformAlert("Missing Info", "Please enter a meal name.");
       return;
     }
 
     if (ingredients.length === 0) {
-      crossPlatformAlert("Error", "Please add at least one ingredient");
+      crossPlatformAlert("No Ingredients", "Please add at least one ingredient.");
       return;
     }
 
@@ -184,7 +184,7 @@ export const useMealEdit = (
       }
 
       haptics.success();
-      crossPlatformAlert("Success", "Meal updated successfully");
+      crossPlatformAlert("Meal Updated!", "Your changes have been saved.");
       onSave(updatedMeal);
       onClose();
     } catch (error) {

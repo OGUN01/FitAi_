@@ -478,9 +478,10 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
             "You've reached your AI generation limit. Upgrade to Pro for unlimited access."
           );
         } else {
+          console.error('[useFitnessLogic] workout plan generation failed:', response.error);
           crossPlatformAlert(
             'Generation Failed',
-            response.error || 'Failed to generate workout plan'
+            "We couldn't generate your plan this time. Please try again in a moment."
           );
         }
       }
