@@ -49,7 +49,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         >
           {isCompleting ? (
             <>
-              <AuroraSpinner customSize={rf(14)} theme="white" />
+              <AuroraSpinner customSize={rf(14)} theme="dark" />
               <Text style={[styles.navButtonText, styles.completeButtonText]}>
                 Completing...
               </Text>
@@ -61,7 +61,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
                   isCompleted ? "checkmark-circle" : "checkmark-circle-outline"
                 }
                 size={24}
-                color="#FFFFFF"
+                color={colors.surface}
               />
               <Text style={[styles.navButtonText, styles.completeButtonText]}>
                 {isCompleted ? "✅ Completed" : "Mark Complete"}
@@ -136,6 +136,9 @@ const styles = StyleSheet.create({
     color: colors.surface,
   },
   nextButtonText: {
-    color: colors.surface,
+    // colors.white (not colors.surface) — nextButton's #6B7280 mid-gray
+    // background needs a light foreground (~4.83:1), matching the sibling
+    // chevron-forward icon on the same button, which already uses white.
+    color: colors.white,
   },
 });

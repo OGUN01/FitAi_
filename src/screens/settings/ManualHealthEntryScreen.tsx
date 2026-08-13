@@ -607,12 +607,12 @@ export const ManualHealthEntryScreen: React.FC<
             accessibilityState={{ disabled: !canSave }}
           >
             {saving ? (
-              <AuroraSpinner customSize={rf(16)} theme="white" />
+              <AuroraSpinner customSize={rf(16)} theme="dark" />
             ) : (
               <Ionicons
                 name="save-outline"
                 size={rf(18)}
-                color={colors.text}
+                color={colors.background}
               />
             )}
             <Text style={styles.saveButtonText}>
@@ -760,7 +760,9 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: colors.text,
+    // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
+    // computes to ~7.4:1 against #FF6B35.
+    color: colors.background,
     marginLeft: spacing.xs,
   },
 });

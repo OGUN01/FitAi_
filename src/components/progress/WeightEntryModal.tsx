@@ -366,13 +366,13 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
         accessibilityLabel="Save weight entry"
       >
         {isSubmitting ? (
-          <AuroraSpinner customSize={rf(14)} theme="white" />
+          <AuroraSpinner customSize={rf(14)} theme="dark" />
         ) : (
           <>
             <Ionicons
               name="checkmark-circle"
               size={rs(20)}
-              color={colors.text.primary}
+              color={colors.background.DEFAULT}
             />
             <Text style={styles.submitButtonText}>Save Entry</Text>
           </>
@@ -488,7 +488,9 @@ const styles = StyleSheet.create({
   submitButtonText: {
     ...typography.variants.cardHeadline,
     fontFamily: "Manrope_600SemiBold",
-    color: colors.text.primary,
+    // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
+    // computes to ~7.4:1 against #FF6B35 (matches ConnectionCard precedent).
+    color: colors.background.DEFAULT,
   },
   infoText: {
     ...typography.variants.caption,

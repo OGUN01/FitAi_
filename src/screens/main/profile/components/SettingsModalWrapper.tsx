@@ -177,13 +177,13 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     ]}
                   >
                     {isSaving ? (
-                      <AuroraSpinner customSize={rf(16)} theme="white" />
+                      <AuroraSpinner customSize={rf(16)} theme="dark" />
                     ) : (
                       <>
                         <Ionicons
                           name="checkmark-circle"
                           size={rf(18)}
-                          color={colors.text.primary}
+                          color={colors.background.DEFAULT}
                         />
                         <Text style={styles.saveButtonText}>{saveLabel}</Text>
                       </>
@@ -301,7 +301,9 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     ...variants.cardHeadline,
-    color: colors.text.primary,
+    // White-on-primary gradient computes to 2.32-2.84:1, failing WCAG AA;
+    // near-black computes to a safe ratio across the whole gradient span.
+    color: colors.background.DEFAULT,
   },
 });
 

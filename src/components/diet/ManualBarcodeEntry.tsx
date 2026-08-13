@@ -256,7 +256,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         >
           {isLooking ? (
             <View style={styles.loadingRow}>
-              <AuroraSpinner customSize={rf(14)} theme="white" />
+              <AuroraSpinner customSize={rf(14)} theme="dark" />
               <Text style={styles.lookUpButtonText}>Looking up...</Text>
             </View>
           ) : (
@@ -415,7 +415,9 @@ const styles = StyleSheet.create({
   lookUpButtonText: {
     fontSize: rf(16),
     fontWeight: '700',
-    color: colors.white,
+    // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
+    // computes to ~7.4:1 against #FF6B35.
+    color: colors.background,
     letterSpacing: 0.5,
   },
   lookUpButtonTextDisabled: {

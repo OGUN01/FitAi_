@@ -496,7 +496,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   accessibilityRole="button"
                 >
                   {isSubmitting ? (
-                    <AuroraSpinner customSize={rf(16)} theme="white" />
+                    <AuroraSpinner customSize={rf(16)} theme="dark" />
                   ) : (
                     <Text style={styles.primaryButtonText}>Add to meal</Text>
                   )}
@@ -880,6 +880,8 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: rf(14),
     fontWeight: '700',
-    color: colors.white,
+    // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
+    // computes to ~7.4:1 against #FF6B35.
+    color: colors.background,
   },
 });

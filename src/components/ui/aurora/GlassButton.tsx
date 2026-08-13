@@ -17,6 +17,7 @@ import { AuroraSpinner } from "./AuroraSpinner";
 import { colors, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
 import { gradientButton } from "../../../theme/gradients";
 import { rp, rf } from "../../../utils/responsive";
+import { getReadableTextColor } from "../../../utils/colors";
 
 export type GlassButtonVariant =
   | "primary"
@@ -79,6 +80,11 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
 }) => {
   const gradColors = customColors ?? VARIANT_GRADIENT[variant];
   const isDisabled = disabled || loading;
+  // WCAG: pick a legible foreground per-variant instead of hardcoding white —
+  // the brand gradients (primary/secondary/success/warning/error) are all
+  // mid-high luminance and fail AA contrast with white text/icons/spinner.
+  const readableColor = getReadableTextColor(gradColors[0]);
+  const spinnerTheme = readableColor === "#FFFFFF" ? "white" : "dark";
 
   return (
     <AnimatedPressable
@@ -112,18 +118,18 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
         style={styles.gradient}
       >
         {loading ? (
-          <AuroraSpinner customSize={rf(20)} theme="white" />
+          <AuroraSpinner customSize={rf(20)} theme={spinnerTheme} />
         ) : (
           <View style={styles.content}>
             {icon ? (
               <Ionicons
                 name={icon}
                 size={rf(typography.fontSize.body)}
-                color={colors.text.primary}
+                color={readableColor}
                 style={styles.icon}
               />
             ) : null}
-            <Text style={[styles.label, textStyle]}>{label}</Text>
+            <Text style={[styles.label, { color: readableColor }, textStyle]}>{label}</Text>
           </View>
         )}
       </LinearGradient>

@@ -61,7 +61,9 @@ export const ExerciseCardHeader: React.FC<ExerciseCardHeaderProps> = ({
       <View style={styles.statusSection}>
         {isCompleted ? (
           <View style={styles.completedBadge} accessibilityRole="text">
-            <Ionicons name="checkmark" size={rf(16)} color={colors.white} />
+            {/* White-on-success computes to ~2.78:1, failing the 3:1 icon
+                minimum; near-black computes to ~8.6:1. */}
+            <Ionicons name="checkmark" size={rf(16)} color={colors.background} />
           </View>
         ) : (
           <TouchableOpacity

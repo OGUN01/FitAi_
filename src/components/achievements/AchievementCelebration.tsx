@@ -16,7 +16,7 @@ import {
   spacing,
 } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
-import { hexToRgba } from "../../utils/colors";
+import { hexToRgba, getReadableTextColor } from "../../utils/colors";
 import useAchievementStore from "../../stores/achievementStore";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP as tierColorMap } from "../../data/achievements/tierColors";
@@ -36,25 +36,10 @@ const tierGradientMap: Record<string, [string, string]> = Object.fromEntries(
 
 // WCAG relative-luminance check so text/icons stay legible against whichever
 // tier accent they're placed on (bright tiers like gold/silver need a dark
-// label; darker tiers like platinum read fine with white). Computed from the
-// color itself rather than hardcoded per tier so this stays correct if
-// TIER_COLOR_MAP ever changes. Exported so AchievementCard and
-// AchievementDetailModal can apply the same rule to their status badges
-// instead of hardcoding white-on-tierColor (which is illegible on gold/silver).
-export const getReadableTextColor = (hex: string): string => {
-  const clean = hex.replace("#", "");
-  if (clean.length !== 6) return colors.text.primary;
-  const r = parseInt(clean.substring(0, 2), 16) / 255;
-  const g = parseInt(clean.substring(2, 4), 16) / 255;
-  const b = parseInt(clean.substring(4, 6), 16) / 255;
-  const toLinear = (c: number) =>
-    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  const luminance =
-    0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-  const contrastWithWhite = 1.05 / (luminance + 0.05);
-  const contrastWithBlack = (luminance + 0.05) / 0.05;
-  return contrastWithBlack > contrastWithWhite ? "#0A0A0F" : "#FFFFFF";
-};
+// label; darker tiers like platinum read fine with white). Re-exported here
+// (moved to src/utils/colors.ts as the single source of truth) so existing
+// imports from AchievementCard/AchievementDetailModal keep working.
+export { getReadableTextColor };
 
 const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
   visible,

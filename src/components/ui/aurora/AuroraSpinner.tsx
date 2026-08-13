@@ -27,7 +27,7 @@ import { colors } from "../../../theme/aurora-tokens";
 // ============================================================================
 
 export type SpinnerSize = "sm" | "md" | "lg" | "xl";
-export type SpinnerTheme = "primary" | "secondary" | "aurora" | "white";
+export type SpinnerTheme = "primary" | "secondary" | "aurora" | "white" | "dark";
 
 export interface AuroraSpinnerProps {
   /**
@@ -123,6 +123,19 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
             "rgba(255,255,255,0.2)",
             "rgba(255,255,255,1)",
             "rgba(255,255,255,0.2)",
+          ],
+          start: { x: 0, y: 0 },
+          end: { x: 1, y: 1 },
+        };
+      case "dark":
+        // Near-black ring for use on light/bright solid backgrounds (e.g.
+        // colors.primary/success/warning) where a white spinner fails WCAG's
+        // 3:1 UI-component contrast minimum.
+        return {
+          colors: [
+            "rgba(10,10,15,0.2)",
+            "rgba(10,10,15,1)",
+            "rgba(10,10,15,0.2)",
           ],
           start: { x: 0, y: 0 },
           end: { x: 1, y: 1 },

@@ -8,6 +8,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ProgressRing } from "../../../components/ui/aurora/ProgressRing";
 import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
@@ -63,30 +64,22 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
           >
             <Ionicons name={action.icon} size={rf(22)} color={action.color} />
 
-            {/* Progress ring overlay */}
+            {/* Progress ring overlay — reuses the shared ProgressRing SVG
+                component (same one WaterQuickRow's mini ring and
+                DailyProgressRings use) instead of a hand-rolled quadrant
+                border, so every "circular progress" surface in the app
+                renders a true smooth arc. */}
             {action.progress !== undefined &&
               action.progress > 0 &&
               action.progress < 100 && (
-                <View
-                  style={[
-                    styles.progressRing,
-                    { borderColor: hexToRgba(action.color, 0.25) },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.progressArc,
-                      {
-                        borderColor: action.color,
-                        borderTopColor: "transparent",
-                        borderRightColor:
-                          action.progress > 25 ? action.color : "transparent",
-                        borderBottomColor:
-                          action.progress > 50 ? action.color : "transparent",
-                        borderLeftColor:
-                          action.progress > 75 ? action.color : "transparent",
-                      },
-                    ]}
+                <View style={styles.progressRingWrap} pointerEvents="none">
+                  <ProgressRing
+                    progress={action.progress}
+                    size={rw(60)}
+                    strokeWidth={rw(3)}
+                    color={action.color}
+                    backgroundColor={hexToRgba(action.color, 0.25)}
+                    showText={false}
                   />
                 </View>
               )}
@@ -94,10 +87,12 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
             {/* Completed checkmark */}
             {action.progress === 100 && (
               <View style={styles.completedBadge}>
+                {/* White-on-success computes to ~2.78:1, failing the 3:1
+                    icon minimum; near-black computes to ~8.6:1. */}
                 <Ionicons
                   name="checkmark"
                   size={rf(10)}
-                  color={colors.white}
+                  color={colors.background}
                 />
               </View>
             )}
@@ -145,23 +140,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
     position: "relative",
   },
-  progressRing: {
+  progressRingWrap: {
     position: "absolute",
-    top: -2,
-    left: -2,
-    right: -2,
-    bottom: -2,
-    borderRadius: rw(30),
-    borderWidth: 2,
-  },
-  progressArc: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderWidth: 2,
-    borderRadius: rw(30),
+    top: -rw(2),
+    left: -rw(2),
   },
   completedBadge: {
     position: "absolute",

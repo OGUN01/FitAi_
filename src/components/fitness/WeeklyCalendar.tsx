@@ -219,10 +219,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                       : styles.workoutPending,
                   ]}
                 >
+                  {/* White-on-success/warning computes to ~2.78:1/~2.15:1,
+                      failing the 3:1 icon minimum; near-black passes AA on both. */}
                   <Ionicons
                     name={day.isCompleted ? "checkmark" : "ellipse"}
                     size={rf(10)}
-                    color={colors.white}
+                    color={colors.background}
                   />
                 </View>
               )}

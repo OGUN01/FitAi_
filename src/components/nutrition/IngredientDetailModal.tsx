@@ -335,7 +335,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             >
               {isCompleting ? (
                 <>
-                  <AuroraSpinner customSize={rf(14)} theme="white" />
+                  <AuroraSpinner customSize={rf(14)} theme="dark" />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}
                   >
@@ -351,7 +351,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                         : "checkmark-circle-outline"
                     }
                     size={24}
-                    color={colors.white}
+                    color={colors.surface}
                   />
                   <Text
                     style={[styles.navButtonText, styles.completeButtonText]}

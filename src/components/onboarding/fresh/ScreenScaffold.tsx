@@ -167,7 +167,7 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
                   ]}
                 >
                   {nextLoading ? (
-                    <AuroraSpinner customSize={20} theme="white" />
+                    <AuroraSpinner customSize={20} theme="dark" />
                   ) : (
                     <Text
                       style={[

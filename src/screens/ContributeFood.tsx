@@ -527,13 +527,13 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               accessibilityState={{ disabled: isSubmitting || Object.keys(errors).length > 0 }}
             >
               {isSubmitting ? (
-                <AuroraSpinner size="sm" theme="white" />
+                <AuroraSpinner size="sm" theme="dark" />
               ) : (
                 <>
                   <Ionicons
                     name="cloud-upload-outline"
                     size={rf(18)}
-                    color={colors.text.primary}
+                    color={colors.background.DEFAULT}
                   />
                   <Text style={styles.submitBtnText}>
                     Submit Nutrition Data
@@ -693,7 +693,9 @@ const styles = StyleSheet.create({
   submitBtnText: {
     fontSize: rf(16),
     fontWeight: "700",
-    color: colors.text.primary,
+    // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
+    // computes to ~7.4:1 against #FF6B35.
+    color: colors.background.DEFAULT,
   },
   bottomSpacing: {
     height: rh(40),

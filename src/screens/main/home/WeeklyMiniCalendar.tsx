@@ -112,7 +112,9 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 </Text>
                 <View style={[styles.dayCell, cellStyle]}>
                   {day.workoutCompleted ? (
-                    <Ionicons name="checkmark" size={rf(14)} color={colors.white} />
+                    // White-on-success computes to ~2.78:1, failing the 3:1
+                    // icon minimum; near-black computes to ~8.6:1.
+                    <Ionicons name="checkmark" size={rf(14)} color={colors.background} />
                   ) : (
                     <Text style={[styles.dayNumber, { color: textColor }]} numberOfLines={1}>
                       {day.date.getDate()}

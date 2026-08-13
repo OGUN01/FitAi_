@@ -593,7 +593,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
 
-  // Solid success tint (was 0.2 alpha green-on-green ~3:1 fail).
+  // Solid success bg + dark text — white-on-success computes to ~2.78:1
+  // (fails WCAG AA); a near-black foreground computes to ~8.6:1.
   qualityIndicator: {
     backgroundColor: colors.success,
     paddingHorizontal: spacing.sm,
@@ -603,7 +604,7 @@ const styles = StyleSheet.create({
 
   qualityText: {
     fontSize: fontSize.xs,
-    color: colors.white,
+    color: colors.background,
     fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },

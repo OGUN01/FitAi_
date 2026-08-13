@@ -67,9 +67,8 @@ const styles = StyleSheet.create({
   },
 
   qualityBadge: {
-    // Solid success bg + white text — was 0.2 alpha tint + success text
-    // (~2.5:1 fail on surface). Mirrors the ExerciseGifPlayer "Demo" badge
-    // pattern (solid bg + white text passes WCAG AA across themes).
+    // Solid success bg + dark text — white-on-success computes to ~2.78:1
+    // (fails WCAG AA); a near-black foreground computes to ~8.6:1.
     backgroundColor: colors.success,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -79,7 +78,7 @@ const styles = StyleSheet.create({
 
   qualityBadgeText: {
     fontSize: fontSize.xs,
-    color: colors.white,
+    color: colors.background,
     fontFamily: FONT_FAMILY.semibold,
     fontWeight: "600",
   },

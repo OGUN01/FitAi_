@@ -30,9 +30,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  // Solid amber bg + white text — consistent contrast across themes
-  // (was rgba amber tint + amber text ~2.8:1 fail; tinted variants now use
-  // the warningTint token only when paired with dark text).
+  // Solid amber bg + dark text — white-on-amber only computes to ~2.15:1
+  // (fails both the 3:1 UI-component and 4.5:1 text minimums); a near-black
+  // foreground computes to ~7:1 against #FF9800, comfortably passing AA.
   timerDisplay: {
     backgroundColor: colors.warning,
     paddingHorizontal: spacing.md,
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   },
 
   timerText: {
-    color: colors.white,
+    color: colors.background,
     fontSize: fontSize.md,
     fontWeight: typography.fontWeight.bold,
   },

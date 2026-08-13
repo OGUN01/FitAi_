@@ -163,7 +163,7 @@ export const DestructiveConfirmModal: React.FC<
               accessibilityLabel={confirmLabel}
             >
               {isLoading ? (
-                <AuroraSpinner customSize={rf(16)} theme="white" />
+                <AuroraSpinner customSize={rf(16)} theme="dark" />
               ) : (
                 <Text style={styles.confirmButtonText}>{confirmLabel}</Text>
               )}
@@ -272,7 +272,9 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     ...variants.cardHeadline,
-    color: colors.text.primary,
+    // White on colors.error.DEFAULT (#F44336) computes to 3.68:1, failing
+    // the 4.5:1 threshold for 16px/600 text; near-black comfortably passes.
+    color: colors.background.DEFAULT,
   },
 });
 
