@@ -1,6 +1,6 @@
 import React from "react";
 import { Platform, StyleSheet, Text } from "react-native";
-import { fireEvent, render, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { BottomSheet } from "@/components/ui/aurora/BottomSheet";
 import { GlassCard } from "@/components/ui/aurora/GlassCard";
 import { LogoutConfirmationModal } from "@/components/profile/LogoutConfirmationModal";
@@ -275,6 +275,31 @@ describe("opaque overlay interactions", () => {
     fireEvent.press(clearCacheLabels[clearCacheLabels.length - 1]);
 
     await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
+  });
+
+  it("ignores repeated clear-cache confirmation while the first request is pending", async () => {
+    let resolveConfirm: (() => void) | undefined;
+    const onConfirm = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveConfirm = resolve;
+        }),
+    );
+    const view = render(
+      <ClearCacheConfirmModal
+        visible
+        onConfirm={onConfirm}
+        onCancel={jest.fn()}
+      />,
+    );
+    const clearCacheLabels = view.getAllByText("Clear Cache");
+    const confirmButton = clearCacheLabels[clearCacheLabels.length - 1];
+
+    fireEvent.press(confirmButton);
+    fireEvent.press(confirmButton);
+
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    await act(async () => resolveConfirm?.());
   });
 
   it("preserves clear-cache cancellation", () => {

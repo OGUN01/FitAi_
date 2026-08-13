@@ -18,6 +18,7 @@ import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { springConfig } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import { rf, rbr } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 export interface SwipeAction {
   /**
@@ -121,6 +122,7 @@ export const GestureCard: React.FC<GestureCardProps> = ({
   style,
   contentStyle,
 }) => {
+  const reduceMotion = useReducedMotion();
   // Animated values
   const translateX = useSharedValue(0);
   const actionTriggered = useSharedValue(false);
@@ -143,7 +145,7 @@ export const GestureCard: React.FC<GestureCardProps> = ({
     action.onAction();
 
     // Reset position
-    translateX.value = withSpring(0, getSpringConfig());
+    translateX.value = reduceMotion ? 0 : withSpring(0, getSpringConfig());
     actionTriggered.value = false;
   };
 
@@ -188,7 +190,7 @@ export const GestureCard: React.FC<GestureCardProps> = ({
       }
 
       // Reset to center if threshold not met
-      translateX.value = withSpring(0, getSpringConfig());
+      translateX.value = reduceMotion ? 0 : withSpring(0, getSpringConfig());
       actionTriggered.value = false;
     });
 
@@ -281,6 +283,11 @@ export const GestureCard: React.FC<GestureCardProps> = ({
       accessible={accessibilityActions.length > 0}
       accessibilityActions={accessibilityActions}
       onAccessibilityAction={handleAccessibilityAction}
+      accessibilityHint={
+        accessibilityActions.length > 0
+          ? `Actions available: ${accessibilityActions.map((action) => action.label).join(", ")}`
+          : undefined
+      }
     >
       {/* Action Backgrounds */}
       {renderAction(onSwipeLeft, "left")}

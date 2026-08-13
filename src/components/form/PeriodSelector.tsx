@@ -18,7 +18,7 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
-import { rf, rp, dimensions } from "../../utils/responsive";
+import { rf, rp } from "../../utils/responsive";
 
 export type Period = "week" | "month" | "year";
 
@@ -91,6 +91,9 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
             scaleValue={0.95}
             hapticFeedback={true}
             hapticType="light"
+            accessibilityRole="button"
+            accessibilityLabel={`Show ${period.label.toLowerCase()} period`}
+            accessibilityState={{ selected: selectedPeriod === period.key }}
           >
             <Text
               style={[
@@ -107,11 +110,6 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   );
 };
 
-// Clamped screen width (capped to 480 on web/tablet) so the segmented control
-// sizes against the mobile design width, not a 1920px desktop window.
-const SCREEN_WIDTH = dimensions.screenWidth;
-const HORIZONTAL_PADDING = spacing.lg * 2; // Account for parent padding
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -119,7 +117,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: rp(4),
     position: "relative",
-    width: SCREEN_WIDTH - HORIZONTAL_PADDING,
+    width: "100%",
   },
   indicator: {
     position: "absolute",
@@ -137,6 +135,7 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    minHeight: 44,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     alignItems: "center" as const,

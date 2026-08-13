@@ -39,6 +39,7 @@ import {
 import { rp } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 import { haptics } from '../../../utils/haptics';
+import { useReducedMotion } from '../../../utils/accessibility/hooks';
 
 export interface SlidingSegmentedOption {
   id: string;
@@ -66,6 +67,7 @@ export const SlidingSegmentedControl: React.FC<SlidingSegmentedControlProps> = (
   style,
   testIDPrefix,
 }) => {
+  const reduceMotion = useReducedMotion();
   const [segmentWidths, setSegmentWidths] = useState<number[]>([]);
   const translateX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
@@ -78,10 +80,14 @@ export const SlidingSegmentedControl: React.FC<SlidingSegmentedControlProps> = (
       const position = segmentWidths.slice(0, selectedIndex).reduce((sum, w) => sum + w, 0);
       const width = segmentWidths[selectedIndex] || 0;
 
-      translateX.value = withSpring(position, { damping: 20, stiffness: 150 });
-      indicatorWidth.value = withSpring(width, { damping: 20, stiffness: 150 });
+      translateX.value = reduceMotion
+        ? position
+        : withSpring(position, { damping: 20, stiffness: 150 });
+      indicatorWidth.value = reduceMotion
+        ? width
+        : withSpring(width, { damping: 20, stiffness: 150 });
     }
-  }, [selectedIndex, segmentWidths]);
+  }, [indicatorWidth, options.length, reduceMotion, segmentWidths, selectedIndex, translateX]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -120,10 +126,8 @@ export const SlidingSegmentedControl: React.FC<SlidingSegmentedControlProps> = (
             >
               <Text
                 style={[v.text, option.id === selectedId && v.textActive]}
-                numberOfLines={variant === 'flat' ? 2 : 1}
+                numberOfLines={2}
                 ellipsizeMode="tail"
-                adjustsFontSizeToFit={variant === 'flat'}
-                minimumFontScale={variant === 'flat' ? 0.7 : undefined}
               >
                 {option.label}
               </Text>
@@ -190,7 +194,7 @@ const flatStyles = StyleSheet.create({
     backgroundColor: flatColors.backgroundTertiary,
     borderRadius: borderRadius.xl, // 16 — was an off-grid rp(14)
     padding: rp(4),
-    height: rp(44),
+    minHeight: rp(44),
     overflow: 'hidden',
   },
   indicator: {

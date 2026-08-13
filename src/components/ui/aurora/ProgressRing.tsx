@@ -19,6 +19,7 @@ import Svg, {
 } from "react-native-svg";
 import { colors } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 // ============================================================================
 // TYPES
@@ -124,6 +125,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   duration = 1000,
   children,
 }) => {
+  const reduceMotion = useReducedMotion();
   const animatedProgress = useSharedValue(0);
 
   // Sanitize inputs to prevent NaN on Android native
@@ -144,7 +146,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 
   // Animate progress on mount or when progress changes
   useEffect(() => {
-    if (animated) {
+    if (animated && !reduceMotion) {
       // Use spring animation for natural, bouncy feel
       animatedProgress.value = withSpring(progress, {
         damping: 15,
@@ -154,7 +156,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
     } else {
       animatedProgress.value = progress;
     }
-  }, [progress, animated, duration]);
+  }, [animated, animatedProgress, duration, progress, reduceMotion]);
 
   // Animated circle props - round for Android compatibility
   // CRITICAL: Use Math.round on all calculations to prevent decimal values on Android

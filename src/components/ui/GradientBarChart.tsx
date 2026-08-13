@@ -9,6 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { rh } from "../../utils/responsive";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 export interface BarData {
   label: string;
@@ -45,7 +46,7 @@ export const GradientBarChart: React.FC<GradientBarChartProps> = ({
     (height - (data.length - 1) * spacing.md) / data.length;
 
   return (
-    <View style={[styles.container, { height }, style]}>
+    <View style={[styles.container, { minHeight: height }, style]}>
       {data.map((bar, index) => (
         <BarItem
           key={bar.label}
@@ -75,11 +76,15 @@ const BarItem: React.FC<BarItemProps> = ({
   animated,
   showValue,
 }) => {
+  const reduceMotion = useReducedMotion();
   const progress = useSharedValue(0);
-  const percentage = (data.value / data.maxValue) * 100;
+  const percentage =
+    Number.isFinite(data.value) && Number.isFinite(data.maxValue) && data.maxValue > 0
+      ? Math.max(0, Math.min(100, (data.value / data.maxValue) * 100))
+      : 0;
 
   useEffect(() => {
-    if (animated) {
+    if (animated && !reduceMotion) {
       progress.value = withDelay(
         index * 150,
         withTiming(percentage, {
@@ -90,14 +95,19 @@ const BarItem: React.FC<BarItemProps> = ({
     } else {
       progress.value = percentage;
     }
-  }, [data.value, data.maxValue]);
+  }, [animated, index, percentage, progress, reduceMotion]);
 
   const animatedBarStyle = useAnimatedStyle(() => ({
     width: `${progress.value}%`,
   }));
 
   return (
-    <View style={[styles.barContainer, { height }]}>
+    <View
+      style={[styles.barContainer, { minHeight: height }]}
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${data.label}: ${data.value}${data.unit || "g"}`}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(percentage) }}
+    >
       <View style={styles.barHeader}>
         <Text style={styles.barLabel}>{data.label}</Text>
         {showValue && (
@@ -134,7 +144,8 @@ const styles = StyleSheet.create({
   barHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    alignItems: "flex-start" as const,
+    gap: spacing.sm,
     marginBottom: spacing.xs,
   },
 
@@ -142,6 +153,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
   },
 
   barValue: {
@@ -149,6 +163,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
     fontVariant: ["tabular-nums"],
+    flexShrink: 0,
   },
 
   barTrack: {

@@ -187,7 +187,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             {unit && (
               <Text
                 style={[styles.unit, { fontSize: sizeStyles.labelFontSize }]}
-                numberOfLines={1}
+                numberOfLines={2}
               >
                 {unit}
               </Text>
@@ -219,7 +219,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     minWidth: 120,
-    maxWidth: 240,
+    maxWidth: "100%",
   },
   content: {
     flexDirection: "row",
@@ -231,14 +231,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.glass.background,
+    flexShrink: 0,
   },
   metricsContainer: {
     flex: 1,
+    minWidth: 0,
     gap: spacing.xs,
   },
   valueRow: {
     flexDirection: "row",
     alignItems: "baseline",
+    flexWrap: "wrap",
     gap: spacing.xs,
   },
   value: {

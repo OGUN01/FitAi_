@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { animations } from "../../../theme/animations";
 import { colors } from "../../../theme/aurora-tokens";
 import { rp, rs, rh, rbr } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 // ============================================================================
 // TYPES
@@ -96,6 +97,8 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   animated = true,
 }) => {
   const shimmerPosition = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+  const shouldAnimate = animated && !reducedMotion;
 
   // Get default dimensions from variant
   const variantDefaults = VARIANT_DIMENSIONS[variant];
@@ -105,7 +108,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
 
   // Start shimmer animation on mount
   useEffect(() => {
-    if (animated) {
+    if (shouldAnimate) {
       shimmerPosition.value = withRepeat(
         withTiming(1, {
           duration: animations.sequences.shimmer.duration,
@@ -114,9 +117,12 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         -1, // Infinite loop
         false, // Don't reverse
       );
+    } else {
+      cancelAnimation(shimmerPosition);
+      shimmerPosition.value = 0;
     }
     return () => { cancelAnimation(shimmerPosition); };
-  }, [animated]);
+  }, [shouldAnimate, shimmerPosition]);
 
   // Animated shimmer style — sweep distance is derived from the actual
   // skeleton width so the shimmer covers the full element on wide containers
@@ -153,7 +159,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
       <View style={[styles.base, { borderRadius: finalBorderRadius }]} />
 
       {/* Shimmer gradient overlay */}
-      {animated && (
+      {shouldAnimate && (
         <Animated.View
           style={[
             styles.shimmerContainer,

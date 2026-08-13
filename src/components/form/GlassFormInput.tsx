@@ -43,19 +43,25 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
   suffix,
   value,
   onChangeText,
+  onFocus,
+  onBlur,
+  placeholderTextColor = colors.textMuted,
+  accessibilityLabel = label,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const borderOpacity = useSharedValue(0);
 
-  const handleFocus = () => {
+  const handleFocus: NonNullable<TextInputProps["onFocus"]> = (event) => {
     setIsFocused(true);
     borderOpacity.value = withTiming(1, { duration: 200 });
+    onFocus?.(event);
   };
 
-  const handleBlur = () => {
+  const handleBlur: NonNullable<TextInputProps["onBlur"]> = (event) => {
     setIsFocused(false);
     borderOpacity.value = withTiming(0, { duration: 200 });
+    onBlur?.(event);
   };
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
@@ -94,8 +100,9 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={placeholderTextColor}
           selectionColor={colors.primary}
+          accessibilityLabel={accessibilityLabel}
           {...props}
         />
 
@@ -152,10 +159,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: rw(48),
+    minHeight: rw(48),
     fontSize: rf(15),
     color: colors.white,
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   inputNoIcon: {
     paddingLeft: spacing.md,

@@ -152,7 +152,11 @@ export const DragHandleRow: React.FC<DragHandleRowProps> = ({
       }),
       transform: [
         {
-          scale: withSpring(active ? 1.15 : 1, springConfig.snappy),
+          scale: reduceMotion
+            ? active
+              ? 1.15
+              : 1
+            : withSpring(active ? 1.15 : 1, springConfig.snappy),
         },
       ],
     };

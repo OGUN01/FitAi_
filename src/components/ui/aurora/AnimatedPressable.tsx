@@ -268,7 +268,10 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
         accessibilityRole={accessibilityRole}
-        accessibilityState={{ disabled: !!disabled }}
+        accessibilityState={{
+          ...pressableProps.accessibilityState,
+          disabled: !!disabled,
+        }}
         pressRetentionOffset={
           isInteractive
             ? pressableProps.pressRetentionOffset ??

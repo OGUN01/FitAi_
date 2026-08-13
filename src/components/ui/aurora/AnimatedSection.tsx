@@ -11,7 +11,9 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withDelay,
+  cancelAnimation,
 } from "react-native-reanimated";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 // ============================================================================
 // TYPES
@@ -60,8 +62,17 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
 }) => {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(slideDistance);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      cancelAnimation(opacity);
+      cancelAnimation(translateY);
+      opacity.value = 1;
+      translateY.value = 0;
+      return;
+    }
+
     // Animate on mount with delay
     opacity.value = withDelay(
       delay,
@@ -78,7 +89,11 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
         stiffness: 90,
       }),
     );
-  }, [delay]);
+    return () => {
+      cancelAnimation(opacity);
+      cancelAnimation(translateY);
+    };
+  }, [delay, opacity, reducedMotion, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

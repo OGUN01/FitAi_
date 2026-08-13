@@ -180,9 +180,11 @@ export const DetentBottomSheet: React.FC<DetentBottomSheetProps> = ({
           isLowest &&
           (overdragPastLowest > 80 || event.velocityY > DISMISS_VELOCITY)
         ) {
-          translateY.value = withTiming(screenHeight, {
-            duration: animations.duration.normal,
-          });
+          translateY.value = reduceMotion
+            ? screenHeight
+            : withTiming(screenHeight, {
+                duration: animations.duration.normal,
+              });
           runOnJS(onClose)();
           return;
         }

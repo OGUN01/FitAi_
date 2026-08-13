@@ -8,6 +8,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { rp } from "../../utils/responsive";
 import { flatColors as colors, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface ChartTooltipProps {
   visible: boolean;
@@ -28,27 +29,26 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
   formatValue,
   style,
 }) => {
+  const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.8);
   const translateY = useSharedValue(-10);
 
   useEffect(() => {
     if (visible) {
-      opacity.value = withTiming(1, { duration: 200 });
-      scale.value = withSpring(1, {
-        damping: 15,
-        stiffness: 150,
-      });
-      translateY.value = withSpring(0, {
-        damping: 15,
-        stiffness: 150,
-      });
+      opacity.value = reducedMotion ? 1 : withTiming(1, { duration: 200 });
+      scale.value = reducedMotion
+        ? 1
+        : withSpring(1, { damping: 15, stiffness: 150 });
+      translateY.value = reducedMotion
+        ? 0
+        : withSpring(0, { damping: 15, stiffness: 150 });
     } else {
-      opacity.value = withTiming(0, { duration: 150 });
-      scale.value = withTiming(0.8, { duration: 150 });
-      translateY.value = withTiming(-10, { duration: 150 });
+      opacity.value = reducedMotion ? 0 : withTiming(0, { duration: 150 });
+      scale.value = reducedMotion ? 0.8 : withTiming(0.8, { duration: 150 });
+      translateY.value = reducedMotion ? -10 : withTiming(-10, { duration: 150 });
     }
-  }, [visible, x, y]);
+  }, [visible, x, y, opacity, reducedMotion, scale, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -75,8 +75,8 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
       accessibilityLabel={a11yLabel}
     >
       <View style={styles.bubble}>
-        {label && <Text style={styles.label} numberOfLines={1}>{label}</Text>}
-        <Text style={styles.value} numberOfLines={1}>{displayValue}</Text>
+        {label && <Text style={styles.label} numberOfLines={2}>{label}</Text>}
+        <Text style={styles.value} numberOfLines={2}>{displayValue}</Text>
       </View>
       {/* Arrow rendered as a small triangle (rotated square) — CSS triangle
           borders render with hairline gaps on Android, so we use a rotated
@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
   },
 
   bubble: {
+    maxWidth: rp(240),
     backgroundColor: colors.surface,
     paddingHorizontal: rp(12),
     paddingVertical: rp(8),

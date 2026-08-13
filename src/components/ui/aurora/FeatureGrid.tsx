@@ -19,6 +19,7 @@ import { AnimatedPressable } from "./AnimatedPressable";
 import { colors, typography, spacing } from "../../../theme/aurora-tokens";
 import { springConfig } from "../../../theme/animations";
 import { rs, rbr } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 export interface Feature {
   /**
@@ -115,13 +116,30 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
   showDescription,
   elevation,
 }) => {
+  const reduceMotion = useReducedMotion();
   // Animation values
-  const scale = useSharedValue(animationType === "scale" ? 0 : 1);
-  const opacity = useSharedValue(animationType === "fade" ? 0 : 1);
-  const translateY = useSharedValue(animationType === "slideUp" ? 20 : 0);
+  const scale = useSharedValue(!reduceMotion && animationType === "scale" ? 0 : 1);
+  const opacity = useSharedValue(
+    !reduceMotion && (animationType === "fade" || animationType === "stagger") ? 0 : 1,
+  );
+  const translateY = useSharedValue(
+    !reduceMotion && (animationType === "slideUp" || animationType === "stagger") ? 20 : 0,
+  );
 
   useEffect(() => {
+    if (reduceMotion || animationType === "none") {
+      scale.value = 1;
+      opacity.value = 1;
+      translateY.value = 0;
+      return;
+    }
+
     const delay = animationType === "stagger" ? index * 100 : 0;
+
+    scale.value = animationType === "scale" ? 0 : 1;
+    opacity.value = animationType === "fade" || animationType === "stagger" ? 0 : 1;
+    translateY.value =
+      animationType === "slideUp" || animationType === "stagger" ? 20 : 0;
 
     if (animationType === "scale") {
       scale.value = withDelay(delay, withSpring(1, springConfig.bounce));
@@ -140,7 +158,7 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
     if (animationType === "slideUp" || animationType === "stagger") {
       translateY.value = withDelay(delay, withSpring(0, springConfig.smooth));
     }
-  }, [animationType, index]);
+  }, [animationType, index, opacity, reduceMotion, scale, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { translateY: translateY.value }],
@@ -162,13 +180,13 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
       </View>
 
       {/* Title */}
-      <Text style={styles.title} numberOfLines={2}>
+      <Text style={styles.title}>
         {feature.title}
       </Text>
 
       {/* Description (optional) */}
       {showDescription && feature.description && (
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={styles.description}>
           {feature.description}
         </Text>
       )}
@@ -184,6 +202,9 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
             scaleValue={0.95}
             hapticFeedback={true}
             hapticType="light"
+            accessibilityRole="button"
+            accessibilityLabel={feature.title}
+            accessibilityHint={feature.description}
           >
             <GlassCard
               elevation={elevation}
@@ -218,6 +239,9 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
           hapticFeedback={true}
           hapticType="light"
           style={styles.simpleCard}
+          accessibilityRole="button"
+          accessibilityLabel={feature.title}
+          accessibilityHint={feature.description}
         >
           {content}
         </AnimatedPressable>

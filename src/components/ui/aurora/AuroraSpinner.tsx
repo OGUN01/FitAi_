@@ -21,6 +21,7 @@ import {
   gradientAuroraSpace,
 } from "../../../theme/gradients";
 import { colors } from "../../../theme/aurora-tokens";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 // ============================================================================
 // TYPES
@@ -83,6 +84,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
   duration = 1200,
 }) => {
   const rotation = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   // Determine actual size
   const spinnerSize = customSize || SPINNER_SIZES[size];
@@ -92,6 +94,12 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
 
   // Start rotation animation on mount
   useEffect(() => {
+    if (reducedMotion) {
+      cancelAnimation(rotation);
+      rotation.value = 0;
+      return;
+    }
+
     rotation.value = withRepeat(
       withTiming(360, {
         duration,
@@ -101,7 +109,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
       false, // Don't reverse
     );
     return () => { cancelAnimation(rotation); };
-  }, [duration]);
+  }, [duration, reducedMotion, rotation]);
 
   // Animated rotation style
   const animatedStyle = useAnimatedStyle(() => ({

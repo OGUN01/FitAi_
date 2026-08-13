@@ -19,6 +19,7 @@ import { colors, spacing, typography, borderRadius } from '../../../theme/aurora
 import { rp, rf, rh, rbr } from '../../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../../utils/colors';
 import { AnimatedPressable } from './AnimatedPressable';
+import { useReducedMotion } from '../../../utils/accessibility/hooks';
 
 export interface EmptyStateProps {
   /** Ionicons icon name. */
@@ -55,10 +56,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   delay = 100,
   accessibilityLabel,
 }) => {
+  const reducedMotion = useReducedMotion();
   const size = iconSize ?? rf(48);
   return (
     <Animated.View
-      entering={FadeInDown.delay(delay).duration(400)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(delay).duration(400)}
       style={[styles.container, style]}
       accessible={true}
       accessibilityLabel={accessibilityLabel ?? title}
@@ -68,22 +70,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <Ionicons name={icon} size={size} color={iconColor} />
       </View>
 
-      <Animated.View entering={FadeInDown.delay(delay + 80).duration(400)}>
-        <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+      <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(delay + 80).duration(400)}>
+        <Text style={styles.title}>
           {title}
         </Text>
       </Animated.View>
 
       {subtitle ? (
-        <Animated.View entering={FadeInDown.delay(delay + 160).duration(400)}>
-          <Text style={styles.subtitle} numberOfLines={4}>
+        <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(delay + 160).duration(400)}>
+          <Text style={styles.subtitle}>
             {subtitle}
           </Text>
         </Animated.View>
       ) : null}
 
       {ctaText && onCta ? (
-        <Animated.View entering={FadeInDown.delay(delay + 240).duration(400)}>
+        <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(delay + 240).duration(400)}>
           <AnimatedPressable
             onPress={onCta}
             scaleValue={0.96}
@@ -99,7 +101,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
             />
-            <Animated.Text style={styles.ctaText} numberOfLines={1}>
+            <Animated.Text style={styles.ctaText} numberOfLines={2}>
               {ctaText}
             </Animated.Text>
           </AnimatedPressable>
@@ -152,6 +154,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: rf(15),
     fontWeight: String(typography.fontWeight.bold) as any,
+    textAlign: 'center',
   },
 });
 

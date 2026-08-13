@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from './aurora/GlassCard';
 import { GlassButton, GlassButtonVariant } from './aurora/GlassButton';
+import { AnimatedPressable } from './aurora/AnimatedPressable';
 import {
   flatColors as colors,
   spacing,
@@ -429,8 +430,8 @@ interface WorkoutCompleteDialogProps {
   calories: number;
   exercisesCompleted: number;
   totalExercises: number;
-  onViewProgress: () => void;
-  onDone: (rating?: number, notes?: string) => void;
+  onViewProgress: (rating?: number, notes?: string) => void | Promise<void>;
+  onDone: (rating?: number, notes?: string) => void | Promise<void>;
 }
 
 interface WorkoutDetailsDialogProps {
@@ -603,18 +604,27 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 }) => {
   const [rating, setRating] = useState(0);
   const [notes, setNotes] = useState('');
+  const [submittingAction, setSubmittingAction] = useState<'progress' | 'done' | null>(null);
+  const submittingRef = useRef(false);
 
-  const handleDone = () => {
-    onDone(rating > 0 ? rating : undefined, notes.trim() || undefined);
-    // Reset for next use
-    setRating(0);
-    setNotes('');
-  };
-
-  const handleViewProgress = () => {
-    // Pass rating/notes before navigating so they get saved
-    onDone(rating > 0 ? rating : undefined, notes.trim() || undefined);
-    onViewProgress();
+  const submit = async (action: 'progress' | 'done') => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmittingAction(action);
+    const submittedRating = rating > 0 ? rating : undefined;
+    const submittedNotes = notes.trim() || undefined;
+    try {
+      if (action === 'progress') {
+        await onViewProgress(submittedRating, submittedNotes);
+      } else {
+        await onDone(submittedRating, submittedNotes);
+      }
+      setRating(0);
+      setNotes('');
+    } finally {
+      submittingRef.current = false;
+      setSubmittingAction(null);
+    }
   };
 
   return (
@@ -664,21 +674,25 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
               <Text style={completeStyles.feedbackLabel}>How was this workout?</Text>
               <View style={completeStyles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
+                  <AnimatedPressable
                     key={star}
                     onPress={() => setRating(star)}
+                    disabled={submittingAction !== null}
                     accessibilityRole="button"
                     accessibilityLabel={`Rate ${star} star${star > 1 ? 's' : ''}`}
                     accessibilityState={{ selected: star <= rating }}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                     style={completeStyles.starButton}
+                    scaleValue={0.9}
+                    springConfig="snappy"
+                    hapticType="selection"
                   >
                     <Ionicons
                       name={star <= rating ? 'star' : 'star-outline'}
                       size={rf(28)}
                       color={star <= rating ? colors.warningAlt : colors.textSecondary}
                     />
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 ))}
               </View>
 
@@ -692,6 +706,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 multiline
                 maxLength={500}
                 numberOfLines={2}
+                editable={submittingAction === null}
                 accessibilityLabel="Workout notes (optional)"
               />
             </View>
@@ -700,17 +715,21 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
             <View style={styles.actionsContainer}>
               <GlassButton
                 label="View Progress"
-                onPress={handleViewProgress}
+                onPress={() => { void submit('progress'); }}
                 variant="secondary"
                 fullWidth
                 style={styles.actionButton}
+                loading={submittingAction === 'progress'}
+                disabled={submittingAction !== null}
               />
               <GlassButton
                 label="Done"
-                onPress={handleDone}
+                onPress={() => { void submit('done'); }}
                 variant="primary"
                 fullWidth
                 style={styles.lastActionButton}
+                loading={submittingAction === 'done'}
+                disabled={submittingAction !== null}
               />
             </View>
           </GlassCard>

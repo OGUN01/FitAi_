@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Text, TextStyle, StyleProp } from "react-native";
 import Animated, {
   useSharedValue,
@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AnimatedNumberProps {
   value: number;
@@ -37,16 +38,17 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = React.memo(({
   suffix = "",
   accessibilityLabel,
 }) => {
-  const animatedValue = useSharedValue(0);
-  const previousValue = useRef(0);
+  const reduceMotion = useReducedMotion();
+  const animatedValue = useSharedValue(reduceMotion ? value : 0);
 
   useEffect(() => {
-    animatedValue.value = withTiming(value, {
-      duration,
-      easing: Easing.out(Easing.cubic),
-    });
-    previousValue.current = value;
-  }, [value]);
+    animatedValue.value = reduceMotion
+      ? value
+      : withTiming(value, {
+          duration,
+          easing: Easing.out(Easing.cubic),
+        });
+  }, [animatedValue, duration, reduceMotion, value]);
 
   const animatedProps = useAnimatedProps(() => {
     const displayValue = animatedValue.value.toFixed(decimals);

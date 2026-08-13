@@ -9,7 +9,7 @@
  * rest of the system on both web and native.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { BottomSheet } from "./BottomSheet";
 import { GlassButton } from "./GlassButton";
@@ -40,6 +40,7 @@ export const ForgotPasswordSheet: React.FC<ForgotPasswordSheetProps> = ({
   const [email, setEmail] = useState(initialEmail);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
 
   // Re-seed with the caller's current email + clear stale errors each time
   // the sheet opens.
@@ -56,6 +57,8 @@ export const ForgotPasswordSheet: React.FC<ForgotPasswordSheetProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (submitLockRef.current) return;
+
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail) {
@@ -68,10 +71,10 @@ export const ForgotPasswordSheet: React.FC<ForgotPasswordSheetProps> = ({
     }
 
     setError(null);
+    submitLockRef.current = true;
     setSubmitting(true);
     try {
       const result = await resetPassword(trimmedEmail.toLowerCase());
-      setSubmitting(false);
       onClose();
       crossPlatformAlert(
         result.success ? "Password Reset Email Sent" : "Reset Failed",
@@ -80,8 +83,10 @@ export const ForgotPasswordSheet: React.FC<ForgotPasswordSheetProps> = ({
           : result.error || "Unable to send reset email. Please try again.",
       );
     } catch (err) {
-      setSubmitting(false);
       crossPlatformAlert("Error", "Failed to send reset email. Please try again.");
+    } finally {
+      submitLockRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -107,6 +112,14 @@ export const ForgotPasswordSheet: React.FC<ForgotPasswordSheetProps> = ({
         }}
         keyboardType="email-address"
         autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="send"
+        onSubmitEditing={() => {
+          void handleSubmit();
+        }}
+        editable={!submitting}
         accentColor={error ? colors.error.DEFAULT : undefined}
         containerStyle={styles.fieldContainer}
       />

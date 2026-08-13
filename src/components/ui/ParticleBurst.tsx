@@ -9,9 +9,11 @@ import Animated, {
   Easing,
   interpolate,
   Extrapolate,
+  cancelAnimation,
 } from "react-native-reanimated";
 import { rf } from "../../utils/responsive";
 import { flatColors as tokenColors } from "../../theme/aurora-tokens";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface ParticleBurstProps {
   particleCount?: number;
@@ -96,6 +98,7 @@ export const ParticleBurst: React.FC<ParticleBurstProps> = ({
   style,
 }) => {
   const progress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   // Generate particles once per (particleCount, colors) pair — previously
   // rebuilt on every render (including unrelated parent re-renders while the
@@ -118,7 +121,7 @@ export const ParticleBurst: React.FC<ParticleBurstProps> = ({
   }, [particleCount, colors]);
 
   useEffect(() => {
-    if (autoPlay) {
+    if (autoPlay && !reducedMotion) {
       progress.value = 0;
       progress.value = withDelay(
         200,
@@ -130,8 +133,14 @@ export const ParticleBurst: React.FC<ParticleBurstProps> = ({
           withTiming(0, { duration: 0 }),
         ),
       );
+    } else {
+      cancelAnimation(progress);
+      progress.value = 0;
     }
-  }, [autoPlay]);
+    return () => cancelAnimation(progress);
+  }, [autoPlay, duration, progress, reducedMotion]);
+
+  if (reducedMotion) return null;
 
   return (
     <View style={[styles.container, style, { pointerEvents: "none" }]}>

@@ -53,6 +53,7 @@ import { colors, spacing, borderRadius, zIndex } from "../../../theme/aurora-tok
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
 import { rp, rf, dimensions } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 // Clamped screen height from responsive.ts (capped to 900 on web/tablet so the
 // sheet sizes against the mobile design height, not a 1080px desktop window).
@@ -102,27 +103,33 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   testID,
 }) => {
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   // Lazy screen-height read — evaluated on first render, NOT at module load.
   const SCREEN_HEIGHT = getScreenHeight();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacitySV = useSharedValue(0);
+  const reducedMotionSV = useSharedValue(reducedMotion);
+
+  useEffect(() => {
+    reducedMotionSV.value = reducedMotion;
+  }, [reducedMotion, reducedMotionSV]);
 
   // Animate in/out when `visible` changes.
   useEffect(() => {
     if (visible) {
-      translateY.value = withSpring(0, animations.spring.smooth);
-      backdropOpacitySV.value = withTiming(backdropOpacity, {
-        duration: animations.duration.normal,
-      });
+      translateY.value = reducedMotion ? 0 : withSpring(0, animations.spring.smooth);
+      backdropOpacitySV.value = reducedMotion
+        ? backdropOpacity
+        : withTiming(backdropOpacity, { duration: animations.duration.normal });
     } else {
-      translateY.value = withTiming(SCREEN_HEIGHT, {
-        duration: animations.duration.normal,
-      });
-      backdropOpacitySV.value = withTiming(0, {
-        duration: animations.duration.normal,
-      });
+      translateY.value = reducedMotion
+        ? SCREEN_HEIGHT
+        : withTiming(SCREEN_HEIGHT, { duration: animations.duration.normal });
+      backdropOpacitySV.value = reducedMotion
+        ? 0
+        : withTiming(0, { duration: animations.duration.normal });
     }
-  }, [visible, backdropOpacity, translateY, backdropOpacitySV]);
+  }, [visible, backdropOpacity, translateY, backdropOpacitySV, reducedMotion, SCREEN_HEIGHT]);
 
   const handleClose = useCallback(() => {
     haptics.trigger("light");
@@ -144,12 +151,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       },
       onEnd: (event, _ctx) => {
         if (event.translationY > DISMISS_THRESHOLD) {
-          translateY.value = withTiming(SCREEN_HEIGHT, {
-            duration: animations.duration.normal,
-          });
+          translateY.value = reducedMotionSV.value
+            ? SCREEN_HEIGHT
+            : withTiming(SCREEN_HEIGHT, { duration: animations.duration.normal });
           runOnJS(handleClose)();
         } else {
-          translateY.value = withSpring(0, animations.spring.smooth);
+          translateY.value = reducedMotionSV.value
+            ? 0
+            : withSpring(0, animations.spring.smooth);
         }
       },
     });
@@ -220,7 +229,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 {(title || showCloseButton) && (
                   <View style={styles.header}>
                     {title ? (
-                      <Animated.Text style={styles.title} numberOfLines={1}>{title}</Animated.Text>
+                      <Animated.Text style={styles.title} numberOfLines={2}>{title}</Animated.Text>
                     ) : (
                       <View />
                     )}
@@ -340,6 +349,8 @@ const styles = StyleSheet.create({
     fontSize: rf(18),
     fontWeight: "700",
     flex: 1,
+    minWidth: 0,
+    marginRight: rp(spacing.sm),
   },
   closeButton: {
     // 44x44 minimum touch target for accessibility compliance.

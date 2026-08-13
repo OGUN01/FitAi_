@@ -15,6 +15,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { colors, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
 import { rp, rf } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 export interface GlassHeaderProps {
   /**
@@ -61,11 +62,12 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({
   eyebrowStyle,
   leftAlignTitle = false,
 }) => {
+  const reducedMotion = useReducedMotion();
   const showBack = typeof onBack === "function";
 
   return (
     <Animated.View
-      entering={FadeIn.duration(250)}
+      entering={reducedMotion ? undefined : FadeIn.duration(250)}
       style={[styles.container, style]}
       accessibilityRole="header"
     >
@@ -113,12 +115,12 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({
           ]}
         >
           {eyebrow ? (
-            <Text numberOfLines={1} style={[styles.eyebrow, eyebrowStyle]}>
+            <Text numberOfLines={2} style={[styles.eyebrow, eyebrowStyle]}>
               {eyebrow}
             </Text>
           ) : null}
           {title ? (
-            <Text numberOfLines={1} style={[styles.title, titleStyle]}>
+            <Text numberOfLines={2} style={[styles.title, titleStyle]}>
               {title}
             </Text>
           ) : null}
@@ -176,6 +178,8 @@ const styles = StyleSheet.create({
     marginRight: rp(spacing.xs),
   },
   textColumn: {
+    flex: 1,
+    minWidth: 0,
     flexShrink: 1,
   },
   textColumnCenter: {

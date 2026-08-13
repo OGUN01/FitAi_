@@ -9,6 +9,8 @@ export { GlassView } from './GlassView';
 export { GlassCard } from './GlassCard';
 export { AnimatedPressable } from './AnimatedPressable';
 export { AnimatedSection } from './AnimatedSection';
+export { AuroraSearchField } from './AuroraSearchField';
+export type { AuroraSearchFieldProps } from './AuroraSearchField';
 
 // Shared primitives (Wave 3 — modernization foundation)
 export { BottomSheet } from './BottomSheet';

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet } from "react-native";
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 import { WorkoutCompleteDialog } from "@/components/ui/CustomDialog";
 import { spacing } from "@/theme/aurora-tokens";
 
@@ -110,7 +110,7 @@ describe("WorkoutCompleteDialog", () => {
     expect(screen.getByText("Done")).toBeTruthy();
   });
 
-  it("submits the selected rating and trimmed notes from Done", () => {
+  it("submits the selected rating and trimmed notes from Done", async () => {
     const onDone = jest.fn();
     const onViewProgress = jest.fn();
     const screen = render(
@@ -121,24 +121,23 @@ describe("WorkoutCompleteDialog", () => {
       />,
     );
 
-    const starButtons = screen
-      .UNSAFE_getAllByType("TouchableOpacity")
-      .slice(0, 5);
-    fireEvent.press(starButtons[3]);
+    fireEvent.press(screen.getByLabelText("Rate 4 stars"));
     fireEvent.changeText(
       screen.UNSAFE_getByType("TextInput"),
       "  Felt strong  ",
     );
     fireEvent.press(screen.getByText("Done"));
 
-    expect(onDone).toHaveBeenCalledWith(4, "Felt strong");
+    await waitFor(() => {
+      expect(onDone).toHaveBeenCalledWith(4, "Felt strong");
+    });
     expect(onViewProgress).not.toHaveBeenCalled();
   });
 
-  it("saves feedback before opening progress", () => {
+  it("passes feedback directly to the progress action", async () => {
     const calls: string[] = [];
     const onDone = jest.fn(() => calls.push("done"));
-    const onViewProgress = jest.fn(() => calls.push("progress"));
+    const onViewProgress = jest.fn(async () => { calls.push("progress"); });
     const screen = render(
       <WorkoutCompleteDialog
         {...baseProps}
@@ -153,8 +152,10 @@ describe("WorkoutCompleteDialog", () => {
     );
     fireEvent.press(screen.getByText("View Progress"));
 
-    expect(onDone).toHaveBeenCalledWith(undefined, "Recovery session");
-    expect(onViewProgress).toHaveBeenCalledTimes(1);
-    expect(calls).toEqual(["done", "progress"]);
+    await waitFor(() => {
+      expect(onViewProgress).toHaveBeenCalledWith(undefined, "Recovery session");
+    });
+    expect(onDone).not.toHaveBeenCalled();
+    expect(calls).toEqual(["progress"]);
   });
 });

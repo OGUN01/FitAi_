@@ -16,6 +16,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { rf, rp, rh, rw, rbr } from "../../utils/responsive";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface InputProps {
   label?: string;
@@ -57,15 +58,16 @@ export const Input: React.FC<InputProps> = ({
   onRightIconPress,
   testID,
 }) => {
+  const reducedMotion = useReducedMotion();
   const [isFocused, setIsFocused] = useState(false);
   const focusAnimation = useSharedValue(0);
 
   // Animate focus glow
   useEffect(() => {
-    focusAnimation.value = withTiming(isFocused ? 1 : 0, {
-      duration: 200,
-    });
-  }, [isFocused]);
+    focusAnimation.value = reducedMotion
+      ? (isFocused ? 1 : 0)
+      : withTiming(isFocused ? 1 : 0, { duration: 200 });
+  }, [focusAnimation, isFocused, reducedMotion]);
 
   // Real animated border/glow transition (border colour, width, background
   // tint and shadow all ease in together instead of snapping instantly),
@@ -88,7 +90,7 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {label && <Text style={styles.label} numberOfLines={1}>{label}</Text>}
+      {label && <Text style={styles.label}>{label}</Text>}
 
       <Animated.View
         style={[
@@ -150,7 +152,6 @@ export const Input: React.FC<InputProps> = ({
       {error && (
         <Text
           style={styles.errorText}
-          numberOfLines={3}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
