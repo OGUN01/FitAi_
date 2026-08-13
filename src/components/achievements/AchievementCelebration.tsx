@@ -21,6 +21,7 @@ import useAchievementStore from "../../stores/achievementStore";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP as tierColorMap } from "../../data/achievements/tierColors";
 import { DialogShell } from "../ui/CustomDialog";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AchievementCelebrationProps {
   visible: boolean;
@@ -48,6 +49,9 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 }) => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const { markCelebrationShown } = useAchievementStore();
+  const reducedMotion = useReducedMotion();
+  const reducedMotionRef = useRef(reducedMotion);
+  reducedMotionRef.current = reducedMotion;
 
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -80,6 +84,8 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dy > 100 || gestureState.vy > 0.8) {
           handleClose();
+        } else if (reducedMotionRef.current) {
+          slideAnim.setValue(0);
         } else {
           Animated.spring(slideAnim, {
             toValue: 0,
@@ -92,9 +98,21 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
 
   useEffect(() => {
     if (visible && achievement) {
-      slideAnim.setValue(screenHeight);
-      scaleAnim.setValue(0);
+      slideAnim.setValue(reducedMotion ? 0 : screenHeight);
+      scaleAnim.setValue(reducedMotion ? 1 : 0);
       rotateAnim.setValue(0);
+      pulseAnim.setValue(1);
+
+      if (reducedMotion) {
+        confettiAnimations.current.forEach((anim) => anim.stop());
+        confettiAnimations.current = [];
+
+        const timer = setTimeout(() => {
+          handleClose();
+        }, 8000);
+
+        return () => clearTimeout(timer);
+      }
 
       Animated.parallel([
         Animated.spring(slideAnim, {
@@ -145,7 +163,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
         confettiAnimations.current = [];
       };
     }
-  }, [visible, achievement]);
+  }, [visible, achievement, reducedMotion, screenHeight]);
 
   const startConfettiAnimation = () => {
     confettiAnimations.current.forEach((anim) => anim.stop());
@@ -180,6 +198,11 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
       markCelebrationShown(achievement.id);
     }
 
+    if (reducedMotionRef.current) {
+      onClose();
+      return;
+    }
+
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: screenHeight,
@@ -212,7 +235,7 @@ const AchievementCelebration: React.FC<AchievementCelebrationProps> = ({
     <DialogShell visible={visible} animationType="none" onRequestClose={handleClose} bare>
       <View style={styles.overlay}>
         {/* Confetti particle burst */}
-        {confetti.map((item, index) => (
+        {!reducedMotion && confetti.map((item, index) => (
           <Animated.View
             key={index}
             accessibilityLabel="Celebration confetti"

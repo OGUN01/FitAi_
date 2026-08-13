@@ -125,6 +125,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           scaleValue={0.9}
           springConfig="snappy"
           hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="Previous week"
         >
           <Ionicons
             name="chevron-back"
@@ -152,6 +154,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           scaleValue={0.9}
           springConfig="snappy"
           hapticType="light"
+          accessibilityRole="button"
+          accessibilityLabel="Next week"
         >
           <Ionicons
             name="chevron-forward"
@@ -176,7 +180,20 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
           <AnimatedPressable
             key={day.dayName}
             testID={`day-${day.dayName}`}
-            accessibilityLabel={`day ${day.dayName}`}
+            accessibilityRole="tab"
+            accessibilityLabel={`${day.dayName}, ${new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined, {
+              month: "long",
+              day: "numeric",
+            })}${day.isToday ? ", today" : ""}${
+              day.isCompleted
+                ? ", workout completed"
+                : day.isRestDay
+                  ? ", rest day"
+                  : day.hasWorkout
+                    ? ", workout scheduled"
+                    : ""
+            }`}
+            accessibilityState={{ selected: selectedDay === day.dayName }}
             style={[
               styles.dayButton,
               selectedDay === day.dayName && styles.dayButtonSelected,

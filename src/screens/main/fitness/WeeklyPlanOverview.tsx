@@ -164,6 +164,8 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
             hapticType="light"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={styles.viewPlanButton}
+            accessibilityRole="button"
+            accessibilityLabel="View full workout plan"
           >
             <View style={styles.viewPlanContent}>
               <Text style={styles.viewPlanText} numberOfLines={1}>
@@ -190,6 +192,17 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
               hapticType="light"
               style={styles.dayCell}
               hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+              accessibilityRole="tab"
+              accessibilityLabel={`${day}, ${weekDates[index]}${status.isToday ? ', today' : ''}${
+                status.isCompleted
+                  ? ', workout completed'
+                  : status.isRestDay
+                    ? ', rest day'
+                    : status.hasWorkout
+                      ? ', workout scheduled'
+                      : ', no workout scheduled'
+              }`}
+              accessibilityState={{ selected: status.isSelected }}
             >
               <Text
                 style={[

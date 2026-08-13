@@ -25,6 +25,7 @@ import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rp, rh, rbr } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 import { useProfileStore } from "../../../stores/profileStore";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 interface EmptyPlanStateProps {
   experienceLevel?: "beginner" | "intermediate" | "advanced";
@@ -39,11 +40,12 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
   isGenerating,
   onGeneratePlan,
 }) => {
+  const reducedMotion = useReducedMotion();
   // Spin the sync icon while generating — progressive feedback instead of a
   // static icon next to "Finding best exercises for you...".
   const rotation = useSharedValue(0);
   useEffect(() => {
-    if (isGenerating) {
+    if (isGenerating && !reducedMotion) {
       rotation.value = withRepeat(
         withTiming(360, { duration: 1000, easing: Easing.linear }),
         -1,
@@ -53,7 +55,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
       cancelAnimation(rotation);
       rotation.value = 0;
     }
-  }, [isGenerating, rotation]);
+  }, [isGenerating, reducedMotion, rotation]);
   const spinStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
@@ -79,7 +81,10 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
   return (
     <View style={styles.heroEmpty} testID="empty-plan-state">
       {/* Gradient icon orb + soft glow */}
-      <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.heroIconWrap}>
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.delay(120).duration(500)}
+        style={styles.heroIconWrap}
+      >
         <View style={styles.heroGlow} />
         <LinearGradient
           colors={[colors.primary, colors.secondary]}
@@ -91,10 +96,10 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
         </LinearGradient>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(200).duration(500)}>
+      <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(200).duration(500)}>
         <Text style={styles.heroEyebrow}>Get Started</Text>
       </Animated.View>
-      <Animated.View entering={FadeInDown.delay(260).duration(500)}>
+      <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(260).duration(500)}>
         <Text
           style={styles.heroTitle}
           numberOfLines={2}
@@ -104,7 +109,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           Build your AI workout plan
         </Text>
       </Animated.View>
-      <Animated.View entering={FadeInDown.delay(320).duration(500)}>
+      <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(320).duration(500)}>
         <Text style={styles.heroSubtitle} numberOfLines={3}>
           Generate a personalized weekly plan tailored to your goals, equipment, and experience level.
         </Text>
@@ -114,7 +119,10 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           from the user's real onboarding preferences (the same values the
           generator reads) — omitted entirely when not yet available rather
           than showing a fabricated number. */}
-      <Animated.View entering={FadeInDown.delay(360).duration(500)} style={styles.previewRow}>
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.delay(360).duration(500)}
+        style={styles.previewRow}
+      >
         {workoutsPerWeek != null && workoutsPerWeek > 0 ? (
           <View style={styles.previewChip}>
             <Ionicons name="calendar-outline" size={rf(14)} color={colors.primary} />
@@ -148,7 +156,10 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
       </Animated.View>
 
       {/* Generate Button — full-width gradient CTA */}
-      <Animated.View entering={FadeInDown.delay(440).duration(500)} style={styles.heroCtaRow}>
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.delay(440).duration(500)}
+        style={styles.heroCtaRow}
+      >
         <AnimatedPressable
           onPress={onGeneratePlan}
           scaleValue={0.96}

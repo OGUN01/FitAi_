@@ -33,6 +33,7 @@ import {
 } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
 import { Ionicons } from "@expo/vector-icons";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AchievementsScreenProps {
   navigation?: any;
@@ -58,6 +59,7 @@ function chunkPairs<T>(items: T[]): T[][] {
 export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
   navigation,
 }) => {
+  const reducedMotion = useReducedMotion();
   const { user, guestId } = useAuth();
   const {
     achievements,
@@ -239,7 +241,11 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
 
         {!catalogEmpty && (
           <Animated.View
-            entering={Platform.OS !== "web" ? FadeInDown.delay(100).duration(350) : undefined}
+            entering={
+              Platform.OS !== "web" && !reducedMotion
+                ? FadeInDown.delay(100).duration(350)
+                : undefined
+            }
             style={styles.statsStrip}
           >
             <View style={styles.statItem}>
@@ -289,7 +295,9 @@ export const AchievementsScreen: React.FC<AchievementsScreenProps> = ({
         ) : (
           <Animated.View
             style={styles.flexContainer}
-            entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
+            entering={
+              Platform.OS !== "web" && !reducedMotion ? FadeIn.duration(300) : undefined
+            }
           >
             <SectionList
               sections={sections}

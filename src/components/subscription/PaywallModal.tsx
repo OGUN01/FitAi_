@@ -20,6 +20,7 @@ import { SkeletonLoader } from "../ui/aurora/SkeletonLoader";
 import PlanCard from "./paywall/PlanCard";
 import TrustRow from "./paywall/TrustRow";
 import haptics from "../../utils/haptics";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface PaywallModalProps {
   visible: boolean;
@@ -32,6 +33,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   onClose,
   reason,
 }) => {
+  const reducedMotion = useReducedMotion();
   const {
     plans,
     currentPlan,
@@ -177,7 +179,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
         </View>
 
         {displayReason ? (
-          <Animated.View entering={FadeIn.duration(200)} style={styles.reasonRow}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeIn.duration(200)}
+            style={styles.reasonRow}
+          >
             <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primaryLight} />
             <Text style={styles.headerReason}>{displayReason}</Text>
           </Animated.View>
@@ -191,7 +196,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       >
         {/* ── Banners ─────────────────────────────────── */}
         {plansUnavailable && didAttemptLoad && (
-          <Animated.View entering={FadeInUp.duration(250)} style={styles.warningBanner}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInUp.duration(250)}
+            style={styles.warningBanner}
+          >
             <Ionicons name="cloud-offline-outline" size={rf(18)} color={colors.errorLight} style={styles.bannerIcon} />
             <View style={styles.bannerTextWrap}>
               <Text style={styles.warningBannerTitle}>Plans unavailable</Text>
@@ -213,7 +221,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
         )}
 
         {!isAuthenticated && (
-          <Animated.View entering={FadeInUp.duration(250)} style={styles.authBanner}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInUp.duration(250)}
+            style={styles.authBanner}
+          >
             <Ionicons name="person-circle-outline" size={rf(18)} color={colors.blue} style={styles.bannerIcon} />
             <View style={styles.bannerTextWrap}>
               <Text style={styles.authBannerTitle}>Sign in required</Text>
@@ -309,7 +320,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
         {/* ── Trust row ───────────────────────────────── */}
         {!isInitialLoading && (
-          <Animated.View entering={FadeIn.duration(300)} style={styles.trustWrap}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeIn.duration(300)}
+            style={styles.trustWrap}
+          >
             <TrustRow />
           </Animated.View>
         )}

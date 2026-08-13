@@ -38,6 +38,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { TIER_COLOR_MAP } from "../../data/achievements/tierColors";
 import { getReadableTextColor } from "./AchievementCelebration";
 import { DialogShell } from "../ui/CustomDialog";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AchievementDetailModalProps {
   visible: boolean;
@@ -62,6 +63,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
   userAchievement,
   onClose,
 }) => {
+  const reducedMotion = useReducedMotion();
   const badgeScale = useSharedValue(0);
   const badgeRotate = useSharedValue(0);
   const contentOpacity = useSharedValue(0);
@@ -85,9 +87,11 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
 
   useEffect(() => {
     if (visible && achievement) {
-      badgeScale.value = 0;
+      badgeScale.value = reducedMotion ? 1 : 0;
       badgeRotate.value = 0;
-      contentOpacity.value = 0;
+      contentOpacity.value = reducedMotion ? 1 : 0;
+
+      if (reducedMotion) return;
 
       badgeScale.value = withDelay(
         100,
@@ -99,7 +103,7 @@ export const AchievementDetailModal: React.FC<AchievementDetailModalProps> = ({
       );
       contentOpacity.value = withDelay(200, withTiming(1, { duration: 300 }));
     }
-  }, [visible, achievement]);
+  }, [visible, achievement, reducedMotion, badgeRotate, badgeScale, contentOpacity]);
 
   const badgeStyle = useAnimatedStyle(() => {
     const rotate = interpolate(

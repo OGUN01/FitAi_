@@ -26,6 +26,7 @@ import PaywallModal from '../../components/subscription/PaywallModal';
 import { DayWorkout, WeeklyWorkoutPlan } from '../../types/ai';
 import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
 import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 // Hook
 import { useFitnessLogic, FitnessNavigation } from '../../hooks/useFitnessLogic';
@@ -144,6 +145,7 @@ const PLAN_TOGGLE_OPTIONS = [
 ];
 
 const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
+  const reducedMotion = useReducedMotion();
   // Top safe-area inset — applied explicitly to FitnessHeader so the greeting
   // clears the status bar the same way Diet/Home do. SafeAreaView edges={
   // ['top','bottom']} was not pushing the header down on some devices (greeting
@@ -228,7 +230,9 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
           reliably. edges={['top']} here would double-pad the top. */}
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <Animated.View
-          entering={Platform.OS !== 'web' ? FadeIn.duration(300) : undefined}
+          entering={
+            Platform.OS !== 'web' && !reducedMotion ? FadeIn.duration(300) : undefined
+          }
           style={styles.animatedContainer}
         >
           <Animated.ScrollView

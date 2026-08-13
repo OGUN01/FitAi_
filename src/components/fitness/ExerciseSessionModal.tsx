@@ -485,7 +485,7 @@ const ExerciseSessionModalComponent: React.FC<ExerciseSessionModalProps> = ({
                 accessibilityLabel="Go back"
               >
                 <View style={styles.controlContent}>
-                  <Ionicons name="arrow-back" size={rf(16)} color={colors.text.primary} />
+                  <Ionicons name="chevron-back" size={rf(16)} color={colors.text.primary} />
                   <Text style={[styles.controlText, styles.cancelText]}>Back</Text>
                 </View>
               </AnimatedPressable>

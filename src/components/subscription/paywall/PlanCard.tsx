@@ -8,6 +8,7 @@ import { flatColors as colors } from "../../../theme/aurora-tokens";
 import { radioA11yProps } from "../../../utils/accessibility/props";
 import { formatINR } from "../../../utils/subscriptionUi";
 import { rf, rp, rbr } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 export interface PlanCardProps {
   name: string;
@@ -61,6 +62,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   isStatic = false,
   monthlyOnly = false,
 }) => {
+  const reducedMotion = useReducedMotion();
   const a11yLabel =
     `${name}, ${formatINR(pricePerMonth)} per month` +
     (billingCycle === "yearly" ? `, billed ${formatINR(pricePerMonth * 12)} yearly` : "") +
@@ -137,7 +139,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
     </>
   );
 
-  const entering = FadeInDown.duration(350).delay(index * 80);
+  const entering = reducedMotion ? undefined : FadeInDown.duration(350).delay(index * 80);
 
   if (isStatic) {
     return (

@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Modal,
   StatusBar,
-  Dimensions,
+  useWindowDimensions,
   StyleProp,
   ViewStyle,
 } from "react-native";
@@ -56,6 +56,8 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const mediaWidth = Math.min(width, Math.max(0, windowWidth - spacing.lg * 2));
 
   const getFallbackDisplayName = (value: string) =>
     value
@@ -100,11 +102,13 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
     exerciseName ||
     (exerciseId ? getFallbackDisplayName(exerciseId) : "") ||
     "Exercise";
+  const activeGifUrl = fallbackUrl ?? exercise?.gifUrl ?? "";
 
   useEffect(() => {
     // Reset fallback + retry counter whenever exercise changes
     setFallbackUrl(null);
     setRetryCount(0);
+    setIsPlaying(autoPlay);
     if (exercise?.gifUrl) {
       setIsLoading(true);
       setHasError(false);
@@ -116,7 +120,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
       setHasError(false);
       setNotFound(true);
     }
-  }, [exercise, exerciseId]);
+  }, [exercise, exerciseId, autoPlay]);
 
   const handleImageLoad = () => {
     setIsLoading(false);
@@ -151,12 +155,11 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   const renderFullscreenModal = () => {
     if (!exercise || !exercise.gifUrl) return null;
 
-    const screenDimensions = Dimensions.get("window");
     // Clamp to the phone-column width on web/tablet so the fullscreen GIF
     // doesn't balloon to 1728px on a 1920px desktop window. Mirrors the
     // clamping in src/utils/responsive.ts (effective design width ≤480px).
-    const effectiveWidth = Math.min(screenDimensions.width, 480);
-    const effectiveHeight = Math.min(screenDimensions.height, 900);
+    const effectiveWidth = Math.min(windowWidth, 480);
+    const effectiveHeight = Math.min(windowHeight, 900);
     const modalWidth = effectiveWidth * 0.9;
     const modalHeight = effectiveHeight * 0.7;
 
@@ -192,7 +195,8 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
             </Text>
 
             <Image
-              source={{ uri: exercise.gifUrl }}
+              key={`fullscreen-${exerciseId}-${activeGifUrl}`}
+              source={{ uri: activeGifUrl }}
               style={[
                 styles.fullscreenGif,
                 { width: modalWidth, height: modalHeight * 0.8 },
@@ -200,6 +204,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
               contentFit="contain"
               transition={300}
               cachePolicy="memory-disk"
+              autoplay={isPlaying}
             />
 
             <Text style={styles.fullscreenHint}>
@@ -269,7 +274,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   const renderGifPlayer = () => {
     if (!exercise || !exercise.gifUrl) {
       return (
-        <View style={[styles.placeholder, { height, width }]}>
+        <View style={[styles.placeholder, { height, width: mediaWidth }]}>
           <Text style={styles.placeholderText}>Demo unavailable</Text>
           <Text style={styles.placeholderSubtext}>
             We could not load the movement demo for {displayName}.
@@ -292,7 +297,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
     }
 
     return (
-      <View style={[styles.gifContainer, { height, width }]}>
+      <View style={[styles.gifContainer, { height, width: mediaWidth }]}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <AuroraSpinner size="lg" theme="primary" />
@@ -370,12 +375,13 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
               style={styles.gifTouchArea}
             >
               <Image
-                source={{ uri: fallbackUrl ?? exercise.gifUrl }}
+                key={`${exerciseId}-${activeGifUrl}`}
+                source={{ uri: activeGifUrl }}
                 style={[
                   styles.gif,
                   {
                     height,
-                    width,
+                    width: mediaWidth,
                     maxWidth: "100%",
                     maxHeight: "100%",
                   },
@@ -385,6 +391,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
                 contentFit="contain" // Expo Image prop (was resizeMode)
                 transition={300} // Smooth loading transition
                 cachePolicy="memory-disk" // Better caching for GIFs
+                autoplay={isPlaying}
               />
 
               {/* Zoom hint overlay — hidden when showControls=false */}
