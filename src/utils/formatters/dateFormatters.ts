@@ -12,7 +12,9 @@
 
 /**
  * Date Formatter Service
- * Centralized date formatting with consistent locale and options
+ * Centralized date formatting with consistent, device-aware locale options.
+ * Passing `undefined` as the locale lets the native Intl implementation use
+ * the user's configured locale instead of forcing U.S. month/day ordering.
  */
 export const DateFormatters = {
   /**
@@ -21,7 +23,7 @@ export const DateFormatters = {
    */
   short(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
     });
@@ -33,7 +35,7 @@ export const DateFormatters = {
    */
   long(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       month: "long",
       day: "numeric",
       year: "numeric",
@@ -46,7 +48,7 @@ export const DateFormatters = {
    */
   weekdayOnly(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       weekday: "long",
     });
   },
@@ -57,7 +59,7 @@ export const DateFormatters = {
    */
   weekdayShort(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       weekday: "short",
     });
   },
@@ -68,7 +70,7 @@ export const DateFormatters = {
    */
   monthYear(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       month: "short",
       year: "numeric",
     });
@@ -80,7 +82,7 @@ export const DateFormatters = {
    */
   fullMonthYear(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       month: "long",
       year: "numeric",
     });
@@ -92,7 +94,7 @@ export const DateFormatters = {
    */
   weekdayDate(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       weekday: "long",
       month: "short",
       day: "numeric",
@@ -105,7 +107,7 @@ export const DateFormatters = {
    */
   full(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -135,12 +137,12 @@ export const DateFormatters = {
    * Time only
    * @example "2:30 PM" or "14:30"
    */
-  timeOnly(date: Date | string, use24Hour: boolean = false): string {
+  timeOnly(date: Date | string, use24Hour?: boolean): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleTimeString("en-US", {
+    return d.toLocaleTimeString(undefined, {
       hour: "numeric",
       minute: "2-digit",
-      hour12: !use24Hour,
+      ...(use24Hour == null ? {} : { hour12: !use24Hour }),
     });
   },
 
@@ -206,7 +208,7 @@ export const DateFormatters = {
    */
   cardFormat(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -219,7 +221,7 @@ export const DateFormatters = {
    */
   calendarHeader(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(undefined, {
       month: "long",
       year: "numeric",
     });
@@ -234,8 +236,8 @@ export const DateFormatters = {
       typeof startDate === "string" ? new Date(startDate) : startDate;
     const end = typeof endDate === "string" ? new Date(endDate) : endDate;
 
-    const startMonth = start.toLocaleDateString("en-US", { month: "short" });
-    const endMonth = end.toLocaleDateString("en-US", { month: "short" });
+    const startMonth = start.toLocaleDateString(undefined, { month: "short" });
+    const endMonth = end.toLocaleDateString(undefined, { month: "short" });
     const startDay = start.getDate();
     const endDay = end.getDate();
 

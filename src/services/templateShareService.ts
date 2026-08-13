@@ -9,8 +9,8 @@
  *  - importTemplateFromLink(link): parse the link, fetch the source template
  *    (must be public — RLS enforces this on the read), then fork it into the
  *    current user's library via `workoutTemplateService.forkTemplate`.
- *  - openShareSheet(text, url): open the OS share sheet via `expo-sharing` when
- *    available, with a `Linking` fallback that opens the SMS/mail chooser.
+ *  - openShareSheet(text, url): open the native OS share sheet so the user can
+ *    choose any available app.
  *
  * LINK SCHEMES (both resolve to the same template id):
  *   - fitai://template/{templateId}      (app deep link — opens the app directly)
@@ -25,7 +25,7 @@
  * real authenticated userId; if absent it throws (caller surfaces the error).
  */
 
-import { Linking, Platform } from "react-native";
+import { Share } from "react-native";
 import {
   workoutTemplateService,
   type WorkoutTemplate,
@@ -159,47 +159,44 @@ export async function importTemplateFromLink(
 // ----------------------------------------------------------------------------
 
 /**
- * Open the OS share sheet with the given message + URL. Uses `Linking.openURL`
- * with the `sms:` / `mailto:` chooser as a portable fallback because
- * `expo-sharing` is not installed in this project (adding a native dep is out
- * of scope for Phase 10 — the deep-link itself is the deliverable; the share
- * sheet is a thin convenience wrapper).
+ * Open the native OS share sheet with the given message + URL.
  *
- * On iOS, `Linking.openURL('sms:&body=...')` opens the Messages app with the
- * body pre-filled. On Android, `Linking.openURL('sms:?body=...')` does the
- * same. Callers can also copy the link to the clipboard via the returned URL
- * if the share sheet fails.
- *
- * Returns true if the OS accepted the openURL request.
+ * Returns true only when the user completes a share; dismissing the sheet is
+ * normal cancellation.
  */
 export async function openShareSheet(
   message: string,
   url: string,
 ): Promise<boolean> {
-  const body = encodeURIComponent(`${message}\n\n${url}`);
-  const scheme = Platform.OS === "ios" ? `sms:&body=${body}` : `sms:?body=${body}`;
   try {
-    await Linking.openURL(scheme);
-    return true;
+    const result = await Share.share({
+      title: "Share FitAI workout",
+      message: `${message}\n\n${url}`,
+      url,
+    });
+    return result.action === Share.sharedAction;
   } catch (error) {
     console.error("[templateShareService] openShareSheet failed:", error);
-    return false;
+    throw error;
   }
 }
 
 /**
  * Convenience: generate a share link for a template AND open the share sheet
- * with a friendly message. Returns the generated link so the caller can
- * surface a "link copied" toast even if the share sheet is dismissed.
+ * with a friendly message. Returns the generated link after a completed share,
+ * or null when the user dismisses the sheet. Handoff failures reject so the
+ * caller can surface recovery UI.
  */
 export async function shareTemplate(
   templateId: string,
   templateName: string,
-): Promise<string> {
-  const link = generateShareLink(templateId);
+): Promise<string | null> {
+  // Share the HTTPS form so recipients without FitAI still receive a usable
+  // destination; configured associated-domain devices can open it in-app.
+  const link = generateUniversalLink(templateId);
   const message = `Check out this workout template "${templateName}" on FitAI:`;
-  await openShareSheet(message, link);
-  return link;
+  const shared = await openShareSheet(message, link);
+  return shared ? link : null;
 }
 
 export default {
