@@ -205,8 +205,14 @@ export const LineChart: React.FC<LineChartProps> = ({
                   },
                 ]}
               >
+                {/* Arrow direction reflects the actual data movement (trend
+                    sign); isPositiveTrend only recolors it green/red for
+                    whether that movement is "good" (e.g. weightLossGoal
+                    flips which direction counts as good). Using
+                    isPositiveTrend for the icon too showed an up-arrow next
+                    to a weight LOSS, contradicting the line chart below it. */}
                 <Ionicons
-                  name={isPositiveTrend ? "trending-up" : "trending-down"}
+                  name={trend >= 0 ? "trending-up" : "trending-down"}
                   size={rf(12)}
                   color={isPositiveTrend ? chartColors[4] : chartColors[6]}
                 />

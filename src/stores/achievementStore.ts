@@ -560,9 +560,28 @@ export const useAchievementStore = create<AchievementStore>()(
             // carries the actual failure so a consumer can show a real error
             // + retry UI instead of overloading isInitialized for both
             // "not yet loaded" and "failed to load".
+            //
+            // The achievement catalog itself (achievementEngine.getAllAchievements())
+            // is a static, synchronous, purely local array — it cannot fail from a
+            // network error. A failure here is almost always a *later* step in the
+            // try block (Supabase progress sync, streak persistence, etc). Falling
+            // back to the local catalog means the user still sees their achievement
+            // list (locked/zero-progress) instead of a misleading "Couldn't load
+            // achievements — check your connection" empty state for data that was
+            // never network-dependent in the first place.
+            let fallbackAchievements: Achievement[] = [];
+            try {
+              fallbackAchievements = achievementEngine.getAllAchievements();
+            } catch {
+              // Engine itself never initialized — no local catalog available either.
+            }
             set({
               isLoading: false,
               isInitialized: true,
+              achievements:
+                fallbackAchievements.length > 0
+                  ? fallbackAchievements
+                  : get().achievements,
               initError:
                 error instanceof Error
                   ? error.message

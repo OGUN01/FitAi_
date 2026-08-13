@@ -222,6 +222,29 @@ export const BarChart: React.FC<BarChartProps> = React.memo(({
                 stroke={border.subtle}
                 strokeWidth={1}
               />
+              {/* Y-axis scale reference — without this, bars only convey their
+                  value relative to each other (via tap-to-reveal tooltip), so
+                  e.g. two bars of near-equal height read as "same value" even
+                  when a caller passes an explicit maxValue far above both. */}
+              <Line
+                x1={0}
+                y1={2}
+                x2={containerWidth}
+                y2={2}
+                stroke={border.subtle}
+                strokeWidth={1}
+                strokeDasharray="2,4"
+              />
+              <SvgText
+                x={containerWidth}
+                y={12}
+                fill={colors.text.muted}
+                fontSize={rf(9)}
+                fontFamily={typography.variants.caption.fontFamily}
+                textAnchor="end"
+              >
+                {Math.round(max).toLocaleString()}
+              </SvgText>
 
               {chartData.map((item, index) => {
                 const barHeight = Math.max((item.value / max) * BAR_AREA_HEIGHT, rh(4));

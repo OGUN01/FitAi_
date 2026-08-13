@@ -74,6 +74,11 @@ const StatCell: React.FC<{
   title: string;
   value: string;
   subtitle?: string;
+  // Escalates the subtitle's color for a clinically notable value (e.g. a
+  // BMI reading outside the typical range) instead of rendering it in the
+  // same neutral tone as an in-range value. Defaults to the neutral subtitle
+  // color when omitted.
+  subtitleColor?: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   trend?: "up" | "down" | "stable";
@@ -88,6 +93,7 @@ const StatCell: React.FC<{
   title,
   value,
   subtitle,
+  subtitleColor,
   icon,
   color,
   trend,
@@ -206,7 +212,15 @@ const StatCell: React.FC<{
               </Text>
             </View>
           ) : subtitle ? (
-            <Text style={styles.subtitleText} numberOfLines={1}>{subtitle}</Text>
+            <Text
+              style={[
+                styles.subtitleText,
+                subtitleColor ? { color: subtitleColor, fontWeight: "600" } : null,
+              ]}
+              numberOfLines={1}
+            >
+              {subtitle}
+            </Text>
           ) : null}
         </View>
       </AnimatedPressable>
@@ -384,6 +398,16 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = React.memo(({
                         : data.bmi < 30
                           ? "Above typical range"
                           : "Well above typical range"
+                    : undefined
+                }
+                // Escalate color only for the two clinically notable
+                // extremes (under/well-above) — "Typical"/"Above typical"
+                // stay neutral. Previously every tier rendered identically,
+                // so a "Well above typical range" reading carried no more
+                // visual weight than an in-range one.
+                subtitleColor={
+                  data.bmi && (data.bmi < 18.5 || data.bmi >= 30)
+                    ? chart[6]
                     : undefined
                 }
                 icon="body-outline"
