@@ -489,8 +489,12 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
             the rightAction slot. BottomStartBar (below) also offers Start,
             but it's gated on `!isCompleted`; this header pill has no such
             gate, so a completed workout still has a restart affordance. */}
+        {/* No `title` here — the hero card immediately below already renders
+            the workout name prominently (with description/meta chips), so a
+            second literal copy in the sticky header read as a copy-paste
+            leftover. `eyebrow` gives the header context without repeating it. */}
         <GlassHeader
-          title={workout.title || 'Workout'}
+          eyebrow="WORKOUT"
           onBack={handleBack}
           backAccessibilityLabel="Go back to previous screen"
           rightAction={
@@ -611,7 +615,13 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                 <Stat
                   icon="time-outline"
                   label="Duration"
-                  value={stats.duration > 0 ? `${Math.round(stats.duration)}m` : '—'}
+                  value={
+                    stats.duration > 0
+                      ? `${Math.round(stats.duration)}m`
+                      : workout.duration > 0
+                        ? `~${Math.round(workout.duration)}m`
+                        : '—'
+                  }
                 />
                 <Divider />
                 <Stat icon="trending-up-outline" label="Difficulty" value={difficultyLabel} />
