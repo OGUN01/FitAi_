@@ -97,17 +97,17 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
-
-  // Ref guard: the session-check effect only needs to run once on mount.
-  // Without this, a re-render triggered by a parent state change (e.g. App.tsx
-  // flipping the passwordResetToken flag) could re-trigger the async session
-  // check and overwrite a settled state. CLAUDE.md #10.
-  const sessionCheckedRef = useRef(false);
+  const submitInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (sessionCheckedRef.current) return;
-    sessionCheckedRef.current = true;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
+  useEffect(() => {
     let cancelled = false;
     const checkSession = async () => {
       try {
@@ -160,10 +160,12 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (submitInFlightRef.current) return;
     const validationErrors = validateNewPassword(password, confirmPassword);
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -174,20 +176,29 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
 
       if (error) {
         console.error("[PasswordResetScreen] updateUser failed:", error);
-        setSubmitError(error.message || "Failed to update password. Please try again.");
+        if (mountedRef.current) {
+          setSubmitError(error.message || "Failed to update password. Please try again.");
+        }
         return;
       }
 
-      setState("success");
+      if (mountedRef.current) {
+        setState("success");
+      }
     } catch (error) {
       console.error("[PasswordResetScreen] updateUser threw:", error);
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred. Please try again.",
-      );
+      if (mountedRef.current) {
+        setSubmitError(
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
+        );
+      }
     } finally {
-      setIsSubmitting(false);
+      submitInFlightRef.current = false;
+      if (mountedRef.current) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -197,13 +208,15 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         <AnimatedPressable
           style={styles.backButton}
           onPress={onBack}
+          disabled={isSubmitting}
           scaleValue={0.97}
           accessibilityLabel="Go back"
           accessibilityRole="button"
+          accessibilityState={{ disabled: isSubmitting }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Ionicons
-            name="arrow-back"
+            name="chevron-back"
             size={rf(22)}
             color={colors.primary}
           />
@@ -213,9 +226,6 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         <Text style={styles.title} numberOfLines={2}>{title}</Text>
         <Text
           style={styles.subtitle}
-          numberOfLines={3}
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
         >
           {subtitle}
         </Text>
@@ -236,7 +246,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         accessibilityRole="button"
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       >
-        <Ionicons name="arrow-back" size={rf(22)} color={colors.primary} />
+        <Ionicons name="chevron-back" size={rf(22)} color={colors.primary} />
       </AnimatedPressable>
     </View>
   );
@@ -284,9 +294,6 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
               <View style={styles.footerRow}>
                 <Text
                   style={styles.footerText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
                 >
                   Remembered your password?{" "}
                 </Text>
@@ -300,9 +307,6 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 >
                   <Text
                     style={styles.footerLink}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.8}
                   >
                     Back to Login
                   </Text>
@@ -389,7 +393,7 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 </AnimatedPressable>
               </View>
               {errors.password ? (
-                <Text style={styles.fieldError}>{errors.password}</Text>
+                <Text style={styles.fieldError} accessibilityRole="alert">{errors.password}</Text>
               ) : (
                 <Text style={styles.fieldHint}>
                   At least 8 characters, including a number or symbol
@@ -425,11 +429,11 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 </AnimatedPressable>
               </View>
               {errors.confirmPassword ? (
-                <Text style={styles.fieldError}>{errors.confirmPassword}</Text>
+                <Text style={styles.fieldError} accessibilityRole="alert">{errors.confirmPassword}</Text>
               ) : null}
 
               {submitError && (
-                <View style={styles.submitErrorContainer}>
+                <View style={styles.submitErrorContainer} accessibilityRole="alert">
                   <Ionicons
                     name="alert-circle"
                     size={rf(16)}
@@ -452,25 +456,21 @@ export const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
               <View style={styles.footerRow}>
                 <Text
                   style={styles.footerText}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.8}
                 >
                   Link not working?{" "}
                 </Text>
                 <AnimatedPressable
                   onPress={onRequestNewReset}
+                  disabled={isSubmitting}
                   scaleValue={0.97}
                   style={styles.footerLinkContainer}
                   accessibilityRole="link"
                   accessibilityLabel="Request a new password reset link"
+                  accessibilityState={{ disabled: isSubmitting }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Text
                     style={styles.footerLink}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.8}
                   >
                     Request a new one
                   </Text>

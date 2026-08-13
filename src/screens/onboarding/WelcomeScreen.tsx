@@ -212,7 +212,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 accessibilityRole="button"
               >
                 <Ionicons
-                  name="arrow-back"
+                  name="chevron-back"
                   size={rf(22)}
                   color={colors.primary.DEFAULT}
                 />

@@ -126,7 +126,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: ExpoSecureStoreAdapter,
-    autoRefreshToken: true,
+    // Jest imports many service modules for otherwise-pure unit tests. Keeping
+    // the auth refresh scheduler alive there fires timers after the test
+    // environment is torn down and makes a fully passing suite exit non-zero.
+    // Runtime builds still retain normal token refresh behavior.
+    autoRefreshToken: process.env.NODE_ENV !== "test",
     persistSession: true,
     detectSessionInUrl: Platform.OS === "web",
   },
