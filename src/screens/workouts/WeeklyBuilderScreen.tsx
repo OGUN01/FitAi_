@@ -147,27 +147,58 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   // screen must not fall back to an indefinite "Loading…" spinner with no
   // way forward besides backing out entirely.
   const [hydrateError, setHydrateError] = useState(false);
+  const [isHydrating, setIsHydrating] = useState(false);
+  const hydrationInFlightRef = useRef(false);
+  const hydrationAttemptRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(
+    () => {
+      mountedRef.current = true;
+      return () => {
+        mountedRef.current = false;
+      };
+    },
+    [],
+  );
+
+  const runHydration = useCallback(async () => {
+    if (hydrationInFlightRef.current) return;
+    hydrationInFlightRef.current = true;
+    const attempt = ++hydrationAttemptRef.current;
+    setHydrateError(false);
+    setHydrated(false);
+    setIsHydrating(true);
+    try {
+      await hydrateFromCustomPlan();
+      if (!useWorkoutBuilderStore.getState().draft) {
+        throw new Error("Hydration completed without a workout draft");
+      }
+      if (mountedRef.current && attempt === hydrationAttemptRef.current) {
+        setHydrated(true);
+      }
+    } catch (err) {
+      console.error("[WeeklyBuilderScreen] hydrate failed:", err);
+      if (mountedRef.current && attempt === hydrationAttemptRef.current) {
+        setHydrateError(true);
+      }
+    } finally {
+      if (attempt === hydrationAttemptRef.current) {
+        hydrationInFlightRef.current = false;
+        if (mountedRef.current) setIsHydrating(false);
+      }
+    }
+  }, [hydrateFromCustomPlan]);
+
   useEffect(() => {
     if (hydratedRef.current) return;
     hydratedRef.current = true;
-    hydrateFromCustomPlan()
-      .catch((err) => {
-        console.error("[WeeklyBuilderScreen] hydrate failed:", err);
-        setHydrateError(true);
-      })
-      .finally(() => setHydrated(true));
-  }, [hydrateFromCustomPlan]);
+    void runHydration();
+  }, [runHydration]);
 
   const handleRetryHydrate = useCallback(() => {
-    setHydrateError(false);
-    setHydrated(false);
-    hydrateFromCustomPlan()
-      .catch((err) => {
-        console.error("[WeeklyBuilderScreen] hydrate retry failed:", err);
-        setHydrateError(true);
-      })
-      .finally(() => setHydrated(true));
-  }, [hydrateFromCustomPlan]);
+    void runHydration();
+  }, [runHydration]);
 
   // ── Seed from TemplateLibrary "Use in Schedule" ──
   // Runs once per activation, after hydration, so the picker reflects the
@@ -558,6 +589,8 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
                 <GlassButton
                   label="Retry"
                   onPress={handleRetryHydrate}
+                  loading={isHydrating}
+                  disabled={isHydrating}
                   variant="primary"
                   hapticType="medium"
                   testID="weekly-builder-hydrate-retry"

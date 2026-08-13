@@ -48,9 +48,9 @@ import {
 import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
-import { haptics } from "../../utils/haptics";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface BuildMethodLandingScreenProps {
   navigation: {
@@ -122,9 +122,9 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
   // Unlocked rows select normally.
   const isPremium = useSubscriptionStore((s) => s.isPremium());
   const [selectedId, setSelectedId] = useState<BuildMethodId | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const handleSelect = (method: BuildMethod) => {
-    haptics.buttonPress();
     if (method.id === "community" && !isPremium) {
       // Free-tier user tapped the locked Community row — surface the upgrade
       // path via the alert below. This screen doesn't mount <PaywallModal>,
@@ -147,12 +147,11 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
   const handleContinue = () => {
     const method = METHODS.find((m) => m.id === selectedId);
     if (!method) return;
-    haptics.buttonPress();
     navigation.navigate(method.nextScreen, method.nextScreenParams);
   };
 
   return (
-    <AuroraBackground theme="space" animated intensity={0.3}>
+    <AuroraBackground theme="space" animated={!reducedMotion} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         {/* Shared Aurora header — eyebrow-only */}
         <GlassHeader
@@ -166,7 +165,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeInUp.delay(80).duration(450)}>
+          <Animated.View entering={reducedMotion ? undefined : FadeInUp.delay(80).duration(450)}>
             <Text style={styles.title}>Build your program</Text>
             <Text style={styles.subtitle}>
               Pick a starting point — you can always switch later.
@@ -180,7 +179,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
               return (
                 <Animated.View
                   key={method.id}
-                  entering={FadeInUp.delay(160 + index * 80).duration(450)}
+                  entering={reducedMotion ? undefined : FadeInUp.delay(160 + index * 80).duration(450)}
                 >
                   <AnimatedPressable
                     onPress={() => handleSelect(method)}
@@ -188,7 +187,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
                     springConfig="smooth"
                     hapticType="light"
                     accessibilityRole="button"
-                    accessibilityLabel={`${method.title}${method.badge ? `, ${method.badge}` : ""}${locked ? ", locked" : ""}`}
+                    accessibilityLabel={`${method.title}. ${method.description}${method.badge ? ` ${method.badge}.` : ""}${locked ? " Locked." : ""}`}
                     accessibilityHint={locked ? "Premium feature — tap to view upgrade options" : "Tap to select"}
                     accessibilityState={{ disabled: false, selected }}
                     style={[
@@ -213,7 +212,7 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
 
                     <View style={styles.methodText}>
                       <View style={styles.titleRow}>
-                        <Text style={styles.methodTitle} numberOfLines={1}>
+                        <Text style={styles.methodTitle}>
                           {method.title}
                         </Text>
                         {method.badge ? (
@@ -235,14 +234,13 @@ export const BuildMethodLandingScreen: React.FC<BuildMethodLandingScreenProps> =
                             ) : null}
                             <Text
                               style={[styles.badgeText, { color: method.badgeTint }]}
-                              numberOfLines={1}
                             >
                               {method.badge}
                             </Text>
                           </View>
                         ) : null}
                       </View>
-                      <Text style={styles.methodDescription} numberOfLines={3}>
+                      <Text style={styles.methodDescription}>
                         {method.description}
                       </Text>
                     </View>
@@ -360,6 +358,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: rp(spacing.sm),
     marginBottom: rp(2),
   },

@@ -34,6 +34,8 @@ import { rf, rp } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
 import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
 import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
+import { DateFormatters } from '../../utils/formatters/dateFormatters';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 import type { DayWorkout } from '../../types/ai';
 
 // ----------------------------------------------------------------------------
@@ -93,6 +95,7 @@ interface DayRowModel {
 // ----------------------------------------------------------------------------
 
 export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) => {
+  const reducedMotion = useReducedMotion();
   // SSOT: respect the AI/My-Plan toggle — "View plan" from the custom (My
   // Plan) view must show the custom schedule, not the AI plan. Reading only
   // weeklyWorkoutPlan showed "No Plan Yet" to custom-schedule users. Subscribe
@@ -114,10 +117,7 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
     return DAY_KEYS.map((dayKey, index) => {
       const date = new Date(`${currentWeekStart}T00:00:00`);
       date.setDate(date.getDate() + index);
-      const dateLabel = date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      });
+      const dateLabel = DateFormatters.short(date);
 
       const workout = plan?.workouts?.find((w) => w.dayOfWeek?.toLowerCase() === dayKey) ?? null;
       // Defense: a day carrying exercises can never be a rest day, even if
@@ -218,7 +218,7 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
                 rest (deload week, or an all-rest custom schedule) is NOT the
                 same as no plan at all; say so instead of falling through to
                 the "No Plan Yet" empty state below. */}
-            <Text style={styles.summary} numberOfLines={1}>
+            <Text style={styles.summary}>
               {scheduledCount > 0
                 ? `${completedCount} of ${scheduledCount} workouts done`
                 : 'Recovery week — no workouts scheduled'}
@@ -234,7 +234,11 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
                 return (
                   <Animated.View
                     key={day.dayKey}
-                    entering={FadeInDown.delay(60 + index * 60).duration(300)}
+                    entering={
+                      reducedMotion
+                        ? undefined
+                        : FadeInDown.delay(60 + index * 60).duration(300)
+                    }
                   >
                     <AnimatedPressable
                       onPress={
@@ -257,7 +261,7 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
                       <View style={styles.dayHeader}>
                         <Text
                           style={[styles.dayLabel, day.isToday && styles.dayLabelToday]}
-                          numberOfLines={1}
+                          numberOfLines={2}
                         >
                           {day.dayLabel} · {day.dateLabel}
                         </Text>
@@ -291,11 +295,11 @@ export const FullPlanScreen: React.FC<FullPlanScreenProps> = ({ navigation }) =>
                       {/* Workout title + meta */}
                       {day.isRestDay ? null : (
                         <>
-                          <Text style={styles.workoutTitle} numberOfLines={1}>
+                          <Text style={styles.workoutTitle} numberOfLines={2}>
                             {day.workout?.title}
                           </Text>
                           {day.meta ? (
-                            <Text style={styles.workoutMeta} numberOfLines={1}>
+                            <Text style={styles.workoutMeta} numberOfLines={2}>
                               {day.meta}
                             </Text>
                           ) : null}
@@ -335,6 +339,7 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: colors.textTertiary,
     textAlign: 'center',
+    paddingHorizontal: rp(spacing.lg),
     marginTop: rp(spacing.xs),
     marginBottom: rp(spacing.sm),
   },
@@ -351,8 +356,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: rp(spacing.sm),
   },
   dayLabel: {
+    flex: 1,
+    minWidth: 0,
     fontSize: rf(11),
     fontWeight: '600',
     color: colors.textTertiary,
@@ -364,6 +372,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statusDone: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: rp(spacing.xs),
@@ -374,6 +383,7 @@ const styles = StyleSheet.create({
     color: colors.successAlt,
   },
   statusRest: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: rp(spacing.xs),

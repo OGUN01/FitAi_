@@ -765,24 +765,31 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                         <View style={styles.addedActions}>
                           <AnimatedPressable
                             onPress={() => moveExercise(index, "up")}
+                            disabled={index === 0}
                             testID={`move-up-${index}`}
-                            accessibilityLabel="Move exercise up"
-                            style={styles.iconBtn}
+                            accessibilityLabel={`Move ${ex.name} up`}
+                            accessibilityState={{ disabled: index === 0 }}
+                            style={[styles.iconBtn, index === 0 && styles.iconBtnDisabled]}
                           >
                             <Ionicons name="chevron-up" size={rf(16)} color={colors.primary} />
                           </AnimatedPressable>
                           <AnimatedPressable
                             onPress={() => moveExercise(index, "down")}
+                            disabled={index === addedExercises.length - 1}
                             testID={`move-down-${index}`}
-                            accessibilityLabel="Move exercise down"
-                            style={styles.iconBtn}
+                            accessibilityLabel={`Move ${ex.name} down`}
+                            accessibilityState={{ disabled: index === addedExercises.length - 1 }}
+                            style={[
+                              styles.iconBtn,
+                              index === addedExercises.length - 1 && styles.iconBtnDisabled,
+                            ]}
                           >
                             <Ionicons name="chevron-down" size={rf(16)} color={colors.primary} />
                           </AnimatedPressable>
                           <AnimatedPressable
                             onPress={() => removeExercise(index)}
                             testID={`remove-exercise-${index}`}
-                            accessibilityLabel="Remove exercise"
+                            accessibilityLabel={`Remove ${ex.name}`}
                             style={styles.iconBtn}
                           >
                             <Ionicons name="close" size={rf(16)} color={colors.error} />
@@ -846,8 +853,9 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                     style={[styles.tab, active && styles.tabActive]}
                     onPress={() => setSelectedCategory(tab.key)}
                     testID={`category-tab-${tab.key}`}
-                    accessibilityRole="button"
+                    accessibilityRole="tab"
                     accessibilityLabel={`Filter by ${tab.label}`}
+                    accessibilityState={{ selected: active }}
                     scaleValue={0.97}
                     springConfig="smooth"
                     hapticType="light"
@@ -946,9 +954,9 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                             styles.difficultyChip,
                             active && styles.difficultyChipActive,
                           ]}
-                          accessibilityRole="button"
+                          accessibilityRole="radio"
                           accessibilityLabel={opt.label}
-                          accessibilityState={{ selected: active }}
+                          accessibilityState={{ checked: active }}
                           testID={`share-difficulty-${opt.key}`}
                           scaleValue={0.97}
                           springConfig="smooth"
@@ -983,9 +991,9 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                             styles.categoryChip,
                             active && styles.categoryChipActive,
                           ]}
-                          accessibilityRole="button"
+                          accessibilityRole="radio"
                           accessibilityLabel={`Category ${cat}`}
-                          accessibilityState={{ selected: active }}
+                          accessibilityState={{ checked: active }}
                           testID={`share-category-${cat}`}
                           scaleValue={0.97}
                           springConfig="smooth"
@@ -1229,6 +1237,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: Math.max(rw(32), 44),
     height: Math.max(rw(32), 44),
+  },
+  iconBtnDisabled: {
+    opacity: 0.35,
   },
   // ── Exercise search ──
   exerciseSearchRow: {

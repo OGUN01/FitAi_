@@ -628,7 +628,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
         >
           <View style={styles.sheetBody}>
             <View style={[styles.sheetIcon, { backgroundColor: hexToRgba(colors.error.DEFAULT, 0.12) }]}>
-              <Ionicons name="trash" size={rf(28)} color={colors.error.DEFAULT} />
+              <Ionicons name="trash-outline" size={rf(28)} color={colors.error.DEFAULT} />
             </View>
             <Text style={styles.sheetTitle}>Clear {dayLabel}?</Text>
             <Text style={styles.sheetMessage}>

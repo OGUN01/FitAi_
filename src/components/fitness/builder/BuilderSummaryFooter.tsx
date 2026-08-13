@@ -22,7 +22,7 @@
  * instead of centered CustomDialog overlays. Metric readouts use
  * tabular-nums.
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, ViewStyle, Pressable, type TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -79,6 +79,20 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
   const [aiMenuOpen, setAiMenuOpen] = useState(false);
   const [deloadConfirmOpen, setDeloadConfirmOpen] = useState(false);
   const [aiActionError, setAiActionError] = useState<string | null>(null);
+  const saveInFlightRef = useRef(false);
+  const aiActionInFlightRef = useRef(false);
+  const saveSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (saveSuccessTimeoutRef.current) {
+        clearTimeout(saveSuccessTimeoutRef.current);
+      }
+      saveInFlightRef.current = false;
+      aiActionInFlightRef.current = false;
+    },
+    [],
+  );
 
   // ── Phase 9: filled-day count (drives "Generate Full Week" disabled state) ──
   const filledDayCount = useMemo(() => {
@@ -173,63 +187,98 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
   const hasContent = totalExercises > 0;
 
   const handleSave = async () => {
-    if (!hasContent || saving) return;
+    if (!hasContent || saving || saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
     setSaving(true);
     try {
       await save();
       haptics.celebration();
       setShowConfetti(true);
       // Let the confetti play briefly before navigating back
-      setTimeout(() => {
+      saveSuccessTimeoutRef.current = setTimeout(() => {
+        saveSuccessTimeoutRef.current = null;
+        saveInFlightRef.current = false;
+        setSaving(false);
         setShowConfetti(false);
         onSaved();
       }, 900);
     } catch (err) {
       console.error("[BuilderSummaryFooter] save failed:", err);
       haptics.error();
+      saveInFlightRef.current = false;
       setSaving(false);
     }
   };
 
   // ── Phase 9 AI action handlers ──
   const handleGenerateFullWeek = async () => {
+    if (aiLoading || aiActionInFlightRef.current) return;
     setAiMenuOpen(false);
     if (filledDayCount < 2) {
       setAiActionError("Add exercises to at least 2 days first.");
       haptics.warning();
       return;
     }
+    aiActionInFlightRef.current = true;
     haptics.medium();
-    const result = await generateFullWeek();
-    if (result.success) {
-      haptics.success();
-    } else {
-      setAiActionError(result.error ?? "Failed to generate full week");
+    try {
+      const result = await generateFullWeek();
+      if (result.success) {
+        haptics.success();
+      } else {
+        setAiActionError(result.error ?? "Failed to generate full week");
+        haptics.error();
+      }
+    } catch (error) {
+      console.error("[BuilderSummaryFooter] generate full week failed:", error);
+      setAiActionError("Failed to generate full week");
       haptics.error();
+    } finally {
+      aiActionInFlightRef.current = false;
     }
   };
 
   const handleApplyProgression = async () => {
+    if (aiLoading || aiActionInFlightRef.current) return;
+    aiActionInFlightRef.current = true;
     setAiMenuOpen(false);
     haptics.medium();
-    const result = await applyProgression(priorPerformance);
-    if (result.success) {
-      haptics.success();
-    } else {
-      setAiActionError(result.error ?? "Failed to apply progressive overload");
+    try {
+      const result = await applyProgression(priorPerformance);
+      if (result.success) {
+        haptics.success();
+      } else {
+        setAiActionError(result.error ?? "Failed to apply progressive overload");
+        haptics.error();
+      }
+    } catch (error) {
+      console.error("[BuilderSummaryFooter] apply progression failed:", error);
+      setAiActionError("Failed to apply progressive overload");
       haptics.error();
+    } finally {
+      aiActionInFlightRef.current = false;
     }
   };
 
   const handleDeloadConfirm = async () => {
+    if (aiLoading || aiActionInFlightRef.current) return;
+    aiActionInFlightRef.current = true;
     setDeloadConfirmOpen(false);
     haptics.medium();
-    const result = await deloadWeek();
-    if (result.success) {
-      haptics.success();
-    } else {
-      setAiActionError(result.error ?? "Failed to apply deload");
+    try {
+      const result = await deloadWeek();
+      if (result.success) {
+        haptics.success();
+      } else {
+        setAiActionError(result.error ?? "Failed to apply deload");
+        haptics.error();
+      }
+    } catch (error) {
+      console.error("[BuilderSummaryFooter] apply deload failed:", error);
+      setAiActionError("Failed to apply deload");
       haptics.error();
+    } finally {
+      aiActionInFlightRef.current = false;
     }
   };
 
@@ -296,6 +345,8 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
             }}
             accessibilityRole="button"
             accessibilityLabel="AI actions menu"
+            accessibilityState={{ disabled: aiLoading }}
+            disabled={aiLoading}
             style={[styles.aiMenuBtn, aiLoading && styles.aiMenuBtnLoading]}
           >
             {aiLoading ? (
@@ -392,6 +443,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
       <DetentBottomSheet
         visible={deloadConfirmOpen}
         onClose={() => setDeloadConfirmOpen(false)}
+        dismissOnLowestDrag={!aiLoading}
         snapPoints={[0.4, 0.6]}
         initialSnapIndex={1}
         testID={`${testID ?? "footer"}-deload-sheet`}
@@ -408,6 +460,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
             <GlassButton
               label="Cancel"
               onPress={() => setDeloadConfirmOpen(false)}
+              disabled={aiLoading}
               variant="secondary"
               hapticType="light"
               style={styles.sheetActionBtn}
@@ -416,6 +469,8 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
             <GlassButton
               label="Apply Deload"
               onPress={handleDeloadConfirm}
+              loading={aiLoading}
+              disabled={aiLoading}
               variant="primary"
               hapticType="medium"
               style={styles.sheetActionBtn}

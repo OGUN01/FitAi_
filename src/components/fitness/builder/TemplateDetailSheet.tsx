@@ -64,6 +64,7 @@ import { crossPlatformAlert } from "../../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../../services/authUtils";
 import { rf, rp, rw, rs } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 // ----------------------------------------------------------------------------
 // TYPES & CONSTANTS
@@ -174,6 +175,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
   onRated,
   testID,
 }) => {
+  const reducedMotion = useReducedMotion();
   const [forking, setForking] = React.useState(false);
   const [forked, setForked] = React.useState(false);
   const [confettiTrigger, setConfettiTrigger] = React.useState(false);
@@ -326,11 +328,12 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
     if (!template) return;
     haptics.light();
     try {
-      // shareTemplate builds a fitai://template/{id} deep link + opens the OS
-      // share sheet (SMS chooser fallback). Returns the link so we can show a
-      // confirmation toast even if the user dismisses the sheet.
-      await shareTemplate(template.id, template.name);
-      setShared(true);
+      // shareTemplate opens the native share sheet with a recipient-safe HTTPS
+      // link. A dismissed sheet returns null, so cancellation stays quiet.
+      const sharedLink = await shareTemplate(template.id, template.name);
+      if (sharedLink) {
+        setShared(true);
+      }
     } catch (err) {
       console.error("[TemplateDetailSheet] share failed:", err);
       haptics.error();
@@ -397,7 +400,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
         {template ? (
           <View testID={`${testID ?? "template-detail"}-${template.id}`}>
             {/* Header */}
-            <Animated.View entering={FadeInDown.delay(60).duration(300)}>
+            <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(60).duration(300)}>
               <Text
                 style={styles.name}
                 numberOfLines={2}
@@ -460,7 +463,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
             </Animated.View>
 
             {/* Stats grid */}
-            <Animated.View entering={FadeInDown.delay(120).duration(300)}>
+            <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(120).duration(300)}>
               <View style={styles.statsGrid}>
                 <StatTile
                   icon="barbell-outline"
@@ -504,7 +507,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
             {/* Muscle balance radar (mini) */}
             {exerciseCount > 0 ? (
               <Animated.View
-                entering={FadeInDown.delay(180).duration(300)}
+                entering={reducedMotion ? undefined : FadeInDown.delay(180).duration(300)}
                 style={styles.radarWrap}
               >
                 <Text style={styles.sectionTitle}>Muscle Balance</Text>
@@ -518,7 +521,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
 
             {/* Exercise list */}
             {exerciseCount > 0 ? (
-              <Animated.View entering={FadeInDown.delay(240).duration(300)}>
+              <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(240).duration(300)}>
                 <Text style={styles.sectionTitle}>Exercises</Text>
                 <GlassCard
                   elevation={1}
@@ -539,7 +542,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
 
             {/* Tags */}
             {template.tags && template.tags.length > 0 ? (
-              <Animated.View entering={FadeInDown.delay(300).duration(300)}>
+              <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(300).duration(300)}>
                 <Text style={styles.sectionTitle}>Tags</Text>
                 <View style={styles.tagsRow}>
                   {template.tags.map((tag) => (
@@ -553,7 +556,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
 
             {/* Description */}
             {template.description ? (
-              <Animated.View entering={FadeInDown.delay(360).duration(300)}>
+              <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(360).duration(300)}>
                 <Text style={styles.sectionTitle}>Description</Text>
                 <Text style={styles.descriptionText}>
                   {template.description}
@@ -565,7 +568,7 @@ export const TemplateDetailSheet: React.FC<TemplateDetailSheetProps> = ({
                 (Fork/Rate/Share) collapse into a 2-column grid so the section
                 doesn't grow to 5 stacked full-width buttons. */}
             <Animated.View
-              entering={FadeInDown.delay(420).duration(300)}
+              entering={reducedMotion ? undefined : FadeInDown.delay(420).duration(300)}
               style={styles.actions}
             >
               <GlassButton

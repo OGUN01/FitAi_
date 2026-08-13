@@ -14,7 +14,7 @@
  * Tokens: aurora-tokens. Haptics: src/utils/haptics.ts. Springs: Reanimated
  * FadeInDown springify entrance.
  */
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -33,10 +33,10 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { GlassButton } from "../../ui/aurora/GlassButton";
-import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { workoutBuilderAi } from "../../../ai/workoutBuilderAi";
 import { haptics } from "../../../utils/haptics";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 import {
   colors,
   spacing,
@@ -66,15 +66,46 @@ export const NaturalLanguageEditBar: React.FC = () => {
   const [summary, setSummary] = useState<string>("");
 
   const inputRef = useRef<TextInput>(null);
+  const requestInFlightRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const collapseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+  const reducedMotion = useReducedMotion();
+
+  useEffect(
+    () => {
+      mountedRef.current = true;
+      return () => {
+        mountedRef.current = false;
+        requestIdRef.current += 1;
+        requestInFlightRef.current = false;
+        if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+        if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+      };
+    },
+    [],
+  );
 
   const handleExpand = useCallback(() => {
+    if (requestInFlightRef.current) return;
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+    if (collapseTimeoutRef.current) {
+      clearTimeout(collapseTimeoutRef.current);
+      collapseTimeoutRef.current = null;
+    }
     setExpanded((v) => !v);
     haptics.selection();
     // Focus the input on expand so the keyboard appears.
     if (!expanded) {
-      setTimeout(() => inputRef.current?.focus(), 200);
+      focusTimeoutRef.current = setTimeout(() => {
+        focusTimeoutRef.current = null;
+        inputRef.current?.focus();
+      }, reducedMotion ? 0 : 200);
+    } else {
+      inputRef.current?.blur();
     }
-  }, [expanded]);
+  }, [expanded, reducedMotion]);
 
   const handleChange = useCallback(
     (e: NativeSyntheticEvent<TextInputChangeEventData>) => {
@@ -87,13 +118,15 @@ export const NaturalLanguageEditBar: React.FC = () => {
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!draft) return;
+    if (!draft || requestInFlightRef.current) return;
     const trimmed = instruction.trim();
     if (trimmed.length < 3) {
       setError("Enter a longer instruction.");
       haptics.warning();
       return;
     }
+    requestInFlightRef.current = true;
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError("");
     setSummary("");
@@ -104,13 +137,17 @@ export const NaturalLanguageEditBar: React.FC = () => {
         plan: draft,
         instruction: trimmed,
       });
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
       if (result.success && result.data) {
         applyAiEdit(result.data.updatedPlan);
         setSummary(result.data.summary);
         setInstruction("");
         haptics.success();
         // Collapse after a short delay so the user sees the success summary.
-        setTimeout(() => {
+        if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+        collapseTimeoutRef.current = setTimeout(() => {
+          collapseTimeoutRef.current = null;
+          if (!mountedRef.current || requestId !== requestIdRef.current) return;
           setExpanded(false);
           setSummary("");
         }, 2500);
@@ -120,12 +157,16 @@ export const NaturalLanguageEditBar: React.FC = () => {
       }
     } catch (err) {
       console.error("[NaturalLanguageEditBar] edit failed:", err);
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
       setError("AI edit unavailable. Please try again.");
       haptics.error();
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        requestInFlightRef.current = false;
+        if (mountedRef.current) setLoading(false);
+      }
     }
-  }, [draft, instruction, applyAiEdit, error]);
+  }, [draft, instruction, applyAiEdit]);
 
   const handleSubmitEditing = useCallback(
     (_e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
@@ -137,7 +178,10 @@ export const NaturalLanguageEditBar: React.FC = () => {
   // ── Collapsed: small "AI Edit" chip ──
   if (!expanded) {
     return (
-      <Animated.View entering={FadeInDown.springify()} style={styles.collapsedWrap}>
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.springify()}
+        style={styles.collapsedWrap}
+      >
         <Pressable
           onPress={handleExpand}
           accessibilityRole="button"
@@ -163,7 +207,10 @@ export const NaturalLanguageEditBar: React.FC = () => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
       style={styles.container}
     >
-      <Animated.View entering={FadeInDown.springify()} style={styles.container}>
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.springify()}
+        style={styles.container}
+      >
         <GlassCard
           blurIntensity="default"
           elevation={2}
@@ -180,8 +227,10 @@ export const NaturalLanguageEditBar: React.FC = () => {
             <Pressable
               hitSlop={10}
               onPress={handleExpand}
+              disabled={loading}
               accessibilityRole="button"
               accessibilityLabel="Collapse AI edit bar"
+              accessibilityState={{ disabled: loading }}
               style={styles.closeBtn}
             >
               <Ionicons name="close" size={rf(16)} color={colors.text.tertiary} />
@@ -221,11 +270,11 @@ export const NaturalLanguageEditBar: React.FC = () => {
           {/* Error and summary are mutually exclusive — error takes precedence
               so the user sees what went wrong, not a stale success summary. */}
           {error.length > 0 ? (
-            <Text style={styles.errorText} numberOfLines={2}>
+            <Text style={styles.errorText} accessibilityLiveRegion="polite">
               {error}
             </Text>
           ) : summary.length > 0 && !loading ? (
-            <Text style={styles.summaryText} numberOfLines={2}>
+            <Text style={styles.summaryText} accessibilityLiveRegion="polite">
               {summary}
             </Text>
           ) : null}

@@ -131,6 +131,7 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
   const [sort, setSort] = useState<CommunitySortOption>("trending");
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -139,6 +140,7 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
   // Reset + fetch whenever sort/category/difficulty changes.
   const fetchFirstPage = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     pageCountRef.current = 1;
     setHasMore(true);
     try {
@@ -155,6 +157,7 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
       console.error("[CommunityTemplatesTab] fetch failed:", err);
       setTemplates([]);
       setHasMore(false);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -232,14 +235,28 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
   // ── Empty state ──────────────────────────────────────────────────────────
   if (templates.length === 0) {
     return (
-      <View style={[styles.container, style]} testID="community-tab-empty">
+      <View
+        style={[styles.container, style]}
+        testID={loadError ? "community-tab-error" : "community-tab-empty"}
+      >
         <SortRow sort={sort} onSelect={handleSortChange} />
-        <EmptyState
-          icon="people-outline"
-          title="No community templates yet"
-          subtitle="Be the first to share a workout with the community!"
-          iconColor={colors.secondary}
-        />
+        {loadError ? (
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="Couldn't load community templates"
+            subtitle="Check your connection and try again."
+            iconColor={colors.error}
+            ctaText="Try Again"
+            onCta={() => { void fetchFirstPage(); }}
+          />
+        ) : (
+          <EmptyState
+            icon="people-outline"
+            title="No community templates yet"
+            subtitle="Be the first to share a workout with the community!"
+            iconColor={colors.secondary}
+          />
+        )}
       </View>
     );
   }

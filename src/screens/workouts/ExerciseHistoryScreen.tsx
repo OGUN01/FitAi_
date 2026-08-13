@@ -34,9 +34,9 @@ import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Polyline, Line, Text as SvgText } from "react-native-svg";
 import {
   AuroraBackground,
-  AuroraSpinner,
   EmptyState,
   GlassHeader,
+  SkeletonLoader,
 } from "../../components/ui/aurora";
 import {
   flatColors as colors,
@@ -450,7 +450,17 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
         <SafeAreaView style={styles.container}>
           <GlassHeader title={exerciseName} eyebrow="History" onBack={navigation?.goBack} />
           <View style={styles.loadingWrap}>
-            <AuroraSpinner size="lg" theme="primary" />
+            <SkeletonLoader variant="title" width="42%" />
+            <SkeletonLoader variant="card" height={rp(112)} />
+            {[0, 1, 2].map((item) => (
+              <View key={`history-loading-${item}`} style={styles.loadingRow}>
+                <View style={styles.loadingRowText}>
+                  <SkeletonLoader variant="text" width="56%" />
+                  <SkeletonLoader variant="text" width="34%" height={rp(12)} />
+                </View>
+                <SkeletonLoader variant="text" width={rp(64)} />
+              </View>
+            ))}
           </View>
         </SafeAreaView>
       </AuroraBackground>
@@ -527,8 +537,20 @@ const styles = StyleSheet.create({
   },
   loadingWrap: {
     flex: 1,
-    justifyContent: "center",
+    paddingHorizontal: rp(spacing.md),
+    paddingTop: rp(spacing.md),
+    gap: rp(spacing.md),
+  },
+  loadingRow: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 64,
+    gap: rp(spacing.md),
+  },
+  loadingRowText: {
+    flex: 1,
+    gap: rp(spacing.xs),
   },
   errorWrap: {
     flex: 1,

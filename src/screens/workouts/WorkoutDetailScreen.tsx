@@ -65,6 +65,7 @@ import { calculateWorkoutCalories } from '../../services/calorieCalculator';
 import { CURATED_EXERCISES } from '../../data/curatedExercises';
 import { exerciseFilterService } from '../../services/exerciseFilterService';
 import { haptics } from '../../utils/haptics';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { FONT_FAMILY } from '../../theme/fonts';
 import { rp, rf, rw, rbr } from '../../utils/responsive';
@@ -447,6 +448,10 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     } catch (err) {
       console.error('[WorkoutDetailScreen] startWorkoutSession failed:', err);
       haptics.error();
+      crossPlatformAlert(
+        'Couldn\'t start workout',
+        'FitAI could not start this workout. Please try again.'
+      );
       setStarting(false);
     }
   }, [starting, startWorkoutSession, workout, navigation]);

@@ -25,10 +25,10 @@ import type { DayWorkout, WeeklyWorkoutPlan } from "../../types/ai";
 import {
   AuroraBackground,
   BottomSheet,
-  AuroraSpinner,
   EmptyState,
   AnimatedPressable,
   GlassHeader,
+  SkeletonLoader,
 } from "../../components/ui/aurora";
 import {
   flatColors as colors,
@@ -292,7 +292,26 @@ export default function ScheduleBuilderScreen({ navigation }: Props) {
         <SafeAreaView style={styles.flex} edges={["top", "bottom"]}>
           <GlassHeader eyebrow="SCHEDULE BUILDER" onBack={() => navigation.goBack()} />
           <View style={styles.loader}>
-            <AuroraSpinner size="lg" />
+            <SkeletonLoader variant="title" width="68%" height={rp(32)} />
+            <SkeletonLoader variant="text" width="92%" />
+            <SkeletonLoader variant="button" height={rp(52)} />
+            <View style={styles.loadingDayList}>
+              {DAYS.map((day) => (
+                <View key={`loading-${day.key}`} style={styles.loadingDayRow}>
+                  <SkeletonLoader
+                    variant="avatar"
+                    width={rp(44)}
+                    height={rp(44)}
+                    borderRadius={borderRadius.full}
+                  />
+                  <View style={styles.loadingDayText}>
+                    <SkeletonLoader variant="text" width="34%" />
+                    <SkeletonLoader variant="text" width="58%" height={rp(12)} />
+                  </View>
+                  <SkeletonLoader variant="text" width={rp(48)} />
+                </View>
+              ))}
+            </View>
           </View>
         </SafeAreaView>
       </AuroraBackground>
@@ -1001,7 +1020,27 @@ const styles = StyleSheet.create({
     lineHeight: rf(20),
     marginBottom: rp(spacing.lg),
   },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loader: {
+    flex: 1,
+    paddingHorizontal: rp(spacing.lg),
+    paddingTop: rp(spacing.md),
+    gap: rp(spacing.sm),
+  },
+  loadingDayList: {
+    marginTop: rp(spacing.sm),
+  },
+  loadingDayRow: {
+    minHeight: 68,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.md),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderLight,
+  },
+  loadingDayText: {
+    flex: 1,
+    gap: rp(spacing.xs),
+  },
   emptyWrap: { flex: 1, justifyContent: "center" },
 
   // ── Mode toggle ──

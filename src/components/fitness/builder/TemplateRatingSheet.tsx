@@ -16,7 +16,7 @@
  * lifecycle.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -88,9 +88,24 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitInFlightRef = useRef(false);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (submitInFlightRef.current) return;
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    onClose();
+  }, [onClose]);
 
   // Reset transient state whenever the sheet opens or the template changes.
   useEffect(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
     if (visible) {
       setRating(0);
       setHoveredRating(0);
@@ -99,6 +114,12 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
       setSubmitted(false);
       setError(null);
     }
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+    };
   }, [visible, template?.id]);
 
   const displayRating = hoveredRating > 0 ? hoveredRating : rating;
@@ -126,12 +147,13 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!template || !userId) return;
+    if (!template || !userId || submitInFlightRef.current) return;
     if (rating < 1 || rating > MAX_RATING) {
       haptics.warning();
       setError("Please select a rating from 1 to 5 stars.");
       return;
     }
+    submitInFlightRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -144,7 +166,8 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
       haptics.success();
       onRated?.(template.id, rating);
       // Auto-close after a short beat so the user sees the "Rated!" confirmation.
-      setTimeout(() => {
+      closeTimeoutRef.current = setTimeout(() => {
+        closeTimeoutRef.current = null;
         onClose();
       }, 700);
     } catch (err) {
@@ -156,6 +179,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
           : "Could not submit your rating. Please try again.",
       );
     } finally {
+      submitInFlightRef.current = false;
       setSubmitting(false);
     }
   }, [template, userId, rating, review, onRated, onClose]);
@@ -165,7 +189,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
     return (
       <DetentBottomSheet
         visible={visible}
-        onClose={onClose}
+        onClose={handleClose}
         snapPoints={[0.4, 0.7]}
         initialSnapIndex={1}
         testID={testID}
@@ -183,7 +207,8 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
   return (
     <DetentBottomSheet
       visible={visible}
-      onClose={onClose}
+      onClose={handleClose}
+      dismissOnLowestDrag={!submitting}
       snapPoints={[0.5, 0.8]}
       initialSnapIndex={1}
       testID={testID}
@@ -259,6 +284,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
               placeholder="Share what worked for you…"
               placeholderTextColor={colors.textTertiary}
               multiline
+              editable={!submitting}
               maxLength={REVIEW_MAX_LENGTH}
               textAlignVertical="top"
               accessibilityLabel="Optional review text"
@@ -287,7 +313,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
           >
             <GlassButton
               label="Cancel"
-              onPress={onClose}
+              onPress={handleClose}
               variant="secondary"
               style={styles.actionBtn}
               hapticType="light"
@@ -301,7 +327,7 @@ export const TemplateRatingSheet: React.FC<TemplateRatingSheetProps> = ({
               icon="star"
               style={styles.actionBtn}
               loading={submitting}
-              disabled={rating < 1}
+              disabled={rating < 1 || submitting || !userId}
               hapticType="medium"
               testID="rating-submit-button"
             />

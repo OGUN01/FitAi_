@@ -33,6 +33,8 @@ import { flatColors as colors, spacing } from '../../theme/aurora-tokens';
 import { rf, rw, rp, rbr } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
 import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
+import { DateFormatters } from '../../utils/formatters/dateFormatters';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 import type { CompletedSession } from '../../stores/fitness/types';
 
 // ----------------------------------------------------------------------------
@@ -115,7 +117,7 @@ function getRelativeDate(dateString: string): string {
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return DateFormatters.short(date);
 }
 
 // ----------------------------------------------------------------------------
@@ -123,6 +125,7 @@ function getRelativeDate(dateString: string): string {
 // ----------------------------------------------------------------------------
 
 export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navigation }) => {
+  const reducedMotion = useReducedMotion();
   const completedSessions = useFitnessStore((state) => state.completedSessions);
   const [search, setSearch] = useState('');
 
@@ -164,10 +167,7 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
         const title =
           weekStart === currentWeekStart
             ? 'This week'
-            : `Week of ${monday.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              })}`;
+            : `Week of ${DateFormatters.short(monday)}`;
         return { weekStart, title, count: weekRows.length, data: weekRows };
       });
   }, [allRows, search]);
@@ -184,7 +184,7 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
   const renderSectionHeader = useCallback(
     ({ section }: { section: HistorySection }) => (
       <View style={styles.groupHeader} testID={`workout-history-week-${section.weekStart}`}>
-        <Text style={styles.groupLabel} numberOfLines={1}>
+        <Text style={styles.groupLabel} numberOfLines={2}>
           {section.title}
         </Text>
         <Text style={styles.groupCount} numberOfLines={1}>
@@ -201,7 +201,13 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
       const tappable = !!row.workoutSnapshot;
       const isLast = index === section.data.length - 1;
       return (
-        <Animated.View entering={FadeInRight.delay(Math.min(index, 6) * 40).duration(250)}>
+        <Animated.View
+          entering={
+            reducedMotion
+              ? undefined
+              : FadeInRight.delay(Math.min(index, 6) * 40).duration(250)
+          }
+        >
           <AnimatedPressable
             onPress={tappable ? () => handleRowPress(row) : undefined}
             disabled={!tappable}
@@ -220,10 +226,10 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
 
             {/* Info */}
             <View style={styles.infoContainer}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
+              <Text style={styles.rowTitle} numberOfLines={2}>
                 {row.title}
               </Text>
-              <Text style={styles.rowMeta} numberOfLines={1}>
+              <Text style={styles.rowMeta} numberOfLines={2}>
                 {getRelativeDate(row.completedAt)} • {row.duration || 0} min • {row.caloriesBurned || 0} kcal
               </Text>
             </View>
@@ -238,7 +244,7 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
         </Animated.View>
       );
     },
-    [handleRowPress]
+    [handleRowPress, reducedMotion]
   );
 
   return (
@@ -249,7 +255,7 @@ export const WorkoutHistoryScreen: React.FC<WorkoutHistoryScreenProps> = ({ navi
 
         {totalCount > 0 ? (
           <>
-            <Text style={styles.summary} numberOfLines={1}>
+            <Text style={styles.summary}>
               {totalCount} workout{totalCount === 1 ? '' : 's'} completed
             </Text>
 
@@ -327,6 +333,7 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: colors.textTertiary,
     textAlign: 'center',
+    paddingHorizontal: rp(spacing.lg),
     marginTop: rp(spacing.xs),
     marginBottom: rp(spacing.sm),
   },
@@ -359,6 +366,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: rp(spacing.sm),
     marginTop: rp(spacing.md),
     marginBottom: rp(spacing.xs),
   },
@@ -368,9 +376,11 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 1.2,
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
   },
   groupCount: {
+    flexShrink: 0,
     fontSize: rf(12),
     fontWeight: '500',
     color: colors.textTertiary,
