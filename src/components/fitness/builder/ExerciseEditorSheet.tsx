@@ -57,7 +57,8 @@ import { OptionRow } from "../../onboarding/fresh/OptionRow";
 import { RestTimerRadial } from "../../ui/aurora/RestTimerRadial";
 import { Confetti } from "../../ui/aurora/Confetti";
 import { AnimatedChart } from "../../charts/AnimatedChart";
-import { SetRow } from "./SetRow";
+import { SetRow, SET_ROW_HEIGHT } from "./SetRow";
+import { useDragReflow } from "../../../gestures/handlers";
 import { useWorkoutBuilderStore } from "../../../stores/workoutBuilderStore";
 import { useAnalyticsStore } from "../../../stores/analyticsStore";
 import { useProfileStore } from "../../../stores/profileStore";
@@ -284,6 +285,22 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
       patchExercise({ sets: renumbered });
     },
     [exercise, patchExercise],
+  );
+
+  // ── Sibling reflow for the set-drag gesture (see SetRow's useDragToReorder
+  //    onDragMove wiring). ──
+  const {
+    offsets: setReflowOffsets,
+    reportDragMove: reportSetDragMove,
+    resetOffsets: resetSetReflowOffsets,
+  } = useDragReflow(exercise?.sets.length ?? 0, SET_ROW_HEIGHT);
+
+  const handleSetReorderWrapped = useCallback(
+    (fromOneBased: number, toOneBased: number) => {
+      resetSetReflowOffsets();
+      handleSetReorder(fromOneBased, toOneBased);
+    },
+    [handleSetReorder, resetSetReflowOffsets],
   );
 
   const handleAddSet = useCallback(() => {
@@ -570,7 +587,9 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                   totalCount={exercise.sets.length}
                   onChange={(updated) => handleSetChange(i, updated)}
                   onDelete={() => handleSetDelete(i)}
-                  onReorder={handleSetReorder}
+                  onReorder={handleSetReorderWrapped}
+                  reflowOffsets={setReflowOffsets}
+                  onDragMove={reportSetDragMove}
                   testID={`editor-set-row-${i}`}
                 />
               ))}

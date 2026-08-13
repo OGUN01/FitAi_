@@ -40,12 +40,14 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import type { SharedValue } from "react-native-reanimated";
 import { GlassButton } from "../../ui/aurora/GlassButton";
 import { DetentBottomSheet } from "../../ui/aurora/DetentBottomSheet";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
-import { useDragToReorder, usePinchToZoom } from "../../../gestures/handlers";
+import { useDragToReorder, useDragReflow, usePinchToZoom } from "../../../gestures/handlers";
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
+import { hexToRgba } from "../../../utils/colors";
 import {
   colors,
   surface,
@@ -57,7 +59,7 @@ import {
 import { rp, rf, rw } from "../../../utils/responsive";
 import type { DayWorkout } from "../../../types/ai";
 import type { PlannedExercise } from "../../../types/workout";
-import { ExerciseRow } from "./ExerciseRow";
+import { ExerciseRow, EXERCISE_ROW_HEIGHT } from "./ExerciseRow";
 
 export interface DayBlockProps {
   dayIndex: number;
@@ -94,6 +96,15 @@ export interface DayBlockProps {
   /** Drag-handle reorder of the day itself (workout across days). */
   onReorderDay: (fromIndex: number, toIndex: number) => void;
   /**
+   * Live sibling-day offsets during a day-drag (owned by WeeklyBuilderScreen's
+   * useDragReflow) — read directly by this block's own drag animated style so
+   * other DayBlocks visibly shift out of the way while this one (or another)
+   * is being dragged.
+   */
+  dayReflowOffsets: SharedValue<number[]>;
+  /** Reports live day-drag position up to WeeklyBuilderScreen for sibling reflow. */
+  onDayDragMove?: (fromIndex: number, targetIndex: number) => void;
+  /**
    * Fired when a pinch-IN gesture (scale < 0.8) is detected on this day block —
    * the caller collapses ALL expanded days (setExpandedDay(null)). Phase 8
    * gesture wiring (additive — does not affect existing expand/drag behavior).
@@ -115,7 +126,9 @@ const DAY_LABELS = [
 
 const DAY_SHORT = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 
-const DAY_HEADER_HEIGHT = 68;
+// Exported so WeeklyBuilderScreen's useDragReflow (day-level sibling reflow
+// during the day-drag gesture) uses the same slot size.
+export const DAY_HEADER_HEIGHT = 68;
 
 export const DayBlock: React.FC<DayBlockProps> = React.memo(
   ({
@@ -134,6 +147,8 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
     onClearDay,
     onUpdateNotes,
     onReorderDay,
+    dayReflowOffsets,
+    onDayDragMove,
     onCollapseAll,
     testID,
   }) => {
@@ -177,15 +192,28 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
       [onReorderDay],
     );
 
+    const handleDayDragMove = useCallback(
+      (from: number, to: number) => {
+        onDayDragMove?.(from, to);
+      },
+      [onDayDragMove],
+    );
+
     const { gesture: dayDragGesture, translateY: dayTranslateY, isDragging: dayIsDragging } =
       useDragToReorder(dayIndex, {
         itemHeight: DAY_HEADER_HEIGHT,
         onDragEnd: handleDragEnd,
+        onDragMove: handleDayDragMove,
         activationDelay: 450,
       });
 
     const dayDragStyle = useAnimatedStyle(() => ({
-      transform: [{ translateY: dayTranslateY.value }],
+      transform: [
+        {
+          translateY:
+            dayTranslateY.value + (dayReflowOffsets.value[dayIndex] ?? 0),
+        },
+      ],
       opacity: dayIsDragging.value ? 0.9 : 1,
       zIndex: dayIsDragging.value ? 100 : 0,
       elevation: dayIsDragging.value ? 8 : 0,
@@ -263,6 +291,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [showCopyPicker, setShowCopyPicker] = useState(false);
+    const [clearDayConfirmOpen, setClearDayConfirmOpen] = useState(false);
 
     const handleHeaderPress = useCallback(() => {
       haptics.selection();
@@ -270,6 +299,29 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
     }, [onToggleExpand, dayIndex]);
 
     const planned: PlannedExercise[] = exercises;
+
+    // ── Sibling reflow for within-day exercise drag (see ExerciseRow's
+    //    useDragToReorder onDragMove wiring below). ──
+    const {
+      offsets: exerciseReflowOffsets,
+      reportDragMove: reportExerciseDragMove,
+      resetOffsets: resetExerciseReflowOffsets,
+    } = useDragReflow(planned.length, EXERCISE_ROW_HEIGHT);
+
+    const handleExerciseDragMove = useCallback(
+      (_dIdx: number, from: number, to: number) => {
+        reportExerciseDragMove(from, to);
+      },
+      [reportExerciseDragMove],
+    );
+
+    const handleExerciseReorder = useCallback(
+      (dIdx: number, from: number, to: number) => {
+        resetExerciseReflowOffsets();
+        onReorderExercise(dIdx, from, to);
+      },
+      [onReorderExercise, resetExerciseReflowOffsets],
+    );
 
     return (
       <Animated.View
@@ -372,7 +424,9 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                               onRemove={onRemoveExercise}
                               onReplace={onReplaceExercise}
                               onMoveTo={onMoveExerciseTo}
-                              onReorder={onReorderExercise}
+                              onReorder={handleExerciseReorder}
+                              reflowOffsets={exerciseReflowOffsets}
+                              onDragMove={handleExerciseDragMove}
                               testID={`${testID}-ex-${idx}`}
                             />
                           );
@@ -472,7 +526,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                             onPress={() => {
                               setMenuOpen(false);
                               haptics.warning();
-                              onClearDay(dayIndex);
+                              setClearDayConfirmOpen(true);
                             }}
                             accessibilityRole="button"
                             accessibilityLabel={`Clear ${dayLabel}`}
@@ -558,6 +612,51 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
             </View>
           </DetentBottomSheet>
         )}
+
+        {/*
+          Clear Day confirmation — mirrors the Deload Week confirm pattern in
+          BuilderSummaryFooter (icon + title + message + Cancel/Confirm
+          GlassButton row) since clearing a day is a fully destructive,
+          irreversible action with no undo stack.
+        */}
+        <DetentBottomSheet
+          visible={clearDayConfirmOpen}
+          onClose={() => setClearDayConfirmOpen(false)}
+          snapPoints={[0.4, 0.6]}
+          initialSnapIndex={1}
+          testID={`${testID}-clear-day-sheet`}
+        >
+          <View style={styles.sheetBody}>
+            <View style={[styles.sheetIcon, { backgroundColor: hexToRgba(colors.error.DEFAULT, 0.12) }]}>
+              <Ionicons name="trash" size={rf(28)} color={colors.error.DEFAULT} />
+            </View>
+            <Text style={styles.sheetTitle}>Clear {dayLabel}?</Text>
+            <Text style={styles.sheetMessage}>
+              This removes all {exerciseCount} exercise{exerciseCount !== 1 ? "s" : ""} from this day. This can't be undone.
+            </Text>
+            <View style={styles.sheetActions}>
+              <GlassButton
+                label="Cancel"
+                onPress={() => setClearDayConfirmOpen(false)}
+                variant="secondary"
+                hapticType="light"
+                style={styles.sheetActionBtn}
+                testID={`${testID}-clear-day-cancel`}
+              />
+              <GlassButton
+                label="Clear Day"
+                onPress={() => {
+                  setClearDayConfirmOpen(false);
+                  onClearDay(dayIndex);
+                }}
+                variant="primary"
+                hapticType="medium"
+                style={styles.sheetActionBtn}
+                testID={`${testID}-clear-day-confirm`}
+              />
+            </View>
+          </View>
+        </DetentBottomSheet>
       </Animated.View>
     );
   },
@@ -784,6 +883,42 @@ const styles = StyleSheet.create({
   copyPickerCancelText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
+  },
+  // Clear-day confirmation sheet body — mirrors BuilderSummaryFooter's
+  // deload-confirm sheet tokens for visual consistency across the builder.
+  sheetBody: {
+    alignItems: "center",
+    paddingTop: rp(spacing.sm),
+    paddingBottom: rp(spacing.xl),
+    gap: rp(spacing.sm),
+  },
+  sheetIcon: {
+    width: rf(56),
+    height: rf(56),
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetTitle: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.h3),
+    fontWeight: String(typography.fontWeight.bold) as TextStyle["fontWeight"],
+    textAlign: "center",
+  },
+  sheetMessage: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.body),
+    textAlign: "center",
+    lineHeight: rf(22),
+  },
+  sheetActions: {
+    flexDirection: "column",
+    gap: rp(spacing.sm),
+    width: "100%",
+    marginTop: rp(spacing.sm),
+  },
+  sheetActionBtn: {
+    width: "100%",
   },
 });
 

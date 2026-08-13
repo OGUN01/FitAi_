@@ -42,6 +42,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import type { SharedValue } from "react-native-reanimated";
 import { useDragToReorder, createDoubleTapGesture } from "../../../gestures/handlers";
 import { animations } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
@@ -62,7 +63,9 @@ import type { PlannedExercise } from "../../../types/workout";
 // module-level cache mirrors it for instant visual re-renders.
 const FAV_STORAGE_KEY = "favorite_exercises";
 
-const EXERCISE_ROW_HEIGHT = 76; // approximate row height for drag snap math
+// approximate row height for drag snap math — exported so DayBlock's
+// useDragReflow (sibling-row reflow during drag) uses the same slot size.
+export const EXERCISE_ROW_HEIGHT = 76;
 
 // ----------------------------------------------------------------------------
 // Category-keyed thumbnail (icon + gradient). Every row previously rendered
@@ -128,6 +131,15 @@ export interface ExerciseRowProps {
   onMoveTo: (dayIndex: number, exerciseIndex: number) => void;
   /** Reorder within this day (drag end). */
   onReorder: (dayIndex: number, fromIndex: number, toIndex: number) => void;
+  /**
+   * Live sibling-row offsets during a within-day drag (owned by DayBlock's
+   * useDragReflow) — read directly by this row's own drag animated style so
+   * non-dragged rows visibly shift out of the way while another row drags
+   * over them.
+   */
+  reflowOffsets: SharedValue<number[]>;
+  /** Reports live drag position up to DayBlock for sibling reflow. */
+  onDragMove?: (dayIndex: number, fromIndex: number, targetIndex: number) => void;
   /** True when this is the first row of a contiguous superset group (rounds
    *  the top of the connector bracket). Computed by the parent list. */
   isFirstInSuperset?: boolean;
@@ -218,6 +230,8 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
   onReplace,
   onMoveTo,
   onReorder,
+  reflowOffsets,
+  onDragMove,
   isFirstInSuperset = false,
   isLastInSuperset = false,
   testID,
@@ -255,17 +269,30 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
     [dayIndex, onReorder],
   );
 
+  const handleDragMove = useCallback(
+    (from: number, to: number) => {
+      onDragMove?.(dayIndex, from, to);
+    },
+    [dayIndex, onDragMove],
+  );
+
   const { gesture: dragGesture, translateY, isDragging } = useDragToReorder(
     exerciseIndex,
     {
       itemHeight: EXERCISE_ROW_HEIGHT,
       onDragEnd: handleDragEnd,
+      onDragMove: handleDragMove,
       activationDelay: 400,
     },
   );
 
   const dragAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [
+      {
+        translateY:
+          translateY.value + (reflowOffsets.value[exerciseIndex] ?? 0),
+      },
+    ],
     opacity: isDragging.value ? 0.9 : 1,
     zIndex: isDragging.value ? 100 : 0,
     elevation: isDragging.value ? 6 : 0,

@@ -6,12 +6,13 @@
  */
 
 import { Gesture } from 'react-native-gesture-handler';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   runOnJS,
   useSharedValue,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { animations } from '../theme/animations';
 import { haptics } from '../utils/haptics';
@@ -228,6 +229,68 @@ export const useDragToReorder = (
 };
 
 // ============================================================================
+// DRAG REFLOW (live sibling-row reflow during drag-to-reorder)
+// ============================================================================
+
+/**
+ * Companion to useDragToReorder: tracks a per-item translateY offset array so
+ * sibling rows visibly shift out of the way while one item is mid-drag,
+ * instead of only animating the dragged item itself. A parent list creates
+ * ONE of these (sized to its item count) and:
+ *   - reads `offsets` inside each row's own useAnimatedStyle as
+ *     `offsets.value[index] ?? 0` (added to that row's own translateY),
+ *   - wires `reportDragMove` into the dragged row's `useDragToReorder`
+ *     `onDragMove` callback,
+ *   - calls `resetOffsets()` once the drop is committed (alongside the real
+ *     reorder callback), so shifted siblings snap back before the list
+ *     itself re-renders in its new order.
+ *
+ * itemHeight must match the same value passed to useDragToReorder for the
+ * items in this list (the two must agree on what "one slot" means).
+ */
+export const useDragReflow = (count: number, itemHeight: number) => {
+  const offsets = useSharedValue<number[]>(new Array(Math.max(0, count)).fill(0));
+  const reduceMotion = useReducedMotion();
+
+  // Keep the offsets array sized to the current item count (items added or
+  // removed elsewhere in the builder while nothing here is mid-drag).
+  useEffect(() => {
+    if (offsets.value.length !== count) {
+      offsets.value = new Array(Math.max(0, count)).fill(0);
+    }
+  }, [count, offsets]);
+
+  const reportDragMove = useCallback(
+    (fromIndex: number, targetIndex: number) => {
+      if (count <= 0) return;
+      const clamped = Math.max(0, Math.min(count - 1, targetIndex));
+      const next = new Array(count).fill(0);
+      if (fromIndex !== clamped) {
+        if (fromIndex < clamped) {
+          // Dragging down: items between the source and target shift UP one
+          // slot to fill the gap the dragged item is passing over.
+          for (let i = fromIndex + 1; i <= clamped; i++) next[i] = -itemHeight;
+        } else {
+          // Dragging up: items between the target and source shift DOWN one
+          // slot.
+          for (let i = clamped; i < fromIndex; i++) next[i] = itemHeight;
+        }
+      }
+      offsets.value = reduceMotion
+        ? next
+        : next.map((v) => withTiming(v, { duration: animations.duration.quick }));
+    },
+    [count, itemHeight, offsets, reduceMotion],
+  );
+
+  const resetOffsets = useCallback(() => {
+    offsets.value = new Array(Math.max(0, count)).fill(0);
+  }, [count, offsets]);
+
+  return { offsets, reportDragMove, resetOffsets };
+};
+
+// ============================================================================
 // PINCH TO ZOOM
 // ============================================================================
 
@@ -366,6 +429,7 @@ export const createDoubleTapGesture = (
 export const gestures = {
   pullToRefresh: usePullToRefresh,
   dragToReorder: useDragToReorder,
+  dragReflow: useDragReflow,
   pinchToZoom: usePinchToZoom,
   doubleTap: createDoubleTapGesture,
 } as const;

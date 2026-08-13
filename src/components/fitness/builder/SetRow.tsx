@@ -39,6 +39,7 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { GestureDetector } from "react-native-gesture-handler";
+import type { SharedValue } from "react-native-reanimated";
 import { useDragToReorder } from "../../../gestures/handlers";
 import { animations, duration } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
@@ -101,6 +102,15 @@ export interface SetRowProps {
   onDelete: () => void;
   /** Fires on drag end with from/to indices (1-based setNumber space). */
   onReorder: (from: number, to: number) => void;
+  /**
+   * Live sibling-row offsets during a set drag (owned by the parent's
+   * useDragReflow, indexed 0-based i.e. `setNumber - 1`) — read directly by
+   * this row's own drag animated style so other sets visibly shift out of
+   * the way while one is being dragged.
+   */
+  reflowOffsets: SharedValue<number[]>;
+  /** Reports live drag position up to the parent for sibling reflow (0-based). */
+  onDragMove?: (fromIndex: number, targetIndex: number) => void;
   /** Test ID prefix. */
   testID?: string;
 }
@@ -108,7 +118,9 @@ export interface SetRowProps {
 // Approximate row height — used by useDragToReorder for snap math. Tuned to the
 // collapsed (non-drop) row height; extra rows below don't affect snap target
 // math materially because we reorder by set index, not absolute pixel offset.
-const SET_ROW_HEIGHT = 64;
+// Exported so the parent's useDragReflow (sibling-row reflow) uses the same
+// slot size.
+export const SET_ROW_HEIGHT = 64;
 
 // ============================================================================
 // COMPONENT
@@ -121,6 +133,8 @@ export const SetRow: React.FC<SetRowProps> = ({
   onChange,
   onDelete,
   onReorder,
+  reflowOffsets,
+  onDragMove,
   testID,
 }) => {
   const reduceMotion = useReducedMotion();
@@ -235,12 +249,18 @@ export const SetRow: React.FC<SetRowProps> = ({
       itemHeight: SET_ROW_HEIGHT,
       activationDelay: animations.gesture.longPressDuration - 100,
       onDragEnd: handleDragEnd,
+      onDragMove,
       hapticFeedback: true,
     },
   );
 
   const dragAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [
+      {
+        translateY:
+          translateY.value + (reflowOffsets.value[setNumber - 1] ?? 0),
+      },
+    ],
     opacity: isDragging.value ? 0.92 : 1,
     zIndex: isDragging.value ? 100 : 0,
     elevation: isDragging.value ? 6 : 0,

@@ -40,7 +40,7 @@ import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { DetentBottomSheet } from "../../components/ui/aurora/DetentBottomSheet";
 import { GlassButton } from "../../components/ui/aurora/GlassButton";
 import { CustomDialog } from "../../components/ui/CustomDialog";
-import { DayBlock } from "../../components/fitness/builder/DayBlock";
+import { DayBlock, DAY_HEADER_HEIGHT } from "../../components/fitness/builder/DayBlock";
 import { ExercisePickerSheet } from "../../components/fitness/builder/ExercisePickerSheet";
 import { ExerciseEditorSheet } from "../../components/fitness/builder/ExerciseEditorSheet";
 import { BuilderSummaryFooter } from "../../components/fitness/builder/BuilderSummaryFooter";
@@ -54,7 +54,7 @@ import type { WorkoutTemplate } from "../../services/workoutTemplateService";
 import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
 import { fromTemplateExercise } from "../../types/workout";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
-import { usePullToRefresh } from "../../gestures/handlers";
+import { usePullToRefresh, useDragReflow } from "../../gestures/handlers";
 import { haptics } from "../../utils/haptics";
 import {
   flatColors as colors,
@@ -107,6 +107,7 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   const removeExercise = useWorkoutBuilderStore((s) => s.removeExercise);
   const duplicateExercise = useWorkoutBuilderStore((s) => s.duplicateExercise);
   const reorderExercise = useWorkoutBuilderStore((s) => s.reorderExercise);
+  const moveExerciseBetweenDays = useWorkoutBuilderStore((s) => s.moveExerciseBetweenDays);
   const duplicateDay = useWorkoutBuilderStore((s) => s.duplicateDay);
   const clearDay = useWorkoutBuilderStore((s) => s.clearDay);
   const updateDay = useWorkoutBuilderStore((s) => s.updateDay);
@@ -368,13 +369,46 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
     [removeExercise, openPicker],
   );
 
+  // "Move to…" — opens a day-target picker (mirrors DayBlock's "Copy to…"
+  // picker: a flat list of days, tap = act immediately) then delegates to
+  // the store's moveExerciseBetweenDays action.
+  const [moveExerciseContext, setMoveExerciseContext] = useState<{
+    dayIndex: number;
+    exerciseIndex: number;
+  } | null>(null);
+
   const handleMoveExerciseTo = useCallback(
-    (_dayIndex: number, _exerciseIndex: number) => {
-      // v1: cross-day move store action exists; the target-day picker UI is
-      // deferred to Phase 8. No-op + haptic so the menu item feels responsive.
+    (dayIndex: number, exerciseIndex: number) => {
       haptics.selection();
+      setMoveExerciseContext({ dayIndex, exerciseIndex });
     },
     [],
+  );
+
+  const moveExerciseName = useMemo(() => {
+    if (!moveExerciseContext || !draft) return null;
+    const day = draft.workouts[moveExerciseContext.dayIndex];
+    const ex = day?.plannedExercises?.[moveExerciseContext.exerciseIndex];
+    return ex?.name ?? null;
+  }, [moveExerciseContext, draft]);
+
+  const handleCancelMoveExercise = useCallback(() => {
+    setMoveExerciseContext(null);
+  }, []);
+
+  const handleConfirmMoveExercise = useCallback(
+    (targetDayIndex: number) => {
+      if (!moveExerciseContext) return;
+      const { dayIndex, exerciseIndex } = moveExerciseContext;
+      setMoveExerciseContext(null);
+      const targetDay = useWorkoutBuilderStore.getState().draft?.workouts[targetDayIndex];
+      const toIndex = targetDay?.plannedExercises?.length ?? 0;
+      // moveExerciseBetweenDays already recomputes insights internally (store
+      // SSOT — see other mutation actions in workoutBuilderStore.ts).
+      moveExerciseBetweenDays(dayIndex, exerciseIndex, targetDayIndex, toIndex);
+      haptics.success();
+    },
+    [moveExerciseContext, moveExerciseBetweenDays],
   );
 
   const handleReorderExercise = useCallback(
@@ -434,6 +468,22 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
       haptics.dragDrop();
     },
     [draft, computeInsights, userWeightKg],
+  );
+
+  // ── Sibling reflow for the day-drag gesture (see DayBlock's onDayDragMove
+  //    wiring — mirrors the exercise-row reflow owned by DayBlock itself). ──
+  const {
+    offsets: dayReflowOffsets,
+    reportDragMove: reportDayDragMove,
+    resetOffsets: resetDayReflowOffsets,
+  } = useDragReflow(draft?.workouts.length ?? 0, DAY_HEADER_HEIGHT);
+
+  const handleReorderDayWrapped = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      resetDayReflowOffsets();
+      handleReorderDay(fromIndex, toIndex);
+    },
+    [handleReorderDay, resetDayReflowOffsets],
   );
 
   // ── Saved (footer callback) ──
@@ -650,7 +700,9 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
                     onDuplicateDay={handleDuplicateDay}
                     onClearDay={handleClearDay}
                     onUpdateNotes={handleUpdateNotes}
-                    onReorderDay={handleReorderDay}
+                    onReorderDay={handleReorderDayWrapped}
+                    dayReflowOffsets={dayReflowOffsets}
+                    onDayDragMove={reportDayDragMove}
                     onCollapseAll={handleCollapseAll}
                     testID={`day-block-${idx}`}
                   />
@@ -812,6 +864,90 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
             hapticType="medium"
             style={styles.sheetActionBtn}
             testID="day-picker-confirm"
+          />
+        </View>
+      </DetentBottomSheet>
+
+      {/*
+        "Move to…" day picker — tap a day to move the exercise there
+        immediately (mirrors DayBlock's "Copy to…" tap-to-act picker rather
+        than the template picker's select+confirm flow, since a move has no
+        occupied/empty distinction to gate on). Cancel / close / swipe-dismiss
+        leaves the exercise where it is.
+      */}
+      <DetentBottomSheet
+        visible={!!moveExerciseContext}
+        onClose={handleCancelMoveExercise}
+        snapPoints={[0.6, 0.85]}
+        initialSnapIndex={0}
+        testID="move-exercise-day-picker-sheet"
+      >
+        <Text style={styles.sheetEyebrow}>MOVE EXERCISE</Text>
+        <Text style={styles.sheetTitle} numberOfLines={2}>
+          Move {moveExerciseName ?? "exercise"} to…
+        </Text>
+        <Text style={styles.sheetMessage}>
+          Choose the day to move this exercise to.
+        </Text>
+
+        <ScrollView
+          style={styles.dayRowsScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {DAYS_OF_WEEK.map((dayKey, idx) => {
+            if (idx === moveExerciseContext?.dayIndex) return null;
+            const day = draft.workouts[idx];
+            const count =
+              day?.plannedExercises?.length ?? day?.exercises?.length ?? 0;
+            const sublabel =
+              count > 0
+                ? `${count} exercise${count === 1 ? "" : "s"} · ${day.title}`
+                : "Empty";
+            return (
+              <Pressable
+                key={dayKey}
+                onPress={() => handleConfirmMoveExercise(idx)}
+                accessibilityRole="button"
+                accessibilityLabel={`Move to ${DAY_FULL[idx]}, ${sublabel}`}
+                testID={`move-exercise-day-row-${dayKey}`}
+                style={({ pressed }) => [
+                  styles.dayRow,
+                  pressed && styles.dayRowPressed,
+                ]}
+              >
+                <View style={styles.dayRowInner}>
+                  <View style={styles.dayRowBarSlot}>
+                    <View style={[styles.dayRowBar, styles.dayRowBarHidden]} />
+                  </View>
+                  <View style={styles.dayRowText}>
+                    <Text style={styles.dayRowLabel} numberOfLines={1}>
+                      {DAY_FULL[idx]}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dayRowSublabel,
+                        count === 0 && styles.dayRowSublabelEmpty,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {sublabel}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.dayRowHairline} />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.sheetActions}>
+          <GlassButton
+            label="Cancel"
+            onPress={handleCancelMoveExercise}
+            variant="secondary"
+            hapticType="light"
+            style={styles.sheetActionBtn}
+            testID="move-exercise-cancel"
           />
         </View>
       </DetentBottomSheet>

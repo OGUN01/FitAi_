@@ -39,6 +39,7 @@ import {
   AnimatedPressable,
   GlassHeader,
 } from "../../components/ui/aurora";
+import { CustomDialog } from "../../components/ui/CustomDialog";
 import {
   flatColors as colors,
   spacing,
@@ -170,6 +171,14 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
     useState<ShareDifficulty | null>(null);
   const [shareTagsInput, setShareTagsInput] = useState("");
 
+  // ── Unsaved-changes / discard-confirmation on back nav ──────────────────
+  // Mirrors WeeklyBuilderScreen's draftDirty + CustomDialog pattern. A
+  // one-time snapshot is captured once loading settles (immediately for the
+  // create-new path, or after loadTemplate hydrates for the edit path), and
+  // isDirty compares the live fields against it.
+  const initialSnapshotRef = React.useRef<string | null>(null);
+  const [discardDialogVisible, setDiscardDialogVisible] = useState(false);
+
   const startTemplateSession = useFitnessStore((s) => s.startTemplateSession);
 
   // Read user's equipment & location from onboarding SSOT (profileStore)
@@ -227,6 +236,57 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
   useEffect(() => {
     loadTemplate();
   }, [loadTemplate]);
+
+  // Capture the dirty-check baseline once loading settles: immediately for
+  // the create-new path (loadingTemplate is false from init), or right after
+  // loadTemplate hydrates the existing fields for the edit path. Guarded by
+  // the ref so it only ever captures once.
+  useEffect(() => {
+    if (loadingTemplate) return;
+    if (initialSnapshotRef.current !== null) return;
+    initialSnapshotRef.current = JSON.stringify({
+      workoutName,
+      addedExercises,
+      shareToCommunity,
+      shareCategory,
+      shareDifficulty,
+      shareTagsInput,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingTemplate]);
+
+  const isDirty = useMemo(() => {
+    if (initialSnapshotRef.current == null) return false;
+    const current = JSON.stringify({
+      workoutName,
+      addedExercises,
+      shareToCommunity,
+      shareCategory,
+      shareDifficulty,
+      shareTagsInput,
+    });
+    return current !== initialSnapshotRef.current;
+  }, [
+    workoutName,
+    addedExercises,
+    shareToCommunity,
+    shareCategory,
+    shareDifficulty,
+    shareTagsInput,
+  ]);
+
+  const handleBack = useCallback(() => {
+    if (isDirty) {
+      setDiscardDialogVisible(true);
+      return;
+    }
+    navigation.goBack();
+  }, [isDirty, navigation]);
+
+  const handleConfirmDiscard = useCallback(() => {
+    setDiscardDialogVisible(false);
+    navigation.goBack();
+  }, [navigation]);
 
   const availableExercises = useMemo(() => {
     const all = getCuratedExercises(
@@ -571,7 +631,8 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
               Save/Update is a separate sticky bottom bar). */}
           <GlassHeader
             eyebrow={isEditing ? "EDIT WORKOUT" : "NEW WORKOUT"}
-            onBack={() => navigation.goBack()}
+            onBack={handleBack}
+            backAccessibilityLabel="Go back (discard or keep changes)"
           />
 
           <ScrollView
@@ -638,6 +699,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                               onChangeText={(v) =>
                                 updateExerciseField(index, "sets", parseInt(v) || 1)
                               }
+                              accessibilityLabel={`Sets for ${ex.name}`}
                               testID={`sets-input-${index}`}
                             />
                             <Text style={styles.inputLabel}>Reps</Text>
@@ -649,6 +711,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                                 const min = parseInt(v) || 1;
                                 updateExerciseField(index, "repRange", [min, Math.max(min, ex.repRange[1])]);
                               }}
+                              accessibilityLabel={`Minimum reps for ${ex.name}`}
                               testID={`reps-min-input-${index}`}
                             />
                             <Text style={styles.inputLabel}>-</Text>
@@ -660,6 +723,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                                 const max = parseInt(v) || 1;
                                 updateExerciseField(index, "repRange", [Math.min(ex.repRange[0], max), max]);
                               }}
+                              accessibilityLabel={`Maximum reps for ${ex.name}`}
                               testID={`reps-max-input-${index}`}
                             />
                             <Text style={styles.inputLabel}>Rest</Text>
@@ -674,6 +738,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                                   parseInt(v) || 30,
                                 )
                               }
+                              accessibilityLabel={`Rest seconds for ${ex.name}`}
                               testID={`rest-input-${index}`}
                             />
                             {/* Unit suffix — without it "REST 60" is ambiguous (sec vs min) */}
@@ -692,6 +757,7 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                               }
                               placeholder="0"
                               placeholderTextColor={colors.textTertiary}
+                              accessibilityLabel={`Target weight in kilograms for ${ex.name}`}
                               testID={`weight-input-${index}`}
                             />
                           </View>
@@ -991,13 +1057,13 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
                 style={styles.primaryCtaGradient}
               >
                 {saving ? (
-                  <AuroraSpinner size="sm" customSize={rf(16)} theme="white" />
+                  <AuroraSpinner size="sm" customSize={rf(16)} theme="dark" />
                 ) : (
                   <>
                     <Text style={styles.primaryCtaText}>
                       {isEditing ? "Update" : "Save Template"}
                     </Text>
-                    <Ionicons name="checkmark" size={rf(18)} color={colors.white} />
+                    <Ionicons name="checkmark" size={rf(18)} color={colors.background} />
                   </>
                 )}
               </LinearGradient>
@@ -1005,6 +1071,30 @@ export default function CreateWorkoutScreen({ navigation, route }: Props) {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* Discard-changes confirm dialog — mirrors WeeklyBuilderScreen's
+          pattern for the same unsaved-edits-on-back scenario. */}
+      <CustomDialog
+        visible={discardDialogVisible}
+        title="Discard changes?"
+        message="You have unsaved edits to this workout. Discarding will lose them."
+        type="warning"
+        actions={[
+          {
+            text: "Keep Editing",
+            onPress: () => setDiscardDialogVisible(false),
+            style: "cancel",
+            variant: "secondary",
+          },
+          {
+            text: "Discard",
+            onPress: handleConfirmDiscard,
+            style: "destructive",
+            variant: "primary",
+          },
+        ]}
+        onDismiss={() => setDiscardDialogVisible(false)}
+      />
     </AuroraBackground>
   );
 }
@@ -1358,7 +1448,9 @@ const styles = StyleSheet.create({
     fontSize: rf(15),
     fontFamily: FONT_FAMILY.bold,
     fontWeight: "700",
-    color: colors.white,
+    // White on the primary/primaryDark gradient computes to 2.84-3.6:1,
+    // failing WCAG AA; near-black stays safely above 4.5:1 across the span.
+    color: colors.background,
   },
   ctaDisabled: {
     opacity: 0.4,
