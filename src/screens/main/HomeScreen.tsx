@@ -40,6 +40,7 @@ import {
   HomeSkeleton,
 } from './home';
 import { WeightEntryModal } from '../../components/progress/WeightEntryModal';
+import { OfflineBanner } from '../../components/OfflineBanner';
 import { useHomeLogic } from '../../hooks/useHomeLogic';
 import { useHealthIntelligenceLogic } from '../../hooks/useHealthIntelligenceLogic';
 import { useAppStateStore, type DayName } from '../../stores/appStateStore';
@@ -287,6 +288,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 onStreakPress={handleStreakPress}
                 dayLabel={dayLabel} // contextual: "Strength Day" / "Rest Day" / undefined
               />
+
+              {/* Offline / pending-sync indicator — reads the existing offline
+                  queue state (offline.ts / offlineStore.ts); see
+                  src/components/OfflineBanner.tsx for state precedence. */}
+              <OfflineBanner />
 
               {/* Error Banner */}
               {error && <ErrorBanner error={error} onRetry={handleRefresh} />}

@@ -7,6 +7,7 @@ export interface UseOfflineReturn {
   isOnline: boolean;
   syncInProgress: boolean;
   queueLength: number;
+  failedCount: number;
   lastSyncAttempt: number | null;
   lastSyncResult: SyncResult | null;
   autoSyncEnabled: boolean;
@@ -32,6 +33,7 @@ export const useOffline = (): UseOfflineReturn => {
     isOnline,
     syncInProgress,
     queueLength,
+    failedCount,
     lastSyncAttempt,
     lastSyncResult,
     autoSyncEnabled,
@@ -60,6 +62,7 @@ export const useOffline = (): UseOfflineReturn => {
     isOnline,
     syncInProgress,
     queueLength,
+    failedCount,
     lastSyncAttempt,
     lastSyncResult,
     autoSyncEnabled,
@@ -98,6 +101,16 @@ export const useSyncInProgress = (): boolean => {
 export const useSyncQueueLength = (): number => {
   const queueLength = useOfflineStore((state) => state.queueLength);
   return queueLength;
+};
+
+/**
+ * Hook to get the count of actions that permanently failed to sync
+ * (exhausted retries and were rolled back). Distinct from queueLength,
+ * which only reflects actions still pending/retrying.
+ */
+export const useSyncFailedCount = (): number => {
+  const failedCount = useOfflineStore((state) => state.failedCount);
+  return failedCount;
 };
 
 /**

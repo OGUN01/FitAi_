@@ -17,6 +17,7 @@ interface OfflineState {
   isOnline: boolean;
   syncInProgress: boolean;
   queueLength: number;
+  failedCount: number;
   lastSyncAttempt: number | null;
   lastSyncResult: SyncResult | null;
   autoSyncEnabled: boolean;
@@ -59,6 +60,7 @@ export const useOfflineStore = create<OfflineState>()(
       isOnline: true,
       syncInProgress: false,
       queueLength: 0,
+      failedCount: 0,
       lastSyncAttempt: null,
       lastSyncResult: null,
       autoSyncEnabled: true,
@@ -138,6 +140,7 @@ export const useOfflineStore = create<OfflineState>()(
 
           set({
             queueLength: 0,
+            failedCount: 0,
             lastSyncResult: null,
             lastSyncAttempt: null,
           });
@@ -166,6 +169,7 @@ export const useOfflineStore = create<OfflineState>()(
           isOnline: status.isOnline,
           syncInProgress: status.syncInProgress,
           queueLength: status.queueLength,
+          failedCount: status.failedCount,
           lastSyncAttempt: status.lastSyncAttempt,
         });
       },

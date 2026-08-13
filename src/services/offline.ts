@@ -686,6 +686,7 @@ class OfflineService {
     isOnline: boolean;
     syncInProgress: boolean;
     lastSyncAttempt: number | null;
+    failedCount: number;
   } {
     return {
       queueLength: this.syncQueue.length,
@@ -695,6 +696,11 @@ class OfflineService {
         this.syncQueue.length > 0
           ? Math.max(...this.syncQueue.map((a) => a.timestamp))
           : null,
+      // Actions that exhausted maxRetries are moved out of syncQueue and
+      // rolled back locally — they must be surfaced separately so a UI
+      // built on queueLength alone doesn't report "fully synced" when
+      // data was actually dropped. See offlineStore.updateSyncStatus().
+      failedCount: this.failedActions.length,
     };
   }
 
