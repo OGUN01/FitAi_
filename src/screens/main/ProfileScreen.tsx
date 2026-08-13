@@ -5,17 +5,18 @@
  * Following FitAI UI/UX methodology
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import Constants from "expo-constants";
-import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   EditProvider,
   useEditActions,
 } from "../../contexts/EditContext";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
-import { colors } from "../../theme/aurora-tokens";
-import { rp, rh } from "../../utils/responsive";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { colors, surface, border, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { rp, rh, rf } from "../../utils/responsive";
 import { useProfileLogic } from "../../hooks/useProfileLogic";
 import { useAuthStore } from "../../stores/authStore";
 import { useUserStore } from "../../stores/userStore";
@@ -50,6 +51,23 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
   route,
 }) => {
   const [refreshing, setRefreshing] = useState(false);
+  // Quick-jump row: Settings was one unbroken scroll requiring 8+ swipes to
+  // reach Sign Out, with no way to jump directly to a section. Purely
+  // additive — the full scroll and every section stay exactly as they were;
+  // this just gives a one-tap shortcut alongside it.
+  const scrollViewRef = useRef<ScrollView>(null);
+  const sectionOffsetsRef = useRef<Record<string, number>>({});
+  const handleSectionLayout = useCallback(
+    (key: string) => (e: LayoutChangeEvent) => {
+      sectionOffsetsRef.current[key] = e.nativeEvent.layout.y;
+    },
+    [],
+  );
+  const scrollToSection = useCallback((key: string) => {
+    const y = sectionOffsetsRef.current[key];
+    if (y == null) return;
+    scrollViewRef.current?.scrollTo({ y: Math.max(0, y - rp(spacing.md)), animated: true });
+  }, []);
   const {
     isAuthenticated,
     isGuestMode,
@@ -233,6 +251,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
         <ScrollView
+          ref={scrollViewRef}
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
@@ -267,12 +286,44 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
             achievements={userStats?.achievements || 0}
           />
 
-          <SettingsSection
-            title="Account"
-            items={accountItems}
-            onItemPress={handleSettingItemPress}
-            animationDelay={200}
-          />
+          {/* Quick jump — one tap to any section instead of scrolling past
+              all of them, most usefully to reach Sign Out at the bottom. */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickJumpRow}
+          >
+            {[
+              { key: "account", label: "Account" },
+              { key: "preferences", label: "Preferences" },
+              { key: "app", label: "App" },
+              { key: "data", label: "Data" },
+              ...(isAuthenticated ? [{ key: "signout", label: "Sign Out" }] : []),
+            ].map((item) => (
+              <AnimatedPressable
+                key={item.key}
+                onPress={() => scrollToSection(item.key)}
+                scaleValue={0.95}
+                hapticType="light"
+                style={styles.quickJumpChip}
+                accessibilityRole="button"
+                accessibilityLabel={`Jump to ${item.label}`}
+              >
+                <Text style={styles.quickJumpChipText} numberOfLines={1}>
+                  {item.label}
+                </Text>
+              </AnimatedPressable>
+            ))}
+          </ScrollView>
+
+          <View onLayout={handleSectionLayout("account")}>
+            <SettingsSection
+              title="Account"
+              items={accountItems}
+              onItemPress={handleSettingItemPress}
+              animationDelay={200}
+            />
+          </View>
 
           {isAuthenticated && (
             <ConnectedAccountsCard
@@ -283,26 +334,32 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
             />
           )}
 
-          <SettingsSection
-            title="Preferences"
-            items={preferencesItems}
-            onItemPress={handleSettingItemPress}
-            animationDelay={300}
-          />
+          <View onLayout={handleSectionLayout("preferences")}>
+            <SettingsSection
+              title="Preferences"
+              items={preferencesItems}
+              onItemPress={handleSettingItemPress}
+              animationDelay={300}
+            />
+          </View>
 
-          <SettingsSection
-            title="App"
-            items={appItems}
-            onItemPress={handleSettingItemPress}
-            animationDelay={400}
-          />
+          <View onLayout={handleSectionLayout("app")}>
+            <SettingsSection
+              title="App"
+              items={appItems}
+              onItemPress={handleSettingItemPress}
+              animationDelay={400}
+            />
+          </View>
 
-          <SettingsSection
-            title="Data"
-            items={dataItems}
-            onItemPress={handleSettingItemPress}
-            animationDelay={500}
-          />
+          <View onLayout={handleSectionLayout("data")}>
+            <SettingsSection
+              title="Data"
+              items={dataItems}
+              onItemPress={handleSettingItemPress}
+              animationDelay={500}
+            />
+          </View>
 
           <AppInfoCard
             version={Constants.expoConfig?.version ?? "0.0.0"}
@@ -310,7 +367,9 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           />
 
           {isAuthenticated && (
-            <LogoutButton onPress={handleSignOut} animationDelay={700} />
+            <View onLayout={handleSectionLayout("signout")}>
+              <LogoutButton onPress={handleSignOut} animationDelay={700} />
+            </View>
           )}
 
           <View style={styles.bottomSpacing} />
@@ -437,6 +496,28 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: rh(100),
+  },
+  quickJumpRow: {
+    flexDirection: "row",
+    gap: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.lg),
+    paddingVertical: rp(spacing.sm),
+  },
+  quickJumpChip: {
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.xs),
+    minHeight: 36,
+    justifyContent: "center",
+    borderRadius: borderRadius.full,
+    backgroundColor: surface[1],
+    borderWidth: 1,
+    borderColor: border.subtle,
+  },
+  quickJumpChipText: {
+    fontFamily: typography.variants.caption.fontFamily,
+    fontSize: rf(13),
+    fontWeight: "600",
+    color: colors.text.secondary,
   },
 });
 

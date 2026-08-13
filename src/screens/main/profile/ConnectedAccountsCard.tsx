@@ -19,6 +19,7 @@ import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
+import { maskEmail } from "../../../utils/validators/emailValidator";
 
 const { variants } = typography;
 
@@ -78,8 +79,10 @@ const AccountRow: React.FC<{
           {account.name}
         </Text>
         {account.isConnected && account.email ? (
+          // Masked (e.g. "h***@gmail.com") — the full address was previously
+          // shown in plaintext, visible to anyone glancing at the screen.
           <Text style={styles.email} numberOfLines={2}>
-            {account.email}
+            {maskEmail(account.email)}
           </Text>
         ) : (
           <Text style={styles.notConnected}>Not connected</Text>

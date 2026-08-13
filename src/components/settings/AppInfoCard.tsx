@@ -43,8 +43,11 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
         style={styles.card}
       >
         <View style={styles.content}>
+          {/* Single-hue orange gradient — was errorLight→primaryLight
+              (red→orange), inconsistent with the plain-orange "F" mark used
+              elsewhere the app logo appears (e.g. AboutFitAIScreen). */}
           <LinearGradient
-            colors={[colors.errorLight, colors.primaryLight]}
+            colors={[colors.primaryLight, colors.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.logo}

@@ -37,8 +37,11 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
       }
       style={styles.container}
     >
+      {/* Single-hue orange gradient — was primary→secondary (orange→blue),
+          a two-tone brand mark that didn't match the plain-orange "F" mark
+          used everywhere else the app logo appears (e.g. AboutFitAIScreen). */}
       <LinearGradient
-        colors={[colors.primary.DEFAULT, colors.secondary.DEFAULT]}
+        colors={[colors.primary[400], colors.primary.dark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.logo}
