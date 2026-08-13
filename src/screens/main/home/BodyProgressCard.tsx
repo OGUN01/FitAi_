@@ -65,14 +65,14 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
           <AnimatedPressable
             onPress={onPress}
             scaleValue={0.98}
-            accessibilityRole="button"
+            accessibilityRole={onPress ? 'button' : undefined}
             accessibilityLabel="View Progress"
             testID="progress-card"
             style={styles.headerPressable}
           >
             <View style={styles.headerLeft}>
               <Ionicons name="body" size={rf(16)} color={colors.primary} />
-              <Text style={styles.headerTitle} numberOfLines={1}>
+              <Text style={styles.headerTitle} numberOfLines={2}>
                 Body Progress
               </Text>
             </View>
@@ -164,7 +164,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
                 </Text>
               </View>
 
-              <View style={styles.actionButtons}>
+              {onLogWeight ? <View style={styles.actionButtons}>
                 <AnimatedPressable
                   onPress={onLogWeight}
                   scaleValue={0.95}
@@ -175,11 +175,11 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
                   accessibilityLabel="Log weight"
                 >
                   <Ionicons name="add-circle-outline" size={rf(16)} color={colors.primary} />
-                  <Text style={styles.actionButtonText} numberOfLines={1}>
+                  <Text style={styles.actionButtonText} numberOfLines={2}>
                     Log Weight
                   </Text>
                 </AnimatedPressable>
-              </View>
+              </View> : null}
             </>
           ) : (
             /* Empty State */
@@ -187,13 +187,13 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
               <View style={styles.emptyIconContainer}>
                 <Ionicons name="scale-outline" size={rf(32)} color={colors.primary} />
               </View>
-              <Text style={styles.emptyTitle} numberOfLines={1}>
+              <Text style={styles.emptyTitle} numberOfLines={2}>
                 Track Your Progress
               </Text>
               <Text style={styles.emptyDescription} numberOfLines={3}>
                 Log your weight to see trends and track your fitness journey
               </Text>
-              <AnimatedPressable
+              {onLogWeight ? <AnimatedPressable
                 onPress={onLogWeight}
                 scaleValue={0.95}
                 hapticFeedback={true}
@@ -203,10 +203,10 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = React.memo(
                 accessibilityLabel="Log first weight"
               >
                 <Ionicons name="add" size={rf(16)} color={colors.white} />
-                <Text style={styles.startButtonText} numberOfLines={1}>
+                <Text style={styles.startButtonText} numberOfLines={2}>
                   Log First Weight
                 </Text>
-              </AnimatedPressable>
+              </AnimatedPressable> : null}
             </View>
           )}
         </View>
@@ -235,11 +235,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
     ...typography.variants.cardHeadline,
     color: colors.text,
     letterSpacing: 0.3,
+    flexShrink: 1,
   },
   trendBadge: {
     flexDirection: 'row',
@@ -248,6 +251,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
     gap: spacing.xs,
+    flexShrink: 0,
   },
   trendText: {
     fontSize: rf(12),

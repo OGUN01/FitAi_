@@ -99,6 +99,8 @@ const StatCell: React.FC<{
   infoKey,
   onInfoPress,
 }) => {
+  const isInteractive = Boolean(onPress || (metricId && onMetricPress));
+
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
       case "up":
@@ -134,17 +136,23 @@ const StatCell: React.FC<{
       style={styles.cellWrapper}
     >
       <AnimatedPressable
-        onPress={() => {
-          if (metricId && onMetricPress) {
-            onMetricPress(metricId);
-          } else {
-            onPress?.();
-          }
-        }}
-        scaleValue={0.97}
-        hapticFeedback={true}
+        onPress={
+          isInteractive
+            ? () => {
+                if (metricId && onMetricPress) {
+                  onMetricPress(metricId);
+                } else {
+                  onPress?.();
+                }
+              }
+            : undefined
+        }
+        scaleValue={isInteractive ? 0.97 : 1}
+        hapticFeedback={isInteractive}
         hapticType="light"
         style={styles.cellPressable}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}, ${value}${trendValue ? `, ${trendValue}` : subtitle ? `, ${subtitle}` : ""}`}
       >
         <View style={styles.cellContent}>
           <View style={styles.cellHeader}>

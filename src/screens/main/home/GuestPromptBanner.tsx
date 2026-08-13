@@ -25,7 +25,7 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
       hapticFeedback={true}
       hapticType="light"
       accessibilityRole="button"
-      accessibilityLabel="Sign up"
+      accessibilityLabel="Create an account to save your progress"
     >
       {/* Flat Editorial-Dark surface replacing the former GlassCard (no blur,
           no elevation) — same primary-tinted fill + hairline accent border. */}
@@ -38,9 +38,9 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
               color={colors.primary}
             />
           </View>
-          <Text style={styles.text} numberOfLines={1}>Create account to save progress</Text>
+          <Text style={styles.text} numberOfLines={2}>Create account to save progress</Text>
           <View style={styles.button}>
-            <Text style={styles.buttonText} numberOfLines={1}>Sign Up</Text>
+            <Text style={styles.buttonText} numberOfLines={2}>Sign Up</Text>
           </View>
         </View>
       </View>
@@ -69,18 +69,22 @@ const styles = StyleSheet.create({
     backgroundColor: hexToRgba(colors.primary, 0.09),
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   text: {
     fontSize: fontSize.sm,
     color: colors.text,
     fontWeight: typography.fontWeight.medium,
     flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
   },
   button: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    flexShrink: 0,
   },
   buttonText: {
     fontSize: fontSize.sm,

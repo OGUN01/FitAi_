@@ -14,6 +14,9 @@ jest.mock("react-native", () => ({
     runAfterInteractions: (...args: unknown[]) =>
       mockRunAfterInteractions(...args),
   },
+  AppState: {
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  },
 }));
 
 const mockUseAuth = jest.fn(() => ({

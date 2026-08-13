@@ -236,7 +236,9 @@ describe("advanced picker touch targets", () => {
     expect(StyleSheet.flatten(date.getByLabelText("Select date").props.style)).toMatchObject({
       minHeight: 44,
     });
-    expect(StyleSheet.flatten(date.getByLabelText(/Mon, Mar 23|Mar 23/i).props.style)).toMatchObject({
+    // Date labels follow the test runner/device locale, so match the stable
+    // month/day content without assuming U.S. ordering or punctuation.
+    expect(StyleSheet.flatten(date.getByLabelText(/Mar.*23|23.*Mar/i).props.style)).toMatchObject({
       minHeight: 44,
     });
     expect(StyleSheet.flatten(multi.getByLabelText("Equipment").props.style)).toMatchObject({
@@ -273,5 +275,55 @@ describe("advanced picker touch targets", () => {
       minWidth: 44,
       height: 44,
     });
+  });
+
+  it("refreshes custom multi-select drafts from the latest controlled value", () => {
+    const options = [
+      { id: "1", label: "Indian", value: "indian" },
+      { id: "2", label: "Thai", value: "thai" },
+    ];
+    const onSelectionChange = jest.fn();
+    const screen = render(
+      <MultiSelectWithCustom
+        label="Cuisine"
+        options={options}
+        selectedValues={["indian"]}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    fireEvent.press(screen.getByLabelText("Cuisine"));
+    fireEvent.press(screen.getByLabelText("Cancel"));
+    screen.rerender(
+      <MultiSelectWithCustom
+        label="Cuisine"
+        options={options}
+        selectedValues={["thai"]}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    fireEvent.press(screen.getByLabelText("Cuisine"));
+
+    expect(screen.getByLabelText("Indian").props.accessibilityState.checked).toBe(false);
+    expect(screen.getByLabelText("Thai").props.accessibilityState.checked).toBe(true);
+  });
+
+  it("guards custom multi-select confirmation against same-frame double taps", () => {
+    const onSelectionChange = jest.fn();
+    const screen = render(
+      <MultiSelectWithCustom
+        label="Cuisine"
+        options={[{ id: "1", label: "Indian", value: "indian" }]}
+        selectedValues={[]}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    fireEvent.press(screen.getByLabelText("Cuisine"));
+    const confirm = screen.getByLabelText("Select 0 items");
+    fireEvent.press(confirm);
+    fireEvent.press(confirm);
+
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
   });
 });

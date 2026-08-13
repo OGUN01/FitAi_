@@ -61,12 +61,14 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             </Text>
           </View>
           <AnimatedPressable
-            onPress={onViewFullCalendar}
+            onPress={onViewFullCalendar ?? undefined}
             scaleValue={0.97}
             hapticFeedback={true}
             hapticType="light"
             style={styles.statsRow}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={`View full calendar, ${stats.completed} of ${stats.total} workouts completed`}
           >
             <Text style={styles.statsText} numberOfLines={1}>
               {stats.completed}/{stats.total}
@@ -100,12 +102,26 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             return (
               <AnimatedPressable
                 key={index}
-                onPress={() => onDayPress?.(day.date)}
+                onPress={onDayPress ? () => onDayPress(day.date) : undefined}
                 scaleValue={0.9}
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.dayWrapper}
                 hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                accessibilityRole="button"
+                accessibilityLabel={`${day.date.toLocaleDateString(undefined, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })}${isToday ? ', today' : ''}${
+                  day.workoutCompleted
+                    ? ', workout completed'
+                    : day.isRestDay
+                      ? ', rest day'
+                      : day.hasWorkout
+                        ? ', workout scheduled'
+                        : ''
+                }`}
               >
                 <Text style={[styles.dayLabel, isToday && styles.todayLabel]} numberOfLines={1}>
                   {DAY_LABELS[index]}

@@ -20,6 +20,7 @@ import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { useTopSafeAreaInset } from "../../../components/ui/aurora/useTopSafeAreaInset";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
@@ -32,6 +33,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   onPeriodChange,
   onProgressPress,
 }) => {
+  const reducedMotion = useReducedMotion();
   // Top spacing so the title clears the status bar. The wrapping SafeAreaView
   // in AnalyticsScreen owns only the bottom edge (edges={["bottom"]}) — earlier
   // relying on its top edge left the title overlapping the status bar on some
@@ -61,7 +63,11 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
       <Animated.View
-        entering={Platform.OS !== "web" ? FadeInDown.delay(100).duration(350) : undefined}
+        entering={
+          Platform.OS !== "web" && !reducedMotion
+            ? FadeInDown.delay(100).duration(350)
+            : undefined
+        }
         style={styles.titleRow}
       >
         <View style={styles.titleLeft}>
@@ -104,7 +110,11 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       </Animated.View>
 
       <Animated.View
-        entering={Platform.OS !== "web" ? FadeInDown.delay(200).duration(350) : undefined}
+        entering={
+          Platform.OS !== "web" && !reducedMotion
+            ? FadeInDown.delay(200).duration(350)
+            : undefined
+        }
         style={styles.periodSelectorWrapper}
       >
         <PeriodSelector

@@ -66,6 +66,12 @@ export const InsightCard: React.FC<InsightCardProps> = ({
         hapticFeedback={!!onAction}
         hapticType="light"
         disabled={!onAction}
+        accessibilityRole="button"
+        accessibilityLabel={
+          onAction
+            ? `${title}. ${description}${actionText ? `. ${actionText}` : ""}`
+            : undefined
+        }
       >
         <View style={styles.container}>
           {/* Accent left border */}

@@ -3,7 +3,7 @@
  * Shows wearable sync status with last sync time and quick sync action
  */
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -38,8 +38,18 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
 
   const isConnected = isHealthKitAuthorized || isHealthConnectAuthorized;
   const isIOS = Platform.OS === "ios";
-  const isSyncing = syncStatus === "syncing";
+  const [localSyncInFlight, setLocalSyncInFlight] = useState(false);
+  const syncInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
+  const isSyncing = syncStatus === "syncing" || localSyncInFlight;
   const isError = syncStatus === "error";
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Get primary data source from metrics
   const primarySource = metrics?.sources?.steps || metrics?.sources?.heartRate;
@@ -74,15 +84,16 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
   // actually retries. When onPress is provided and we're not in an error
   // state, defer to the parent's handler (existing behavior).
   const handleSync = async () => {
+    if (syncInFlightRef.current || isSyncing) return;
+    syncInFlightRef.current = true;
+    setLocalSyncInFlight(true);
     haptics.light();
-    if (onPress && !isError) {
-      onPress();
-      return;
-    }
 
     // Perform sync (force=true so a retry actually re-fetches)
     try {
-      if (isIOS && isHealthKitAuthorized) {
+      if (onPress && !isError) {
+        await onPress();
+      } else if (isIOS && isHealthKitAuthorized) {
         await syncHealthData(true);
       } else if (!isIOS && isHealthConnectAuthorized) {
         await syncFromHealthConnect(7);
@@ -97,6 +108,11 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
         "[SyncStatusIndicator] retry sync failed:",
         err instanceof Error ? err.message : String(err),
       );
+    } finally {
+      syncInFlightRef.current = false;
+      if (mountedRef.current) {
+        setLocalSyncInFlight(false);
+      }
     }
   };
 
@@ -146,6 +162,21 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
     }
   };
 
+  const sourceName = primarySource
+    ? primarySource.name
+    : isIOS
+      ? "HealthKit"
+      : "Health Connect";
+  const statusDescription = isError
+    ? `${syncError || "Sync failed"}. Tap to retry`
+    : isSyncing
+      ? "Syncing"
+      : `${formatLastSync(lastSyncTime)}${
+          primarySource && tierAccuracyLabel(primarySource.tier)
+            ? `, ${tierAccuracyLabel(primarySource.tier)}`
+            : ""
+        }`;
+
   return (
     <AnimatedPressable
       onPress={handleSync}
@@ -153,6 +184,9 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
       hapticFeedback
       disabled={isSyncing}
       hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
+      accessibilityRole="button"
+      accessibilityLabel={`${sourceName}: ${statusDescription}`}
+      accessibilityState={{ disabled: isSyncing, busy: isSyncing }}
     >
       <View style={styles.container}>
         <View style={styles.iconContainer}>
@@ -167,18 +201,14 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
           )}
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.label} numberOfLines={1}>
-            {primarySource
-              ? primarySource.name
-              : isIOS
-                ? "HealthKit"
-                : "Health Connect"}
+          <Text style={styles.label} numberOfLines={2}>
+            {sourceName}
           </Text>
           {isError ? (
             <>
               <Text
                 style={[styles.status, { color: getStatusColor() }]}
-                numberOfLines={1}
+                numberOfLines={2}
               >
                 {syncError ? truncateError(syncError) : "Sync failed"}
               </Text>
@@ -187,7 +217,7 @@ export const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
               </Text>
             </>
           ) : (
-            <Text style={[styles.status, { color: getStatusColor() }]} numberOfLines={1}>
+            <Text style={[styles.status, { color: getStatusColor() }]} numberOfLines={2}>
               {isSyncing ? "Syncing..." : formatLastSync(lastSyncTime)}
               {primarySource &&
                 !isSyncing &&
@@ -235,6 +265,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    minWidth: 0,
   },
   label: {
     fontSize: rf(12),

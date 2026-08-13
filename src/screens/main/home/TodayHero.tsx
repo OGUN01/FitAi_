@@ -140,16 +140,12 @@ const TodayHero: React.FC<TodayHeroProps> = ({
         {insightColor ? (
           <View style={[styles.insightDot, { backgroundColor: insightColor }]} />
         ) : null}
-        <Text style={styles.coachText} numberOfLines={2}>
-          {insightText}
-        </Text>
+        <Text style={styles.coachText}>{insightText}</Text>
       </View>
 
       {/* 3. Workout meta line */}
       {metaLine ? (
-        <Text style={styles.metaText} numberOfLines={1}>
-          {metaLine}
-        </Text>
+        <Text style={styles.metaText}>{metaLine}</Text>
       ) : null}
 
       {/* 4. CTA button */}
@@ -164,7 +160,7 @@ const TodayHero: React.FC<TodayHeroProps> = ({
       >
         <Text
           style={[styles.ctaText, { color: cta.textColor }]}
-          numberOfLines={1}
+          numberOfLines={2}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
         >
@@ -216,6 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   ctaText: {
     fontFamily: 'Manrope_600SemiBold',

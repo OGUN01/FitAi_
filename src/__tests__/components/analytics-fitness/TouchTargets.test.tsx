@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet } from "react-native";
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 jest.mock("react-native", () => {
   const React = require("react");
@@ -47,7 +47,10 @@ jest.mock("expo-linear-gradient", () => ({
 }));
 
 jest.mock("expo-image", () => ({
-  Image: ({ children }: { children?: React.ReactNode }) => children ?? null,
+  Image: (props: Record<string, unknown>) => {
+    const ReactLocal = require("react");
+    return ReactLocal.createElement("ExpoImage", { testID: "exercise-demo-image", ...props });
+  },
 }));
 
 jest.mock("@expo/vector-icons", () => ({
@@ -240,5 +243,22 @@ describe("analytics and fitness touch targets", () => {
     expect(
       StyleSheet.flatten(journey.getByLabelText("1W").props.style),
     ).toMatchObject({ minHeight: 44 });
+  });
+
+  it("actually pauses and resumes animated exercise demonstrations", () => {
+    const player = render(
+      <ExerciseGifPlayer exerciseId="push-up" exerciseName="Push Up" />,
+    );
+
+    expect(
+      player.getAllByTestId("exercise-demo-image").every((image) => image.props.autoplay === true),
+    ).toBe(true);
+
+    fireEvent.press(player.getByLabelText("Pause exercise demonstration"));
+
+    expect(
+      player.getAllByTestId("exercise-demo-image").every((image) => image.props.autoplay === false),
+    ).toBe(true);
+    expect(player.getByLabelText("Play exercise demonstration")).toBeTruthy();
   });
 });

@@ -7,6 +7,7 @@ import { DashboardSkeleton } from '../../components/ui/aurora/DashboardSkeleton'
 import { colors } from '../../theme/aurora-tokens';
 import { rh } from '../../utils/responsive';
 import { mergeWeightSeries } from '../../components/progress/goalProgressUtils';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 // Hooks
 import { useProgressScreen } from '../../hooks/useProgressScreen';
@@ -32,6 +33,7 @@ interface ProgressScreenProps {
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   const { state, computed, actions } = useProgressScreen(navigation);
 
   const {
@@ -112,7 +114,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ navigation }) =>
     <>
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
         <View style={[styles.container, { paddingTop: insets.top }]}>
-          <Animated.View entering={FadeInDown.duration(400).delay(80)} style={{ flex: 1 }}>
+          <Animated.View
+            entering={reducedMotion ? undefined : FadeInDown.duration(400).delay(80)}
+            style={{ flex: 1 }}
+          >
             <ScrollView
               style={styles.scrollView}
               contentContainerStyle={{ paddingBottom: rh(120) }}

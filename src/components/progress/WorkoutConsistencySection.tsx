@@ -23,6 +23,7 @@ import {
   spacing,
   borderRadius,
 } from '../../theme/aurora-tokens';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 const WEEKS_SHOWN = 12;
 const DAYS_PER_WEEK = 7;
@@ -49,6 +50,7 @@ const dateKey = (d: Date): string =>
 export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps> = ({
   streak,
 }) => {
+  const reducedMotion = useReducedMotion();
   const completedSessions = useFitnessStore((s) => s.completedSessions);
 
   // Session count per day (not just worked/didn't-work) so the heatmap can
@@ -112,7 +114,7 @@ export const WorkoutConsistencySection: React.FC<WorkoutConsistencySectionProps>
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(180).duration(320)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(180).duration(320)}
       style={styles.section}
     >
       <View style={styles.header}>

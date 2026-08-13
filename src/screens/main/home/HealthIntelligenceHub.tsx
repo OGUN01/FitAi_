@@ -75,9 +75,9 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
       <AnimatedPressable
         onPress={onPress}
         scaleValue={0.98}
-        hapticFeedback={true}
+        hapticFeedback={Boolean(onPress)}
         hapticType="light"
-        accessibilityRole="button"
+        accessibilityRole={onPress ? "button" : undefined}
         accessibilityLabel="Health Intelligence"
       >
         <View style={styles.surface}>
@@ -89,7 +89,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
                 size={typography.variants.cardHeadline.fontSize}
                 color={colors.primary}
               />
-              <Text style={styles.headerTitle} numberOfLines={1}>
+              <Text style={styles.headerTitle} numberOfLines={2}>
                 Health Intelligence
               </Text>
             </View>

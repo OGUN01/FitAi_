@@ -38,6 +38,7 @@ import { haptics } from '../../utils/haptics';
 import type { WeightUnit } from '../../utils/units';
 import { toDisplayWeight } from '../../utils/units';
 import { mergeWeightSeries } from './goalProgressUtils';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -122,6 +123,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
   unit = 'kg',
   fallbackCurrentWeightKg = null,
 }) => {
+  const reducedMotion = useReducedMotion();
   const [period, setPeriod] = useState<Period>('1M');
   const cutoffDays = PERIODS.find((item) => item.key === period)?.days ?? 30;
   const { width: windowWidth } = useWindowDimensions();
@@ -187,10 +189,15 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
   const [drawn, setDrawn] = useState(false);
 
   React.useEffect(() => {
-    setDrawn(false);
-    drawProgress.value = 0;
-    drawProgress.value = withTiming(1, { duration: 900 });
-  }, [period, chartValues.length, drawProgress]);
+    if (reducedMotion) {
+      drawProgress.value = 1;
+      setDrawn(true);
+    } else {
+      setDrawn(false);
+      drawProgress.value = 0;
+      drawProgress.value = withTiming(1, { duration: 900 });
+    }
+  }, [period, chartValues.length, drawProgress, reducedMotion]);
 
   useAnimatedReaction(
     () => drawProgress.value,
@@ -232,7 +239,10 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(0).duration(320)} style={styles.section}>
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeInDown.delay(0).duration(320)}
+      style={styles.section}
+    >
       {/* Header row */}
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Weight Journey</Text>

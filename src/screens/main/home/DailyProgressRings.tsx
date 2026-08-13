@@ -145,6 +145,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
   onPress,
   onEmptyStatePress,
 }) => {
+  const emptyStateAction = onEmptyStatePress ?? onPress;
   // Check for empty/unset goals state
   const hasNoGoals = caloriesGoal === 0 && workoutGoal === 0 && mealsGoal === 0;
 
@@ -229,11 +230,11 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
   if (hasNoGoals) {
     return (
       <AnimatedPressable
-        onPress={onEmptyStatePress ?? onPress}
+        onPress={emptyStateAction}
         scaleValue={0.98}
-        hapticFeedback={true}
+        hapticFeedback={Boolean(emptyStateAction)}
         hapticType="light"
-        accessibilityRole="button"
+        accessibilityRole={emptyStateAction ? "button" : undefined}
         accessibilityLabel="Complete profile to set your goals"
       >
         <View style={styles.surface}>
@@ -241,10 +242,10 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
             <View style={styles.emptyStateIconContainer}>
               <Ionicons name="fitness-outline" size={rf(28)} color={colors.primary} />
             </View>
-            <Text style={styles.emptyStateTitle} numberOfLines={1}>
+            <Text style={styles.emptyStateTitle} numberOfLines={2}>
               Set Your Goals
             </Text>
-            <Text style={styles.emptyStateText} numberOfLines={2}>
+            <Text style={styles.emptyStateText} numberOfLines={3}>
               Complete your profile to track daily progress
             </Text>
             <View style={styles.emptyStateCta}>
@@ -269,9 +270,9 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
     <AnimatedPressable
       onPress={onPress}
       scaleValue={0.98}
-      hapticFeedback={true}
+      hapticFeedback={Boolean(onPress)}
       hapticType="light"
-      accessibilityRole="button"
+      accessibilityRole={onPress ? "button" : undefined}
       accessibilityLabel={`Daily progress ${overallScore}%`}
       testID="daily-progress-rings"
     >
@@ -373,7 +374,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
                 {caloriesBurned}
                 <Text style={styles.chipUnit}>/{caloriesGoal > 0 ? caloriesGoal : '--'}</Text>
               </Text>
-              <Text style={styles.chipLabel} numberOfLines={1}>
+              <Text style={styles.chipLabel} numberOfLines={2}>
                 Move
               </Text>
             </View>
@@ -389,7 +390,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
                 {workoutMinutes}
                 <Text style={styles.chipUnit}>/{workoutGoal > 0 ? workoutGoal : '--'}</Text>
               </Text>
-              <Text style={styles.chipLabel} numberOfLines={1}>
+              <Text style={styles.chipLabel} numberOfLines={2}>
                 Exercise
               </Text>
             </View>
@@ -405,7 +406,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
                 {mealsLogged}
                 <Text style={styles.chipUnit}>/{mealsGoal > 0 ? mealsGoal : '--'}</Text>
               </Text>
-              <Text style={styles.chipLabel} numberOfLines={1}>
+              <Text style={styles.chipLabel} numberOfLines={2}>
                 Nutrition
               </Text>
             </View>
@@ -423,7 +424,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
                     {steps.toLocaleString()}
                     <Text style={styles.chipUnit}>/{stepsGoal.toLocaleString()}</Text>
                   </Text>
-                  <Text style={styles.chipLabel} numberOfLines={1}>
+                  <Text style={styles.chipLabel} numberOfLines={2}>
                     Steps
                   </Text>
                 </View>
@@ -539,6 +540,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.xs,
+    minWidth: 0,
   },
   chipDivider: {
     width: 1,
@@ -562,6 +564,7 @@ const styles = StyleSheet.create({
     ...typography.variants.caption,
     fontSize: rf(12),
     color: colors.textSecondary,
+    textAlign: 'center',
   },
 });
 

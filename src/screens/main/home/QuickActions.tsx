@@ -34,7 +34,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scrollContent}
-      snapToInterval={rw(72) + spacing.md}
       decelerationRate="fast"
     >
       {actions.map((action) => (
@@ -110,7 +109,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions }) => {
           </View>
 
           {/* Label */}
-          <Text style={styles.label} numberOfLines={1}>
+          <Text style={styles.label} numberOfLines={2}>
             {action.label}
           </Text>
         </AnimatedPressable>
@@ -126,7 +125,8 @@ const styles = StyleSheet.create({
   },
   actionItem: {
     alignItems: "center",
-    width: rw(72),
+    width: Math.max(rw(80), 88),
+    minHeight: 88,
   },
   actionItemDisabled: {
     opacity: 0.4,
@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     color: colors.text,
     textAlign: "center",
+    flexShrink: 1,
   },
 });
 

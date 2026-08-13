@@ -39,6 +39,7 @@ import {
   calculateChartBounds,
   calculateTrend,
 } from "./chartUtils";
+import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 
 export interface ChartData {
   label: string;
@@ -66,6 +67,7 @@ export const LineChart: React.FC<LineChartProps> = ({
   emptySubtitle = "Start tracking to see progress",
   weightLossGoal = false,
 }) => {
+  const reducedMotion = useReducedMotion();
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const animationProgress = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
@@ -123,13 +125,17 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   useEffect(() => {
     if (hasData) {
-      animationProgress.value = withTiming(1, {
-        duration: 1200,
-        easing: Easing.out(Easing.cubic),
-      });
-      glowIntensity.value = withDelay(800, withSpring(1, { damping: 12 }));
+      animationProgress.value = reducedMotion
+        ? 1
+        : withTiming(1, {
+            duration: 1200,
+            easing: Easing.out(Easing.cubic),
+          });
+      glowIntensity.value = reducedMotion
+        ? 1
+        : withDelay(800, withSpring(1, { damping: 12 }));
     }
-  }, [data, hasData]);
+  }, [animationProgress, data, glowIntensity, hasData, reducedMotion]);
 
   useEffect(() => {
     setSelectedPoint(null);

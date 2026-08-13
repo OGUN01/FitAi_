@@ -25,6 +25,7 @@ import {
 } from "../../../../theme/aurora-tokens";
 import { rf, rh, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 
 export interface ChartData {
   label: string;
@@ -68,13 +69,16 @@ const AnimatedBar: React.FC<{
   color: string;
 }> = React.memo(({ x, finalHeight, width, index, isSelected, color }) => {
   const progress = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    progress.value = withDelay(
-      Math.min(index, MAX_BAR_STAGGER_INDEX) * 40,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) })
-    );
-  }, []);
+    progress.value = reducedMotion
+      ? 1
+      : withDelay(
+          Math.min(index, MAX_BAR_STAGGER_INDEX) * 40,
+          withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }),
+        );
+  }, [index, progress, reducedMotion]);
 
   const animatedProps = useAnimatedProps(() => ({
     height: progress.value * finalHeight,

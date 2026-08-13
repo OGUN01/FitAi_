@@ -32,6 +32,7 @@ import { colors, surface, spacing, borderRadius, typography } from "../../theme/
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { hexToRgba } from "../../utils/colors";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 // Subscription gate
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
@@ -75,6 +76,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
   navigation,
 }) => {
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   // Subscription gate — analytics is a premium feature.
   // Two conditions must hold: the plan's feature flag grants analytics AND
@@ -847,7 +849,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
           bar reliably. edges={["top"]} here would double-pad the top. */}
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <Animated.View
-          entering={Platform.OS !== "web" ? FadeIn.duration(300) : undefined}
+          entering={
+            Platform.OS !== "web" && !reducedMotion ? FadeIn.duration(300) : undefined
+          }
           style={styles.animatedContainer}
         >
           <Animated.ScrollView

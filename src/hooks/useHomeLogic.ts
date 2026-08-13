@@ -42,6 +42,7 @@ import {
   getLocalDayName,
 } from "../utils/weekUtils";
 import { type WeightUnit } from "../utils/units";
+import { useReducedMotion } from "../utils/accessibility/hooks";
 
 export const isHealthSnapshotFromToday = (
   lastUpdated?: string | null,
@@ -139,7 +140,11 @@ export const useHomeLogic = () => {
 
   // Entrance fade — Reanimated shared value (replaces legacy Animated.Value).
   const fadeAnim = useSharedValue(0);
-  const isLoadingDataRef = useRef(false);
+  const reducedMotion = useReducedMotion();
+  const dataLoadRequestRef = useRef(0);
+  const completionReloadInFlightRef = useRef(false);
+  const refreshInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
   // Keep a ref to the current user id so the subscription callback always reads
   // the latest value without needing to re-subscribe when user changes.
   const userIdRef = useRef(user?.id);
@@ -150,10 +155,31 @@ export const useHomeLogic = () => {
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const weightHistory = useAnalyticsStore((s) => s.weightHistory);
+  const [todayDateString, setTodayDateString] = useState(() =>
+    getLocalDateString(),
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const refreshDate = () => {
+      const nextDate = getLocalDateString();
+      setTodayDateString((currentDate) =>
+        currentDate === nextDate ? currentDate : nextDate,
+      );
+    };
+    const interval = setInterval(refreshDate, 60_000);
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") refreshDate();
+    });
+    return () => {
+      mountedRef.current = false;
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, []);
 
   // SSOT Fix 17: todaysData computed reactively from stores, not snapshotted
   // Include todayDateString so this recomputes if the date changes (e.g., midnight boundary)
-  const todayDateString = getLocalDateString();
   const todaysData = useMemo(
     () => buildTodaysData(),
     [
@@ -177,6 +203,7 @@ export const useHomeLogic = () => {
     checkAndResetIfNewDay,
     checkAndResetProgressIfNewDay,
     syncHydrationWithSupabase,
+    todayDateString,
   ]);
 
   // Wave 5A: populate metricsHistory (30 days) on mount so the new
@@ -220,12 +247,11 @@ export const useHomeLogic = () => {
 
   useEffect(() => {
     let cancelled = false;
+    const requestId = ++dataLoadRequestRef.current;
 
     const loadData = async () => {
-      if (isLoadingDataRef.current) return; // deduplicate concurrent loads
-      isLoadingDataRef.current = true;
       try {
-        if (!cancelled) {
+        if (!cancelled && requestId === dataLoadRequestRef.current) {
           setIsLoading(true);
           setError(null);
         }
@@ -235,7 +261,7 @@ export const useHomeLogic = () => {
         ]);
       } catch (err) {
         console.error("Load error:", err);
-        if (!cancelled) {
+        if (!cancelled && requestId === dataLoadRequestRef.current) {
           setError(
             err instanceof Error
               ? err.message
@@ -243,8 +269,7 @@ export const useHomeLogic = () => {
           );
         }
       } finally {
-        isLoadingDataRef.current = false;
-        if (!cancelled) {
+        if (!cancelled && requestId === dataLoadRequestRef.current) {
           setIsLoading(false);
         }
       }
@@ -255,27 +280,49 @@ export const useHomeLogic = () => {
       loadData();
     });
 
-    fadeAnim.value = withTiming(1, { duration: 250 });
+    fadeAnim.value = reducedMotion ? 1 : withTiming(1, { duration: 250 });
     // Completion events update the stores; useMemo consumers re-render automatically.
     const unsubscribe = completionTrackingService.subscribe(() => {
-      if (!isLoadingDataRef.current) {
-        useFitnessStore.getState().loadData();
-        useNutritionStore.getState().loadData();
+      if (!completionReloadInFlightRef.current) {
+        completionReloadInFlightRef.current = true;
+        void Promise.all([
+          useFitnessStore.getState().loadData(),
+          useNutritionStore.getState().loadData(),
+        ])
+          .catch((loadError) => {
+            console.error("[useHomeLogic] Completion reload failed:", loadError);
+          })
+          .finally(() => {
+            completionReloadInFlightRef.current = false;
+          });
       }
       if (userIdRef.current) {
-        useAchievementStore.getState().reconcileWithCurrentData(userIdRef.current);
+        void Promise.resolve(
+          useAchievementStore
+            .getState()
+            .reconcileWithCurrentData(userIdRef.current),
+        ).catch((reconcileError) => {
+          console.error(
+            "[useHomeLogic] Achievement reconciliation failed:",
+            reconcileError,
+          );
+        });
       }
     });
     return () => {
       cancelled = true;
+      if (requestId === dataLoadRequestRef.current) {
+        dataLoadRequestRef.current += 1;
+      }
       interactionTask.cancel();
       unsubscribe();
     };
-  }, [fadeAnim, user?.id]);
+  }, [fadeAnim, reducedMotion, user?.id]);
   // NOTE: fadeAnim is a Reanimated SharedValue (stable across renders); kept
   // in deps only to satisfy exhaustive-deps lint without functional change.
 
   useEffect(() => {
+    let cancelled = false;
     const analyticsTask = InteractionManager.runAfterInteractions(() => {
       const loadAnalytics = async () => {
         if (Platform.OS === "ios" && healthSettings.healthKitEnabled) {
@@ -309,6 +356,7 @@ export const useHomeLogic = () => {
           user.id,
           90,
         );
+        if (cancelled) return;
         setHistoryData(weightData, useAnalyticsStore.getState().calorieHistory);
       };
 
@@ -318,6 +366,7 @@ export const useHomeLogic = () => {
     });
 
     return () => {
+      cancelled = true;
       analyticsTask.cancel();
     };
   }, [
@@ -572,6 +621,8 @@ export const useHomeLogic = () => {
 
   // Handlers
   const handleRefresh = useCallback(async () => {
+    if (refreshInFlightRef.current) return;
+    refreshInFlightRef.current = true;
     setRefreshing(true);
     haptics.light();
     setError(null);
@@ -594,9 +645,14 @@ export const useHomeLogic = () => {
       }
     } catch (err) {
       console.error("Refresh error:", err);
-      setError(err instanceof Error ? err.message : "Failed to refresh data");
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err.message : "Failed to refresh data");
+      }
     } finally {
-      setRefreshing(false);
+      refreshInFlightRef.current = false;
+      if (mountedRef.current) {
+        setRefreshing(false);
+      }
     }
   }, [
     loadFitnessData,

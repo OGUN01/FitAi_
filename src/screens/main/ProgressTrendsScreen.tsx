@@ -107,7 +107,9 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
                 icon="cloud-offline-outline"
                 iconColor={colors.error.DEFAULT}
                 title="Couldn't load trends"
-                subtitle="Check your connection and pull down to refresh."
+                subtitle="Check your connection and try again."
+                ctaText="Try Again"
+                onCta={() => { void handleRefresh(); }}
               />
             </View>
           ) : (

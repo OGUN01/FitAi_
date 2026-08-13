@@ -37,7 +37,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = React.memo(({
           accessibilityRole="button"
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={rf(20)} color={colors.text.primary} />
+          <Ionicons name="chevron-back" size={rf(20)} color={colors.text.primary} />
         </AnimatedPressable>
       )}
 

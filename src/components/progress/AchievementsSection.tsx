@@ -18,6 +18,7 @@ import {
   borderRadius,
 } from '../../theme/aurora-tokens';
 import { TIER_COLOR_MAP } from '../../data/achievements/tierColors';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 interface Achievement {
   id: string;
@@ -54,6 +55,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
   completedCount,
   totalCount,
 }) => {
+  const reducedMotion = useReducedMotion();
   // Guests never initialize achievement definitions (auth-only store), so the
   // section would render a bare "Achievements 0/0" header with an empty strip —
   // looks broken, not intentional. Hide until definitions exist.
@@ -73,7 +75,7 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(270).duration(320)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(270).duration(320)}
       style={styles.section}
     >
       <View style={styles.headerRow}>
@@ -102,7 +104,9 @@ export const AchievementsSection: React.FC<AchievementsSectionProps> = ({
           return (
             <Animated.View
               key={achievement.id}
-              entering={FadeInDown.delay(300 + index * 40).duration(260)}
+              entering={
+                reducedMotion ? undefined : FadeInDown.delay(300 + index * 40).duration(260)
+              }
               style={styles.badgeWrap}
             >
               <View

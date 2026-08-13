@@ -66,7 +66,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
 
     const todayDate = useMemo(
       () =>
-        now.toLocaleDateString('en-US', {
+        now.toLocaleDateString(undefined, {
           weekday: 'long',
           month: 'short',
           day: 'numeric',
@@ -89,14 +89,14 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <View style={[styles.avatar, { backgroundColor: accentColor }]}>
-              <Text style={styles.avatarText}>{(userInitial || '').toUpperCase()}</Text>
+              <Text style={styles.avatarText}>{(userInitial || '').slice(0, 1).toUpperCase()}</Text>
             </View>
           </AnimatedPressable>
 
           {/* Center: Greeting + Name */}
           <View style={styles.greetingSection}>
             <View style={styles.greetingRow}>
-              <Text style={styles.greetingText} numberOfLines={1}>
+              <Text style={styles.greetingText} numberOfLines={2}>
                 {greeting},
               </Text>
               <Ionicons
@@ -108,13 +108,11 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
             </View>
             <Text
               style={styles.userName}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.8}
+              numberOfLines={2}
             >
               {userName}
             </Text>
-            <Text style={styles.dateText} numberOfLines={1}>
+            <Text style={styles.dateText} numberOfLines={2}>
               {todayDate}
               {dayLabel ? (
                 <Text style={styles.dayLabel} numberOfLines={1}>
@@ -132,10 +130,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = React.memo(
               <AnimatedPressable
                 onPress={onStreakPress}
                 scaleValue={0.92}
-                hapticFeedback={true}
+                hapticFeedback={Boolean(onStreakPress)}
                 hapticType="light"
                 style={styles.streakBadge}
-                accessibilityRole="button"
+                accessibilityRole={onStreakPress ? "button" : undefined}
                 accessibilityLabel={`${streak} day streak`}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
@@ -181,12 +179,14 @@ const styles = StyleSheet.create({
   },
   greetingRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    minWidth: 0,
   },
   greetingText: {
     fontSize: rf(13),
     fontWeight: typography.fontWeight.medium,
     color: colors.textSecondary,
+    flexShrink: 1,
   },
   greetingIcon: {
     marginLeft: rp(4),

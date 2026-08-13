@@ -33,6 +33,7 @@ import {
 } from '../../theme/aurora-tokens';
 import { type WeightUnit, toDisplayWeight } from '../../utils/units';
 import { getWeightGoalProgress } from './goalProgressUtils';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 interface WeeklyProgress {
   workoutsCompleted: number;
@@ -68,13 +69,16 @@ const GoalRow: React.FC<GoalRowProps> = ({
   delay = 0,
 }) => {
   const width = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
   const pct = progress == null ? null : Math.round(Math.min(1, Math.max(0, progress)) * 100);
 
   useEffect(() => {
     if (pct != null) {
-      width.value = withTiming(pct, { duration: 700, easing: Easing.out(Easing.cubic) });
+      width.value = reducedMotion
+        ? pct
+        : withTiming(pct, { duration: 700, easing: Easing.out(Easing.cubic) });
     }
-  }, [pct, width]);
+  }, [pct, reducedMotion, width]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${width.value}%`,
@@ -82,7 +86,7 @@ const GoalRow: React.FC<GoalRowProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(delay).duration(280)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(delay).duration(280)}
       style={styles.goalRow}
     >
       <View style={styles.goalHeader}>
@@ -117,6 +121,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
   weightHistory = [],
   unit = 'kg',
 }) => {
+  const reducedMotion = useReducedMotion();
   // SSOT: current weight comes from the latest weightHistory entry — the same
   // source as the WeightJourneySection hero and AnalyticsScreen. progressStats
   // (progressData service) is only a fallback when no history exists yet.
@@ -163,7 +168,7 @@ export const GoalProgressSection: React.FC<GoalProgressSectionProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(90).duration(320)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(90).duration(320)}
       style={styles.section}
     >
       {/* Distinct title from analytics/GoalProgressCard (shown on
