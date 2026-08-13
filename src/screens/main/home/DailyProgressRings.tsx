@@ -108,11 +108,13 @@ const Ring: React.FC<{
 
   return (
     <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+      {/* Track opacity was 0.08 — nearly invisible at 0% progress, reading as
+          a missing/broken ring rather than an empty one. */}
       <Circle
         cx={center}
         cy={center}
         r={radius}
-        stroke={hexToRgba(color, 0.08)}
+        stroke={hexToRgba(color, 0.18)}
         strokeWidth={strokeWidth}
         fill="transparent"
       />

@@ -155,13 +155,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     () =>
       createQuickActions({
         onLogWeight: () => setShowWeightModal(true),
-        onLogMeal: () => onNavigateToTab?.('diet', { openLogMeal: true }),
+        // Omitted when EmptyMealsMessage is already showing its own "Log
+        // Meal" CTA (caloriesConsumed === 0) — both rendered unconditionally
+        // put the same action on screen twice during the zero-meals state.
+        onLogMeal:
+          caloriesConsumed === 0
+            ? undefined
+            : () => onNavigateToTab?.('diet', { openLogMeal: true }),
         onLogWater: () => onNavigateToTab?.('diet', { openWaterModal: true }),
         onBarcodeScan: () => onNavigateToTab?.('diet', { openBarcodeOptions: true }),
         onScanLabel: () => onNavigateToTab?.('diet', { openLabelScanPrep: true }),
         waterProgressPercent,
       }),
-    [setShowWeightModal, onNavigateToTab, waterProgressPercent]
+    [setShowWeightModal, onNavigateToTab, waterProgressPercent, caloriesConsumed]
   );
 
   // Reanimated entrance fade — shared value driven from useHomeLogic.
