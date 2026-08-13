@@ -96,20 +96,21 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
       ]}
       testID={testID}
     >
-      {/* Header — big question, top-left. */}
-      <View style={styles.header}>
-        <Text style={styles.question}>{question}</Text>
-        {subtext && <Text style={styles.subtext}>{subtext}</Text>}
-      </View>
-
-      {/* Content */}
+      {/* Header + content share one scroll surface so a wrapped/localized
+          question cannot squeeze the form out of a short landscape viewport. */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
+        <View style={styles.header}>
+          <Text style={styles.question}>{question}</Text>
+          {subtext && <Text style={styles.subtext}>{subtext}</Text>}
+        </View>
         {children}
+        {footerNote && <View style={styles.footerNote}>{footerNote}</View>}
       </ScrollView>
 
       {/* Footer */}
@@ -123,7 +124,6 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
             },
           ]}
         >
-          {footerNote && <View style={styles.footerNote}>{footerNote}</View>}
           <View style={styles.footerRow}>
             {onBack && (
               <Pressable
@@ -194,8 +194,7 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.bg,
   },
   header: {
-    paddingHorizontal: spacing.screenPad,
-    paddingTop: spacing.s,
+    marginBottom: spacing.qGap,
   },
   question: {
     ...typeScale.question,
@@ -209,7 +208,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: spacing.screenPad,
-    paddingTop: spacing.qGap,
+    paddingTop: spacing.s,
     paddingBottom: 40,
   },
   footer: {
@@ -218,16 +217,17 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.bg,
   },
   footerNote: {
-    marginBottom: spacing.m,
+    marginTop: spacing.l,
   },
   footerRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   backButton: {
-    height: spacing.rowH,
+    minHeight: spacing.rowH,
     justifyContent: "center",
     paddingHorizontal: spacing.l,
+    paddingVertical: spacing.m,
     marginRight: spacing.s,
   },
   backLabel: {
@@ -239,7 +239,9 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     flex: 1,
-    height: spacing.rowH,
+    minHeight: spacing.rowH,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.m,
     borderRadius: 16,
     backgroundColor: tokens.accent,
     alignItems: "center",

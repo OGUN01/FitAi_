@@ -14,6 +14,7 @@ import {
   typography,
   borderRadius,
 } from '../../theme/aurora-tokens';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -33,6 +34,7 @@ interface TabBarProps {
 
 export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) => {
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   // Sliding active-tab indicator — a short accent hairline bar that hangs just
   // below the container's top border, centered over the active tab. One shared
@@ -60,6 +62,8 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
       // First layout: land silently, springs only for user-driven moves.
       slideX.value = target;
       hasLaidOut.current = true;
+    } else if (reducedMotion) {
+      slideX.value = target;
     } else {
       slideX.value = withSpring(target, {
         damping: 17,
@@ -67,7 +71,7 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
         mass: 0.7,
       });
     }
-  }, [activeIndex, segmentWidth, paddingH, barWidth]);
+  }, [activeIndex, segmentWidth, paddingH, barWidth, reducedMotion, slideX]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: slideX.value }],

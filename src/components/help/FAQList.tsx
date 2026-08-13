@@ -9,6 +9,7 @@ import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 import { FAQItem } from "../../hooks/useHelpSupport";
 import { hexToRgba } from "../../utils/colors";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface FAQListProps {
   faqs: FAQItem[];
@@ -21,12 +22,15 @@ export const FAQList: React.FC<FAQListProps> = ({
   expandedFaq,
   onToggleFaq,
 }) => {
+  const reducedMotion = useReducedMotion();
   return (
     <>
       {faqs.map((faq, index) => (
         <Animated.View
           key={faq.id}
-          entering={FadeInDown.delay(300 + index * 50).duration(400)}
+          entering={
+            reducedMotion ? undefined : FadeInDown.delay(300 + index * 50).duration(400)
+          }
         >
           <AnimatedPressable
             onPress={() => onToggleFaq(faq.id)}

@@ -10,6 +10,7 @@ import {
   ViewStyle,
   Keyboard,
   Linking,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
@@ -106,31 +107,81 @@ const CameraComponent: React.FC<CameraProps> = ({
   barcodeStatusMessage,
   barcodeActions = [],
 }) => {
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+  const [permissionRequestFailed, setPermissionRequestFailed] = useState(false);
   const [gramsText, setGramsText] = useState(() =>
     portionGrams != null ? String(portionGrams) : ''
   );
   const cameraRef = useRef<CameraView>(null);
+  const permissionRequestInFlightRef = useRef(false);
+  const requestedForVisibleSessionRef = useRef(false);
   // Top inset so the header clears notches on fullScreen modal. The previous
   // static paddingTop: spacing.lg (24px) approximation clipped on devices
   // with taller status bars / notches.
   const insets = useSafeAreaInsets();
   const headerTopInset = Math.max(insets.top, spacing.sm);
+
+  const handleRequestPermission = React.useCallback(async () => {
+    if (permissionRequestInFlightRef.current) return;
+    permissionRequestInFlightRef.current = true;
+    setIsRequestingPermission(true);
+    setPermissionRequestFailed(false);
+    try {
+      await requestPermission();
+    } catch (error) {
+      console.error('Camera permission request failed:', error);
+      setPermissionRequestFailed(true);
+      crossPlatformAlert(
+        'Camera Access Unavailable',
+        'FitAI could not request camera access. Please try again or enable it in device settings.',
+      );
+    } finally {
+      permissionRequestInFlightRef.current = false;
+      setIsRequestingPermission(false);
+    }
+  }, [requestPermission]);
+
+  const handleOpenSettings = React.useCallback(async () => {
+    try {
+      await Linking.openSettings();
+    } catch (error) {
+      console.error('Failed to open camera settings:', error);
+      crossPlatformAlert(
+        'Unable to Open Settings',
+        'Open your device settings and allow FitAI to use the camera.',
+      );
+    }
+  }, []);
+
   React.useEffect(() => {
     if (!visible) {
+      requestedForVisibleSessionRef.current = false;
       return;
     }
 
-    if (!permission || !permission.granted) {
-      if (permission?.canAskAgain !== false) {
-        requestPermission();
-      }
+    if (
+      !requestedForVisibleSessionRef.current &&
+      (!permission || (!permission.granted && permission.canAskAgain !== false))
+    ) {
+      requestedForVisibleSessionRef.current = true;
+      void handleRequestPermission();
     }
-  }, [visible, permission, requestPermission]);
+  }, [visible, permission, handleRequestPermission]);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void getPermission();
+      }
+    });
+    return () => subscription.remove();
+  }, [visible, getPermission]);
 
   const takePicture = async () => {
     if (cameraRef.current && !isCapturing && isCameraReady) {
@@ -173,13 +224,33 @@ const CameraComponent: React.FC<CameraProps> = ({
   if (!permission) {
     return (
       <View style={styles.permissionContainer}>
-        <AuroraSpinner size="lg" theme="primary" />
+        {isRequestingPermission && !permissionRequestFailed ? (
+          <AuroraSpinner size="lg" theme="primary" />
+        ) : (
+          <Ionicons
+            name="camera-outline"
+            size={rf(48)}
+            color={colors.textSecondary}
+            style={styles.permissionIcon}
+          />
+        )}
         <Text style={styles.permissionText} numberOfLines={2}>
-          Requesting camera permission...
+          {permissionRequestFailed ? 'Camera access unavailable' : 'Requesting camera permission...'}
         </Text>
         <Text style={styles.permissionSubtext} numberOfLines={2}>
-          This lets us identify your food
+          FitAI uses the camera only when you choose to scan or take a photo
         </Text>
+        {permissionRequestFailed && (
+          <GlassButton
+            label="Try Again"
+            onPress={handleRequestPermission}
+            loading={isRequestingPermission}
+            disabled={isRequestingPermission}
+            variant="primary"
+            fullWidth
+            style={styles.permissionPrimaryBtn}
+          />
+        )}
       </View>
     );
   }
@@ -197,27 +268,21 @@ const CameraComponent: React.FC<CameraProps> = ({
           No access to camera
         </Text>
         <Text style={styles.permissionSubtext} numberOfLines={3}>
-          FitAI needs camera access to scan your meal
+          FitAI needs camera access to scan products and take photos
         </Text>
         <GlassButton
-          label="Open Settings"
-          onPress={() => Linking.openSettings()}
+          label={permission.canAskAgain === false ? 'Open Settings' : 'Try Again'}
+          onPress={
+            permission.canAskAgain === false
+              ? handleOpenSettings
+              : handleRequestPermission
+          }
+          loading={isRequestingPermission}
+          disabled={isRequestingPermission}
           variant="primary"
           fullWidth
           style={styles.permissionPrimaryBtn}
         />
-        {permission.canAskAgain !== false && (
-          <TouchableOpacity
-            style={styles.permissionSecondaryBtn}
-            onPress={requestPermission}
-            accessibilityRole="button"
-            accessibilityLabel="Try again"
-          >
-            <Text style={styles.permissionSecondaryText} numberOfLines={1}>
-              Try Again
-            </Text>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity
           style={styles.permissionCloseBtn}
           onPress={onClose}

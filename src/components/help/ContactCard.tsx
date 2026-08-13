@@ -9,14 +9,16 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface ContactCardProps {
   onContactEmail: () => void;
 }
 
 export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
+  const reducedMotion = useReducedMotion();
   return (
-    <Animated.View entering={FadeInDown.delay(800).duration(400)}>
+    <Animated.View entering={reducedMotion ? undefined : FadeInDown.delay(800).duration(400)}>
       <GlassCard
         elevation={2}
         padding="lg"

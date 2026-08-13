@@ -68,7 +68,7 @@ const fireSelection = () => {
 const milestoneLabel = (weeks: number): string => {
   if (weeks <= 0) return "";
   const target = new Date(Date.now() + weeks * 7 * 24 * 60 * 60 * 1000);
-  const month = target.toLocaleString("en-US", { month: "short" });
+  const month = target.toLocaleString(undefined, { month: "short" });
   const year = target.getFullYear();
   const day = target.getDate();
   const phase = day <= 10 ? "early" : day <= 20 ? "mid" : "late";

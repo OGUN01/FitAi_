@@ -46,19 +46,19 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const formatDate = (date: Date) => {
     switch (mode) {
       case "date":
-        return date.toLocaleDateString("en-US", {
+        return date.toLocaleDateString(undefined, {
           weekday: "short",
           year: "numeric",
           month: "short",
           day: "numeric",
         });
       case "time":
-        return date.toLocaleTimeString("en-US", {
+        return date.toLocaleTimeString(undefined, {
           hour: "2-digit",
           minute: "2-digit",
         });
       case "datetime":
-        return date.toLocaleDateString("en-US", {
+        return date.toLocaleDateString(undefined, {
           month: "short",
           day: "numeric",
           hour: "2-digit",
@@ -167,7 +167,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {date.toLocaleDateString("en-US", {
+                  {date.toLocaleDateString(undefined, {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
@@ -205,7 +205,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           scaleValue={0.98}
           springConfig="smooth"
           hapticType="light"
-          accessibilityLabel={time.toLocaleTimeString("en-US", {
+          accessibilityLabel={time.toLocaleTimeString(undefined, {
             hour: "2-digit",
             minute: "2-digit",
           })}
@@ -224,7 +224,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
-                {time.toLocaleTimeString("en-US", {
+                {time.toLocaleTimeString(undefined, {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
@@ -319,7 +319,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         accessibilityLabel={label || placeholder}
         accessibilityHint="Opens the date picker"
       >
-        <Text style={[styles.triggerText, !value && styles.placeholderText]} numberOfLines={1}>
+        <Text style={[styles.triggerText, !value && styles.placeholderText]} numberOfLines={2}>
           {value ? formatDate(value) : placeholder}
         </Text>
         <Ionicons name="calendar-outline" size={rf(20)} color={disabled ? colors.textMuted : colors.primary} />
@@ -378,8 +378,11 @@ const styles = StyleSheet.create({
   },
 
   triggerText: {
+    flex: 1,
+    minWidth: 0,
     fontSize: fontSize.md,
     color: colors.text,
+    marginRight: spacing.sm,
   },
 
   placeholderText: {
@@ -419,6 +422,8 @@ const styles = StyleSheet.create({
   },
 
   optionContent: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,

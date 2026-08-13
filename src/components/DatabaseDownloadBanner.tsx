@@ -28,6 +28,7 @@ import {
 import { gradients, toLinearGradientProps } from '../theme/gradients';
 import { AnimatedPressable } from './ui/aurora/AnimatedPressable';
 import { hexToRgba, TINT_ALPHA_LOW } from '../utils/colors';
+import { useReducedMotion } from '../utils/accessibility/hooks';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,12 +51,14 @@ function formatMB(bytes: number): string {
 // ---------------------------------------------------------------------------
 
 const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismiss }) => {
+  const reducedMotion = useReducedMotion();
   const [downloadState, setDownloadState] = useState<SQLiteDownloadState>(sqliteFood.getState());
   const [downloaded, setDownloaded] = useState(0);
   const [total, setTotal] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isDismissed, setIsDismissed] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const downloadLockRef = useRef(false);
 
   // Animated progress bar value: 0 → 1
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -76,13 +79,17 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
   useEffect(() => {
     if (total > 0) {
       const ratio = Math.min(downloaded / total, 1);
-      Animated.timing(progressAnim, {
-        toValue: ratio,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
+      if (reducedMotion) {
+        progressAnim.setValue(ratio);
+      } else {
+        Animated.timing(progressAnim, {
+          toValue: ratio,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+      }
     }
-  }, [downloaded, total, progressAnim]);
+  }, [downloaded, total, progressAnim, reducedMotion]);
 
   // ---------------------------------------------------------------------------
   // Ready state: fade-in + auto-dismiss
@@ -90,11 +97,15 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
 
   useEffect(() => {
     if (downloadState === 'ready') {
-      Animated.timing(readyOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
+      if (reducedMotion) {
+        readyOpacity.setValue(1);
+      } else {
+        Animated.timing(readyOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }
 
       dismissTimerRef.current = setTimeout(() => {
         setIsDismissed(true);
@@ -107,7 +118,7 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
         clearTimeout(dismissTimerRef.current);
       }
     };
-  }, [downloadState, onDismiss, readyOpacity]);
+  }, [downloadState, onDismiss, readyOpacity, reducedMotion]);
 
   // ---------------------------------------------------------------------------
   // Polling to keep state fresh
@@ -131,6 +142,8 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
   // ---------------------------------------------------------------------------
 
   const handleDownload = useCallback(async () => {
+    if (downloadLockRef.current) return;
+    downloadLockRef.current = true;
     setErrorMessage('');
     setDownloadState('downloading');
     setIsPaused(false);
@@ -140,11 +153,24 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
         setDownloaded(dl);
         setTotal(tot);
       });
-      setDownloadState('ready');
+      // The service can resolve without becoming ready when a resumable
+      // download is paused/cancelled, or when another caller already owns the
+      // active download. Mirror its authoritative state instead of showing a
+      // false success banner.
+      setDownloadState(sqliteFood.getState());
     } catch (err) {
+      // Pause/cancel intentionally moves the service back to not_downloaded.
+      // Do not let the rejected in-flight download overwrite that recovery
+      // state with a misleading "Download failed" banner.
+      if (sqliteFood.getState() === 'not_downloaded') {
+        setDownloadState('not_downloaded');
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Download failed. Please retry.';
       setErrorMessage(msg);
       setDownloadState('error');
+    } finally {
+      downloadLockRef.current = false;
     }
   }, []);
 
@@ -169,9 +195,7 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
   }, [onDismiss]);
 
   const handleRetry = useCallback(() => {
-    setErrorMessage('');
-    setDownloadState('not_downloaded');
-    handleDownload();
+    void handleDownload();
   }, [handleDownload]);
 
   // ---------------------------------------------------------------------------
@@ -193,7 +217,7 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
     <View style={styles.container}>
       {/* ── not_downloaded ── */}
       {downloadState === 'not_downloaded' && (
-        <Reanimated.View entering={FadeInDown.duration(350)}>
+        <Reanimated.View entering={reducedMotion ? undefined : FadeInDown.duration(350)}>
           <View style={styles.banner}>
             <View style={styles.headerRow}>
               <View style={styles.iconDisc}>
@@ -210,7 +234,9 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
             <View style={styles.actionsRow}>
               <AnimatedPressable
                 style={styles.primaryBtn}
-                onPress={handleDownload}
+                onPress={() => {
+                  void handleDownload();
+                }}
                 scaleValue={0.97}
                 hapticType="medium"
                 accessibilityRole="button"
@@ -242,7 +268,7 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
 
       {/* ── downloading ── */}
       {downloadState === 'downloading' && (
-        <Reanimated.View entering={FadeInDown.duration(350)}>
+        <Reanimated.View entering={reducedMotion ? undefined : FadeInDown.duration(350)}>
           <View style={styles.banner}>
             <View style={styles.headerRow}>
               <View style={styles.iconDisc}>
@@ -337,7 +363,7 @@ const DatabaseDownloadBanner: React.FC<DatabaseDownloadBannerProps> = ({ onDismi
 
       {/* ── error ── */}
       {downloadState === 'error' && (
-        <Reanimated.View entering={FadeInDown.duration(350)}>
+        <Reanimated.View entering={reducedMotion ? undefined : FadeInDown.duration(350)}>
           <View style={[styles.banner, styles.errorBanner]}>
             <View style={styles.headerRow}>
               <View style={[styles.iconDisc, styles.errorIconDisc]}>

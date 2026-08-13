@@ -67,6 +67,18 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customValue, setCustomValue] = useState("");
   const [customOptions, setCustomOptions] = useState<Option[]>([]);
+  const customSubmitLockRef = React.useRef(false);
+  const confirmLockRef = React.useRef(false);
+
+  const handleOpen = () => {
+    if (disabled) return;
+    // Refresh the draft every time the sheet opens. Keeping the mount-time
+    // selection here caused stale checked rows after a parent reset/update.
+    setTempSelectedValues(selectedValues);
+    customSubmitLockRef.current = false;
+    confirmLockRef.current = false;
+    setIsVisible(true);
+  };
 
   // Combine initial options with custom options and add custom button if allowed
   const allOptions = [
@@ -128,9 +140,12 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
   };
 
   const handleAddCustom = () => {
+    if (customSubmitLockRef.current) return;
+    customSubmitLockRef.current = true;
     const trimmedValue = customValue.trim();
 
     if (!trimmedValue) {
+      customSubmitLockRef.current = false;
       crossPlatformAlert("Invalid Input", "Please enter a valid value.", [
         { text: "OK" },
       ]);
@@ -143,6 +158,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     );
 
     if (existingOption) {
+      customSubmitLockRef.current = false;
       crossPlatformAlert("Duplicate Entry", "This option already exists.", [
         { text: "OK" },
       ]);
@@ -179,9 +195,16 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     // Reset custom input
     setCustomValue("");
     setShowCustomInput(false);
+    // Hold the synchronous guard through this event turn so a rapid double
+    // tap cannot append the same custom option twice using a stale closure.
+    Promise.resolve().then(() => {
+      customSubmitLockRef.current = false;
+    });
   };
 
   const handleConfirm = () => {
+    if (confirmLockRef.current) return;
+    confirmLockRef.current = true;
     onSelectionChange(tempSelectedValues);
     setIsVisible(false);
     setSearchQuery("");
@@ -245,7 +268,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
 
       <TouchableOpacity
         style={[styles.trigger, disabled && styles.triggerDisabled]}
-        onPress={() => !disabled && setIsVisible(true)}
+        onPress={handleOpen}
         accessibilityRole="button"
         accessibilityLabel={label || placeholder}
         accessibilityState={{ disabled }}
@@ -255,7 +278,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
             styles.triggerText,
             selectedValues.length === 0 && styles.placeholderText,
           ]}
-          numberOfLines={1}
+          numberOfLines={2}
           ellipsizeMode="tail"
         >
           {getDisplayText()}
@@ -310,7 +333,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         {/* Custom Input Mode */}
         {showCustomInput ? (
           <View style={styles.customInputContainer}>
-            <Text style={styles.customInputLabel} numberOfLines={1}>
+            <Text style={styles.customInputLabel}>
               Add Custom {label?.replace("Select ", "")}
             </Text>
             <TextInput
@@ -352,7 +375,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
               ([region, regionOptions]) => (
                 <View key={`region-${region}`}>
                   {showRegions && region && (
-                    <Text style={styles.regionHeader} numberOfLines={1}>{region}</Text>
+                    <Text style={styles.regionHeader}>{region}</Text>
                   )}
                   {regionOptions.map((option) => {
                     const isSelected = isOptionSelected(option.value);
@@ -414,7 +437,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                                   {option.label}
                                 </Text>
                                 {option.region && showRegions && (
-                                  <Text style={styles.optionRegion} numberOfLines={1}>
+                                  <Text style={styles.optionRegion} numberOfLines={2}>
                                     {option.region}
                                   </Text>
                                 )}
@@ -446,7 +469,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
             {filteredOptions.length === 0 && (
               <View style={styles.noResults}>
                 <Ionicons name="search-outline" size={rf(28)} color={colors.textMuted} />
-                <Text style={styles.noResultsText} numberOfLines={1}>No options found</Text>
+                <Text style={styles.noResultsText}>No options found</Text>
               </View>
             )}
           </ScrollView>
@@ -505,6 +528,7 @@ const styles = StyleSheet.create({
 
   triggerText: {
     flex: 1,
+    minWidth: 0,
     fontSize: fontSize.md,
     color: colors.text,
   },

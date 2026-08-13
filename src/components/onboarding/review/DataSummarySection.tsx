@@ -66,16 +66,10 @@ const SummaryRow: React.FC<SummaryRowProps> = ({
       accessibilityHint="Tap to edit"
       testID={testID}
     >
-      <Text style={styles.rowLabel} numberOfLines={1}>
-        {label}
-      </Text>
+      <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowRight}>
-        <Text style={styles.rowValue} numberOfLines={1}>
-          {value}
-        </Text>
-        <Text style={styles.rowSub} numberOfLines={1}>
-          {sub}
-        </Text>
+        <Text style={styles.rowValue}>{value}</Text>
+        <Text style={styles.rowSub}>{sub}</Text>
       </View>
       <Ionicons name="chevron-forward" size={14} color={tokens.ink3} />
     </Pressable>
@@ -159,6 +153,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: tokens.hairline,
   },
@@ -166,7 +161,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   rowLabel: {
-    width: 84,
+    minWidth: 72,
+    maxWidth: "32%",
+    flexShrink: 1,
     fontFamily: "Manrope_600SemiBold",
     fontSize: 11,
     letterSpacing: 1.6,

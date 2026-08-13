@@ -82,7 +82,7 @@ export const OptionRow: React.FC<OptionRowProps> = ({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ selected, disabled }}
-      accessibilityLabel={label}
+      accessibilityLabel={sublabel ? `${label}. ${sublabel}` : label}
       testID={testID}
     >
       <Animated.View style={animatedStyle}>
@@ -107,14 +107,11 @@ export const OptionRow: React.FC<OptionRowProps> = ({
                 !selected && styles.labelUnselected,
                 disabled && styles.labelDisabled,
               ]}
-              numberOfLines={1}
             >
               {label}
             </Text>
             {sublabel && (
-              <Text style={styles.sublabel} numberOfLines={1}>
-                {sublabel}
-              </Text>
+              <Text style={styles.sublabel}>{sublabel}</Text>
             )}
           </View>
           {selected && (
@@ -137,10 +134,11 @@ export const OptionRow: React.FC<OptionRowProps> = ({
 
 const styles = StyleSheet.create({
   row: {
-    height: spacing.rowH,
+    minHeight: spacing.rowH,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "transparent",
+    paddingVertical: spacing.s,
   },
   bar: {
     width: 2,

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePickerExpo from "expo-image-picker";
@@ -40,33 +41,59 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 }) => {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const actionInFlightRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!visible) {
       setSelectedImages([]);
+      actionInFlightRef.current = false;
+      setIsLoading(false);
     }
   }, [visible]);
 
-  const requestPermissions = async () => {
-    const { status } =
-      await ImagePickerExpo.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      crossPlatformAlert(
-        "Permission Required",
-        "Sorry, we need camera roll permissions to select images.",
-        [{ text: "OK" }],
-      );
-      return false;
+  const showPermissionRecovery = (
+    source: "camera" | "photo library",
+    canAskAgain: boolean,
+  ) => {
+    const message = `FitAI needs ${source} access to add photos.`;
+    if (canAskAgain) {
+      crossPlatformAlert("Permission Required", message, [{ text: "OK" }]);
+      return;
     }
-    return true;
+
+    crossPlatformAlert(
+      "Permission Blocked",
+      `${message} You can enable it in your device settings.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Open Settings",
+          onPress: () => {
+            Linking.openSettings().catch(() =>
+              crossPlatformAlert(
+                "Unable to Open Settings",
+                "Open your device settings and allow FitAI to access your photos and camera.",
+              ),
+            );
+          },
+        },
+      ],
+    );
   };
 
   const pickFromLibrary = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
 
     setIsLoading(true);
     try {
+      const permission =
+        await ImagePickerExpo.requestMediaLibraryPermissionsAsync();
+      if (permission.status !== "granted") {
+        showPermissionRecovery("photo library", permission.canAskAgain);
+        return;
+      }
+
       const result = await ImagePickerExpo.launchImageLibraryAsync({
         mediaTypes: ImagePickerExpo.MediaTypeOptions.Images,
         allowsEditing,
@@ -91,23 +118,23 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
     } catch (error) {
       crossPlatformAlert("Error", "Failed to pick image from library");
     } finally {
+      actionInFlightRef.current = false;
       setIsLoading(false);
     }
   };
 
   const takePhoto = async () => {
-    const { status } = await ImagePickerExpo.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      crossPlatformAlert(
-        "Permission Required",
-        "Sorry, we need camera permissions to take photos.",
-        [{ text: "OK" }],
-      );
-      return;
-    }
+    if (actionInFlightRef.current) return;
+    actionInFlightRef.current = true;
 
     setIsLoading(true);
     try {
+      const permission = await ImagePickerExpo.requestCameraPermissionsAsync();
+      if (permission.status !== "granted") {
+        showPermissionRecovery("camera", permission.canAskAgain);
+        return;
+      }
+
       const result = await ImagePickerExpo.launchCameraAsync({
         allowsEditing,
         aspect,
@@ -129,6 +156,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
     } catch (error) {
       crossPlatformAlert("Error", "Failed to take photo");
     } finally {
+      actionInFlightRef.current = false;
       setIsLoading(false);
     }
   };
@@ -260,6 +288,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             onPress={confirmSelection}
             variant="primary"
             fullWidth
+            disabled={isLoading}
             style={styles.confirmButton}
           />
         )}

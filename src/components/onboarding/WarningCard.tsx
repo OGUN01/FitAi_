@@ -60,7 +60,7 @@ interface WarningCardProps {
 }
 
 const formatCalories = (cal: number | null | undefined): string =>
-  cal != null && !isNaN(cal) ? Number(cal).toLocaleString("en-US") : "—";
+  cal != null && !isNaN(cal) ? Number(cal).toLocaleString() : "—";
 
 // ============================================================================
 // PACE TIER ROW — one rung of the pace ladder (loss mode)
@@ -95,14 +95,14 @@ const PaceTierRow: React.FC<PaceTierRowProps> = ({
           />
           <View style={styles.tierLeft}>
             <View style={styles.tierTitleRow}>
-              <Text style={[styles.tierTitle, styles.tierTitleBlocked]} numberOfLines={1}>
+              <Text style={[styles.tierTitle, styles.tierTitleBlocked]}>
                 {tier.title}
               </Text>
               {tier.badge && (
                 <Text style={[styles.tierBadge, styles.tierBadgeDanger]}>{tier.badge}</Text>
               )}
             </View>
-            <Text style={styles.tierMeta} numberOfLines={2}>
+            <Text style={styles.tierMeta}>
               {tier.warning ?? "Not safely deliverable at your numbers"}
             </Text>
           </View>
@@ -133,10 +133,7 @@ const PaceTierRow: React.FC<PaceTierRowProps> = ({
       >
         <View style={styles.tierLeft}>
           <View style={styles.tierTitleRow}>
-            <Text
-              style={[styles.tierTitle, isSelected && styles.tierTitleSelected]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.tierTitle, isSelected && styles.tierTitleSelected]}>
               {tier.title}
             </Text>
             {tier.badge && (
@@ -151,16 +148,16 @@ const PaceTierRow: React.FC<PaceTierRowProps> = ({
               </Text>
             )}
           </View>
-          <Text style={styles.tierNote} numberOfLines={2}>
+          <Text style={styles.tierNote}>
             {tier.note}
           </Text>
-          <Text style={styles.tierMeta} numberOfLines={1}>
+          <Text style={styles.tierMeta}>
             {formatCalories(tier.dailyCalories)} cal/day
             {"  ·  "}
             {tier.timelineWeeks > 0 ? `${tier.timelineWeeks} weeks to goal` : "Ongoing"}
           </Text>
           {tier.warning && (
-            <Text style={styles.tierWarning} numberOfLines={2}>
+            <Text style={styles.tierWarning}>
               {tier.warning}
             </Text>
           )}

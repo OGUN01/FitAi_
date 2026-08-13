@@ -9,6 +9,7 @@ import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rp } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { hexToRgba } from "../../utils/colors";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface ResourceItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -27,8 +28,11 @@ export const ResourceItem: React.FC<ResourceItemProps> = ({
   onPress,
   animationDelay,
 }) => {
+  const reducedMotion = useReducedMotion();
   return (
-    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(400)}
+    >
       <AnimatedPressable
         onPress={() => {
           haptics.light();

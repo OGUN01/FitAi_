@@ -94,7 +94,6 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                     styles.cardTitle,
                     isSelected && styles.cardTitleSelected,
                   ]}
-                  numberOfLines={1}
                 >
                   {alternative.name}
                 </Text>
@@ -175,7 +174,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   <Text style={styles.prosTitle}>Benefits</Text>
                 </View>
                 {(alternative.pros || []).slice(0, 2).map((pro, i) => (
-                  <Text key={i} style={styles.prosText} numberOfLines={1}>
+                  <Text key={i} style={styles.prosText}>
                     {pro}
                   </Text>
                 ))}
@@ -191,7 +190,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   <Text style={styles.consTitle}>Trade-offs</Text>
                 </View>
                 {(alternative.cons || []).slice(0, 2).map((con, i) => (
-                  <Text key={i} style={styles.consText} numberOfLines={1}>
+                  <Text key={i} style={styles.consText}>
                     {con}
                   </Text>
                 ))}

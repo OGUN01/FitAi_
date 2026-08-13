@@ -34,7 +34,7 @@ const fireSelection = () => {
 };
 
 export const InfoTap: React.FC<InfoTapProps> = ({
-  title: _title,
+  title,
   description: _description,
   benefits: _benefits,
   onPress,
@@ -50,7 +50,7 @@ export const InfoTap: React.FC<InfoTapProps> = ({
       style={[styles.chip, style]}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       accessibilityRole="button"
-      accessibilityLabel="More info"
+      accessibilityLabel={`More info about ${title}`}
       testID={testID}
     >
       <Ionicons name="information-circle-outline" size={18} color={colors.text.tertiary} />

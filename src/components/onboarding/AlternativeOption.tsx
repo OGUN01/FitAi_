@@ -36,7 +36,7 @@ const PRESS_DURATION = 120;
 const PRESS_OPACITY = 0.6;
 
 const formatCalories = (cal: number | null | undefined): string =>
-  cal != null && !isNaN(cal) ? Number(cal).toLocaleString("en-US") : "—";
+  cal != null && !isNaN(cal) ? Number(cal).toLocaleString() : "—";
 
 // ============================================================================
 // COMPONENT
@@ -72,13 +72,10 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
             style={styles.lockIcon}
           />
           <View style={styles.content}>
-            <Text
-              style={[styles.label, styles.labelBlocked]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.label, styles.labelBlocked]}>
               {alternative.label}
             </Text>
-            <Text style={styles.blockedReason} numberOfLines={2}>
+            <Text style={styles.blockedReason}>
               {alternative.blockReason}
             </Text>
           </View>
@@ -110,10 +107,7 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
           <View style={styles.content}>
             {/* Label + optional "Smart pick" caption */}
             <View style={styles.labelRow}>
-              <Text
-                style={[styles.label, !isSelected && styles.labelUnselected]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.label, !isSelected && styles.labelUnselected]}>
                 {alternative.label}
               </Text>
               {alternative.isRecommended && (
@@ -131,7 +125,7 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
                   style={styles.detailsWarningIcon}
                 />
               )}
-              <Text style={styles.details} numberOfLines={1}>
+              <Text style={styles.details}>
                 {alternative.weeklyRate} kg/week
                 {"  ·  "}
                 <Text style={alternative.isBelowBMR && styles.detailsDanger}>

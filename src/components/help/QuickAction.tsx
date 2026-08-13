@@ -9,6 +9,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface QuickActionProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -27,9 +28,10 @@ export const QuickAction: React.FC<QuickActionProps> = ({
   onPress,
   animationDelay,
 }) => {
+  const reducedMotion = useReducedMotion();
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(400)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(400)}
       style={styles.quickActionWrapper}
     >
       <AnimatedPressable

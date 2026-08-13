@@ -93,9 +93,7 @@ export const TimeRow: React.FC<TimeRowProps> = ({
   return (
     <View testID={testID}>
       <View style={styles.row}>
-        <Text style={styles.label} numberOfLines={1}>
-          {label}
-        </Text>
+        <Text style={styles.label}>{label}</Text>
         <View style={styles.stepper}>
           <StepButton
             icon="remove"
@@ -152,19 +150,24 @@ const StepButton: React.FC<{
 
 const styles = StyleSheet.create({
   row: {
-    height: spacing.rowH,
+    minHeight: spacing.rowH,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "transparent",
+    paddingVertical: spacing.s,
   },
   label: {
     ...typeScale.value,
     color: tokens.ink2,
+    flex: 1,
+    flexShrink: 1,
+    marginRight: spacing.s,
   },
   stepper: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 0,
   },
   time: {
     ...typeScale.valueLg,
