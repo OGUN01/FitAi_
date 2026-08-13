@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, border, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 interface EmptyMealsMessageProps {
   mealsLogged: number;
@@ -20,10 +21,14 @@ export const EmptyMealsMessage: React.FC<EmptyMealsMessageProps> = ({
     <View style={styles.card}>
       <View style={styles.container}>
         <View style={styles.iconContainer}>
+          {/* colors.info matches DailyProgressRings' nutrition-ring color —
+              the ring directly above this card on Home already establishes
+              blue as the nutrition category's color; this used the generic
+              brand orange instead, reading as a different category. */}
           <Ionicons
             name="restaurant-outline"
             size={rf(28)}
-            color={colors.primary}
+            color={colors.info}
           />
         </View>
         <Text style={styles.title}>No meals logged today</Text>
@@ -66,7 +71,7 @@ const styles = StyleSheet.create({
     width: rw(52),
     height: rw(52),
     borderRadius: rbr(26),
-    backgroundColor: colors.primaryTint,
+    backgroundColor: hexToRgba(colors.info, 0.1),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.sm,
