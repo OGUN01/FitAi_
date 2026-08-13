@@ -6,6 +6,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AboutFitAIActionItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -28,8 +29,14 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
   accessibilityLabel,
   testID,
 }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+    <Animated.View
+      entering={
+        reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(400)
+      }
+    >
       <AnimatedPressable
         onPress={() => {
           haptics.light();
@@ -37,6 +44,7 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
         }}
         scaleValue={0.98}
         hapticFeedback={false}
+        accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? title}
         accessibilityHint={description}
         testID={testID}

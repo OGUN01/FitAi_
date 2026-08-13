@@ -21,6 +21,7 @@ import { useAboutFitAILogic } from "../../hooks/useAboutFitAILogic";
 
 import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../utils/responsive";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AboutFitAIScreenProps {
   onBack?: () => void;
@@ -29,6 +30,7 @@ interface AboutFitAIScreenProps {
 export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
   onBack,
 }) => {
+  const reducedMotion = useReducedMotion();
   const {
     appVersion,
     features,
@@ -42,7 +44,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
   } = useAboutFitAILogic();
 
   return (
-    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+    <AuroraBackground theme="space" animated={!reducedMotion} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <GlassHeader
           title="About FitAI"
@@ -56,7 +58,11 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
           contentContainerStyle={styles.scrollContent}
         >
           {/* App Logo & Info */}
-          <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+          <Animated.View
+            entering={
+              reducedMotion ? undefined : FadeInDown.delay(100).duration(400)
+            }
+          >
             <View style={styles.appSection}>
               <View style={styles.appLogo}>
               <Text style={styles.appLogoText}>F</Text>
@@ -72,7 +78,11 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
           </Animated.View>
 
           {/* Mission Statement */}
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
+          <Animated.View
+            entering={
+              reducedMotion ? undefined : FadeInDown.delay(200).duration(400)
+            }
+          >
             <View style={styles.missionCard}>
               <View style={styles.missionIconContainer}>
                 <View style={styles.missionIcon}>
@@ -207,7 +217,9 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
           {/* Copyright */}
           <Animated.View
-            entering={FadeInDown.delay(950).duration(400)}
+            entering={
+              reducedMotion ? undefined : FadeInDown.delay(950).duration(400)
+            }
             style={styles.copyrightSection}
           >
             <Text style={styles.copyrightText}>

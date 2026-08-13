@@ -132,6 +132,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   }}
                   scaleValue={0.95}
                   hapticFeedback={false}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${title} time, currently ${timeInfo}`}
                 >
                   <View style={styles.timeInfoBadge}>
                     <Ionicons
@@ -168,6 +171,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                 scaleValue={0.9}
                 hapticFeedback={false}
                 hitSlop={{ top: 7, bottom: 7, left: 7, right: 7 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${title} settings`}
               >
                 <View style={styles.editButton}>
                   <Ionicons
@@ -343,6 +348,8 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                 onPress={openNotificationSettings}
                 scaleValue={0.95}
                 hapticFeedback={false}
+                accessibilityRole="button"
+                accessibilityLabel="Open notification settings"
               >
                 <View style={styles.openSettingsButton}>
                   <Text style={styles.openSettingsText}>Open Settings</Text>

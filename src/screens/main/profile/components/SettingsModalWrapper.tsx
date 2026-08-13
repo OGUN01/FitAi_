@@ -2,7 +2,7 @@
  * SettingsModalWrapper - Consistent modal container with Aurora 2026 tokens
  */
 
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import {
 } from "../../../../theme/aurora-tokens";
 import { rf, rw, rh } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -38,7 +39,7 @@ interface SettingsModalWrapperProps {
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
   onClose: () => void;
-  onSave?: () => void;
+  onSave?: () => void | Promise<void>;
   isSaving?: boolean;
   saveDisabled?: boolean;
   saveLabel?: string;
@@ -58,22 +59,45 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
   saveLabel = "Save Changes",
   children,
 }) => {
+  const reducedMotion = useReducedMotion();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const saveInFlight = isSaving || isSubmitting;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const handleClose = useCallback(() => {
+    if (isSaving || isSubmittingRef.current) return;
     haptics.light();
     onClose();
-  }, [onClose]);
+  }, [isSaving, onClose]);
 
-  const handleSave = useCallback(() => {
-    if (onSave && !saveDisabled && !isSaving) {
-      haptics.medium();
-      onSave();
+  const handleSave = useCallback(async () => {
+    if (!onSave || saveDisabled || isSaving || isSubmittingRef.current) return;
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+    haptics.medium();
+    try {
+      await onSave();
+    } finally {
+      isSubmittingRef.current = false;
+      if (mountedRef.current) {
+        setIsSubmitting(false);
+      }
     }
-  }, [onSave, saveDisabled, isSaving]);
+  }, [isSaving, onSave, saveDisabled]);
 
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType={reducedMotion ? "none" : "slide"}
       presentationStyle="fullScreen"
       transparent={false}
       statusBarTranslucent={Platform.OS === "android"}
@@ -92,16 +116,18 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
           >
             {/* Header */}
             <Animated.View
-              entering={FadeIn.delay(100).duration(300)}
+              entering={reducedMotion ? undefined : FadeIn.delay(100).duration(300)}
               style={styles.header}
             >
               <AnimatedPressable
                 onPress={handleClose}
                 scaleValue={0.9}
                 hapticFeedback={false}
+                disabled={saveInFlight}
                 style={styles.closeButton}
                 accessibilityRole="button"
-                accessibilityLabel={`Close ${title}`}
+                accessibilityLabel={saveInFlight ? `Saving ${title}` : `Close ${title}`}
+                accessibilityState={{ disabled: saveInFlight, busy: saveInFlight }}
               >
                 <Ionicons name="close" size={rf(22)} color={colors.text.primary} />
               </AnimatedPressable>
@@ -118,11 +144,11 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                   </View>
                 )}
                 <View style={styles.headerTitleText}>
-                  <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
                     {title}
                   </Text>
                   {subtitle && (
-                    <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                    <Text style={styles.headerSubtitle} numberOfLines={2} ellipsizeMode="tail">
                       {subtitle}
                     </Text>
                   )}
@@ -142,7 +168,11 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+              <Animated.View
+                entering={
+                  reducedMotion ? undefined : FadeInDown.delay(200).duration(350)
+                }
+              >
                 {children}
               </Animated.View>
             </ScrollView>
@@ -150,18 +180,23 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
             {/* Save Button */}
             {onSave && (
               <Animated.View
-                entering={FadeIn.delay(300).duration(350)}
+                entering={
+                  reducedMotion ? undefined : FadeIn.delay(300).duration(350)
+                }
                 style={styles.footer}
               >
                 <AnimatedPressable
                   onPress={handleSave}
                   scaleValue={0.97}
                   hapticFeedback={false}
-                  disabled={saveDisabled || isSaving}
+                  disabled={saveDisabled || saveInFlight}
                   style={styles.saveButtonContainer}
                   accessibilityRole="button"
-                  accessibilityLabel={isSaving ? `${saveLabel} (saving)` : saveLabel}
-                  accessibilityState={{ disabled: saveDisabled || isSaving }}
+                  accessibilityLabel={saveInFlight ? `${saveLabel} (saving)` : saveLabel}
+                  accessibilityState={{
+                    disabled: saveDisabled || saveInFlight,
+                    busy: saveInFlight,
+                  }}
                 >
                   <LinearGradient
                     colors={
@@ -173,10 +208,10 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     end={{ x: 1, y: 0 }}
                     style={[
                       styles.saveButton,
-                      (saveDisabled || isSaving) && styles.saveButtonDisabled,
+                      (saveDisabled || saveInFlight) && styles.saveButtonDisabled,
                     ]}
                   >
-                    {isSaving ? (
+                    {saveInFlight ? (
                       <AuroraSpinner customSize={rf(16)} theme="dark" />
                     ) : (
                       <>

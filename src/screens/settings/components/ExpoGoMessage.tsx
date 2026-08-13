@@ -5,11 +5,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 export const ExpoGoMessage: React.FC = () => {
+  const reducedMotion = useReducedMotion();
+
   return (
     <View style={styles.expoGoContainer}>
-      <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+      <Animated.View
+        entering={reducedMotion ? undefined : FadeInDown.delay(100).duration(400)}
+      >
         <View style={styles.expoGoCard}>
           <View style={styles.expoGoIconContainer}>
             <LinearGradient
@@ -88,6 +93,7 @@ const styles = StyleSheet.create({
     textAlign: "center" as const,
   },
   codeBox: {
+    width: "100%",
     backgroundColor: colors.overlayDark,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
@@ -97,5 +103,6 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     color: colors.primary,
     fontFamily: "monospace",
+    textAlign: "center",
   },
 });

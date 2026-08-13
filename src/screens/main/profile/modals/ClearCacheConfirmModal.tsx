@@ -7,7 +7,7 @@
  * BlurView backdrop, destructive (error) CTA.
  */
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { DestructiveConfirmModal } from "../../../../components/profile/DestructiveConfirmModal";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 
@@ -23,8 +23,11 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
   onCancel,
 }) => {
   const [isClearing, setIsClearing] = useState(false);
+  const isClearingRef = useRef(false);
 
   const handleConfirm = async () => {
+    if (isClearingRef.current) return;
+    isClearingRef.current = true;
     setIsClearing(true);
     try {
       await onConfirm();
@@ -35,6 +38,7 @@ export const ClearCacheConfirmModal: React.FC<ClearCacheConfirmModalProps> = ({
         "Failed to clear cache. Please try again.",
       );
     } finally {
+      isClearingRef.current = false;
       setIsClearing(false);
     }
   };

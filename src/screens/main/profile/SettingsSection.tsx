@@ -20,6 +20,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -120,7 +121,7 @@ const SettingRow: React.FC<{
               isPremium && styles.premiumTitle,
               item.disabled && styles.disabledTitle,
             ]}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {item.title}
           </Text>
@@ -140,7 +141,7 @@ const SettingRow: React.FC<{
         {item.subtitle && (
           <Text
             style={[styles.subtitle, item.disabled && styles.disabledSubtitle]}
-            numberOfLines={1}
+            numberOfLines={2}
             ellipsizeMode="tail"
           >
             {item.subtitle}
@@ -167,11 +168,14 @@ export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(({
   onItemPress,
   animationDelay = 0,
 }) => {
+  const reducedMotion = useReducedMotion();
   const sectionIcon = SECTION_ICONS[title];
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(350)}
+      entering={
+        reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(350)
+      }
       style={styles.container}
     >
       {/* Section header */}

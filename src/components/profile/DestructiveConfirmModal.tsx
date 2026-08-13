@@ -14,7 +14,16 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, Pressable, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
@@ -105,71 +114,89 @@ export const DestructiveConfirmModal: React.FC<
         >
           <BlurView intensity={80} style={styles.blurFill} />
         </Pressable>
-        <View style={styles.dialogContainer} accessibilityRole="alert">
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.iconSquircle}>
-              <Ionicons name={icon} size={rf(28)} color={colors.error.DEFAULT} />
-            </View>
-          </View>
+        <KeyboardAvoidingView
+          style={styles.keyboardArea}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView
+            style={styles.scrollViewport}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            <View style={styles.dialogContainer} accessibilityRole="alert">
+              {/* Icon */}
+              <View style={styles.iconContainer}>
+                <View style={styles.iconSquircle}>
+                  <Ionicons name={icon} size={rf(28)} color={colors.error.DEFAULT} />
+                </View>
+              </View>
 
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+              <Text style={styles.title}>{title}</Text>
+              <Text style={styles.message}>{message}</Text>
 
-          {isTypedMatchRequired && (
-            <View style={styles.typedFieldWrap}>
-              {typedConfirmationLabel && (
-                <Text style={styles.typedFieldLabel}>
-                  {typedConfirmationLabel}
-                </Text>
+              {isTypedMatchRequired && (
+                <View style={styles.typedFieldWrap}>
+                  {typedConfirmationLabel && (
+                    <Text style={styles.typedFieldLabel}>
+                      {typedConfirmationLabel}
+                    </Text>
+                  )}
+                  <TextInput
+                    style={styles.typedField}
+                    value={typedValue}
+                    onChangeText={setTypedValue}
+                    placeholder={requireTypedConfirmation}
+                    placeholderTextColor={colors.text.tertiary}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!isLoading}
+                    returnKeyType="done"
+                    selectionColor={colors.error.DEFAULT}
+                    accessibilityLabel={`Type ${requireTypedConfirmation} to confirm`}
+                  />
+                </View>
               )}
-              <TextInput
-                style={styles.typedField}
-                value={typedValue}
-                onChangeText={setTypedValue}
-                placeholder={requireTypedConfirmation}
-                placeholderTextColor={colors.text.tertiary}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                editable={!isLoading}
-                selectionColor={colors.error.DEFAULT}
-                accessibilityLabel={`Type ${requireTypedConfirmation} to confirm`}
-              />
+
+              <View style={styles.actions}>
+                <AnimatedPressable
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onCancel}
+                  scaleValue={0.97}
+                  disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel={cancelLabel}
+                >
+                  <Text style={styles.cancelButtonText} numberOfLines={2}>
+                    {cancelLabel}
+                  </Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={[
+                    styles.button,
+                    styles.confirmButton,
+                    isConfirmDisabled && styles.confirmButtonDisabled,
+                  ]}
+                  onPress={onConfirm}
+                  scaleValue={0.97}
+                  disabled={isConfirmDisabled}
+                  accessibilityRole="button"
+                  accessibilityLabel={confirmLabel}
+                >
+                  {isLoading ? (
+                    <AuroraSpinner customSize={rf(16)} theme="dark" />
+                  ) : (
+                    <Text style={styles.confirmButtonText} numberOfLines={2}>
+                      {confirmLabel}
+                    </Text>
+                  )}
+                </AnimatedPressable>
+              </View>
             </View>
-          )}
-
-          <View style={styles.actions}>
-            <AnimatedPressable
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}
-              scaleValue={0.97}
-              disabled={isLoading}
-              accessibilityRole="button"
-              accessibilityLabel={cancelLabel}
-            >
-              <Text style={styles.cancelButtonText}>{cancelLabel}</Text>
-            </AnimatedPressable>
-
-            <AnimatedPressable
-              style={[
-                styles.button,
-                styles.confirmButton,
-                isConfirmDisabled && styles.confirmButtonDisabled,
-              ]}
-              onPress={onConfirm}
-              scaleValue={0.97}
-              disabled={isConfirmDisabled}
-              accessibilityRole="button"
-              accessibilityLabel={confirmLabel}
-            >
-              {isLoading ? (
-                <AuroraSpinner customSize={rf(16)} theme="dark" />
-              ) : (
-                <Text style={styles.confirmButtonText}>{confirmLabel}</Text>
-              )}
-            </AnimatedPressable>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </DialogShell>
   );
@@ -184,6 +211,20 @@ const styles = StyleSheet.create({
   blurFill: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  keyboardArea: {
+    flex: 1,
+    width: "100%",
+  },
+  scrollViewport: {
+    flex: 1,
+    width: "100%",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: spacing.lg,
   },
   dialogContainer: {
     width: "85%",
@@ -269,12 +310,14 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     ...variants.cardHeadline,
     color: colors.text.primary,
+    textAlign: "center",
   },
   confirmButtonText: {
     ...variants.cardHeadline,
     // White on colors.error.DEFAULT (#F44336) computes to 3.68:1, failing
     // the 4.5:1 threshold for 16px/600 text; near-black comfortably passes.
     color: colors.background.DEFAULT,
+    textAlign: "center",
   },
 });
 

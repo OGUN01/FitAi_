@@ -6,6 +6,7 @@ import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf } from "../../utils/responsive";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AboutFitAISocialButtonsProps {
   onSocialPress: (platform: string) => void;
@@ -14,9 +15,11 @@ interface AboutFitAISocialButtonsProps {
 export const AboutFitAISocialButtons: React.FC<
   AboutFitAISocialButtonsProps
 > = ({ onSocialPress }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
     <Animated.View
-      entering={FadeInDown.delay(750).duration(400)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(750).duration(400)}
       style={styles.socialGrid}
     >
       <AnimatedPressable
@@ -24,6 +27,9 @@ export const AboutFitAISocialButtons: React.FC<
         scaleValue={0.95}
         hapticFeedback={false}
         style={styles.socialButtonWrapper}
+        accessibilityRole="link"
+        accessibilityLabel="FitAI on Twitter"
+        accessibilityHint="Opens Twitter"
       >
         <GlassCard
           elevation={1}
@@ -42,6 +48,9 @@ export const AboutFitAISocialButtons: React.FC<
         scaleValue={0.95}
         hapticFeedback={false}
         style={styles.socialButtonWrapper}
+        accessibilityRole="link"
+        accessibilityLabel="FitAI on Instagram"
+        accessibilityHint="Opens Instagram"
       >
         <GlassCard
           elevation={1}
@@ -60,6 +69,9 @@ export const AboutFitAISocialButtons: React.FC<
         scaleValue={0.95}
         hapticFeedback={false}
         style={styles.socialButtonWrapper}
+        accessibilityRole="link"
+        accessibilityLabel="FitAI on Facebook"
+        accessibilityHint="Opens Facebook"
       >
         <GlassCard
           elevation={1}

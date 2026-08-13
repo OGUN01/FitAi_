@@ -14,7 +14,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
-import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
+import { rf, rw, rp, rbr } from "../../utils/responsive";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AppInfoCardProps {
   version?: string;
@@ -25,9 +26,13 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
   version = "1.0.0",
   animationDelay = 0,
 }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
     <Animated.View
-      entering={FadeIn.delay(animationDelay).duration(400)}
+      entering={
+        reducedMotion ? undefined : FadeIn.delay(animationDelay).duration(400)
+      }
       style={styles.container}
     >
       <GlassCard
@@ -143,6 +148,8 @@ const styles = StyleSheet.create({
   footerContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
   },
   footerText: {
     fontSize: rf(12),

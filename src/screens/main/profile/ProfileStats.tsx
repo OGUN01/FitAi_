@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -17,6 +17,7 @@ import {
   borderRadius,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -51,14 +52,22 @@ function formatValue(value: number | string): string {
 const StatPill: React.FC<{
   stat: StatItem;
   index: number;
-}> = React.memo(({ stat, index }) => {
+  reducedMotion: boolean;
+  stacked: boolean;
+}> = React.memo(({ stat, index, reducedMotion, stacked }) => {
   return (
     <Animated.View
-      entering={FadeInDown.delay(150 + index * 80).duration(350)}
-      style={styles.pillWrapper}
+      entering={
+        reducedMotion
+          ? undefined
+          : FadeInDown.delay(150 + index * 80).duration(350)
+      }
+      style={[styles.pillWrapper, stacked && styles.pillWrapperStacked]}
     >
       <View
         style={styles.pill}
+        accessible
+        accessibilityRole="text"
         accessibilityLabel={`${stat.label}: ${formatValue(stat.value)}`}
       >
         <View style={[styles.iconWrap, { backgroundColor: `${stat.color}18` }]}>
@@ -79,9 +88,13 @@ export const ProfileStats: React.FC<ProfileStatsProps> = React.memo(({
   currentStreak,
   totalWorkouts,
   totalCaloriesBurned,
-  longestStreak,
-  achievements,
+  longestStreak: _longestStreak,
+  achievements: _achievements,
 }) => {
+  const reducedMotion = useReducedMotion();
+  const { fontScale } = useWindowDimensions();
+  const useStackedLayout = fontScale >= 1.3;
+
   const stats: StatItem[] = [
     {
       id: "current-streak",
@@ -108,14 +121,26 @@ export const ProfileStats: React.FC<ProfileStatsProps> = React.memo(({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(100).duration(350)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(100).duration(350)}
       style={styles.container}
     >
-      <View style={styles.row}>
+      <View style={[styles.row, useStackedLayout && styles.rowLargeText]}>
         {stats.map((stat, index) => (
           <React.Fragment key={stat.id}>
-            <StatPill stat={stat} index={index} />
-            {index < stats.length - 1 && <View style={styles.divider} />}
+            <StatPill
+              stat={stat}
+              index={index}
+              reducedMotion={reducedMotion}
+              stacked={useStackedLayout}
+            />
+            {index < stats.length - 1 && (
+              <View
+                style={[
+                  styles.divider,
+                  useStackedLayout && styles.dividerLargeText,
+                ]}
+              />
+            )}
           </React.Fragment>
         ))}
       </View>
@@ -137,8 +162,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  rowLargeText: {
+    flexDirection: "column",
+  },
   pillWrapper: {
     flex: 1,
+  },
+  pillWrapperStacked: {
+    flex: 0,
+    width: "100%",
   },
   pill: {
     alignItems: "center",
@@ -170,6 +202,10 @@ const styles = StyleSheet.create({
     height: "56%",
     backgroundColor: border.DEFAULT,
     alignSelf: "center",
+  },
+  dividerLargeText: {
+    width: "80%",
+    height: 1,
   },
 });
 

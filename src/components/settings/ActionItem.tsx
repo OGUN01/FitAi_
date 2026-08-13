@@ -6,6 +6,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface ActionItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -26,8 +27,14 @@ export const ActionItem: React.FC<ActionItemProps> = ({
   isDanger = false,
   animationDelay,
 }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+    <Animated.View
+      entering={
+        reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(400)
+      }
+    >
       <AnimatedPressable
         onPress={() => {
           haptics.light();
@@ -35,6 +42,9 @@ export const ActionItem: React.FC<ActionItemProps> = ({
         }}
         scaleValue={0.98}
         hapticFeedback={false}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityHint={description}
       >
         <View
           style={

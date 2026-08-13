@@ -5,19 +5,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 interface ResetButtonProps {
   onPress: () => void;
 }
 
 export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <Animated.View entering={FadeInDown.delay(350).duration(400)}>
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeInDown.delay(350).duration(400)}
+    >
       <AnimatedPressable
         onPress={onPress}
         scaleValue={0.98}
         hapticFeedback={true}
         hapticType="light"
+        accessibilityRole="button"
+        accessibilityLabel="Reset notification settings"
+        accessibilityHint="Restores all notification settings to their defaults"
       >
         <View style={styles.actionCard}>
           <View style={styles.actionContent}>

@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
@@ -19,6 +19,7 @@ import {
   borderRadius,
 } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
+import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -56,8 +57,15 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
   onClose,
   footerNote,
 }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <DialogShell visible={visible} animationType="fade" onRequestClose={onClose} bare>
+    <DialogShell
+      visible={visible}
+      animationType={reducedMotion ? "none" : "fade"}
+      onRequestClose={onClose}
+      bare
+    >
       {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
           the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
       <View style={styles.root}>
@@ -81,11 +89,11 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                   <Ionicons name={icon} size={rf(20)} color={iconColor} />
                 </View>
                 <View style={styles.headerText}>
-                  <Text style={styles.title} numberOfLines={1}>
+                  <Text style={styles.title} numberOfLines={2}>
                     {title}
                   </Text>
                   {subtitle && (
-                    <Text style={styles.subtitle} numberOfLines={1}>
+                    <Text style={styles.subtitle} numberOfLines={2}>
                       {subtitle}
                     </Text>
                   )}
@@ -108,12 +116,17 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
               {/* Divider */}
               <View style={styles.divider} />
 
-              {/* Options */}
-              <View
-                style={styles.optionsList}
-                accessibilityRole="radiogroup"
-                accessibilityLabel={title}
+              <ScrollView
+                style={styles.optionsViewport}
+                contentContainerStyle={styles.optionsContent}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
               >
+                <View
+                  style={styles.optionsList}
+                  accessibilityRole="radiogroup"
+                  accessibilityLabel={title}
+                >
                 {options.map((opt) => {
                   const isSelected = opt.value === selectedValue;
                   const isDisabled = opt.disabled === true;
@@ -131,6 +144,7 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                       accessibilityRole="radio"
                       accessibilityState={{ checked: isSelected }}
                       accessibilityLabel={opt.label}
+                      accessibilityHint={opt.description}
                       style={[
                         styles.optionRow,
                         isSelected && styles.optionRowSelected,
@@ -189,19 +203,20 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
                     </AnimatedPressable>
                   );
                 })}
-              </View>
-
-              {/* Footer note */}
-              {footerNote && (
-                <View style={styles.footerNoteWrap}>
-                  <Ionicons
-                    name="information-circle-outline"
-                    size={rf(14)}
-                    color={colors.text.tertiary}
-                  />
-                  <Text style={styles.footerNoteText}>{footerNote}</Text>
                 </View>
-              )}
+
+                {/* Footer note */}
+                {footerNote && (
+                  <View style={styles.footerNoteWrap}>
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={rf(14)}
+                      color={colors.text.tertiary}
+                    />
+                    <Text style={styles.footerNoteText}>{footerNote}</Text>
+                  </View>
+                )}
+              </ScrollView>
             </View>
       </View>
     </DialogShell>
@@ -269,6 +284,12 @@ const styles = StyleSheet.create({
   },
   optionsList: {
     gap: spacing.xs,
+  },
+  optionsContent: {
+    flexGrow: 1,
+  },
+  optionsViewport: {
+    flexShrink: 1,
   },
   optionRow: {
     flexDirection: "row",

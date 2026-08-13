@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
 import { rf, rw, rbr } from "../../utils/responsive";
 import { FeatureItem } from "../../hooks/useAboutFitAILogic";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface AboutFitAIFeatureCardProps {
   feature: FeatureItem;
@@ -16,10 +17,20 @@ export const AboutFitAIFeatureCard: React.FC<AboutFitAIFeatureCardProps> = ({
   feature,
   index,
 }) => {
+  const reducedMotion = useReducedMotion();
+  const { fontScale } = useWindowDimensions();
+
   return (
     <Animated.View
-      entering={FadeInDown.delay(300 + index * 50).duration(400)}
-      style={styles.featureWrapper}
+      entering={
+        reducedMotion
+          ? undefined
+          : FadeInDown.delay(300 + index * 50).duration(400)
+      }
+      style={[
+        styles.featureWrapper,
+        fontScale >= 1.3 && styles.featureWrapperLargeText,
+      ]}
     >
       <GlassCard
         elevation={1}
@@ -46,6 +57,9 @@ export const AboutFitAIFeatureCard: React.FC<AboutFitAIFeatureCardProps> = ({
 const styles = StyleSheet.create({
   featureWrapper: {
     width: "48.5%",
+  },
+  featureWrapperLargeText: {
+    width: "100%",
   },
   featureCard: {
     alignItems: "center",

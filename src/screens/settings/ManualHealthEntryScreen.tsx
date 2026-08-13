@@ -18,13 +18,16 @@
  * takes an `onBack` callback, matching WearableConnectionScreen.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TextInput,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -281,6 +284,7 @@ export const ManualHealthEntryScreen: React.FC<
   // Values held as strings so partial input ("72.") is editable.
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const saveLockRef = useRef(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   // True while today's saved metrics are being read back to prefill the
   // form on mount. Keeps the input fields from flashing empty before the
@@ -362,7 +366,9 @@ export const ManualHealthEntryScreen: React.FC<
   const canSave = changedKeys.length > 0 && !hasErrors && !saving;
 
   const handleSave = async () => {
-    if (!canSave) return;
+    if (saveLockRef.current || !canSave) return;
+    saveLockRef.current = true;
+    Keyboard.dismiss();
     haptics.light();
 
     // Build the numeric payload for the batch upsert.
@@ -454,6 +460,7 @@ export const ManualHealthEntryScreen: React.FC<
         [{ text: "OK" }],
       );
     } finally {
+      saveLockRef.current = false;
       setSaving(false);
     }
   };
@@ -467,11 +474,16 @@ export const ManualHealthEntryScreen: React.FC<
           onBack={onBack}
         />
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          >
           <Text style={styles.subheader}>
             For watches that don't sync with Health Connect (Noise, boAt,
             Fire-Boltt, Huawei). Enter your values and they'll be saved to your
@@ -515,6 +527,10 @@ export const ManualHealthEntryScreen: React.FC<
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={colors.textTertiary}
                 maxLength={10}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
                 accessibilityLabel="Date for the manual entry"
               />
             </View>
@@ -619,7 +635,8 @@ export const ManualHealthEntryScreen: React.FC<
               {saving ? "Saving..." : "Save"}
             </Text>
           </AnimatedPressable>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -627,6 +644,9 @@ export const ManualHealthEntryScreen: React.FC<
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  flex: {
     flex: 1,
   },
   scrollView: {

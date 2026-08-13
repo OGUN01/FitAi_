@@ -18,6 +18,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -31,8 +32,15 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
   animationDelay = 0,
 }) => {
   const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
+      return;
+    }
+
     const pulse = RNAnimated.loop(
       RNAnimated.sequence([
         RNAnimated.timing(pulseAnim, {
@@ -49,7 +57,7 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
     );
     pulse.start();
     return () => pulse.stop();
-  }, [pulseAnim]);
+  }, [pulseAnim, reducedMotion]);
 
   const handlePress = useCallback(() => {
     haptics.medium();
@@ -58,7 +66,7 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(350)}
+      entering={reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(350)}
       style={styles.container}
     >
       <View style={styles.content}>

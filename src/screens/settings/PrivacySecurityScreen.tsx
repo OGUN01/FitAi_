@@ -6,7 +6,7 @@
  * aurora-tokens for spacing/colors, FadeInDown entry animations.
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Linking, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
@@ -28,6 +28,7 @@ import { flatColors as colors, spacing, surface, border, borderRadius } from "..
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { useReducedMotion } from "../../utils/accessibility/hooks";
 
 interface PrivacySecurityScreenProps {
   onBack?: () => void;
@@ -41,6 +42,7 @@ interface SecurityToggleRowProps {
   value: boolean;
   disabled?: boolean;
   unavailableHint?: string;
+  busy?: boolean;
   onToggle: (next: boolean) => void;
   animationDelay: number;
   testID?: string;
@@ -55,12 +57,20 @@ const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
   value,
   disabled = false,
   unavailableHint,
+  busy = false,
   onToggle,
   animationDelay,
   testID,
   isLast = false,
-}) => (
-  <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+}) => {
+  const reducedMotion = useReducedMotion();
+
+  return (
+  <Animated.View
+    entering={
+      reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(400)
+    }
+  >
     <View
       style={[
         styles.toggleCard,
@@ -97,34 +107,51 @@ const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
         thumbColor={value ? colors.primary : colors.textMuted}
         ios_backgroundColor={surface[2]}
         accessibilityLabel={title}
+        accessibilityHint={unavailableHint ?? description}
+        accessibilityState={{ checked: value, disabled, busy }}
         testID={testID}
       />
     </View>
   </Animated.View>
-);
+  );
+};
 
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   onBack,
 }) => {
   const { handleDataExport, deleteAccount, isDeletingAccount } =
     usePrivacySecurityLogic();
+  const reducedMotion = useReducedMotion();
 
   const [appLockEnabled, setAppLockEnabled] = useState(false);
   const [autoLockEnabled, setAutoLockEnabled] = useState(false);
   const [appLockAvailable, setAppLockAvailable] = useState<boolean | null>(null);
+  const [appLockSaving, setAppLockSaving] = useState(false);
+  const [autoLockSaving, setAutoLockSaving] = useState(false);
+  const appLockSavingRef = useRef(false);
+  const autoLockSavingRef = useRef(false);
+  const deleteAccountInFlightRef = useRef(false);
+  const [appLockError, setAppLockError] = useState<string | null>(null);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const [settings, available] = await Promise.all([
-        readAppLockSettings(),
-        isAppLockAvailable(),
-      ]);
-      if (!mounted) return;
-      setAppLockEnabled(settings.enabled);
-      setAutoLockEnabled(settings.autoLock);
-      setAppLockAvailable(available);
+    void (async () => {
+      try {
+        const [settings, available] = await Promise.all([
+          readAppLockSettings(),
+          isAppLockAvailable(),
+        ]);
+        if (!mounted) return;
+        setAppLockEnabled(settings.enabled);
+        setAutoLockEnabled(settings.autoLock);
+        setAppLockAvailable(available);
+      } catch (error) {
+        console.error("[PrivacySecurity] load app lock settings failed:", error);
+        if (!mounted) return;
+        setAppLockAvailable(false);
+        setAppLockError("Couldn't load App Lock settings");
+      }
     })();
     return () => {
       mounted = false;
@@ -132,7 +159,8 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   }, []);
 
   const handleAppLockToggle = useCallback(
-    (next: boolean) => {
+    async (next: boolean) => {
+      if (appLockSavingRef.current) return;
       if (next && appLockAvailable === false) {
         crossPlatformAlert(
           "Rebuild Required",
@@ -140,37 +168,67 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
         );
         return;
       }
+      appLockSavingRef.current = true;
+      setAppLockSaving(true);
+      setAppLockError(null);
       setAppLockEnabled(next);
-      void writeAppLockSettings({ enabled: next, autoLock: autoLockEnabled }).catch(
-        (error) => {
-          console.error("[PrivacySecurity] persist app lock failed:", error);
-          setAppLockEnabled(!next);
-        },
-      );
+      try {
+        await writeAppLockSettings({ enabled: next, autoLock: autoLockEnabled });
+      } catch (error) {
+        console.error("[PrivacySecurity] persist app lock failed:", error);
+        setAppLockEnabled(!next);
+        setAppLockError("App Lock wasn't updated. Try again.");
+        crossPlatformAlert(
+          "Couldn't Update App Lock",
+          "Your App Lock setting wasn't changed. Please try again.",
+        );
+      } finally {
+        appLockSavingRef.current = false;
+        setAppLockSaving(false);
+      }
     },
     [appLockAvailable, autoLockEnabled],
   );
 
   const confirmDeleteAccount = useCallback(async () => {
-    await deleteAccount();
-    setShowDeleteAccountModal(false);
-  }, [deleteAccount]);
+    if (deleteAccountInFlightRef.current || isDeletingAccount) return;
+    deleteAccountInFlightRef.current = true;
+    try {
+      await deleteAccount();
+      // A successful deletion signs the user out and removes this screen. Keep
+      // the dialog open on failure so the typed intent and retry path remain.
+    } finally {
+      deleteAccountInFlightRef.current = false;
+    }
+  }, [deleteAccount, isDeletingAccount]);
 
   const handleAutoLockToggle = useCallback(
-    (next: boolean) => {
+    async (next: boolean) => {
+      if (autoLockSavingRef.current) return;
+      autoLockSavingRef.current = true;
+      setAutoLockSaving(true);
+      setAppLockError(null);
       setAutoLockEnabled(next);
-      void writeAppLockSettings({ enabled: appLockEnabled, autoLock: next }).catch(
-        (error) => {
-          console.error("[PrivacySecurity] persist auto-lock failed:", error);
-          setAutoLockEnabled(!next);
-        },
-      );
+      try {
+        await writeAppLockSettings({ enabled: appLockEnabled, autoLock: next });
+      } catch (error) {
+        console.error("[PrivacySecurity] persist auto-lock failed:", error);
+        setAutoLockEnabled(!next);
+        setAppLockError("Auto-Lock wasn't updated. Try again.");
+        crossPlatformAlert(
+          "Couldn't Update Auto-Lock",
+          "Your Auto-Lock setting wasn't changed. Please try again.",
+        );
+      } finally {
+        autoLockSavingRef.current = false;
+        setAutoLockSaving(false);
+      }
     },
     [appLockEnabled],
   );
 
   return (
-    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+    <AuroraBackground theme="space" animated={!reducedMotion} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <GlassHeader
           title="Privacy & Security"
@@ -191,7 +249,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             />
 
             <Animated.View
-              entering={FadeInDown.delay(375).duration(400)}
+              entering={
+                reducedMotion ? undefined : FadeInDown.delay(375).duration(400)
+              }
             >
               <View style={styles.privacyPolicyCard}>
                 <Text style={styles.privacyPolicyHeading}>
@@ -274,15 +334,23 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 iconColor={colors.primary}
                 title="Biometric App Lock"
                 description={
-                  appLockAvailable === false
+                  appLockAvailable === null
+                    ? "Checking device support..."
+                    : appLockAvailable === false
                     ? "Requires an app rebuild — native module not bundled"
                     : "Require biometric or device credential to open FitAI"
                 }
                 value={appLockEnabled && appLockAvailable !== false}
-                disabled={appLockAvailable === false}
+                disabled={appLockAvailable !== true || appLockSaving}
                 unavailableHint={
-                  appLockAvailable === false ? "Requires app rebuild" : undefined
+                  appLockError ??
+                  (appLockAvailable === null
+                    ? "Checking availability"
+                    : appLockAvailable === false
+                      ? "Requires app rebuild"
+                      : undefined)
                 }
+                busy={appLockAvailable === null || appLockSaving}
                 onToggle={handleAppLockToggle}
                 animationDelay={350}
                 testID="app-lock-toggle"
@@ -294,10 +362,17 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 title="Auto-Lock on Background"
                 description="Re-lock every time you return to the app"
                 value={autoLockEnabled}
-                disabled={!appLockEnabled || appLockAvailable === false}
-                unavailableHint={
-                  !appLockEnabled ? "Enable App Lock first" : undefined
+                disabled={
+                  !appLockEnabled ||
+                  appLockAvailable !== true ||
+                  appLockSaving ||
+                  autoLockSaving
                 }
+                unavailableHint={
+                  appLockError ??
+                  (!appLockEnabled ? "Enable App Lock first" : undefined)
+                }
+                busy={autoLockSaving}
                 onToggle={handleAutoLockToggle}
                 animationDelay={400}
                 testID="auto-lock-toggle"

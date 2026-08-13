@@ -15,6 +15,7 @@ import {
   typography,
 } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -27,9 +28,13 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
   version = "1.0.0",
   animationDelay = 0,
 }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(350)}
+      entering={
+        reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(350)
+      }
       style={styles.container}
     >
       <LinearGradient
@@ -52,7 +57,7 @@ export const AppInfoCard: React.FC<AppInfoCardProps> = ({
         </View>
       </View>
 
-      <Text style={styles.tagline} numberOfLines={1}>
+      <Text style={styles.tagline}>
         Your AI-powered fitness companion
       </Text>
 
@@ -110,11 +115,14 @@ const styles = StyleSheet.create({
     ...variants.caption,
     color: colors.text.tertiary,
     marginBottom: spacing.sm,
+    textAlign: "center",
   },
   footerContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
   footerText: {
     ...variants.caption,

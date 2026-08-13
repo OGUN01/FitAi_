@@ -4,7 +4,13 @@
  */
 
 import React, { useCallback } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -16,6 +22,7 @@ import {
 } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
+import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -47,6 +54,10 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
   error,
   hint,
 }) => {
+  const reducedMotion = useReducedMotion();
+  const { fontScale } = useWindowDimensions();
+  const effectiveColumns = fontScale >= 1.3 ? 1 : columns;
+
   const isSelected = useCallback(
     (optionValue: string): boolean => {
       if (multiSelect && Array.isArray(value)) {
@@ -75,7 +86,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
   );
 
   const getColumnWidth = useCallback(() => {
-    switch (columns) {
+    switch (effectiveColumns) {
       case 1:
         return "100%";
       case 2:
@@ -85,14 +96,19 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
       default:
         return "48.5%";
     }
-  }, [columns]);
+  }, [effectiveColumns]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
 
       <View
-        style={[styles.optionsGrid, columns === 1 && styles.optionsGridSingle]}
+        style={[
+          styles.optionsGrid,
+          effectiveColumns === 1 && styles.optionsGridSingle,
+        ]}
+        accessibilityRole={multiSelect ? undefined : "radiogroup"}
+        accessibilityLabel={label}
       >
         {options.map((option, index) => {
           const selected = isSelected(option.value);
@@ -100,14 +116,19 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
           return (
             <Animated.View
               key={option.value}
-              entering={FadeInDown.delay(index * 40).duration(250)}
+              entering={
+                reducedMotion
+                  ? undefined
+                  : FadeInDown.delay(index * 40).duration(250)
+              }
               style={[styles.optionWrapper, { width: getColumnWidth() }]}
             >
               <Pressable
                 onPress={() => handleSelect(option.value)}
-                accessibilityRole="button"
+                accessibilityRole={multiSelect ? "checkbox" : "radio"}
                 accessibilityLabel={option.label}
-                accessibilityState={selected ? { selected: true } : undefined}
+                accessibilityHint={option.description}
+                accessibilityState={{ checked: selected }}
                 style={({ pressed }) => [
                   styles.optionButton,
                   selected && styles.optionButtonSelected,
@@ -117,7 +138,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                 <View
                   style={[
                     styles.optionContent,
-                    columns === 3 && { paddingHorizontal: spacing.xs },
+                    effectiveColumns === 3 && { paddingHorizontal: spacing.xs },
                   ]}
                 >
                   {option.icon && (
@@ -125,7 +146,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                       style={[
                         styles.optionIcon,
                         selected && styles.optionIconSelected,
-                        columns === 3 && {
+                        effectiveColumns === 3 && {
                           width: rw(24),
                           height: rw(24),
                           borderRadius: rw(12),
@@ -135,7 +156,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                     >
                       <Ionicons
                         name={option.icon}
-                        size={columns === 3 ? rf(14) : rf(18)}
+                        size={effectiveColumns === 3 ? rf(14) : rf(18)}
                         color={
                           selected ? colors.primary.DEFAULT : colors.text.secondary
                         }
@@ -148,9 +169,9 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                       style={[
                         styles.optionLabel,
                         selected && styles.optionLabelSelected,
-                        columns === 3 && { fontSize: rf(12) },
+                        effectiveColumns === 3 && { fontSize: rf(12) },
                       ]}
-                      numberOfLines={columns === 3 ? 1 : 2}
+                      numberOfLines={2}
                       ellipsizeMode="tail"
                     >
                       {option.label}
@@ -158,7 +179,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                     {option.description && (
                       <Text
                         style={styles.optionDescription}
-                        numberOfLines={columns === 3 ? 1 : 2}
+                        numberOfLines={2}
                         ellipsizeMode="tail"
                       >
                         {option.description}
@@ -170,7 +191,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                     <View
                       style={[
                         styles.checkmark,
-                        columns === 3 && {
+                        effectiveColumns === 3 && {
                           width: rw(18),
                           height: rw(18),
                           borderRadius: rw(9),
@@ -179,7 +200,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = React.memo(({
                     >
                       <Ionicons
                         name="checkmark"
-                        size={columns === 3 ? rf(10) : rf(14)}
+                        size={effectiveColumns === 3 ? rf(10) : rf(14)}
                         color={colors.primary.DEFAULT}
                       />
                     </View>

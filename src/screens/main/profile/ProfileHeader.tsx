@@ -78,7 +78,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({
           </LinearGradient>
           {/* Edit badge */}
           <View style={styles.editBadge}>
-            <Ionicons name="pencil" size={rf(11)} color={colors.text.primary} />
+            <Ionicons name="create-outline" size={rf(11)} color={colors.text.primary} />
           </View>
         </View>
       </Pressable>

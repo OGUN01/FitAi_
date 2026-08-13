@@ -15,6 +15,7 @@ import {
 } from "../../../theme/aurora-tokens";
 import { rf } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -27,6 +28,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
   onPress,
   animationDelay = 0,
 }) => {
+  const reducedMotion = useReducedMotion();
   const handlePress = useCallback(() => {
     haptics.medium();
     onPress();
@@ -34,7 +36,9 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(350)}
+      entering={
+        reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(350)
+      }
       style={styles.container}
     >
       <AnimatedPressable

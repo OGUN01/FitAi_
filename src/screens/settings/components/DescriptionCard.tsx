@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
 import { rf, rp } from "../../../utils/responsive";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 interface DescriptionCardProps {
   scheduledCount: number;
@@ -12,8 +13,12 @@ interface DescriptionCardProps {
 export const DescriptionCard: React.FC<DescriptionCardProps> = ({
   scheduledCount,
 }) => {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <Animated.View entering={FadeInDown.delay(50).duration(400)}>
+    <Animated.View
+      entering={reducedMotion ? undefined : FadeInDown.delay(50).duration(400)}
+    >
       <View style={styles.descriptionCard}>
         <View style={styles.descriptionContent}>
           <View style={styles.scheduledBadge}>

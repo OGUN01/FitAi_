@@ -48,9 +48,6 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = React.memo(({
   return (
     <View
       style={[styles.container, disabled && styles.containerDisabled]}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value, disabled }}
-      accessibilityLabel={label}
     >
       {icon && (
         <View
@@ -70,12 +67,11 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = React.memo(({
       <View style={styles.textContainer}>
         <Text
           style={[styles.label, disabled && styles.labelDisabled]}
-          numberOfLines={2}
         >
           {label}
         </Text>
         {description && (
-          <Text style={styles.description} numberOfLines={3}>
+          <Text style={styles.description}>
             {description}
           </Text>
         )}
@@ -91,6 +87,10 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = React.memo(({
         }}
         thumbColor={value ? colors.primary.DEFAULT : colors.text.tertiary}
         ios_backgroundColor={border.DEFAULT}
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityHint={description}
+        accessibilityState={{ checked: value, disabled }}
       />
     </View>
   );

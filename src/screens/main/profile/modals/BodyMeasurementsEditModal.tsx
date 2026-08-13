@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, LayoutChangeEvent } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
@@ -33,6 +33,7 @@ import {
 import { rf, rw } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
 import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
+import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 import { convertWeight, toDisplayWeight, convertHeight, toDisplayHeight, parseLocalFloat } from "../../../../utils/units";
 
 const { variants } = typography;
@@ -45,6 +46,7 @@ interface BodyMeasurementsEditModalProps {
 export const BodyMeasurementsEditModal: React.FC<
   BodyMeasurementsEditModalProps
 > = ({ visible, onClose }) => {
+  const reducedMotion = useReducedMotion();
   const { user } = useAuth();
   const { updateBodyAnalysis } = useProfileStore();
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
@@ -62,7 +64,6 @@ export const BodyMeasurementsEditModal: React.FC<
   const [hips, setHips] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [scaleBarWidth, setScaleBarWidth] = useState(0);
 
   // Load current values ONLY when the modal transitions to visible. The
   // previous deps [visible, bodyAnalysis, weightUnit] re-ran this effect every
@@ -95,7 +96,6 @@ export const BodyMeasurementsEditModal: React.FC<
     const displayHips = rawHips && rawHips > 0 ? toDisplayHeight(rawHips, heightUnit) : null;
     setHips(displayHips != null ? displayHips.toFixed(1) : "");
     setErrors({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   // Calculate BMI — weight/height state are in display units (lbs/in when
@@ -339,7 +339,10 @@ export const BodyMeasurementsEditModal: React.FC<
     >
       {/* BMI Panel — flat surface.1, no card nesting */}
       {bmi && bmiCategory && (
-        <Animated.View entering={FadeIn.duration(400)} style={styles.bmiPanel}>
+        <Animated.View
+          entering={reducedMotion ? undefined : FadeIn.duration(400)}
+          style={styles.bmiPanel}
+        >
           <View style={styles.bmiContent}>
             <View style={styles.bmiLeft}>
               <View
@@ -372,31 +375,34 @@ export const BodyMeasurementsEditModal: React.FC<
           <View style={styles.bmiScale}>
             <View
               style={styles.bmiScaleBarContainer}
-              onLayout={(e: LayoutChangeEvent) => setScaleBarWidth(e.nativeEvent.layout.width)}
             >
               <View style={styles.bmiScaleBar}>
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: colors.info.DEFAULT, flex: 3.5 },
+                    styles.bmiScaleUnderweight,
+                    { backgroundColor: colors.info.DEFAULT },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: colors.success.DEFAULT, flex: 6.5 },
+                    styles.bmiScaleNormal,
+                    { backgroundColor: colors.success.DEFAULT },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: colors.warning.DEFAULT, flex: 5 },
+                    styles.bmiScaleOverweight,
+                    { backgroundColor: colors.warning.DEFAULT },
                   ]}
                 />
                 <View
                   style={[
                     styles.bmiScaleSegment,
-                    { backgroundColor: colors.error.DEFAULT, flex: 10 },
+                    styles.bmiScaleObese,
+                    { backgroundColor: colors.error.DEFAULT },
                   ]}
                 />
               </View>
@@ -620,6 +626,18 @@ const styles = StyleSheet.create({
   },
   bmiScaleSegment: {
     height: "100%",
+  },
+  bmiScaleUnderweight: {
+    flex: 3.5,
+  },
+  bmiScaleNormal: {
+    flex: 6.5,
+  },
+  bmiScaleOverweight: {
+    flex: 5,
+  },
+  bmiScaleObese: {
+    flex: 10,
   },
   bmiScaleLabels: {
     flexDirection: "row",

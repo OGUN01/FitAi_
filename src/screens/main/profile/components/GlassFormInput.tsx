@@ -80,7 +80,7 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = React.memo(({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label} numberOfLines={1}>
+      <Text style={styles.label}>
         {label}
       </Text>
 
@@ -110,8 +110,15 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = React.memo(({
           onBlur={handleBlur}
           placeholderTextColor={colors.text.tertiary}
           selectionColor={colors.primary.DEFAULT}
-          accessibilityLabel={label}
           {...props}
+          accessibilityLabel={props.accessibilityLabel ?? label}
+          accessibilityHint={
+            props.accessibilityHint ?? (error ? `Error: ${error}` : hint)
+          }
+          accessibilityState={{
+            ...props.accessibilityState,
+            disabled: props.editable === false,
+          }}
         />
 
         {suffix && (
@@ -128,12 +135,12 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = React.memo(({
             size={rf(12)}
             color={colors.error.DEFAULT}
           />
-          <Text style={styles.errorText} numberOfLines={3}>
+          <Text style={styles.errorText} accessibilityRole="alert">
             {error}
           </Text>
         </View>
       ) : hint ? (
-        <Text style={styles.hintText} numberOfLines={3}>
+        <Text style={styles.hintText}>
           {hint}
         </Text>
       ) : null}

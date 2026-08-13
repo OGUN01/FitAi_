@@ -18,6 +18,7 @@ import {
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
+import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -73,11 +74,11 @@ const AccountRow: React.FC<{
 
       {/* Info */}
       <View style={styles.infoContainer}>
-        <Text style={styles.providerName} numberOfLines={1}>
+        <Text style={styles.providerName} numberOfLines={2}>
           {account.name}
         </Text>
         {account.isConnected && account.email ? (
-          <Text style={styles.email} numberOfLines={1}>
+          <Text style={styles.email} numberOfLines={2}>
             {account.email}
           </Text>
         ) : (
@@ -129,6 +130,7 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
   onApplePress,
   animationDelay = 0,
 }) => {
+  const reducedMotion = useReducedMotion();
   const accounts: ConnectedAccount[] = [
     {
       id: "google",
@@ -164,7 +166,9 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(animationDelay).duration(350)}
+      entering={
+        reducedMotion ? undefined : FadeInDown.delay(animationDelay).duration(350)
+      }
       style={styles.container}
     >
       <View style={styles.sectionHeader}>
