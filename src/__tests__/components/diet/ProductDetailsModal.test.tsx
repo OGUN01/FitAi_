@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 // ProductDetailsModal renders through DetentBottomSheet (aurora redesign).
 // Mock it as a lightweight passthrough so tests can assert the product-details
@@ -59,7 +59,12 @@ jest.mock("@/utils/responsive", () => ({
   rw: (value: number) => value,
   rbr: (value: number) => value,
   // DetentBottomSheet reads dimensions.screenHeight at module-eval time.
-  dimensions: { screenWidth: 393, screenHeight: 852, baseWidth: 393, baseHeight: 852 },
+  dimensions: {
+    screenWidth: 393,
+    screenHeight: 852,
+    baseWidth: 393,
+    baseHeight: 852,
+  },
 }));
 
 jest.mock("@/utils/constants", () => ({
@@ -199,5 +204,44 @@ describe("ProductDetailsModal", () => {
 
     expect(screen.getByText("Source: Label scan")).toBeTruthy();
     expect(screen.queryByText(/Barcode:/)).toBeNull();
+  });
+
+  it("does not silently replace a cleared amount with the default portion", () => {
+    const onAddToMeal = jest.fn();
+    const product = {
+      barcode: "8900000000012",
+      name: "Sabudana Khichdi",
+      brand: "FitAI",
+      source: "openfoodfacts",
+      confidence: 96,
+      nutrition: {
+        calories: 152,
+        protein: 4.5,
+        carbs: 28,
+        fat: 2.1,
+        fiber: 1.9,
+        sugar: 3.4,
+        sodium: 0.21,
+      },
+    } as any;
+
+    const screen = render(
+      <ProductDetailsModal
+        visible={true}
+        onClose={jest.fn()}
+        product={product}
+        onAddToMeal={onAddToMeal}
+      />,
+    );
+
+    fireEvent.changeText(screen.getByLabelText("Amount in grams"), "");
+
+    const addButton = screen.getByLabelText("Add product to meal");
+    expect(addButton.props.accessibilityState).toEqual({
+      disabled: true,
+      busy: false,
+    });
+    fireEvent.press(addButton);
+    expect(onAddToMeal).not.toHaveBeenCalled();
   });
 });

@@ -52,14 +52,21 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
   return (
     <View style={styles.card}>
       <View style={styles.headingRow}>
-        <View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.mealCount}>
+        <View style={styles.headingCopy}>
+          <Text style={styles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          <Text style={styles.mealCount} numberOfLines={2}>
             {mealCount} logged
             {plannedMealCount > 0 ? ` · ${plannedMealCount} planned` : ''}
           </Text>
         </View>
-        <Text style={[styles.percent, isOverTarget && styles.percentOver]}>{percent}%</Text>
+        <Text
+          style={[styles.percent, isOverTarget && styles.percentOver]}
+          numberOfLines={1}
+        >
+          {percent}%
+        </Text>
       </View>
       <View
         style={styles.track}
@@ -71,15 +78,31 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
         />
       </View>
       <View style={styles.statsRow}>
-        <View>
-          <Text style={styles.statValue}>{Math.round(consumedCalories)}</Text>
-          <Text style={styles.statLabel}>Consumed kcal</Text>
+        <View style={styles.statColumn}>
+          <Text
+            style={styles.statValue}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {Math.round(consumedCalories)}
+          </Text>
+          <Text style={styles.statLabel} numberOfLines={2}>
+            Consumed kcal
+          </Text>
         </View>
-        <View style={styles.statRight}>
-          <Text style={[styles.statValue, isOverTarget && styles.statValueOver]}>
+        <View style={[styles.statColumn, styles.statRight]}>
+          <Text
+            style={[styles.statValue, isOverTarget && styles.statValueOver]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {Math.abs(Math.round(remaining))}
           </Text>
-          <Text style={styles.statLabel}>{isOverTarget ? 'kcal over' : 'Remaining kcal'}</Text>
+          <Text style={styles.statLabel} numberOfLines={2}>
+            {isOverTarget ? 'kcal over' : 'Remaining kcal'}
+          </Text>
         </View>
       </View>
       <View style={styles.actionsRow}>
@@ -126,7 +149,12 @@ const styles = StyleSheet.create({
   headingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  headingCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
     color: colors.text,
@@ -144,6 +172,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontFamily: fontFamilyForWeight('800'),
     fontWeight: '800',
+    flexShrink: 0,
   },
   percentOver: {
     color: colors.error,
@@ -156,7 +185,15 @@ const styles = StyleSheet.create({
   },
   fill: { height: '100%', borderRadius: 3, backgroundColor: colors.primary },
   fillOver: { backgroundColor: colors.error },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  statColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
   statRight: { alignItems: 'flex-end' },
   statValue: {
     color: colors.text,

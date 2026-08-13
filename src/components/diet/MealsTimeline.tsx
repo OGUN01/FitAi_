@@ -31,6 +31,7 @@ import {
 import { springConfig } from '../../theme/animations';
 import { rf, rw } from '../../utils/responsive';
 import { fontFamilyForWeight } from '../../theme/fonts';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 export interface MealsTimelineProps {
   meals: DayMeal[];
@@ -87,6 +88,7 @@ const macroSplit = (meal: DayMeal): string => {
 
 const TimelineRow = React.memo(
   ({ meal, mealSchedule, status, progress, isLast, index, onPress }: RowProps) => {
+    const reducedMotion = useReducedMotion();
     const time = getMealTime(meal.type, mealSchedule);
     // The timeline dot is structural (timeline spine), not a status signal —
     // the StatusPill carries status (primary) and the progress micro-bar's
@@ -102,8 +104,11 @@ const TimelineRow = React.memo(
     // Spring-driven so progress changes settle smoothly (springConfig.smooth).
     const progressSV = useSharedValue(0);
     useEffect(() => {
-      progressSV.value = withSpring(Math.max(0, Math.min(progress, 100)) / 100, springConfig.smooth);
-    }, [progress, progressSV]);
+      const nextProgress = Math.max(0, Math.min(progress, 100)) / 100;
+      progressSV.value = reducedMotion
+        ? nextProgress
+        : withSpring(nextProgress, springConfig.smooth);
+    }, [progress, progressSV, reducedMotion]);
     const progressAnimStyle = useAnimatedStyle(() => ({
       width: `${progressSV.value * 100}%`,
     }));
@@ -115,7 +120,7 @@ const TimelineRow = React.memo(
           {!isLast ? <View style={styles.timelineConnector} /> : null}
         </View>
         <Animated.View
-          entering={FadeInDown.delay(150 + index * 50).duration(350)}
+          entering={reducedMotion ? undefined : FadeInDown.delay(150 + index * 50).duration(350)}
           style={styles.timelineRight}
         >
           <AnimatedPressable
@@ -128,7 +133,7 @@ const TimelineRow = React.memo(
             style={styles.rowPressable}
           >
             <Animated.View
-              entering={FadeIn.delay(300 + index * 50).duration(400)}
+              entering={reducedMotion ? undefined : FadeIn.delay(300 + index * 50).duration(400)}
               style={styles.mealImageWrap}
             >
               <MealImage
@@ -189,13 +194,19 @@ const TimelineRow = React.memo(
 // `rbr`/`rs` at module-load, which those mocks lack.
 const ShimmerMealRow: React.FC = () => {
   const pulse = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 1000 }), -1, true);
+    if (reducedMotion) {
+      cancelAnimation(pulse);
+      pulse.value = 0;
+    } else {
+      pulse.value = withRepeat(withTiming(1, { duration: 1000 }), -1, true);
+    }
     return () => {
       cancelAnimation(pulse);
     };
-  }, [pulse]);
+  }, [pulse, reducedMotion]);
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: interpolate(pulse.value, [0, 1], [0.45, 0.8]),

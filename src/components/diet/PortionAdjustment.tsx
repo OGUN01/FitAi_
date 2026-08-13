@@ -30,7 +30,7 @@ interface PortionAdjustmentProps {
   visible: boolean;
   recognizedFoods: RecognizedFood[];
   onClose: () => void;
-  onAdjustmentComplete: (adjustedFoods: RecognizedFood[]) => void;
+  onAdjustmentComplete: (adjustedFoods: RecognizedFood[]) => void | Promise<void>;
 }
 
 interface PortionAdjustmentData {
@@ -49,6 +49,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   const [adjustments, setAdjustments] = useState<PortionAdjustmentData[]>([]);
   const [currentFoodIndex, setCurrentFoodIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const processingRef = React.useRef(false);
   // Local text state for the manual gram input while it is being edited, so
   // the user can clear/retype without the controlled value snapping back.
   // null = not editing (input mirrors adjustedGrams).
@@ -94,6 +95,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   };
 
   const applyAdjustments = async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
     setIsProcessing(true);
 
     try {
@@ -127,7 +130,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
         } as RecognizedFood;
       });
 
-      onAdjustmentComplete(adjustedFoods);
+      await onAdjustmentComplete(adjustedFoods);
 
       // Show summary of adjustments
       const changedFoods = adjustments.filter((adj) => adj.adjustmentRatio !== 1.0);
@@ -142,8 +145,14 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       console.error('Error applying portion adjustments:', error);
       crossPlatformAlert('Error', 'Failed to apply portion adjustments. Please try again.');
     } finally {
+      processingRef.current = false;
       setIsProcessing(false);
     }
+  };
+
+  const handleClose = () => {
+    if (processingRef.current) return;
+    onClose();
   };
 
   const getServingSizeLabel = (grams: number): string => {
@@ -221,13 +230,14 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Adjust Portion Sizes</Text>
           <AnimatedPressable
-            onPress={onClose}
+            onPress={handleClose}
+            disabled={isProcessing}
             style={styles.closeButton}
             scaleValue={0.9}
             hapticType="light"

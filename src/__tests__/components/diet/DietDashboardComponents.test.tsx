@@ -98,6 +98,58 @@ describe('DatabaseDownloadBanner', () => {
     await waitFor(() => expect(mockDownloadDatabase).toHaveBeenCalledTimes(1));
   });
 
+  it('starts only one download when Download Now is pressed twice', async () => {
+    let resolveDownload!: () => void;
+    mockDownloadDatabase.mockImplementation(
+      () => new Promise<void>((resolve) => {
+        resolveDownload = resolve;
+      }),
+    );
+
+    const screen = render(<DatabaseDownloadBanner />);
+    const download = screen.getByLabelText('Download Now');
+
+    fireEvent.press(download);
+    fireEvent.press(download);
+
+    expect(mockDownloadDatabase).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Database ready')).toBeNull();
+
+    mockDownloadState = 'ready';
+    await act(async () => {
+      resolveDownload();
+    });
+
+    expect(screen.getByText('Database ready')).toBeTruthy();
+  });
+
+  it('keeps a paused download recoverable instead of showing false success or failure', async () => {
+    let resolveDownload!: () => void;
+    mockDownloadDatabase.mockImplementation(
+      () => new Promise<void>((resolve) => {
+        resolveDownload = resolve;
+      }),
+    );
+    mockCancelDownload.mockImplementation(async () => {
+      mockDownloadState = 'not_downloaded';
+    });
+
+    const screen = render(<DatabaseDownloadBanner />);
+    fireEvent.press(screen.getByLabelText('Download Now'));
+
+    const pause = await screen.findByLabelText('Pause');
+    fireEvent.press(pause);
+    await waitFor(() => expect(mockCancelDownload).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      resolveDownload();
+    });
+
+    expect(screen.getByText(/Download paused/)).toBeTruthy();
+    expect(screen.queryByText('Database ready')).toBeNull();
+    expect(screen.queryByText('Download failed')).toBeNull();
+  });
+
   it('shows Database ready then auto-dismisses after 3s calling onDismiss', () => {
     jest.useFakeTimers();
     mockDownloadState = 'ready';

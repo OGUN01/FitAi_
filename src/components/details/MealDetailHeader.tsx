@@ -34,7 +34,7 @@ export const MealDetailHeader: React.FC<MealDetailHeaderProps> = ({
         disabled={backDisabled}
       >
         <Ionicons
-          name="arrow-back"
+          name="chevron-back"
           size={rf(20)}
           color={backDisabled ? colors.textTertiary : colors.text}
         />

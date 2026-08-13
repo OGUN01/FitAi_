@@ -536,7 +536,7 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
             testID="meal-detail-back"
             style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={rf(22)} color={colors.text} />
+            <Ionicons name="chevron-back" size={rf(22)} color={colors.text} />
           </AnimatedPressable>
           <Text
             style={styles.headerTitle}

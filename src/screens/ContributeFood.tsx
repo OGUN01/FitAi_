@@ -6,7 +6,7 @@
  * RLS policy requires user_id = auth.uid() — always set from supabase.auth.getUser().
  */
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -135,6 +136,9 @@ interface FieldProps {
   error?: string;
   unit?: string;
   required?: boolean;
+  inputRef?: (input: TextInput | null) => void;
+  returnKeyType?: "next" | "done";
+  onSubmitEditing?: () => void;
 }
 
 const FormField: React.FC<FieldProps> = ({
@@ -146,6 +150,9 @@ const FormField: React.FC<FieldProps> = ({
   error,
   unit,
   required = false,
+  inputRef,
+  returnKeyType = "next",
+  onSubmitEditing,
 }) => (
   <View style={fieldStyles.container}>
     <View style={fieldStyles.labelRow}>
@@ -159,6 +166,7 @@ const FormField: React.FC<FieldProps> = ({
       {unit ? <Text style={fieldStyles.unit}>{unit}</Text> : null}
     </View>
     <TextInput
+      ref={inputRef}
       style={[fieldStyles.input, error ? fieldStyles.inputError : null]}
       value={value}
       onChangeText={onChangeText}
@@ -167,7 +175,9 @@ const FormField: React.FC<FieldProps> = ({
       keyboardType={keyboardType}
       autoCorrect={false}
       autoCapitalize={keyboardType === "default" ? "words" : "none"}
-      returnKeyType="next"
+      returnKeyType={returnKeyType}
+      onSubmitEditing={onSubmitEditing}
+      blurOnSubmit={returnKeyType === "done"}
       accessibilityLabel={label}
       accessibilityHint={required ? `Required field. ${placeholder}` : placeholder}
     />
@@ -248,6 +258,8 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitLockRef = useRef(false);
+  const fieldRefs = useRef<Array<TextInput | null>>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -260,12 +272,16 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (submitLockRef.current) return;
+
     const validationErrors = validateForm(formData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
+    submitLockRef.current = true;
+    Keyboard.dismiss();
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -276,7 +292,6 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
 
       if (!user) {
         setSubmitError("You must be signed in to submit a contribution.");
-        setIsSubmitting(false);
         return;
       }
 
@@ -308,6 +323,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
           : "Failed to submit. Please try again.";
       setSubmitError(message);
     } finally {
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -374,6 +390,7 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           >
             {/* Barcode badge */}
             <View style={styles.barcodeBadgeRow}>
@@ -412,6 +429,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               placeholder="e.g. Greek Yogurt"
               error={errors.productName}
               required
+              inputRef={(input) => {
+                fieldRefs.current[0] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[1]?.focus()}
             />
             <FormField
               label="Calories"
@@ -422,6 +443,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               unit="kcal / 100g"
               error={errors.calories}
               required
+              inputRef={(input) => {
+                fieldRefs.current[1] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[2]?.focus()}
             />
             <FormField
               label="Protein"
@@ -432,6 +457,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               unit="g / 100g"
               error={errors.protein}
               required
+              inputRef={(input) => {
+                fieldRefs.current[2] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[3]?.focus()}
             />
             <FormField
               label="Carbohydrates"
@@ -442,6 +471,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               unit="g / 100g"
               error={errors.carbs}
               required
+              inputRef={(input) => {
+                fieldRefs.current[3] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[4]?.focus()}
             />
             <FormField
               label="Fat"
@@ -452,6 +485,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               unit="g / 100g"
               error={errors.fat}
               required
+              inputRef={(input) => {
+                fieldRefs.current[4] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[5]?.focus()}
             />
 
             {/* ---- Optional section ---- */}
@@ -471,6 +508,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               value={formData.brand}
               onChangeText={updateField("brand")}
               placeholder="e.g. Nestlé"
+              inputRef={(input) => {
+                fieldRefs.current[5] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[6]?.focus()}
             />
             <FormField
               label="Fiber"
@@ -479,6 +520,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               placeholder="0–100"
               keyboardType="decimal-pad"
               unit="g / 100g"
+              inputRef={(input) => {
+                fieldRefs.current[6] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[7]?.focus()}
             />
             <FormField
               label="Sugar"
@@ -487,6 +532,10 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               placeholder="0–100"
               keyboardType="decimal-pad"
               unit="g / 100g"
+              inputRef={(input) => {
+                fieldRefs.current[7] = input;
+              }}
+              onSubmitEditing={() => fieldRefs.current[8]?.focus()}
             />
             <FormField
               label="Sodium"
@@ -495,6 +544,13 @@ export const ContributeFood: React.FC<ContributeFoodProps> = ({
               placeholder="0–10"
               keyboardType="decimal-pad"
               unit="g / 100g"
+              inputRef={(input) => {
+                fieldRefs.current[8] = input;
+              }}
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                void handleSubmit();
+              }}
             />
 
             {/* Submit error */}

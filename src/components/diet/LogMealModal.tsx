@@ -174,6 +174,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   const [simpleFiber, setSimpleFiber] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionInFlightRef = useRef(false);
   const [scanProvenance, setScanProvenance] = useState<MealLogProvenance | null>(null);
   const [scanReviewNote, setScanReviewNote] = useState<string | null>(null);
   const [scanType, setScanType] = useState<LogMealScanResult['type'] | null>(null);
@@ -367,10 +368,12 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     setBaseDirectEntry(null);
     setActiveMultiplier(1);
     setShowSuggestions(false);
+    submissionInFlightRef.current = false;
     setIsSubmitting(false);
   };
 
   const handleClose = () => {
+    if (submissionInFlightRef.current) return;
     resetForm();
     onClose();
   };
@@ -450,7 +453,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
   );
 
   const handleSave = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || submissionInFlightRef.current) return;
 
     const trimmedName = mealName.trim();
     if (!trimmedName) {
@@ -487,6 +490,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       finalFiber = parseNum(simpleFiber);
     }
 
+    submissionInFlightRef.current = true;
     setIsSubmitting(true);
     haptics.light();
 
@@ -625,6 +629,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       console.error('Failed to log meal:', error);
       crossPlatformAlert('Error', 'Failed to log meal. Please try again.');
     } finally {
+      submissionInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -642,10 +647,12 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
               <Text style={styles.title}>Log Meal</Text>
               <TouchableOpacity
                 onPress={handleClose}
+                disabled={isSubmitting}
                 style={styles.closeButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel="Close log meal"
+                accessibilityState={{ disabled: isSubmitting }}
               >
                 <Ionicons name="chevron-down" size={rf(20)} color={colors.text} />
               </TouchableOpacity>
@@ -1207,7 +1214,14 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
                   {isSubmitting ? 'Logging...' : 'Log Meal'}
                 </Text>
               </AnimatedPressable>
-              <AnimatedPressable style={styles.cancelButton} onPress={handleClose}>
+              <AnimatedPressable
+                style={styles.cancelButton}
+                onPress={handleClose}
+                disabled={isSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel meal logging"
+                accessibilityState={{ disabled: isSubmitting }}
+              >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </AnimatedPressable>
             </Animated.View>

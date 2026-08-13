@@ -47,6 +47,8 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastOutcome, setLastOutcome] = useState<ProductLookupResult['outcome'] | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const lookupInFlightRef = useRef(false);
+  const lookupRequestIdRef = useRef(0);
 
   const cleanBarcode = barcode.trim();
   const countryName = cleanBarcode.length >= 3 ? getCountryFromBarcode(cleanBarcode) : 'Unknown';
@@ -87,14 +89,17 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
   };
 
   const handleLookUp = async () => {
-    if (!canLookUp) return;
+    if (!canLookUp || lookupInFlightRef.current) return;
 
+    lookupInFlightRef.current = true;
+    const requestId = ++lookupRequestIdRef.current;
     setIsLooking(true);
     setError(null);
     setLastOutcome(null);
 
     try {
       const result = await barcodeService.lookupProduct(cleanBarcode);
+      if (requestId !== lookupRequestIdRef.current) return;
 
       if (
         (result.outcome === 'authoritative_hit' || result.outcome === 'weak_data') &&
@@ -123,12 +128,25 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
           break;
       }
     } catch (err) {
+      if (requestId !== lookupRequestIdRef.current) return;
       console.error('ManualBarcodeEntry: barcode lookup failed', err);
       setLastOutcome('transient_failure');
       setError('Barcode lookup failed unexpectedly. Please try again.');
     } finally {
-      setIsLooking(false);
+      if (requestId === lookupRequestIdRef.current) {
+        lookupInFlightRef.current = false;
+        setIsLooking(false);
+      }
     }
+  };
+
+  const handleClose = () => {
+    // Invalidate any pending lookup so a late network response cannot reopen
+    // product details after the user has explicitly left this flow.
+    lookupRequestIdRef.current += 1;
+    lookupInFlightRef.current = false;
+    setIsLooking(false);
+    onClose();
   };
 
   const showFallbackActions = lastOutcome === 'not_found' || lastOutcome === 'transient_failure';
@@ -138,7 +156,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         <View style={styles.header}>
           <Text style={styles.title}>Enter Barcode</Text>
           <AnimatedPressable
-            onPress={onClose}
+            onPress={handleClose}
             style={styles.closeButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             scaleValue={0.9}
@@ -267,7 +285,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
         </AnimatedPressable>
 
         <AnimatedPressable
-          onPress={onClose}
+          onPress={handleClose}
           style={styles.cancelButton}
           scaleValue={0.96}
           springConfig="smooth"

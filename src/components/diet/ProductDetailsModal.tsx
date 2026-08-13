@@ -175,7 +175,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
   const amountValue = Number(amountText.trim());
   const amountIsInvalid =
-    amountText.trim().length > 0 && (!Number.isFinite(amountValue) || amountValue <= 0);
+    amountText.trim().length === 0 || !Number.isFinite(amountValue) || amountValue <= 0;
   const amountIsSuspiciouslyLarge =
     !amountIsInvalid && parsedAmount > LARGE_AMOUNT_WARNING_THRESHOLD_G;
   const handleClose = () => {
@@ -425,6 +425,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   placeholder="100"
                   placeholderTextColor={colors.textMuted}
                   returnKeyType="done"
+                  accessibilityLabel="Amount in grams"
                 />
                 <Text style={styles.amountUnit}>g</Text>
               </View>
@@ -467,6 +468,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 springConfig="smooth"
                 hapticType="light"
                 accessibilityRole="button"
+                accessibilityLabel="Close product details"
                 disabled={isSubmitting}
               >
                 <Text style={styles.secondaryButtonText}>Close</Text>
@@ -494,6 +496,14 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                     void handleAddToMeal();
                   }}
                   accessibilityRole="button"
+                  accessibilityLabel="Add product to meal"
+                  accessibilityState={{
+                    disabled:
+                      isSubmitting ||
+                      amountIsInvalid ||
+                      (amountIsSuspiciouslyLarge && !largeAmountConfirmed),
+                    busy: isSubmitting,
+                  }}
                 >
                   {isSubmitting ? (
                     <AuroraSpinner customSize={rf(16)} theme="dark" />

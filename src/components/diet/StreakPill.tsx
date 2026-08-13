@@ -8,6 +8,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { useAchievementStore } from '../../stores';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
@@ -21,6 +22,7 @@ import {
 import { duration, easingFunctions } from '../../theme/animations';
 import { rf } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 export interface StreakPillProps {
   onPress?: () => void;
@@ -29,6 +31,7 @@ export interface StreakPillProps {
 
 export const StreakPill: React.FC<StreakPillProps> = ({ onPress, testID }) => {
   const streak = useAchievementStore((s) => s.nutritionStreak);
+  const reducedMotion = useReducedMotion();
   // At 0 the orange-tinted pill + grey "0" reads as a broken state, not an
   // invitation. Reframe as a neutral "Start your streak" CTA; only light the
   // flame tint once a streak actually exists.
@@ -43,7 +46,7 @@ export const StreakPill: React.FC<StreakPillProps> = ({ onPress, testID }) => {
   // 1.0 → 1.1 → 1.0 loop. No motion at streak 0 (the flame is grey/off).
   const flameScale = useSharedValue(1);
   useEffect(() => {
-    if (hasStreak) {
+    if (hasStreak && !reducedMotion) {
       flameScale.value = withRepeat(
         withSequence(
           withTiming(1.1, { duration: duration.slow, easing: easingFunctions.easeInOut }),
@@ -53,9 +56,11 @@ export const StreakPill: React.FC<StreakPillProps> = ({ onPress, testID }) => {
         false,
       );
     } else {
+      cancelAnimation(flameScale);
       flameScale.value = 1;
     }
-  }, [hasStreak, flameScale]);
+    return () => cancelAnimation(flameScale);
+  }, [hasStreak, flameScale, reducedMotion]);
   const flameStyle = useAnimatedStyle(() => ({
     transform: [{ scale: flameScale.value }],
   }));
@@ -80,7 +85,7 @@ export const StreakPill: React.FC<StreakPillProps> = ({ onPress, testID }) => {
 
   // StreakPill is a hero-header element — it should enter with the rest of
   // the header, not pop. Every sibling animates in; this used to hard-cut.
-  const entering = FadeInDown.delay(100).duration(300).springify();
+  const entering = reducedMotion ? undefined : FadeInDown.delay(100).duration(300).springify();
 
   if (onPress) {
     return (

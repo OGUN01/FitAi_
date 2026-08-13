@@ -164,4 +164,37 @@ describe("ManualBarcodeEntry", () => {
     fireEvent.press(screen.getByText("Contribute Product"));
     expect(onContributeProduct).toHaveBeenCalledWith("012345678905");
   });
+
+  it("ignores a lookup response that arrives after the user closes the flow", async () => {
+    let resolveLookup: ((value: any) => void) | undefined;
+    mockLookupProduct.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveLookup = resolve;
+        }),
+    );
+    const onLookupResolved = jest.fn();
+    const onClose = jest.fn();
+    const screen = render(
+      <ManualBarcodeEntry
+        onLookupResolved={onLookupResolved}
+        onRequestLabelScan={jest.fn()}
+        onContributeProduct={jest.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.changeText(screen.getByLabelText("Barcode input"), "012345678905");
+    fireEvent.press(screen.getByText("Look Up"));
+    fireEvent.press(screen.getByLabelText("Cancel"));
+
+    resolveLookup?.({
+      outcome: "authoritative_hit",
+      product: { barcode: "012345678905", name: "Late Product" },
+      meta: { retryable: false, lookupPath: ["supabase"] },
+    });
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onLookupResolved).not.toHaveBeenCalled();
+  });
 });

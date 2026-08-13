@@ -113,8 +113,9 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             onPress={() => onPress(star as 1 | 2 | 3 | 4 | 5)}
             style={styles.starButton}
             hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
-            accessibilityRole="button"
-            accessibilityLabel={`${star} star${star > 1 ? 's' : ''}`}
+            accessibilityRole="radio"
+            accessibilityLabel={`Rate ${star} star${star > 1 ? 's' : ''}`}
+            accessibilityState={{ checked: star === rating }}
           >
             <Ionicons
               name={star <= rating ? 'star' : 'star-outline'}
@@ -234,9 +235,9 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                     correctName: undefined,
                   })
                 }
-                accessibilityRole="button"
+                accessibilityRole="radio"
                 accessibilityLabel="Food name is correct"
-                accessibilityState={{ selected: currentFeedback.isCorrect }}
+                accessibilityState={{ checked: currentFeedback.isCorrect }}
               >
                 <Ionicons
                   name="checkmark-circle-outline"
@@ -260,9 +261,9 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                   !currentFeedback.isCorrect && styles.correctnessButtonActive,
                 ]}
                 onPress={() => updateFeedback(currentFoodIndex, { isCorrect: false })}
-                accessibilityRole="button"
+                accessibilityRole="radio"
                 accessibilityLabel="Food name is incorrect"
-                accessibilityState={{ selected: !currentFeedback.isCorrect }}
+                accessibilityState={{ checked: !currentFeedback.isCorrect }}
               >
                 <Ionicons
                   name="close-circle-outline"

@@ -219,4 +219,45 @@ describe("LogMealModal", () => {
     expect(onScanResultConsumed).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("blocks duplicate submit and close while the meal write is pending", async () => {
+    let resolveComplete: (() => void) | undefined;
+    mockCompleteMeal.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveComplete = resolve;
+        }),
+    );
+    const onClose = jest.fn();
+    const screen = render(
+      <LogMealModal
+        visible
+        onClose={onClose}
+        pendingScanResult={{
+          type: "label",
+          mealName: "Pending Meal",
+          directEntry: {
+            calories: "200",
+            protein: "10",
+            carbs: "20",
+            fat: "8",
+            fiber: "3",
+          },
+        }}
+        onScanResultConsumed={jest.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByDisplayValue("200")).toBeTruthy());
+    const submit = screen.getAllByText("Log Meal").at(-1)!;
+
+    fireEvent.press(submit);
+    fireEvent.press(submit);
+    fireEvent.press(screen.getByLabelText("Cancel meal logging"));
+
+    expect(mockCompleteMeal).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+
+    resolveComplete?.();
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
 });

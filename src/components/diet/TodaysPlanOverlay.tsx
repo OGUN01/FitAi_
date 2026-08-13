@@ -62,7 +62,7 @@ export const TodaysPlanOverlay: React.FC<TodaysPlanOverlayProps> = ({
           accessibilityLabel="Back to Diet"
           hapticType="light"
         >
-          <Ionicons name="arrow-back" size={23} color={colors.text} />
+          <Ionicons name="chevron-back" size={23} color={colors.text} />
         </AnimatedPressable>
         <View style={styles.headerTitleWrap}>
           <Text style={styles.title} numberOfLines={1}>

@@ -31,9 +31,9 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
               correctName: undefined,
             })
           }
-          accessibilityRole="button"
+          accessibilityRole="radio"
           accessibilityLabel="Food name is correct"
-          accessibilityState={{ selected: feedback.isCorrect }}
+          accessibilityState={{ checked: feedback.isCorrect }}
         >
           <Ionicons
             name="checkmark-circle-outline"
@@ -54,9 +54,9 @@ export const CorrectnessCheck: React.FC<CorrectnessCheckProps> = ({
         <TouchableOpacity
           style={[styles.correctnessButton, !feedback.isCorrect && styles.correctnessButtonActive]}
           onPress={() => onFeedbackChange({ isCorrect: false })}
-          accessibilityRole="button"
+          accessibilityRole="radio"
           accessibilityLabel="Food name is incorrect"
-          accessibilityState={{ selected: !feedback.isCorrect }}
+          accessibilityState={{ checked: !feedback.isCorrect }}
         >
           <Ionicons
             name="close-circle-outline"

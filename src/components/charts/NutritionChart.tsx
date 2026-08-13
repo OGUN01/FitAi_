@@ -108,9 +108,13 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
     <View style={[styles.container, style]} onLayout={handleLayout}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Nutrition Breakdown</Text>
+        <Text style={styles.title} numberOfLines={2}>
+          Nutrition Breakdown
+        </Text>
         <View style={styles.caloriesContainer}>
-          <Text style={styles.caloriesValue}>{data.calories}</Text>
+          <Text style={styles.caloriesValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {data.calories}
+          </Text>
           <Text style={styles.caloriesLabel}>
             {targetCalories != null ? `/ ${targetCalories} cal` : "cal"}
           </Text>
@@ -217,17 +221,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    alignItems: "flex-start" as const,
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
 
   title: {
+    flex: 1,
+    minWidth: 0,
     fontSize: fontSize.lg,
     fontWeight: typography.fontWeight.semibold,
     color: colors.text,
   },
 
   caloriesContainer: {
+    flexShrink: 0,
     alignItems: "flex-end",
   },
 
@@ -304,6 +312,8 @@ const styles = StyleSheet.create({
   macroHeader: {
     flexDirection: "row",
     alignItems: "center" as const,
+    justifyContent: "center" as const,
+    minWidth: 0,
     marginBottom: spacing.xs,
   },
 
@@ -315,8 +325,10 @@ const styles = StyleSheet.create({
   },
 
   macroName: {
+    flexShrink: 1,
     fontSize: fontSize.sm,
     color: colors.textSecondary,
+    textAlign: "center",
   },
 
   macroGrams: {

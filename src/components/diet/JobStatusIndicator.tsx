@@ -17,6 +17,7 @@ import Reanimated, {
   withTiming,
   useAnimatedStyle,
   interpolate,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -31,6 +32,7 @@ import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
 import { rf, rh, rw, rs } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
 import { AsyncMealJob, JobStatus } from '../../hooks/useAsyncMealGeneration';
+import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 interface JobStatusIndicatorProps {
   job: AsyncMealJob | null;
@@ -92,6 +94,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
   onDismiss,
   compact = false,
 }) => {
+  const reducedMotion = useReducedMotion();
   const [opacityValue] = useState(new Animated.Value(1));
   const [pulseValue] = useState(new Animated.Value(1));
 
@@ -101,7 +104,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
 
   // Pulsing OPACITY animation for the pending badge (hourglasses don't spin)
   useEffect(() => {
-    if (job?.status === 'pending') {
+    if (job?.status === 'pending' && !reducedMotion) {
       const opacityAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(opacityValue, {
@@ -121,17 +124,20 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
       opacityAnimation.start();
       return () => opacityAnimation.stop();
     }
+    opacityValue.stopAnimation?.();
+    opacityValue.setValue?.(1);
     return undefined;
-  }, [job?.status, opacityValue]);
+  }, [job?.status, opacityValue, reducedMotion]);
 
   // Indeterminate slide for the progress bar fill (processing only)
   useEffect(() => {
-    if (job?.status === 'processing') {
+    if (job?.status === 'processing' && !reducedMotion) {
       progressSlide.value = withRepeat(withTiming(1, { duration: 1200 }), -1, true);
     } else {
+      cancelAnimation(progressSlide);
       progressSlide.value = 0;
     }
-  }, [job?.status, progressSlide]);
+  }, [job?.status, progressSlide, reducedMotion]);
 
   const progressFillStyle = useAnimatedStyle(() => ({
     transform: [
@@ -143,7 +149,7 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
 
   // Pulse animation for the card
   useEffect(() => {
-    if (job?.status === 'processing') {
+    if (job?.status === 'processing' && !reducedMotion) {
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseValue, {
@@ -163,7 +169,10 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
       pulseAnimation.start();
       return () => pulseAnimation.stop();
     }
-  }, [job?.status, pulseValue]);
+    pulseValue.stopAnimation?.();
+    pulseValue.setValue?.(1);
+    return undefined;
+  }, [job?.status, pulseValue, reducedMotion]);
 
   if (!job || job.status === 'idle') {
     return null;
@@ -199,7 +208,10 @@ export const JobStatusIndicator: React.FC<JobStatusIndicatorProps> = ({
   }
 
   return (
-    <Reanimated.View entering={FadeInDown.duration(300)} style={styles.wrapper}>
+    <Reanimated.View
+      entering={reducedMotion ? undefined : FadeInDown.duration(300)}
+      style={styles.wrapper}
+    >
       <Animated.View
         style={[
           styles.container,

@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassButton } from '../ui/aurora/GlassButton';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from '../../utils/colors';
-import { rf, rp, rh, rw } from '../../utils/responsive';
+import { rf, rp, rw } from '../../utils/responsive';
 import { MACRO_PILL_COLORS } from './macroColors';
 
 export interface ScanResultData {
@@ -60,6 +61,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
   onFeedback,
   onDismiss,
 }) => {
+  const insets = useSafeAreaInsets();
   // Low-confidence scans get an extra acknowledgement gate before "Accept &
   // Log" is enabled, so an unreliable scan isn't as easy to blindly accept
   // as a clean one. Reset whenever a new result comes in.
@@ -92,14 +94,21 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+          ]}
+        >
           {/* Header */}
           <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.successIconDisc}>
                 <Ionicons name="checkmark-circle" size={rf(18)} color={colors.successAlt} />
               </View>
-              <Text style={styles.title}>Meal Recognized</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                Meal Recognized
+              </Text>
             </View>
             <View style={styles.headerBadges}>
               <View style={[styles.badge, { backgroundColor: `${confColor}20` }]}>
@@ -109,23 +118,30 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                 </Text>
               </View>
               <View style={styles.mealTypeBadge}>
-                <Text style={styles.mealTypeText}>
+                <Text style={styles.mealTypeText} numberOfLines={1}>
                   {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
                 </Text>
               </View>
             </View>
           </Animated.View>
 
+          <ScrollView
+            style={styles.contentScroll}
+            contentContainerStyle={styles.contentScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
           {/* Food cards */}
           <Animated.View entering={FadeInDown.delay(60).duration(400)}>
-            <ScrollView style={styles.foodList} showsVerticalScrollIndicator={false}>
+            <View style={styles.foodList}>
               {recognizedFoods.map((food: any, idx: number) => (
                 <View key={idx} style={styles.foodCard}>
                   <View style={styles.foodHeader}>
                     <View style={styles.foodIconDisc}>
                       <Ionicons name="restaurant-outline" size={rf(14)} color={colors.primary} />
                     </View>
-                    <Text style={styles.foodName}>{food.localName || food.name}</Text>
+                    <Text style={styles.foodName} numberOfLines={2}>
+                      {food.localName || food.name}
+                    </Text>
                     <Text style={styles.foodServing}>
                       {food.userGrams ?? food.estimatedGrams ?? 100}g
                     </Text>
@@ -163,7 +179,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
                   </View>
                 </View>
               ))}
-            </ScrollView>
+            </View>
           </Animated.View>
 
           {/* Total summary bar */}
@@ -231,6 +247,7 @@ export const ScanResultModal: React.FC<ScanResultModalProps> = ({
               </AnimatedPressable>
             </Animated.View>
           )}
+          </ScrollView>
 
           {/* Action buttons */}
           <Animated.View entering={FadeInDown.delay(180).duration(400)}>
@@ -330,19 +347,28 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     padding: spacing.lg,
-    paddingBottom: rp(32),
-    maxHeight: rh(724),
+    maxHeight: '92%',
+  },
+  contentScroll: {
+    flexShrink: 1,
+    minHeight: 0,
+  },
+  contentScrollContent: {
+    paddingBottom: spacing.xs,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    flex: 1,
+    minWidth: 0,
   },
   successIconDisc: {
     width: rw(34),
@@ -362,7 +388,10 @@ const styles = StyleSheet.create({
   headerBadges: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: spacing.xs,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
   badge: {
     flexDirection: 'row',
@@ -395,7 +424,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   foodList: {
-    maxHeight: 280,
     marginBottom: spacing.sm,
   },
   foodCard: {
@@ -460,6 +488,8 @@ const styles = StyleSheet.create({
   totalBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
     borderRadius: borderRadius.md,
     borderWidth: 1,
@@ -469,6 +499,8 @@ const styles = StyleSheet.create({
   },
   totalItem: {
     alignItems: 'center',
+    flexGrow: 1,
+    minWidth: '16%',
   },
   totalLabel: {
     fontSize: rf(11),

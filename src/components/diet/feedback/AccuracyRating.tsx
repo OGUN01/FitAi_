@@ -42,8 +42,9 @@ export const AccuracyRating: React.FC<AccuracyRatingProps> = ({ rating, onRating
             onPress={() => onRatingChange(star as 1 | 2 | 3 | 4 | 5)}
             style={styles.starButton}
             hitSlop={{ top: 10, bottom: 10, left: 5, right: 5 }}
-            accessibilityRole="button"
-            accessibilityLabel={`${star} star${star > 1 ? 's' : ''}`}
+            accessibilityRole="radio"
+            accessibilityLabel={`Rate ${star} star${star > 1 ? 's' : ''}`}
+            accessibilityState={{ checked: star === rating }}
           >
             <Ionicons
               name={star <= rating ? 'star' : 'star-outline'}
