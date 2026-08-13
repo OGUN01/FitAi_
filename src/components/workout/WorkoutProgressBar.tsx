@@ -23,6 +23,7 @@ import { colors } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { gradientPrimary } from '../../theme/gradients';
 import { animations } from '../../theme/animations';
+import { getAccessibleDuration, useReducedMotion } from '../../utils/accessibility/hooks';
 
 interface WorkoutProgressBarProps {
   progress: number; // 0..1
@@ -43,13 +44,16 @@ const safeString = (value: any, fallback: string = ''): string => {
 
 const WorkoutProgressBarComponent: React.FC<WorkoutProgressBarProps> = ({ progress, fadeAnim }) => {
   const widthSV = useSharedValue(0);
+  const reducedMotion = useReducedMotion();
+  const finiteProgress = Number.isFinite(progress) ? progress : 0;
+  const progressPercent = Math.min(100, Math.max(0, Math.round(finiteProgress * 100)));
 
   // Animate the bar width whenever progress changes (smooth instead of snap).
   useEffect(() => {
-    widthSV.value = withTiming(Math.min(100, Math.max(0, progress * 100)), {
-      duration: animations.duration.normal,
+    widthSV.value = withTiming(progressPercent, {
+      duration: getAccessibleDuration(animations.duration.normal, reducedMotion, true),
     });
-  }, [progress, widthSV]);
+  }, [progressPercent, reducedMotion, widthSV]);
 
   const barAnimatedStyle = useAnimatedStyle(() => ({
     width: `${widthSV.value}%`,
@@ -60,7 +64,8 @@ const WorkoutProgressBarComponent: React.FC<WorkoutProgressBarProps> = ({ progre
     <View
       style={styles.track}
       accessibilityRole="progressbar"
-      accessibilityLabel={`Workout progress: ${safeString(Math.round(progress * 100))}%`}
+      accessibilityLabel={`Workout progress: ${safeString(progressPercent)}%`}
+      accessibilityValue={{ min: 0, max: 100, now: progressPercent }}
     >
       <Animated.View style={[styles.fill, barAnimatedStyle]}>
         <LinearGradient

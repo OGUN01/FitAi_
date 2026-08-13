@@ -124,8 +124,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     calories: number;
     exercisesCompleted: number;
     setsCompleted: number;
-    onViewProgress: () => void;
-    onDone: (rating?: number, notes?: string) => void;
+    onViewProgress: (rating?: number, notes?: string) => Promise<void>;
+    onDone: (rating?: number, notes?: string) => Promise<void>;
   } | null>(null);
 
   // Guard against double-tap on "Finish Workout" creating two Supabase rows (Bug 1)
@@ -286,35 +286,47 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       await session.handleSetComplete(
         setIndex,
         async (percentage) => {
-          await achievements.trackMilestone(
-            percentage,
-            workout.category || 'General',
-            session.workoutStats.exercisesCompleted,
-            session.totalExercises,
-            Math.round((new Date().getTime() - session.workoutStartTime.getTime()) / 60000)
-          );
+          try {
+            await achievements.trackMilestone(
+              percentage,
+              workout.category || 'General',
+              session.workoutStats.exercisesCompleted,
+              session.totalExercises,
+              Math.round((new Date().getTime() - session.workoutStartTime.getTime()) / 60000)
+            );
+          } catch (err) {
+            console.error('[WorkoutSession] Milestone tracking failed:', err);
+          }
         },
         async () => {
           wasAllSetsCompleted = true;
-          await achievements.trackExerciseCompletion(
-            session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
-            workout.category || 'General',
-            session.currentProgress.completedSets.length,
-            session.currentExerciseIndex,
-            session.totalExercises
-          );
+          try {
+            await achievements.trackExerciseCompletion(
+              session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
+              workout.category || 'General',
+              session.currentProgress.completedSets.length,
+              session.currentExerciseIndex,
+              session.totalExercises
+            );
+          } catch (err) {
+            console.error('[WorkoutSession] Exercise achievement tracking failed:', err);
+          }
         }
       );
 
       // Per-set achievement tracking
       if (!wasAllSetsCompleted) {
         const totalSets = session.currentProgress.completedSets.length;
-        await achievements.trackSetCompletion(
-          session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
-          setIndex + 1,
-          totalSets,
-          workout.category || 'General'
-        );
+        try {
+          await achievements.trackSetCompletion(
+            session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
+            setIndex + 1,
+            totalSets,
+            workout.category || 'General'
+          );
+        } catch (err) {
+          console.error('[WorkoutSession] Set achievement tracking failed:', err);
+        }
       }
 
       // Advance the phase state machine
@@ -509,43 +521,52 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           }
         }
 
+        const saveFeedback = async (rating?: number, notes?: string) => {
+          // H24: Save user-provided rating and notes to the workout session.
+          // For extra workouts use the server-generated row ID, not the local UUID.
+          const rowId =
+            isExtra === true || String(isExtra) === 'true'
+              ? supabaseSessionIdRef.current
+              : sessionId;
+          if ((!rating && !notes) || !rowId) return;
+
+          try {
+            const feedbackUserId = getCurrentUserId();
+            if (!feedbackUserId) return;
+            const updatePayload: Record<string, unknown> = {};
+            if (rating) updatePayload.rating = rating;
+            if (notes) updatePayload.notes = notes;
+            const { error } = await supabase
+              .from('workout_sessions')
+              .update(updatePayload)
+              .eq('id', rowId)
+              .eq('user_id', feedbackUserId);
+            if (error) throw error;
+          } catch (err) {
+            console.error('[WorkoutSession] Failed to save rating/notes:', err);
+          }
+        };
+
+        const closeCompletion = () => {
+          setCompleteDialog(null);
+          isCompletingRef.current = false;
+          setIsCompleting(false);
+        };
+
         setCompleteDialog({
           visible: true,
           durationMins: durationMinutes,
           calories: finalStats.caloriesBurned,
           exercisesCompleted: finalStats.exercisesCompleted,
           setsCompleted: finalStats.setsCompleted,
-          onViewProgress: () => {
-            setCompleteDialog(null);
+          onViewProgress: async (rating?: number, notes?: string) => {
+            await saveFeedback(rating, notes);
+            closeCompletion();
             navigation.navigate('Progress');
           },
           onDone: async (rating?: number, notes?: string) => {
-            // H24: Save user-provided rating and notes to the workout session
-            // Bug 3: for extra workouts use the server-generated row ID, not the local UUID
-            const rowId =
-              isExtra === true || String(isExtra) === 'true'
-                ? supabaseSessionIdRef.current
-                : sessionId;
-            if ((rating || notes) && rowId) {
-              try {
-                const userId = getCurrentUserId();
-                if (userId) {
-                  const updatePayload: Record<string, unknown> = {};
-                  if (rating) updatePayload.rating = rating;
-                  if (notes) updatePayload.notes = notes;
-                  await supabase
-                    .from('workout_sessions')
-                    .update(updatePayload)
-                    .eq('id', rowId)
-                    .eq('user_id', userId);
-                }
-              } catch (err) {
-                console.error('[WorkoutSession] Failed to save rating/notes:', err);
-              }
-            }
-            setCompleteDialog(null);
-            isCompletingRef.current = false;
-            setIsCompleting(false);
+            await saveFeedback(rating, notes);
+            closeCompletion();
             navigation.goBack();
           },
         });

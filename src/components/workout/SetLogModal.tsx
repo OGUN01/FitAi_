@@ -157,7 +157,7 @@ interface SetLogModalProps {
   calibrationStartKg?: number;
   /** Note shown under the weight input in calibration mode */
   calibrationNote?: string;
-  onSave: (data: SetLogData) => void;
+  onSave: (data: SetLogData) => void | Promise<void>;
   onCancel: () => void;
   onPRDetected?: (exerciseName: string) => void;
 }
@@ -201,6 +201,8 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   // they confirm via the sticky Save button. Replaces the previous "one-tap
   // save" model so users can change their mind without re-opening the modal.
   const [selectedRpe, setSelectedRpe] = useState<1 | 2 | 3 | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const [previousSession, setPreviousSession] = useState<LastSessionData | null>(null);
   const [suggestedWeight, setSuggestedWeight] = useState<ProgressionResult | null>(null);
   // Live PR preview — computed from the current weight/reps inputs against the
@@ -225,6 +227,11 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   const repsLabel = isTimeBased ? 'Sets done' : perSide ? 'Reps/side' : 'Reps';
 
   const previousSet = previousSession?.sets[setIndex];
+
+  useEffect(() => {
+    savingRef.current = false;
+    setIsSaving(false);
+  }, [isVisible, exerciseId, setIndex]);
 
   // Default reps from exercise definition
   useEffect(() => {
@@ -427,7 +434,8 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   const sessionVolume = savedVolume + liveVolume;
 
   // ── Save with validation + RPE ────────────────────────────────────────────
-  const handleSave = (rpe: 1 | 2 | 3) => {
+  const handleSave = async (rpe: 1 | 2 | 3) => {
+    if (savingRef.current) return;
     const weightKg = isBodyweight ? 0 : displayToKg(weight, userUnits);
     const repsValue = parseInt(repsInput, 10) || 0;
 
@@ -519,7 +527,21 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
         });
     }
 
-    onSave(data);
+    savingRef.current = true;
+    setIsSaving(true);
+    try {
+      await onSave(data);
+    } catch (err) {
+      console.error('[SetLogModal] Failed to advance after saving set:', err);
+      crossPlatformAlert(
+        'Set saved locally',
+        'The set was recorded, but FitAI could not advance the workout. Please try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -988,20 +1010,22 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
             textStyle={styles.backButtonText}
             style={styles.backButton}
             accessibilityLabel="Cancel set log"
+            disabled={isSaving}
           />
           <GlassButton
             label={
               !selectedRpe
                 ? 'Pick RPE'
                 : setIndex + 1 >= totalSets
-                  ? 'Complete Workout'
+                  ? 'Complete Exercise'
                   : 'Save & Next →'
             }
-            onPress={() => selectedRpe && handleSave(selectedRpe)}
+            onPress={() => { if (selectedRpe) void handleSave(selectedRpe); }}
             variant="primary"
             style={styles.saveButton}
             accessibilityLabel="Save set"
-            disabled={!selectedRpe}
+            loading={isSaving}
+            disabled={!selectedRpe || isSaving}
           />
         </View>
       </ScrollView>
