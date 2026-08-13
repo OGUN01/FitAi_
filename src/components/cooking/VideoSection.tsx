@@ -14,6 +14,7 @@ import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors
 import { GlassCard } from "../ui/aurora";
 import { AnimatedPressable } from "../ui/aurora";
 import { AuroraSpinner } from "../ui/aurora";
+import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
 interface VideoSectionProps {
   cookingVideo: CookingVideo | null;
@@ -28,6 +29,32 @@ export default function VideoSection({
   videoError,
   onRetry,
 }: VideoSectionProps) {
+  const [isOpeningVideo, setIsOpeningVideo] = React.useState(false);
+  const openingVideoRef = React.useRef(false);
+
+  const openCookingVideo = React.useCallback(async () => {
+    if (!cookingVideo || openingVideoRef.current) return;
+    openingVideoRef.current = true;
+    setIsOpeningVideo(true);
+    const url = `https://www.youtube.com/watch?v=${cookingVideo.id}`;
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (!canOpen) {
+        throw new Error("No app is available to open the cooking video URL");
+      }
+      await Linking.openURL(url);
+    } catch (error) {
+      console.error("[VideoSection] Failed to open cooking video:", error);
+      crossPlatformAlert(
+        "Unable to Open Video",
+        "FitAI could not open YouTube on this device. Check your connection and try again.",
+      );
+    } finally {
+      openingVideoRef.current = false;
+      setIsOpeningVideo(false);
+    }
+  }, [cookingVideo]);
+
   if (isLoadingVideo) {
     return (
       <GlassCard padding="none" borderRadius="xl" style={styles.videoSection}>
@@ -52,11 +79,8 @@ export default function VideoSection({
         <View style={styles.videoContainer}>
           <AnimatedPressable
             style={styles.videoPreview}
-            onPress={() =>
-              Linking.openURL(
-                `https://www.youtube.com/watch?v=${cookingVideo.id}`,
-              )
-            }
+            onPress={openCookingVideo}
+            disabled={isOpeningVideo}
             scaleValue={0.98}
             springConfig="smooth"
             hapticType="light"
@@ -115,17 +139,15 @@ export default function VideoSection({
           </Text>
           <AnimatedPressable
             style={styles.watchVideoButton}
-            onPress={() =>
-              Linking.openURL(
-                `https://www.youtube.com/watch?v=${cookingVideo.id}`,
-              )
-            }
+            onPress={openCookingVideo}
+            disabled={isOpeningVideo}
             scaleValue={0.96}
             springConfig="smooth"
             hapticType="light"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel="Watch cooking tutorial on YouTube"
             accessibilityRole="button"
+            accessibilityState={{ disabled: isOpeningVideo }}
           >
             <Ionicons
               name="play-circle"

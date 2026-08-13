@@ -89,10 +89,6 @@ export default function StepsList({
                     index === currentStepIndex && styles.currentStepText,
                     completedSteps.has(index) && styles.completedStepText,
                   ]}
-                  numberOfLines={3}
-                  ellipsizeMode="tail"
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.85}
                 >
                   {step.instruction}
                 </Text>
@@ -140,9 +136,6 @@ export default function StepsList({
             <Text
               key={index}
               style={styles.proTipText}
-              numberOfLines={4}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
             >
               • {tip}
             </Text>
@@ -249,4 +242,3 @@ const styles = StyleSheet.create({
     marginBottom: rp(4),
   },
 });
-

@@ -85,9 +85,6 @@ export default function CurrentStepDisplay({
           </Text>
           <Text
             style={styles.stepTitle}
-            numberOfLines={4}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
           >
             {currentStep.instruction}
           </Text>
@@ -120,9 +117,6 @@ export default function CurrentStepDisplay({
             <Ionicons name="bulb-outline" size={rf(16)} color={colors.warning.DEFAULT} style={styles.tipIcon} />
             <Text
               style={styles.tipText}
-              numberOfLines={5}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
             >
               {currentStep.tips}
             </Text>

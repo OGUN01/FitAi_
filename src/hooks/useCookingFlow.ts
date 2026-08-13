@@ -5,8 +5,10 @@ import {
   cookingFlowGenerator,
   CookingFlow,
 } from "../utils/cookingFlowGenerator";
+import { useReducedMotion } from "../utils/accessibility/hooks";
 
 export function useCookingFlow(meal: DayMeal) {
+  const reducedMotion = useReducedMotion();
   const [cookingFlow, setCookingFlow] = useState<CookingFlow | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -42,7 +44,7 @@ export function useCookingFlow(meal: DayMeal) {
       (_x, y) => {
         scrollViewRef.current?.scrollTo({
           y: Math.max(0, y - 16),
-          animated: true,
+          animated: !reducedMotion,
         });
       },
       () => {
@@ -50,7 +52,7 @@ export function useCookingFlow(meal: DayMeal) {
         // the next step change will retry.
       },
     );
-  }, [currentStepIndex]);
+  }, [currentStepIndex, reducedMotion]);
 
   const markStepComplete = (stepIndex: number) => {
     setCompletedSteps((prev) => {

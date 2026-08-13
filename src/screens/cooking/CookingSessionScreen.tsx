@@ -20,7 +20,7 @@ import IngredientsSection from "../../components/cooking/IngredientsSection";
 import CurrentStepDisplay from "../../components/cooking/CurrentStepDisplay";
 import StepsList from "../../components/cooking/StepsList";
 import NavigationButtons from "../../components/cooking/NavigationButtons";
-import { colors } from "../../theme/aurora-tokens";
+import { colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp } from "../../utils/responsive";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { AuroraBackground } from "../../components/ui/aurora";
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 44,
     height: 44,
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.glass.background,
@@ -305,8 +305,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: rp(20),
-    paddingVertical: rp(16),
+    paddingHorizontal: rp(spacing.lg),
+    paddingVertical: rp(spacing.md),
     backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: colors.glass.border,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   headerContent: {
     flex: 1,
     minWidth: 0,
-    marginLeft: rp(16),
+    marginLeft: rp(spacing.md),
   },
   mealName: {
     fontSize: rf(20),
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   mealMeta: {
     fontSize: rf(14),
     color: colors.text.secondary,
-    marginTop: 2,
+    marginTop: rp(spacing.xxs),
   },
   content: {
     flex: 1,
