@@ -187,6 +187,14 @@ const resolveExerciseMeta = (exerciseId: string | undefined): ResolvedExerciseMe
     };
   }
 
+  // Neither lookup resolved this exerciseId — it silently contributes zero
+  // sets to every muscle-heatmap bucket, which reads as "this muscle group
+  // wasn't worked" even when the plan legitimately targeted it. Surfacing
+  // this makes an AI-plan-generation ID mismatch debuggable instead of
+  // showing up only as an unexplained gap in the heatmap.
+  console.warn(
+    `[WorkoutDetailScreen] resolveExerciseMeta: exerciseId "${exerciseId}" not found in exercise DB or curated list — contributing zero muscle-group/equipment data for this exercise.`,
+  );
   return empty;
 };
 
@@ -351,7 +359,11 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
               : [colors.primary.DEFAULT, colors.primary.light],
         unit: ' sets',
       };
-    });
+      // Highest-worked muscles first — HEATMAP_GROUPS' fixed canonical order
+      // otherwise left e.g. a 0-set "Chest" chip ahead of the actually-loaded
+      // muscles for this workout, in a horizontal dialer where later chips
+      // may need scrolling to reach.
+    }).sort((a, b) => b.value - a.value);
   }, [stats.muscleCounts]);
 
   // ── Section partitioning ──
