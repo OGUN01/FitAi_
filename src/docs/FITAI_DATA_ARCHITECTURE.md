@@ -14,6 +14,7 @@
 - [G. Resolved Issues Log](#g-resolved-issues-log)
 - [H. Remaining Technical Debt](#h-remaining-technical-debt)
 - [I. Android Wearable / Health Connect Subsystem](#i-android-wearable--health-connect-subsystem)
+- [J. Custom Diet Plan, Meal Templates & Goal Recalculation](#j-custom-diet-plan-meal-templates--goal-recalculation)
 
 ---
 
@@ -1515,3 +1516,76 @@ Declared in `android/app/src/main/AndroidManifest.xml` (managed via the `./plugi
 - **`minSdkVersion` 26**, `compileSdkVersion` 35, `targetSdkVersion` 34 (set both in `app.config.js` android block and the `expo-build-properties` plugin).
 
 See `src/docs/PLAY_STORE_HEALTH_CONNECT_CHECKLIST.md` for the full Play Store compliance checklist.
+
+---
+
+## J. Custom Diet Plan, Meal Templates & Goal Recalculation
+
+The "Custom Diet Plan, Meal Templates & Goal Recalculation Engine" feature (Phases 1–6) lets a user hand-build a weekly meal plan meal-by-meal instead of (or alongside) the AI-generated one, reuse saved meals as templates, and see a live validation/projection of that plan against their goal. This section is the data-flow reference for it.
+
+### J.1 Dual-Source Plan Architecture (`nutritionStore`)
+
+The store holds **two** weekly plans and a selector that switches which one drives the Diet Screen's kcal/macro goals:
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `weeklyMealPlan` | `WeeklyMealPlan \| null` | The AI-generated plan (§F.1 pipeline). The original source. |
+| `customWeeklyMealPlan` | `WeeklyMealPlan \| null` | The user's hand-built plan from the Meal Builder. |
+| `activeDietSource` | `'ai' \| 'custom'` | Which plan is "live" — drives the Diet Screen totals. Default `'ai'`. |
+| `getActiveWeeklyMealPlan()` | getter | Returns `customWeeklyMealPlan` when `activeDietSource==='custom'`, else `weeklyMealPlan`. **The Diet Screen must read through this getter, not the raw fields**, so toggling the source atomically swaps which plan's daily totals are shown. |
+
+**SSOT rule (Principle 1):** `activeDietSource` is the single switch. `DietScreen`'s kcal goal derives from `getActiveWeeklyMealPlan()`'s daily totals; it must never hold a parallel "current plan" copy. Toggling back to `'ai'` restores the AI plan's totals with no re-generation.
+
+**Persistence:** Both plans persist to the **same** `weekly_meal_plans` Supabase table, distinguished by `plan_source` (`'ai'` | `'custom'`). Custom saves (line ~506) upsert the row with `plan_source: 'custom'`, `is_active: true`; a pre-save lookup (`eq(plan_source, 'custom')`, most-recent) reuses the existing custom row so successive edits update one row instead of stacking duplicates. Writes go through the offline queue (`offlineService.queueAction`) — the store is the runtime SSOT, Supabase is the persistence layer (Principle 6). Guests never reach the write path (`getCurrentUserId` guard). `loadCustomWeeklyMealPlan(userId)` reads back the most-recent `plan_source='custom'` row on app start.
+
+### J.2 Stores
+
+| Store | File | Role | Persistence |
+|-------|------|------|-------------|
+| `nutritionStore` | `src/stores/nutritionStore.ts` | Holds the two plans + `activeDietSource` selector; persists custom plans to `weekly_meal_plans`. | Supabase `weekly_meal_plans` (`plan_source='custom'`) via offline queue. |
+| `dietBuilderStore` | `src/stores/dietBuilderStore.ts` | **Transient** builder scratch state: the `draft` (week of days→meals→items), `pickerOpen`/`pickerContext`, validation warnings, and the goal projection. Not persisted on its own — `saveAndActivate()` writes the draft into `nutritionStore.customWeeklyMealPlan` and flips `activeDietSource='custom'`. | None directly; the committed plan is what persists. |
+| `savedMealsStore` | `src/stores/savedMealsStore.ts` | User-saved meals for reuse (Log Meal modal + Meal Builder "My Saved Meals" template source). | AsyncStorage (`fitai-saved-meals-storage`, debounced) **and** Supabase `saved_meals` table (fire-and-forget via offline queue; store stays runtime SSOT). Guests skip the Supabase path. |
+
+**`dietBuilderStore.addFoodItem` / `updateFoodItem`** accept any well-formed `MealItem` with **zero validation on `food` identity** — this is deliberate, so the same code path serves foods from any source (§J.3) including hand-typed ones. Validation is advisory, not a hard gate: the "Save & Activate" footer stays enabled regardless; `MacroValidationBanner`/`NutritionInsightsPanel` surface warnings from the projection but never block the save. `saveAndActivate()` calls `save()` then `setActiveDietSource('custom')` — it does not auto-navigate; the caller (`MealBuilderScreen.handleSaveAndActivate`) returns to the Diet Screen.
+
+### J.3 Food Search Sources (Meal Builder `FoodPickerSheet`)
+
+When adding a food to a custom-plan meal, `FoodPickerSheet.runSearch` merges **three** searchable sources, then a universal manual fallback. Merge order = curated first, then generic-Indian, then branded; dedupe by lowercased name.
+
+| Source | `FoodSearchHit.source` | Where | Scope | Lookup |
+|--------|------------------------|-------|-------|--------|
+| **Indian cooked-dish DB** | `'indian'` | `src/data/indianFoodDatabase.ts` | 30 hand-curated cooked dishes (biryani, dal makhani, dosa…) | In-memory key→entry; `name.includes(q)` |
+| **IFCT 2017** | `'ifct'` | Supabase `ifct_foods` table | 542 ICMR/NIN generic Indian foods (grains, pulses, seeds, nuts, dairy, fruit, veg) | `ilike('name', %q%)`, `.limit(20)`. Public-read RLS (`USING (TRUE)`) — works for guests too. |
+| **Open Food Facts (branded)** | `'sqlite'` | On-device SQLite (barcode-keyed) | Branded packaged products | Local FTS name search |
+
+**IFCT (`ifct_foods`) — populated + wired in Phase 6.** Schema: `food_code` (TEXT PK), `name`, `local_names`, `energy_kcal_100g`, `protein_100g`, `carbohydrate_100g`, `fat_100g`, `fiber_100g`, `sugar_100g`, `sodium_mg_100g` (already mg — matches `Macronutrients.sodium`'s convention, no conversion), … GIN FTS index on `name`+`local_names`. Imported once via `scripts/import-ifct.mjs` (wraps the `ifct2017` npm package: `compositions.load()` → `compositions('')` returns all 542 rows; INFOODS tagnames; `enerc` kJ ÷ 4.184 → kcal, `na`/`ca`/`fe`/`vitc` × 1000 → mg). **Match strategy:** PREFIX (`${q}%`) + WORD-BOUNDARY (`% ${q}%`) in parallel, **not** a bare substring — a bare `%${q}%` collided ("oat" matched "Goat"). "Goat" matches neither (no prefix, no leading space) and is correctly excluded. **Known gap:** IFCT 2017 lacks late-arriving imports like "chia seeds" → correctly falls to the P0 manual path.
+
+**`fromIFCT(row)` mapper** (in `FoodPickerSheet.tsx`) builds a `FoodSearchHit` with `key: "ifct:<food_code>"` and `per100g` from the `_100g` columns (null → 0, sugar/sodium → `undefined` when null). The IFCT branch is wrapped in try/catch and degrades gracefully — an offline/failed query just returns the other two sources, never a crash. Supabase errors are logged via `console.error` (Principle 5).
+
+### J.4 Custom (Manual) Food Entry — the universal fallback (`buildMealItemFromMacros`)
+
+For any food no database contains (chia seeds, boiled water, a homemade recipe), `FoodPickerSheet` offers **"Add custom food"** — a persistent footer row once `query.length ≥ 2`, plus a CTA in the zero-results empty state that pre-fills the name with the typed query. The inline form (Name required; Grams default 100; Protein/Carbs/Fat/Fiber default 0) mirrors `LogMealModal`'s proven manual-entry pattern rather than inventing a new one.
+
+**Shared helper — `buildMealItemFromMacros(input)`** (`src/services/foodPickerService.ts`):
+- Input: `{ name, grams, protein, carbs, fat, fiber }` (absolute numbers for the given quantity — **not** a per-100g density).
+- Calories via **Atwater**: `caloriesFromMacros = protein×4 + carbs×4 + fat×9` (`src/utils/nutritionRecalc.ts`). This is why "boiled water" (all macros 0) lands at **0 kcal with no special-casing** — the universal fallback correctly handles zero-calorie items.
+- Fabricates a minimal `Food` (`id: "custom_<name>_<ts>"`, `category: "proteins"`, `servingSize: grams`, `servingUnit: "g"`, `verified: false`) and returns a `MealItem` with `quantity: grams`, `unit: "g"`.
+- **Shared by** `FoodPickerSheet`'s custom form **and** `savedMealsStore.ingredientToMealItem` (which parses its string fields and delegates here) — so the `Food`-object fabrication lives in one place (Search Before Building, Principle 3).
+- Routed through the **same** `commitMealItem` → `addFoodItem`/`updateFoodItem` path as any searched hit — no new store method. Default unit `"g"` matches `getDefaultUnit`'s fallback, so `FoodRow`'s quantity editor works unchanged.
+
+A hand-typed food stays **local to the plan/meal** it's added to — it is not written to any shared/crowd-sourced table. Reuse later is via "Save as template" into `savedMealsStore` (already exists), not via the food search.
+
+### J.5 Goal Recalculation / Validation (`customDietProjection`)
+
+`src/services/validation/customDietProjection.ts` projects the draft custom plan against the user's TDEE/goal and emits advisory warnings the builder surfaces live (not at save):
+
+- **`GOAL_DIRECTION_CONFLICT`** — the plan's daily average pushes *against* the user's goal direction (e.g. surplus calories during a cut, or deficit during a bulk). **No projected date is rendered** for this code (see `MacroValidationBanner` / `NutritionInsightsPanel`) — a direction conflict is a "stop and reconsider" signal, not a "you'll reach your goal on day N" one.
+- Other codes carry a projected goal-reach date.
+
+Warnings are advisory only — `saveAndActivate()` is never blocked by them (§J.2).
+
+### J.6 Type Contracts
+
+- **`MealItem`** (`src/types/diet.ts`): `{ foodId, food: Food (required), name?, quantity, unit?, calories, macros }`.
+- **`FoodSearchHit`** (`src/services/foodPickerService.ts` — single source for food-picker types): `{ key, name, subtitle?, per100g: { calories, protein, carbs, fat, fiber, sugar?, sodium? }, source, barcode?, … }`. `source` union: `'sqlite' | 'indian' | 'ifct' | 'custom'`. (Previously lived in a `FoodSearchSheet.tsx` component that was built but imported nowhere — that orphan was deleted once the type was relocated.)
+- Unit resolution: `getDefaultUnit`/`convertToGrams` (`src/services/foodUnitConversions.ts`), with a cup override for milk (so IFCT "Milk, whole, Cow" defaults to "1 cup"), and tbsp/cup overrides for chia/flax/oats (measured by spoon, not grams).

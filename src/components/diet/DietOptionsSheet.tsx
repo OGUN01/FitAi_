@@ -7,7 +7,7 @@
  * optionsOverlay/optionsSheet Modal in DietScreen.tsx (single-source-of-truth
  * violation) and used animationType="fade" despite being bottom-anchored, so
  * they faded in place instead of sliding up like every other sheet in the
- * app (WaterIntakeModal, FoodSearchSheet, ScanResultModal). Routing all three
+ * app (WaterIntakeModal, FoodPickerSheet, ScanResultModal). Routing all three
  * through BottomSheet fixes both issues in one place.
  */
 

@@ -104,7 +104,7 @@ class SqliteFoodService {
 
   /**
    * Async readiness guard — resolves once the database is in the 'ready'
-   * state. Used by callers (e.g. FoodSearchSheet) that need to wait for the
+   * state. Used by callers (e.g. FoodPickerSheet) that need to wait for the
    * DB before issuing queries. If the DB is already ready, resolves
    * immediately. Resolves `false` (rather than hanging forever) if the
    * state lands in 'error', or after `timeoutMs` if the download stalls

@@ -23,9 +23,8 @@ interface DateStepperProps {
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // 44px accessibility touch-target floor, matching the sibling pattern in
-// FoodSearchSheet.tsx / MealsTimeline.tsx (Math.max(rw(44), 44)) so these
-// controls never shrink below the minimum tap size on small-width devices
-// (widthScale < 1).
+// MealsTimeline.tsx (Math.max(rw(44), 44)) so these controls never shrink
+// below the minimum tap size on small-width devices (widthScale < 1).
 const TOUCH_TARGET = Math.max(rw(44), 44);
 const TOUCH_TARGET_RADIUS = TOUCH_TARGET / 2;
 
