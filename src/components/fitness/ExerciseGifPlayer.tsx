@@ -210,8 +210,40 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   // expo-av's onLoad/onPlaybackStatusUpdate report an AVPlaybackStatus, not
   // a bare event — bridge to the same isLoading/hasError state the GIF path
   // already uses so both media types share one loading/error UI.
+  //
+  // CONFIRMED ROOT CAUSE (read from node_modules/expo-av source, not
+  // guessed): on web, expo-av's <Video onLoad> relay is broken. In
+  // ExponentVideo.web.tsx, `onLoadedData` (bound to the DOM `loadeddata`
+  // event) forwards the whole React SyntheticEvent up through
+  // `props.onLoad(event)`; Video.tsx's `_nativeOnLoad` then does
+  // `this.props.onLoad(event.nativeEvent)`, expecting the native-bridge
+  // shape `{ nativeEvent: AVPlaybackStatus }`. On web that `event` is
+  // already a SyntheticEvent, so `.nativeEvent` is the raw browser `Event`
+  // object, not an `AVPlaybackStatus` — `status.isLoaded` is therefore
+  // always `undefined` on web and this handler's `isLoading=false` branch
+  // never runs, no matter how long the video has actually been playable
+  // (confirmed live: readyState 4 / HAVE_ENOUGH_DATA, spinner stuck 3.5+
+  // minutes). This isn't a timing race, it's a permanent no-op on web.
+  //
+  // `onPlaybackStatusUpdate` (wired below, in addition to `onLoad`) does
+  // NOT go through that broken relay — ExponentVideo.web.tsx's
+  // `onStatusUpdate` builds the status itself by calling
+  // `ExponentAV.getStatusForVideo(videoElement)`, which reads the real
+  // `<video>` DOM element (ExponentAV.web.ts `getStatusFromMedia`). It also
+  // fires repeatedly (loadstart/loadedmetadata/canplay/timeupdate/etc.), so
+  // it can't be missed the way a single mistimed one-shot event could be.
+  // Its one quirk: `isLoaded` is reported `true` as soon as the `<video>`
+  // element merely exists, even at readyState 0 — before any data has
+  // loaded — so gate on `durationMillis` being a real positive number too;
+  // duration only becomes known once the browser has loaded metadata
+  // (readyState >= 1). Where `durationMillis` isn't present at all (per
+  // expo-av's own docs, sometimes true for native iOS), fall back to the
+  // original `isLoaded`-only check so native playback is unaffected.
   const handleVideoLoad = (status: AVPlaybackStatus) => {
-    if (status.isLoaded) {
+    if (
+      status.isLoaded &&
+      (!("durationMillis" in status) || (status.durationMillis ?? 0) > 0)
+    ) {
       setIsLoading(false);
       setHasError(false);
     }
@@ -296,6 +328,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
                 useNativeControls={false}
                 shouldPlay={isPlaying}
                 onLoad={handleVideoLoad}
+                onPlaybackStatusUpdate={handleVideoLoad}
                 onError={handleVideoError}
               />
             ) : (
@@ -503,6 +536,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
                   useNativeControls={false}
                   shouldPlay={isPlaying}
                   onLoad={handleVideoLoad}
+                  onPlaybackStatusUpdate={handleVideoLoad}
                   onError={handleVideoError}
                 />
               ) : (
