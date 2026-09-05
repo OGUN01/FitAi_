@@ -13,6 +13,8 @@
  * Bodyweight and time-based exercises return [] — no load to ramp.
  */
 
+import { deriveExerciseClassification } from '../utils/resolveExerciseMeta';
+
 export type ExerciseKind = 'upper' | 'lower' | 'bodyweight' | 'time_based';
 
 export interface WarmupSet {
@@ -86,31 +88,20 @@ export function generateWarmupSets(
 }
 
 /**
- * Classify an exercise as upper/lower/bodyweight/time_based
- * for warm-up protocol selection.
+ * Classify an exercise as upper/lower/bodyweight/time_based for warm-up
+ * protocol selection.
  *
- * Uses exercise ID substring matching — consistent with progressionService
- * which uses the same approach for muscle group detection.
+ * Delegates to deriveExerciseClassification (resolveExerciseMeta.ts), the
+ * single source for this classification — it resolves both ExerciseDB hash
+ * IDs (AI-plan exercises) and legacy curated snake_case IDs correctly.
+ * Precedence: time_based > bodyweight > lower > upper, matching the previous
+ * keyword-based behavior (a bodyweight time-based hold like a plank warms up
+ * as time_based, not bodyweight).
  */
-const LOWER_BODY_KEYWORDS = [
-  'squat', 'deadlift', 'leg_press', 'lunge', 'leg_curl', 'leg_extension',
-  'calf_raise', 'hip_thrust', 'romanian', 'sumo', 'goblet_squat', 'step_up',
-  'glute_bridge', 'reverse_lunge', 'split_squat', 'bulgarian',
-];
-
-const BODYWEIGHT_KEYWORDS = [
-  'push_up', 'pull_up', 'chin_up', 'dip', 'pike_push_up', 'mountain_climbers',
-  'jumping_jacks', 'burpee', 'bodyweight_squat',
-];
-
-const TIME_BASED_KEYWORDS = [
-  'plank', 'wall_sit', 'dead_hang', 'hollow_body', 'l_sit', 'superman',
-];
-
 export function classifyExercise(exerciseId: string): ExerciseKind {
-  const id = exerciseId.toLowerCase();
-  if (TIME_BASED_KEYWORDS.some((k) => id.includes(k))) return 'time_based';
-  if (BODYWEIGHT_KEYWORDS.some((k) => id.includes(k))) return 'bodyweight';
-  if (LOWER_BODY_KEYWORDS.some((k) => id.includes(k))) return 'lower';
+  const c = deriveExerciseClassification(exerciseId);
+  if (c.isTimeBased) return 'time_based';
+  if (c.isBodyweight) return 'bodyweight';
+  if (c.isLowerBody) return 'lower';
   return 'upper';
 }

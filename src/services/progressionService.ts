@@ -127,6 +127,18 @@ class ProgressionService {
    * @param isBodyweight       - Override bodyweight detection
    * @param isMuscleGroupLower - Override lower body detection
    * @param lastRPE            - RPE of last set of last session (null = treat as 2)
+   * @param isTimeBased        - Override time-based detection
+   *
+   * NOTE ON OVERRIDES: the isBodyweight/isMuscleGroupLower/isTimeBased params
+   * exist because this service's own keyword-based classifiers
+   * (isBodyweightExercise/getMuscleGroup/isTimeBased below) only recognize
+   * the small legacy snake_case curated ID set (e.g. "push_up"). Most plans
+   * use ExerciseDB hash IDs (e.g. "VPPtusI") which never match those
+   * keywords and would silently fall through to "upper body, weighted,
+   * rep-based" defaults. Callers working with a real exerciseId MUST resolve
+   * these three flags via deriveExerciseClassification (src/utils/
+   * resolveExerciseMeta.ts) and pass them here — never rely on the
+   * no-override fallback for anything but a known curated ID.
    */
   suggestNextWeight(
     exerciseId: string,
@@ -134,7 +146,8 @@ class ProgressionService {
     repRange: [number, number],
     isBodyweight?: boolean,
     isMuscleGroupLower?: boolean,
-    lastRPE?: 1 | 2 | 3 | null
+    lastRPE?: 1 | 2 | 3 | null,
+    isTimeBased?: boolean
   ): ProgressionResult {
     if (lastSets.length === 0) {
       return {
@@ -153,7 +166,7 @@ class ProgressionService {
       };
     }
 
-    if (this.isTimeBased(exerciseId)) {
+    if (isTimeBased ?? this.isTimeBased(exerciseId)) {
       if (!lastSets || lastSets.length === 0) {
         return {
           suggestedWeightKg: 0,

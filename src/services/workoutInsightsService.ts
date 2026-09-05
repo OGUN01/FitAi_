@@ -8,8 +8,9 @@
  * — same SSOT as workout completion (CLAUDE.md §9: calories SSOT).
  *
  * Muscle coverage + push/pull/recovery are computed from planned exercises'
- * `muscleGroups` (resolved via CURATED_EXERCISES — the v1 exercise library
- * SSOT per the redesign plan §1.4).
+ * `muscleGroups` (resolved via `resolveExerciseMeta` — DB → curated, so AI-plan
+ * exercise ids outside the small legacy curated list still contribute muscle
+ * coverage instead of silently zeroing).
  */
 import type { WeeklyWorkoutPlan, DayWorkout } from "../types/ai";
 import type {
@@ -18,7 +19,7 @@ import type {
   ValidationWarning,
 } from "../types/workout";
 import { calculateWorkoutCalories } from "./calorieCalculator";
-import { CURATED_EXERCISES } from "../data/curatedExercises";
+import { resolveExerciseMeta } from "../utils/resolveExerciseMeta";
 
 // ----------------------------------------------------------------------------
 // CONSTANTS — muscle group classification for push/pull/recovery
@@ -48,8 +49,12 @@ const MIN_WEEKLY_FREQUENCY = 2;
 const PUSH_MUSCLES = new Set(["chest", "triceps", "shoulders"]);
 const PULL_MUSCLES = new Set(["back", "biceps", "lower_back"]);
 
-/** Max recoverable weekly sets per muscle group (rough heuristic). */
-const MAX_RECOVERABLE_SETS: Record<string, number> = {
+/** Max recoverable weekly sets per muscle group (rough heuristic). Exported
+ * as the MRV baseline for volumeLandmarksService (Workout Engine v2 Phase 5)
+ * — kept as ONE table rather than two so the app's recovery-score math and
+ * its volume-landmark guidance always agree on what "max recoverable" means
+ * for a given muscle. */
+export const MAX_RECOVERABLE_SETS: Record<string, number> = {
   chest: 20,
   back: 22,
   shoulders: 16,
@@ -167,8 +172,11 @@ export function computeWeeklyInsights(
 // ----------------------------------------------------------------------------
 
 function getMuscleGroupsForExercise(exerciseId: string): string[] {
-  const curated = CURATED_EXERCISES.find((c) => c.id === exerciseId);
-  return curated?.muscleGroups ?? [];
+  // resolveExerciseMeta checks the real exercise DB first (AI-plan ids like
+  // "aXcUyKb"), then falls back to the curated list (legacy builder ids like
+  // "push_up"). The previous CURATED_EXERCISES-only lookup silently contributed
+  // zero muscle coverage for any AI-plan exercise outside that ~70-entry list.
+  return resolveExerciseMeta(exerciseId).muscleGroups;
 }
 
 /** Parse reps range "8-12" → average (10). Single value → itself. */
