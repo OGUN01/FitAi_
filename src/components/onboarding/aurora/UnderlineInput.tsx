@@ -41,6 +41,7 @@ export const UnderlineInput: React.FC<UnderlineInputProps> = ({
     <View style={[styles.container, containerStyle]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
+        accessibilityLabel={label}
         {...textInputProps}
         testID={testID}
         onFocus={(e) => {

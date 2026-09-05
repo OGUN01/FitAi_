@@ -37,6 +37,10 @@ import { RangeSlider } from "../../onboarding/aurora/RangeSlider";
 import { BodyCompositionCalculations } from "../../../utils/healthCalculations";
 import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 import { BodyAnalysisData, PersonalInfoData } from "../../../types/onboarding";
+import {
+  TARGET_TIMELINE_WEEKS_MIN,
+  TARGET_TIMELINE_WEEKS_MAX,
+} from "../../../screens/onboarding/tabs/BodyAnalysisConstants";
 
 interface GoalVisualizationSectionProps {
   formData: BodyAnalysisData;
@@ -50,8 +54,11 @@ interface GoalVisualizationSectionProps {
 
 const WEIGHT_MIN = 30;
 const WEIGHT_MAX = 300;
-const WEEKS_MIN = 4;
-const WEEKS_MAX = 104;
+// Sourced from the shared constant (mirrors the live DB CHECK constraint) —
+// see BodyAnalysisConstants.ts for why this must never drift between call
+// sites again.
+const WEEKS_MIN = TARGET_TIMELINE_WEEKS_MIN;
+const WEEKS_MAX = TARGET_TIMELINE_WEEKS_MAX;
 
 const GOAL_RING_SIZE = 232;
 const GOAL_RING_STROKE = 12;
@@ -185,6 +192,38 @@ export const GoalVisualizationSection: React.FC<
     }),
   ).current;
 
+  // VoiceOver/TalkBack: swipe-up/down on an "adjustable" element fires these
+  // actions instead of the pan gesture (screen-reader users can't drag the
+  // ring). Nudge by the same 0.5kg step the drag gesture snaps to.
+  const handleRingAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      const delta = event.nativeEvent.actionName === "increment" ? 0.5 : -0.5;
+      const next = Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, target + delta));
+      handleTargetChange(next);
+    },
+    [target, handleTargetChange],
+  );
+
+  // Web keyboard support: `accessibilityRole="adjustable"` maps to `role=
+  // "slider"` in the DOM, but an ARIA role alone does not make an element
+  // keyboard-focusable/-operable — needs an explicit `tabIndex` + a real key
+  // handler (same gap already found and fixed once in RangeSlider.tsx).
+  // Without this, this ring is pointer/touch-drag only on web.
+  const handleRingKeyDown = useCallback(
+    (event: { key: string; preventDefault?: () => void }) => {
+      let delta = 0;
+      if (event.key === "ArrowRight" || event.key === "ArrowUp") delta = 0.5;
+      else if (event.key === "ArrowLeft" || event.key === "ArrowDown") delta = -0.5;
+      else if (event.key === "Home") delta = WEIGHT_MIN - target;
+      else if (event.key === "End") delta = WEIGHT_MAX - target;
+      else return;
+      event.preventDefault?.();
+      const next = Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, target + delta));
+      handleTargetChange(next);
+    },
+    [target, handleTargetChange],
+  );
+
   const hasGoal = current > 0 && target > 0;
   const goalFraction =
     target > 0
@@ -214,6 +253,16 @@ export const GoalVisualizationSection: React.FC<
             now: Math.round(target),
             text: `${dispRound(target)} ${unitLabel}`,
           }}
+          accessibilityActions={[
+            { name: "increment", label: "Increase" },
+            { name: "decrement", label: "Decrease" },
+          ]}
+          onAccessibilityAction={handleRingAccessibilityAction}
+          tabIndex={0}
+          // @ts-expect-error — `onKeyDown` is a react-native-web-only prop
+          // (forwarded straight to the DOM node), not present in React
+          // Native's core `ViewProps` typings; harmlessly ignored on native.
+          onKeyDown={handleRingKeyDown}
           {...ringPanResponder.panHandlers}
         >
           <StrokeRing

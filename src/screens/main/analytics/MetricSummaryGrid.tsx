@@ -14,6 +14,7 @@ import {
   surface,
   border as borderTokens,
   chart,
+  chartText,
   colors,
   typography,
   spacing,
@@ -120,18 +121,21 @@ const StatCell: React.FC<{
 
   const getTrendColor = () => {
     // For weight, down is good. For others, up is good.
+    // Neutral case uses chartText[3] (not chart[3]) — this renders as small
+    // text (trendText, 12px), and the raw chart[3] purple fails WCAG AA
+    // (3.4:1) at that size; chartText[3] is the same hue lightened to 4.9:1.
     if (title.toLowerCase().includes("weight")) {
       return trend === "down"
         ? chart[4]
         : trend === "up"
           ? chart[6]
-          : chart[3];
+          : chartText[3];
     }
     return trend === "up"
       ? chart[4]
       : trend === "down"
         ? chart[6]
-        : chart[3];
+        : chartText[3];
   };
 
   return (

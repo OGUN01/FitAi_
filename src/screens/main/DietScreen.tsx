@@ -907,7 +907,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             {foodsLoading ? (
               <DashboardSkeleton showHeader={false} cardCount={3} listItemCount={3} />
             ) : foodsError ? (
-              <View style={styles.errorCard}>
+              <View
+                style={styles.errorCard}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+              >
                 <Text style={styles.errorText}>
                   {typeof foodsError === 'string'
                     ? foodsError
@@ -924,7 +928,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             {!foodsLoading ? (
               <>
                 {!canAccessMealFeatures && (
-                  <View style={styles.errorCard}>
+                  <View
+                    style={styles.errorCard}
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                  >
                     <Text style={styles.errorText}>Please sign in to track your nutrition</Text>
                   </View>
                 )}
@@ -1473,6 +1481,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
     backgroundColor: colors.primary,
+    // Real height was ~35px (padding alone) — under the 44px WCAG
+    // touch-target floor. This is a standalone button (no tight adjacent
+    // siblings), so a real minHeight is safer here than hitSlop.
+    minHeight: 44,
+    justifyContent: 'center',
   },
   customPlanEmptyButtonText: {
     fontSize: fontSize.sm,

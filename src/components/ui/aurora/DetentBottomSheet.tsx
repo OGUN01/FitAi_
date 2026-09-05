@@ -194,6 +194,33 @@ export const DetentBottomSheet: React.FC<DetentBottomSheetProps> = ({
       },
     });
 
+  // Web keyboard support: `accessibilityRole="adjustable"` maps to `role=
+  // "slider"` in the DOM, but an ARIA role alone does not make an element
+  // keyboard-focusable/-operable — needs an explicit `tabIndex` + a real key
+  // handler (same gap already found and fixed once in RangeSlider.tsx). The
+  // grabber was previously wired ONLY to `PanGestureHandler` (pointer-only),
+  // so it was completely unreachable/inoperable via keyboard on web.
+  const handleGrabberKeyDown = useCallback(
+    (event: { key: string; preventDefault?: () => void }) => {
+      let targetIndex: number | null = null;
+      if (event.key === "ArrowUp" || event.key === "ArrowRight") {
+        targetIndex = currentSnapIndex.value + 1;
+      } else if (event.key === "ArrowDown" || event.key === "ArrowLeft") {
+        targetIndex = currentSnapIndex.value - 1;
+      } else if (event.key === "Home") {
+        targetIndex = 0;
+      } else if (event.key === "End") {
+        targetIndex = sortedPoints.length - 1;
+      } else {
+        return;
+      }
+      event.preventDefault?.();
+      haptics.selection();
+      settleToSnap(targetIndex);
+    },
+    [currentSnapIndex, sortedPoints.length, settleToSnap],
+  );
+
   const sheetAnimatedStyle = useAnimatedStyle(() => {
     // The sheet's height animates to the active detent; translateY offsets it
     // during drag. We express the sheet wrapper height directly.
@@ -246,6 +273,17 @@ export const DetentBottomSheet: React.FC<DetentBottomSheetProps> = ({
           borderRadius="xxl"
           style={styles.sheetSurface}
           contentStyle={styles.sheetContent}
+          // The wrapping Animated.View above sets an explicit numeric
+          // `height` from the active snap point (sheetAnimatedStyle), so
+          // there IS a definite height one level up — safe to opt into
+          // GlassView's Android-fallback flex-fill instead of its
+          // content-sized default. Without this, sheetContent's flex:1 had
+          // no definite parent to resolve against (GlassView's fallback
+          // wrapper sized to content), collapsing the whole sheet body —
+          // including LogMealModal's form — to zero height while staying
+          // focusable (a TextInput can take keyboard focus at zero size),
+          // which is exactly what made "Log Meal" appear blank.
+          fillHeight
         >
           {/* Drag handle region (pan-driven detents) */}
           <PanGestureHandler onGestureEvent={gestureHandler}>
@@ -253,6 +291,22 @@ export const DetentBottomSheet: React.FC<DetentBottomSheetProps> = ({
               accessibilityRole="adjustable"
               accessibilityLabel="Sheet detent"
               accessibilityHint="Drag up or down to change sheet height"
+              accessibilityActions={[
+                { name: "increment", label: "Expand" },
+                { name: "decrement", label: "Collapse" },
+              ]}
+              onAccessibilityAction={(event) =>
+                settleToSnap(
+                  currentSnapIndex.value +
+                    (event.nativeEvent.actionName === "increment" ? 1 : -1),
+                )
+              }
+              tabIndex={0}
+              // @ts-expect-error — `onKeyDown` is a react-native-web-only prop
+              // (forwarded straight to the DOM node), not present in React
+              // Native's core `ViewProps` typings; harmlessly ignored on
+              // native.
+              onKeyDown={handleGrabberKeyDown}
             >
               <Animated.View style={[styles.grabberRow, grabberAnimatedStyle]}>
                 <View style={styles.grabber} />

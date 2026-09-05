@@ -125,8 +125,12 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
       ]}
       style={styles.pressable}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: isDisabled }}
+      accessibilityLabel={
+        loading
+          ? `${accessibilityLabel ?? label}, loading`
+          : (accessibilityLabel ?? label)
+      }
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       testID={testID}
     >
       <View style={[styles.fill, { backgroundColor: isDisabled ? border.subtle : fill }]}>

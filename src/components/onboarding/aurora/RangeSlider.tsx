@@ -210,9 +210,24 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
 
   return (
     <View style={[styles.container, style]} testID={testID}>
+      {/* touchArea is the REAL interactive/measured element (44px min
+          height) — the visual track inside it is a deliberately thin 4px
+          line, and the thumb is purely decorative (no touch handler of its
+          own). `hitSlop` was tried here first but confirmed INERT on web:
+          react-native-web's `View` only forwards props in its own
+          allow-list (`forwardPropsList` in
+          node_modules/react-native-web/dist/exports/View/index.js), which
+          does not include `hitSlop` — it's silently dropped, and
+          `Pressable` doesn't intercept it either (spreads straight through
+          to `View`). Confirmed empirically too: `elementFromPoint` just
+          outside the visual box (but inside the claimed hitSlop zone)
+          returned nothing. A REAL enlarged box is the only thing that
+          actually expands the hit-testable region on web; native RN's
+          hitSlop still works, so this fix is web-motivated but harmless on
+          native (just a taller invisible touch layer). */}
       <View
         ref={trackRef}
-        style={styles.track}
+        style={styles.touchArea}
         onLayout={onLayout}
         {...panResponder.panHandlers}
         accessibilityRole="adjustable"
@@ -234,18 +249,20 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
         // Native's core `ViewProps` typings; harmlessly ignored on native.
         onKeyDown={handleKeyDown}
       >
-        <Animated.View style={[styles.fill, fillStyle, { backgroundColor: accentColor }]} />
-        <Animated.View style={[styles.thumbWrap, thumbStyle]}>
-          <View style={styles.thumb} />
-          {showValue && (
-            <View style={styles.valueBubble}>
-              <Animated.Text style={styles.valueText}>
-                {value}
-                {unit ? ` ${unit}` : ""}
-              </Animated.Text>
-            </View>
-          )}
-        </Animated.View>
+        <View style={styles.track}>
+          <Animated.View style={[styles.fill, fillStyle, { backgroundColor: accentColor }]} />
+          <Animated.View style={[styles.thumbWrap, thumbStyle]}>
+            <View style={styles.thumb} />
+            {showValue && (
+              <View style={styles.valueBubble}>
+                <Animated.Text style={styles.valueText}>
+                  {value}
+                  {unit ? ` ${unit}` : ""}
+                </Animated.Text>
+              </View>
+            )}
+          </Animated.View>
+        </View>
       </View>
     </View>
   );
@@ -255,6 +272,13 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     paddingVertical: spacing.md,
+  },
+  // Real (not hitSlop) 44px-minimum interactive layer — see the comment
+  // above its usage for why hitSlop doesn't work here on web.
+  touchArea: {
+    width: "100%",
+    minHeight: 44,
+    justifyContent: "center",
   },
   track: {
     height: 4,

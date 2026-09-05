@@ -279,6 +279,61 @@ export const BodyCompositionSection: React.FC<
       ? tokens.healthy
       : tokens.ink2;
 
+  // ── Keyboard/VoiceOver-TalkBack fallbacks for the four drag-only controls
+  //    above (torso fat fill + 3 tape bands). `accessibilityRole="adjustable"`
+  //    alone does not make a web element keyboard-focusable/-operable, and a
+  //    bare PanResponder gives screen-reader users nothing to swipe on either
+  //    — same gap already found and fixed once in RangeSlider.tsx. Mirrors
+  //    that fix's exact increment/decrement pattern. ──
+  const handleFatAdjust = (delta: number) => {
+    const current = valuesRef.current.body_fat_percentage;
+    const base = current != null && current > 0 ? current : FAT_BASELINE;
+    const v = clamp(Math.round(base + delta), FAT_MIN, FAT_MAX);
+    updateFieldRef.current(
+      "body_fat_percentage",
+      v as BodyAnalysisData["body_fat_percentage"],
+    );
+  };
+  const handleFatAccessibilityAction = (event: {
+    nativeEvent: { actionName: string };
+  }) => handleFatAdjust(event.nativeEvent.actionName === "increment" ? 1 : -1);
+  const handleFatKeyDown = (event: {
+    key: string;
+    preventDefault?: () => void;
+  }) => {
+    let delta = 0;
+    if (event.key === "ArrowUp" || event.key === "ArrowRight") delta = 1;
+    else if (event.key === "ArrowDown" || event.key === "ArrowLeft") delta = -1;
+    else if (event.key === "Home") delta = FAT_MIN - (fat ?? FAT_BASELINE);
+    else if (event.key === "End") delta = FAT_MAX - (fat ?? FAT_BASELINE);
+    else return;
+    event.preventDefault?.();
+    handleFatAdjust(delta);
+  };
+
+  const handleBandAdjust = (field: BandField, delta: number) => {
+    const current = valuesRef.current[field];
+    const base = current != null && current > 0 ? current : GIRTH_BASELINE[field];
+    const v = clamp(Math.round(base + delta), GIRTH_MIN, GIRTH_MAX);
+    updateFieldRef.current(field, v as BodyAnalysisData[BandField]);
+  };
+  const makeBandAccessibilityAction =
+    (field: BandField) => (event: { nativeEvent: { actionName: string } }) =>
+      handleBandAdjust(field, event.nativeEvent.actionName === "increment" ? 1 : -1);
+  const makeBandKeyDown =
+    (field: BandField) =>
+    (event: { key: string; preventDefault?: () => void }) => {
+      const current = formData[field] ?? GIRTH_BASELINE[field];
+      let delta = 0;
+      if (event.key === "ArrowUp" || event.key === "ArrowRight") delta = 1;
+      else if (event.key === "ArrowDown" || event.key === "ArrowLeft") delta = -1;
+      else if (event.key === "Home") delta = GIRTH_MIN - current;
+      else if (event.key === "End") delta = GIRTH_MAX - current;
+      else return;
+      event.preventDefault?.();
+      handleBandAdjust(field, delta);
+    };
+
   return (
     <View style={styles.container}>
       {/* Measurement guide — plain text toggle, no box. */}
@@ -287,6 +342,11 @@ export const BodyCompositionSection: React.FC<
         onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
         accessibilityRole="button"
         accessibilityLabel="How to measure correctly"
+        // Visual row was ~342x28, under the 44px WCAG touch-target floor.
+        // `styles.guideToggle` now carries a real minHeight:44 (see that
+        // style's own comment); hitSlop is kept too as a real, additional
+        // expansion on native.
+        hitSlop={{ top: 8, bottom: 8, left: 0, right: 0 }}
       >
         <Ionicons
           name="information-circle-outline"
@@ -354,6 +414,16 @@ export const BodyCompositionSection: React.FC<
           now: fat ?? 0,
           text: fat != null ? `${fat} percent` : "not set",
         }}
+        accessibilityActions={[
+          { name: "increment", label: "Increase" },
+          { name: "decrement", label: "Decrease" },
+        ]}
+        onAccessibilityAction={handleFatAccessibilityAction}
+        tabIndex={0}
+        // @ts-expect-error — `onKeyDown` is a react-native-web-only prop
+        // (forwarded straight to the DOM node), not present in React
+        // Native's core `ViewProps` typings; harmlessly ignored on native.
+        onKeyDown={handleFatKeyDown}
         {...torsoResponder.panHandlers}
       >
         <Svg width={STAGE_W} height={STAGE_H}>
@@ -437,6 +507,17 @@ export const BodyCompositionSection: React.FC<
                   ? `${formData[field]} centimeters`
                   : "not set",
             }}
+            accessibilityActions={[
+              { name: "increment", label: "Increase" },
+              { name: "decrement", label: "Decrease" },
+            ]}
+            onAccessibilityAction={makeBandAccessibilityAction(field)}
+            tabIndex={0}
+            // @ts-expect-error — `onKeyDown` is a react-native-web-only prop
+            // (forwarded straight to the DOM node), not present in React
+            // Native's core `ViewProps` typings; harmlessly ignored on
+            // native.
+            onKeyDown={makeBandKeyDown(field)}
             {...bandResponders[field].panHandlers}
           />
         ))}
@@ -504,6 +585,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: freshSpacing.s,
     paddingVertical: freshSpacing.xs,
+    // Real (not hitSlop) minHeight: hitSlop is confirmed inert on web —
+    // react-native-web's `View` drops it (not in the module's own prop
+    // allow-list), and `Pressable` spreads straight through to `View`
+    // without intercepting it. This `style` applies directly to this
+    // Pressable, so a real minHeight here genuinely enlarges the touch
+    // target on web (hitSlop below is kept too, as a real additional
+    // expansion on native).
+    minHeight: 44,
   },
   guideToggleText: {
     ...freshType.body,

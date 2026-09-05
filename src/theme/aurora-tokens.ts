@@ -156,7 +156,11 @@ export const border = {
 } as const;
 
 // Chart palette — 6 harmonious data-viz colors tuned for the dark Aurora
-// background. Order = series priority.
+// background. Order = series priority. These values are tuned for
+// fills/bars/dots/icons, which only need the WCAG non-text 3:1 contrast
+// floor — they are NOT guaranteed to clear the stricter 4.5:1 text
+// threshold at small/non-bold sizes (chart[3] in particular sits at
+// ~3.4:1 on surface[1], confirmed too low for real body text).
 export const chart = {
   1: '#FF6B35', // primary orange
   2: '#00D4FF', // electric cyan
@@ -164,6 +168,14 @@ export const chart = {
   4: '#4ADE80', // green
   5: '#FBBF24', // amber
   6: '#EC4899', // pink
+} as const;
+
+// AA-compliant lightened variants of `chart` colors, for use as actual TEXT
+// color on dark surfaces (surface[1]/surface[2]) — add an entry here only
+// when a real small/non-bold text usage needs it (found via contrast
+// auditing), not as a blanket duplicate of the whole palette.
+export const chartText = {
+  3: '#AB61EF', // chart[3] lightened: 4.9:1 on surface[1], 5.5:1 on background (was 3.4:1 / 3.8:1)
 } as const;
 
 // Typography System

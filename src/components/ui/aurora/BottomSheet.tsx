@@ -22,7 +22,7 @@
  * animation that react-native-modal would introduce).
  */
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -186,6 +186,87 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     onClose();
   }, [onClose]);
 
+  // Web keyboard support: Escape-to-close + a scoped Tab focus trap.
+  // Native gets both for free from `RNModal`'s own accessibility/focus
+  // semantics (see the `RNModal` branch below); on web, `RNModal` is bypassed
+  // entirely in favor of a portal (see the Platform.OS === "web" branch
+  // further down), so nothing was providing either behavior — confirmed
+  // live: pressing Escape did not close an open sheet, and Tab could leak
+  // focus onto the background bottom-tab-bar while a sheet was open. A
+  // unique DOM id (not a ref) scopes the Tab-cycling query to just this
+  // sheet instance, since `nativeID` reliably becomes a DOM `id` on
+  // react-native-web regardless of how many Animated.View wrapper layers sit
+  // in between (a raw ref would need to survive Reanimated's forwarding,
+  // which isn't guaranteed the same way).
+  const sheetDomId = useRef(
+    `aurora-bottom-sheet-${Math.random().toString(36).slice(2)}`,
+  ).current;
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    if (!visible) return;
+
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+
+    const FOCUSABLE_SELECTOR =
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const getFocusable = (): HTMLElement[] => {
+      const root = document.getElementById(sheetDomId);
+      if (!root) return [];
+      return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+    };
+
+    // Move focus into the sheet once it's mounted so a screen-reader/keyboard
+    // user lands somewhere sensible instead of on whatever was focused
+    // behind it.
+    const focusTimer = setTimeout(() => {
+      const focusable = getFocusable();
+      focusable[0]?.focus();
+    }, 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        handleClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!focusable.includes(active as HTMLElement)) {
+        // Focus somehow escaped the sheet (e.g. a background element was
+        // still tabindex-reachable) — pull it back in rather than letting it
+        // leak further.
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown, true);
+      // Restore focus to whatever opened the sheet, if it's still around.
+      if (
+        previouslyFocusedRef.current &&
+        document.contains(previouslyFocusedRef.current)
+      ) {
+        previouslyFocusedRef.current.focus();
+      }
+    };
+  }, [visible, sheetDomId, handleClose]);
+
   // Drag-to-dismiss gesture.
   const gestureHandler =
     useAnimatedGestureHandler<
@@ -246,6 +327,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             content descendants on Android (SetLogModal RPE buttons/inputs were
             invisible to uiautomator). */}
         <Animated.View
+          nativeID={sheetDomId}
           style={[
             styles.sheetWrapper,
             {

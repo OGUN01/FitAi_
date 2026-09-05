@@ -66,7 +66,12 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             hapticFeedback={true}
             hapticType="light"
             style={styles.statsRow}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            // Visual box was ~35x17, under the 44px WCAG touch-target
+            // floor. `styles.statsRow` now carries a real minHeight:44 (see
+            // that style's own comment for why hitSlop alone doesn't fix
+            // this on web); hitSlop is kept too since it's a real,
+            // additional expansion on native.
+            hitSlop={{ top: 14, bottom: 14, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel={`View full calendar, ${stats.completed} of ${stats.total} workouts completed`}
           >
@@ -107,7 +112,12 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 hapticFeedback={true}
                 hapticType="light"
                 style={styles.dayWrapper}
-                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                // dayWrapper measured ~42px wide (flex:1 across 7 columns),
+                // 2px short of the 44px floor. `styles.dayWrapper` now
+                // carries a real minWidth:44 (see that style's own comment
+                // for why hitSlop alone doesn't fix this on web); hitSlop
+                // is kept too as a real, additional expansion on native.
+                hitSlop={{ top: 6, bottom: 6, left: 5, right: 5 }}
                 accessibilityRole="button"
                 accessibilityLabel={`${day.date.toLocaleDateString(undefined, {
                   weekday: 'long',
@@ -181,6 +191,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    // Real (not hitSlop) minHeight: hitSlop is confirmed inert on web
+    // (react-native-web's View drops it — it's not in the module's own
+    // prop allow-list, confirmed by reading the installed package source
+    // and by an empirical elementFromPoint check). This `style` prop lands
+    // directly on the real Pressable (AnimatedPressable forwards `style`
+    // to its inner Pressable, `containerStyle` to the outer wrapper), so a
+    // real minHeight here genuinely enlarges the touch target on web too.
+    minHeight: 44,
   },
   statsText: {
     fontSize: rf(12),
@@ -197,6 +215,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: rp(4),
     minHeight: 44,
+    // Real (not hitSlop) minWidth — see the statsRow comment above for why
+    // hitSlop alone doesn't work on web. Live-measured at 42px on a real
+    // 390px viewport with ~22px of slack already free across the row's
+    // gaps, so 44 fits without forcing a horizontal overflow.
+    minWidth: 44,
     justifyContent: 'center',
   },
   dayLabel: {

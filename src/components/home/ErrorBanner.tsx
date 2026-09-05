@@ -14,7 +14,11 @@ interface ErrorBannerProps {
 
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({ error, onRetry }) => (
   <View style={styles.wrapper}>
-    <View style={styles.card}>
+    <View
+      style={styles.card}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <Text style={styles.errorText}>{error}</Text>
       <AnimatedPressable
         onPress={onRetry}
