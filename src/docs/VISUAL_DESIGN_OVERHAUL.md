@@ -696,11 +696,21 @@ overlap, as Stage 2/3's lanes were deliberately partitioned to allow).
   (`laneb-verify-1788598245857@mailinator.com`) was left live after
   Supabase rate-limited further signup attempts mid-cleanup — low risk
   (mailinator is a disposable-email service), but worth a manual delete.
-- Incidental, unconfirmed finding from Lane B's live testing: RLS-policy
-  errors (`42501`) on `daily_energy_ledger`/`user_achievements` appeared
-  post-signup during verification — NOT investigated (out of scope for a
-  visual task), but worth a real look given CLAUDE.md's explicit RLS
-  guarantee. Flagging here rather than letting it silently disappear.
+- ~~Incidental, unconfirmed finding from Lane B's live testing: RLS-policy
+  errors (`42501`) on `daily_energy_ledger`/`user_achievements`~~ —
+  **investigated via the Supabase Management API**: both tables' RLS
+  policies are correctly configured (`auth.uid() = user_id` on every
+  command — INSERT/SELECT/UPDATE/DELETE for `daily_energy_ledger`, ALL for
+  `user_achievements`), matching CLAUDE.md's guarantee exactly. This is
+  NOT a security gap. A `42501` with correctly-scoped policies in place
+  almost always means the client attempted the write before `auth.uid()`
+  was actually populated (a timing race during signup, not a policy hole)
+  — consistent with this session's earlier-found "DataBridge hydration"
+  race-condition bug class, but in the NEW, still-uncommitted "Goal
+  Engine" feature code (`daily_energy_ledger`/`user_achievements` writes),
+  which is a different, separate, in-progress effort — not something to
+  debug as part of this visual-design task. Flagged for whoever picks that
+  feature work back up.
 - Ratchet total is 1,933 and dropping, but nowhere near zero — a genuinely
   exhaustive full-app token migration remains a much larger, multi-round
   effort than Stages 0-4 alone.
