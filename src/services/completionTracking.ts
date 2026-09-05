@@ -818,7 +818,9 @@ class CompletionTrackingService {
     workoutId: string,
     progress: number,
     exerciseData?: any,
-    userId?: string,
+    // No longer used here — this method must never auto-trigger a real
+    // completion (see the comment below). Kept for call-site compatibility.
+    _userId?: string,
   ): Promise<boolean> {
     try {
       const fitnessStore = useFitnessStore.getState();
@@ -873,10 +875,32 @@ class CompletionTrackingService {
 
         this.emit(event);
 
-        // Auto-complete if progress reaches 100%
-        if (progress >= 100) {
-          return this.completeWorkout(workoutId, exerciseData, userId);
-        }
+        // BUG FIX (phantom "completed" history entries from an abandoned
+        // session — E2E_TESTING_GOAL.md Round 9): this method is invoked from
+        // useWorkoutSession.handleSetComplete on EVERY logged set, purely to
+        // persist the progress % and emit an event for achievements/partial
+        // calorie display. It used to ALSO auto-invoke `this.completeWorkout()`
+        // the instant naive `completedExercises/totalExercises` arithmetic hit
+        // 100 — with NO user confirmation and, critically, with `userId`
+        // undefined (this call site never passes one), which made
+        // completeWorkout() skip its own `if (userId)` Supabase gate entirely
+        // and fall straight through to the ALWAYS-RUNS
+        // `useFitnessStore.getState().addCompletedSession(...)` — silently
+        // writing a fully "completed" session into the persisted Zustand
+        // store (fitness-storage) with no DB row backing it. Since that store
+        // is what the UI/history reads AND what survives a page
+        // reload/localStorage rehydration, the very next set logged whose
+        // completedExercises/totalExercises ratio reached 100 (which can
+        // happen well before the user taps "Finish", e.g. a short/few-set
+        // workout, or any exercise-count arithmetic that coincidentally
+        // lands on 100%) fabricated a phantom completed history entry —
+        // exactly the "abandon a session, get a completed entry you never
+        // confirmed" bug. Real completion is already handled correctly,
+        // exactly once, by WorkoutSessionScreen.completeWorkout() (which
+        // guards against double-invocation via isCompletingRef, branches
+        // extra vs planned correctly, and only fires when the user actually
+        // finishes the last set of the last exercise). Progress tracking
+        // must never itself trigger a real completion — removed.
       }
 
       return true;
