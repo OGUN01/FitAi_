@@ -228,6 +228,33 @@ set-count bug) — don't re-investigate either without new evidence.
 
 Pick these up FIRST in the next round before starting new areas:
 
+- [ ] **Round 6 follow-up (a): 6 touch-target groups confirmed genuinely
+      sub-44px on web** (the `hitSlop`-is-inert-on-web finding means these
+      were wrongly ruled "compensated" earlier) — each needs a real
+      box-size increase plus the same per-component adjacent-sibling
+      layout-safety check Round 6 applied to `WeeklyMiniCalendar`'s day
+      cells, done individually, not as a blanket sweep:
+      1. Onboarding age/wake/sleep steppers (32×32 + hitSlop 8)
+      2. Onboarding info-icon buttons (28×28 + hitSlop 10)
+      3. Equipment/workout-type pill chips (37px + hitSlop 14)
+      4. Workout tab's "Regenerate plan" button (40×44 + hitSlop 8)
+      5. Workout tab's weekly day tabs (36×87 + hitSlop {4,6})
+      6. Home's streak badge (51×35 + hitSlop 8)
+- [ ] **Round 6 follow-up (b): `WeekRhythm.tsx`'s 8 frequency-count cells**
+      (0-7 sessions/week, ~42px wide) need an actual layout/design
+      decision, not a mechanical patch — a zero-gap "ruler" layout means
+      neither hitSlop (would overlap the adjacent cell) nor a blanket
+      `minWidth: 44` (8×44=352px > ~342px available on a 390px viewport)
+      is safe. Needs one of: fewer visible cells, horizontal scroll, or
+      reclaiming width from elsewhere in the row.
+- [ ] **Round 6 follow-up (c): exhaustive `error` status-color contrast
+      check.** Spot-checked (not exhaustive) during Round 6: `error`
+      (`#F44336`) on `surface[2]` measured a marginal 4.17:1 (under the
+      4.5:1 AA floor) across 18 files using it as text. Needs a real
+      file-by-file pass confirming actual text/background pairing (not
+      just the token value in isolation) before concluding it's a real,
+      fixable bug vs. a token used correctly as a non-text/graphical
+      element elsewhere.
 - [x] **[CRITICAL] TWO MORE completion-tracking bugs found while
       re-verifying the stale-closure fix above live — both independent,
       both worse than the original, both FIXED.** A retry of the
