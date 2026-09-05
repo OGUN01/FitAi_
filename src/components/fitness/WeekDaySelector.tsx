@@ -11,6 +11,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
+import { hexToRgba } from "../../utils/colors";
 
 interface DayInfo {
   key: string;
@@ -175,12 +176,12 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rh(80),
     borderRadius: borderRadius.lg,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: hexToRgba(colors.white, 0.08),
     justifyContent: "center" as const,
     alignItems: "center" as const,
     position: "relative",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: hexToRgba(colors.white, 0.1),
   },
   dayItemSelected: {
     backgroundColor: colors.primary,
@@ -193,7 +194,6 @@ const styles = StyleSheet.create({
   dayLabel: {
     fontSize: rf(11),
     fontFamily: FONT_FAMILY.semibold,
-    fontWeight: "600",
     color: colors.textSecondary,
     marginBottom: rp(4),
   },
@@ -207,7 +207,6 @@ const styles = StyleSheet.create({
   dayDate: {
     fontSize: rf(18),
     fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
     color: colors.text,
   },
   dayDateSelected: {
@@ -219,18 +218,17 @@ const styles = StyleSheet.create({
   mealIndicator: {
     position: "absolute",
     bottom: rh(6),
-    backgroundColor: "rgba(255, 107, 53, 0.25)",
+    backgroundColor: hexToRgba(colors.primary, 0.25),
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),
     borderRadius: rbr(8),
   },
   mealIndicatorSelected: {
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: hexToRgba(colors.white, 0.25),
   },
   mealCount: {
     fontSize: rf(9),
     fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
     color: colors.white,
   },
   mealCountSelected: {

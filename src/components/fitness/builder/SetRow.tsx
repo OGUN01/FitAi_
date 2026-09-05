@@ -266,7 +266,7 @@ export const SetRow: React.FC<SetRowProps> = ({
     elevation: isDragging.value ? 6 : 0,
     ...(isDragging.value
       ? {
-          shadowColor: "#000000",
+          shadowColor: colors.background.DEFAULT,
           shadowOffset: { width: 0, height: rs(4) },
           shadowOpacity: 0.3,
           shadowRadius: rs(8),

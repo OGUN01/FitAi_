@@ -21,7 +21,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { haptics } from '../../utils/haptics';
-import { flatColors as colors, borderRadius, typography } from '../../theme/aurora-tokens';
+import { flatColors as colors, borderRadius, typography, border } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ProgressRing } from '../ui/aurora/ProgressRing';
@@ -194,7 +194,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
           accessibilityLabel="Close"
           accessibilityHint="Closes the water intake dialog"
         >
-          <Ionicons name="chevron-down" size={rf(20)} color={colors.white} />
+          <Ionicons name="chevron-down" size={rf(20)} color={colors.text} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -373,12 +373,12 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   closeButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    borderRadius: borderRadius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: border.subtle,
     justifyContent: 'center',
     alignItems: 'center',
   },

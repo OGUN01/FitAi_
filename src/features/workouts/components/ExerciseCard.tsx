@@ -10,12 +10,13 @@ import {
   exerciseHistoryService,
   LastSessionData,
 } from "../../../services/exerciseHistoryService";
-import {
-  progressionService,
-  ProgressionResult,
-} from "../../../services/progressionService";
+import { selectScheme, suggestNext, ProgressionPrescription } from "../../../services/progression";
 import { prDetectionService } from "../../../services/prDetectionService";
 import { useFitnessStore } from "../../../stores/fitnessStore";
+import { deriveExerciseClassification } from "../../../utils/resolveExerciseMeta";
+import { colors, chart, surface, borderRadius as br } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
+import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 
 const SET_TYPES = ["normal", "warmup", "failure", "drop"] as const;
 type SetType = (typeof SET_TYPES)[number];
@@ -27,11 +28,18 @@ const SET_TYPE_LABELS: Record<SetType, string> = {
   drop: "D",
 };
 
+// Canonical set-type palette (this was the first real definition of it in the
+// app — previously a private Material-2014 palette with zero token overlap).
+// Sourced from the governed `chart`/`colors` tokens in aurora-tokens.ts:
+//   normal  -> neutral (no data-series meaning, mirrors text.secondary)
+//   warmup  -> chart[5] amber
+//   failure -> colors.error (exact match to the previous literal, now governed)
+//   drop    -> chart[3] purple
 const SET_TYPE_COLORS: Record<SetType, string> = {
-  normal: "#E0E0E0",
-  warmup: "#FF9800",
-  failure: "#F44336",
-  drop: "#9C27B0",
+  normal: colors.text.secondary,
+  warmup: chart[5],
+  failure: colors.error.DEFAULT,
+  drop: chart[3],
 };
 
 export interface SetCompletionData {
@@ -115,7 +123,7 @@ export function ExerciseCard({
   const [previousSession, setPreviousSession] =
     useState<LastSessionData | null>(null);
   const [suggestedWeight, setSuggestedWeight] =
-    useState<ProgressionResult | null>(null);
+    useState<ProgressionPrescription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPR, setShowPR] = useState(false);
 
@@ -159,12 +167,26 @@ export function ExerciseCard({
               setType: s.setType,
               completed: true,
             }));
-            const result = progressionService.suggestNextWeight(
-              exercise.exerciseId,
+            // Resolve via the shared classifier, not progressionService's own
+            // keyword Sets — those only recognize legacy curated IDs and
+            // silently misclassify ExerciseDB hash IDs (most AI-plan
+            // exercises) as upper-body/weighted/rep-based.
+            const exerciseClass = deriveExerciseClassification(exercise.exerciseId);
+            // No trainingAge plumbed to this preview card yet — defaults to
+            // 'intermediate' via selectScheme, i.e. the 'double' scheme this
+            // card always used before the progression registry existed.
+            const scheme = selectScheme({
+              isBodyweight: exerciseClass.isBodyweight,
+              isTimeBased: exerciseClass.isTimeBased,
+            });
+            const result = suggestNext(scheme, {
+              exerciseId: exercise.exerciseId,
               lastSets,
               repRange,
-              progressionService.isBodyweightExercise(exercise.exerciseId),
-            );
+              isBodyweight: exerciseClass.isBodyweight,
+              isLowerBody: exerciseClass.isLowerBody,
+              isTimeBased: exerciseClass.isTimeBased,
+            });
             setSuggestedWeight(result);
 
             if (currentWeightKg == null && result.suggestedWeightKg > 0) {
@@ -251,12 +273,20 @@ export function ExerciseCard({
 
       onSetComplete(setIndex, data);
 
-      useFitnessStore.getState().updateSetData(exercise.exerciseId, setIndex, {
-        weightKg,
-        reps,
-        setType: row.setType,
-        completed: true,
-      });
+      // exerciseIndex (this card's own prop) targets the exact array entry —
+      // see the fix note on fitnessStore.updateSetData for why this matters
+      // when the same exerciseId appears twice in one day's plan.
+      useFitnessStore.getState().updateSetData(
+        exercise.exerciseId,
+        setIndex,
+        {
+          weightKg,
+          reps,
+          setType: row.setType,
+          completed: true,
+        },
+        exerciseIndex,
+      );
 
       if (userId && weightKg > 0 && reps > 0) {
         exerciseHistoryService
@@ -467,17 +497,26 @@ export function ExerciseCard({
   );
 }
 
+// Completed rows get a success-green tint derived from the governed
+// `colors.success` token (previously a hardcoded second-green literal with
+// no relationship to the real success color used elsewhere in the app).
+const COMPLETED_TINT = hexToRgba(colors.success.DEFAULT, TINT_ALPHA_LOW);
+// Active row/accent/check-button use `colors.primary` (the app's real
+// active/selected indicator color) instead of an undocumented rogue indigo
+// that existed nowhere else in the token system.
+const ACTIVE_TINT = hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW);
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#1A1A2E",
-    borderRadius: 12,
+    backgroundColor: surface[1],
+    borderRadius: br.lg,
     padding: 16,
     marginBottom: 12,
   },
   header: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.text.primary,
     marginBottom: 12,
   },
   headerTappable: {
@@ -492,8 +531,8 @@ const styles = StyleSheet.create({
   colLabel: {
     flex: 1,
     fontSize: 11,
-    fontWeight: "600",
-    color: "#888",
+    fontFamily: FONT_FAMILY.semibold,
+    color: colors.text.tertiary,
     textAlign: "center",
   },
   setRow: {
@@ -501,17 +540,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 4,
-    borderRadius: 8,
+    borderRadius: br.md,
     marginBottom: 4,
   },
   completedRow: {
     opacity: 0.6,
-    backgroundColor: "#1E3A2F",
+    backgroundColor: COMPLETED_TINT,
   },
   activeRow: {
-    backgroundColor: "#1A1A3E",
+    backgroundColor: ACTIVE_TINT,
     borderLeftWidth: 3,
-    borderLeftColor: "#6C63FF",
+    borderLeftColor: colors.primary.DEFAULT,
     paddingLeft: 1,
   },
   lockedRow: {
@@ -523,25 +562,27 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 3,
-    backgroundColor: "#6C63FF",
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    borderTopLeftRadius: br.md,
+    borderBottomLeftRadius: br.md,
   },
   lockedBadge: {
     opacity: 0.5,
   },
   setTypeBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    // 44x44 touch-target floor — was 32x32. This badge is tappable
+    // (handleSetTypePress) so it needs to clear the same floor as checkButton.
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 8,
   },
   setTypeText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: "#000",
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.background.DEFAULT,
   },
   previousContainer: {
     flex: 1,
@@ -549,72 +590,78 @@ const styles = StyleSheet.create({
   },
   previousText: {
     fontSize: 13,
-    color: "#666",
+    color: colors.text.tertiary,
   },
   input: {
     flex: 1,
-    backgroundColor: "#2A2A4A",
-    borderRadius: 8,
+    backgroundColor: surface[2],
+    borderRadius: br.md,
     paddingVertical: 8,
     paddingHorizontal: 10,
-    color: "#FFF",
+    color: colors.text.primary,
     fontSize: 14,
     textAlign: "center",
     marginHorizontal: 4,
   },
   checkButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#333",
+    // 44x44 touch-target floor (WCAG/Apple/Material minimum) — was 36x36.
+    // This sits on the most-tapped control in the app (set completion).
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: surface[2],
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 4,
   },
   checkButtonDone: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.success.DEFAULT,
   },
   checkButtonActive: {
-    backgroundColor: "#6C63FF",
+    backgroundColor: colors.primary.DEFAULT,
   },
   checkButtonLocked: {
-    backgroundColor: "#222",
+    backgroundColor: surface[1],
     opacity: 0.4,
   },
   checkText: {
     fontSize: 16,
-    color: "#FFF",
-    fontWeight: "700",
+    color: colors.text.primary,
+    fontFamily: FONT_FAMILY.bold,
   },
   checkTextLocked: {
-    color: "#555",
+    color: colors.text.disabled,
   },
   lockedInput: {
-    backgroundColor: "#1E1E2E",
-    color: "#555",
+    backgroundColor: surface[1],
+    color: colors.text.disabled,
   },
   completedInput: {
-    backgroundColor: "#1E3A2F",
+    backgroundColor: COMPLETED_TINT,
   },
   increaseIndicator: {
-    color: "#4CAF50",
-    fontWeight: "700",
+    color: colors.success.DEFAULT,
+    fontFamily: FONT_FAMILY.bold,
   },
   prBanner: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#FFD700",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    // chart[5] amber — closest governed equivalent to the old "#FFD700 gold"
+    // literal; the deprecated flat gold token is legacy-only, not a new
+    // consumer per aurora-tokens.ts's own guidance to route new accents
+    // through `chart[]` instead.
+    backgroundColor: chart[5],
+    borderTopLeftRadius: br.lg,
+    borderTopRightRadius: br.lg,
     paddingVertical: 6,
     alignItems: "center",
     zIndex: 10,
   },
   prBannerText: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#000",
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.background.DEFAULT,
   },
 });

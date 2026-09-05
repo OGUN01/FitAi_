@@ -10,11 +10,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rp, rw, rbr, rh } from "../../utils/responsive";
 import { DayMeal } from "../../types/ai";
 import { completionTrackingService } from "../../services/completionTracking";
 import { MACRO_PILL_COLORS } from "../diet/macroColors";
+import { fontFamilyForWeight } from "../../theme/fonts";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 
@@ -310,7 +311,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Back"
             >
-              <Ionicons name="chevron-back" size={24} color="#6B7280" />
+              <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
               <Text style={[styles.navButtonText, styles.previousButtonText]}>
                 Back
               </Text>
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: fontSize.lg,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: fontFamilyForWeight("bold"),
     color: colors.text,
   },
   content: {
@@ -467,14 +468,14 @@ const styles = StyleSheet.create({
   },
   ingredientName: {
     fontSize: fontSize.xxl,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: fontFamilyForWeight("bold"),
     color: colors.text,
     marginBottom: spacing.xs,
   },
   ingredientCategory: {
     fontSize: fontSize.md,
     color: colors.primary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: fontFamilyForWeight("semibold"),
     marginBottom: spacing.xs,
   },
   quantityText: {
@@ -486,16 +487,12 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: fontFamilyForWeight("bold"),
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -507,13 +504,14 @@ const styles = StyleSheet.create({
   },
   calorieLabel: {
     fontSize: fontSize.lg,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: fontFamilyForWeight("semibold"),
     color: colors.text,
   },
   calorieValue: {
     fontSize: fontSize.xxl,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: fontFamilyForWeight("bold"),
     color: colors.text,
+    fontVariant: ["tabular-nums"],
   },
   divider: {
     height: 1,
@@ -532,7 +530,7 @@ const styles = StyleSheet.create({
   nutritionLabel: {
     fontSize: fontSize.md,
     color: colors.text,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: fontFamilyForWeight("medium"),
     flex: 1,
   },
   nutritionValueContainer: {
@@ -543,8 +541,9 @@ const styles = StyleSheet.create({
   },
   nutritionValue: {
     fontSize: fontSize.md,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: fontFamilyForWeight("bold"),
     marginRight: spacing.md,
+    fontVariant: ["tabular-nums"],
   },
   percentageContainer: {
     flexDirection: "row",
@@ -571,12 +570,8 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   contextInfo: {
     gap: spacing.sm,
@@ -597,12 +592,8 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   quantityInfo: {
     gap: spacing.sm,
@@ -657,13 +648,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 
-  nextButton: {
-    backgroundColor: "#6B7280",
-  },
-
   navButtonText: {
     fontSize: fontSize.md,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: fontFamilyForWeight("semibold"),
     marginHorizontal: spacing.xs,
   },
 
@@ -672,11 +659,7 @@ const styles = StyleSheet.create({
   },
 
   completeButtonText: {
-    color: colors.surface,
-  },
-
-  nextButtonText: {
-    color: colors.surface,
+    color: colors.background,
   },
 
   // Completion Banner Styles
@@ -696,7 +679,7 @@ const styles = StyleSheet.create({
 
   completionBannerText: {
     fontSize: fontSize.md,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: fontFamilyForWeight("semibold"),
     color: colors.success,
     marginLeft: spacing.sm,
   },

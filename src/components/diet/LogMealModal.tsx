@@ -23,7 +23,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
 import { DietTextField } from './DietTextField';
-import { flatColors as colors, typography } from '../../theme/aurora-tokens';
+import { flatColors as colors, typography, borderRadius, border } from '../../theme/aurora-tokens';
 import { MACRO_PILL_COLORS } from './macroColors';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_MEDIUM } from '../../utils/colors';
 import { rf, rh, rw, rp, rbr } from '../../utils/responsive';
@@ -199,7 +199,22 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
     return () => clearTimeout(id);
   }, [visible]);
 
-  const { weeklyMealPlan, setWeeklyMealPlan, addDailyMeal } = useNutritionStore();
+  const {
+    weeklyMealPlan,
+    setWeeklyMealPlan,
+    customWeeklyMealPlan,
+    setCustomWeeklyMealPlan,
+    activeDietSource,
+    addDailyMeal,
+  } = useNutritionStore();
+  // The manual-log staging trick below must stage into whichever plan is
+  // ACTIVE — completionTrackingService.completeMeal looks the meal up via
+  // getActiveWeeklyMealPlan(), so staging into the AI slot while a custom
+  // plan is active would make the staged meal unfindable.
+  const activeWeeklyMealPlan =
+    activeDietSource === 'custom' ? customWeeklyMealPlan : weeklyMealPlan;
+  const setActiveWeeklyMealPlan =
+    activeDietSource === 'custom' ? setCustomWeeklyMealPlan : setWeeklyMealPlan;
   const { user } = useAuth();
   const savedMealsStore = useSavedMealsStore();
 
@@ -596,7 +611,7 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
       // (setWeeklyMealPlan only — NO saveWeeklyMealPlan DB persist) so the service
       // can find it. addDailyMeal is called so getTodaysConsumedNutrition reflects
       // the meal immediately (Principle 6: store is the runtime source).
-      const currentPlan = weeklyMealPlan || {
+      const currentPlan = activeWeeklyMealPlan || {
         id: `plan_${Date.now()}`,
         weekNumber: 1,
         meals: [],
@@ -607,8 +622,9 @@ export const LogMealModal: React.FC<LogMealModalProps> = ({
         ...currentPlan,
         meals: [...currentPlan.meals, newMeal as unknown as (typeof currentPlan.meals)[number]],
       };
-      // In-memory stage only — do NOT persist the manual meal into the AI plan.
-      setWeeklyMealPlan(stagedPlan);
+      // In-memory stage only — do NOT persist the manual meal into the plan
+      // (AI or custom). Stages into whichever plan is currently active.
+      setActiveWeeklyMealPlan(stagedPlan);
       // Reflect in consumed totals immediately (loggedAt set above).
       addDailyMeal(newMeal as unknown as import('../../types/ai').Meal);
       // completionTrackingService handles: mealProgress update + Supabase
@@ -1244,6 +1260,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     flexDirection: 'column' as const,
+    // flex:1 (not just maxHeight) so this View actually fills the definite
+    // height DetentBottomSheet now provides (see GlassView's fillHeight
+    // prop) — maxHeight alone doesn't stretch a content-sized View to fill
+    // its parent, it only clamps an already content-based size. Without
+    // this, the scrollView:{flex:1} child below had no definite height to
+    // resolve against and collapsed to zero — the entire form (still
+    // focusable, hence the keyboard opening with nothing visible) rendering
+    // as blank except the sibling elements outside this View.
+    flex: 1,
     maxHeight: '100%' as const,
   },
   header: {
@@ -1258,12 +1283,12 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   closeButton: {
-    width: rw(36),
-    height: rw(36),
-    borderRadius: rw(18),
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    borderRadius: borderRadius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: border.subtle,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },

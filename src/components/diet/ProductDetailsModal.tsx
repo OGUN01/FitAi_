@@ -8,14 +8,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { DetentBottomSheet } from '../ui/aurora/DetentBottomSheet';
 import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
 import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
-import { flatColors as colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { flatColors as colors, spacing, borderRadius, border } from '../../theme/aurora-tokens';
+import { fontFamilyForWeight } from '../../theme/fonts';
 import { hexToRgba } from '../../utils/colors';
 import { HealthScoreIndicator } from './HealthScoreIndicator';
 import type { ScannedProduct } from '../../services/barcodeService';
-import { rf, rp } from '../../utils/responsive';
+import { rf, rp, rw } from '../../utils/responsive';
 import {
   clampPackagedFoodGrams,
   getDefaultPackagedFoodGrams,
@@ -242,7 +244,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               accessibilityLabel="Close product details"
               disabled={isSubmitting}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Ionicons name="close" size={rf(20)} color={colors.text} />
             </AnimatedPressable>
           </View>
 
@@ -548,12 +550,12 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: rf(20),
-    fontWeight: typography.fontWeight.bold as '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
   },
   productBrand: {
     fontSize: rf(15),
-    fontWeight: '600',
+    fontFamily: fontFamilyForWeight('semibold'),
     color: colors.primary,
   },
   productMeta: {
@@ -561,18 +563,14 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   closeButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
     borderRadius: borderRadius.full,
     backgroundColor: colors.surface,
-    minHeight: Math.max(rp(44), 44),
+    borderWidth: 1,
+    borderColor: border.subtle,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: rf(13),
-    fontWeight: '600',
-    color: colors.text,
   },
   scrollView: {
     maxHeight: '100%',
@@ -590,7 +588,7 @@ const styles = StyleSheet.create({
   },
   disclaimerTitle: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -611,13 +609,13 @@ const styles = StyleSheet.create({
   },
   scoreBadgeLabel: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontFamily: fontFamilyForWeight('semibold'),
     color: colors.text,
     opacity: 0.9,
   },
   scoreBadgeValue: {
     fontSize: rf(24),
-    fontWeight: '800',
+    fontFamily: fontFamilyForWeight('extrabold'),
     color: colors.text,
     marginTop: spacing.xs,
   },
@@ -630,7 +628,7 @@ const styles = StyleSheet.create({
   },
   infoBadgeTitle: {
     fontSize: rf(12),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -657,7 +655,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: rf(16),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -686,7 +684,7 @@ const styles = StyleSheet.create({
   },
   nutritionValue: {
     fontSize: rf(20),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     fontVariant: ['tabular-nums'],
   },
@@ -704,7 +702,7 @@ const styles = StyleSheet.create({
   },
   breakdownLabel: {
     fontSize: rf(14),
-    fontWeight: '600',
+    fontFamily: fontFamilyForWeight('semibold'),
     color: colors.text,
   },
   breakdownScore: {
@@ -717,7 +715,7 @@ const styles = StyleSheet.create({
   },
   breakdownScoreText: {
     fontSize: rf(12),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
   },
   breakdownMessage: {
@@ -746,7 +744,7 @@ const styles = StyleSheet.create({
   listBullet: {
     width: rf(10),
     fontSize: rf(14),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     marginTop: 1,
   },
@@ -761,7 +759,7 @@ const styles = StyleSheet.create({
   },
   infoSectionTitle: {
     fontSize: rf(13),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -789,7 +787,7 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -816,7 +814,7 @@ const styles = StyleSheet.create({
     minWidth: rp(40),
     paddingVertical: 0,
     fontSize: rf(18),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
     textAlign: 'right',
   },
@@ -825,7 +823,7 @@ const styles = StyleSheet.create({
   },
   amountUnit: {
     fontSize: rf(14),
-    fontWeight: '600',
+    fontFamily: fontFamilyForWeight('semibold'),
     color: colors.textSecondary,
   },
   amountError: {
@@ -843,7 +841,7 @@ const styles = StyleSheet.create({
   },
   largeAmountWarningTitle: {
     fontSize: rf(13),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
   },
   largeAmountWarningText: {
@@ -871,7 +869,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     color: colors.text,
   },
   primaryButtonContainer: {
@@ -889,7 +887,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontFamily: fontFamilyForWeight('bold'),
     // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
     // computes to ~7.4:1 against #FF6B35.
     color: colors.background,

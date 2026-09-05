@@ -16,6 +16,7 @@ import {
   borderRadius,
   flatFontSize as fontSize,
   typography,
+  border,
 } from '../../theme/aurora-tokens';
 import { GlassButton } from '../ui/aurora/GlassButton';
 import { GlassCard } from '../ui/aurora/GlassCard';
@@ -508,10 +509,12 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: Math.max(rw(32), 44),
-    height: Math.max(rh(32), 44),
-    borderRadius: rbr(16),
-    backgroundColor: colors.backgroundSecondary,
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: border.subtle,
     justifyContent: 'center',
     alignItems: 'center',
   },

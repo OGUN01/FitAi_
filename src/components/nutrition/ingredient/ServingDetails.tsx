@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rbr } from "../../../utils/responsive";
 import { MealItem } from "../../../types/ai";
+import { fontFamilyForWeight } from "../../../theme/fonts";
 
 interface ServingDetailsProps {
   ingredientData: MealItem;
@@ -38,16 +39,12 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontFamily: fontFamilyForWeight("bold"),
     color: colors.text,
     marginBottom: spacing.md,
   },

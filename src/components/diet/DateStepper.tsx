@@ -242,7 +242,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSize.md,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
@@ -273,7 +272,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSize.lg,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
   weekdayRow: { flexDirection: 'row', marginBottom: spacing.xs },
   weekday: {
@@ -282,7 +280,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: fontSize.xs,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   day: {
@@ -303,12 +300,10 @@ const styles = StyleSheet.create({
   dayTextToday: {
     color: colors.primary,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
   dayTextSelected: {
     color: colors.white,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
   closeButton: {
     minHeight: TOUCH_TARGET,
@@ -320,7 +315,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: fontSize.md,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
 });
 

@@ -3,8 +3,8 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import barcodeService, { ProductLookupResult } from '@/services/barcodeService';
 import { getCountryFromBarcode } from '@/utils/countryMapping';
-import { flatColors as colors, spacing, borderRadius } from '@/theme/aurora-tokens';
-import { rbr, rf, rp } from '@/utils/responsive';
+import { flatColors as colors, spacing, borderRadius, border } from '@/theme/aurora-tokens';
+import { rbr, rf, rp, rw } from '@/utils/responsive';
 import { AnimatedPressable } from '@/components/ui/aurora/AnimatedPressable';
 import { AuroraSpinner } from '@/components/ui/aurora/AuroraSpinner';
 import { DietTextField } from './DietTextField';
@@ -165,7 +165,7 @@ export const ManualBarcodeEntry: React.FC<ManualBarcodeEntryProps> = ({
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={rf(16)} color={colors.textSecondary} />
+            <Ionicons name="close" size={rf(20)} color={colors.text} />
           </AnimatedPressable>
         </View>
 
@@ -313,10 +313,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: rbr(16),
-    backgroundColor: colors.backgroundTertiary,
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: border.subtle,
     alignItems: 'center',
     justifyContent: 'center',
   },

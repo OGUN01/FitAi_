@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rbr, rf, rh } from "../../../utils/responsive";
+import { fontFamilyForWeight } from "../../../theme/fonts";
 
 interface ActionButtonsProps {
   isCompleted: boolean;
@@ -30,7 +31,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           style={[styles.navButton, styles.previousButton]}
           onPress={onClose}
         >
-          <Ionicons name="chevron-back" size={24} color="#6B7280" />
+          <Ionicons name="chevron-back" size={24} color={colors.textSecondary} />
           <Text style={[styles.navButtonText, styles.previousButtonText]}>
             Previous
           </Text>
@@ -61,7 +62,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
                   isCompleted ? "checkmark-circle" : "checkmark-circle-outline"
                 }
                 size={24}
-                color={colors.surface}
+                color={colors.background}
               />
               <Text style={[styles.navButtonText, styles.completeButtonText]}>
                 {isCompleted ? "✅ Completed" : "Mark Complete"}
@@ -77,7 +78,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           <Text style={[styles.navButtonText, styles.nextButtonText]}>
             Next Step
           </Text>
-          <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
+          <Ionicons name="chevron-forward" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -122,23 +123,25 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   nextButton: {
-    backgroundColor: "#6B7280",
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   navButtonText: {
     fontSize: fontSize.md,
-    fontWeight: "600",
+    fontFamily: fontFamilyForWeight("semibold"),
     marginHorizontal: spacing.xs,
   },
   previousButtonText: {
     color: colors.textSecondary,
   },
   completeButtonText: {
-    color: colors.surface,
+    color: colors.background,
   },
   nextButtonText: {
-    // colors.white (not colors.surface) — nextButton's #6B7280 mid-gray
-    // background needs a light foreground (~4.83:1), matching the sibling
-    // chevron-forward icon on the same button, which already uses white.
-    color: colors.white,
+    // Same ghost/hairline treatment as previousButton — "Next Step" is a
+    // secondary nav action, not a primary CTA, so it gets the muted
+    // secondary-text color rather than a filled accent background.
+    color: colors.textSecondary,
   },
 });

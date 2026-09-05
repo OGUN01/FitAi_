@@ -8,7 +8,7 @@
  *
  * Layout:
  *  - AuroraBackground theme="space"
- *  - Flat header: transparent back circle + workout title (centered)
+ *  - Flat header: transparent back circle + workout title + "Start" pill
  *  - Sticky progress indicator (ProgressRing) — shows completion % when a
  *    session is in-progress (workoutProgress[workout.id].progress)
  *  - Stats bar: volume, calories (MET calc), duration, difficulty
@@ -44,7 +44,6 @@ import {
   ScrollView,
   FlatList,
   useWindowDimensions,
-  type TextStyle,
   type NativeSyntheticEvent,
   type NativeScrollEvent,
 } from 'react-native';
@@ -55,8 +54,6 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { ProgressRing } from '../../components/ui/aurora/ProgressRing';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
-import { GlassHeader } from '../../components/ui/aurora/GlassHeader';
-import { EmptyState } from '../../components/ui/aurora/EmptyState';
 import { type BarData } from '../../components/ui/GradientBarChart';
 import { BuilderAnalyticsPanel } from '../../components/fitness/builder/BuilderAnalyticsPanel';
 import { useFitnessStore } from '../../stores/fitnessStore';
@@ -65,28 +62,17 @@ import { calculateWorkoutCalories } from '../../services/calorieCalculator';
 import { CURATED_EXERCISES } from '../../data/curatedExercises';
 import { exerciseFilterService } from '../../services/exerciseFilterService';
 import { haptics } from '../../utils/haptics';
-import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { FONT_FAMILY } from '../../theme/fonts';
 import { rp, rf, rw, rbr } from '../../utils/responsive';
 import { hexToRgba } from '../../utils/colors';
 import { titleCaseExerciseName } from '../../utils/textFormat';
-import { findCompletedSessionForWorkout } from '../../utils/workoutIdentity';
-import { getCurrentWeekStart, getWeekStartForDate } from '../../utils/weekUtils';
 import type { DayWorkout } from '../../types/ai';
 import type { PlannedExercise } from '../../types/workout';
 
 // ----------------------------------------------------------------------------
 // TYPES
 // ----------------------------------------------------------------------------
-
-/**
- * Cast a typography font-weight token to RN's TextStyle['fontWeight'] without
- * `any` (TS strict). Same pattern as InlineValidationBanner.
- */
-const fw = (
-  w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight]
-): TextStyle['fontWeight'] => String(w) as TextStyle['fontWeight'];
 
 export interface WorkoutDetailScreenProps {
   /** The workout to render. Required. */
@@ -187,14 +173,6 @@ const resolveExerciseMeta = (exerciseId: string | undefined): ResolvedExerciseMe
     };
   }
 
-  // Neither lookup resolved this exerciseId — it silently contributes zero
-  // sets to every muscle-heatmap bucket, which reads as "this muscle group
-  // wasn't worked" even when the plan legitimately targeted it. Surfacing
-  // this makes an AI-plan-generation ID mismatch debuggable instead of
-  // showing up only as an unexplained gap in the heatmap.
-  console.warn(
-    `[WorkoutDetailScreen] resolveExerciseMeta: exerciseId "${exerciseId}" not found in exercise DB or curated list — contributing zero muscle-group/equipment data for this exercise.`,
-  );
   return empty;
 };
 
@@ -210,45 +188,8 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   testID,
 }) => {
   // ── Progress (sticky ring) — from fitnessStore.workoutProgress ──
-  const progressEntry = useFitnessStore((s) => s.workoutProgress[workout.id]);
-  const progress = progressEntry?.progress ?? 0;
+  const progress = useFitnessStore((s) => s.workoutProgress[workout.id]?.progress ?? 0);
   const startWorkoutSession = useFitnessStore((s) => s.startWorkoutSession);
-
-  // ── Completion — mirrors FullPlanScreen's week-aware check: a real
-  //    completed session wins; a stale 100% progress entry left over from a
-  //    previous week (recurring workout ids repeat week to week) never counts
-  //    as "done" for the current week. Both screens must agree on what
-  //    "completed" means for the same workout (CLAUDE.md §1 SSOT). ──
-  const activePlanSource = useFitnessStore((s) => s.activePlanSource);
-  const aiWeeklyPlan = useFitnessStore((s) => s.weeklyWorkoutPlan);
-  const customWeeklyPlan = useFitnessStore((s) => s.customWeeklyPlan);
-  const weeklyWorkoutPlan = activePlanSource === 'custom' ? customWeeklyPlan : aiWeeklyPlan;
-  const completedSessions = useFitnessStore((s) => s.completedSessions);
-  const currentWeekStart = getCurrentWeekStart();
-  const completedSession = useMemo(
-    () =>
-      findCompletedSessionForWorkout({
-        completedSessions,
-        workout,
-        plan: weeklyWorkoutPlan,
-        weekStart: currentWeekStart,
-      }),
-    [completedSessions, workout, weeklyWorkoutPlan, currentWeekStart]
-  );
-  const hasStaleCompletedProgress =
-    progressEntry?.progress === 100 &&
-    !!progressEntry.completedAt &&
-    getWeekStartForDate(progressEntry.completedAt) !== currentWeekStart;
-  // A partial (<100%) entry has no completedAt, but does get updatedAt
-  // stamped on every write (see fitnessStore.updateWorkoutProgress) — use
-  // that to detect a leftover partial from a prior week the same way.
-  const hasStalePartialProgress =
-    !!progressEntry &&
-    progressEntry.progress > 0 &&
-    progressEntry.progress < 100 &&
-    !!progressEntry.updatedAt &&
-    getWeekStartForDate(progressEntry.updatedAt) !== currentWeekStart;
-  const hasStaleProgress = hasStaleCompletedProgress || hasStalePartialProgress;
 
   // ── User weight for MET calorie calc ──
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
@@ -321,13 +262,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     });
 
     const calorieResult = calculateWorkoutCalories(calorieInputs, userWeightKg);
-    // CLAUDE.md §9: prefer the actual burned value — from the completed
-    // session, or an in-progress caloriesBurned snapshot on workoutProgress —
-    // over the pre-workout MET estimate. Mirrors FullPlanScreen's identical
-    // preference for the same plan/workout so both screens show the same
-    // number for the same session.
-    const actualCalories = completedSession?.caloriesBurned ?? progressEntry?.caloriesBurned ?? null;
-    const calories = actualCalories != null ? actualCalories : calorieResult.totalCalories;
+    const calories = calorieResult.totalCalories;
     const duration =
       workout.duration && workout.duration > 0
         ? workout.duration
@@ -340,7 +275,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
       duration,
       muscleCounts,
     };
-  }, [planned, workout.duration, userWeightKg, completedSession, progressEntry]);
+  }, [planned, workout.duration, userWeightKg]);
 
   // ── Muscle heatmap data (top groups by set count) ──
   const heatmapData: BarData[] = useMemo(() => {
@@ -359,11 +294,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
               : [colors.primary.DEFAULT, colors.primary.light],
         unit: ' sets',
       };
-      // Highest-worked muscles first — HEATMAP_GROUPS' fixed canonical order
-      // otherwise left e.g. a 0-set "Chest" chip ahead of the actually-loaded
-      // muscles for this workout, in a horizontal dialer where later chips
-      // may need scrolling to reach.
-    }).sort((a, b) => b.value - a.value);
+    });
   }, [stats.muscleCounts]);
 
   // ── Section partitioning ──
@@ -434,12 +365,8 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     setCarouselIndex(0);
   }, []);
 
-  const isCompleted = !!completedSession;
-  const inProgress = !isCompleted && !hasStaleProgress && progress > 0 && progress < 100;
-  // Never render a stale prior-week 100% (or a stale leftover partial) as a
-  // filled ring — show the neutral "not started this week" state instead
-  // (barbell icon, no text).
-  const displayProgress = hasStaleProgress ? 0 : progress;
+  const inProgress = progress > 0 && progress < 100;
+  const isCompleted = progress >= 100;
 
   // Bottom inset so the sticky Start CTA clears the home indicator on devices
   // without gesture nav (SafeAreaView uses edges={['top']} only — see below).
@@ -460,10 +387,6 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
     } catch (err) {
       console.error('[WorkoutDetailScreen] startWorkoutSession failed:', err);
       haptics.error();
-      crossPlatformAlert(
-        'Couldn\'t start workout',
-        'FitAI could not start this workout. Please try again.'
-      );
       setStarting(false);
     }
   }, [starting, startWorkoutSession, workout, navigation]);
@@ -497,48 +420,50 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
   return (
     <AuroraBackground theme="space">
       <SafeAreaView style={styles.flex} edges={['top']}>
-        {/* Shared Aurora header — back chevron + centered title + Start pill in
-            the rightAction slot. BottomStartBar (below) also offers Start,
-            but it's gated on `!isCompleted`; this header pill has no such
-            gate, so a completed workout still has a restart affordance. */}
-        {/* No `title` here — the hero card immediately below already renders
-            the workout name prominently (with description/meta chips), so a
-            second literal copy in the sticky header read as a copy-paste
-            leftover. `eyebrow` gives the header context without repeating it. */}
-        <GlassHeader
-          eyebrow="WORKOUT"
-          onBack={handleBack}
-          backAccessibilityLabel="Go back to previous screen"
-          rightAction={
-            <AnimatedPressable
-              onPress={handleStartWorkout}
-              disabled={starting || planned.length === 0}
-              accessibilityRole="button"
-              accessibilityLabel={starting ? 'Starting workout' : 'Start workout'}
-              testID={`${testID ?? 'workout-detail'}-start`}
-              style={[styles.headerStartBtn, (starting || planned.length === 0) && styles.headerStartDisabled]}
-              scaleValue={0.95}
-              springConfig="snappy"
-              hapticType="medium"
+        {/* ── Flat header — transparent back circle + plain title + gradient pill ── */}
+        <View style={styles.header}>
+          <AnimatedPressable
+            onPress={handleBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to previous screen"
+            style={styles.backBtn}
+            scaleValue={0.9}
+            springConfig="snappy"
+            hapticType="light"
+          >
+            <Ionicons name="chevron-back" size={rf(26)} color={colors.text.primary} />
+          </AnimatedPressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {workout.title || 'Workout'}
+          </Text>
+          <AnimatedPressable
+            onPress={handleStartWorkout}
+            disabled={starting || planned.length === 0}
+            accessibilityRole="button"
+            accessibilityLabel={starting ? 'Starting workout' : 'Start workout'}
+            testID={`${testID ?? 'workout-detail'}-start`}
+            style={[styles.headerStartBtn, (starting || planned.length === 0) && styles.headerStartDisabled]}
+            scaleValue={0.95}
+            springConfig="snappy"
+            hapticType="medium"
+          >
+            <LinearGradient
+              colors={
+                starting
+                  ? [colors.primary.dark, colors.primary.dark]
+                  : [colors.primary.DEFAULT, colors.primary.dark]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.headerStartGradient}
             >
-              <LinearGradient
-                colors={
-                  starting
-                    ? [colors.primary.dark, colors.primary.dark]
-                    : [colors.primary.DEFAULT, colors.primary.dark]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.headerStartGradient}
-              >
-                <Ionicons name="play-circle-outline" size={rf(14)} color={colors.text.primary} />
-                <Text style={styles.headerStartText} numberOfLines={1}>
-                  {starting ? 'Starting…' : 'Start'}
-                </Text>
-              </LinearGradient>
-            </AnimatedPressable>
-          }
-        />
+              <Ionicons name="play-circle-outline" size={rf(14)} color={colors.text.primary} />
+              <Text style={styles.headerStartText} numberOfLines={1}>
+                {starting ? 'Starting…' : 'Start'}
+              </Text>
+            </LinearGradient>
+          </AnimatedPressable>
+        </View>
 
         <ScrollView
           style={styles.scroll}
@@ -552,7 +477,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
             <View style={styles.heroRow}>
                 {/* Progress ring (sticky at top — shows % if in-progress) */}
                 <ProgressRing
-                  progress={displayProgress}
+                  progress={progress}
                   size={rf(72)}
                   strokeWidth={6}
                   gradient
@@ -561,7 +486,7 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                     colors.secondary[500],
                   ]}
                   showText={inProgress || isCompleted}
-                  text={isCompleted ? '✓' : inProgress ? `${Math.round(displayProgress)}%` : ''}
+                  text={isCompleted ? '✓' : inProgress ? `${Math.round(progress)}%` : ''}
                 >
                   {!(inProgress || isCompleted) ? (
                     <Ionicons name="barbell-outline" size={rf(24)} color={colors.primary.DEFAULT} />
@@ -614,7 +539,17 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                 <Divider />
                 <Stat
                   icon="flame-outline"
-                  label="Calories"
+                  // BUG FIX: this tile falls back to the plan's PRE-GENERATION
+                  // estimate when the actual (MET-computed) calories aren't
+                  // available yet, while the sticky bottom bar below only
+                  // ever shows the actual value (never estimatedCalories —
+                  // see BottomStartBar's `calories={stats.calories}`, no
+                  // fallback). Both numbers are individually correct per
+                  // CLAUDE.md #8/#9, but sitting side by side with the same
+                  // generic "Calories" label they read as contradictory
+                  // ("334" here vs "—" below). Label the estimate as an
+                  // estimate so it's clear these are two different things.
+                  label={stats.calories > 0 ? 'Calories' : 'Est. Calories'}
                   value={
                     stats.calories > 0
                       ? String(stats.calories)
@@ -627,16 +562,15 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
                 <Stat
                   icon="time-outline"
                   label="Duration"
-                  value={
-                    stats.duration > 0
-                      ? `${Math.round(stats.duration)}m`
-                      : workout.duration > 0
-                        ? `~${Math.round(workout.duration)}m`
-                        : '—'
-                  }
+                  value={stats.duration > 0 ? `${Math.round(stats.duration)}m` : '—'}
                 />
                 <Divider />
-                <Stat icon="trending-up-outline" label="Difficulty" value={difficultyLabel} />
+                <Stat
+                  icon="trending-up-outline"
+                  label="Difficulty"
+                  value={difficultyLabel}
+                  valueFontSize={11}
+                />
               </View>
           </Animated.View>
 
@@ -676,11 +610,11 @@ export const WorkoutDetailScreen: React.FC<WorkoutDetailScreenProps> = ({
           {/* ── Empty state ── */}
           {planned.length === 0 && sections.cooldown.length === 0 && (
             <View style={styles.emptyState}>
-              <EmptyState
-                icon="barbell-outline"
-                title="No exercises yet"
-                subtitle="This workout has no planned exercises. Add some via the builder."
-              />
+              <Ionicons name="barbell-outline" size={rf(48)} color={colors.text.tertiary} />
+              <Text style={styles.emptyTitle}>No exercises yet</Text>
+              <Text style={styles.emptyHint}>
+                This workout has no planned exercises. Add some via the builder.
+              </Text>
             </View>
           )}
 
@@ -744,12 +678,12 @@ const SectionPills: React.FC<{
           springConfig="snappy"
           hapticType="selection"
         >
-          <Ionicons name={t.icon} size={rf(13)} color={isActive ? colors.background.DEFAULT : t.accent} />
-          <Text style={[styles.pillText, { color: isActive ? colors.background.DEFAULT : colors.text.secondary }]} numberOfLines={1}>
+          <Ionicons name={t.icon} size={rf(13)} color={isActive ? colors.text.primary : t.accent} />
+          <Text style={[styles.pillText, { color: isActive ? colors.text.primary : colors.text.secondary }]} numberOfLines={1}>
             {t.label}
           </Text>
           <View style={[styles.pillCount, isActive && styles.pillCountActive]}>
-            <Text style={[styles.pillCountText, { color: isActive ? colors.background.DEFAULT : colors.text.tertiary }]}>
+            <Text style={[styles.pillCountText, { color: isActive ? colors.text.primary : colors.text.tertiary }]}>
               {t.count}
             </Text>
           </View>
@@ -1108,10 +1042,26 @@ const Stat: React.FC<{
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
-}> = ({ icon, label, value }) => (
+  /** Override the value's font size — for a tile whose value can be a long
+   * word ("Intermediate") that a shared size would clip. Optional; the 3
+   * numeric/short-string tiles (Volume/Calories/Duration) don't need it. */
+  valueFontSize?: number;
+}> = ({ icon, label, value, valueFontSize }) => (
   <View style={styles.statCell}>
     <Ionicons name={icon} size={rf(16)} color={colors.text.secondary} />
-    <Text style={styles.statValue} numberOfLines={1}>
+    {/* BUG FIX: "Intermediate" (the longest value the Difficulty tile can
+        show) clipped to "Intermedi..." at normal viewport width — all 4
+        tiles share equal flex width but this is the only one whose value is
+        a long single word. Tried adjustsFontSizeToFit/minimumFontScale
+        first, but React Native Web does not implement it (no visible
+        effect, confirmed via a live before/after screenshot) — this is a
+        web app, so an explicit smaller fontSize (passed only for the
+        Difficulty tile, via `valueFontSize`) is the fix that actually
+        works, cross-platform, rather than relying on a native-only prop. */}
+    <Text
+      style={[styles.statValue, valueFontSize ? { fontSize: rf(valueFontSize) } : null]}
+      numberOfLines={1}
+    >
       {value}
     </Text>
     <Text style={styles.statLabel} numberOfLines={1}>
@@ -1137,7 +1087,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(spacing.lg),
     paddingTop: rp(spacing.sm),
   },
-  // Header "Start" pill — rendered in GlassHeader's rightAction slot.
+  // Flat header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
+    minHeight: rf(52),
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: hexToRgba(colors.text.primary, 0.08),
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.h3),
+    fontFamily: FONT_FAMILY.bold,    marginHorizontal: rp(spacing.xs),
+  },
   headerStartBtn: {
     borderRadius: rbr(16),
     overflow: 'hidden',
@@ -1155,9 +1128,7 @@ const styles = StyleSheet.create({
   headerStartText: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.bold,  },
   headerStartDisabled: {
     opacity: 0.6,
   },
@@ -1177,14 +1148,12 @@ const styles = StyleSheet.create({
   heroTitle: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.h3),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.bold,  },
   heroDesc: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
     marginTop: rp(spacing.xxs),
-    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
   },
   heroMeta: {
     flexDirection: 'row',
@@ -1198,13 +1167,8 @@ const styles = StyleSheet.create({
     paddingVertical: rp(1),
   },
   intensityChipText: {
-    // White text fails AA (4.5:1) on every intensity chip background — orange
-    // (#FF6B35: 2.84), warning (#FF9800: 2.16), grey (#8A8A8A: 3.45). Black
-    // passes on all (7.4 / 9.7 / 6.1), so use the app background black.
-    color: colors.background.DEFAULT,
-    fontSize: rf(11),
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    color: colors.text.primary,
+    fontSize: rf(11),  },
   metaText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
@@ -1227,9 +1191,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: colors.text.primary,
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontSize: rf(typography.fontSize.caption),  },
   statLabel: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
@@ -1247,9 +1209,7 @@ const styles = StyleSheet.create({
   heatmapTotal: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.semibold,
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
+    fontFamily: FONT_FAMILY.semibold,  },
   heatScrollWrap: {
     marginHorizontal: rp(-spacing.lg),
   },
@@ -1268,9 +1228,7 @@ const styles = StyleSheet.create({
   heatLabel: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.semibold,
-    fontWeight: fw(typography.fontWeight.semibold),
-    textTransform: 'capitalize',
+    fontFamily: FONT_FAMILY.semibold,    textTransform: 'capitalize',
   },
   heatBar: {
     height: rp(6),
@@ -1285,15 +1243,11 @@ const styles = StyleSheet.create({
   heatCount: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.caption),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.bold,  },
   heatUnit: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.regular,
-    fontWeight: fw(typography.fontWeight.regular),
-  },
+    fontFamily: FONT_FAMILY.regular,  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1302,8 +1256,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.text.tertiary,
-    fontSize: rf(12),
-    fontWeight: fw(typography.fontWeight.bold),
+    fontSize: rf(typography.fontSize.micro),
+    fontFamily: FONT_FAMILY.bold,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
     flex: 1,
@@ -1331,13 +1285,11 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: hexToRgba(colors.text.primary, 0.1),
     backgroundColor: hexToRgba(colors.text.primary, 0.04),
-    minHeight: 44,
+    minHeight: 40,
   },
   pillText: {
     fontSize: rf(typography.fontSize.caption),
-    fontFamily: FONT_FAMILY.semibold,
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
+    fontFamily: FONT_FAMILY.semibold,  },
   pillCount: {
     minWidth: rw(20),
     alignItems: 'center',
@@ -1351,9 +1303,7 @@ const styles = StyleSheet.create({
   },
   pillCountText: {
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.bold,  },
   // Carousel
   carouselWrap: {
     marginHorizontal: rp(-spacing.lg),
@@ -1394,9 +1344,7 @@ const styles = StyleSheet.create({
   exName: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.body),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.tight,
+    fontFamily: FONT_FAMILY.bold,    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.tight,
   },
   exSub: {
     color: colors.text.secondary,
@@ -1417,15 +1365,11 @@ const styles = StyleSheet.create({
   exSetsValue: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.h3),
-    fontFamily: FONT_FAMILY.extrabold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.extrabold,  },
   exSetsX: {
     color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.body),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.bold,  },
   exSetsLabel: {
     color: colors.text.tertiary,
     fontSize: rf(typography.fontSize.micro),
@@ -1450,9 +1394,7 @@ const styles = StyleSheet.create({
   exPillText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.semibold,
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
+    fontFamily: FONT_FAMILY.semibold,  },
   // Per-set chips
   exSetsChipsScroll: {
     marginHorizontal: rp(-spacing.lg),
@@ -1475,15 +1417,11 @@ const styles = StyleSheet.create({
   exSetChipNum: {
     color: colors.primary.DEFAULT,
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.bold,
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontFamily: FONT_FAMILY.bold,  },
   exSetChipText: {
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.micro),
-    fontFamily: FONT_FAMILY.semibold,
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
+    fontFamily: FONT_FAMILY.semibold,  },
   // Notes + tempo rows
   exNotes: {
     flexDirection: 'row',
@@ -1495,7 +1433,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.secondary,
     fontSize: rf(typography.fontSize.caption),
-    lineHeight: rf(typography.fontSize.caption) * typography.lineHeight.normal,
+    lineHeight: rf(typography.fontSize.body) * typography.lineHeight.normal,
   },
   // Carousel dots
   dotsRow: {
@@ -1519,6 +1457,17 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: rp(spacing.xxl),
+    gap: rp(spacing.sm),
+  },
+  emptyTitle: {
+    color: colors.text.secondary,
+    fontSize: rf(typography.fontSize.body),  },
+  emptyHint: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.caption),
+    textAlign: 'center',
+    paddingHorizontal: rp(spacing.xl),
   },
   footerSpacer: {
     height: rp(120),
@@ -1536,7 +1485,7 @@ const styles = StyleSheet.create({
     borderTopColor: hexToRgba(colors.text.primary, 0.06),
     // Sticky footer z-index + elevation so it renders above scroll content.
     zIndex: 1100,
-    elevation: 1100,
+    elevation: 11,
   },
   bottomCta: {
     width: '100%',
@@ -1554,9 +1503,7 @@ const styles = StyleSheet.create({
   },
   bottomCtaText: {
     color: colors.text.primary,
-    fontSize: rf(15),
-    fontWeight: fw(typography.fontWeight.bold),
-  },
+    fontSize: rf(15),  },
   bottomCtaDisabled: {
     opacity: 0.7,
   },
@@ -1573,9 +1520,7 @@ const styles = StyleSheet.create({
   },
   bottomStatValue: {
     color: colors.text.primary,
-    fontSize: rf(typography.fontSize.caption),
-    fontWeight: fw(typography.fontWeight.semibold),
-  },
+    fontSize: rf(typography.fontSize.caption),  },
   bottomDivider: {
     // Fixed 1px (was rw(1) — scales border with screen width).
     width: StyleSheet.hairlineWidth,

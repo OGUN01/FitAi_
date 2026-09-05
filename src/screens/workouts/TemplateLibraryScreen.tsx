@@ -27,6 +27,7 @@ import {
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { useAuthStore } from "../../stores/authStore";
 import { usePaywall } from "../../hooks/usePaywall";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 import { getCurrentUserId } from "../../services/authUtils";
@@ -59,6 +60,7 @@ import {
   flatColors as colors,
   spacing,
   typography,
+  borderRadius,
 } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
 import { animations } from "../../theme/animations";
@@ -229,6 +231,7 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
   // WorkoutSessionScreen's selector — see that screen for the canonical read).
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const isPremium = useSubscriptionStore((s) => s.isPremium());
+  const isGuestMode = useAuthStore((s) => s.isGuestMode);
   const { triggerPaywall, showPaywall, paywallReason, dismiss } = usePaywall();
 
   const userWeightKg = bodyAnalysis?.current_weight_kg ?? null;
@@ -704,11 +707,23 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
         <SafeAreaView style={styles.flex} edges={["top"]}>
           <GlassHeader title="Template Library" eyebrow="Workouts" onBack={() => navigation.goBack()} />
           <View style={styles.emptyWrap} testID="template-sign-in-required">
+            {/* BUG FIX (found via live testing): `getCurrentUserId()` returns
+                null for BOTH a genuinely expired/signed-out session AND a
+                guest who was never signed in to begin with — the same
+                guest-vs-signed-out conflation bug class already found and
+                fixed elsewhere this session (App.tsx's WelcomeScreen-bounce
+                effect). A guest reaching this screen saw the factually
+                false "Your session has expired" message. Branch the copy so
+                a guest gets an accurate, actionable message instead. */}
             <EmptyState
               icon="lock-closed-outline"
               iconColor={colors.warning}
-              title="Sign in required"
-              subtitle="Your session has expired. Sign in again to view and manage your workout templates."
+              title={isGuestMode ? "Sign up to save templates" : "Sign in required"}
+              subtitle={
+                isGuestMode
+                  ? "Workout templates are saved to your account. Create a free account to build and save your own."
+                  : "Your session has expired. Sign in again to view and manage your workout templates."
+              }
               ctaText="Go Back"
               onCta={() => navigation.goBack()}
             />
@@ -982,6 +997,13 @@ export default function TemplateLibraryScreen({ navigation, route }: Props) {
           />
         ) : (
           <FlatList
+            // React Native's FlatList does not support changing numColumns on
+            // an already-mounted instance (throws an Invariant Violation) --
+            // remounting via a viewMode-keyed `key` is the documented fix
+            // (confirmed live: toggling Grid <-> List with saved templates
+            // present crashed the whole screen to the error boundary before
+            // this fix, since numColumns below flips 2 <-> 1 with view mode).
+            key={viewMode}
             data={filteredTemplates}
             keyExtractor={(item) => item.id}
             testID="template-list"
@@ -1441,6 +1463,7 @@ const TemplateGridCard: React.FC<GridCardProps> = ({
         <AnimatedPressable
           onPress={() => onToggleBookmark(template.id)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          containerStyle={styles.gridBookmarkBtnPosition}
           style={styles.gridBookmarkBtn}
           accessibilityRole="button"
           accessibilityLabel={
@@ -1622,6 +1645,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
             testID={`menu-button-${template.id}`}
             accessibilityRole="button"
             accessibilityLabel="Open template menu"
+            containerStyle={styles.menuBtnPosition}
             style={styles.menuBtn}
           >
             <Ionicons
@@ -1735,6 +1759,7 @@ const TemplateListRow: React.FC<ListRowProps> = ({
         <AnimatedPressable
           onPress={() => onToggleBookmark(template.id)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          containerStyle={styles.listBookmarkBtnPosition}
           style={styles.listBookmarkBtn}
           accessibilityRole="button"
           accessibilityLabel={
@@ -1804,7 +1829,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: hexToRgba(colors.background, 0.4),
     zIndex: 1300,
     elevation: 1300,
   },
@@ -1831,7 +1856,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: Math.max(rw(40), 44),
     height: Math.max(rw(40), 44),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     backgroundColor: hexToRgba(colors.primary, 0.12),
     alignItems: "center",
     justifyContent: "center",
@@ -1874,7 +1899,7 @@ const styles = StyleSheet.create({
     gap: rp(spacing.xxs),
     paddingVertical: rp(spacing.sm),
     paddingHorizontal: rp(spacing.md),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     minHeight: Math.max(rp(spacing.xl), 44),
   },
   tabChipActive: {
@@ -1907,7 +1932,7 @@ const styles = StyleSheet.create({
     minHeight: Math.max(rp(spacing.xl), 44),
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
   },
   collectionChipActive: {
     backgroundColor: hexToRgba(colors.secondary, 0.12),
@@ -1949,7 +1974,7 @@ const styles = StyleSheet.create({
   multiBarBtn: {
     width: Math.max(rw(36), 44),
     height: Math.max(rw(36), 44),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: hexToRgba(colors.text, 0.06),
@@ -1976,21 +2001,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: rp(160),
     height: rp(160),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     backgroundColor: hexToRgba(colors.primary, 0.18),
     transform: [{ scale: 1.1 }],
   },
   heroIconDisc: {
     width: rp(104),
     height: rp(104),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    // Ambient glow is already provided by `heroGlow` (a translucent orange
+    // circle behind this disc) — a second colored drop-shadow here was a
+    // redundant, copy-pasted 24px bloom (identical block also existed in
+    // EmptyPlanState.tsx). Removed rather than duplicated.
   },
   heroEyebrow: {
     fontSize: rf(11),
@@ -2093,10 +2117,10 @@ const styles = StyleSheet.create({
     right: rp(spacing.xs),
     width: rw(22),
     height: rw(22),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     borderWidth: 2,
     borderColor: colors.text,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: hexToRgba(colors.background, 0.3),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -2104,17 +2128,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
-  gridBookmarkBtn: {
+  // Positioning only (passed via AnimatedPressable's `containerStyle`, which
+  // targets the OUTER Animated.View -- the true DOM sibling among this card's
+  // other overlays. `style` only reaches the INNER Pressable, so absolute
+  // positioning/zIndex placed there never actually affects this element's
+  // stacking position relative to its siblings -- see the sibling `menuBtn`
+  // comment below for the live-confirmed bug this fixes.
+  gridBookmarkBtnPosition: {
     position: "absolute",
     top: rp(spacing.xs),
     right: rp(spacing.xs),
+    zIndex: 2,
+  },
+  gridBookmarkBtn: {
     width: GRID_BOOKMARK_W,
     height: GRID_BOOKMARK_W,
-    borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.background, 0.35),
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 2,
   },
   gridBody: {
     padding: rp(spacing.sm),
@@ -2203,7 +2235,7 @@ const styles = StyleSheet.create({
   listCheckbox: {
     width: rw(22),
     height: rw(22),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     borderWidth: 2,
     borderColor: colors.textSecondary,
     alignItems: "center",
@@ -2224,33 +2256,50 @@ const styles = StyleSheet.create({
     marginTop: rp(spacing.xxs),
     textTransform: "capitalize",
   },
-  listBookmarkBtn: {
-    // Absolute sibling overlay — sits where it used to in the header row:
-    // vertically aligned with the name line, immediately left of the menu
-    // button (row padding + menu width).
+  // Positioning only -- see gridBookmarkBtnPosition comment above for why
+  // this must go through `containerStyle`, not `style`.
+  listBookmarkBtnPosition: {
     position: "absolute",
     top: rp(spacing.md),
     right: rp(spacing.xs) + LIST_MENU_BTN_W,
+    zIndex: 2,
+  },
+  listBookmarkBtn: {
     minWidth: LIST_BOOKMARK_W,
     minHeight: LIST_BOOKMARK_W,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 2,
   },
-  menuBtn: {
-    // Absolute sibling overlay — sits where it used to in the header row:
-    // vertically aligned with the name line, at the row's right edge (the
-    // bookmark overlay sits immediately to its left).
+  // Positioning only -- CONFIRMED LIVE BUG, now fixed: AnimatedPressable
+  // renders an outer `Animated.View` (which `containerStyle` targets) wrapping
+  // an inner `Pressable` (which plain `style` targets). This `menuBtn` object
+  // used to be passed via `style`, so `position: absolute` + `zIndex: 2`
+  // landed on the INNER Pressable only -- the OUTER wrapper (the element that
+  // actually participates in this row's sibling stacking order, since it's
+  // the one that's a direct DOM sibling of `listLower` below) stayed at the
+  // default `position: relative; z-index: 0`. Because `listLower`'s exercise
+  // rows (also z-index: 0) come LATER in DOM order, they won every stacking
+  // tie-break and visually occluded this button -- confirmed via
+  // `document.elementsFromPoint()` at the button's own computed center, and
+  // via a real Playwright click landing on the exercise row underneath
+  // instead of opening the template menu. Splitting positioning into
+  // `containerStyle` (this object) fixes the DOM-level stacking; the size/
+  // padding/centering below stays on `style` so the tap target remains the
+  // full 44x44 hit area (moving those into containerStyle too would have
+  // shrunk the clickable area down to just the icon glyph's natural size).
+  menuBtnPosition: {
     position: "absolute",
     top: rp(spacing.md),
     right: rp(spacing.xs),
+    zIndex: 2,
+  },
+  menuBtn: {
     paddingLeft: rp(spacing.sm),
     paddingVertical: rp(spacing.xs),
     minWidth: LIST_MENU_BTN_W,
     minHeight: Math.max(rw(44), 44),
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 2,
   },
   // ── Exercise quick list (flat rows + hairlines) ───────────────────────────────
   exerciseListContainer: {

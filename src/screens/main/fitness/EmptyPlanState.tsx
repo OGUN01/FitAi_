@@ -228,21 +228,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: rp(160),
     height: rp(160),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     backgroundColor: hexToRgba(colors.primary, 0.18),
     transform: [{ scale: 1.1 }],
   },
   heroIconDisc: {
     width: rp(104),
     height: rp(104),
-    borderRadius: 999,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    // Ambient glow already comes from `heroGlow` (translucent orange circle
+    // behind this disc) — the colored drop-shadow here was a redundant,
+    // copy-pasted 24px bloom (identical block also existed in
+    // TemplateLibraryScreen.tsx). Removed rather than duplicated.
   },
   heroEyebrow: {
     fontSize: rf(11),

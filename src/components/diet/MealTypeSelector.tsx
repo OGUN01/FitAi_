@@ -11,6 +11,7 @@ import {
   borderRadius,
   flatFontSize as fontSize,
   typography,
+  border,
 } from '../../theme/aurora-tokens';
 import { hexToRgba, TINT_ALPHA_LOW } from '../../utils/colors';
 import { haptics } from '../../utils/haptics';
@@ -262,10 +263,12 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: rbr(22),
-    backgroundColor: colors.backgroundSecondary,
+    width: Math.max(rw(44), 44),
+    height: Math.max(rw(44), 44),
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: border.subtle,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',

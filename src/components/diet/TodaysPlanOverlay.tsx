@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { DayMeal } from '../../types/ai';
 import type { MealSchedule } from '../../utils/mealSchedule';
@@ -54,24 +55,29 @@ export const TodaysPlanOverlay: React.FC<TodaysPlanOverlayProps> = ({
 
   return (
     <View style={styles.overlay} testID="diet-todays-plan-overlay">
-      <View style={styles.header}>
-        <AnimatedPressable
-          style={styles.headerButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Diet"
-          hapticType="light"
-        >
-          <Ionicons name="chevron-back" size={23} color={colors.text} />
-        </AnimatedPressable>
-        <View style={styles.headerTitleWrap}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={styles.subtitle}>Your selected-day meal plan</Text>
+      {/* This overlay is StyleSheet.absoluteFillObject, so it escapes the
+          parent SafeAreaView's top padding — nest our own here, matching
+          MealDetailView's pattern for the same absolute-fill overlay shape. */}
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.header}>
+          <AnimatedPressable
+            style={styles.headerButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Diet"
+            hapticType="light"
+          >
+            <Ionicons name="chevron-back" size={23} color={colors.text} />
+          </AnimatedPressable>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={styles.subtitle}>Your selected-day meal plan</Text>
+          </View>
+          <View style={styles.headerButton} />
         </View>
-        <View style={styles.headerButton} />
-      </View>
+      </SafeAreaView>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <MealsTimeline
           meals={meals}
@@ -103,6 +109,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     zIndex: 150,
   },
+  safeArea: {
+    backgroundColor: colors.background,
+  },
   header: {
     minHeight: 64,
     paddingHorizontal: spacing.md,
@@ -122,7 +131,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSize.lg,
     fontFamily: fontFamilyForWeight('800'),
-    fontWeight: '800',
   },
   subtitle: {
     color: colors.textSecondary,

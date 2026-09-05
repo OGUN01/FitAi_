@@ -1008,7 +1008,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(28),
     fontFamily: FONT_FAMILY.extrabold,
-    fontWeight: "800",
     color: colors.text,
     lineHeight: rf(34),
     letterSpacing: -0.3,
@@ -1068,13 +1067,12 @@ const styles = StyleSheet.create({
   modeSegmentIcon: {},
   modeSegmentText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.textSecondary,
   },
   modeSegmentTextActive: {
     color: colors.white,
     fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
   },
 
   // ── Day list ──
@@ -1113,7 +1111,6 @@ const styles = StyleSheet.create({
   dayDiscText: {
     fontSize: rf(15),
     fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
   },
   dayDiscTextFilled: {
     color: colors.white,
@@ -1136,7 +1133,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text,
     marginBottom: rp(spacing.xs),
   },
@@ -1150,7 +1147,7 @@ const styles = StyleSheet.create({
   assignedInfo: { flex: 1, minWidth: 0 },
   assignedName: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.textSecondary,
   },
   assignedMeta: {
@@ -1170,7 +1167,7 @@ const styles = StyleSheet.create({
   ghostBtnText: {
     fontSize: rf(13),
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   iconBtn: {
     alignItems: "center",
@@ -1194,7 +1191,7 @@ const styles = StyleSheet.create({
   addText: {
     fontSize: rf(13),
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
 
   summaryRow: {
@@ -1225,7 +1222,7 @@ const styles = StyleSheet.create({
   exerciseDayCount: {
     fontSize: rf(12),
     color: colors.primary,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   exerciseDayRest: {
     fontSize: rf(12),
@@ -1256,7 +1253,7 @@ const styles = StyleSheet.create({
   exerciseItemInfo: { flex: 1, minWidth: 0 },
   exerciseItemName: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text,
     marginBottom: rp(spacing.xs),
   },
@@ -1274,12 +1271,12 @@ const styles = StyleSheet.create({
     marginBottom: rp(2),
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   controlValue: {
     fontSize: rf(13),
     color: colors.text,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   stepperRow: {
     flexDirection: "row",
@@ -1297,12 +1294,12 @@ const styles = StyleSheet.create({
   stepperBtnText: {
     fontSize: rf(16),
     color: colors.text,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   stepperValue: {
     fontSize: rf(13),
     color: colors.text,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     minWidth: rw(28),
     textAlign: "center",
   },
@@ -1333,7 +1330,7 @@ const styles = StyleSheet.create({
   },
   addExerciseBtnText: {
     fontSize: rf(13),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.primary,
   },
   clearDayBtn: {
@@ -1345,7 +1342,7 @@ const styles = StyleSheet.create({
   clearDayBtnText: {
     fontSize: rf(12),
     color: colors.error,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
 
   // ── Footer CTA ──
@@ -1377,7 +1374,6 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: rf(15),
     fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
     color: colors.white,
   },
 
@@ -1396,7 +1392,7 @@ const styles = StyleSheet.create({
   pickerItemInfo: { flex: 1, minWidth: 0 },
   pickerItemName: {
     fontSize: rf(15),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text,
   },
   pickerItemMeta: {
@@ -1463,11 +1459,10 @@ const styles = StyleSheet.create({
   categoryTabText: {
     fontSize: rf(12),
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   categoryTabTextActive: {
     color: colors.white,
     fontFamily: FONT_FAMILY.bold,
-    fontWeight: "700",
   },
 });

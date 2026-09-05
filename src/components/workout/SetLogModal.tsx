@@ -29,17 +29,22 @@ import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheet, AnimatedPressable, GlassButton } from '../ui/aurora';
 import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
+import { FONT_FAMILY } from '../../theme/fonts';
 import { rp, rf } from '../../utils/responsive';
 import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
 import { parseLocalFloat } from '../../utils/units';
 import { hexToRgba } from '../../utils/colors';
 import { totalVolume } from '../../utils/volumeCalculator';
 import { exerciseHistoryService, LastSessionData } from '../../services/exerciseHistoryService';
-import { progressionService, ProgressionResult } from '../../services/progressionService';
+import { PROGRESSION_INCREMENTS } from '../../services/progressionService';
+import { selectScheme, suggestNext, ProgressionPrescription } from '../../services/progression';
+import type { TrainingEmphasis } from '../../services/volumeLandmarksService';
 import { prDetectionService, PRCheckResult } from '../../services/prDetectionService';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { parseRepRange } from '../../features/workouts/components/ExerciseCard';
 import { exerciseFilterService } from '../../services/exerciseFilterService';
+import { deriveExerciseClassification } from '../../utils/resolveExerciseMeta';
+import { EFFORT_BUCKET_TO_RPE10 } from '../../utils/effortScale';
 
 const SET_TYPES = ['normal', 'warmup', 'failure', 'drop'] as const;
 type SetType = (typeof SET_TYPES)[number];
@@ -78,7 +83,9 @@ const WEIGHT_STEP_KG = 2.5;
 // the numeric value is meaningful to users familiar with RPE. The three-tap
 // interface stays (Easy/Just Right/Hard) but each shows its RPE equivalent.
 // 1 = Easy (RPE ~4), 2 = Just Right (RPE ~7), 3 = Hard (RPE ~9).
-const RPE_NUMERIC: Record<1 | 2 | 3, number> = { 1: 4, 2: 7, 3: 9 };
+// This was previously display-only (shown but never persisted) — handleSave
+// now writes it through to exercise_sets.rpe_10 via EFFORT_BUCKET_TO_RPE10.
+const RPE_NUMERIC = EFFORT_BUCKET_TO_RPE10;
 const RPE_DESCRIPTOR: Record<1 | 2 | 3, string> = {
   1: 'Easy',
   2: 'Just Right',
@@ -138,6 +145,10 @@ export interface SetLogData {
   completed: boolean;
   /** 1=easy, 2=just right, 3=hard — always present after Phase 6 */
   rpe: 1 | 2 | 3;
+  /** Full 1-10 RPE — synthesized from `rpe` via EFFORT_BUCKET_TO_RPE10, or
+   * entered precisely if the user opened the advanced RPE slider. See
+   * src/utils/effortScale.ts. */
+  rpe10: number;
   /** True when this set is part of a first-session calibration ramp-up */
   isCalibration: boolean;
 }
@@ -149,8 +160,28 @@ interface SetLogModalProps {
   reps: number | string;
   setIndex: number;
   totalSets: number;
+  /**
+   * This exercise's position in workout.exercises — passed through to
+   * fitnessStore.updateSetData so it can target this exact array entry
+   * instead of matching by exerciseId alone (which silently collides when
+   * the same exerciseId appears twice in one day, e.g. a circuit round).
+   * Optional for backward compatibility; omitting it falls back to the
+   * previous exerciseId-match behavior.
+   */
+  exerciseIndex?: number;
   userId?: string;
   userUnits?: 'kg' | 'lbs';
+  /** workoutPreferences.intensity — drives progression scheme auto-selection
+   * (selectScheme in src/services/progression). Defaults to 'intermediate',
+   * which selects the same 'double' scheme this modal always used before
+   * the scheme registry existed — omitting this prop is fully backward
+   * compatible. */
+  trainingAge?: 'beginner' | 'intermediate' | 'advanced';
+  /** Onboarding goal, collapsed via volumeLandmarksService.resolveTrainingEmphasis
+   * (Workout Engine v2 Phase 5) — feeds selectScheme's goal-bound default
+   * (e.g. strength → linear). Optional; omitting it falls through to the
+   * trainingAge/'double' behavior this modal always used. */
+  emphasis?: TrainingEmphasis;
   /** Set when calibrationService determined this is a first session */
   calibrationMode?: boolean;
   /** Conservative starting weight from calibrationService */
@@ -173,8 +204,11 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   reps,
   setIndex,
   totalSets,
+  exerciseIndex,
   userId,
   userUnits = 'kg',
+  trainingAge = 'intermediate',
+  emphasis,
   calibrationMode = false,
   calibrationStartKg = 0,
   calibrationNote = '',
@@ -204,7 +238,7 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const savingRef = useRef(false);
   const [previousSession, setPreviousSession] = useState<LastSessionData | null>(null);
-  const [suggestedWeight, setSuggestedWeight] = useState<ProgressionResult | null>(null);
+  const [suggestedWeight, setSuggestedWeight] = useState<ProgressionPrescription | null>(null);
   // Live PR preview — computed from the current weight/reps inputs against the
   // user's existing PRs. Null until history is loaded; null when no PR hit.
   const [prPreview, setPrPreview] = useState<PRCheckResult | null>(null);
@@ -218,9 +252,12 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
   const weightExerciseRef = useRef<string | null>(null);
 
   const exerciseData = exerciseFilterService.getExerciseById(exerciseId);
-  const isBodyweight =
-    exerciseData?.equipments?.includes('body weight') ??
-    progressionService.isBodyweightExercise(exerciseId);
+  // Single source for bodyweight/lower-body/time-based classification — works
+  // for both ExerciseDB hash IDs (AI plans) and legacy curated snake_case IDs
+  // (custom builder). See resolveExerciseMeta.ts for why this can't be
+  // derived from exerciseId keyword matching alone.
+  const exerciseClass = deriveExerciseClassification(exerciseId);
+  const isBodyweight = exerciseClass.isBodyweight;
 
   const isTimeBased = isTimeHold(reps);
   const perSide = isPerSide(reps);
@@ -293,14 +330,21 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
               return null;
             });
 
-          const result = progressionService.suggestNextWeight(
+          const scheme = selectScheme({
+            isBodyweight,
+            isTimeBased: exerciseClass.isTimeBased,
+            trainingAge,
+            emphasis,
+          });
+          const result = suggestNext(scheme, {
             exerciseId,
             lastSets,
             repRange,
             isBodyweight,
-            undefined,
-            lastRPE
-          );
+            isLowerBody: exerciseClass.isLowerBody,
+            isTimeBased: exerciseClass.isTimeBased,
+            lastRPE,
+          });
           setSuggestedWeight(result);
 
           // Pre-fill weight
@@ -458,24 +502,33 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
       return;
     }
 
+    const rpe10 = EFFORT_BUCKET_TO_RPE10[rpe];
+
     const data: SetLogData = {
       weightKg,
       reps: repsValue,
       setType,
       completed: true,
       rpe,
+      rpe10,
       isCalibration: calibrationMode,
     };
 
     // Persist to fitness store — SSOT path (unchanged)
-    useFitnessStore.getState().updateSetData(exerciseId, setIndex, {
-      weightKg,
-      reps: repsValue,
-      setType,
-      completed: true,
-      rpe,
-      isCalibration: calibrationMode,
-    });
+    useFitnessStore.getState().updateSetData(
+      exerciseId,
+      setIndex,
+      {
+        weightKg,
+        reps: repsValue,
+        setType,
+        completed: true,
+        rpe,
+        rpe10,
+        isCalibration: calibrationMode,
+      },
+      exerciseIndex,
+    );
 
     // PR detection — async, non-blocking
     // Skip PR detection for calibration sets (exploratory weights, not max effort)
@@ -758,9 +811,11 @@ export const SetLogModal: React.FC<SetLogModalProps> = ({
           users can hide it. */}
         {overloadExplainerOpen &&
           (() => {
-            const increment = progressionService.getIncrementForExercise(exerciseId);
+            const increment = exerciseClass.isLowerBody
+              ? PROGRESSION_INCREMENTS.lower
+              : PROGRESSION_INCREMENTS.upper;
             const [minReps, maxReps] = parseRepRange(reps);
-            const muscleGroup = progressionService.getMuscleGroup(exerciseId);
+            const muscleGroup = exerciseClass.isLowerBody ? 'lower' : 'upper';
             return (
               <View style={styles.overloadCard}>
                 <View style={styles.overloadHeader}>
@@ -1061,7 +1116,7 @@ const styles = StyleSheet.create({
   },
   exerciseName: {
     fontSize: rf(22),
-    fontWeight: String(typography.fontWeight.extrabold) as any,
+    fontFamily: FONT_FAMILY.extrabold,
     color: colors.text.primary,
     letterSpacing: -0.2,
     flex: 1,
@@ -1080,7 +1135,7 @@ const styles = StyleSheet.create({
   },
   prBadgeText: {
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: FONT_FAMILY.bold,
     color: colors.warning.DEFAULT,
   },
   // Calibration banner — compact single row (reviewer: was too tall).
@@ -1101,7 +1156,7 @@ const styles = StyleSheet.create({
   calibrationTitle: {
     fontSize: rf(typography.fontSize.micro),
     color: colors.secondary.DEFAULT,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: FONT_FAMILY.bold,
   },
   calibrationBody: {
     fontSize: rf(typography.fontSize.micro),
@@ -1129,7 +1184,7 @@ const styles = StyleSheet.create({
   previousValue: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
   },
   copyChip: {
     flexDirection: 'row',
@@ -1149,12 +1204,12 @@ const styles = StyleSheet.create({
   copyChipText: {
     fontSize: rf(typography.fontSize.micro),
     color: colors.primary.DEFAULT,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: FONT_FAMILY.semibold,
   },
   suggestionText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.success.DEFAULT,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
     marginTop: rp(spacing.xxs),
   },
   reasonText: {
@@ -1183,7 +1238,7 @@ const styles = StyleSheet.create({
   },
   setTypeText: {
     fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
     color: colors.text.secondary,
   },
   legendToggle: {
@@ -1215,7 +1270,7 @@ const styles = StyleSheet.create({
   legendLabel: {
     width: rp(64),
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text.secondary,
   },
   legendDesc: {
@@ -1235,7 +1290,7 @@ const styles = StyleSheet.create({
     width: rp(80),
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
   },
   stepperRow: {
     flex: 1,
@@ -1276,13 +1331,13 @@ const styles = StyleSheet.create({
     // Big numeric readout (was h3=20) — glanceable mid-workout.
     fontSize: rf(28),
     textAlign: 'center',
-    fontWeight: String(typography.fontWeight.extrabold) as any,
+    fontFamily: FONT_FAMILY.extrabold,
     fontVariant: ['tabular-nums'],
   },
   inputSuffix: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.tertiary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
     paddingRight: rp(spacing.sm),
   },
   bodyweightNote: {
@@ -1310,7 +1365,7 @@ const styles = StyleSheet.create({
   },
   requiredStar: {
     color: colors.error.DEFAULT,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: FONT_FAMILY.bold,
   },
   rpeHint: {
     fontSize: rf(typography.fontSize.micro),
@@ -1321,7 +1376,7 @@ const styles = StyleSheet.create({
   rpeLabelText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
   },
   rpeInfoToggle: {
     width: 44,
@@ -1339,7 +1394,7 @@ const styles = StyleSheet.create({
   },
   rpeExplainerTitle: {
     fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: FONT_FAMILY.bold,
     color: colors.text.primary,
     marginBottom: rp(spacing.xxs),
   },
@@ -1358,13 +1413,13 @@ const styles = StyleSheet.create({
   rpeZoneRange: {
     width: rp(56),
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.secondary.DEFAULT,
   },
   rpeZoneLabel: {
     width: rp(72),
     fontSize: rf(typography.fontSize.micro),
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
     color: colors.text.secondary,
   },
   rpeZoneDesc: {
@@ -1395,7 +1450,7 @@ const styles = StyleSheet.create({
   rpeText: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.semibold) as any,
+    fontFamily: FONT_FAMILY.semibold,
     textAlign: 'center',
   },
   // Session volume footer — flat row with a hairline top rule (no card-in-sheet).
@@ -1426,7 +1481,7 @@ const styles = StyleSheet.create({
   overloadTitle: {
     flex: 1,
     fontSize: rf(typography.fontSize.caption),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: FONT_FAMILY.bold,
     color: colors.success.DEFAULT,
   },
   overloadDismiss: {
@@ -1444,12 +1499,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: rf(typography.fontSize.caption),
     color: colors.text.tertiary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
   },
   volumeValue: {
     fontSize: rf(typography.fontSize.caption),
     color: colors.secondary.DEFAULT,
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: FONT_FAMILY.bold,
   },
   backButton: {
     flex: 1,
@@ -1459,7 +1514,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: colors.text.secondary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
   },
   saveButton: {
     flex: 2,
@@ -1487,7 +1542,7 @@ const styles = StyleSheet.create({
   rpeNumeric: {
     fontSize: rf(typography.fontSize.micro),
     color: colors.text.tertiary,
-    fontWeight: String(typography.fontWeight.medium) as any,
+    fontFamily: FONT_FAMILY.medium,
     marginTop: 2,
   },
   // Header progress dots

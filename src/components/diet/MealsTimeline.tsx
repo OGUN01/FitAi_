@@ -25,8 +25,6 @@ import {
   spacing,
   borderRadius,
   flatFontSize as fontSize,
-  typography,
-  shadows,
 } from '../../theme/aurora-tokens';
 import { springConfig } from '../../theme/animations';
 import { rf, rw } from '../../utils/responsive';
@@ -145,15 +143,18 @@ const TimelineRow = React.memo(
             </Animated.View>
             <View style={styles.mealInfo}>
               <View style={styles.headerRow}>
-                <Text style={styles.mealTypeLabel} numberOfLines={1}>
-                  {MEAL_TYPE_LABELS[meal.type]}
-                </Text>
-                <View style={styles.timeBadge}>
-                  <Ionicons name="time-outline" size={rf(13)} color={colors.textSecondary} />
-                  <Text style={styles.timeText} numberOfLines={1}>
-                    {time}
+                <View style={styles.headerRowLeft}>
+                  <Text style={styles.mealTypeLabel} numberOfLines={1}>
+                    {MEAL_TYPE_LABELS[meal.type]}
                   </Text>
+                  <View style={styles.timeBadge}>
+                    <Ionicons name="time-outline" size={rf(13)} color={colors.textSecondary} />
+                    <Text style={styles.timeText} numberOfLines={1}>
+                      {time}
+                    </Text>
+                  </View>
                 </View>
+                <StatusPill status={status} size="sm" />
               </View>
               <Text
                 style={styles.mealName}
@@ -171,7 +172,6 @@ const TimelineRow = React.memo(
                 <Text style={styles.macroText} numberOfLines={1}>
                   {macroSplit(meal)}
                 </Text>
-                <StatusPill status={status} size="sm" />
               </View>
             </View>
             <Ionicons name="chevron-forward" size={rf(18)} color={colors.textMuted} />
@@ -347,7 +347,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(fontSize.lg),
     fontFamily: fontFamilyForWeight('bold'),
-    fontWeight: String(typography.fontWeight.bold) as any,
     color: colors.text,
   },
   countPill: {
@@ -407,7 +406,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     overflow: 'hidden' as const,
-    ...shadows.level3,
   },
   mealInfo: {
     flex: 1,
@@ -417,11 +415,18 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    gap: spacing.xs,
+  },
+  headerRowLeft: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    flexShrink: 1,
     gap: spacing.xs,
   },
   mealTypeLabel: {
     fontSize: rf(fontSize.xs),
-    fontWeight: '700' as const,
+    fontFamily: fontFamilyForWeight('700'),
     color: colors.primary,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
@@ -434,12 +439,11 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: rf(fontSize.xs),
     color: colors.textSecondary,
-    fontWeight: '600' as const,
+    fontFamily: fontFamilyForWeight('600'),
   },
   mealName: {
     fontSize: rf(fontSize.md),
     fontFamily: fontFamilyForWeight('600'),
-    fontWeight: '600' as const,
     color: colors.text,
   },
   calorieRow: {
@@ -450,13 +454,13 @@ const styles = StyleSheet.create({
   calorieText: {
     fontSize: rf(fontSize.sm),
     color: colors.primary,
-    fontWeight: '700' as const,
+    fontFamily: fontFamilyForWeight('700'),
     fontVariant: ['tabular-nums'],
   },
   macroText: {
     fontSize: rf(fontSize.xs),
     color: colors.textSecondary,
-    fontWeight: '500' as const,
+    fontFamily: fontFamilyForWeight('500'),
     flexShrink: 1,
   },
   // 2px progress micro-bar — absolutely positioned flush to the card's
@@ -479,7 +483,7 @@ const styles = StyleSheet.create({
   },
   shimmerLabel: {
     fontSize: rf(fontSize.xs),
-    fontWeight: '600' as const,
+    fontFamily: fontFamilyForWeight('600'),
     color: colors.textMuted,
     marginBottom: spacing.sm,
     textTransform: 'uppercase' as const,
@@ -528,7 +532,7 @@ const styles = StyleSheet.create({
   secondaryLinkText: {
     fontSize: rf(fontSize.xs),
     color: colors.textSecondary,
-    fontWeight: '600' as const,
+    fontFamily: fontFamilyForWeight('600'),
     textDecorationLine: 'underline' as const,
   },
 });

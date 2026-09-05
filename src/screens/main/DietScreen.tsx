@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSharedValue } from 'react-native-reanimated';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { SlidingSegmentedControl } from '../../components/ui/aurora/SlidingSegmentedControl';
 import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
 import { DashboardSkeleton } from '../../components/ui/aurora/DashboardSkeleton';
 import { rf, rw, rp, rh } from '../../utils/responsive';
@@ -45,10 +46,11 @@ import { DietActionDock } from '../../components/diet/DietActionDock';
 import { ManualBarcodeEntry } from '../../components/diet/ManualBarcodeEntry';
 import DatabaseDownloadBanner from '../../components/DatabaseDownloadBanner';
 import { LogMealModal, LogMealScanResult } from '../../components/diet/LogMealModal';
+import { MealEditModal } from '../../components/diet/MealEditModal';
 import { ProductDetailsModal } from '../../components/diet/ProductDetailsModal';
 import { FoodScanLoadingOverlay } from '../../components/diet/FoodScanLoadingOverlay';
 import { ScanResultModal } from '../../components/diet/ScanResultModal';
-import { DayMeal } from '../../types/ai';
+import { DayMeal, Meal } from '../../types/ai';
 
 import { useMealPlanning } from '../../hooks/useMealPlanning';
 import { useNutritionTracking } from '../../hooks/useNutritionTracking';
@@ -81,12 +83,19 @@ const EMPTY_CONSUMED_NUTRITION = {
   sodium: 0,
 };
 
+/** Static options for the AI Plan / My Plan exclusive toggle
+ * (SlidingSegmentedControl) — mirrors FitnessScreen's PLAN_TOGGLE_OPTIONS. */
+const DIET_PLAN_TOGGLE_OPTIONS = [
+  { id: 'ai', label: 'AI Plan' },
+  { id: 'custom', label: 'My Plan' },
+];
+
 export const DietScreen: React.FC<DietScreenProps> = ({
   navigation,
   route,
   isActive: _isActive = true,
 }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isGuestMode, user } = useAuth();
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -94,6 +103,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [showLogMealModal, setShowLogMealModal] = useState(false);
   const [logMealScanResult, setLogMealScanResult] = useState<LogMealScanResult | null>(null);
   const [showMealDetail, setShowMealDetail] = useState(false);
+  const [showMealEditModal, setShowMealEditModal] = useState(false);
   const [showTodaysPlan, setShowTodaysPlan] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<DayMeal | null>(null);
   const [showBarcodeOptions, setShowBarcodeOptions] = useState(false);
@@ -107,6 +117,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
   const {
     weeklyMealPlan,
+    activeWeeklyMealPlan,
+    activeDietSource,
     isGeneratingPlan,
     asyncJob,
     aiError,
@@ -240,14 +252,53 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   // whose zIndex only applies inside SafeAreaView (MealDetailView, the barcode
   // loading overlay). Hiding via the shared value is cheaper than restructuring
   // the tree and keeps the scroll-driven show/hide logic intact when closed.
+  // BUG FIX (found via Playwright testing): this condition previously only
+  // covered showTodaysPlan/showMealDetail/barcode-processing/showCamera —
+  // missing showLogMealModal, showManualEntry, showBarcodeOptions,
+  // showLabelScanPrep, showWeightPrompt, and showScanResult entirely. Since
+  // the dock renders as a sibling AFTER SafeAreaView (see comment above) and
+  // paints on top of ANY overlay not covered here, a real tap on e.g.
+  // LogMealModal's own submit button landed on the dock's "Log meal"
+  // quick-action icon instead — Playwright's real click hit-testing timed
+  // out with "element intercepts pointer events", and a real user tapping
+  // normally in that exact screen region would likely hit the same dead
+  // zone. Cover every full-screen overlay this screen can show.
   useEffect(() => {
     const overlayOpen =
-      showTodaysPlan || showMealDetail || (isProcessingBarcode && !showCamera) || showCamera;
+      showTodaysPlan ||
+      showMealDetail ||
+      (isProcessingBarcode && !showCamera) ||
+      showCamera ||
+      showLogMealModal ||
+      showManualEntry ||
+      showBarcodeOptions ||
+      showLabelScanPrep ||
+      showWeightPrompt ||
+      showScanResult;
     dockHide.value = overlayOpen ? 1 : 0;
-  }, [showTodaysPlan, showMealDetail, isProcessingBarcode, showCamera, dockHide]);
+  }, [
+    showTodaysPlan,
+    showMealDetail,
+    isProcessingBarcode,
+    showCamera,
+    showLogMealModal,
+    showManualEntry,
+    showBarcodeOptions,
+    showLabelScanPrep,
+    showWeightPrompt,
+    showScanResult,
+    dockHide,
+  ]);
 
   const mealProgress = useNutritionStore((state) => state.mealProgress);
-  const storeGetMealProgress = (mealId: string) => mealProgress[mealId] ?? null;
+  const setActiveDietSource = useNutritionStore((state) => state.setActiveDietSource);
+  const customWeeklyMealPlan = useNutritionStore((state) => state.customWeeklyMealPlan);
+  const isCustomPlanEmpty =
+    activeDietSource === 'custom' && !(customWeeklyMealPlan?.meals?.length);
+  // Reads mergedMealProgress (declared below, alongside selectedDayMeals) so
+  // a standalone logged meal's synthetic 100%-progress entry is visible here
+  // too — this closure is only invoked from JSX after that const has run.
+  const storeGetMealProgress = (mealId: string) => mergedMealProgress[mealId] ?? null;
   const dailyMeals = useNutritionStore((state) => state.dailyMeals);
   const selectedDateConsumedMeals = React.useMemo(() => {
     return dailyMeals.filter(
@@ -275,7 +326,16 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     [personalInfo, bodyAnalysis, dietPreferences, workoutPreferences]
   );
 
-  const canAccessMealFeatures = isAuthenticated;
+  // BUG FIX (found via live testing): `isAuthenticated` alone is false for
+  // BOTH a genuinely signed-out user AND a guest — but a guest CAN use meal
+  // features (locally-tracked, per useNutritionStore) and this banner's own
+  // sibling UI already showed a real, correctly-counted logged meal
+  // ("Today's intake: 1 logged", accurate kcal) at the same time this
+  // "Please sign in to track your nutrition" banner rendered — a genuinely
+  // contradictory, guest-vs-signed-out conflation bug (the same class fixed
+  // elsewhere this session, e.g. TemplateLibraryScreen.tsx). Only a real
+  // user who is neither authenticated nor in guest mode should see this.
+  const canAccessMealFeatures = isAuthenticated || isGuestMode;
 
   useEffect(() => {
     if (route?.params?.mealCompleted) {
@@ -379,12 +439,84 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const selectedWeekday = selectedDateMidnight
     .toLocaleDateString('en-US', { weekday: 'long' })
     .toLowerCase();
-  const selectedDayMeals = useMemo(
+  // Manually-logged meals (barcode/label scan, food search, direct manual
+  // entry) live in `dailyMeals`/`selectedDateConsumedMeals` — a different
+  // store field than the plan's `meals`, so they were previously invisible
+  // in Today's Plan even though they correctly count toward the calorie/macro
+  // totals above. Two cases must NOT be merged in a second time, since they're
+  // already represented by a planned-meal row:
+  //   (a) LogMealModal's manual-entry path stages its meal directly into
+  //       activeWeeklyMealPlan.meals (see LogMealModal.tsx) with the same id
+  //       it also passes to addDailyMeal, so it's already in `planned` below;
+  //   (b) completing a planned meal ("Log this meal") writes a *new*
+  //       dailyMeals row keyed by the meal_logs id (mealLogId) while the
+  //       original planned DayMeal stays in the plan and picks up 100%
+  //       progress via mealProgress[mealId].logId === mealLogId — merging
+  //       that dailyMeals row in too would show the same meal twice.
+  const loggedMealIdsAlreadyShown = useMemo(() => {
+    const ids = new Set<string>();
+    Object.values(mealProgress).forEach((entry) => {
+      if (entry?.logId) ids.add(entry.logId);
+    });
+    return ids;
+  }, [mealProgress]);
+  const standaloneLoggedMeals = useMemo(() => {
+    const plannedIds = new Set((activeWeeklyMealPlan?.meals ?? []).map((m) => m.id));
+    return selectedDateConsumedMeals.filter(
+      (meal) => !loggedMealIdsAlreadyShown.has(meal.id) && !plannedIds.has(meal.id)
+    );
+  }, [selectedDateConsumedMeals, loggedMealIdsAlreadyShown, activeWeeklyMealPlan?.meals]);
+  const DAY_MEAL_TYPES: ReadonlySet<string> = useMemo(
+    () => new Set(['breakfast', 'lunch', 'dinner', 'snack']),
+    []
+  );
+  const loggedMealsAsDayMeals: DayMeal[] = useMemo(
     () =>
-      (weeklyMealPlan?.meals ?? []).filter(
-        (meal) => meal.dayOfWeek?.toLowerCase() === selectedWeekday
+      standaloneLoggedMeals.map(
+        (meal: Meal): DayMeal => ({
+          id: meal.id,
+          type: DAY_MEAL_TYPES.has(meal.type) ? (meal.type as DayMeal['type']) : 'snack',
+          name: meal.name,
+          description: '',
+          items: meal.items,
+          totalCalories: meal.totalCalories,
+          totalMacros: meal.totalMacros,
+          preparationTime: meal.prepTime ?? meal.preparationTime ?? 0,
+          difficulty: meal.difficulty ?? 'easy',
+          tags: meal.tags ?? [],
+          dayOfWeek: selectedWeekday,
+          isPersonalized: meal.isPersonalized ?? false,
+          aiGenerated: meal.aiGenerated ?? false,
+          createdAt: meal.createdAt,
+          imageUrl: meal.imageUrl,
+          isCompleted: true,
+          completedAt: (meal as unknown as { loggedAt?: string }).loggedAt,
+        })
       ),
-    [weeklyMealPlan?.meals, selectedWeekday]
+    [standaloneLoggedMeals, selectedWeekday, DAY_MEAL_TYPES]
+  );
+  const selectedDayMeals = useMemo(() => {
+    const planned = (activeWeeklyMealPlan?.meals ?? []).filter(
+      (meal) => meal.dayOfWeek?.toLowerCase() === selectedWeekday
+    );
+    return [...planned, ...loggedMealsAsDayMeals];
+  }, [activeWeeklyMealPlan?.meals, selectedWeekday, loggedMealsAsDayMeals]);
+  // Synthetic 100%-progress entries for standalone logged meals, so the
+  // timeline's status pill and MealDetailView both read them as "completed"
+  // (they're a record of something already eaten, not a task to complete).
+  const mergedMealProgress = useMemo(() => {
+    if (loggedMealsAsDayMeals.length === 0) return mealProgress;
+    const merged = { ...mealProgress };
+    loggedMealsAsDayMeals.forEach((meal) => {
+      if (!merged[meal.id]) {
+        merged[meal.id] = { mealId: meal.id, progress: 100, completedAt: meal.completedAt };
+      }
+    });
+    return merged;
+  }, [mealProgress, loggedMealsAsDayMeals]);
+  const standaloneLoggedMealIdSet = useMemo(
+    () => new Set(loggedMealsAsDayMeals.map((m) => m.id)),
+    [loggedMealsAsDayMeals]
   );
   // Use optimized today cache when viewing today, date-filtered query otherwise
   const displayNutrition = isSelectedDateToday ? storeNutrition : selectedDateNutrition;
@@ -648,6 +780,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     },
     [handleDeleteMeal]
   );
+  // Overflow menu — "Edit" opens MealEditModal for the selected meal.
+  // useMealEdit (the hook behind the modal) persists to meal_logs and
+  // reloads the store itself; updating selectedMeal here just keeps the
+  // still-open MealDetailView showing the edited values immediately.
+  const handleMealDetailEdit = useCallback((meal: DayMeal) => {
+    setSelectedMeal(meal);
+    setShowMealEditModal(true);
+  }, []);
+  const handleCloseMealEditModal = useCallback(() => setShowMealEditModal(false), []);
+  const handleMealEditSave = useCallback((updatedMeal: DayMeal) => {
+    setSelectedMeal(updatedMeal);
+  }, []);
   const handleCloseLogMealModal = useCallback(() => setShowLogMealModal(false), []);
   const handleScanResultConsumed = useCallback(() => setLogMealScanResult(null), []);
   const handleCloseWaterIntake = useCallback(
@@ -701,24 +845,56 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               </View>
               <View style={styles.topBarRight}>
                 <StreakPill />
-                <AnimatedPressable
-                  onPress={onGenerateWeeklyPlan}
-                  disabled={isGeneratingPlan}
-                  scaleValue={0.9}
-                  hapticType="light"
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    weeklyMealPlan?.meals?.length ? 'Refresh weekly plan' : 'Generate weekly plan'
-                  }
-                  style={styles.refreshButton}
-                >
-                  {isGeneratingPlan ? (
-                    <AuroraSpinner size="sm" theme="primary" />
-                  ) : (
-                    <Ionicons name="refresh-outline" size={rf(20)} color={colors.primary} />
-                  )}
-                </AnimatedPressable>
+                {activeDietSource === 'ai' && (
+                  <AnimatedPressable
+                    onPress={onGenerateWeeklyPlan}
+                    disabled={isGeneratingPlan}
+                    scaleValue={0.9}
+                    hapticType="light"
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      weeklyMealPlan?.meals?.length ? 'Refresh weekly plan' : 'Generate weekly plan'
+                    }
+                    style={styles.refreshButton}
+                  >
+                    {isGeneratingPlan ? (
+                      <AuroraSpinner size="sm" theme="primary" />
+                    ) : (
+                      <Ionicons name="refresh-outline" size={rf(20)} color={colors.primary} />
+                    )}
+                  </AnimatedPressable>
+                )}
+                {activeDietSource === 'custom' && (
+                  <AnimatedPressable
+                    onPress={() =>
+                      navigation?.navigate(
+                        isCustomPlanEmpty ? 'MealPlanMethodLanding' : 'MealBuilder'
+                      )
+                    }
+                    scaleValue={0.9}
+                    hapticType="light"
+                    accessibilityRole="button"
+                    accessibilityLabel={isCustomPlanEmpty ? 'Build custom plan' : 'Edit custom plan'}
+                    style={styles.refreshButton}
+                  >
+                    <Ionicons
+                      name={isCustomPlanEmpty ? 'add-circle-outline' : 'create-outline'}
+                      size={rf(20)}
+                      color={colors.primary}
+                    />
+                  </AnimatedPressable>
+                )}
               </View>
+            </View>
+
+            <View style={styles.planToggleContainer}>
+              <SlidingSegmentedControl
+                options={DIET_PLAN_TOGGLE_OPTIONS}
+                selectedId={activeDietSource}
+                onSelect={(id) => setActiveDietSource(id as 'ai' | 'custom')}
+                variant="aurora"
+                testIDPrefix="diet-plan-toggle"
+              />
             </View>
 
             <DateStepper
@@ -750,6 +926,31 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 {!canAccessMealFeatures && (
                   <View style={styles.errorCard}>
                     <Text style={styles.errorText}>Please sign in to track your nutrition</Text>
+                  </View>
+                )}
+
+                {isCustomPlanEmpty && (
+                  <View style={styles.customPlanEmptyCard}>
+                    <View style={styles.customPlanEmptyIcon}>
+                      <Ionicons name="restaurant-outline" size={rf(22)} color={colors.primary} />
+                    </View>
+                    <View style={styles.customPlanEmptyTextGroup}>
+                      <Text style={styles.customPlanEmptyTitle}>No custom meal plan yet</Text>
+                      <Text style={styles.customPlanEmptySubtitle}>
+                        Build your own weekly meals, or start from your AI plan.
+                      </Text>
+                    </View>
+                    <AnimatedPressable
+                      onPress={() => navigation?.navigate('MealPlanMethodLanding')}
+                      scaleValue={0.95}
+                      hapticType="light"
+                      accessibilityRole="button"
+                      accessibilityLabel="Build custom meal plan"
+                      style={styles.customPlanEmptyButton}
+                      testID="build-meal-plan-button"
+                    >
+                      <Text style={styles.customPlanEmptyButtonText}>Build</Text>
+                    </AnimatedPressable>
                   </View>
                 )}
 
@@ -791,6 +992,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   onLogMeal={handleSearchFood}
                   onViewPlan={handleViewTodaysPlan}
                   selectedDate={selectedDateKey}
+                  targetsSource={calculatedMetrics?.targetsSource}
                 />
 
                 <WaterQuickRow
@@ -1120,7 +1322,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             selectedDate={selectedDateKey}
             meals={selectedDayMeals}
             mealSchedule={mealSchedule}
-            mealProgress={mealProgress}
+            mealProgress={mergedMealProgress}
             consumedCalories={currentNutrition.calories}
             calorieTarget={calorieTarget}
             mealCount={currentNutrition.mealsCount}
@@ -1141,14 +1343,36 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               progress={storeGetMealProgress(selectedMeal.id)?.progress ?? 0}
               onBack={handleMealDetailBack}
               onLogMeal={handleMealDetailLogMeal}
-              onSwapMeal={handleMealDetailSwap}
+              // A standalone logged meal (barcode/label scan, food search,
+              // manual entry) isn't a row in activeWeeklyMealPlan.meals, so
+              // swap/edit/delete — which all mutate the plan by meal id —
+              // don't apply to it; omitting the handlers hides those actions
+              // in MealDetailView instead of letting them silently no-op.
+              onSwapMeal={
+                standaloneLoggedMealIdSet.has(selectedMeal.id) ? undefined : handleMealDetailSwap
+              }
               onShareMeal={handleMealDetailShare}
-              onDeleteMeal={handleMealDetailDelete}
+              onEditMeal={
+                standaloneLoggedMealIdSet.has(selectedMeal.id) ? undefined : handleMealDetailEdit
+              }
+              onDeleteMeal={
+                standaloneLoggedMealIdSet.has(selectedMeal.id) ? undefined : handleMealDetailDelete
+              }
               mealSchedule={mealSchedule}
               selectedDate={selectedDateKey}
               testID="diet-meal-detail-view"
             />
           </View>
+        ) : null}
+
+        {showMealEditModal && selectedMeal ? (
+          <MealEditModal
+            visible={showMealEditModal}
+            meal={selectedMeal}
+            onClose={handleCloseMealEditModal}
+            onSave={handleMealEditSave}
+            userId={user?.id}
+          />
         ) : null}
       </SafeAreaView>
 
@@ -1208,8 +1432,56 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
+  planToggleContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+  },
+  customPlanEmptyCard: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  customPlanEmptyIcon: {
+    width: Math.max(rw(40), 40),
+    height: Math.max(rw(40), 40),
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  customPlanEmptyTextGroup: {
+    flex: 1 as const,
+  },
+  customPlanEmptyTitle: {
+    fontSize: fontSize.md,
+    fontWeight: '600' as const,
+    color: colors.text,
+  },
+  customPlanEmptySubtitle: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  customPlanEmptyButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+  },
+  customPlanEmptyButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: '700' as const,
+    color: colors.white,
+  },
   errorCard: {
     padding: spacing.lg,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     alignItems: 'center',
     backgroundColor: colors.backgroundSecondary,

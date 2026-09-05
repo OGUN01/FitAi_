@@ -3,6 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rbr } from "../../../utils/responsive";
 import { MealItem } from "../../../types/ai";
+import { fontFamilyForWeight } from "../../../theme/fonts";
+import { MACRO_PILL_COLORS } from "../../diet/macroColors";
 
 interface NutritionRowProps {
   label: string;
@@ -82,28 +84,28 @@ export const NutritionCard: React.FC<NutritionCardProps> = ({
           label="Protein"
           value={ingredientData.macros?.protein || 0}
           unit="g"
-          color="#4ECDC4"
+          color={MACRO_PILL_COLORS.protein}
           percentage={macroPercent(ingredientData.macros?.protein || 0, 4)}
         />
         <NutritionRow
           label="Carbohydrates"
           value={ingredientData.macros?.carbohydrates || 0}
           unit="g"
-          color="#45B7D1"
+          color={MACRO_PILL_COLORS.carbs}
           percentage={macroPercent(ingredientData.macros?.carbohydrates || 0, 4)}
         />
         <NutritionRow
           label="Fat"
           value={ingredientData.macros?.fat || 0}
           unit="g"
-          color="#96CEB4"
+          color={MACRO_PILL_COLORS.fat}
           percentage={macroPercent(ingredientData.macros?.fat || 0, 9)}
         />
         <NutritionRow
           label="Fiber"
           value={ingredientData.macros?.fiber || 0}
           unit="g"
-          color="#FF8A5C"
+          color={MACRO_PILL_COLORS.fiber}
         />
       </View>
     </View>
@@ -116,16 +118,12 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     marginBottom: spacing.lg,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontFamily: fontFamilyForWeight("700"),
     color: colors.text,
     marginBottom: spacing.md,
   },
@@ -137,13 +135,14 @@ const styles = StyleSheet.create({
   },
   calorieLabel: {
     fontSize: fontSize.lg,
-    fontWeight: "600",
+    fontFamily: fontFamilyForWeight("600"),
     color: colors.text,
   },
   calorieValue: {
     fontSize: fontSize.xxl,
-    fontWeight: "700",
-    color: colors.errorLight,
+    fontFamily: fontFamilyForWeight("700"),
+    color: colors.primary,
+    fontVariant: ["tabular-nums"],
   },
   divider: {
     height: 1,
@@ -162,7 +161,7 @@ const styles = StyleSheet.create({
   nutritionLabel: {
     fontSize: fontSize.md,
     color: colors.text,
-    fontWeight: "500",
+    fontFamily: fontFamilyForWeight("500"),
     flex: 1,
   },
   nutritionValueContainer: {
@@ -173,8 +172,9 @@ const styles = StyleSheet.create({
   },
   nutritionValue: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontFamily: fontFamilyForWeight("700"),
     marginRight: spacing.md,
+    fontVariant: ["tabular-nums"],
   },
   percentageContainer: {
     flexDirection: "row",

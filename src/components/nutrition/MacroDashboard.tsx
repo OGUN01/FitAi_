@@ -11,6 +11,7 @@ import { DayMeal } from "../../types/ai";
 import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../utils/responsive";
 import { MACRO_PILL_COLORS } from "../diet/macroColors";
+import { fontFamilyForWeight } from "../../theme/fonts";
 
 interface MacroDashboardProps {
   meal: DayMeal;
@@ -280,12 +281,8 @@ const styles = StyleSheet.create({
     borderRadius: rbr(16),
     padding: spacing.lg,
     marginVertical: spacing.md,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   containerCompact: {
     padding: spacing.md,
@@ -294,7 +291,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: "700",
+    fontFamily: fontFamilyForWeight("bold"),
     color: colors.text,
     marginBottom: spacing.md,
     textAlign: "center",
@@ -348,8 +345,9 @@ const styles = StyleSheet.create({
   },
   macroValue: {
     fontSize: fontSize.xl,
-    fontWeight: "700",
+    fontFamily: fontFamilyForWeight("bold"),
     lineHeight: 24,
+    fontVariant: ["tabular-nums"],
   },
   macroValueCompact: {
     fontSize: fontSize.lg,
@@ -366,7 +364,7 @@ const styles = StyleSheet.create({
   macroLabel: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontFamily: fontFamilyForWeight("semibold"),
     marginTop: spacing.xs,
   },
   macroLabelCompact: {
@@ -380,7 +378,7 @@ const styles = StyleSheet.create({
   },
   macroPercentage: {
     fontSize: fontSize.xs,
-    fontWeight: "600",
+    fontFamily: fontFamilyForWeight("semibold"),
     marginTop: rp(2),
   },
   additionalInfo: {
@@ -398,12 +396,13 @@ const styles = StyleSheet.create({
   fiberLabel: {
     fontSize: fontSize.md,
     color: colors.text,
-    fontWeight: "500",
+    fontFamily: fontFamilyForWeight("medium"),
   },
   fiberValue: {
     fontSize: fontSize.md,
     color: colors.accent,
-    fontWeight: "700",
+    fontFamily: fontFamilyForWeight("bold"),
+    fontVariant: ["tabular-nums"],
   },
   caloricBreakdown: {
     marginTop: spacing.md,
@@ -411,7 +410,7 @@ const styles = StyleSheet.create({
   breakdownTitle: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: "600",
+    fontFamily: fontFamilyForWeight("semibold"),
     marginBottom: spacing.sm,
   },
   breakdownBars: {

@@ -146,6 +146,13 @@ export interface ExerciseRowProps {
   /** True when this is the last row of a contiguous superset group (rounds
    *  the bottom of the connector bracket). Computed by the parent list. */
   isLastInSuperset?: boolean;
+  /** Same as isFirstInSuperset but for a contiguous circuit run (Workout
+   * Engine v2 Phase 4B.1 — circuits previously had no visual language
+   * anywhere in the app; this establishes one, mirrored in the live
+   * session screen so the two never diverge). */
+  isFirstInCircuit?: boolean;
+  /** Same as isLastInSuperset but for a contiguous circuit run. */
+  isLastInCircuit?: boolean;
   /** Test ID prefix. */
   testID?: string;
 }
@@ -234,6 +241,8 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
   onDragMove,
   isFirstInSuperset = false,
   isLastInSuperset = false,
+  isFirstInCircuit = false,
+  isLastInCircuit = false,
   testID,
 }) => {
   const favourites = useFavourites();
@@ -408,20 +417,31 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
       : colors.primary.DEFAULT;
 
   const supersetActive = Boolean(exercise.supersetId);
+  // Circuit visual language (Workout Engine v2 Phase 4B.1) — mirrors the
+  // superset treatment exactly (same rail/chip/connector mechanics), just
+  // colors.warning.DEFAULT instead of colors.secondary.DEFAULT and a
+  // "CIRC" chip instead of "SS", so the two read as siblings, not
+  // unrelated concepts. Superset/circuit are mutually exclusive per
+  // exercise (the builder enforces this), so exactly one of these is ever
+  // true for a given row.
+  const circuitActive = Boolean(exercise.circuitId);
+  const groupActive = supersetActive || circuitActive;
+  const isFirstInGroup = supersetActive ? isFirstInSuperset : isFirstInCircuit;
+  const isLastInGroup = supersetActive ? isLastInSuperset : isLastInCircuit;
 
-  // Superset connector: grouped rows stack flush (tight margin) with their
-  // abutting corners flattened, so the shared left rail (styles.supersetRail)
-  // reads as one continuous bracket spanning the group instead of separate
-  // per-row rail segments.
-  const connectorMarginStyle: ViewStyle = supersetActive
-    ? { marginBottom: isLastInSuperset ? rp(spacing.xs) : rp(2) }
+  // Group connector: grouped rows stack flush (tight margin) with their
+  // abutting corners flattened, so the shared left rail (styles.supersetRail/
+  // styles.circuitRail) reads as one continuous bracket spanning the group
+  // instead of separate per-row rail segments.
+  const connectorMarginStyle: ViewStyle = groupActive
+    ? { marginBottom: isLastInGroup ? rp(spacing.xs) : rp(2) }
     : {};
-  const connectorCornerStyle: ViewStyle = supersetActive
+  const connectorCornerStyle: ViewStyle = groupActive
     ? {
-        borderTopLeftRadius: isFirstInSuperset ? borderRadius.lg : 0,
-        borderTopRightRadius: isFirstInSuperset ? borderRadius.lg : 0,
-        borderBottomLeftRadius: isLastInSuperset ? borderRadius.lg : 0,
-        borderBottomRightRadius: isLastInSuperset ? borderRadius.lg : 0,
+        borderTopLeftRadius: isFirstInGroup ? borderRadius.lg : 0,
+        borderTopRightRadius: isFirstInGroup ? borderRadius.lg : 0,
+        borderBottomLeftRadius: isLastInGroup ? borderRadius.lg : 0,
+        borderBottomRightRadius: isLastInGroup ? borderRadius.lg : 0,
       }
     : {};
 
@@ -487,6 +507,9 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
             <Animated.View style={[styles.rowInner, connectorCornerStyle]}>
               {/* Superset left-border indicator (Phase 1 SupersetConnector absent) */}
               {supersetActive && <View style={styles.supersetRail} />}
+              {/* Circuit left-border indicator — same mechanic as supersetRail,
+                  distinct color, so circuits finally have a visual identity. */}
+              {circuitActive && <View style={styles.circuitRail} />}
 
               {/* Drag handle */}
               <View style={styles.dragHandle} pointerEvents="none">
@@ -520,13 +543,21 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
                       <Text style={styles.supersetChipText}>SS</Text>
                     </View>
                   )}
+                  {circuitActive && (
+                    <View style={styles.circuitChip}>
+                      <Text style={styles.circuitChipText}>CIRC</Text>
+                    </View>
+                  )}
                   <View style={[styles.intensityDot, { backgroundColor: intensityColor }]} />
-                  <Text
-                    style={styles.name}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
+                  {/* adjustsFontSizeToFit/minimumFontScale removed: confirmed
+                      (via the Workout Detail screen's Difficulty tile, same
+                      class of issue) that React Native Web does not
+                      implement adjustsFontSizeToFit — it silently has no
+                      effect on web, so this fell straight through to plain
+                      numberOfLines={1} ellipsis truncation anyway. Removed
+                      the dead props rather than leave them implying a
+                      shrink-to-fit behavior that isn't actually happening. */}
+                  <Text style={styles.name} numberOfLines={1}>
                     {exercise.name}
                   </Text>
                 </View>
@@ -660,6 +691,17 @@ const styles = StyleSheet.create({
     width: rw(3),
     backgroundColor: colors.secondary.DEFAULT,
   },
+  // Circuit's rail/chip pair (Workout Engine v2 Phase 4B.1) — identical
+  // mechanics to supersetRail/supersetChip, distinct color+label only, so
+  // the two group types read as siblings in the builder UI.
+  circuitRail: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: rw(3),
+    backgroundColor: colors.warning.DEFAULT,
+  },
   dragHandle: {
     width: rw(20),
     alignItems: "center",
@@ -694,6 +736,17 @@ const styles = StyleSheet.create({
     paddingVertical: rp(1),
   },
   supersetChipText: {
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.micro),
+    fontWeight: String(typography.fontWeight.bold) as any,
+  },
+  circuitChip: {
+    backgroundColor: colors.warning.DEFAULT,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: rp(spacing.xxs),
+    paddingVertical: rp(1),
+  },
+  circuitChipText: {
     color: colors.text.primary,
     fontSize: rf(typography.fontSize.micro),
     fontWeight: String(typography.fontWeight.bold) as any,
@@ -780,7 +833,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     paddingVertical: rp(spacing.xs),
     minWidth: rw(140),
-    shadowColor: "#000",
+    shadowColor: colors.background.DEFAULT,
     shadowOpacity: 0.3,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },

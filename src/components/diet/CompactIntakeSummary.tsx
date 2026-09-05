@@ -12,6 +12,10 @@ import { getLocalDateString } from '../../utils/weekUtils';
 import { DateFormatters } from '../../utils/formatters/dateFormatters';
 import { getIntakeSummary } from './dietViewModel';
 
+/** Which target source drove the calorie target shown on this card.
+ *  Mirrors `CalculatedMetrics.targetsSource` from useCalculatedMetrics. */
+export type TargetsSource = 'goal' | 'plan' | 'goal_fallback_empty_day';
+
 interface CompactIntakeSummaryProps {
   consumedCalories: number;
   calorieTarget: number;
@@ -22,7 +26,20 @@ interface CompactIntakeSummaryProps {
   /** ISO date the card is summarizing. Defaults to today when omitted so
    * existing callers keep the "Today" copy. */
   selectedDate?: string;
+  /** Goal Engine Phase C: labels which target source the calorie target
+   * came from so the user understands why a number is showing (goal vs
+   * plan vs goal-fallback-on-empty-plan-day). Omitted = no caption. */
+  targetsSource?: TargetsSource;
 }
+
+// Phase C: human-readable label for the target source. The empty-day
+// fallback is the load-bearing case — previously the silent revert had
+// no explanation; now the card says why it's showing the goal target.
+const TARGET_SOURCE_LABEL: Record<TargetsSource, string> = {
+  goal: 'Target from your goal profile',
+  plan: "Target from today's plan",
+  goal_fallback_empty_day: 'Goal target — no meals planned today',
+};
 
 const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
   consumedCalories,
@@ -32,13 +49,19 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
   onLogMeal,
   onViewPlan,
   selectedDate,
+  targetsSource,
 }) => {
   // percent is clamped to 100 for the progress-bar fill, but remaining stays
   // signed so an over-target day shows the true overage (e.g. "-244") instead
   // of a misleading "0 Remaining" that hides it. Matches dietViewModel's
   // getIntakeSummary, the shared source of truth for this calculation.
   const { remaining, percent } = getIntakeSummary(consumedCalories, calorieTarget);
-  const isOverTarget = remaining < 0;
+  // No real target set (calorieTarget <= 0, e.g. onboarding/goal not
+  // completed) must never read as "over" — target(0) - consumed is always
+  // negative the moment anything is logged, which would falsely claim the
+  // user blew past a goal that doesn't exist yet.
+  const hasTarget = calorieTarget > 0;
+  const isOverTarget = hasTarget && remaining < 0;
 
   const isToday = !selectedDate || selectedDate === getLocalDateString();
   const title = isToday
@@ -60,6 +83,11 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
             {mealCount} logged
             {plannedMealCount > 0 ? ` · ${plannedMealCount} planned` : ''}
           </Text>
+          {targetsSource ? (
+            <Text style={styles.targetSource} numberOfLines={2}>
+              {TARGET_SOURCE_LABEL[targetsSource]}
+            </Text>
+          ) : null}
         </View>
         <Text
           style={[styles.percent, isOverTarget && styles.percentOver]}
@@ -98,10 +126,10 @@ const CompactIntakeSummaryComponent: React.FC<CompactIntakeSummaryProps> = ({
             adjustsFontSizeToFit
             minimumFontScale={0.7}
           >
-            {Math.abs(Math.round(remaining))}
+            {hasTarget ? Math.abs(Math.round(remaining)) : Math.round(consumedCalories)}
           </Text>
           <Text style={styles.statLabel} numberOfLines={2}>
-            {isOverTarget ? 'kcal over' : 'Remaining kcal'}
+            {!hasTarget ? 'Logged kcal' : isOverTarget ? 'kcal over' : 'Remaining kcal'}
           </Text>
         </View>
       </View>
@@ -164,18 +192,22 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSize.md,
     fontFamily: fontFamilyForWeight('700'),
-    fontWeight: '700',
   },
   mealCount: {
     color: colors.textSecondary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
+  targetSource: {
+    color: colors.textTertiary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
   percent: {
     color: colors.primary,
     fontSize: fontSize.lg,
     fontFamily: fontFamilyForWeight('800'),
-    fontWeight: '800',
     flexShrink: 0,
   },
   percentOver: {
@@ -203,7 +235,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: fontSize.lg,
     fontFamily: fontFamilyForWeight('800'),
-    fontWeight: '800',
   },
   statValueOver: {
     color: colors.error,
