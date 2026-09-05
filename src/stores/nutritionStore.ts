@@ -9,21 +9,7 @@ import { crudOperations } from '../services/crudOperations';
 import { offlineService } from '../services/offline';
 import { supabase } from '../services/supabase';
 import { generateUUID, isValidUUID } from '../utils/uuid';
-import { getCurrentUserId } from '../services/authUtils';
-
-/**
- * P1-6: Returns the real authenticated user id, or null when the user is a
- * guest / not authenticated. Callers use this to SKIP offline-queue sync for
- * guests (matching the pattern in analyticsData, achievementData,
- * crudOperations, extraWorkoutService). Guest IDs ("guest-...") must never
- * reach Supabase writes — RLS rejects them and they pollute the retry queue.
- */
-function getSyncableUserId(): string | null {
-  const userId = getCurrentUserId();
-  if (!userId) return null;
-  if (userId.startsWith('guest')) return null;
-  return userId;
-}
+import { getCurrentUserId, getSyncableUserId } from '../services/authUtils';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { getLocalDateString, getLocalDayBounds } from '../utils/weekUtils';
 import {
@@ -116,6 +102,30 @@ function recomputeNutritionStreak(): void {
     require('./achievementStore').useAchievementStore.getState().updateNutritionStreak();
   } catch (error) {
     console.error('[nutritionStore] nutrition streak recompute failed:', error);
+  }
+}
+
+// BUG FIX (found via live testing): a STANDALONE logged meal (barcode scan,
+// manual entry, AI-photo recognition — anything landing directly in
+// `dailyMeals` via `addDailyMeal`, as opposed to completing a PLANNED meal
+// slot via `completionTracking.completeMeal`, which already calls this) never
+// triggered achievement progress at all. Nutrition-count achievements like
+// "First Bite" could silently never unlock for the most common real-world way
+// users actually log food. Same lazy-require pattern as
+// `recomputeNutritionStreak` above (avoids a nutritionStore <-> achievementStore
+// cycle) and the same call already proven live in `completionTracking.ts`.
+function trackMealLoggedAchievement(meal: Meal, totalLogs: number): void {
+  try {
+    const userId = require('../services/authUtils').getUserIdOrGuest();
+    require('./achievementStore').trackAchievementActivity.mealLogged(userId, {
+      calories: meal.totalCalories || 0,
+      protein: meal.totalMacros?.protein ?? 0,
+      carbs: meal.totalMacros?.carbohydrates ?? 0,
+      fat: meal.totalMacros?.fat ?? 0,
+      totalLogs,
+    });
+  } catch (error) {
+    console.error('[nutritionStore] meal-logged achievement tracking failed:', error);
   }
 }
 
@@ -274,6 +284,20 @@ export interface NutritionState {
   isGeneratingPlan: boolean;
   planError: string | null;
 
+  // Dual AI/custom diet plan support (mirrors fitnessStore.customWeeklyPlan /
+  // activePlanSource — see FITAI_DATA_ARCHITECTURE.md Section E.1).
+  customWeeklyMealPlan: WeeklyMealPlan | null;
+  activeDietSource: 'ai' | 'custom';
+
+  // Goal Engine Phase A.2/C: shared target-source toggle. 'goal' = daily
+  // calorie/macro targets follow the onboarding-goal-derived number;
+  // 'plan' = follow the active custom plan's per-day number (falling back to
+  // the goal target — labelled — on empty plan days). One shared field on
+  // profiles (NOT per-domain), persisted via `profiles.goal_targets_mode`.
+  // Hydrated alongside `active_diet_source` in loadData(); reset to 'goal'
+  // whenever setActiveDietSource('ai') or setActivePlanSource('ai') fires.
+  goalTargetsMode: 'goal' | 'plan';
+
   // Meal progress tracking
   mealProgress: Record<string, MealProgress>;
 
@@ -301,6 +325,25 @@ export interface NutritionState {
   loadWeeklyMealPlan: () => Promise<WeeklyMealPlan | null>;
   setGeneratingPlan: (isGenerating: boolean) => void;
   setPlanError: (error: string | null) => void;
+
+  // Dual AI/custom diet plan actions
+  setActiveDietSource: (source: 'ai' | 'custom') => void;
+  /** Set the shared goal/plan target-source toggle. Persists to
+   *  `profiles.goal_targets_mode` via the offline queue (multi-device sync). */
+  setGoalTargetsMode: (mode: 'goal' | 'plan') => void;
+  setCustomWeeklyMealPlan: (plan: WeeklyMealPlan | null) => void;
+  saveCustomWeeklyMealPlan: (plan: WeeklyMealPlan) => Promise<void>;
+  loadCustomWeeklyMealPlan: () => Promise<WeeklyMealPlan | null>;
+  /**
+   * Non-reactive getter — safe for services/stores (completionTracking,
+   * offline.ts) that call getState() imperatively. NEVER call this inside a
+   * React component or hook; it will not trigger a re-render when the
+   * source or either plan changes. Components must instead subscribe to
+   * activeDietSource + weeklyMealPlan + customWeeklyMealPlan individually
+   * and branch in the render body (see FullPlanScreen.tsx's documented
+   * fix for the identical workout-side bug).
+   */
+  getActiveWeeklyMealPlan: () => WeeklyMealPlan | null;
 
   // Daily meal actions
   addDailyMeal: (meal: Meal) => void;
@@ -361,10 +404,217 @@ export const useNutritionStore = create<NutritionState>()(
       mealError: null,
       currentMealSession: null,
       hydrationOwnerUserId: null,
+      customWeeklyMealPlan: null,
+      activeDietSource: 'ai' as const,
+      goalTargetsMode: 'goal' as const,
 
       // Weekly meal plan actions
       setWeeklyMealPlan: (plan) => {
         set({ weeklyMealPlan: plan });
+      },
+
+      // Dual AI/custom diet plan actions (mirrors fitnessStore.setActivePlanSource)
+      setActiveDietSource: (source) => {
+        set({ activeDietSource: source });
+
+        // Goal Engine reset rule (Phase A.2/C): 'plan' mode was a decision
+        // about a SPECIFIC custom plan; it must not keep governing targets
+        // once that plan is no longer active. Toggling back to 'ai' reverts
+        // the shared toggle to 'goal' so the app never silently keeps
+        // driving targets off a now-inactive custom plan. The fitness side
+        // (setActivePlanSource('ai')) mirrors this via a lazy require below.
+        if (source === 'ai' && get().goalTargetsMode === 'plan') {
+          get().setGoalTargetsMode('goal');
+        }
+
+        // Persist to Supabase via offline queue so preference syncs across
+        // devices. Uses getSyncableUserId (not getCurrentUserId, which the
+        // fitness-side equivalent uses) — a guest id must never reach the
+        // offline queue, since RLS would reject it on every retry.
+        const syncableUserId = getSyncableUserId();
+        if (syncableUserId) {
+          offlineService.queueAction({
+            type: 'UPDATE',
+            table: 'profiles',
+            data: { id: syncableUserId, active_diet_source: source },
+            userId: syncableUserId,
+            maxRetries: 3,
+          });
+        }
+      },
+
+      setGoalTargetsMode: (mode) => {
+        set({ goalTargetsMode: mode });
+        const syncableUserId = getSyncableUserId();
+        if (syncableUserId) {
+          offlineService.queueAction({
+            type: 'UPDATE',
+            table: 'profiles',
+            data: { id: syncableUserId, goal_targets_mode: mode },
+            userId: syncableUserId,
+            maxRetries: 3,
+          });
+        }
+      },
+
+      setCustomWeeklyMealPlan: (plan) => {
+        set({ customWeeklyMealPlan: plan });
+      },
+
+      getActiveWeeklyMealPlan: () => {
+        const state = get();
+        return state.activeDietSource === 'custom'
+          ? state.customWeeklyMealPlan
+          : state.weeklyMealPlan;
+      },
+
+      saveCustomWeeklyMealPlan: async (plan) => {
+        try {
+          // Save to local storage via Zustand persist first (optimistic;
+          // also the ONLY step for guests — see getSyncableUserId guard below).
+          set({ customWeeklyMealPlan: plan });
+
+          // A blank/in-progress builder draft has zero meals. Unlike
+          // saveWeeklyMealPlan (which throws on empty — that guards a false
+          // "Meal Plan Generated!" alert for AI generation), a custom plan
+          // legitimately starts empty in the builder, so just skip the
+          // Supabase write rather than erroring.
+          if (!plan.meals || plan.meals.length === 0) {
+            return;
+          }
+        } catch (error) {
+          console.error('[nutritionStore] Failed to save custom meal plan locally:', error);
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to save custom meal plan';
+          set({ planError: errorMessage });
+          if (!get().customWeeklyMealPlan) {
+            throw error;
+          }
+        }
+
+        try {
+          // P1-6: guests save locally only, never reach the offline queue.
+          const syncableUserId = getSyncableUserId();
+          if (!syncableUserId) {
+            return;
+          }
+          const userId = syncableUserId;
+          const planId = generateUUID();
+
+          if (!isValidUUID(userId)) {
+            console.error('[nutritionStore] Invalid user UUID format:', userId);
+            throw new Error('Invalid user UUID format');
+          }
+          if (!isValidUUID(planId)) {
+            console.error('[nutritionStore] Invalid plan UUID format:', planId);
+            throw new Error('Invalid plan UUID format');
+          }
+
+          // Look up the existing active custom plan row (plan_source-scoped,
+          // unlike the AI-plan lookup in saveWeeklyMealPlan before this
+          // feature — that lookup has no plan_source filter and must not be
+          // reused here or a custom save would collide with the AI row).
+          let activeCustomPlanRowId = plan.databaseId || null;
+          if (!activeCustomPlanRowId) {
+            try {
+              const { data: customPlans, error: customPlansError } = await supabase
+                .from('weekly_meal_plans')
+                .select('id')
+                .eq('user_id', userId)
+                .eq('is_active', true)
+                .eq('plan_source', 'custom')
+                .order('created_at', { ascending: false })
+                .limit(1);
+              if (customPlansError) {
+                console.error(
+                  '[nutritionStore] Failed to look up active custom meal plan:',
+                  customPlansError
+                );
+              }
+              activeCustomPlanRowId = customPlans?.[0]?.id || null;
+            } catch (lookupError) {
+              console.warn(
+                '[nutritionStore] Failed to look up active custom meal plan; falling back to queued create:',
+                lookupError
+              );
+            }
+          }
+
+          const planRowId = activeCustomPlanRowId || planId;
+          const hasConfirmedDatabaseId = Boolean(activeCustomPlanRowId || plan.databaseId);
+          const planDataWithDbId = hasConfirmedDatabaseId
+            ? { ...plan, databaseId: activeCustomPlanRowId || plan.databaseId }
+            : plan;
+
+          set({ customWeeklyMealPlan: planDataWithDbId });
+
+          const weeklyMealPlanData = {
+            id: planRowId,
+            user_id: userId,
+            plan_title: planDataWithDbId.planTitle || `Week ${plan.weekNumber} Custom Plan`,
+            plan_description:
+              planDataWithDbId.planDescription || `${plan.meals.length} meals planned`,
+            week_number: plan.weekNumber || 1,
+            total_meals: plan.meals.length,
+            total_calories:
+              planDataWithDbId.totalEstimatedCalories ||
+              plan.meals.reduce((sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0), 0),
+            plan_data: planDataWithDbId,
+            is_active: true,
+            plan_source: 'custom',
+          };
+
+          await offlineService.queueAction({
+            type: activeCustomPlanRowId ? 'UPDATE' : 'CREATE',
+            table: 'weekly_meal_plans',
+            data: weeklyMealPlanData,
+            userId,
+            maxRetries: 3,
+          });
+        } catch (customPlanError) {
+          console.error(
+            '[nutritionStore] Failed to save custom meal plan to database:',
+            customPlanError
+          );
+          const errorMessage =
+            customPlanError instanceof Error
+              ? customPlanError.message
+              : 'Failed to save custom meal plan to database';
+          set({ planError: errorMessage });
+        }
+      },
+
+      loadCustomWeeklyMealPlan: async () => {
+        try {
+          const userId = getCurrentUserId();
+          if (!userId) return null;
+
+          const { data: customPlans, error } = await supabase
+            .from('weekly_meal_plans')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .eq('plan_source', 'custom')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!error && customPlans && customPlans.length > 0) {
+            const latestPlan = customPlans[0];
+            const planData = latestPlan.plan_data as WeeklyMealPlan | null;
+            if (planData && planData.meals) {
+              const planWithDbId = { ...planData, databaseId: latestPlan.id };
+              set({ customWeeklyMealPlan: planWithDbId });
+              return planWithDbId;
+            }
+          }
+
+          // No custom plan found (0 rows or no valid plan_data) — clear stale state
+          set({ customWeeklyMealPlan: null });
+          return null;
+        } catch (error) {
+          console.error('[nutritionStore] Failed to load custom meal plan:', error);
+          return null;
+        }
       },
 
       saveWeeklyMealPlan: async (plan) => {
@@ -409,8 +659,15 @@ export const useNutritionStore = create<NutritionState>()(
             return;
           }
 
-          // Clear any failed UUID attempts in the queue first
-          await offlineService.clearFailedActionsForTable('weekly_meal_plans');
+          // Clear any failed UUID attempts in the queue first — scoped to
+          // plan_source: 'ai' rows only, so this can never discard a
+          // permanently-failed custom-plan write queued by
+          // saveCustomWeeklyMealPlan (which doesn't call this at all, so the
+          // reverse — a custom save dropping a failed AI write — can't happen).
+          await offlineService.clearFailedActionsForTable(
+            'weekly_meal_plans',
+            (data) => (data.plan_source ?? 'ai') === 'ai'
+          );
 
           // Get authenticated user ID (already validated non-guest above)
           const userId = syncableUserId;
@@ -440,11 +697,16 @@ export const useNutritionStore = create<NutritionState>()(
             let activePlanRowId = plan.databaseId || null;
             if (!activePlanRowId) {
               try {
+                // plan_source-scoped: without this filter, once a custom
+                // plan can also be active (Phase 1 migration), this lookup
+                // could return the custom row and this AI save would
+                // silently overwrite it instead of creating its own row.
                 const { data: activePlans, error: activePlansError } = await supabase
                   .from('weekly_meal_plans')
                   .select('id')
                   .eq('user_id', userId)
                   .eq('is_active', true)
+                  .eq('plan_source', 'ai')
                   .order('created_at', { ascending: false })
                   .limit(1);
                 if (activePlansError) {
@@ -486,6 +748,7 @@ export const useNutritionStore = create<NutritionState>()(
                 plan.meals.reduce((sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0), 0),
               plan_data: planDataWithDbId, // Store complete plan as JSONB
               is_active: true,
+              plan_source: 'ai',
             };
 
             await offlineService.queueAction({
@@ -526,6 +789,7 @@ export const useNutritionStore = create<NutritionState>()(
                 .select('*')
                 .eq('user_id', userId)
                 .eq('is_active', true)
+                .eq('plan_source', 'ai')
                 .order('created_at', { ascending: false })
                 .limit(1);
 
@@ -589,6 +853,7 @@ export const useNutritionStore = create<NutritionState>()(
         }));
 
         recomputeNutritionStreak();
+        trackMealLoggedAchievement(meal, get().dailyMeals.length);
       },
 
       setDailyMeals: (meals) => {
@@ -874,22 +1139,39 @@ export const useNutritionStore = create<NutritionState>()(
 
       // Data persistence
       removeLegacyScanShadows: () => {
-        const cleanedState = pruneLegacyScanShadowState({
+        const aiCleanedState = pruneLegacyScanShadowState({
           weeklyMealPlan: get().weeklyMealPlan,
           mealProgress: get().mealProgress,
           currentMealSession: get().currentMealSession,
         });
 
-        if (!cleanedState) {
-          return;
+        if (aiCleanedState) {
+          set({
+            weeklyMealPlan: aiCleanedState.weeklyMealPlan as WeeklyMealPlan | null,
+            mealProgress: aiCleanedState.mealProgress as Record<string, MealProgress>,
+            currentMealSession:
+              (aiCleanedState.currentMealSession as NutritionState['currentMealSession']) ?? null,
+          });
         }
 
-        set({
-          weeklyMealPlan: cleanedState.weeklyMealPlan as WeeklyMealPlan | null,
-          mealProgress: cleanedState.mealProgress as Record<string, MealProgress>,
-          currentMealSession:
-            (cleanedState.currentMealSession as NutritionState['currentMealSession']) ?? null,
+        // Run a second pass against the custom plan — a legacy "scanned_"
+        // shadow meal could equally have ended up there. Reads mealProgress
+        // fresh (post-AI-pass) so the two passes compose instead of one
+        // clobbering the other's removals.
+        const customCleanedState = pruneLegacyScanShadowState({
+          weeklyMealPlan: get().customWeeklyMealPlan,
+          mealProgress: get().mealProgress,
+          currentMealSession: get().currentMealSession,
         });
+
+        if (customCleanedState) {
+          set({
+            customWeeklyMealPlan: customCleanedState.weeklyMealPlan as WeeklyMealPlan | null,
+            mealProgress: customCleanedState.mealProgress as Record<string, MealProgress>,
+            currentMealSession:
+              (customCleanedState.currentMealSession as NutritionState['currentMealSession']) ?? null,
+          });
+        }
       },
 
       persistData: async () => {
@@ -898,6 +1180,9 @@ export const useNutritionStore = create<NutritionState>()(
 
           if (state.weeklyMealPlan) {
             await get().saveWeeklyMealPlan(state.weeklyMealPlan);
+          }
+          if (state.customWeeklyMealPlan) {
+            await get().saveCustomWeeklyMealPlan(state.customWeeklyMealPlan);
           }
 
           // Save daily meals as individual logs — dedup within this call by meal ID
@@ -955,6 +1240,7 @@ export const useNutritionStore = create<NutritionState>()(
           if (plan) {
             set({ weeklyMealPlan: plan });
           }
+          const customPlan = await get().loadCustomWeeklyMealPlan();
 
           // Hydrate mealProgress + dailyMeals from Supabase on login
           try {
@@ -978,12 +1264,66 @@ export const useNutritionStore = create<NutritionState>()(
                   currentMealSession: null,
                   hydrationOwnerUserId: authenticatedUserId,
                   weeklyMealPlan: plan ?? null,
+                  // Account-switch guard: without this, user B's cold-start
+                  // hydration would keep showing user A's custom plan (it was
+                  // only ever cleared here for weeklyMealPlan, not this one).
+                  customWeeklyMealPlan: customPlan ?? null,
+                  activeDietSource: 'ai',
+                  goalTargetsMode: 'goal',
                 });
               }
 
+              // Hydrate active_diet_source + goal_targets_mode preferences
+              // from profiles (multi-device sync — mirrors fitnessStore's
+              // active_plan_source hydration). goal_targets_mode is the
+              // shared target-source toggle (Phase A.2/C); fetched in the
+              // same round-trip as active_diet_source.
+              // BUG FIX: a brand-new sign-up has no `profiles` row yet —
+              // `.single()` threw a real 406 for this normal case;
+              // `.maybeSingle()` returns null data with no error instead.
+              try {
+                const { data: profile, error: profileError } = await supabase
+                  .from('profiles')
+                  .select('active_diet_source, goal_targets_mode')
+                  .eq('id', authenticatedUserId)
+                  .maybeSingle();
+
+                if (profileError) {
+                  console.error(
+                    '[nutritionStore] Failed to fetch active_diet_source from profiles:',
+                    profileError
+                  );
+                } else {
+                  if (profile?.active_diet_source) {
+                    const source = profile.active_diet_source as 'ai' | 'custom';
+                    if (source === 'ai' || source === 'custom') {
+                      set({ activeDietSource: source });
+                    }
+                  }
+                  if (profile?.goal_targets_mode) {
+                    const mode = profile.goal_targets_mode as 'goal' | 'plan';
+                    if (mode === 'goal' || mode === 'plan') {
+                      set({ goalTargetsMode: mode });
+                    }
+                  }
+                }
+              } catch (dietSourceError) {
+                console.error(
+                  '[nutritionStore] Failed to hydrate active_diet_source:',
+                  dietSourceError
+                );
+              }
+
+              // planMealIds must reflect whichever plan is ACTUALLY active,
+              // not always the AI plan — otherwise a custom-plan user's
+              // planned-log hydration silently rebuilds against the wrong
+              // plan's meal ids after every cold start.
+              const activePlanForHydration =
+                get().activeDietSource === 'custom' ? customPlan : plan;
+
               const todayBounds = getLocalDayBounds();
               const planMealIds =
-                plan?.meals
+                activePlanForHydration?.meals
                   ?.map((meal: any) => meal.id)
                   .filter((mealId: string | undefined): mealId is string => !!mealId) || [];
               const runPlannedLogsQuery = async (selectColumns: string) =>
@@ -1196,6 +1536,9 @@ export const useNutritionStore = create<NutritionState>()(
           hydrationOwnerUserId: null,
           planError: null,
           mealError: null,
+          customWeeklyMealPlan: null,
+          activeDietSource: 'ai',
+          goalTargetsMode: 'goal',
         });
       },
 
@@ -1365,12 +1708,23 @@ export const useNutritionStore = create<NutritionState>()(
           mealError: null,
           currentMealSession: null,
           hydrationOwnerUserId: null,
+          customWeeklyMealPlan: null,
+          activeDietSource: 'ai',
+          goalTargetsMode: 'goal',
         });
       },
     }),
     {
       name: 'nutrition-storage',
-      version: 2,
+      // v3: added customWeeklyMealPlan + activeDietSource (dual AI/custom
+      // diet plan support). Pre-v3 persisted state has neither key; the
+      // ?? defaults below make a returning user rehydrate as
+      // activeDietSource: 'ai' / customWeeklyMealPlan: null rather than
+      // undefined.
+      // v4: added goalTargetsMode (Goal Engine Phase A.2/C target-source
+      // toggle). Pre-v4 state lacks the key; ?? 'goal' keeps returning users
+      // on the goal-derived target until they explicitly opt into 'plan'.
+      version: 4,
       storage: createDebouncedStorage(),
       migrate: (persistedState) => {
         const sanitized = sanitizeLegacyScanShadowPersistedState(
@@ -1382,11 +1736,30 @@ export const useNutritionStore = create<NutritionState>()(
           } | null
         );
 
+        const typedPersistedState = persistedState as {
+          hydrationOwnerUserId?: string | null;
+          customWeeklyMealPlan?: WeeklyMealPlan | null;
+          activeDietSource?: 'ai' | 'custom';
+          goalTargetsMode?: 'goal' | 'plan';
+        } | null;
+
+        // Second pass: a legacy "scanned_" shadow meal could equally have
+        // ended up in the custom plan. Reuse the same sanitizer by mapping
+        // customWeeklyMealPlan into the `weeklyMealPlan` slot it expects,
+        // chaining off the AI pass's already-cleaned mealProgress so the
+        // two passes compose.
+        const customSanitized = sanitizeLegacyScanShadowPersistedState({
+          weeklyMealPlan: typedPersistedState?.customWeeklyMealPlan ?? null,
+          mealProgress: sanitized?.mealProgress,
+        });
+
         return {
           ...sanitized,
-          hydrationOwnerUserId:
-            (persistedState as { hydrationOwnerUserId?: string | null } | null)
-              ?.hydrationOwnerUserId ?? null,
+          mealProgress: customSanitized?.mealProgress ?? sanitized?.mealProgress,
+          hydrationOwnerUserId: typedPersistedState?.hydrationOwnerUserId ?? null,
+          customWeeklyMealPlan: customSanitized?.weeklyMealPlan ?? null,
+          activeDietSource: typedPersistedState?.activeDietSource ?? 'ai',
+          goalTargetsMode: typedPersistedState?.goalTargetsMode ?? 'goal',
         };
       },
       partialize: (state) => ({
@@ -1394,6 +1767,9 @@ export const useNutritionStore = create<NutritionState>()(
         mealProgress: state.mealProgress,
         dailyMeals: state.dailyMeals,
         hydrationOwnerUserId: state.hydrationOwnerUserId,
+        customWeeklyMealPlan: state.customWeeklyMealPlan,
+        activeDietSource: state.activeDietSource,
+        goalTargetsMode: state.goalTargetsMode,
       }),
       onRehydrateStorage: () => (state) => {
         // Defer so the set() inside removeLegacyScanShadows doesn't fire during

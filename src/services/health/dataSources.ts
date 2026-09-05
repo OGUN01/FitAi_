@@ -163,3 +163,24 @@ export const getBestDataSource = (
 
   return sources[0]?.source || null;
 };
+
+// Rank a set of Health Connect data-origin package names by device-accuracy
+// tier, after dropping excluded raw/self sources (the phone's own sensor,
+// FitAI's own write-back) entirely. This is the single ranking used to pick
+// ONE authoritative source per cumulative metric (steps, calories, distance)
+// instead of summing every contributing app together — see
+// syncHelpers.ts:resolveBestAggregate, the same policy Apple HealthKit's
+// per-category "Data Sources & Access" priority and Health Connect's own
+// "App priority" setting encode.
+export const rankOrigins = (
+  origins: string[],
+  excluded: string[],
+): { origin: string; source: DataSource }[] => {
+  return origins
+    .filter((origin) => !excluded.includes(origin))
+    .map((origin) => ({ origin, source: getDataSource(origin) }))
+    .sort(
+      (a, b) =>
+        a.source.tier - b.source.tier || b.source.accuracy - a.source.accuracy,
+    );
+};

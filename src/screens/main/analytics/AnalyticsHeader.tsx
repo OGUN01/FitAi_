@@ -19,7 +19,6 @@ import { rf } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
 import { haptics } from "../../../utils/haptics";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { useTopSafeAreaInset } from "../../../components/ui/aurora/useTopSafeAreaInset";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
 interface AnalyticsHeaderProps {
@@ -34,16 +33,6 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   onProgressPress,
 }) => {
   const reducedMotion = useReducedMotion();
-  // Top spacing so the title clears the status bar. The wrapping SafeAreaView
-  // in AnalyticsScreen owns only the bottom edge (edges={["bottom"]}) — earlier
-  // relying on its top edge left the title overlapping the status bar on some
-  // devices, so the header is the sole owner of top padding here.
-  //
-  // useTopSafeAreaInset is the single shared source for this fallback formula
-  // (insets.top -> StatusBar.currentHeight -> 24px floor) — FitnessHeader
-  // should use the same hook (see cross-domain follow-up).
-  const topInset = useTopSafeAreaInset();
-  const topPadding = topInset + spacing.md;
 
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
@@ -61,7 +50,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
+    <View style={styles.container}>
       <Animated.View
         entering={
           Platform.OS !== "web" && !reducedMotion
@@ -129,6 +118,9 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
+    // Top safe-area inset is handled natively by AnalyticsScreen's
+    // SafeAreaView edges={["top", "bottom"]}.
+    paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     gap: spacing.sm,
     alignItems: "stretch",

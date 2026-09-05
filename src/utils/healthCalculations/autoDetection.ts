@@ -17,6 +17,7 @@ import {
   ActivityLevel,
   HealthCalcProfile,
 } from './types';
+import { mapActivityLevelForHealthCalc } from '../typeTransformers';
 
 // ============================================================================
 // COUNTRY NAME → ISO CODE NORMALIZATION (BUG-85/BUG-11)
@@ -561,8 +562,10 @@ export function validateActivityLevel(
 
   const activityLevels: ActivityLevel[] = ['sedentary', 'light', 'moderate', 'active', 'very_active'];
   const minIndex = activityLevels.indexOf(minRequired);
-  // Map "extreme" → "very_active" for comparison (onboarding uses "extreme")
-  const normalizedLevel = (activityLevel as string) === 'extreme' ? 'very_active' : activityLevel;
+  // Normalize at the boundary (typeTransformers.ts) instead of a local
+  // "extreme" alias check — was duplicated near-identically across 3+ files
+  // with no single source of truth for the mapping.
+  const normalizedLevel = mapActivityLevelForHealthCalc(activityLevel);
   const selectedIndex = activityLevels.indexOf(normalizedLevel as ActivityLevel);
 
   if (selectedIndex < minIndex) {

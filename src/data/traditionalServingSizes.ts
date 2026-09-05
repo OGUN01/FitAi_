@@ -184,6 +184,14 @@ export const TRADITIONAL_SERVING_SIZES = {
 };
 
 // Regional meal combinations (complete meals)
+//
+// BUG FIX: component keys previously included the literal word "sweet" —
+// too generic for ANY nutrition-database entry to meaningfully represent
+// (unlike "sabji"/"raita"/etc., which are real dish CATEGORIES with typical
+// nutrition profiles, "sweet" names no specific food at all). Renamed to
+// "gulab jamun" (a real, already-catalogued entry in indianFoodDatabase.ts)
+// — a genuine, common thali dessert, matched exactly instead of silently
+// contributing zero calories to the template's total.
 export const TRADITIONAL_MEAL_COMBINATIONS = {
   north_indian_thali: {
     totalServing: 450,
@@ -194,7 +202,7 @@ export const TRADITIONAL_MEAL_COMBINATIONS = {
       roti: 80, // 2 pieces
       raita: 50,
       pickle: 10,
-      sweet: 25,
+      'gulab jamun': 25,
       papad: 10,
     },
   },
@@ -221,7 +229,7 @@ export const TRADITIONAL_MEAL_COMBINATIONS = {
       roti: 60, // 2 pieces
       raita: 40,
       pickle: 5,
-      sweet: 30,
+      'gulab jamun': 30,
       farsan: 15,
     },
   },
@@ -236,7 +244,7 @@ export const TRADITIONAL_MEAL_COMBINATIONS = {
       raita: 50,
       pickle: 10,
       lassi: 200,
-      sweet: 30,
+      'gulab jamun': 30,
     },
   },
 };

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rp, rbr } from "../../../utils/responsive";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
@@ -32,10 +33,10 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: colors.errorTint },
+                { backgroundColor: `${colors.error.DEFAULT}1F` },
               ]}
             >
-              <Ionicons name="refresh-outline" size={rf(20)} color={colors.error} />
+              <Ionicons name="refresh-outline" size={rf(20)} color={colors.error.DEFAULT} />
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Reset to Defaults</Text>
@@ -46,7 +47,7 @@ export const ResetButton: React.FC<ResetButtonProps> = ({ onPress }) => {
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={colors.textMuted}
+              color={colors.text.tertiary}
             />
           </View>
         </View>
@@ -81,13 +82,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   actionTitle: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   actionDescription: {
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
 });

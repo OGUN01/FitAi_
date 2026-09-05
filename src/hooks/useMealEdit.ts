@@ -33,8 +33,24 @@ export const useMealEdit = (
   const [ingredients, setIngredients] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan } =
-    useNutritionStore();
+  const {
+    weeklyMealPlan,
+    setWeeklyMealPlan,
+    saveWeeklyMealPlan,
+    activeDietSource,
+    customWeeklyMealPlan,
+    setCustomWeeklyMealPlan,
+    saveCustomWeeklyMealPlan,
+  } = useNutritionStore();
+  // Edit the plan the user is actually viewing — not always the AI plan
+  // (verified plan, Blocker 5: editing a meal while custom is active must
+  // not silently write into the AI plan).
+  const activeWeeklyMealPlan =
+    activeDietSource === "custom" ? customWeeklyMealPlan : weeklyMealPlan;
+  const setActiveWeeklyMealPlan =
+    activeDietSource === "custom" ? setCustomWeeklyMealPlan : setWeeklyMealPlan;
+  const saveActiveWeeklyMealPlan =
+    activeDietSource === "custom" ? saveCustomWeeklyMealPlan : saveWeeklyMealPlan;
 
   // Load meal data when modal opens
   useEffect(() => {
@@ -143,21 +159,28 @@ export const useMealEdit = (
         },
       };
 
-      // Update in database if meal has a log ID (DB write first, before store update)
+      // Update in database if meal has a log ID (DB write first, before store update).
+      // Was writing to the "meals" table with columns ("name", "total_carbs")
+      // that don't exist there — the actual logged-meal table nutritionStore
+      // reads from (getTodaysConsumedNutrition/dailyMeals, see MEAL_LOG_SELECT)
+      // is "meal_logs" with columns meal_name/total_carbohydrates/food_items.
+      // The edit silently "succeeded" while never touching the row the
+      // calorie ring and macro totals actually read from, so a correction
+      // never showed up and was permanently lost on the next full reload.
       const { getMealProgress } = useNutritionStore.getState();
       const mealProgressData = getMealProgress(meal.id);
 
       if (mealProgressData?.logId && userId) {
         const { error } = await supabase
-          .from("meals")
+          .from("meal_logs")
           .update({
-            name: mealName.trim(),
+            meal_name: mealName.trim(),
             meal_type: mealType,
             total_calories: nutrition.calories,
             total_protein: nutrition.protein,
-            total_carbs: nutrition.carbs,
+            total_carbohydrates: nutrition.carbs,
             total_fat: nutrition.fat,
-            updated_at: new Date().toISOString(),
+            food_items: ingredients,
           })
           .eq("id", mealProgressData.logId);
 
@@ -166,21 +189,29 @@ export const useMealEdit = (
           crossPlatformAlert("Error", "Failed to save changes to the server. Please try again.");
           return;
         }
+
+        // Re-hydrate dailyMeals from meal_logs immediately rather than relying
+        // on the realtime subscription's timing — the calorie ring and macro
+        // totals (CLAUDE.md #6: store must reflect a DB write immediately)
+        // read from dailyMeals, not weeklyMealPlan (which is the planning
+        // template and, per nutritionStore's own SSOT comment, must never
+        // contribute to consumed totals).
+        await useNutritionStore.getState().loadData();
       }
 
-      // Update in weekly meal plan (store updated after successful DB write)
-      if (weeklyMealPlan) {
-        const updatedMeals = weeklyMealPlan.meals.map((m) =>
+      // Update in the active weekly meal plan (store updated after successful DB write)
+      if (activeWeeklyMealPlan) {
+        const updatedMeals = activeWeeklyMealPlan.meals.map((m) =>
           m.id === meal.id ? updatedMeal : m,
         );
 
         const updatedPlan = {
-          ...weeklyMealPlan,
+          ...activeWeeklyMealPlan,
           meals: updatedMeals,
         };
 
-        await saveWeeklyMealPlan(updatedPlan);
-        setWeeklyMealPlan(updatedPlan);
+        await saveActiveWeeklyMealPlan(updatedPlan);
+        setActiveWeeklyMealPlan(updatedPlan);
       }
 
       haptics.success();

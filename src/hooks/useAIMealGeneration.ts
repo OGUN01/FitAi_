@@ -1514,7 +1514,14 @@ export const useAIMealGeneration = (options?: {
       if (response.success && response.data) {
         const generatedMeal = response.data;
 
-        // Push generated meal to Zustand nutrition store so DietScreen renders it
+        // Push generated meal to Zustand nutrition store so DietScreen renders it.
+        // Deliberately always targets the AI plan (weeklyMealPlan), even
+        // when a custom plan is the active source — this is a distinct
+        // "AI generates a meal" feature (ai_generation usage tracked), not
+        // a manual-log staging trick like LogMealModal's. Whether an
+        // AI-suggested meal should be insertable into a custom plan is an
+        // open product question for the diet builder (Phase 5), not
+        // addressed here.
         const addGeneratedMeal = () => {
           const currentMeals = weeklyMealPlan?.meals || [];
           const updatedPlan: WeeklyMealPlan = {
@@ -1651,7 +1658,9 @@ export const useAIMealGeneration = (options?: {
       if (response.success && response.data) {
         const generatedMeals = response.data.meals as unknown as DayMeal[];
 
-        // Push to weeklyMealPlan store so MealPlanView renders the new meals immediately
+        // Push to weeklyMealPlan store so MealPlanView renders the new meals
+        // immediately. Deliberately AI-plan-scoped — see the identical note
+        // on generateAIMeal's addGeneratedMeal above.
         const addGeneratedMeals = () => {
           const currentPlan = weeklyMealPlan || {
             id: `plan_${Date.now()}`,

@@ -5,6 +5,7 @@
 
 import type { WaterCalculator } from '../interfaces/calculators';
 import type { ActivityLevel, ClimateType } from '../types';
+import { mapActivityLevelForHealthCalc } from '../../typeTransformers';
 
 /**
  * Climate-Adaptive Water Calculator
@@ -31,10 +32,12 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
       moderate: 1000,      // Moderate sweating
       active: 1500,        // Heavy sweating
       very_active: 2000,   // Intense sweating
-      extreme: 2000,       // Alias for very_active (onboarding uses "extreme")
     };
 
-    waterML += activityBonus[activityLevel] ?? 0;
+    // Normalize at the boundary (typeTransformers.ts) instead of hand-rolling
+    // an "extreme" alias key here — was duplicated near-identically across
+    // 3+ files with no single source of truth for the mapping.
+    waterML += activityBonus[mapActivityLevelForHealthCalc(activityLevel)] ?? 0;
 
     // Climate adjustments: additive (not multiplicative) to avoid compounding
     // with already-elevated base for higher body weights.
@@ -91,7 +94,6 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
       moderate: 1000,
       active: 1500,
       very_active: 2000,
-      extreme: 2000, // Alias for very_active (onboarding uses "extreme")
     };
 
     const climateBonus: Record<ClimateType, number> = {
@@ -101,7 +103,7 @@ export class ClimateAdaptiveWaterCalculator implements WaterCalculator {
       arid: 1000,
     };
 
-    const bonus = activityBonus[activityLevel];
+    const bonus = activityBonus[mapActivityLevelForHealthCalc(activityLevel)];
     const climateMl = climateBonus[climate];
     // Route through calculate() so this breakdown can never drift from the
     // real (clamped) SSOT value — previously totalWater was re-derived by

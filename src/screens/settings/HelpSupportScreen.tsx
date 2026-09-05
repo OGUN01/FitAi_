@@ -19,7 +19,7 @@ import { FAQList } from "../../components/help/FAQList";
 import { ContactCard } from "../../components/help/ContactCard";
 import { SectionHeader } from "../../components/settings/SectionHeader";
 
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { colors, spacing } from "../../theme/aurora-tokens";
 import { rp, rh } from "../../utils/responsive";
 import { useHelpSupport } from "../../hooks/useHelpSupport";
 
@@ -61,24 +61,24 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             <View style={styles.quickActionsGrid}>
               <QuickAction
                 icon="chatbubbles-outline"
-                iconColor={colors.text}
-                gradientColors={[colors.primary, colors.primaryDark]}
+                iconColor={colors.text.primary}
+                gradientColors={[colors.primary.DEFAULT, colors.primary.dark]}
                 title="Contact Support"
                 onPress={handleContactSupport}
                 animationDelay={100}
               />
               <QuickAction
                 icon="bug-outline"
-                iconColor={colors.text}
-                gradientColors={[colors.errorLight, colors.primaryLight]}
+                iconColor={colors.text.primary}
+                gradientColors={[colors.error.light, colors.primary.light]}
                 title="Report Bug"
                 onPress={handleReportBug}
                 animationDelay={150}
               />
               <QuickAction
                 icon="bulb-outline"
-                iconColor={colors.text}
-                gradientColors={[colors.success, colors.successLight]}
+                iconColor={colors.text.primary}
+                gradientColors={[colors.success.DEFAULT, colors.success.light]}
                 title="Feature Request"
                 onPress={handleFeatureRequest}
                 animationDelay={200}
@@ -104,7 +104,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="pulse-outline"
-              iconColor={colors.warning}
+              iconColor={colors.warning.DEFAULT}
               title="System Status"
               description="Check if all FitAI services are running smoothly"
               onPress={handleSystemStatus}

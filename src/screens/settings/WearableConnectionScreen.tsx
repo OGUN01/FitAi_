@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { colors, spacing } from "../../theme/aurora-tokens";
 import { rp } from "../../utils/responsive";
 import { useWearableConnection } from "../../hooks/useWearableConnection";
 import { WarningBanner } from "../../components/wearable/WarningBanner";
@@ -72,7 +72,7 @@ export const WearableConnectionScreen: React.FC<
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.text}
+              tintColor={colors.text.primary}
             />
           }
         >

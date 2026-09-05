@@ -692,62 +692,30 @@ class AnalyticsDataService {
       );
 
       if (hasIncrementalUpdate) {
-        // Fetch existing row to accumulate
-        const { data: existing, error: fetchError } = await supabase
-          .from("analytics_metrics")
-          .select(
-            "calories_consumed, calories_burned, workouts_completed, meals_logged, water_intake_ml",
-          )
-          .eq("id", rowId)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error(
-            "[analyticsData] Failed to fetch existing metrics row for accumulation:",
-            fetchError,
-          );
-          return false;
-        }
-
-        const row: Record<string, unknown> = {
-          id: rowId,
-          user_id: userId,
-          metric_date: today,
-        };
-
-        // Accumulate incremental fields
-        if (updates.caloriesConsumed !== undefined) {
-          row.calories_consumed =
-            (existing?.calories_consumed ?? 0) + updates.caloriesConsumed;
-        }
-        if (updates.caloriesBurned !== undefined) {
-          row.calories_burned =
-            (existing?.calories_burned ?? 0) + updates.caloriesBurned;
-        }
-        if (updates.workoutsCompleted !== undefined) {
-          row.workouts_completed =
-            (existing?.workouts_completed ?? 0) + updates.workoutsCompleted;
-        }
-        if (updates.mealsLogged !== undefined) {
-          row.meals_logged =
-            (existing?.meals_logged ?? 0) + updates.mealsLogged;
-        }
+        // Was: SELECT the row, add the increment in JS, UPSERT the sum — not
+        // atomic. Two near-simultaneous callers (e.g. completing a workout
+        // right after logging a meal) could both read the same stale row and
+        // the second UPSERT would silently clobber the first's increment,
+        // undercounting the day's totals. Fixed via a single atomic SQL
+        // statement (increment_analytics_metrics RPC, migration
+        // 20260817000001) instead of a client-side read-then-write.
         // P0-1: waterIntakeMl is intentionally NOT accumulated into
         // analytics_metrics here. water_logs is the SSOT and the column is
         // derived at read time (getTodaysMetrics / loadMetricsHistory).
-
-        // Non-accumulating fields (overwrite is correct)
-        if (updates.weightKg !== undefined) row.weight_kg = updates.weightKg;
-        if (updates.steps !== undefined) row.steps = updates.steps;
-        if (updates.sleepHours !== undefined)
-          row.sleep_hours = updates.sleepHours;
-
-        const { error } = await supabase
-          .from("analytics_metrics")
-          .upsert(row, { onConflict: "user_id,metric_date" });
+        const { error } = await supabase.rpc("increment_analytics_metrics", {
+          p_user_id: userId,
+          p_metric_date: today,
+          p_calories_consumed_delta: updates.caloriesConsumed ?? 0,
+          p_calories_burned_delta: updates.caloriesBurned ?? 0,
+          p_workouts_completed_delta: updates.workoutsCompleted ?? 0,
+          p_meals_logged_delta: updates.mealsLogged ?? 0,
+          p_weight_kg: updates.weightKg ?? null,
+          p_steps: updates.steps ?? null,
+          p_sleep_hours: updates.sleepHours ?? null,
+        });
 
         if (error) {
-          console.error("❌ Metrics accumulate-upsert error:", error);
+          console.error("❌ Metrics atomic-increment RPC error:", error);
           return false;
         }
       } else {

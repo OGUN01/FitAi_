@@ -37,10 +37,11 @@ export const buildRecentActivities = (limit: number = 200): any[] => {
     });
 
   // Meal activities — from mealProgress (SSOT)
+  const activeMealPlan = nutritionState.getActiveWeeklyMealPlan();
   Object.values(nutritionState.mealProgress)
     .filter((p) => p.progress === 100 && p.completedAt)
     .forEach((p) => {
-      const meal = nutritionState.weeklyMealPlan?.meals.find((m) => m.id === p.mealId);
+      const meal = activeMealPlan?.meals.find((m) => m.id === p.mealId);
       let mealName = meal?.name ?? "Meal";
       if (Array.isArray(mealName)) mealName = mealName.join(", ");
       else if (typeof mealName !== "string") mealName = String(mealName || "Meal");
@@ -74,7 +75,7 @@ export const buildTodaysData = (): any => {
     (w) => w.dayOfWeek === todayName
   ) ?? null;
 
-  const todaysMeals = nutritionState.weeklyMealPlan?.meals.filter(
+  const todaysMeals = nutritionState.getActiveWeeklyMealPlan()?.meals.filter(
     (m) => m.dayOfWeek === todayName
   ) ?? [];
 
@@ -104,6 +105,10 @@ export const buildTodaysData = (): any => {
     return total;
   }, 0);
 
+  // Sum of the ACTIVE plan's today's meals — now consistent with
+  // useCalculatedMetrics' custom-plan-derived target (Decision 1), since
+  // both read whichever plan is actually toggled on and both scope to
+  // today only (not the whole week).
   const targetCalories = todaysMeals.reduce((t, m) => t + (m.totalCalories ?? 0), 0);
 
   return {
@@ -162,7 +167,7 @@ export const refreshProgressData = async (
     ).length;
     const mealsCompleted = Object.values(nutritionState.mealProgress)
       .filter((p) => p.progress === 100).length;
-    const totalMeals = nutritionState.weeklyMealPlan?.meals.length ?? 0;
+    const totalMeals = nutritionState.getActiveWeeklyMealPlan()?.meals.length ?? 0;
     const totalWorkouts = fitnessState.weeklyWorkoutPlan?.workouts.length ?? 0;
 
     setWeeklyProgress({ workoutsCompleted, totalWorkouts, mealsCompleted, totalMeals });

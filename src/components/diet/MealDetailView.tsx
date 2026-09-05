@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Image, Dimensions, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,6 +45,12 @@ const MEAL_TYPE_LABELS: Record<DayMeal['type'], string> = {
   dinner: 'Dinner',
   snack: 'Snack',
 };
+
+// Approximates the header row's content height (backButton height +
+// paddingVertical on both sides — see styles.header/backButton) so the
+// overflow menu, now rendered in its own top-level Modal instead of nested
+// under the header, still visually sits right below the "..." button.
+const OVERFLOW_MENU_TOP_OFFSET = Math.max(rw(40), 44) + spacing.sm * 2;
 
 export interface MealDetailViewProps {
   meal: DayMeal;
@@ -565,8 +571,32 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
           >
             <Ionicons name="ellipsis-horizontal" size={rf(22)} color={colors.text} />
           </AnimatedPressable>
-          {showOverflow ? (
-            <View style={styles.overflowMenu} accessibilityRole="menu">
+        </View>
+      </SafeAreaView>
+
+      {/* Was an absolutely-positioned View nested inside the header's
+          SafeAreaView, a sibling of the Animated.ScrollView body below it.
+          Since the ScrollView is declared later in the tree, it painted (and
+          crucially, touch-dispatched) ON TOP of the menu wherever the two
+          visually overlapped — the menu was visible in screenshots but its
+          items silently never received taps. A transparent Modal renders in
+          its own top-level native window, immune to any sibling ordering. */}
+      {showOverflow ? (
+        <Modal
+          visible={showOverflow}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowOverflow(false)}
+        >
+          <Pressable
+            style={styles.overflowBackdrop}
+            onPress={() => setShowOverflow(false)}
+            accessibilityLabel="Close meal options"
+          >
+            <View
+              style={[styles.overflowMenu, { top: insets.top + OVERFLOW_MENU_TOP_OFFSET }]}
+              accessibilityRole="menu"
+            >
               {onShareMeal ? (
                 <Pressable
                   style={styles.overflowItem}
@@ -598,9 +628,9 @@ export const MealDetailView: React.FC<MealDetailViewProps> = ({
                 </Pressable>
               ) : null}
             </View>
-          ) : null}
-        </View>
-      </SafeAreaView>
+          </Pressable>
+        </Modal>
+      ) : null}
 
       <Animated.ScrollView
         style={styles.scrollView}
@@ -878,11 +908,15 @@ const styles = StyleSheet.create({
   headerButtonDisabled: {
     opacity: 0.35,
   },
+  overflowBackdrop: {
+    flex: 1,
+  },
   overflowMenu: {
+    // `top` is set inline (insets.top + OVERFLOW_MENU_TOP_OFFSET) — this
+    // now renders inside a full-screen Modal, not nested under the header,
+    // so it has no header box to anchor `top: '100%'` against any more.
     position: 'absolute' as const,
-    top: '100%' as const,
     right: spacing.md,
-    zIndex: 20,
     minWidth: rw(170),
     padding: spacing.xs,
     borderRadius: rbr(borderRadius.md),

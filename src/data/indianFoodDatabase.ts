@@ -687,6 +687,186 @@ export const INDIAN_FOOD_DATABASE: Record<string, IndianFoodData> = {
     traditionalServing: 120,
     tags: ['vegetarian', 'paneer', 'spinach', 'protein-rich'],
   },
+
+  // === GENERIC THALI/MEAL-COMBO COMPONENTS ===
+  // BUG FIX: TRADITIONAL_MEAL_COMBINATIONS (traditionalServingSizes.ts) seeds
+  // regional thali templates with generic component names ("sabji", "raita",
+  // "pickle", "papad", "farsan", "curry", "vegetables", "curd") that had NO
+  // matching entry here — MealPlanMethodLandingScreen.componentToMealItem's
+  // fuzzy substring match found nothing for any of them (confirmed live: 5
+  // "no nutrition match" console errors when seeding North Indian Thali
+  // alone), so every regional template's daily calorie/macro total silently
+  // undercounted these components as zero. These are genuine, common Indian
+  // meal categories (not fabricated dishes) with well-established typical
+  // nutrition profiles — added as representative averages so the templates'
+  // totals are realistic rather than systematically low.
+  sabji: {
+    name: 'Mixed Vegetable Sabji',
+    hindiName: 'सब्जी',
+    region: 'pan-indian',
+    category: 'side',
+    spiceLevel: 'medium',
+    cookingMethod: 'curry',
+    nutritionPer100g: {
+      calories: 95,
+      protein: 3,
+      carbs: 12,
+      fat: 4,
+      fiber: 3,
+      sugar: 3,
+      sodium: 350,
+    },
+    commonIngredients: ['seasonal vegetables', 'onions', 'tomatoes', 'oil', 'spices'],
+    traditionalServing: 80,
+    tags: ['vegetarian', 'vegetables', 'side dish', 'generic'],
+  },
+
+  raita: {
+    name: 'Raita',
+    hindiName: 'रायता',
+    region: 'pan-indian',
+    category: 'side',
+    spiceLevel: 'mild',
+    cookingMethod: 'raw',
+    nutritionPer100g: {
+      calories: 60,
+      protein: 3,
+      carbs: 5,
+      fat: 3,
+      fiber: 0.5,
+      sugar: 4,
+      sodium: 150,
+    },
+    commonIngredients: ['yogurt', 'cucumber', 'cumin', 'salt'],
+    traditionalServing: 50,
+    tags: ['vegetarian', 'yogurt', 'side dish', 'cooling'],
+  },
+
+  pickle: {
+    name: 'Indian Pickle (Achaar)',
+    hindiName: 'अचार',
+    region: 'pan-indian',
+    category: 'side',
+    spiceLevel: 'hot',
+    cookingMethod: 'raw',
+    nutritionPer100g: {
+      calories: 250,
+      protein: 2,
+      carbs: 15,
+      fat: 20,
+      fiber: 3,
+      sugar: 5,
+      sodium: 1800,
+    },
+    commonIngredients: ['mango or lime', 'mustard oil', 'spices', 'salt'],
+    traditionalServing: 10,
+    tags: ['vegetarian', 'condiment', 'oil-based', 'high-sodium'],
+  },
+
+  papad: {
+    name: 'Papad',
+    hindiName: 'पापड़',
+    region: 'pan-indian',
+    category: 'side',
+    spiceLevel: 'mild',
+    cookingMethod: 'fried',
+    nutritionPer100g: {
+      calories: 350,
+      protein: 20,
+      carbs: 55,
+      fat: 5,
+      fiber: 8,
+      sugar: 2,
+      sodium: 900,
+    },
+    commonIngredients: ['lentil flour', 'salt', 'spices'],
+    traditionalServing: 10,
+    tags: ['vegetarian', 'lentil', 'crispy', 'side dish'],
+  },
+
+  farsan: {
+    name: 'Farsan',
+    hindiName: 'फरसाण',
+    region: 'west',
+    category: 'snack',
+    spiceLevel: 'mild',
+    cookingMethod: 'fried',
+    nutritionPer100g: {
+      calories: 500,
+      protein: 12,
+      carbs: 45,
+      fat: 30,
+      fiber: 4,
+      sugar: 3,
+      sodium: 700,
+    },
+    commonIngredients: ['gram flour', 'oil', 'spices'],
+    traditionalServing: 15,
+    tags: ['vegetarian', 'gujarati', 'fried', 'snack mix'],
+  },
+
+  curd: {
+    name: 'Curd (Dahi)',
+    hindiName: 'दही',
+    region: 'pan-indian',
+    category: 'side',
+    spiceLevel: 'mild',
+    cookingMethod: 'raw',
+    nutritionPer100g: {
+      calories: 60,
+      protein: 3.5,
+      carbs: 4.5,
+      fat: 3.5,
+      fiber: 0,
+      sugar: 4.5,
+      sodium: 45,
+    },
+    commonIngredients: ['milk'],
+    traditionalServing: 40,
+    tags: ['vegetarian', 'yogurt', 'plain', 'side dish'],
+  },
+
+  vegetables: {
+    name: 'Cooked Mixed Vegetables',
+    hindiName: 'सब्ज़ियाँ',
+    region: 'pan-indian',
+    category: 'side',
+    spiceLevel: 'mild',
+    cookingMethod: 'steamed',
+    nutritionPer100g: {
+      calories: 70,
+      protein: 2.5,
+      carbs: 10,
+      fat: 2.5,
+      fiber: 3,
+      sugar: 3,
+      sodium: 250,
+    },
+    commonIngredients: ['seasonal vegetables', 'oil', 'light spices'],
+    traditionalServing: 60,
+    tags: ['vegetarian', 'vegetables', 'side dish', 'generic'],
+  },
+
+  curry: {
+    name: 'Mixed Curry',
+    hindiName: 'करी',
+    region: 'pan-indian',
+    category: 'main',
+    spiceLevel: 'medium',
+    cookingMethod: 'curry',
+    nutritionPer100g: {
+      calories: 110,
+      protein: 4,
+      carbs: 10,
+      fat: 6,
+      fiber: 2,
+      sugar: 3,
+      sodium: 400,
+    },
+    commonIngredients: ['vegetables or paneer or lentils', 'onions', 'tomatoes', 'spices'],
+    traditionalServing: 100,
+    tags: ['vegetarian', 'curry', 'generic', 'main'],
+  },
 };
 
 // Export functions for easier access

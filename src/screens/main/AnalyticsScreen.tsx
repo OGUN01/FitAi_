@@ -17,6 +17,7 @@ import {
   StyleSheet,
   RefreshControl,
   Platform,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -771,6 +772,19 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
     haptics.light();
     navigation?.navigate("Progress");
   }, [navigation]);
+  // BUG FIX (found via live testing): AchievementsScreen.tsx is a fully
+  // built, navigation-registered screen (unlock flows, celebration UI,
+  // progress-toward-next-achievement) that was completely UNREACHABLE from
+  // anywhere in the app — grepping the whole codebase for
+  // navigation.navigate('Achievements') / screen === 'Achievements' found
+  // only the generic MainNavigation dispatcher that HANDLES the call, never
+  // a caller. This section's own preview (AchievementShowcase below) had no
+  // press handler at all. Wired one in, mirroring handleProgressPress's
+  // exact pattern for the sibling Progress screen just above.
+  const handleAchievementsPress = useCallback(() => {
+    haptics.light();
+    navigation?.navigate("Achievements");
+  }, [navigation]);
 
   // Show loading state for the period-dependent widgets (metric grid, calorie
   // breakdown, trend charts) only. Intentionally NOT gated on
@@ -844,10 +858,7 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      {/* edges={["bottom"]} — top inset is applied explicitly in AnalyticsHeader
-          (paddingTop = insets.top + spacing.md) so the title clears the status
-          bar reliably. edges={["top"]} here would double-pad the top. */}
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <Animated.View
           entering={
             Platform.OS !== "web" && !reducedMotion ? FadeIn.duration(300) : undefined
@@ -957,12 +968,17 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
                 state reads as a clean full-screen spinner rather than a
                 spinner stacked above a fully-rendered section. */}
             {showAchievementShowcase && (
-              <View style={styles.sectionContainer}>
+              <Pressable
+                style={styles.sectionContainer}
+                onPress={handleAchievementsPress}
+                accessibilityRole="button"
+                accessibilityLabel="View all achievements"
+              >
                 <AchievementShowcase
                   isLoading={areAchievementsLoading}
                   isInitialized={areAchievementsInitialized}
                 />
-              </View>
+              </Pressable>
             )}
 
             {/* 4. Trend Charts */}

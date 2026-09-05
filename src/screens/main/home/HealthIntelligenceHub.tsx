@@ -28,6 +28,12 @@ interface HealthIntelligenceHubProps {
   stepsGoal?: number;
   activeCalories?: number;
 
+  // Whether Health Connect/HealthKit is already authorized. Used only to pick
+  // the right placeholder copy when there's no recovery data yet — "Connect
+  // Health Data" is wrong (and confusing) once the user has already connected
+  // but simply has no smartwatch feeding sleep/heart-rate into it.
+  isWearableConnected?: boolean;
+
   onPress?: () => void;
 
   // Separate CTA for the no-data placeholder ("Connect Health Data") — it must
@@ -47,6 +53,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
     steps,
     stepsGoal,
     activeCalories,
+    isWearableConnected,
     onPress,
     onConnectPress,
     onDetailPress: _onDetailPress,
@@ -62,7 +69,12 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = React
       });
 
     if (!hasRealData) {
-      return <HealthIntelligencePlaceholder onPress={onConnectPress ?? onPress} />;
+      return (
+        <HealthIntelligencePlaceholder
+          onPress={onConnectPress ?? onPress}
+          variant={isWearableConnected ? 'no-data' : 'not-connected'}
+        />
+      );
     }
 
     // recoveryScore is null when there's no sufficient recovery data (sleep or

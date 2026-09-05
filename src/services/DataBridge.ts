@@ -524,6 +524,33 @@ class DataBridge {
       // Auto-saving re-persists stale null fields (bmi, bmr) and can overwrite newer server data.
       // Weight reconciliation should happen via explicit user actions only.
 
+      // ── Phase A.3: Existing-user daily_calories recompute ──────────────
+      // Fixing the TDEE double-count LOWERS every stored daily_calories. This
+      // runs ONCE per user: if daily_calories_legacy is null (never recomputed)
+      // and daily_calories exists, snapshot the current value into
+      // daily_calories_legacy, recompute daily_calories via the fixed
+      // computeEnergyBreakdown path (through ValidationEngine), clamp to the
+      // food floor, persist, and update the in-memory object so the rest of
+      // the app sees the corrected value. Guard: never runs twice (the legacy
+      // column goes from null to a number on the first run).
+      if (
+        advancedReview &&
+        advancedReview.daily_calories != null &&
+        advancedReview.daily_calories_legacy == null &&
+        personalInfo &&
+        canonicalBodyAnalysis &&
+        workoutPreferences
+      ) {
+        await this.recomputeLegacyDailyCalories(
+          userId,
+          advancedReview,
+          personalInfo,
+          canonicalBodyAnalysis,
+          workoutPreferences,
+          dietPreferences,
+        );
+      }
+
       // Update ProfileStore with loaded data (SSOT for onboarding data)
       // BUG-60 fix: mark as "syncing" before batch updates so SyncEngine doesn't push
       // partially-loaded state, then mark "synced" when all updates are committed.
@@ -602,6 +629,86 @@ class DataBridge {
         ...localData,
         source: "local",
       };
+    }
+  }
+
+  /**
+   * Phase A.3: One-time existing-user recompute of daily_calories.
+   *
+   * Fixing the TDEE double-count lowers every stored daily_calories. This
+   * method snapshots the current value into daily_calories_legacy, recomputes
+   * via the fixed ValidationEngine (which now uses computeEnergyBreakdown),
+   * clamps to the food floor, and persists. Guarded by daily_calories_legacy
+   * being null so it never runs twice.
+   *
+   * Errors are logged but never block hydration — the app proceeds with
+   * the old (inflated) value if the recompute fails, and the next open
+   * retries (legacy column is still null).
+   */
+  private async recomputeLegacyDailyCalories(
+    userId: string,
+    advancedReview: AdvancedReviewData,
+    personalInfo: PersonalInfoData,
+    bodyAnalysis: BodyAnalysisData,
+    workoutPreferences: WorkoutPreferencesData,
+    dietPreferences: DietPreferencesData | null,
+  ): Promise<void> {
+    try {
+      const legacyCalories = advancedReview.daily_calories ?? 0;
+      if (legacyCalories <= 0) return; // nothing to snapshot
+
+      // Recompute via the fixed engine — same path as onboarding.
+      const { ValidationEngine } = await import("./validationEngine");
+      const result = ValidationEngine.validateUserPlan(
+        personalInfo,
+        dietPreferences ?? ({} as DietPreferencesData),
+        bodyAnalysis,
+        workoutPreferences,
+        { bypassDeficitLimit: true },
+      );
+      const newCalories = result.calculatedMetrics.targetCalories;
+
+      // Clamp to the food floor (max(BMR, 1500 M / 1200 F)).
+      const bmr = result.calculatedMetrics.bmr;
+      const genderMin = personalInfo.gender === "female" ? 1200 : 1500;
+      const foodFloor = Math.max(bmr, genderMin);
+      const clampedCalories = Math.max(newCalories, foodFloor);
+
+      // Persist: snapshot old value, write new value. Single update so it's
+      // atomic — either both columns land or neither does.
+      const { supabase } = await import("./supabase");
+      const { error } = await supabase
+        .from("advanced_review")
+        .update({
+          daily_calories: clampedCalories,
+          daily_calories_legacy: legacyCalories,
+        })
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error(
+          "[DataBridge] recomputeLegacyDailyCalories: DB update failed:",
+          error,
+        );
+        return; // legacy column still null → retries on next open
+      }
+
+      // Update the in-memory object so the rest of the app sees the new value.
+      advancedReview.daily_calories = clampedCalories;
+      advancedReview.daily_calories_legacy = legacyCalories;
+
+      // One-time notice. Uses crossPlatformAlert (never Alert.alert directly).
+      const { crossPlatformAlert } = await import("../utils/crossPlatformAlert");
+      crossPlatformAlert(
+        "Calorie Target Updated",
+        `Your daily calorie target was recalculated to ${clampedCalories} kcal/day to fix a calculation that previously overestimated exercise burn. Your previous target was ${legacyCalories} kcal/day.`,
+        [{ text: "Got it" }],
+      );
+    } catch (error) {
+      console.error(
+        "[DataBridge] recomputeLegacyDailyCalories: unexpected error:",
+        error,
+      );
     }
   }
 

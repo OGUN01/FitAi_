@@ -6,6 +6,7 @@ import {
 } from "./core/tdeeCalculation";
 import { getMETValue } from "./core/metValues";
 import type { ActivityLevel } from "./types";
+import { mapActivityLevelForHealthCalc } from "../typeTransformers";
 import {
   BodyFatData,
   IntensityRecommendation,
@@ -258,7 +259,6 @@ export class MetabolicCalculations {
       moderate: 1000,
       active: 1500,
       very_active: 2000,
-      extreme: 2000, // Alias for very_active (onboarding uses "extreme")
     };
     const climateMultipliers: Record<string, number> = {
       tropical: 1.5,
@@ -266,7 +266,11 @@ export class MetabolicCalculations {
       cold: 0.9,
       arid: 1.7,
     };
-    const bonus = activityBonuses[activityLevel ?? 'sedentary'] ?? 1000;
+    // Normalize at the boundary (typeTransformers.ts) instead of hand-rolling
+    // an "extreme" alias key in this Record — was duplicated near-identically
+    // across 3+ files with no single source of truth for the mapping.
+    const normalizedActivity = mapActivityLevelForHealthCalc(activityLevel ?? 'sedentary');
+    const bonus = activityBonuses[normalizedActivity] ?? 1000;
     const multiplier = climateMultipliers[climate ?? 'temperate'] ?? 1.0;
     return Math.round(((base + bonus) * multiplier) / 50) * 50;
   }

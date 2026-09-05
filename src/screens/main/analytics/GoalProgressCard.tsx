@@ -6,6 +6,7 @@ import {
   surface,
   border,
   chart,
+  chartText,
   colors,
   typography,
   spacing,
@@ -16,6 +17,33 @@ import { CalculatedMetrics } from "../../../hooks/useCalculatedMetrics";
 import { getWeightGoalProgress } from "../../../components/progress/goalProgressUtils";
 import { type WeightUnit, toDisplayWeight } from "../../../utils/units";
 import type { PersonalInfoData, BodyAnalysisData } from "../../../types/onboarding";
+import type { ProjectGoalResult } from "../../../services/energy/projection";
+
+// Hermes-safe month names (no Intl dependency) — matches projection.ts.
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+] as const;
+
+function formatProjectionRange(earliest: Date, latest: Date): string {
+  return `${MONTHS[earliest.getMonth()]} ${earliest.getFullYear()} – ${MONTHS[latest.getMonth()]} ${latest.getFullYear()}`;
+}
+
+function formatConfidenceLabel(p: ProjectGoalResult): string {
+  const bandWord =
+    p.band === "safe"
+      ? "Safe rate"
+      : p.band === "aggressive"
+        ? "Aggressive rate"
+        : "Unpredictable rate";
+  const confWord =
+    p.confidence === "observed"
+      ? `${p.weighInsUsed} weigh-ins (observed trend)`
+      : p.confidence === "blended"
+        ? `${p.weighInsUsed} weigh-ins (blended)`
+        : `Plan estimate (need 3+ weigh-ins)`;
+  return `${bandWord} · ${confWord}`;
+}
 
 interface GoalProgressCardProps {
   calculatedMetrics: CalculatedMetrics | null;
@@ -23,6 +51,11 @@ interface GoalProgressCardProps {
   bodyAnalysis?: BodyAnalysisData | null;
   weightHistory?: Array<{ date: string; weight: number }>;
   unit?: WeightUnit;
+  /** Phase D: honest projection (eta range, band, confidence) from
+   *  useGoalProjection. Omitted on screens that don't wire it. */
+  projection?: ProjectGoalResult | null;
+  /** Phase D: "what would close the gap" hint from useGoalProjection. */
+  gapHint?: string;
 }
 
 export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
@@ -31,6 +64,8 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
   bodyAnalysis,
   weightHistory = [],
   unit = "kg",
+  projection = null,
+  gapHint = "",
 }) => {
   const { weightProgressPercent, hasStartWeight } = useMemo(() => {
     const { weightProgress } = getWeightGoalProgress({
@@ -144,6 +179,34 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = React.memo(({
         </View>
       )}
 
+      {projection && (
+        <View style={styles.goalItem}>
+          <Text style={styles.goalLabel} numberOfLines={1}>
+            Goal Projection
+          </Text>
+          {projection.etaEarliest && projection.etaLatest ? (
+            <Text style={styles.goalValue} numberOfLines={2}>
+              {formatProjectionRange(
+                projection.etaEarliest,
+                projection.etaLatest,
+              )}
+            </Text>
+          ) : (
+            <Text style={styles.goalSubtext} numberOfLines={3}>
+              {projection.label}
+            </Text>
+          )}
+          <Text style={styles.bandLabel} numberOfLines={1}>
+            {formatConfidenceLabel(projection)}
+          </Text>
+          {!!gapHint && (
+            <Text style={styles.gapHint} numberOfLines={3}>
+              {gapHint}
+            </Text>
+          )}
+        </View>
+      )}
+
       {isEmpty && (
         <View style={styles.emptyState}>
           <Ionicons
@@ -228,6 +291,18 @@ const styles = StyleSheet.create({
     fontFamily: "Manrope_700Bold",
     fontSize: rf(18),
     letterSpacing: -0.3,
+  },
+  bandLabel: {
+    ...typography.variants.caption2,
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  gapHint: {
+    ...typography.variants.caption2,
+    // chart[3] fails WCAG AA (3.4:1) at this text size on surface[1] —
+    // chartText[3] is the same hue lightened to clear 4.5:1.
+    color: chartText[3],
+    marginTop: 4,
   },
   emptyState: {
     alignItems: "center",

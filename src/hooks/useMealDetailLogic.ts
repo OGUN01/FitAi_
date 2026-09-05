@@ -35,13 +35,17 @@ export interface MealInsight {
 }
 
 export const useMealDetailLogic = (mealId: string) => {
-  const { weeklyMealPlan, mealProgress, isGeneratingPlan } =
+  const { weeklyMealPlan, customWeeklyMealPlan, activeDietSource, mealProgress, isGeneratingPlan } =
     useNutritionStore();
+  // Look up the meal in whichever plan is actually active — a mealId from
+  // a custom plan would otherwise never be found here.
+  const activeWeeklyMealPlan =
+    activeDietSource === "custom" ? customWeeklyMealPlan : weeklyMealPlan;
 
   const meal = useMemo(() => {
-    if (!weeklyMealPlan?.meals) return null;
+    if (!activeWeeklyMealPlan?.meals) return null;
 
-    for (const m of weeklyMealPlan.meals) {
+    for (const m of activeWeeklyMealPlan.meals) {
       if (m.id === mealId) {
         const foods: FoodItem[] = (m.items || m.foods || []).map(
           (food: any, index: number) => ({
@@ -97,7 +101,7 @@ export const useMealDetailLogic = (mealId: string) => {
       }
     }
     return null;
-  }, [weeklyMealPlan, mealId, mealProgress]);
+  }, [activeWeeklyMealPlan, mealId, mealProgress]);
 
   const nutritionData = meal
     ? {

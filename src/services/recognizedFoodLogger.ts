@@ -96,6 +96,7 @@ export class RecognizedFoodLogger {
       }
 
       await this.storeRecognitionMetadata(
+        userId,
         logResult.data.id,
         recognizedFoods,
         foodMappings,
@@ -303,6 +304,23 @@ export class RecognizedFoodLogger {
         .single();
 
       if (error) {
+        // 23505 = unique_violation on `ufo_barcode_user_unique`
+        // (barcode, user_id). Found live: re-scanning a barcode this user
+        // already contributed (still pending moderation, so not yet in
+        // `foods` — findExistingFood above only checks `foods`, so a
+        // not-yet-approved repeat scan always reaches here) is a normal,
+        // expected case, not a real failure — the contribution already
+        // exists, there's just nothing new to insert. Look it up instead
+        // of surfacing a scary console error for a benign outcome.
+        if (error.code === "23505" && contributionData.barcode) {
+          const { data: existing } = await supabase
+            .from("user_food_contributions")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("barcode", contributionData.barcode)
+            .maybeSingle();
+          return existing;
+        }
         console.error("Error submitting food contribution:", error);
         return null;
       }
@@ -352,6 +370,7 @@ export class RecognizedFoodLogger {
    * Store additional metadata for food recognition tracking and accuracy improvement
    */
   private async storeRecognitionMetadata(
+    userId: string,
     mealLogId: string,
     recognizedFoods: RecognizedFood[],
     foodMappings: FoodMapping[],
@@ -359,8 +378,21 @@ export class RecognizedFoodLogger {
   ): Promise<void> {
     try {
       const metadata = {
+        user_id: userId,
         meal_log_id: mealLogId,
-        recognition_data: {
+        // Live schema column is `recognition_result` (see
+        // supabase-types.generated.ts) — a since-superseded migration
+        // (20260314_create_meal_recognition_metadata.sql) tried to define
+        // this table with a `recognition_data` column via `CREATE TABLE IF
+        // NOT EXISTS`, but the table already existed from an earlier
+        // migration (20260124000001_add_missing_data_tables.sql) with
+        // `recognition_result` + a required `user_id`, so that later
+        // migration's column names never actually took effect. This insert
+        // was still using the never-live `recognition_data` name (and
+        // omitting the required `user_id`), so every recognition-metadata
+        // write has been silently failing (PGRST204 — non-fatal, logged via
+        // console.error per rule 5, but never actually stored).
+        recognition_result: {
           totalFoods: recognizedFoods.length,
           averageConfidence:
             recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) /
@@ -447,22 +479,34 @@ export class RecognizedFoodLogger {
 
       if (data && data.length > 0) {
         const totalConfidence = data.reduce((sum, record) => {
-          return sum + (record.recognition_data?.averageConfidence || 0);
+          const result = record.recognition_result as {
+            averageConfidence?: number;
+            cuisineTypes?: string[];
+          } | null;
+          return sum + (result?.averageConfidence || 0);
         }, 0);
         stats.averageConfidence = totalConfidence / data.length;
 
         data.forEach((record) => {
-          const cuisines = record.recognition_data?.cuisineTypes || [];
+          const result = record.recognition_result as {
+            cuisineTypes?: string[];
+          } | null;
+          const cuisines = result?.cuisineTypes || [];
           cuisines.forEach((cuisine: string) => {
             stats.cuisineBreakdown[cuisine] =
               (stats.cuisineBreakdown[cuisine] || 0) + 1;
           });
         });
 
-        stats.accuracyTrends = data.map((record) => ({
-          date: record.created_at.split("T")[0],
-          confidence: record.recognition_data?.averageConfidence || 0,
-        }));
+        stats.accuracyTrends = data.map((record) => {
+          const result = record.recognition_result as {
+            averageConfidence?: number;
+          } | null;
+          return {
+            date: record.created_at.split("T")[0],
+            confidence: result?.averageConfidence || 0,
+          };
+        });
       }
 
       return stats;

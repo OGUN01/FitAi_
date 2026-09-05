@@ -19,6 +19,7 @@ import { SummaryCard } from "./analytics/SummaryCard";
 import { GoalProgressCard } from "./analytics/GoalProgressCard";
 import { ProgressTrendsHeader } from "./analytics/ProgressTrendsHeader";
 import { toDisplayWeight, type WeightUnit } from "../../utils/units";
+import { useGoalProjection } from "../../hooks/useGoalProjection";
 
 interface ProgressTrendsScreenProps {
   navigation?: {
@@ -48,6 +49,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
   const { personalInfo: profilePersonalInfo, bodyAnalysis } = useProfileStore();
   // SSOT: weight history from analyticsStore (same source as Analytics tab)
   const weightHistory = useAnalyticsStore((s) => s.weightHistory);
+  // Phase D: honest goal projection (eta range, band, gap hint).
+  const { projection, gapHint } = useGoalProjection();
   const weightUnit: WeightUnit =
     profilePersonalInfo?.units === "imperial" ? "lbs" : "kg";
   const displayWeightTrend = React.useMemo(() => {
@@ -143,6 +146,8 @@ export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
                 bodyAnalysis={bodyAnalysis}
                 weightHistory={weightHistory}
                 unit={weightUnit}
+                projection={projection}
+                gapHint={gapHint}
               />
             </>
           )}

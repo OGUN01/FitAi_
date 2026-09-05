@@ -24,7 +24,8 @@ import {
 
 import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
 import { DeleteAccountConfirmModal } from "./components/DeleteAccountConfirmModal";
-import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -103,8 +104,8 @@ const SecurityToggleRow: React.FC<SecurityToggleRowProps> = ({
           onToggle(next);
         }}
         disabled={disabled}
-        trackColor={{ false: surface[2], true: `${colors.primary}50` }}
-        thumbColor={value ? colors.primary : colors.textMuted}
+        trackColor={{ false: surface[2], true: `${colors.primary.DEFAULT}50` }}
+        thumbColor={value ? colors.primary.DEFAULT : colors.text.tertiary}
         ios_backgroundColor={surface[2]}
         accessibilityLabel={title}
         accessibilityHint={unavailableHint ?? description}
@@ -244,7 +245,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="fitness-outline"
-              iconColor={colors.error}
+              iconColor={colors.error.DEFAULT}
               title="Health Connect Privacy"
             />
 
@@ -309,7 +310,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="open-outline"
-              iconColor={colors.info}
+              iconColor={colors.info.DEFAULT}
               title="View Full Privacy Policy"
               description="Read the complete policy on our website"
               onPress={() =>
@@ -324,14 +325,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="lock-closed-outline"
-              iconColor={colors.primary}
+              iconColor={colors.primary.DEFAULT}
               title="App Lock"
             />
 
             <View style={styles.toggleListSurface}>
               <SecurityToggleRow
                 icon="finger-print-outline"
-                iconColor={colors.primary}
+                iconColor={colors.primary.DEFAULT}
                 title="Biometric App Lock"
                 description={
                   appLockAvailable === null
@@ -358,7 +359,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
               <SecurityToggleRow
                 icon="time-outline"
-                iconColor={colors.info}
+                iconColor={colors.info.DEFAULT}
                 title="Auto-Lock on Background"
                 description="Re-lock every time you return to the app"
                 value={autoLockEnabled}
@@ -384,13 +385,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="folder-outline"
-              iconColor={colors.textSecondary}
+              iconColor={colors.text.secondary}
               title="Data Management"
             />
 
             <ActionItem
               icon="cloud-download-outline"
-              iconColor={colors.success}
+              iconColor={colors.success.DEFAULT}
               title="Export My Data"
               description="Download a copy of all your personal data"
               onPress={handleDataExport}
@@ -399,7 +400,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <ActionItem
               icon="clipboard-outline"
-              iconColor={colors.warning}
+              iconColor={colors.warning.DEFAULT}
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={() =>
@@ -414,14 +415,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           <View style={styles.section}>
             <SectionHeader
               icon="warning-outline"
-              iconColor={colors.error}
+              iconColor={colors.error.DEFAULT}
               title="Danger Zone"
               isDanger={true}
             />
 
             <ActionItem
               icon="trash-outline"
-              iconColor={colors.error}
+              iconColor={colors.error.DEFAULT}
               title="Delete Account"
               description="Permanently delete your account and all data — this cannot be undone"
               onPress={() => setShowDeleteAccountModal(true)}
@@ -469,14 +470,14 @@ const styles = StyleSheet.create({
   },
   privacyPolicyHeading: {
     fontSize: rf(16),
-    fontWeight: "700",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
   },
   privacyPolicySubheading: {
     fontSize: rf(13),
-    fontWeight: "700",
-    color: colors.primary,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.primary.DEFAULT,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
     textTransform: "uppercase",
@@ -484,13 +485,13 @@ const styles = StyleSheet.create({
   },
   privacyPolicyBody: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(19),
     marginBottom: spacing.xs,
   },
   privacyPolicyList: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(19),
   },
   toggleListSurface: {
@@ -527,17 +528,17 @@ const styles = StyleSheet.create({
   },
   toggleTitle: {
     fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.semibold,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   toggleDescription: {
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   toggleUnavailableHint: {
     fontSize: rf(11),
-    color: colors.warning,
+    color: colors.warning.DEFAULT,
     marginTop: rp(2),
     fontStyle: "italic" as const,
   },

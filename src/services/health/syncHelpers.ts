@@ -1,5 +1,5 @@
 import { HealthConnectData, MetricSource } from "./types";
-import { getDataSource, getBestDataSource } from "./dataSources";
+import { getDataSource, getBestDataSource, rankOrigins } from "./dataSources";
 
 /** Shape of a Health Connect record returned by readRecords */
 interface HealthConnectRecord {
@@ -65,54 +65,144 @@ function addOriginSource(
   }
 }
 
+/** Attribute a metric to the single package name that actually produced its
+ * value (as opposed to addOriginSource's multi-origin label, used only by
+ * genuinely-averaged metrics like heart rate). No-ops when there's no source
+ * (metric truly has no data this window). */
+function setMetricSource(
+  ctx: SyncContext,
+  field: keyof NonNullable<HealthConnectData["sources"]>,
+  packageName: string | null,
+) {
+  if (!packageName) return;
+  ctx.allDataOrigins.add(packageName);
+  ctx.healthData.sources![field] = {
+    packageName,
+    ...getDataSource(packageName),
+  };
+}
+
+interface ResolveAggregateParams {
+  ctx: SyncContext;
+  recordType: string;
+  timeRangeFilter: Record<string, unknown>;
+  /** Pull the numeric value out of an AggregateResult — shape differs per
+   * record type (COUNT_TOTAL is a bare number; ACTIVE_CALORIES_TOTAL,
+   * DISTANCE, ENERGY_TOTAL, BASAL_CALORIES_TOTAL are {inKilocalories |
+   * inMeters}). Return null when the field is genuinely absent (distinct
+   * from a legitimate 0). */
+  extractValue: (agg: AggregateResult) => number | null;
+}
+
+interface AggregateResolution {
+  /** null only when Health Connect has no data for this metric/window at
+   * all — callers decide whether that means "leave field unset" or "show 0"
+   * for that metric, matching each field's existing UI convention. */
+  value: number | null;
+  /** The single package name the returned value is attributed to. */
+  source: string | null;
+}
+
+/**
+ * Single-source-of-truth resolver for cumulative (SUM-style) Health Connect
+ * aggregates — steps, distance, active/total calories, BMR. Health Connect's
+ * own aggregateRecord SUMS every contributing app's records for the window,
+ * which silently double-counts once more than one source writes the same
+ * metric: the phone's own step sensor AND a paired watch's companion app, or
+ * two different watch apps both enabled. Every mature health platform avoids
+ * this the same way — Apple HealthKit's per-category source priority, Health
+ * Connect's own "app priority" setting — by never summing across sources:
+ * pick ONE authoritative source per metric, ranked by device-accuracy tier
+ * (dataSources.ts), and use only that source's value.
+ *
+ * Resolution order:
+ *   1. Query unfiltered to discover which apps contributed this window.
+ *   2. Rank the non-excluded (real app/watch) origins by tier + accuracy.
+ *   3. Re-query filtered to just the top-ranked origin. A real (non-null)
+ *      value from it wins outright.
+ *   4. If the top source has nothing for this window, fall down the ranked
+ *      list one at a time — never sum, just try the next-best source alone.
+ *   5. If no app/watch source has anything (nothing paired, or Health
+ *      Connect itself has no data), fall back to the raw unfiltered total —
+ *      typically just the phone's own sensor.
+ */
+async function resolveBestAggregate({
+  ctx,
+  recordType,
+  timeRangeFilter,
+  extractValue,
+}: ResolveAggregateParams): Promise<AggregateResolution> {
+  const raw = await ctx.aggregateRecord({ recordType, timeRangeFilter });
+  if (!raw) return { value: null, source: null };
+
+  const allOrigins = raw.dataOrigins || [];
+  const ranked = rankOrigins(allOrigins, ctx.excludedRawSources);
+
+  for (const { origin } of ranked) {
+    const filtered = await ctx.aggregateRecord({
+      recordType,
+      timeRangeFilter,
+      dataOriginFilter: [origin],
+    });
+    const value = filtered ? extractValue(filtered) : null;
+    if (value != null) {
+      return { value, source: origin };
+    }
+  }
+
+  // No ranked app/watch source had usable data — fall back to the raw,
+  // unfiltered total (covers "no watch paired, phone sensor only").
+  return { value: extractValue(raw), source: allOrigins[0] ?? null };
+}
+
+/**
+ * For "latest snapshot" metrics (weight, HRV, SpO2, body fat) that pick a
+ * single most-recent record rather than summing: picking by recency alone,
+ * with no regard for which source wrote it, means a later-but-less-accurate
+ * reading (e.g. a manual phone entry) silently overrides an earlier, more
+ * accurate one (e.g. a Withings scale) just because it happened to be
+ * entered later that day. Scope to the highest-tier source present, then
+ * take its most recent record — mirroring resolveBestAggregate's
+ * never-let-a-lower-tier-source-win policy, just for "pick one" instead of
+ * "sum" semantics. Records are assumed to already arrive in ascending
+ * chronological order from Health Connect (the same assumption the plain
+ * array-index lookups this replaces already relied on).
+ */
+function pickBestRecordByOrigin<T extends { metadata?: { dataOrigin?: string } }>(
+  records: T[],
+): T | undefined {
+  if (records.length === 0) return undefined;
+  const origins = Array.from(
+    new Set(
+      records
+        .map((r) => r.metadata?.dataOrigin)
+        .filter((o): o is string => !!o),
+    ),
+  );
+  const ranked = rankOrigins(origins, []);
+  const topOrigin = ranked[0]?.origin;
+  const candidates = topOrigin
+    ? records.filter((r) => r.metadata?.dataOrigin === topOrigin)
+    : records;
+  return candidates[candidates.length - 1];
+}
+
 export async function syncSteps(ctx: SyncContext): Promise<void> {
   try {
-    const stepsAggregate = await ctx.aggregateRecord({
+    const { value, source } = await resolveBestAggregate({
+      ctx,
       recordType: "Steps",
       timeRangeFilter: {
         operator: "between",
         startTime: ctx.todayStart.toISOString(),
         endTime: ctx.endDate.toISOString(),
       },
+      extractValue: (agg) =>
+        typeof agg.COUNT_TOTAL === "number" ? agg.COUNT_TOTAL : null,
     });
-
-    if (stepsAggregate && typeof stepsAggregate.COUNT_TOTAL === "number") {
-      const origins = stepsAggregate.dataOrigins || [];
-      const hasRawSensor = origins.some((o: string) =>
-        ctx.excludedRawSources.includes(o),
-      );
-      const appSources = origins.filter(
-        (o: string) => !ctx.excludedRawSources.includes(o),
-      );
-
-      if (hasRawSensor && appSources.length > 0) {
-        const filteredAggregate = await ctx.aggregateRecord({
-          recordType: "Steps",
-          timeRangeFilter: {
-            operator: "between",
-            startTime: ctx.todayStart.toISOString(),
-            endTime: ctx.endDate.toISOString(),
-          },
-          dataOriginFilter: appSources,
-        });
-
-        if (
-          filteredAggregate &&
-          typeof filteredAggregate.COUNT_TOTAL === "number"
-        ) {
-          ctx.healthData.steps = filteredAggregate.COUNT_TOTAL;
-          addOriginSource(ctx, "steps", appSources);
-        } else {
-          ctx.healthData.steps = stepsAggregate.COUNT_TOTAL;
-          origins.forEach((origin: string) => ctx.allDataOrigins.add(origin));
-        }
-      } else {
-        ctx.healthData.steps = stepsAggregate.COUNT_TOTAL;
-        addOriginSource(ctx, "steps", origins);
-      }
-    } else {
-      ctx.healthData.steps = 0;
-    }
+    // Steps always shows a number (0, not "--") elsewhere in the app.
+    ctx.healthData.steps = value ?? 0;
+    setMetricSource(ctx, "steps", source);
   } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("steps");
@@ -149,62 +239,24 @@ export async function syncHeartRate(ctx: SyncContext): Promise<void> {
 
 export async function syncActiveCalories(ctx: SyncContext): Promise<void> {
   try {
-    const caloriesAggregate = await ctx.aggregateRecord({
+    // excludedRawSources covers both the phone's raw sensor and FitAI's own
+    // write-back (ActiveCaloriesBurned records written on workout completion
+    // via completionTracking) — resolveBestAggregate drops both from
+    // consideration the same way it does for steps/distance, so a workout
+    // MET calories never double-counts against a watch's own reading.
+    const { value, source } = await resolveBestAggregate({
+      ctx,
       recordType: "ActiveCaloriesBurned",
       timeRangeFilter: {
         operator: "between",
         startTime: ctx.todayStart.toISOString(),
         endTime: ctx.endDate.toISOString(),
       },
+      extractValue: (agg) => agg.ACTIVE_CALORIES_TOTAL?.inKilocalories ?? null,
     });
-
-    if (caloriesAggregate?.ACTIVE_CALORIES_TOTAL) {
-      const origins = caloriesAggregate.dataOrigins || [];
-      // Filter out FitAI's own write-back (ActiveCaloriesBurned records we
-      // wrote on workout completion) and other excluded sources so the MET
-      // calories already tracked via completionTracking are NOT double-counted
-      // against the Move ring. Mirrors the steps/distance source-exclusion
-      // pattern — the raw aggregate is recomputed against app sources only.
-      const appSources = origins.filter(
-        (o: string) => !ctx.excludedRawSources.includes(o),
-      );
-      const hasExcluded = origins.some((o: string) =>
-        ctx.excludedRawSources.includes(o),
-      );
-
-      if (hasExcluded && appSources.length > 0 && appSources.length < origins.length) {
-        // Recompute excluding FitAI / raw-sensor sources so we only count
-        // active calories from external wearable/watch providers.
-        const filteredAggregate = await ctx.aggregateRecord({
-          recordType: "ActiveCaloriesBurned",
-          timeRangeFilter: {
-            operator: "between",
-            startTime: ctx.todayStart.toISOString(),
-            endTime: ctx.endDate.toISOString(),
-          },
-          dataOriginFilter: appSources,
-        });
-
-        if (
-          filteredAggregate?.ACTIVE_CALORIES_TOTAL
-        ) {
-          ctx.healthData.activeCalories = Math.round(
-            filteredAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
-          );
-          addOriginSource(ctx, "activeCalories", appSources);
-        } else {
-          // Fallback: filtered re-query returned nothing usable — use raw.
-          ctx.healthData.activeCalories = Math.round(
-            caloriesAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
-          );
-          addOriginSource(ctx, "activeCalories", origins);
-        }
-      } else {
-        ctx.healthData.activeCalories = Math.round(
-          caloriesAggregate.ACTIVE_CALORIES_TOTAL.inKilocalories || 0,
-        );
-        addOriginSource(ctx, "activeCalories", origins);
-      }
+    if (value != null) {
+      ctx.healthData.activeCalories = Math.round(value);
+      setMetricSource(ctx, "activeCalories", source);
     }
   } catch {
     ctx.healthData.metadata!.isPartial = true;
@@ -215,64 +267,50 @@ export async function syncActiveCalories(ctx: SyncContext): Promise<void> {
 export async function syncTotalCaloriesWithBMRFallback(
   ctx: SyncContext,
 ): Promise<void> {
-  let totalCaloriesSuccess = false;
-
   try {
-    const totalCaloriesAggregate = await ctx.aggregateRecord({
+    const { value, source } = await resolveBestAggregate({
+      ctx,
       recordType: "TotalCaloriesBurned",
       timeRangeFilter: {
         operator: "between",
         startTime: ctx.todayStart.toISOString(),
         endTime: ctx.endDate.toISOString(),
       },
+      extractValue: (agg) => agg.ENERGY_TOTAL?.inKilocalories ?? null,
     });
-
-    if (totalCaloriesAggregate?.ENERGY_TOTAL) {
-      ctx.healthData.totalCalories = Math.round(
-        totalCaloriesAggregate.ENERGY_TOTAL.inKilocalories || 0,
-      );
-      totalCaloriesSuccess = true;
-      addOriginSource(
-        ctx,
-        "totalCalories",
-        totalCaloriesAggregate.dataOrigins || [],
-      );
+    if (value != null) {
+      ctx.healthData.totalCalories = Math.round(value);
+      setMetricSource(ctx, "totalCalories", source);
     }
   } catch {
     ctx.healthData.metadata!.isPartial = true;
     ctx.healthData.metadata!.failedMetrics!.push("totalCalories");
   }
 
-  if (!totalCaloriesSuccess || !ctx.healthData.totalCalories) {
+  if (!ctx.healthData.totalCalories) {
     try {
-      const bmrAggregate = await ctx.aggregateRecord({
+      const { value: bmrValue, source: bmrSource } = await resolveBestAggregate({
+        ctx,
         recordType: "BasalMetabolicRate",
         timeRangeFilter: {
           operator: "between",
           startTime: ctx.todayStart.toISOString(),
           endTime: ctx.endDate.toISOString(),
         },
+        extractValue: (agg) => agg.BASAL_CALORIES_TOTAL?.inKilocalories ?? null,
       });
 
-      if (bmrAggregate?.BASAL_CALORIES_TOTAL) {
-        const bmrCalories = Math.round(
-          bmrAggregate.BASAL_CALORIES_TOTAL.inKilocalories || 0,
-        );
+      if (bmrValue != null) {
         ctx.healthData.totalCalories =
-          bmrCalories + (ctx.healthData.activeCalories || 0);
+          Math.round(bmrValue) + (ctx.healthData.activeCalories || 0);
 
-        if (bmrAggregate.dataOrigins && bmrAggregate.dataOrigins.length > 0) {
-          bmrAggregate.dataOrigins.forEach((origin: string) =>
-            ctx.allDataOrigins.add(origin),
-          );
-          const bestSource = getBestDataSource(bmrAggregate.dataOrigins);
-          if (bestSource) {
-            ctx.healthData.sources!.totalCalories = {
-              packageName: bmrAggregate.dataOrigins[0],
-              ...bestSource,
-              name: bestSource.name + " (BMR+Active)",
-            };
-          }
+        if (bmrSource) {
+          ctx.allDataOrigins.add(bmrSource);
+          ctx.healthData.sources!.totalCalories = {
+            packageName: bmrSource,
+            ...getDataSource(bmrSource),
+            name: getDataSource(bmrSource).name + " (BMR+Active)",
+          };
         }
       }
     } catch (bmrError) {
@@ -283,51 +321,19 @@ export async function syncTotalCaloriesWithBMRFallback(
 
 export async function syncDistance(ctx: SyncContext): Promise<void> {
   try {
-    const distanceAggregate = await ctx.aggregateRecord({
+    const { value, source } = await resolveBestAggregate({
+      ctx,
       recordType: "Distance",
       timeRangeFilter: {
         operator: "between",
         startTime: ctx.todayStart.toISOString(),
         endTime: ctx.endDate.toISOString(),
       },
+      extractValue: (agg) => agg.DISTANCE?.inMeters ?? null,
     });
-
-    if (distanceAggregate?.DISTANCE) {
-      const origins = distanceAggregate.dataOrigins || [];
-      const hasRawSensor = origins.some((o: string) =>
-        ctx.excludedRawSources.includes(o),
-      );
-      const appSources = origins.filter(
-        (o: string) => !ctx.excludedRawSources.includes(o),
-      );
-
-      if (hasRawSensor && appSources.length > 0) {
-        const filteredAggregate = await ctx.aggregateRecord({
-          recordType: "Distance",
-          timeRangeFilter: {
-            operator: "between",
-            startTime: ctx.todayStart.toISOString(),
-            endTime: ctx.endDate.toISOString(),
-          },
-          dataOriginFilter: appSources,
-        });
-
-        if (filteredAggregate?.DISTANCE) {
-          ctx.healthData.distance = Math.round(
-            filteredAggregate.DISTANCE.inMeters || 0,
-          );
-          addOriginSource(ctx, "distance", appSources);
-        } else {
-          ctx.healthData.distance = Math.round(
-            distanceAggregate.DISTANCE.inMeters || 0,
-          );
-        }
-      } else {
-        ctx.healthData.distance = Math.round(
-          distanceAggregate.DISTANCE.inMeters || 0,
-        );
-        addOriginSource(ctx, "distance", origins);
-      }
+    if (value != null) {
+      ctx.healthData.distance = Math.round(value);
+      setMetricSource(ctx, "distance", source);
     }
   } catch {
     ctx.healthData.metadata!.isPartial = true;
@@ -346,9 +352,7 @@ export async function syncWeight(ctx: SyncContext): Promise<void> {
     });
 
     if (weightRecords?.records && weightRecords.records.length > 0) {
-      const latestRecord = weightRecords.records[
-        weightRecords.records.length - 1
-      ];
+      const latestRecord = pickBestRecordByOrigin(weightRecords.records)!;
       ctx.healthData.weight = latestRecord.weight?.inKilograms;
 
       if (latestRecord.metadata?.dataOrigin) {
@@ -474,9 +478,7 @@ export async function syncHRV(ctx: SyncContext): Promise<void> {
     });
 
     if (hrvRecords?.records && hrvRecords.records.length > 0) {
-      const latestRecord = hrvRecords.records[
-        hrvRecords.records.length - 1
-      ];
+      const latestRecord = pickBestRecordByOrigin(hrvRecords.records)!;
       ctx.healthData.heartRateVariability =
         latestRecord.heartRateVariabilityMillis;
 
@@ -506,9 +508,7 @@ export async function syncSpO2(ctx: SyncContext): Promise<void> {
     });
 
     if (spo2Records?.records && spo2Records.records.length > 0) {
-      const latestRecord = spo2Records.records[
-        spo2Records.records.length - 1
-      ];
+      const latestRecord = pickBestRecordByOrigin(spo2Records.records)!;
       ctx.healthData.oxygenSaturation = latestRecord.percentage;
 
       if (latestRecord.metadata?.dataOrigin) {
@@ -537,9 +537,7 @@ export async function syncBodyFat(ctx: SyncContext): Promise<void> {
     });
 
     if (bodyFatRecords?.records && bodyFatRecords.records.length > 0) {
-      const latestRecord = bodyFatRecords.records[
-        bodyFatRecords.records.length - 1
-      ];
+      const latestRecord = pickBestRecordByOrigin(bodyFatRecords.records)!;
       ctx.healthData.bodyFat = latestRecord.percentage;
 
       if (latestRecord.metadata?.dataOrigin) {
