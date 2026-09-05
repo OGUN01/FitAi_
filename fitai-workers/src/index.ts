@@ -139,7 +139,7 @@ app.use('*', async (c, next) => {
 	// Set CORS headers
 	c.header('Access-Control-Allow-Origin', allowOrigin);
 	c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-	c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+	c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-client-timezone');
 	c.header('Access-Control-Expose-Headers', 'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset');
 	c.header('Access-Control-Max-Age', '86400');
 	// Only set Allow-Credentials when we have a specific origin (credentials + * is invalid per CORS spec)
@@ -153,7 +153,7 @@ app.use('*', async (c, next) => {
 		const preflightHeaders: Record<string, string> = {
 			'Access-Control-Allow-Origin': allowOrigin,
 			'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-timezone',
 			'Access-Control-Max-Age': '86400',
 		};
 		if (allowOrigin !== '*') {
@@ -185,7 +185,7 @@ function addCorsHeaders(c: Parameters<Parameters<typeof app.onError>[0]>[1], res
 	const headers = new Headers(response.headers);
 	headers.set('Access-Control-Allow-Origin', allowOrigin);
 	headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-	headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+	headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-client-timezone');
 	if (allowOrigin !== '*') {
 		headers.set('Access-Control-Allow-Credentials', 'true');
 	}
