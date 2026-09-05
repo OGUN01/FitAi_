@@ -60,3 +60,21 @@ export const isAuthenticated = (): boolean => {
 export const getUserIdOrGuest = (): string => {
   return getCurrentUserId() ?? "guest";
 };
+
+/**
+ * P1-6: Returns the real authenticated user id, or null when the user is a
+ * guest / not authenticated. Callers use this to SKIP offline-queue sync for
+ * guests (matching the pattern in analyticsData, achievementData,
+ * crudOperations, extraWorkoutService). Guest IDs ("guest-...") must never
+ * reach Supabase writes — RLS rejects them and they pollute the retry queue.
+ *
+ * Extracted here because it was copy-pasted identically in nutritionStore.ts,
+ * fitnessStore.ts and hydrationStore.ts — single source of truth for the
+ * guest-id-shape check.
+ */
+export const getSyncableUserId = (): string | null => {
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  if (userId.startsWith("guest")) return null;
+  return userId;
+};
