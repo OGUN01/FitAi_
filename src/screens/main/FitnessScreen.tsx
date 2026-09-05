@@ -16,7 +16,6 @@ import { DetentBottomSheet } from '../../components/ui/aurora/DetentBottomSheet'
 import { GlassButton } from '../../components/ui/aurora/GlassButton';
 import { GlassCard } from '../../components/ui/aurora/GlassCard';
 import { SlidingSegmentedControl } from '../../components/ui/aurora/SlidingSegmentedControl';
-import { useTopSafeAreaInset } from '../../components/ui/aurora/useTopSafeAreaInset';
 import { colors, spacing } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rh, rf, rp, rbr } from '../../utils/responsive';
@@ -144,15 +143,49 @@ const PLAN_TOGGLE_OPTIONS = [
   { id: 'custom', label: 'My Plan' },
 ];
 
+/**
+ * Goal Engine Phase C: today's planned burn vs actual burn — a compact gap
+ * card under the WeekProgressCard.
+ *
+ * Planned = the active plan's per-day-of-week burn for today
+ * (`computePlanBurnPerDay(activePlan, weightKg).perDayOfWeek[today]`, exposed
+ * by useFitnessLogic). Actual = today's completed sessions' `caloriesBurned`
+ * summed — the Calories SSOT per CLAUDE.md §9 (set at completion via the MET
+ * calculator; a plan's `estimatedCalories` is display-only and is never read
+ * here).
+ */
+const BurnGapCard: React.FC<{ plannedBurn: number; actualBurn: number }> = React.memo(
+  ({ plannedBurn, actualBurn }) => {
+    // Hidden entirely when the plan schedules no burn today AND nothing was
+    // burned (rest day / no active plan) — a dead "0 vs 0" row is noise.
+    if (plannedBurn <= 0 && actualBurn <= 0) return null;
+
+    const delta = actualBurn - plannedBurn; // + = ahead of plan
+    return (
+      <View style={styles.burnGapCard}>
+        <View style={styles.burnGapRow}>
+          <Ionicons name="flame-outline" size={rf(14)} color={colors.error.light} />
+          <Text style={styles.burnGapLabel}>Today's burn</Text>
+          <Text style={styles.burnGapValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {Math.round(actualBurn)}
+            <Text style={styles.burnGapUnit}> / {Math.round(plannedBurn)} planned</Text>
+          </Text>
+        </View>
+        <Text
+          style={[styles.burnGapDelta, delta < 0 ? styles.burnGapDeltaUnder : styles.burnGapDeltaOver]}
+          numberOfLines={1}
+        >
+          {delta < 0
+            ? `${Math.abs(Math.round(delta))} kcal to go`
+            : `${Math.round(delta)} kcal ahead of plan`}
+        </Text>
+      </View>
+    );
+  }
+);
+
 const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const reducedMotion = useReducedMotion();
-  // Top safe-area inset — applied explicitly to FitnessHeader so the greeting
-  // clears the status bar the same way Diet/Home do. SafeAreaView edges={
-  // ['top','bottom']} was not pushing the header down on some devices (greeting
-  // rendered behind the status bar), so we mirror the WorkoutSessionScreen
-  // pattern: SafeAreaView keeps only the bottom edge, and the top inset is
-  // handed to the header as explicit paddingTop.
-  const headerPaddingTop = useTopSafeAreaInset();
   const { state, actions, setShowGuestSignUp } = useFitnessLogic(navigation);
   const planError = useFitnessStore((s) => s.planError);
   const setPlanError = useFitnessStore((s) => s.setPlanError);
@@ -225,10 +258,7 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      {/* edges={['bottom']} — top inset is applied explicitly to FitnessHeader
-          (paddingTop={insets.top}) so the greeting clears the status bar
-          reliably. edges={['top']} here would double-pad the top. */}
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <Animated.View
           entering={
             Platform.OS !== 'web' && !reducedMotion ? FadeIn.duration(300) : undefined
@@ -252,7 +282,6 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
             <FitnessHeader
               userName={state.userName || ''}
               onCalendarPress={actions.handleCalendarPress}
-              paddingTop={headerPaddingTop}
             />
 
             {/* 1.5 Week Progress Ring Card — single source of truth for weekly stats.
@@ -266,6 +295,16 @@ const FitnessScreenInner: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   totalWorkouts={weekProgress.totalWorkouts}
                   weeklyCalories={weekProgress.weeklyCalories}
                   progressPercent={weekProgress.progressPercent}
+                />
+                {/* Goal Engine Phase C: today's planned burn vs actual burn.
+                    Planned = the active plan's per-day-of-week burn for today
+                    (computePlanBurnPerDay, via useFitnessLogic). Actual =
+                    completed sessions' caloriesBurned summed — the Calories
+                    SSOT (CLAUDE.md §9). Hidden when the plan schedules no
+                    burn today AND nothing was burned (rest day, no plan). */}
+                <BurnGapCard
+                  plannedBurn={state.plannedBurnToday}
+                  actualBurn={state.actualBurnToday}
                 />
               </View>
             )}
@@ -598,6 +637,46 @@ const styles = StyleSheet.create({
   },
   sectionNoHorizontalPadding: {
     marginBottom: rp(spacing.lg),
+  },
+  // ── BurnGapCard (Goal Engine Phase C) ──
+  burnGapCard: {
+    marginTop: rp(spacing.sm),
+    paddingHorizontal: rp(spacing.md),
+    paddingVertical: rp(spacing.sm),
+    borderRadius: 12,
+    backgroundColor: colors.background.secondary,
+    borderWidth: 1,
+    borderColor: hexToRgba(colors.text.primary, 0.08),
+    gap: rp(spacing.xs),
+  },
+  burnGapRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xs),
+  },
+  burnGapLabel: {
+    flex: 1,
+    color: colors.text.secondary,
+    fontSize: rf(12),
+  },
+  burnGapValue: {
+    color: colors.text.primary,
+    fontSize: rf(12),
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  burnGapUnit: {
+    color: colors.text.tertiary,
+    fontWeight: '500',
+  },
+  burnGapDelta: {
+    fontSize: rf(11),
+  },
+  burnGapDeltaOver: {
+    color: colors.success.DEFAULT,
+  },
+  burnGapDeltaUnder: {
+    color: colors.text.secondary,
   },
   errorCard: {
     // Background-tinting a GlassCard doesn't read through: GlassView paints an
