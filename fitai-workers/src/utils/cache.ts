@@ -40,8 +40,23 @@ export interface CacheMetadata {
 /**
  * Generate deterministic cache key from request parameters
  * Same parameters = Same key = Cache hit
+ *
+ * BUG FIX (found via Playwright testing of Workout Engine v2, 2026-09-04):
+ * this used to base64-ENCODE the full readable param string and return that
+ * directly as the key — base64 encoding doesn't shrink anything (~33%
+ * larger than the input), so as soon as the builder-AI endpoints started
+ * folding in richer context (Phase 6A's volumeLandmarkContext array +
+ * mesocycleContext object, on top of the existing plan/profile fingerprint),
+ * the key routinely exceeded Cloudflare KV's 512-byte key length limit —
+ * every suggest-day/generate-full-week/deload/etc. call failed with
+ * `KV GET failed: 414 ... exceeds key length limit of 512`, independent of
+ * anything about the request being invalid. A cache key only needs to be
+ * deterministic and collision-resistant, not human-readable or reversible —
+ * hashing the same deterministic string to a fixed-length SHA-256 digest
+ * fixes the length problem permanently (64 hex chars, always well under the
+ * limit) regardless of how much context this or future phases add.
  */
-export function generateCacheKey(type: CacheType, params: Record<string, any>): string {
+export async function generateCacheKey(type: CacheType, params: Record<string, any>): Promise<string> {
   // Sort keys alphabetically for consistency
   const sortedKeys = Object.keys(params).sort();
 
@@ -61,11 +76,17 @@ export function generateCacheKey(type: CacheType, params: Record<string, any>): 
     })
     .join('&');
 
-  // Create hash key
-  const cacheKey = `${type}:${paramString}`;
+  // Hash to a fixed-length hex digest — crypto.subtle is available in the
+  // Workers runtime (Web Crypto API), no extra dependency needed.
+  const digestBuffer = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(paramString),
+  );
+  const hex = Array.from(new Uint8Array(digestBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 
-  // Return as base64 to handle special characters
-  return btoa(cacheKey);
+  return `${type}:${hex}`;
 }
 
 // ============================================================================
@@ -285,7 +306,7 @@ export async function getCachedData(
   params: Record<string, any>,
   userId?: string
 ): Promise<CacheResult> {
-  const cacheKey = generateCacheKey(type, params);
+  const cacheKey = await generateCacheKey(type, params);
 
   // Tier 1: Try KV first
   const kv = type === 'workout' ? env.WORKOUT_CACHE : env.MEAL_CACHE;

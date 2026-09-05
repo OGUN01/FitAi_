@@ -6,6 +6,13 @@ import { calculateWorkoutCalories, ExerciseCalorieInput } from '../services/calo
 import { useProfileStore } from '../stores/profileStore';
 import { resolveCurrentWeightFromStores } from '../services/currentWeight';
 import { useFitnessStore } from '../stores/fitnessStore';
+import {
+  computeExerciseGroups,
+  getNextStep,
+  type ExerciseGroupInfo,
+  type RestMode,
+  type NextStep,
+} from '../utils/workoutGrouping';
 
 export type ExercisePhase = 'preview' | 'performing' | 'logging' | 'resting';
 
@@ -90,10 +97,27 @@ export const useWorkoutSession = (
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
 
   const [workoutStartTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showNextExercisePreview, setShowNextExercisePreview] = useState(false);
 
   const nextExercisePreviewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Superset/circuit grouping (Workout Engine v2 Phase 4B.1) — contiguity-
+  // based, same rule the builder itself uses (DayBlock.tsx). Recomputed only
+  // when the exercise LIST changes, not on every set logged.
+  const exerciseGroups = useMemo<ExerciseGroupInfo[]>(
+    () => computeExerciseGroups(workout.exercises),
+    [workout.exercises]
+  );
+  const currentGroup = exerciseGroups[currentExerciseIndex];
+
+  // Set by advanceAfterLog, consumed by applyPendingStep on rest-timer
+  // expiry — mirrors the existing split between "decide what happens next"
+  // (at log time) and "actually move there" (at rest expiry) that
+  // goToNextExercise/onRestComplete already established; group hops extend
+  // that same split rather than replacing it.
+  const pendingStepRef = useRef<NextStep | null>(null);
 
   const currentExercise = useMemo(() => {
     return workout.exercises[currentExerciseIndex] || {};
@@ -206,24 +230,14 @@ export const useWorkoutSession = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exerciseProgress, workout.exercises, storeExercises, resolvedWeight]);
 
-  // Time-based stats. `totalDuration` used to tick off a `currentTime` state
-  // updated by a 1s interval in the parent screen; that interval was removed
-  // (it re-rendered the entire WorkoutSessionScreen tree every tick — the
-  // live elapsed-time DISPLAY now lives entirely in WorkoutHeader's
-  // self-contained WorkoutElapsedTime, driven off the stable
-  // `workoutStartTime`). Nothing calls `setCurrentTime` anymore, so re-adding
-  // it here would just freeze totalDuration near 0 forever. Instead we
-  // compute totalDuration fresh from Date.now() whenever this memo
-  // recomputes (i.e. whenever exerciseStats changes — a set is logged / an
-  // exercise completes), which keeps it accurate as of the last real workout
-  // event without reintroducing a per-second re-render.
+  // Time-based stats — recalculate every second for the live duration display.
   const workoutStats = useMemo((): WorkoutStats => {
-    const durationSeconds = Math.floor((Date.now() - workoutStartTime.getTime()) / 1000);
+    const durationSeconds = Math.floor((currentTime.getTime() - workoutStartTime.getTime()) / 1000);
     return {
       totalDuration: Math.max(0, durationSeconds),
       ...exerciseStats,
     };
-  }, [workoutStartTime, exerciseStats]);
+  }, [currentTime, workoutStartTime, exerciseStats]);
 
   // P2-13 fix: keep the ref in sync synchronously at render time (not via an
   // effect that runs after render). This guarantees handleSetComplete emits the
@@ -237,6 +251,34 @@ export const useWorkoutSession = (
     }
     return null;
   }, [currentExerciseIndex, totalExercises, workout.exercises]);
+
+  // BUG FIX: the rest-timer's "Next up" label previously always used
+  // `nextExercise` above — the naive next ARRAY POSITION — even during an
+  // intra_group/post_group rest (a hop WITHIN a superset/circuit, or a
+  // round transition looping back to the group's first member). getNextStep
+  // already computes the CORRECT target exercise index for every rest mode
+  // (group.exerciseIndex + 1 for intra_group, group.groupStartIndex for
+  // post_group, position+1 only for a true inter_exercise hop) — this is
+  // that same target, resolved to the actual exercise, set by advanceAfterLog
+  // alongside pendingStepRef so the screen's rest-timer preview always names
+  // whichever exercise is truly about to start next, group-aware.
+  const [restPreviewExercise, setRestPreviewExercise] = useState<
+    DayWorkout['exercises'][number] | null
+  >(null);
+
+  // BUG FIX (found investigating the "Next up" issue above): WorkoutHeader's
+  // "Exercise N of Total" used a SEPARATE ad-hoc `isInterExerciseRest ?
+  // currentExerciseIndex + 2 : currentExerciseIndex + 1` in the screen —
+  // `isInterExerciseRest` is `true` for ALL THREE resting rest modes
+  // (inter_exercise, intra_group, post_group; see WorkoutSessionScreen's
+  // handleSaveSetData), so that "+2" (meant only for "about to land on the
+  // very next array position") also fired for intra_group (usually harmless,
+  // group members ARE sequential) and post_group (WRONG — a round
+  // transition can loop back to an EARLIER index, e.g. the group's first
+  // member, not currentExerciseIndex+2). Exposing the resolved pending
+  // index directly lets the header compute the correct 1-based number for
+  // every rest mode the same way restPreviewExercise does for the name.
+  const [pendingExerciseIndex, setPendingExerciseIndex] = useState<number | null>(null);
 
   // Internal: persists workout progress metadata (percent + calories) after a
   // set is logged. Set DATA itself (weight/reps/rpe) is written to the store
@@ -253,9 +295,27 @@ export const useWorkoutSession = (
           Vibration.vibrate(50);
         }
 
-        // exerciseProgress is now derived from the store SSOT, so we read the
-        // current (post-updateSetData) state directly — no local mutation.
-        const ep = exerciseProgress[currentExerciseIndex];
+        // BUG FIX (found via live testing — "Set 4 of 3": every exercise
+        // needed one extra phantom set to actually finish): `exerciseProgress`
+        // is a `useMemo` derived from the store via a React-subscribed
+        // selector, so it only reflects a write AFTER React re-renders this
+        // hook with the new value. `updateSetData()` (SetLogModal.handleSave)
+        // is a synchronous, IMPERATIVE `useFitnessStore.getState().updateSetData(...)`
+        // call, and `handleSetComplete` runs synchronously right after it —
+        // still inside the SAME event-handler tick, before React has re-run
+        // this hook. So the closed-over `exerciseProgress` here was ALWAYS
+        // one set stale: checking whether the set JUST written was already
+        // complete BEFORE this call, which is never true for a fresh
+        // completion. Read the store's CURRENT state directly via
+        // `getState()` instead of the closure — imperative reads are never
+        // stale, unlike a React-subscribed value read mid-tick.
+        const freshStoreSets =
+          useFitnessStore.getState().currentWorkoutSession?.exercises?.[currentExerciseIndex]?.sets;
+        const ep = freshStoreSets
+          ? {
+              completedSets: freshStoreSets.map((s) => Boolean(s.completed)),
+            }
+          : exerciseProgress[currentExerciseIndex];
         if (!ep) return;
 
         const allSetsCompleted = ep.completedSets.every(Boolean);
@@ -333,28 +393,120 @@ export const useWorkoutSession = (
     setExercisePhase('performing');
   }, []);
 
-  // Phase transition: logging → resting or exercise complete
+  // Phase transition: logging → resting or exercise complete.
   // Called after user submits weight/reps. handleSetComplete is invoked here
   // so the screen's handleSetComplete wrapper (with achievement tracking) is used.
+  //
+  // Workout Engine v2 Phase 4B.1: this is now group-aware. It DECIDES the
+  // rest mode and computes (but does not yet apply) where the session goes
+  // next via getNextStep — the actual currentExerciseIndex/currentSetIndex
+  // move happens in applyPendingStep, called by the screen once the rest
+  // timer (of whatever duration THIS restMode implies) expires. This mirrors
+  // the pre-4B.1 split between "decide" (here) and "move" (onRestComplete/
+  // goToNextExercise) rather than collapsing it.
+  //
+  // `allSetsCompleted` here means "the exercise instance just logged has
+  // exhausted its own sets for the CURRENT round" — for an ungrouped
+  // exercise that's the same thing "all sets completed" always meant; inside
+  // a group it's evaluated per-hop (one set of one member at a time).
   const advanceAfterLog = useCallback(
-    (allSetsCompleted: boolean) => {
-      if (allSetsCompleted) {
-        if (currentExerciseIndex < totalExercises - 1) {
-          setShowNextExercisePreview(true);
-          if (nextExercisePreviewTimeoutRef.current) {
-            clearTimeout(nextExercisePreviewTimeoutRef.current);
-            nextExercisePreviewTimeoutRef.current = null;
-          }
-        }
-        setExercisePhase('preview');
-      } else {
+    (allSetsCompleted: boolean): RestMode => {
+      const group: ExerciseGroupInfo =
+        currentGroup ?? {
+          exerciseIndex: currentExerciseIndex,
+          groupType: 'none',
+          groupId: null,
+          groupStartIndex: currentExerciseIndex,
+          groupEndIndex: currentExerciseIndex,
+          isFirstInGroup: true,
+          isLastInGroup: true,
+          roundCount: 1,
+        };
+      const step = getNextStep(group, currentSetIndex, allSetsCompleted);
+      pendingStepRef.current = step;
+      // See restPreviewExercise's declaration for why this is resolved from
+      // the group-aware step target rather than the naive next array index.
+      setRestPreviewExercise(workout.exercises[step.nextExerciseIndex] ?? null);
+      setPendingExerciseIndex(step.nextExerciseIndex);
+
+      if (step.restMode === 'intra_set') {
         setExercisePhase('resting');
+        return step.restMode;
       }
+
+      // inter_exercise (normal exercise finish, or exiting a group entirely)
+      // — same "preview + auto-dismissing banner" UX as before 4B.1.
+      // intra_group / post_group don't show this banner — the point of a
+      // superset/circuit is to keep moving without a "here's what's next"
+      // interstitial on every hop.
+      if (step.restMode === 'inter_exercise' && step.nextExerciseIndex < totalExercises) {
+        // Clear any previously-scheduled dismiss before showing + scheduling
+        // a new one, so back-to-back exercise completions don't leave a
+        // stale timer racing to hide a banner for the WRONG exercise.
+        if (nextExercisePreviewTimeoutRef.current) {
+          clearTimeout(nextExercisePreviewTimeoutRef.current);
+          nextExercisePreviewTimeoutRef.current = null;
+        }
+        setShowNextExercisePreview(true);
+        // Auto-hide after 4s, which reads better than requiring a tap for a
+        // purely informational banner.
+        nextExercisePreviewTimeoutRef.current = setTimeout(() => {
+          setShowNextExercisePreview(false);
+          nextExercisePreviewTimeoutRef.current = null;
+        }, 4000);
+      }
+
+      setExercisePhase(step.restMode === 'inter_exercise' ? 'preview' : 'resting');
+      return step.restMode;
     },
-    [currentExerciseIndex, totalExercises]
+    [currentGroup, currentExerciseIndex, currentSetIndex, totalExercises, workout.exercises]
   );
 
-  // Phase transition: resting → performing (rest timer expired or skipped)
+  /**
+   * Applies the NextStep computed by the last advanceAfterLog call — called
+   * once the rest timer for that step's restMode expires (or is skipped).
+   * For inter_exercise this reproduces the exact pre-4B.1 goToNextExercise
+   * semantics (land on 'preview' of the next exercise, tap to start).
+   * For intra_group/post_group it goes straight to 'performing' on the
+   * target exercise/round — no manual "Start Exercise" tap between group
+   * members, which would defeat the point of grouping them.
+   * Falls back to the plain onRestComplete (same-exercise, next set)
+   * behavior if called with no pending step — defensive, should not happen
+   * on the normal flow.
+   */
+  const applyPendingStep = useCallback(() => {
+    const step = pendingStepRef.current;
+    pendingStepRef.current = null;
+
+    if (!step) {
+      setCurrentSetIndex((prev) => prev + 1);
+      setExercisePhase('performing');
+      return;
+    }
+
+    if (step.restMode === 'inter_exercise') {
+      if (step.nextExerciseIndex < totalExercises) {
+        setCurrentExerciseIndex(step.nextExerciseIndex);
+        setCurrentSetIndex(0);
+        setShowNextExercisePreview(false);
+        setExercisePhase('preview');
+      }
+      // else: workout is over — the screen's completeWorkout() handles this
+      // path directly and never lets the rest timer fire for it.
+      return;
+    }
+
+    // intra_group / post_group
+    setCurrentExerciseIndex(step.nextExerciseIndex);
+    setCurrentSetIndex(step.nextSetIndex);
+    setExercisePhase('performing');
+  }, [totalExercises]);
+
+  // Phase transition: resting → performing (rest timer expired or skipped).
+  // Kept for the plain "between sets of the SAME ungrouped exercise" path
+  // and as applyPendingStep's own defensive fallback — NOT used for the
+  // post-advanceAfterLog expiry path anymore, which now always goes through
+  // applyPendingStep so group hops are handled correctly.
   const onRestComplete = useCallback(() => {
     setCurrentSetIndex((prev) => prev + 1);
     setExercisePhase('performing');
@@ -362,6 +514,13 @@ export const useWorkoutSession = (
 
   const goToNextExercise = useCallback(() => {
     if (currentExerciseIndex < totalExercises - 1) {
+      // User navigated manually before the auto-dismiss timer fired — clear
+      // it so a stray setShowNextExercisePreview(false) doesn't fire later
+      // for what is by then the NEXT exercise's own banner state.
+      if (nextExercisePreviewTimeoutRef.current) {
+        clearTimeout(nextExercisePreviewTimeoutRef.current);
+        nextExercisePreviewTimeoutRef.current = null;
+      }
       setCurrentExerciseIndex((prev) => prev + 1);
       setShowNextExercisePreview(false);
       setExercisePhase('preview');
@@ -377,70 +536,40 @@ export const useWorkoutSession = (
     }
   }, [currentExerciseIndex]);
 
-  // Memoize the returned surface itself. Without this, useWorkoutSession
-  // returned a brand-new object literal on every render, so `session`
-  // changed identity on every parent re-render regardless of whether any of
-  // its actual fields changed — which in turn defeated React.memo on every
-  // component consuming `session` (and any downstream useCallback that
-  // depends on the whole `session` object, e.g. exitWorkout in
-  // WorkoutSessionScreen.tsx). Now `session` only gets a new identity when
-  // one of its constituent values actually changes.
-  return useMemo(
-    () => ({
-      currentExerciseIndex,
-      exerciseProgress,
-      exercisePhase,
-      currentSetIndex,
-      workoutStartTime,
-      showInstructionModal,
-      showNextExercisePreview,
-      currentExercise,
-      currentProgress,
-      totalExercises,
-      overallProgress,
-      workoutStats,
-      nextExercise,
-      setShowInstructionModal,
-      handleSetComplete,
-      startExercise,
-      completeCurrentSet,
-      completeTimeBasedSet,
-      cancelPerforming,
-      cancelLogging,
-      advanceAfterLog,
-      onRestComplete,
-      goToNextExercise,
-      goToPreviousExercise,
-      nextExercisePreviewTimeoutRef,
-    }),
-    [
-      currentExerciseIndex,
-      exerciseProgress,
-      exercisePhase,
-      currentSetIndex,
-      workoutStartTime,
-      showInstructionModal,
-      showNextExercisePreview,
-      currentExercise,
-      currentProgress,
-      totalExercises,
-      overallProgress,
-      workoutStats,
-      nextExercise,
-      setShowInstructionModal,
-      handleSetComplete,
-      startExercise,
-      completeCurrentSet,
-      completeTimeBasedSet,
-      cancelPerforming,
-      cancelLogging,
-      advanceAfterLog,
-      onRestComplete,
-      goToNextExercise,
-      goToPreviousExercise,
-      nextExercisePreviewTimeoutRef,
-    ]
-  );
+  return {
+    currentExerciseIndex,
+    exerciseProgress,
+    exercisePhase,
+    currentSetIndex,
+    workoutStartTime,
+    currentTime,
+    showInstructionModal,
+    showNextExercisePreview,
+    currentExercise,
+    currentProgress,
+    totalExercises,
+    overallProgress,
+    workoutStats,
+    nextExercise,
+    restPreviewExercise,
+    pendingExerciseIndex,
+    setCurrentTime,
+    setShowInstructionModal,
+    handleSetComplete,
+    startExercise,
+    completeCurrentSet,
+    completeTimeBasedSet,
+    cancelPerforming,
+    cancelLogging,
+    advanceAfterLog,
+    applyPendingStep,
+    onRestComplete,
+    goToNextExercise,
+    goToPreviousExercise,
+    nextExercisePreviewTimeoutRef,
+    exerciseGroups,
+    currentGroup,
+  };
 };
 
 /**

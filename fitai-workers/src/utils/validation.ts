@@ -452,12 +452,16 @@ const DietProfileOverrideSchema = z.object({
 
 const DietPreferencesOverrideSchema = z.object({
 	// diet_type: onboarding values are 'vegetarian|vegan|non-veg|pescatarian|balanced'.
-	// The DB CHECK constraint also allows 'non_veg|omnivore|keto|paleo' (see migrations),
-	// so the worker accepts the union. Anything else is rejected here rather than reaching
-	// the AI prompt as a garbage diet label.
+	// The DB CHECK constraint also allows 'non_veg|omnivore|keto|paleo|mediterranean' (see
+	// migrations, and src/utils/typeTransformers.ts's documented canonical enum), so the
+	// worker accepts the union. Anything else is rejected here rather than reaching the AI
+	// prompt as a garbage diet label. 'mediterranean' was previously missing here even
+	// though typeTransformers.ts already treats it as a first-class value alongside
+	// 'keto'/'paleo' — any client sending it would fail validation for the whole
+	// dietPreferences object, not just this field.
 	diet_type: z.enum([
 		'vegetarian', 'vegan', 'non-veg', 'non_veg', 'pescatarian', 'balanced',
-		'omnivore', 'keto', 'paleo',
+		'omnivore', 'keto', 'paleo', 'mediterranean',
 	]).optional(),
 	allergies: z.array(z.string()).optional(),
 	restrictions: z.array(z.string()).optional(),
@@ -938,6 +942,26 @@ export const PlannedExerciseSchema = z.object({
 });
 
 /**
+ * CardioBlock — mirrors src/types/workout.ts CardioBlock (Workout Engine v2
+ * Phase 4B.2). Added here because BuilderDayWorkoutSchema previously had no
+ * `cardioBlocks` field at all — every endpoint that round-trips a plan
+ * through this schema (deload, apply-progression, natural-language edit,
+ * generate) silently STRIPPED cardio blocks via Zod's default unknown-key
+ * drop behavior, even though the client's DayWorkout/Workout type already
+ * carried them. Confirmed via Playwright testing: Deload Week wiped a day's
+ * cardio block entirely while correctly preserving its strength exercises.
+ */
+export const CardioBlockSchema = z.object({
+	id: z.string(),
+	kind: z.literal('cardio'),
+	name: z.string(),
+	exerciseId: z.string().optional(),
+	durationMinutes: z.number().min(0).max(600),
+	intensity: z.enum(['low', 'moderate', 'high']),
+	distanceKm: z.number().min(0).max(1000).optional(),
+});
+
+/**
  * Builder DayWorkout — mirrors src/types/ai.ts DayWorkout (subset used by the
  * builder). Carries plannedExercises (canonical) + legacy exercises for back-compat.
  */
@@ -951,6 +975,7 @@ export const BuilderDayWorkoutSchema = z.object({
 	estimatedCalories: z.number().optional(),
 	exercises: z.array(WorkoutExerciseSchema),
 	plannedExercises: z.array(PlannedExerciseSchema),
+	cardioBlocks: z.array(CardioBlockSchema).optional(),
 	equipment: z.array(z.string()),
 	targetMuscleGroups: z.array(z.string()),
 	icon: z.string(),
@@ -1026,6 +1051,34 @@ export const ValidationWarningSchema = z.object({
 // ENDPOINT REQUEST / RESPONSE SCHEMAS
 // ----------------------------------------------------------------------------
 
+/**
+ * Per-muscle current weekly set count vs MEV/MAV/MRV landmarks (Workout
+ * Engine v2 Phase 5/6A) — computed client-side by volumeLandmarksService
+ * (computeAllVolumeLandmarks + countWeeklySetsByMuscleFromCatalog) and
+ * attached to the request, same pattern as priorPerformance. Optional and
+ * additive: an older client that doesn't send this degrades to the prompt's
+ * pre-6A behavior (no volume context), never a hard failure.
+ */
+export const VolumeLandmarkContextSchema = z.array(z.object({
+	muscle: z.string(),
+	currentSets: z.number().min(0),
+	mev: z.number().min(0),
+	mav: z.number().min(0),
+	mrv: z.number().min(0),
+	zone: z.enum(['under_mev', 'mev_to_mav', 'mav_to_mrv', 'over_mrv']),
+})).max(12).optional();
+
+/**
+ * Current mesocycle week's target effort/volume (periodizationService.
+ * getWeekTarget) — same optional/additive contract as above.
+ */
+export const MesocycleContextSchema = z.object({
+	weekInBlock: z.number().int().min(0).max(10),
+	isDeloadWeek: z.boolean(),
+	targetRir: z.number().min(0).max(10),
+	volumeMultiplier: z.number().min(0).max(3),
+}).optional();
+
 // ── 1. POST /workout/suggest-day ────────────────────────────────────────────
 
 export const SuggestDayRequestSchema = z.object({
@@ -1035,6 +1088,8 @@ export const SuggestDayRequestSchema = z.object({
 	profile: UserProfileSchema,
 	goals: z.array(z.string()).max(10).optional(),
 	weekNumber: z.number().int().min(1).max(4).optional(),
+	volumeLandmarkContext: VolumeLandmarkContextSchema,
+	mesocycleContext: MesocycleContextSchema,
 	model: z.string().default('google/gemini-3.5-flash-lite'),
 	temperature: z.number().min(0).max(2).default(0.6),
 	skipCache: z.boolean().default(false),
@@ -1098,6 +1153,9 @@ export const GenerateFullWeekRequestSchema = z.object({
 	userId: z.string().uuid().optional(),
 	partialPlan: BuilderWeeklyPlanSchema,
 	profile: UserProfileSchema,
+	weekNumber: z.number().int().min(1).max(52).optional(),
+	volumeLandmarkContext: VolumeLandmarkContextSchema,
+	mesocycleContext: MesocycleContextSchema,
 	model: z.string().default('google/gemini-3.5-flash-lite'),
 	temperature: z.number().min(0).max(2).default(0.5),
 	skipCache: z.boolean().default(false),
@@ -1122,7 +1180,14 @@ export const PriorPerformanceEntrySchema = z.object({
 			setNumber: z.number().int(),
 			weightKg: z.number().nullable().optional(),
 			reps: z.number().nullable().optional(),
+			// Legacy 3-tap bucket — still the only field older clients send.
 			rpe: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable().optional(),
+			// Full 1-10 RPE (Workout Engine v2 Phase 3, src/utils/effortScale.ts)
+			// — additive. exercise_sets.rpe_10 is populated on every logged set
+			// now; callers should prefer this over the bucket when both are
+			// present. `rpe` keeps working unchanged for any caller not yet
+			// updated to send rpe10.
+			rpe10: z.number().min(1).max(10).nullable().optional(),
 		})),
 	}).optional(),
 });

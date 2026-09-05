@@ -29,10 +29,14 @@ import { useWorkoutAnimations } from '../../hooks/useWorkoutAnimations';
 import { WorkoutHeader } from '../../components/workout/WorkoutHeader';
 import { WorkoutProgressBar } from '../../components/workout/WorkoutProgressBar';
 import { SetLogModal, SetLogData } from '../../components/workout/SetLogModal';
+import { CardioBlockCard } from '../../components/workout/CardioBlockCard';
+import { ExerciseSwapSheet } from '../../components/workout/ExerciseSwapSheet';
 import { RestTimer } from '../../features/workouts/components/RestTimer';
 import { DeloadModal } from '../../features/workouts/components/DeloadModal';
 import { parseTimedExercise } from '../../utils/exerciseDuration';
 import { startTimer } from '../../services/restTimerService';
+import { EFFORT_BUCKET_TO_RPE10 } from '../../utils/effortScale';
+import { resolveTrainingEmphasis } from '../../services/volumeLandmarksService';
 import { titleCaseExerciseName } from '../../utils/textFormat';
 import {
   checkReactiveDeload,
@@ -54,6 +58,19 @@ import { getCalibrationStatus, CalibrationStatus } from '../../services/calibrat
 import { generateWarmupSets, classifyExercise, WarmupSet } from '../../services/warmupService';
 import { totalVolume } from '../../utils/volumeCalculator';
 import { exerciseHistoryOverlayFlag } from '../../navigation/exerciseHistoryOverlayFlag';
+import type { RestMode } from '../../utils/workoutGrouping';
+import { crossPlatformAlert } from '../../utils/crossPlatformAlert';
+import { catalogEntryToPlanned } from '../../services/exercisePickerService';
+import { toWorkoutSet } from '../../types/workout';
+import type { CatalogEntry } from '../../data/exerciseCatalog.generated';
+
+// Minimal rest hopping between exercises WITHIN a superset/circuit (Workout
+// Engine v2 Phase 4B.1). No builder UI writes a per-plan
+// restBetweenExercises value (confirmed — CircuitGroup/SupersetGroup exist
+// on the type but nothing ever populates them), so this is a deliberate
+// fixed default rather than a per-plan setting: short enough that the
+// session keeps moving, distinct from a full between-exercise recovery rest.
+const INTRA_GROUP_REST_SECONDS = 15;
 
 // P1 type-hole fix: the navigation object handed to this screen is the custom
 // plain-JS navigation defined in MainNavigation.tsx (NOT React Navigation's
@@ -106,15 +123,22 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   route,
   navigation,
 }) => {
-  const { workout, sessionId, resumeExerciseIndex, isExtra } = route.params;
+  const { workout: routeWorkout, sessionId, resumeExerciseIndex, isExtra } = route.params;
   const insets = useSafeAreaInsets();
 
-  const parsedResumeIndex = safeNumber(resumeExerciseIndex, 0);
-  const session = useWorkoutSession(
-    (workout ?? { exercises: [] }) as DayWorkout,
-    sessionId,
-    parsedResumeIndex
+  // Workout Engine v2 Phase 6C-iii — local mutable copy of the plan so a
+  // mid-session exercise swap can update what's DISPLAYED (name, reps,
+  // video, group badge) for the rest of the session. Every existing
+  // reference to the bare `workout` identifier below is unchanged — it now
+  // reads from this state (seeded once from the route param) instead of the
+  // param directly. The SAVED plan (weeklyWorkoutPlan/customWeeklyPlan) is
+  // never touched by a swap — only this screen-local copy.
+  const [workout, setWorkout] = useState<DayWorkout>(
+    (routeWorkout ?? { exercises: [] }) as DayWorkout,
   );
+
+  const parsedResumeIndex = safeNumber(resumeExerciseIndex, 0);
+  const session = useWorkoutSession(workout, sessionId, parsedResumeIndex);
   const achievements = useWorkoutAchievements();
   const animations = useWorkoutAnimations();
 
@@ -151,6 +175,12 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [restTotalDuration, setRestTotalDuration] = useState<number>(60);
   // When true, rest timer completion advances to next exercise (not next set)
   const [isInterExerciseRest, setIsInterExerciseRest] = useState(false);
+  // Full rest-mode signal (Workout Engine v2 Phase 4B.1) — isInterExerciseRest
+  // stays as the coarse boolean the existing RestTimer/header UI already
+  // reads (true for inter_exercise/intra_group/post_group, false for
+  // intra_set); restMode is the precise value handleSaveSetData needs to
+  // pick the right duration per mode.
+  const [restMode, setRestMode] = useState<RestMode>('intra_set');
   const [deloadSuggestion, setDeloadSuggestion] = useState<DeloadSuggestion | null>(null);
 
   // Calibration state: keyed by exerciseId
@@ -163,7 +193,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [warmupDoneByExercise, setWarmupDoneByExercise] = useState<
     Record<string, Record<number, boolean>>
   >({});
-  const currentExerciseIdForWarmup = session.currentExercise?.exerciseId ?? '';
+  // Instance-keyed (exerciseId + array position), not bare exerciseId — a
+  // circuit round can repeat the same exercise more than once in one day,
+  // and each occurrence needs its own "which warm-up sets are done" slot
+  // (Workout Engine v2 Phase 4B.1).
+  const currentExerciseIdForWarmup = session.currentExercise?.exerciseId
+    ? `${session.currentExercise.exerciseId}-${session.currentExerciseIndex}`
+    : '';
   // Per-current-exercise view used by the render (keeps the render simple).
   const warmupDoneMap = warmupDoneByExercise[currentExerciseIdForWarmup] ?? {};
 
@@ -185,6 +221,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const userWeightKg = bodyAnalysis?.current_weight_kg || 0;
   const experienceLevel: 'beginner' | 'intermediate' | 'advanced' =
     workoutPreferences?.intensity ?? 'beginner';
+  // Training emphasis (Workout Engine v2 Phase 5) — drives progression scheme
+  // auto-selection alongside experienceLevel. resolveTrainingEmphasis returns
+  // 'general' for no/unmapped goals, which selectScheme treats the same as
+  // omitting emphasis entirely (falls through to 'double') until a goal is set.
+  const trainingEmphasis = resolveTrainingEmphasis(workoutPreferences?.primary_goals ?? undefined);
 
   // ── Live session volume + mesocycle week (for the header) ─────────────────
   // SSOT: currentWorkoutSession.exercises[].sets[] (CompletedSet uses `weight`
@@ -195,6 +236,86 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   // array — which is NOT reactive, so the memo never recomputed and VOL stayed
   // at 0 even after sets were logged.
   const storeExercises = useFitnessStore((s) => s.currentWorkoutSession?.exercises);
+  // Workout Engine v2 Phase 4B.2 — cardio blocks, always-visible regardless
+  // of exercisePhase (deliberately NOT wired into the strength-exercise
+  // phase state machine — a user may want to warm up or finish with cardio,
+  // and this keeps cardio logging fully independent of that machine).
+  const cardioBlocks = useFitnessStore((s) => s.currentWorkoutSession?.cardioBlocks);
+  const updateCardioBlock = useFitnessStore((s) => s.updateCardioBlock);
+  const swapSessionExercise = useFitnessStore((s) => s.swapSessionExercise);
+
+  // Workout Engine v2 Phase 6C-iii — runtime exercise swap. Only offered
+  // while no set on the CURRENT exercise instance has been logged yet
+  // (derived straight from the store's own sets, the same source
+  // swapSessionExercise itself guards against) — logged sets belong to the
+  // exercise being replaced and must never be discarded/reattributed.
+  const [swapSheetVisible, setSwapSheetVisible] = useState(false);
+  const currentExerciseHasLoggedSets = Boolean(
+    storeExercises?.[session.currentExerciseIndex]?.sets?.some((s) => s.completed),
+  );
+
+  const handleOpenSwapSheet = useCallback(() => {
+    setSwapSheetVisible(true);
+  }, []);
+
+  const handleCloseSwapSheet = useCallback(() => {
+    setSwapSheetVisible(false);
+  }, []);
+
+  const handleSelectSwapExercise = useCallback(
+    (entry: CatalogEntry) => {
+      const exerciseIndex = session.currentExerciseIndex;
+      const oldExercise = workout.exercises[exerciseIndex];
+      if (!oldExercise) {
+        setSwapSheetVisible(false);
+        return;
+      }
+
+      // Carry over group membership (supersetId/circuitId/blockIndex) from
+      // the slot being replaced — matches workoutBuilderStore.replaceExercise
+      // (6C-i), which established this exact carry-over so a swap doesn't
+      // silently kick an exercise out of its superset/circuit. Everything
+      // else (reps range, rest seconds) comes from the NEW exercise's own
+      // catalog defaults, same as the builder's replace flow.
+      const planned = {
+        ...catalogEntryToPlanned(entry, oldExercise.exerciseId),
+        supersetId: oldExercise.supersetId,
+        circuitId: oldExercise.circuitId,
+        blockIndex: oldExercise.blockIndex,
+      };
+      const newWorkoutSet = toWorkoutSet(planned);
+
+      // Update the LOCAL plan copy (drives display: name/reps/video/group
+      // badge) and the store's session mirror (drives persistence — see
+      // completionTracking._writeExerciseSets, which reads exercise_id from
+      // the store's exercises[idx], not from the plan) together, so they
+      // never disagree about which exercise occupies this slot.
+      const applied = swapSessionExercise(
+        exerciseIndex,
+        newWorkoutSet.exerciseId,
+        newWorkoutSet.sets,
+      );
+
+      if (!applied) {
+        crossPlatformAlert(
+          'Cannot swap exercise',
+          'Sets have already been logged for this exercise. Finish it as-is instead of swapping.',
+        );
+        setSwapSheetVisible(false);
+        return;
+      }
+
+      setWorkout((prev) => {
+        const exercises = [...prev.exercises];
+        exercises[exerciseIndex] = newWorkoutSet;
+        return { ...prev, exercises };
+      });
+
+      setSwapSheetVisible(false);
+    },
+    [session.currentExerciseIndex, workout.exercises, swapSessionExercise],
+  );
+
   const sessionVolume = useMemo(() => {
     const exercises = storeExercises ?? [];
     return exercises.reduce((sum, ex) => {
@@ -229,20 +350,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   useEffect(() => {
     if (!userId || !workout?.exercises) return;
     let cancelled = false;
-    for (const exercise of workout.exercises) {
-      if (!exercise.exerciseId) continue;
+    workout.exercises.forEach((exercise, idx) => {
+      if (!exercise.exerciseId) return;
+      // Keyed by (exerciseId, array position), not bare exerciseId — a
+      // circuit round can repeat the same exercise more than once in one
+      // day, and each occurrence needs its own calibration lookup slot
+      // (Workout Engine v2 Phase 4B.1; matches the instance-keying fix
+      // 4B.0 applied to fitnessStore.updateSetData for the same reason).
+      const instanceKey = `${exercise.exerciseId}-${idx}`;
       getCalibrationStatus(exercise.exerciseId, userId, userWeightKg, experienceLevel)
         .then((status) => {
           if (cancelled) return;
           setCalibrationMap((prev) => ({
             ...prev,
-            [exercise.exerciseId!]: status,
+            [instanceKey]: status,
           }));
         })
         .catch(() => {
           /* non-blocking — defaults to no calibration */
         });
-    }
+    });
     return () => {
       cancelled = true;
     };
@@ -251,6 +378,17 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   // Load warm-up sets whenever exercise changes.
   // P2-15: do NOT reset the warmup-done map here — it is now keyed by exerciseId
   // and persists across navigation. Each exercise retains its own done-state.
+  //
+  // Workout Engine v2 Phase 4B.1: gated on the GROUP identity, not the raw
+  // exercise index — currentExerciseIndex changes on every intra-group hop
+  // (moving between superset/circuit members), and without this the warm-up
+  // fetch (an async e1RM lookup) would re-fire on every single hop instead
+  // of once when the group is first entered. An ungrouped exercise still
+  // gets its own key every time (session.currentExerciseIndex is unique to
+  // it), so solo-exercise behavior is unchanged.
+  const warmupGroupKey = session.currentGroup?.groupId
+    ? `group-${session.currentGroup.groupId}`
+    : `solo-${session.currentExerciseIndex}`;
   useEffect(() => {
     if (!userId || !session.currentExercise?.exerciseId) {
       setWarmupSets([]);
@@ -268,7 +406,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         setWarmupSets(generateWarmupSets(e1rm, kind));
       })
       .catch(() => setWarmupSets([]));
-  }, [session.currentExerciseIndex, userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [warmupGroupKey, userId]);
 
   useEffect(() => {
     return () => {
@@ -278,134 +417,18 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     };
   }, []);
 
-  // Called after user submits weight/reps in SetLogModal
-  const handleSaveSetData = useCallback(
-    async (setIndex: number, _setData: SetLogData) => {
-      let wasAllSetsCompleted = false;
-
-      await session.handleSetComplete(
-        setIndex,
-        async (percentage) => {
-          try {
-            await achievements.trackMilestone(
-              percentage,
-              workout.category || 'General',
-              session.workoutStats.exercisesCompleted,
-              session.totalExercises,
-              Math.round((new Date().getTime() - session.workoutStartTime.getTime()) / 60000)
-            );
-          } catch (err) {
-            console.error('[WorkoutSession] Milestone tracking failed:', err);
-          }
-        },
-        async () => {
-          wasAllSetsCompleted = true;
-          try {
-            await achievements.trackExerciseCompletion(
-              session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
-              workout.category || 'General',
-              session.currentProgress.completedSets.length,
-              session.currentExerciseIndex,
-              session.totalExercises
-            );
-          } catch (err) {
-            console.error('[WorkoutSession] Exercise achievement tracking failed:', err);
-          }
-        }
-      );
-
-      // Per-set achievement tracking
-      if (!wasAllSetsCompleted) {
-        const totalSets = session.currentProgress.completedSets.length;
-        try {
-          await achievements.trackSetCompletion(
-            session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
-            setIndex + 1,
-            totalSets,
-            workout.category || 'General'
-          );
-        } catch (err) {
-          console.error('[WorkoutSession] Set achievement tracking failed:', err);
-        }
-      }
-
-      // Advance the phase state machine
-      session.advanceAfterLog(wasAllSetsCompleted);
-
-      if (wasAllSetsCompleted) {
-        // Between exercises: longer rest (1.5x normal, min 60s)
-        if (session.currentExerciseIndex < session.totalExercises - 1) {
-          const restSecs = Math.max(
-            60,
-            Math.round(safeNumber(session.currentExercise.restTime, 60) * 1.5)
-          );
-          setIsInterExerciseRest(true);
-          setRestTotalDuration(restSecs);
-          setRestTimerEndTime(startTimer(restSecs));
-        } else {
-          // Last exercise — go straight to workout complete
-          completeWorkout();
-        }
-      } else {
-        // Between sets: normal rest timer
-        const restSecs = safeNumber(session.currentExercise.restTime, 60);
-        setIsInterExerciseRest(false);
-        setRestTotalDuration(restSecs);
-        if (restSecs > 0) {
-          setRestTimerEndTime(startTimer(restSecs));
-        } else {
-          // No rest defined — go straight to next set
-          session.onRestComplete();
-        }
-      }
-    },
-    [session, achievements, workout.category]
-  );
-
-  /**
-   * Called when a time-based set completes (no logging UI shown).
-   * Auto-logs a zero-data record so history still knows the exercise was done.
-   */
-  const handleTimeBasedSetComplete = useCallback(async () => {
-    const autoData: SetLogData = {
-      weightKg: 0,
-      reps: 0,
-      setType: 'normal',
-      completed: true,
-      rpe: 2, // neutral RPE for auto-logged time-based sets
-      isCalibration: false,
-    };
-    await handleSaveSetData(session.currentSetIndex, autoData);
-  }, [handleSaveSetData, session.currentSetIndex]);
-
-  // Stable prop for ExerciseGifPlayer (React.memo'd) — session.setShowInstructionModal
-  // is the raw useState setter returned by useWorkoutSession, itself always
-  // stable, so this callback never changes identity.
-  const handleShowInstructions = useCallback(() => {
-    session.setShowInstructionModal(true);
-  }, [session.setShowInstructionModal]);
-
-  // Stable prop for ExerciseSessionModal (React.memo'd) when the current
-  // exercise is time-based: auto-logs the set and advances the phase.
-  const handleTimeBasedComplete = useCallback(() => {
-    session.completeTimeBasedSet();
-    handleTimeBasedSetComplete();
-  }, [session.completeTimeBasedSet, handleTimeBasedSetComplete]);
-
-  const handleRestTimerExpire = useCallback(() => {
-    setRestTimerEndTime(null);
-    setIsInterExerciseRest((prevIsInter) => {
-      if (prevIsInter) {
-        animations.animateTransition(() => {
-          session.goToNextExercise();
-        });
-      } else {
-        session.onRestComplete();
-      }
-      return false;
-    });
-  }, [session, animations]);
-
+  // BUG FIX (stale closure): completeWorkout was previously declared AFTER
+  // handleSaveSetData but called from inside it (on the "last exercise, all
+  // sets done" path) without being in handleSaveSetData's dependency array.
+  // Since completeWorkout is itself a useCallback recreated whenever ITS OWN
+  // deps change, and handleSaveSetData's memoized closure was never
+  // invalidated by that, handleSaveSetData could call a stale completeWorkout
+  // closure captured from an earlier render — e.g. one closing over an old
+  // `session`/`achievements`/`sessionId`. Moved above handleSaveSetData and
+  // added to its deps so the reference is always current. (completeWorkout's
+  // own deps — workout, sessionId, isExtra, session, achievements,
+  // navigation — are all established earlier in this component, so this
+  // reorder introduces no new forward reference.)
   const completeWorkout = useCallback(async () => {
     // Bug 1: prevent double-tap from creating two Supabase rows
     if (isCompletingRef.current) return;
@@ -597,6 +620,200 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     }
   }, [workout, sessionId, isExtra, session, achievements, navigation]);
 
+  // Called after user submits weight/reps in SetLogModal
+  const handleSaveSetData = useCallback(
+    async (setIndex: number, _setData: SetLogData) => {
+      let wasAllSetsCompleted = false;
+
+      await session.handleSetComplete(
+        setIndex,
+        async (percentage) => {
+          try {
+            await achievements.trackMilestone(
+              percentage,
+              workout.category || 'General',
+              session.workoutStats.exercisesCompleted,
+              session.totalExercises,
+              Math.round((new Date().getTime() - session.workoutStartTime.getTime()) / 60000)
+            );
+          } catch (err) {
+            console.error('[WorkoutSession] Milestone tracking failed:', err);
+          }
+        },
+        async () => {
+          wasAllSetsCompleted = true;
+          try {
+            await achievements.trackExerciseCompletion(
+              session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
+              workout.category || 'General',
+              session.currentProgress.completedSets.length,
+              session.currentExerciseIndex,
+              session.totalExercises,
+              // Grouped exercises finish out of strict linear plan order —
+              // "Exercise N of Total" would misrepresent that. Name the
+              // group instead (Workout Engine v2 Phase 4B.1).
+              session.currentGroup?.groupType === 'superset'
+                ? 'Superset'
+                : session.currentGroup?.groupType === 'circuit'
+                  ? 'Circuit'
+                  : undefined
+            );
+          } catch (err) {
+            console.error('[WorkoutSession] Exercise achievement tracking failed:', err);
+          }
+        }
+      );
+
+      // Per-set achievement tracking
+      if (!wasAllSetsCompleted) {
+        const totalSets = session.currentProgress.completedSets.length;
+        try {
+          await achievements.trackSetCompletion(
+            session.currentExercise.name || session.currentExercise.exerciseName || 'Exercise',
+            setIndex + 1,
+            totalSets,
+            workout.category || 'General'
+          );
+        } catch (err) {
+          console.error('[WorkoutSession] Set achievement tracking failed:', err);
+        }
+      }
+
+      // Advance the (now group-aware) phase state machine — returns the rest
+      // mode so this screen can pick the right duration and, on expiry,
+      // route through session.applyPendingStep() rather than the old plain
+      // isInterExerciseRest boolean (Workout Engine v2 Phase 4B.1).
+      const mode = session.advanceAfterLog(wasAllSetsCompleted);
+      setRestMode(mode);
+
+      if (mode === 'inter_exercise') {
+        if (session.currentExerciseIndex < session.totalExercises - 1) {
+          // Between exercises (or exiting a superset/circuit entirely):
+          // longer rest — 1.5x this exercise's own restTime, min 60s.
+          const restSecs = Math.max(
+            60,
+            Math.round(safeNumber(session.currentExercise.restTime, 60) * 1.5)
+          );
+          setIsInterExerciseRest(true);
+          setRestTotalDuration(restSecs);
+          setRestTimerEndTime(startTimer(restSecs));
+        } else {
+          // Last exercise — go straight to workout complete
+          completeWorkout();
+        }
+      } else if (mode === 'intra_group') {
+        // Minimal rest hopping to the next exercise WITHIN a superset/circuit
+        // — the whole point of grouping them is to keep moving. No builder
+        // UI writes PlannedExercise/CircuitGroup.restBetweenExercises today
+        // (confirmed), so this is a deliberate, documented default rather
+        // than a per-plan value: short enough to feel like "keep moving",
+        // not a full recovery window.
+        const restSecs = Math.min(INTRA_GROUP_REST_SECONDS, safeNumber(session.currentExercise.restTime, 60));
+        setIsInterExerciseRest(true);
+        setRestTotalDuration(restSecs);
+        setRestTimerEndTime(startTimer(restSecs));
+      } else if (mode === 'post_group') {
+        // Full rest after completing one round through the WHOLE group —
+        // same formula as a normal exercise finish (1.5x this exercise's
+        // restTime, min 60s), since a completed round across N exercises is
+        // at least as fatiguing as finishing one exercise normally.
+        const restSecs = Math.max(
+          60,
+          Math.round(safeNumber(session.currentExercise.restTime, 60) * 1.5)
+        );
+        setIsInterExerciseRest(true);
+        setRestTotalDuration(restSecs);
+        setRestTimerEndTime(startTimer(restSecs));
+      } else {
+        // intra_set — between sets of the SAME (ungrouped) exercise, exactly
+        // as before 4B.1.
+        const restSecs = safeNumber(session.currentExercise.restTime, 60);
+        setIsInterExerciseRest(false);
+        setRestTotalDuration(restSecs);
+        if (restSecs > 0) {
+          setRestTimerEndTime(startTimer(restSecs));
+        } else {
+          // No rest defined — go straight to next set
+          session.applyPendingStep();
+        }
+      }
+    },
+    // completeWorkout added (bug fix — see the comment on its declaration
+    // above): without it here, this callback could call a stale
+    // completeWorkout closure from an earlier render.
+    [session, achievements, workout.category, completeWorkout]
+  );
+
+  /**
+   * Called when a time-based set completes (no logging UI shown).
+   * Auto-logs a zero-data record so history still knows the exercise was done.
+   *
+   * BUG FIX (found via live testing — a time-based exercise could NEVER
+   * complete: "Set 3 of 2", "Set 4 of 2", climbing forever): unlike the
+   * weight/reps flow, where `SetLogModal.handleSave` calls
+   * `useFitnessStore.getState().updateSetData(...)` BEFORE calling
+   * `onSave`/`handleSaveSetData`, this time-based path went straight to
+   * `handleSaveSetData` — which only checks completion via
+   * `session.handleSetComplete`, it never itself writes to the store. The
+   * set's `completed` flag in `currentWorkoutSession.exercises[].sets[]`
+   * was NEVER set to true for a time-based set, so no amount of "finishing"
+   * it could ever satisfy `allSetsCompleted` — worse than the sibling
+   * stale-closure bug (which needed one extra set), this needed infinite
+   * extra sets. Fixed by writing the set data first, exactly mirroring
+   * SetLogModal.handleSave's own call, before running the same completion
+   * check.
+   */
+  const handleTimeBasedSetComplete = useCallback(async () => {
+    const autoData: SetLogData = {
+      weightKg: 0,
+      reps: 0,
+      setType: 'normal',
+      completed: true,
+      rpe: 2, // neutral RPE for auto-logged time-based sets
+      rpe10: EFFORT_BUCKET_TO_RPE10[2],
+      isCalibration: false,
+    };
+    useFitnessStore.getState().updateSetData(
+      session.currentExercise.exerciseId,
+      session.currentSetIndex,
+      autoData,
+      session.currentExerciseIndex,
+    );
+    await handleSaveSetData(session.currentSetIndex, autoData);
+  }, [
+    handleSaveSetData,
+    session.currentSetIndex,
+    session.currentExercise.exerciseId,
+    session.currentExerciseIndex,
+  ]);
+
+  // Stable prop for ExerciseGifPlayer (React.memo'd) — session.setShowInstructionModal
+  // is the raw useState setter returned by useWorkoutSession, itself always
+  // stable, so this callback never changes identity.
+  const handleShowInstructions = useCallback(() => {
+    session.setShowInstructionModal(true);
+  }, [session.setShowInstructionModal]);
+
+  // Stable prop for ExerciseSessionModal (React.memo'd) when the current
+  // exercise is time-based: auto-logs the set and advances the phase.
+  const handleTimeBasedComplete = useCallback(() => {
+    session.completeTimeBasedSet();
+    handleTimeBasedSetComplete();
+  }, [session.completeTimeBasedSet, handleTimeBasedSetComplete]);
+
+  // Workout Engine v2 Phase 4B.1: always routes through applyPendingStep now
+  // (not the old isInterExerciseRest-boolean dispatch to
+  // goToNextExercise/onRestComplete) — applyPendingStep correctly handles
+  // ALL four rest modes, including intra_set (same exercise, next set),
+  // since advanceAfterLog always populates a pending step regardless of mode.
+  const handleRestTimerExpire = useCallback(() => {
+    setRestTimerEndTime(null);
+    setIsInterExerciseRest(false);
+    animations.animateTransition(() => {
+      session.applyPendingStep();
+    });
+  }, [session, animations]);
+
   const goToNextExercise = useCallback(() => {
     // Always clear the rest timer before navigating — prevents ghost onExpire
     setRestTimerEndTime(null);
@@ -777,6 +994,27 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       ? session.currentSetIndex
       : session.currentSetIndex;
 
+  // Superset/circuit badge (Workout Engine v2 Phase 4B.1) — mirrors the
+  // builder's SS/CIRC chip identity (same colors.secondary/colors.warning
+  // tokens) so a grouped exercise reads consistently whether you're
+  // building the plan or living it. currentSetIndex doubles as the round
+  // index for grouped exercises (see getNextStep in workoutGrouping.ts —
+  // nextSetIndex advances once per completed round through the group).
+  const groupBadge =
+    session.currentGroup && session.currentGroup.groupType !== 'none'
+      ? {
+          label: session.currentGroup.groupType === 'superset' ? 'SUPERSET' : 'CIRCUIT',
+          color:
+            session.currentGroup.groupType === 'superset'
+              ? colors.secondary.DEFAULT
+              : colors.warning.DEFAULT,
+          roundText:
+            session.currentGroup.roundCount > 1
+              ? `Round ${session.currentSetIndex + 1} of ${session.currentGroup.roundCount}`
+              : null,
+        }
+      : null;
+
   // Reanimated animated style for the exercise container (migrated from legacy
   // Animated.Value — fadeAnim/scaleAnim are now SharedValue<number>).
   const exerciseContainerStyle = useAnimatedStyle(() => ({
@@ -793,10 +1031,21 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         <WorkoutHeader
           workoutTitle={workout.title}
           currentExercise={
-            // During inter-exercise rest the CURRENT exercise is complete;
-            // show the next exercise number so the header matches context.
-            isInterExerciseRest
-              ? session.currentExerciseIndex + 2
+            // BUG FIX: this used to be `isInterExerciseRest ? currentExerciseIndex
+            // + 2 : currentExerciseIndex + 1` — isInterExerciseRest is true for
+            // ALL THREE resting rest modes (inter_exercise, intra_group,
+            // post_group), so "+2" (only valid for landing on the very next
+            // array position) also fired for post_group, which can loop BACK to
+            // an earlier index (the group's first member for the next round) —
+            // showing an inflated/wrong exercise number mid-round. During any
+            // rest, pendingExerciseIndex already holds the group-aware resolved
+            // target (same source restPreviewExercise's name comes from); fall
+            // back to the current exercise's own number whenever we're not
+            // actually resting (also guards against a stale leftover
+            // pendingExerciseIndex from a PREVIOUS rest — it's only trusted
+            // while exercisePhase is genuinely 'resting').
+            session.exercisePhase === 'resting' && session.pendingExerciseIndex !== null
+              ? session.pendingExerciseIndex + 1
               : session.currentExerciseIndex + 1
           }
           totalExercises={session.totalExercises}
@@ -829,6 +1078,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View style={[styles.exerciseContainer, exerciseContainerStyle]}>
+            {/* Superset/circuit identity badge — see groupBadge derivation above.
+                Circuits previously had zero visual language anywhere in the
+                app; this establishes one, matching the builder's chip. */}
+            {groupBadge && (
+              <View style={styles.groupBadgeRow}>
+                <View style={[styles.groupBadgeChip, { backgroundColor: groupBadge.color }]}>
+                  <Text style={styles.groupBadgeChipText}>{groupBadge.label}</Text>
+                </View>
+                {groupBadge.roundText && (
+                  <Text style={styles.groupBadgeRoundText}>{groupBadge.roundText}</Text>
+                )}
+              </View>
+            )}
             {/* HERO — big exercise name. GAP-05: tappable → ExerciseHistoryScreen */}
             <AnimatedPressable
               onPress={() =>
@@ -863,6 +1125,23 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             <Text style={styles.heroSubline} numberOfLines={1}>
               {exerciseSubline}
             </Text>
+
+            {/* Swap exercise (Workout Engine v2 Phase 6C-iii) — hidden once a
+                set on this instance is logged; swapSessionExercise also
+                guards this server-side so a stale UI can never corrupt data. */}
+            {!currentExerciseHasLoggedSets && session.exercisePhase !== 'performing' && (
+              <AnimatedPressable
+                onPress={handleOpenSwapSheet}
+                style={styles.swapChip}
+                testID="swap-exercise-button"
+                hapticType="light"
+                accessibilityRole="button"
+                accessibilityLabel={`Swap ${exerciseName} for a different exercise`}
+              >
+                <Ionicons name="swap-horizontal" size={rf(14)} color={colors.text.secondary} />
+                <Text style={styles.swapChipText}>Swap</Text>
+              </AnimatedPressable>
+            )}
 
             {/* P2-13: During the performing phase the ExerciseSessionModal overlay
               covers this area. Rendering the GIF player at opacity:0 still
@@ -975,6 +1254,37 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               </View>
             )}
           </Animated.View>
+
+          {/* Cardio blocks (Workout Engine v2 Phase 4B.2) — always visible,
+              independent of the strength-exercise phase state machine above.
+              CardioBlock had zero runtime representation before this. */}
+          {cardioBlocks && cardioBlocks.length > 0 && (
+            <View style={styles.cardioSection}>
+              <Text style={styles.sectionEyebrow}>CARDIO</Text>
+              {cardioBlocks.map((block) => (
+                <CardioBlockCard
+                  key={block.blockId}
+                  block={block}
+                  onComplete={(actualDurationMinutes) => {
+                    updateCardioBlock(block.blockId, { completed: true, actualDurationMinutes });
+                    // Fires immediately, independent of completeWorkout() —
+                    // durable even if the session is abandoned before finishing.
+                    if (userId) {
+                      completionTrackingService
+                        .logCardioBlock(userId, sessionId || 'unknown', {
+                          ...block,
+                          actualDurationMinutes,
+                        })
+                        .catch((err) =>
+                          console.error('⚠️ logCardioBlock failed:', err),
+                        );
+                    }
+                  }}
+                  testID={`cardio-block-${block.blockId}`}
+                />
+              ))}
+            </View>
+          )}
         </ScrollView>
 
         {/* ── Bottom thumb-zone: one dominant gradient CTA + secondary text action ── */}
@@ -1047,17 +1357,33 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         {!isTimeBased &&
           (() => {
             const exId = safeString(session.currentExercise.exerciseId, '');
-            const cali = calibrationMap[exId];
+            // Instance-keyed (exerciseId + array position) — see the
+            // calibrationMap population effect above for why.
+            const cali = calibrationMap[`${exId}-${session.currentExerciseIndex}`];
+            // plannedSets carries the REAL per-set target (a drop set's
+            // reduced final set, a pyramid's varying reps per set) — the
+            // flat `reps` field collapses all sets to one value (or, for
+            // AI-generated plans, which never populate plannedSets, is
+            // already the only value available). Falls back to the flat
+            // field whenever plannedSets is absent or the index doesn't
+            // exist, so AI-plan behavior is unchanged.
+            const activeSetReps =
+              session.currentExercise.plannedSets?.[activeSetIndex]?.reps ??
+              session.currentExercise.reps ??
+              0;
             return (
               <SetLogModal
                 isVisible={session.exercisePhase === 'logging'}
                 exerciseId={exId}
                 exerciseName={safeString(exerciseName, 'Exercise')}
-                reps={session.currentExercise.reps ?? 0}
+                reps={activeSetReps}
                 setIndex={activeSetIndex}
                 totalSets={totalSets}
+                exerciseIndex={session.currentExerciseIndex}
                 userId={userId}
                 userUnits={userUnits}
+                trainingAge={experienceLevel}
+                emphasis={trainingEmphasis}
                 calibrationMode={cali?.needsCalibration ?? false}
                 calibrationStartKg={cali?.estimatedStartKg ?? 0}
                 calibrationNote={cali?.referenceNote ?? ''}
@@ -1075,10 +1401,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           onSkip={handleRestTimerExpire}
           isInterExercise={isInterExerciseRest}
           exerciseName={exerciseName}
+          // BUG FIX: this used to read `session.nextExercise` — the naive
+          // next ARRAY POSITION — which is only correct for a true
+          // inter_exercise rest (finishing the whole group, or an ungrouped
+          // exercise). During an intra_group/post_group rest (hopping to the
+          // next member within a superset/circuit, or looping back to the
+          // group's first member for the next round) that named whatever
+          // comes AFTER the entire group instead of what's actually next.
+          // restPreviewExercise is resolved from getNextStep's own
+          // group-aware target and is correct for every rest mode.
           nextExerciseName={
-            session.nextExercise
+            session.restPreviewExercise
               ? safeString(
-                  session.nextExercise.name || getExerciseName(session.nextExercise.exerciseId),
+                  session.restPreviewExercise.name ||
+                    getExerciseName(session.restPreviewExercise.exerciseId),
                   'Next Exercise'
                 )
               : undefined
@@ -1136,6 +1472,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             onDismiss={() => setDeloadSuggestion(null)}
           />
         )}
+
+        {/* Workout Engine v2 Phase 6C-iii — runtime exercise swap sheet. */}
+        <ExerciseSwapSheet
+          visible={swapSheetVisible}
+          currentExerciseId={safeString(session.currentExercise.exerciseId, '')}
+          onSelect={handleSelectSwapExercise}
+          onClose={handleCloseSwapSheet}
+        />
       </SafeAreaView>
     </AuroraBackground>
   );
@@ -1160,6 +1504,28 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   // ── HERO: big exercise name + muted subline ──────────────────────────────
+  groupBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(spacing.xs),
+    marginBottom: rp(spacing.xs),
+  },
+  groupBadgeChip: {
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: rp(spacing.xs),
+    paddingVertical: rp(2),
+  },
+  groupBadgeChipText: {
+    color: colors.text.primary,
+    fontSize: rf(11),
+    fontWeight: String(typography.fontWeight.bold) as any,
+    letterSpacing: 0.5,
+  },
+  groupBadgeRoundText: {
+    fontSize: rf(12),
+    color: colors.text.secondary,
+    fontWeight: String(typography.fontWeight.medium) as any,
+  },
   heroNameRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1196,6 +1562,32 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     marginTop: rp(spacing.xs),
     marginBottom: spacing.lg,
+  },
+  // ── Swap exercise (Workout Engine v2 Phase 6C-iii) ──────────────────────
+  swapChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: rp(spacing.xxs),
+    paddingHorizontal: rp(spacing.sm),
+    paddingVertical: rp(spacing.xxs),
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    backgroundColor: colors.glass.background,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+    minHeight: 32,
+  },
+  swapChipText: {
+    fontSize: rf(12),
+    color: colors.text.secondary,
+    fontWeight: String(typography.fontWeight.semibold) as any,
+  },
+  // ── Cardio blocks (Workout Engine v2 Phase 4B.2) ────────────────────────
+  cardioSection: {
+    alignSelf: 'stretch',
+    marginTop: spacing.xl,
   },
   // ── Typographic section header (shared by warm-up + set indicator) ──────
   sectionEyebrow: {
