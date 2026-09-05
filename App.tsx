@@ -180,6 +180,23 @@ export default function App() {
 
   const handleAuthDeepLink = useCallback(
     (result: DeepLinkResult) => {
+      // BUG FIX (found via live testing): Supabase can redirect an
+      // expired/invalid auth link with an `error`/`error_code` but NO
+      // `type` param at all (confirmed a real shape it sends, not just a
+      // `type=recovery&error=...` variant). Without this guard the switch
+      // below fell through to `default` and silently did nothing — the
+      // user landed on the plain WelcomeScreen with zero indication their
+      // link was invalid, unlike the `type=recovery` error variants (and
+      // missing/garbage-code cases) which already correctly show "Link
+      // Invalid or Expired".
+      if (!result.type && (result.error || result.errorCode)) {
+        crossPlatformAlert(
+          "Link Invalid or Expired",
+          result.error ||
+            "This link is no longer valid. It may have already been used or expired — please request a new one.",
+        );
+        return;
+      }
       switch (result.type) {
         case "recovery": {
           // Surface the recovery token if present (diagnostic only — PKCE flow
@@ -315,12 +332,29 @@ export default function App() {
   // DBUG-005/016 FIX: Reset to WelcomeScreen on sign-out
   // When user becomes null (signed out) while app was initialized,
   // reset showWelcome to true so returning users see the Sign In option
+  //
+  // BUG FIX (found via live testing): a GUEST's `user` is ALSO null (guests
+  // were never signed into a real account, not "signed out" of one) — this
+  // effect's deps include `isLoading`, which `authStore`'s `register`/
+  // `login` actions toggle true→false for EVERY attempt, success or
+  // failure. A guest who completes onboarding and then hits ANY failed
+  // sign-up attempt (wrong validation, a transient network error, or a
+  // real Supabase rate limit — confirmed live: `429
+  // over_email_send_rate_limit`) re-fires this effect on the `isLoading`
+  // transition, finds `user` still null (registration failed, never
+  // became a real user), and forcibly resets the guest all the way back to
+  // the plain WelcomeScreen with `isOnboardingComplete: false` — silently
+  // discarding a completed onboarding session over a failed *sign-up*
+  // attempt, not an actual sign-out. Guarding on `!isGuestMode` restores
+  // the original intent: only a genuine previously-authenticated user
+  // transitioning to signed-out should bounce to WelcomeScreen; a guest's
+  // null `user` was never signed in to begin with.
   useEffect(() => {
-    if (!user && isInitialized && !isLoading) {
+    if (!user && !isGuestMode && isInitialized && !isLoading) {
       setShowWelcome(true);
       setIsOnboardingComplete(false);
     }
-  }, [user, isInitialized, isLoading]);
+  }, [user, isGuestMode, isInitialized, isLoading]);
 
   useEffect(() => {
     if (!isInitialized) return;
