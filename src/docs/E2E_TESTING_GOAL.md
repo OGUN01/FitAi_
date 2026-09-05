@@ -3370,6 +3370,58 @@ to match the corrected upsert behavior for finding 3, not a regression.
 See `FITAI_DATA_ARCHITECTURE.md`'s new "Round 7" section for full
 technical detail on all four fixes.
 
+## Scope — Round 8: performance audit
+
+Explicitly acknowledged going in: this is a weaker-fit dimension than
+Rounds 1-7 (each of which was motivated by a real, concrete finding —
+this one isn't). Real device-farm performance testing (cold start time on
+actual low-end Android hardware, frame drops during a real workout
+session, native bundle size) is NOT possible from this browser-only
+Playwright setup — do not claim device-level findings that weren't
+actually measured on a device. What IS honestly testable through a real
+Chrome browser via the Chrome DevTools Protocol (which Playwright exposes)
+is real signal, not a proxy guess: long tasks blocking the main thread,
+JS heap growth over a session (memory leaks), actual layout/paint timing,
+and real AI-generation/worker endpoint latency. Scope to what's real,
+report uncertainty honestly where the web-vs-native gap matters, and do
+not manufacture a "finding" to justify the round.
+
+- [ ] **Main-thread long tasks**: using the CDP Performance/Long Tasks API
+      (`PerformanceObserver` for `longtask` entries, or `page.evaluate`
+      reading `performance.getEntriesByType('longtask')`), identify any
+      interaction (workout logging, meal search, plan generation trigger)
+      that blocks the main thread for >50ms in a way a real user would
+      feel as jank. Report actual measured durations, not estimates.
+- [ ] **Memory growth over a session**: use `page.evaluate(() =>
+      performance.memory)` (Chrome-only, available via CDP) sampled before
+      and after a realistic multi-screen session (onboarding → Home → log
+      a few meals/sets → navigate through Diet/Workout/Profile/Analytics
+      repeatedly) to check for unbounded JS heap growth suggesting a real
+      memory leak (e.g. an uncleaned subscription, interval, or listener).
+- [ ] **AI-generation / worker endpoint latency**: measure real
+      request-to-response time for the actual `fitai-workers` endpoints
+      (plan generation, natural-language edit, etc.) against the deployed
+      worker — not localhost — using real Network-tab-equivalent timing
+      (`page.waitForResponse` + timestamps, or the Resource Timing API).
+      Flag anything that reads as user-perceptibly slow (a rough
+      guideline: >3s for an AI generation call without a loading
+      indicator that clearly communicates progress).
+- [ ] **Excessive re-renders**: spot-check 2-3 high-traffic components
+      (Home screen, workout session screen, diet screen) for obviously
+      pathological re-render patterns — e.g. a component re-rendering on
+      every keystroke of an unrelated input, or a list re-rendering all
+      rows when only one changed. Use React DevTools' profiler data if
+      reachable via the browser, or targeted `console.count`/render-count
+      instrumentation as a fallback; remove any debug instrumentation
+      added for this check before finishing (CLAUDE.md: no debug logs in
+      production paths).
+- [ ] **Bundle size sanity check**: a rough, honest read of the web
+      bundle's actual transferred size (Network tab / `page.evaluate`
+      reading `performance.getEntriesByType('resource')` for JS chunks)
+      — flag anything absurdly large (e.g. an accidentally-bundled dev
+      dependency), but do not chase bundle-size optimization as a general
+      project (that's a much bigger initiative than a testing round).
+
 ## How to pick up this goal in a fresh round
 
 0. **If picking up after a Claude Code process/session restart**: background
@@ -3459,18 +3511,18 @@ technical detail on all four fixes.
    see the Round 7 summary after its scope list, and
    `FITAI_DATA_ARCHITECTURE.md`'s matching "Round 7" section, for full
    technical detail on all four).
-   If a future pickup finds Round 7 also fully checked with nothing else
-   unchecked anywhere (besides the still-open item (b), which needs the
-   user, not more testing): per this file's own "don't invent busywork"
-   guidance, do not manufacture a Round 8 by re-sweeping already-covered
-   ground. Instead, first spend real effort looking for another genuinely
-   NEW, real testing dimension not yet covered (skim recent app changes/
-   commits for newly-added features no round has ever touched, or a class
-   of testing — e.g. localization, performance under real device
-   constraints — that CLAUDE.md or the product goal implies but this file
-   has never scoped). If a real one is found, add it as a new
-   "## Scope — Round N" section (same rigor as Round 4/5/6's own framing
-   of why they were legitimate) and work it per step 4. If no such
-   genuinely new, valuable dimension can be found after real effort, that
-   is the point to check in with the user (e.g. via `AskUserQuestion`)
-   rather than looping indefinitely on manufactured tasks.
+   With Round 7 also fully checked and nothing else unchecked besides
+   item (b), a pickup checked in with the user rather than manufacturing
+   a weaker Round 8 unprompted (per this file's own "don't invent
+   busywork" guidance) — the user explicitly chose to attempt performance
+   testing anyway, accepting its weaker fit (see the new "## Scope —
+   Round 8: performance audit" section above, which states this
+   explicitly up front). **Round 8 is now open. Work it next.**
+   If a future pickup finds Round 8 also fully checked with nothing else
+   unchecked anywhere (besides item (b), which still needs the user, not
+   more testing): do not manufacture a Round 9 by re-sweeping
+   already-covered ground or forcing another weak-fit dimension. Check in
+   with the user (e.g. via `AskUserQuestion`) about what's next, the same
+   way this pickup did before Round 8 — that conversation is the correct
+   mechanism for deciding whether more testing rounds are valuable at
+   this point, not an assumption baked into this file.
