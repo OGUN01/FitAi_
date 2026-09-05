@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../ui/aurora/AnimatedPressable";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
+import { colors, surface, border } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { radioA11yProps } from "../../../utils/accessibility/props";
 import { formatINR } from "../../../utils/subscriptionUi";
 import { rf, rp, rbr } from "../../../utils/responsive";
@@ -73,15 +73,12 @@ const PlanCard: React.FC<PlanCardProps> = ({
     <>
       {badgeLabel && !isCurrent && (
         <View style={styles.badgeWrap} pointerEvents="none">
-          <LinearGradient
-            colors={[colors.primaryLight, colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.badge}
-          >
-            <Ionicons name="star" size={rf(10)} color={colors.white} />
+          {/* Flat fill, not a gradient — DESIGN.md's de-gradient rule (a
+              pricing-tier pill isn't a genuine brand moment). */}
+          <View style={styles.badge}>
+            <Ionicons name="star" size={rf(10)} color={colors.background.DEFAULT} />
             <Text style={styles.badgeText}>{badgeLabel}</Text>
-          </LinearGradient>
+          </View>
         </View>
       )}
       {isCurrent && (
@@ -95,7 +92,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           <Ionicons
             name="checkmark-circle"
             size={rf(20)}
-            color={colors.textMuted}
+            color={colors.text.tertiary}
             style={styles.includedIcon}
           />
         ) : (
@@ -129,7 +126,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
             <Ionicons
               name={getFeatureIcon(feat)}
               size={rf(14)}
-              color={colors.successLight}
+              color={colors.success.light}
               style={styles.featureIcon}
             />
             <Text style={styles.featureText}>{feat}</Text>
@@ -169,19 +166,19 @@ const PlanCard: React.FC<PlanCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderColor: colors.glassBorder,
+    borderColor: border.subtle,
     borderRadius: rbr(16),
     padding: rp(18),
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: surface[1],
     overflow: "visible",
   },
   cardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryTint,
+    borderColor: colors.primary.DEFAULT,
+    backgroundColor: `${colors.primary.DEFAULT}1A`,
   },
   cardCurrent: {
-    borderColor: colors.glassSurface,
-    backgroundColor: colors.backgroundTertiary,
+    borderColor: border.subtle,
+    backgroundColor: surface[2],
     opacity: 0.7,
   },
   badgeWrap: {
@@ -198,26 +195,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(10),
     paddingVertical: rp(4),
     borderRadius: rbr(10),
+    backgroundColor: colors.primary.DEFAULT,
   },
   badgeText: {
+    fontFamily: FONT_FAMILY.extrabold,
     fontSize: rf(10),
-    fontWeight: "800",
-    color: colors.white,
+    // Near-black on the solid accent fill — white-on-#FF6B35 fails WCAG
+    // (~2.84:1); matches the GlassButton primary-variant label convention.
+    color: colors.background.DEFAULT,
     letterSpacing: 0.6,
   },
   currentBadge: {
     position: "absolute",
     top: rp(-11),
     right: rp(14),
-    backgroundColor: colors.textMuted,
+    backgroundColor: surface[2],
     borderRadius: rbr(10),
     paddingHorizontal: rp(10),
     paddingVertical: rp(4),
   },
   currentBadgeText: {
+    fontFamily: FONT_FAMILY.extrabold,
     fontSize: rf(10),
-    fontWeight: "800",
-    color: colors.text,
+    color: colors.text.primary,
   },
   titleRow: {
     flexDirection: "row",
@@ -229,53 +229,53 @@ const styles = StyleSheet.create({
     height: rp(20),
     borderRadius: rbr(10),
     borderWidth: 2,
-    borderColor: colors.textMuted,
+    borderColor: colors.text.tertiary,
     alignItems: "center",
     justifyContent: "center",
     marginRight: rp(10),
   },
   radioSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.primary.DEFAULT,
   },
   radioDot: {
     width: rp(10),
     height: rp(10),
     borderRadius: rbr(5),
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
   includedIcon: {
     marginRight: rp(10),
   },
   planName: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(17),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     flexShrink: 1,
     marginRight: rp(8),
   },
   billedPill: {
     marginLeft: "auto",
-    backgroundColor: colors.successTint,
+    backgroundColor: `${colors.success.DEFAULT}26`,
     borderRadius: rbr(6),
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),
   },
   billedPillText: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(10),
-    fontWeight: "700",
-    color: colors.successLight,
+    color: colors.success.light,
   },
   monthlyOnlyPill: {
     marginLeft: "auto",
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: surface[2],
     borderRadius: rbr(6),
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),
   },
   monthlyOnlyPillText: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(10),
-    fontWeight: "700",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   priceRow: {
     flexDirection: "row",
@@ -283,13 +283,13 @@ const styles = StyleSheet.create({
     marginBottom: rp(10),
   },
   priceAmount: {
+    fontFamily: FONT_FAMILY.extrabold,
     fontSize: rf(30),
-    fontWeight: "800",
-    color: colors.text,
+    color: colors.text.primary,
   },
   pricePeriod: {
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginLeft: rp(3),
   },
   featureList: {
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     flex: 1,
     lineHeight: rf(18),
   },

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
@@ -66,7 +67,7 @@ export const AboutFitAIActionItem: React.FC<AboutFitAIActionItemProps> = ({
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={colors.textMuted}
+              color={colors.text.tertiary}
             />
           </View>
         </View>
@@ -101,13 +102,13 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   actionTitle: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   actionDescription: {
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
 });

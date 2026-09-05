@@ -47,6 +47,52 @@ interface CustomDialogProps {
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
 
+// Web-only, lazily-loaded — kept out of the native runtime path (require,
+// not a static import, so native never needs `react-dom` to actually run;
+// it's still resolvable in node_modules for bundling purposes since it's an
+// existing project dependency).
+//
+// BUG FIX: mirrors the identical fix applied to BottomSheet.tsx's web scrim
+// (found via Playwright testing — a barcode-scan sheet's Cancel button was
+// unclickable, hidden behind the bottom tab bar). DialogShell's web scrim
+// below has the SAME root cause: it renders in place, as a structural
+// descendant of whatever screen mounted it. react-native-web gives every
+// View an explicit (non-`auto`) z-index, and `position:relative` + a
+// non-auto z-index each establish a NEW stacking context — so a dialog
+// opened from deep inside a screen's own render tree has its z-index
+// compared only among ITS OWN ancestor's siblings, never globally against a
+// structurally separate branch of the tree (like the bottom tab bar). A
+// bare z-index bump does NOT fix this (confirmed on the identical
+// BottomSheet bug) — the fix is a real DOM portal, mounting the scrim as an
+// actual sibling of the tab bar's own root instead of a descendant of the
+// screen that opened it.
+function getWebDialogPortalRoot(): HTMLElement | null {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return null;
+  const existing = document.getElementById('aurora-dialog-portal-root');
+  if (existing) return existing as HTMLElement;
+  const root = document.createElement('div');
+  root.id = 'aurora-dialog-portal-root';
+  document.body.appendChild(root);
+  return root;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let webCreateDialogPortal: ((children: React.ReactNode, container: Element) => any) | null = null;
+if (Platform.OS === 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    webCreateDialogPortal = require('react-dom').createPortal;
+  } catch (error) {
+    // Fall back to in-place rendering (the previous, pre-portal behavior)
+    // if react-dom is genuinely unavailable for any reason — never crash
+    // the dialog over this.
+    console.warn(
+      '[CustomDialog] react-dom createPortal unavailable, falling back to in-place render:',
+      error,
+    );
+  }
+}
+
 /**
  * Web scrim-layering fix: react-native-web renders <Modal> into a body-level
  * portal whose fixed wrapper has z-index:auto, so any in-app element with
@@ -76,11 +122,16 @@ export const DialogShell: React.FC<{
   if (Platform.OS === 'web') {
     if (!visible) return null;
     const WebWrapper = keyboardAvoiding ? KeyboardAvoidingView : View;
-    return (
+    const scrim = (
       <WebWrapper style={[wrapperStyle, styles.webScrim]}>
         {children}
       </WebWrapper>
     );
+    const portalRoot = getWebDialogPortalRoot();
+    if (webCreateDialogPortal && portalRoot) {
+      return webCreateDialogPortal(scrim, portalRoot);
+    }
+    return scrim; // defensive fallback if portal setup failed
   }
   return (
     <Modal

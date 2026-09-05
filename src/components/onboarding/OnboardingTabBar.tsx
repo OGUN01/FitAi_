@@ -110,14 +110,19 @@ const styles = StyleSheet.create({
 
   metaText: {
     fontSize: rf(9),
-    fontWeight: "600",
+    // Root cause of a real audit finding (VISUAL_DESIGN_OVERHAUL.md Stage 3):
+    // this Text had only the numeric-weight style prop, no `fontFamily` —
+    // React Native loads each Manrope weight as a separate font file, so
+    // that prop alone silently does nothing and the label fell back to the
+    // system font stack. Use `fontFamily` per DESIGN.md §3.
+    fontFamily: "Manrope_600SemiBold",
     letterSpacing: 1.4,
     color: `${colors.white}73`,
   },
 
   metaPct: {
     fontSize: rf(10),
-    fontWeight: "700",
+    fontFamily: "Manrope_700Bold",
     fontVariant: ["tabular-nums"],
     color: `${colors.white}8C`,
   },

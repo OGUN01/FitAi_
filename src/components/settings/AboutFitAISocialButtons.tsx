@@ -4,7 +4,8 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { colors, spacing } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf } from "../../utils/responsive";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 
@@ -34,7 +35,6 @@ export const AboutFitAISocialButtons: React.FC<
         <GlassCard
           elevation={1}
           padding="md"
-          blurIntensity="light"
           borderRadius="lg"
           style={styles.socialButton}
         >
@@ -55,7 +55,6 @@ export const AboutFitAISocialButtons: React.FC<
         <GlassCard
           elevation={1}
           padding="md"
-          blurIntensity="light"
           borderRadius="lg"
           style={styles.socialButton}
         >
@@ -76,7 +75,6 @@ export const AboutFitAISocialButtons: React.FC<
         <GlassCard
           elevation={1}
           padding="md"
-          blurIntensity="light"
           borderRadius="lg"
           style={styles.socialButton}
         >
@@ -101,11 +99,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: colors.glassSurface,
   },
   socialText: {
+    fontFamily: FONT_FAMILY.medium,
     fontSize: rf(12),
-    fontWeight: "500",
-    color: colors.text,
+    color: colors.text.primary,
   },
 });

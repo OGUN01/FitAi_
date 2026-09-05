@@ -70,12 +70,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: fontSize.md,
-    fontWeight: "700",
+    fontFamily: "Manrope_700Bold",
     color: colors.text,
     marginBottom: rp(4),
   },
   subtitle: {
     fontSize: fontSize.sm,
+    fontFamily: "Manrope_400Regular",
     color: colors.textSecondary,
     textAlign: "center",
     opacity: 0.8,
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
   },
   ctaText: {
     fontSize: fontSize.sm,
-    fontWeight: "700",
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
 });

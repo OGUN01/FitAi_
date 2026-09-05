@@ -2,17 +2,37 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, border, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, border } from "../../theme/aurora-tokens";
 import { rf, rw } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
 
 interface HealthIntelligencePlaceholderProps {
   onPress?: () => void;
+  // 'not-connected': Health Connect/HealthKit was never authorized.
+  // 'no-data': already connected, but no sleep/heart-rate/activity data has
+  // come through yet — usually because the phone alone doesn't produce it;
+  // it needs a smartwatch's companion app (Galaxy Wearable, Mi Fit, etc.)
+  // writing into Health Connect for FitAI to read.
+  variant?: 'not-connected' | 'no-data';
 }
+
+const COPY = {
+  'not-connected': {
+    title: 'Connect Health Data',
+    subtitle:
+      'Sync Apple Health or Health Connect to unlock recovery, sleep, and heart-rate insights.',
+  },
+  'no-data': {
+    title: 'No Recovery Data Yet',
+    subtitle:
+      "Health Connect is synced, but recovery needs sleep or heart-rate data. Pair a smartwatch via its companion app (Galaxy Wearable, Mi Fit, etc.) — FitAI reads it from Health Connect automatically.",
+  },
+} as const;
 
 export const HealthIntelligencePlaceholder: React.FC<
   HealthIntelligencePlaceholderProps
-> = ({ onPress }) => {
+> = ({ onPress, variant = 'not-connected' }) => {
+  const { title, subtitle } = COPY[variant];
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -47,11 +67,8 @@ export const HealthIntelligencePlaceholder: React.FC<
             />
           </View>
           <View style={styles.placeholderTextBlock}>
-            <Text style={styles.placeholderTitle}>Connect Health Data</Text>
-            <Text style={styles.placeholderSubtitle}>
-              Sync Apple Health or Health Connect to unlock recovery, sleep,
-              and heart-rate insights.
-            </Text>
+            <Text style={styles.placeholderTitle}>{title}</Text>
+            <Text style={styles.placeholderSubtitle}>{subtitle}</Text>
           </View>
           {onPress ? (
             <Ionicons
@@ -87,7 +104,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: rf(14),
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
     color: colors.text,
     letterSpacing: 0.3,
   },
@@ -111,13 +128,13 @@ const styles = StyleSheet.create({
   },
   placeholderTitle: {
     fontSize: rf(14),
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
     color: colors.text,
     marginBottom: spacing.xs,
   },
   placeholderSubtitle: {
     fontSize: rf(12),
-    fontWeight: typography.fontWeight.regular,
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
     lineHeight: rf(18),
     opacity: 0.65,

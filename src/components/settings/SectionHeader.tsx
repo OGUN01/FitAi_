@@ -1,12 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { colors, spacing } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf } from "../../utils/responsive";
 
 interface SectionHeaderProps {
   icon: keyof typeof Ionicons.glyphMap;
-  /** @default colors.textSecondary */
+  /** @default colors.text.secondary */
   iconColor?: string;
   title: string;
   isDanger?: boolean;
@@ -14,7 +15,7 @@ interface SectionHeaderProps {
 
 export const SectionHeader: React.FC<SectionHeaderProps> = ({
   icon,
-  iconColor = colors.textSecondary,
+  iconColor = colors.text.secondary,
   title,
   isDanger = false,
 }) => {
@@ -37,13 +38,13 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   sectionTitle: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
   dangerTitle: {
-    color: colors.error,
+    color: colors.error.DEFAULT,
   },
 });

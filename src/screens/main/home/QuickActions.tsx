@@ -9,7 +9,7 @@ import { View, Text, StyleSheet, ScrollView, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ProgressRing } from "../../../components/ui/aurora/ProgressRing";
-import { flatColors as colors, spacing, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rw, rh, rp } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 
@@ -173,12 +173,12 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: rf(11),
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
   label: {
     fontSize: fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: "Manrope_500Medium",
     color: colors.text,
     textAlign: "center",
     flexShrink: 1,

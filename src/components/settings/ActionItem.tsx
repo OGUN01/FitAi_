@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
@@ -61,7 +62,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
                 styles.iconContainer,
                 {
                   backgroundColor: isDanger
-                    ? colors.errorTint
+                    ? `${colors.error.DEFAULT}1F`
                     : `${iconColor}15`,
                 },
               ]}
@@ -69,7 +70,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
               <Ionicons
                 name={icon}
                 size={rf(18)}
-                color={isDanger ? colors.error : iconColor}
+                color={isDanger ? colors.error.DEFAULT : iconColor}
               />
             </View>
             <View style={styles.textContainer}>
@@ -83,7 +84,7 @@ export const ActionItem: React.FC<ActionItemProps> = ({
             <Ionicons
               name="chevron-forward"
               size={rf(18)}
-              color={colors.textMuted}
+              color={colors.text.tertiary}
             />
           </View>
         </View>
@@ -102,8 +103,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   dangerCard: {
-    backgroundColor: `${colors.error}0F`,
-    borderColor: `${colors.error}33`,
+    backgroundColor: `${colors.error.DEFAULT}0F`,
+    borderColor: `${colors.error.DEFAULT}33`,
   },
   actionContent: {
     flexDirection: "row",
@@ -122,16 +123,16 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   actionTitle: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   dangerTitle: {
-    color: colors.error,
+    color: colors.error.DEFAULT,
   },
   actionDescription: {
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
 });

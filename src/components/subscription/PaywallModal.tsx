@@ -9,7 +9,8 @@ import {
 import Animated, { FadeIn, FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { usePaywall } from "../../hooks/usePaywall";
-import { flatColors as colors, border } from "../../theme/aurora-tokens";
+import { colors, border } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp, rh, rbr } from "../../utils/responsive";
 import { getPaywallPrimaryLabel, TIER_FEATURES } from "../../utils/subscriptionUi";
 import { useAuthStore } from "../../stores/authStore";
@@ -157,7 +158,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       <View style={styles.header}>
         <View style={styles.heroRow}>
           <View style={styles.crownBadge}>
-            <Ionicons name="diamond" size={rf(26)} color={colors.primaryLight} />
+            <Ionicons name="diamond" size={rf(26)} color={colors.primary.light} />
           </View>
 
           <View style={styles.headerTextWrap}>
@@ -174,7 +175,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             accessibilityHint="Dismisses the subscription screen"
             style={styles.closeBtn}
           >
-            <Ionicons name="close" size={rf(18)} color={colors.textSecondary} />
+            <Ionicons name="close" size={rf(18)} color={colors.text.secondary} />
           </Pressable>
         </View>
 
@@ -183,7 +184,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             entering={reducedMotion ? undefined : FadeIn.duration(200)}
             style={styles.reasonRow}
           >
-            <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primaryLight} />
+            <Ionicons name="lock-open-outline" size={rf(13)} color={colors.primary.light} />
             <Text style={styles.headerReason}>{displayReason}</Text>
           </Animated.View>
         ) : null}
@@ -200,7 +201,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             entering={reducedMotion ? undefined : FadeInUp.duration(250)}
             style={styles.warningBanner}
           >
-            <Ionicons name="cloud-offline-outline" size={rf(18)} color={colors.errorLight} style={styles.bannerIcon} />
+            <Ionicons name="cloud-offline-outline" size={rf(18)} color={colors.error.light} style={styles.bannerIcon} />
             <View style={styles.bannerTextWrap}>
               <Text style={styles.warningBannerTitle}>Plans unavailable</Text>
               <Text style={styles.warningBannerText}>
@@ -225,7 +226,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             entering={reducedMotion ? undefined : FadeInUp.duration(250)}
             style={styles.authBanner}
           >
-            <Ionicons name="person-circle-outline" size={rf(18)} color={colors.blue} style={styles.bannerIcon} />
+            <Ionicons name="person-circle-outline" size={rf(18)} color={colors.info.DEFAULT} style={styles.bannerIcon} />
             <View style={styles.bannerTextWrap}>
               <Text style={styles.authBannerTitle}>Sign in required</Text>
               <Text style={styles.authBannerText}>
@@ -388,9 +389,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: rp(12),
-    backgroundColor: colors.primaryTint,
+    backgroundColor: `${colors.primary.DEFAULT}1A`,
     borderWidth: 1,
-    borderColor: colors.primaryFaded,
+    borderColor: `${colors.primary.DEFAULT}4D`,
   },
   headerTextWrap: {
     flex: 1,
@@ -398,13 +399,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: rf(24),
-    fontWeight: "800",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.extrabold,
+    color: colors.text.primary,
     letterSpacing: 0.2,
   },
   headerSubtitle: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginTop: rp(2),
   },
   reasonRow: {
@@ -412,7 +413,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: rp(6),
     marginTop: rp(10),
-    backgroundColor: colors.primaryTint,
+    backgroundColor: `${colors.primary.DEFAULT}1A`,
     borderRadius: rbr(8),
     paddingHorizontal: rp(8),
     paddingVertical: rp(6),
@@ -420,15 +421,15 @@ const styles = StyleSheet.create({
   },
   headerReason: {
     fontSize: rf(12),
-    color: colors.primaryLight,
-    fontWeight: "600",
+    color: colors.primary.light,
+    fontFamily: FONT_FAMILY.semibold,
     flexShrink: 1,
   },
   closeBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.backgroundTertiary,
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -463,20 +464,20 @@ const styles = StyleSheet.create({
     marginTop: rp(14),
     padding: rp(12),
     borderRadius: rbr(12),
-    backgroundColor: colors.errorTint,
+    backgroundColor: `${colors.error.DEFAULT}26`,
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.30)",
+    borderColor: `${colors.error.DEFAULT}4D`,
   },
   warningBannerTitle: {
     fontSize: rf(13),
-    fontWeight: "700",
-    color: colors.errorLight,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.error.light,
     marginBottom: rp(2),
   },
   warningBannerText: {
     fontSize: rf(12),
     lineHeight: rf(18),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
   bannerRetryBtn: {
     marginTop: rp(8),
@@ -486,28 +487,32 @@ const styles = StyleSheet.create({
   },
   bannerRetryText: {
     fontSize: rf(13),
-    fontWeight: "700",
-    color: colors.primaryLight,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.primary.light,
   },
+  // Governed info-token tint, not a freehand hardcoded Tailwind blue — see
+  // DESIGN.md's semantic-color section (colors.info is the "Sign in
+  // required" notice's correct token, same family as colors.info.DEFAULT
+  // used for its icon/title below).
   authBanner: {
     flexDirection: "row",
     marginTop: rp(14),
     padding: rp(12),
     borderRadius: rbr(12),
-    backgroundColor: "rgba(59,130,246,0.10)",
+    backgroundColor: `${colors.info.DEFAULT}1A`,
     borderWidth: 1,
-    borderColor: "rgba(59,130,246,0.25)",
+    borderColor: `${colors.info.DEFAULT}40`,
   },
   authBannerTitle: {
     fontSize: rf(13),
-    fontWeight: "700",
-    color: colors.blue,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.info.DEFAULT,
     marginBottom: rp(2),
   },
   authBannerText: {
     fontSize: rf(12),
     lineHeight: rf(18),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
   },
 
   /* Toggle */
@@ -523,17 +528,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -rp(8),
     right: rp(4),
-    backgroundColor: colors.successTint,
+    backgroundColor: `${colors.success.DEFAULT}26`,
     borderRadius: rbr(4),
     paddingHorizontal: rp(6),
     paddingVertical: rp(2),
     borderWidth: 1,
-    borderColor: colors.successTint,
+    borderColor: `${colors.success.DEFAULT}26`,
   },
   savingsBadgeText: {
     fontSize: rf(11),
-    fontWeight: "700",
-    color: colors.successLight,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.success.light,
   },
 
   /* Plans */
@@ -562,7 +567,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: rf(11),
-    color: colors.textMuted,
+    color: colors.text.tertiary,
     textAlign: "center",
     lineHeight: rf(16),
   },

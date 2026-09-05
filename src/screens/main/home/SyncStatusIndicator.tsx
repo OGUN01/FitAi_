@@ -269,16 +269,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: rf(12),
-    fontWeight: "600",
+    fontFamily: "Manrope_600SemiBold",
     color: colors.text,
   },
   status: {
     fontSize: rf(11),
-    fontWeight: "500",
+    fontFamily: "Manrope_500Medium",
   },
   retryHint: {
     fontSize: rf(11),
-    fontWeight: "700",
+    fontFamily: "Manrope_700Bold",
     marginTop: spacing.xxs,
     textTransform: "uppercase",
   },

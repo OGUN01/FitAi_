@@ -230,6 +230,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
+    // Real Stage 3 audit finding: this whole-card-header Pressable measured
+    // 25px tall (row content height only) — below the 44px WCAG/Apple/
+    // Material minimum for an interactive element (DESIGN.md §8).
+    minHeight: 44,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -255,7 +259,7 @@ const styles = StyleSheet.create({
   },
   trendText: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontFamily: "Manrope_600SemiBold",
   },
   mainStats: {
     flexDirection: 'row',
@@ -269,18 +273,18 @@ const styles = StyleSheet.create({
   },
   weightValue: {
     fontSize: rf(28),
-    fontWeight: '800',
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.text,
     fontVariant: ['tabular-nums'],
   },
   weightUnit: {
     fontSize: rf(14),
-    fontWeight: '600',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   weightLabel: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
   },
   chartContainer: {
@@ -294,17 +298,17 @@ const styles = StyleSheet.create({
   },
   goalValue: {
     fontSize: rf(18),
-    fontWeight: '600',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   goalUnit: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
   },
   goalLabel: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
   },
   progressSection: {
@@ -318,12 +322,12 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   progressPercent: {
     fontSize: rf(13),
-    fontWeight: '700',
+    fontFamily: "Manrope_700Bold",
     fontVariant: ['tabular-nums'],
   },
   remainingText: {
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
   },
   emptyState: {
@@ -367,13 +371,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontFamily: "Manrope_700Bold",
     color: colors.text,
     marginBottom: spacing.xs,
   },
   emptyDescription: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.md,
@@ -391,7 +395,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     fontSize: rf(13),
-    fontWeight: '700',
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
 });

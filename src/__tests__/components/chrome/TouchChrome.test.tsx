@@ -109,6 +109,21 @@ jest.mock("@/components/ui/aurora/GlassCard", () => {
   };
 });
 
+jest.mock("@/components/ui/aurora/BottomSheet", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+
+  // SettingsSelectionModal now renders on the shared BottomSheet primitive
+  // (Stage 3 bottom-sheet migration), which pulls in reanimated/gesture-
+  // handler/safe-area-insets — irrelevant to this test's touch-target size
+  // assertions, so stub it down to a plain passthrough wrapper like the
+  // GlassCard mocks above.
+  return {
+    BottomSheet: ({ children }: { children: React.ReactNode }) =>
+      React.createElement(View, null, children),
+  };
+});
+
 jest.mock("@/components/ui/aurora/AnimatedPressable", () => {
   const React = require("react");
   const { Pressable } = require("react-native");

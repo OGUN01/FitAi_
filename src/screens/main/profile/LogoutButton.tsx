@@ -12,8 +12,9 @@ import {
   colors,
   spacing,
   typography,
+  borderRadius,
 } from "../../../theme/aurora-tokens";
-import { rf } from "../../../utils/responsive";
+import { rs } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
@@ -52,7 +53,7 @@ export const LogoutButton: React.FC<LogoutButtonProps> = ({
       >
         <Ionicons
           name="log-out-outline"
-          size={rf(18)}
+          size={rs(18)}
           color={colors.error.DEFAULT}
           style={styles.icon}
         />
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: spacing.md,
     minHeight: 44,
-    borderRadius: 12,
+    borderRadius: borderRadius.card,
     backgroundColor: `${colors.error.DEFAULT}14`,
     borderWidth: 1,
     borderColor: `${colors.error.DEFAULT}2E`,

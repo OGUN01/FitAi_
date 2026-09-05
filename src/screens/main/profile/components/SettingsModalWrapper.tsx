@@ -16,7 +16,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../../../../components/ui/aurora/AuroraSpinner";
 import {
@@ -198,16 +197,17 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                     busy: saveInFlight,
                   }}
                 >
-                  <LinearGradient
-                    colors={
-                      saveDisabled
-                        ? [colors.text.tertiary, colors.text.tertiary]
-                        : [colors.primary.DEFAULT, colors.primary.light]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
+                  {/* Flat fill, not a gradient — DESIGN.md's de-gradient rule
+                      (Stage 1 already retired GlassButton's gradient variants
+                      for the same reason). */}
+                  <View
                     style={[
                       styles.saveButton,
+                      {
+                        backgroundColor: saveDisabled
+                          ? border.subtle
+                          : colors.primary.DEFAULT,
+                      },
                       (saveDisabled || saveInFlight) && styles.saveButtonDisabled,
                     ]}
                   >
@@ -218,12 +218,23 @@ export const SettingsModalWrapper: React.FC<SettingsModalWrapperProps> = ({
                         <Ionicons
                           name="checkmark-circle"
                           size={rf(18)}
-                          color={colors.background.DEFAULT}
+                          color={
+                            saveDisabled
+                              ? colors.text.tertiary
+                              : colors.background.DEFAULT
+                          }
                         />
-                        <Text style={styles.saveButtonText}>{saveLabel}</Text>
+                        <Text
+                          style={[
+                            styles.saveButtonText,
+                            saveDisabled && styles.saveButtonTextDisabled,
+                          ]}
+                        >
+                          {saveLabel}
+                        </Text>
                       </>
                     )}
-                  </LinearGradient>
+                  </View>
                 </AnimatedPressable>
               </Animated.View>
             )}
@@ -336,9 +347,13 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     ...variants.cardHeadline,
-    // White-on-primary gradient computes to 2.32-2.84:1, failing WCAG AA;
-    // near-black computes to a safe ratio across the whole gradient span.
+    // Near-black on the flat accent fill, not white — white-on-#FF6B35
+    // fails WCAG AA (~2.84:1); near-black clears 7:1+. Matches the
+    // GlassButton primary-variant label convention.
     color: colors.background.DEFAULT,
+  },
+  saveButtonTextDisabled: {
+    color: colors.text.tertiary,
   },
 });
 

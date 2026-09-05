@@ -36,10 +36,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { GlassButton } from "../ui/aurora/GlassButton";
 import { AuroraBackground } from "../ui/aurora/AuroraBackground";
 import {
-  flatColors as colors,
+  colors,
   spacing,
+  surface,
+  border,
   typography,
 } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp } from "../../utils/responsive";
 
 // ============================================================================
@@ -289,7 +292,7 @@ export const AppLockGate: React.FC<AppLockGateProps> = ({ children }) => {
           <Ionicons
             name="lock-closed-outline"
             size={rf(48)}
-            color={colors.primary}
+            color={colors.primary.DEFAULT}
           />
         </View>
         <Text style={styles.lockTitle}>FitAI is locked</Text>
@@ -332,26 +335,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    backgroundColor: colors.surface,
+    borderColor: border.subtle,
+    backgroundColor: surface[1],
   },
   lockTitle: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: typography.fontSize.h2,
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
     textAlign: "center",
   },
   lockBody: {
     fontSize: typography.fontSize.body,
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
     marginBottom: spacing.lg,
     lineHeight: rf(20),
   },
   lockError: {
     fontSize: typography.fontSize.caption,
-    color: colors.error,
+    color: colors.error.DEFAULT,
     marginBottom: spacing.md,
     textAlign: "center",
   },

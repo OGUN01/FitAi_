@@ -20,7 +20,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import AnimatedRN, { FadeInUp, ZoomIn } from "react-native-reanimated";
 import { GlassButton } from "./aurora/GlassButton";
-import { flatColors as colors, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { useReducedMotion, getAccessibleDuration } from "../../utils/accessibility/hooks";
@@ -443,23 +443,29 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(26),
-    fontWeight: typography.fontWeight.extrabold,
+    // Root cause of a real Stage 3 audit finding (same class of bug as
+    // WelcomeScreen/OnboardingTabBar/MultiSelectWithCustom/BottomSheet): a
+    // bare numeric-weight style prop with no `fontFamily` is a no-op on RN,
+    // so this and every other Text below fell back to the system font stack.
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.text,
     textAlign: "center",
     marginBottom: spacing.xs,
   },
   subtitle: {
     fontSize: rf(16),
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
     textAlign: "center",
     marginBottom: spacing.xs,
   },
   userName: {
     color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
   },
   description: {
     fontSize: rf(13),
+    fontFamily: "Manrope_400Regular",
     color: colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(20),
@@ -493,12 +499,13 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: rf(10),
+    fontFamily: "Manrope_400Regular",
     color: colors.textSecondary,
     marginBottom: rp(2),
   },
   statValue: {
     fontSize: rf(10),
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
     color: colors.text,
     textAlign: "center",
     fontVariant: ["tabular-nums"],
@@ -515,6 +522,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: rf(13),
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
   },
   buttonContainer: {

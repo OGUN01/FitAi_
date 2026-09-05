@@ -3,8 +3,8 @@
  *
  * Thin wrapper around the shared DestructiveConfirmModal so every destructive
  * confirmation in Profile/Settings (sign out, unlink account, delete account,
- * clear cache) shares one visual language — flat surface.2 panel over a real
- * BlurView backdrop, destructive (error) CTA.
+ * clear cache) shares one visual language — a bottom sheet with a destructive
+ * (error) CTA, per DESIGN.md's modal-presentation standard.
  */
 
 import React from "react";

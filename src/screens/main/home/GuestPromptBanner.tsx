@@ -7,7 +7,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../../theme/aurora-tokens";
 import { rf, rw } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
 
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: fontSize.sm,
     color: colors.text,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: "Manrope_500Medium",
     flexShrink: 1,
     flex: 1,
     minWidth: 0,
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
     color: colors.white,
   },
 });

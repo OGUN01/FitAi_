@@ -5,10 +5,9 @@
  */
 
 import React, { useCallback } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Switch } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   colors,
   surface,
@@ -18,7 +17,7 @@ import {
   borderRadius,
   flatColors,
 } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rs, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
@@ -29,7 +28,6 @@ export interface SettingItem {
   title: string;
   subtitle?: string;
   icon: keyof typeof Ionicons.glyphMap;
-  iconColor?: string;
   badge?: string;
   badgeColor?: string;
   showChevron?: boolean;
@@ -37,14 +35,14 @@ export interface SettingItem {
   isDestructive?: boolean;
   isPremium?: boolean;
   isIncomplete?: boolean;
+  /** Renders a trailing Switch instead of a chevron; the row itself is
+   * inert (only the Switch is interactive) so tapping it can't double-fire
+   * alongside onValueChange. */
+  toggle?: {
+    value: boolean;
+    onValueChange: (next: boolean) => void;
+  };
 }
-
-const SECTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Account: "person-circle-outline",
-  Preferences: "settings-outline",
-  App: "apps-outline",
-  Data: "cloud-outline",
-};
 
 interface SettingsSectionProps {
   title: string;
@@ -64,52 +62,39 @@ const SettingRow: React.FC<{
     onPress(item);
   }, [item, onPress]);
 
+  const handleToggle = useCallback(
+    (next: boolean) => {
+      haptics.light();
+      item.toggle?.onValueChange(next);
+    },
+    [item],
+  );
+
   const isPremium = !!item.isPremium;
-  const iconColor = item.isDestructive
+  // Single neutral icon system: every squircle is the same surface[2] tint
+  // with a full-contrast glyph. Only destructive/premium rows carry a
+  // semantic color — nothing is coded per-row anymore.
+  const glyphColor = item.isDestructive
     ? colors.error.DEFAULT
     : isPremium
       ? flatColors.gold
-      : item.iconColor || colors.primary.DEFAULT;
+      : colors.text.primary;
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      disabled={item.disabled}
-      accessibilityRole="button"
-      accessibilityLabel={item.title}
-      accessibilityHint={item.subtitle}
-      accessibilityState={{ disabled: item.disabled }}
-      style={({ pressed }) => [
-        styles.row,
-        isPremium && styles.rowPremium,
-        pressed && !item.disabled && styles.rowPressed,
-        item.disabled && styles.rowDisabled,
-        !isLast && styles.rowBorder,
-      ]}
-    >
+  const rowContent = (
+    <>
       {/* Icon squircle */}
-      {isPremium ? (
-        <LinearGradient
-          colors={[flatColors.gold, colors.warning.DEFAULT]}
-          style={styles.iconSquircle}
-        >
-          <Ionicons name={item.icon} size={rf(18)} color={colors.text.primary} />
-        </LinearGradient>
-      ) : (
-        <View
-          style={[
-            styles.iconSquircle,
-            { backgroundColor: `${iconColor}14` },
-            item.isDestructive && { backgroundColor: `${colors.error.DEFAULT}14` },
-          ]}
-        >
-          <Ionicons
-            name={item.icon}
-            size={rf(18)}
-            color={item.disabled ? colors.text.tertiary : iconColor}
-          />
-        </View>
-      )}
+      <View
+        style={[
+          styles.iconSquircle,
+          item.isDestructive && { backgroundColor: `${colors.error.DEFAULT}14` },
+        ]}
+      >
+        <Ionicons
+          name={item.icon}
+          size={rs(18)}
+          color={item.disabled ? colors.text.tertiary : glyphColor}
+        />
+      </View>
 
       {/* Text */}
       <View style={styles.textContainer}>
@@ -149,16 +134,64 @@ const SettingRow: React.FC<{
         )}
       </View>
 
-      {/* Chevron */}
-      {!item.disabled && item.showChevron !== false && (
-        <Ionicons
-          name="chevron-forward"
-          size={rf(18)}
-          color={isPremium ? flatColors.gold : colors.text.tertiary}
-          style={styles.chevron}
+      {/* Trailing affordance — exactly one of: Switch (toggle), chevron
+          (navigation), or nothing. Never ambiguous. */}
+      {item.toggle ? (
+        <Switch
+          value={item.toggle.value}
+          onValueChange={handleToggle}
+          trackColor={{ false: surface[2], true: colors.primary.DEFAULT }}
+          thumbColor={colors.text.primary}
+          style={styles.toggle}
         />
+      ) : (
+        !item.disabled &&
+        item.showChevron !== false && (
+          <Ionicons
+            name="chevron-forward"
+            size={rs(18)}
+            color={isPremium ? flatColors.gold : colors.text.tertiary}
+            style={styles.chevron}
+          />
+        )
       )}
-    </Pressable>
+    </>
+  );
+
+  // A toggle row is inert as a whole — only the Switch itself is
+  // interactive — so tapping the row body can't double-fire alongside
+  // Switch's onValueChange.
+  if (item.toggle) {
+    return (
+      <View style={styles.rowWrapper}>
+        <View style={styles.row} accessibilityLabel={item.title}>
+          {rowContent}
+        </View>
+        {!isLast && <View style={styles.divider} />}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.rowWrapper}>
+      <Pressable
+        onPress={handlePress}
+        disabled={item.disabled}
+        accessibilityRole="button"
+        accessibilityLabel={item.title}
+        accessibilityHint={item.subtitle}
+        accessibilityState={{ disabled: item.disabled }}
+        style={({ pressed }) => [
+          styles.row,
+          isPremium && styles.rowPremium,
+          pressed && !item.disabled && styles.rowPressed,
+          item.disabled && styles.rowDisabled,
+        ]}
+      >
+        {rowContent}
+      </Pressable>
+      {!isLast && <View style={styles.divider} />}
+    </View>
   );
 });
 
@@ -169,7 +202,6 @@ export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(({
   animationDelay = 0,
 }) => {
   const reducedMotion = useReducedMotion();
-  const sectionIcon = SECTION_ICONS[title];
 
   return (
     <Animated.View
@@ -178,21 +210,10 @@ export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(({
       }
       style={styles.container}
     >
-      {/* Section header */}
-      <View style={styles.sectionHeader}>
-        {sectionIcon && (
-          <Ionicons
-            name={sectionIcon}
-            size={rf(14)}
-            color={colors.text.secondary}
-            style={styles.sectionIcon}
-          />
-        )}
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-
-      {/* Single surface list */}
-      <View style={styles.listSurface}>
+      {/* No visible header — the quick-jump chip row above is the single
+          source of the section label, so this isn't repeated here. Kept as
+          an accessibility label on the surface for screen readers. */}
+      <View style={styles.listSurface} accessibilityLabel={`${title} settings`}>
         {items.map((item, index) => (
           <SettingRow
             key={item.id}
@@ -209,22 +230,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  sectionIcon: {
-    marginRight: spacing.xs,
-  },
-  sectionTitle: {
-    ...variants.caption,
-    color: colors.text.secondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
+    marginBottom: spacing.xl,
   },
   listSurface: {
     backgroundColor: surface[1],
@@ -233,12 +239,15 @@ const styles = StyleSheet.create({
     borderColor: border.subtle,
     overflow: "hidden",
   },
+  rowWrapper: {
+    // Positioning context for the absolutely-positioned inset divider.
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.md + spacing.xxs,
     paddingHorizontal: spacing.md,
-    minHeight: 56,
+    minHeight: 64,
   },
   rowPremium: {
     backgroundColor: `${flatColors.gold}0D`,
@@ -247,11 +256,21 @@ const styles = StyleSheet.create({
     backgroundColor: surface[2],
   },
   rowDisabled: {
-    opacity: 0.5,
+    // Dimming is carried entirely by disabledTitle/disabledSubtitle text
+    // color — stacking opacity on top of already-dim token colors used to
+    // push effective contrast below WCAG AA.
   },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: border.DEFAULT,
+  // Inset divider — a separate absolutely-positioned line rather than a
+  // borderBottom on the row itself, so insetting it can't shift the row's
+  // own content (a borderBottom + marginLeft on the row would push the
+  // icon/text/chevron inward along with the line).
+  divider: {
+    position: "absolute",
+    left: rw(32) + spacing.md,
+    right: 0,
+    bottom: 0,
+    height: 1,
+    backgroundColor: border.DEFAULT,
   },
   iconSquircle: {
     width: rw(32),
@@ -261,9 +280,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: spacing.md,
     overflow: "hidden",
+    backgroundColor: surface[2],
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: "auto",
   },
   textContainer: {
     flex: 1,
+    flexShrink: 1,
     justifyContent: "center",
     minWidth: 0,
   },
@@ -289,7 +313,7 @@ const styles = StyleSheet.create({
   subtitle: {
     ...variants.caption,
     color: colors.text.secondary,
-    marginTop: spacing.xxs,
+    marginTop: spacing.xs,
   },
   disabledSubtitle: {
     color: colors.text.tertiary,
@@ -319,6 +343,15 @@ const styles = StyleSheet.create({
   },
   chevron: {
     marginLeft: spacing.sm,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: "auto",
+  },
+  toggle: {
+    marginLeft: spacing.sm,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: "auto",
   },
 });
 

@@ -14,7 +14,7 @@ import { BottomSheet } from "../ui/aurora/BottomSheet";
 import { GlassCard } from "../ui/aurora/GlassCard";
 import { GlassButton } from "../ui/aurora/GlassButton";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize } from "../../theme/aurora-tokens";
 import { rs, rbr, rp, rf } from '../../utils/responsive';
 import { hexToRgba, TINT_ALPHA_LOW, TINT_ALPHA_SOFT, TINT_ALPHA_MEDIUM } from "../../utils/colors";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -504,7 +504,15 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.medium as "500",
+    // Root cause of a real Stage 3 audit finding (VISUAL_DESIGN_OVERHAUL.md):
+    // this Text always receives an explicit `style` prop, which means React
+    // never falls back to the app-wide Text.defaultProps.style Manrope
+    // override (App.tsx) — defaultProps only apply when the prop is
+    // undefined, not merged. A numeric-weight-only style with no `fontFamily`
+    // therefore rendered on the system font stack. Use `fontFamily` per
+    // DESIGN.md §3 (a bare weight prop is a no-op on RN — each weight is a
+    // separate font file).
+    fontFamily: "Manrope_500Medium",
     color: colors.text,
     marginBottom: spacing.xs,
   },
@@ -530,6 +538,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontSize: fontSize.md,
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
   },
 
@@ -559,11 +568,12 @@ const styles = StyleSheet.create({
   selectedTagText: {
     fontSize: fontSize.sm,
     color: colors.primary,
-    fontWeight: typography.fontWeight.medium as "500",
+    fontFamily: "Manrope_500Medium",
   },
 
   selectionCount: {
     fontSize: fontSize.sm,
+    fontFamily: "Manrope_400Regular",
     color: colors.textSecondary,
     textAlign: "center",
     marginBottom: spacing.sm,
@@ -584,6 +594,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: fontSize.md,
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
     minHeight: 44,
   },
@@ -598,13 +609,14 @@ const styles = StyleSheet.create({
 
   customInputLabel: {
     fontSize: fontSize.md,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontFamily: "Manrope_600SemiBold",
     color: colors.text,
     marginBottom: spacing.sm,
   },
 
   customTextInput: {
     fontSize: fontSize.md,
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -631,7 +643,7 @@ const styles = StyleSheet.create({
 
   regionHeader: {
     fontSize: fontSize.sm,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
@@ -689,12 +701,13 @@ const styles = StyleSheet.create({
 
   optionText: {
     fontSize: fontSize.md,
+    fontFamily: "Manrope_400Regular",
     color: colors.text,
   },
 
   optionTextSelected: {
     color: colors.primary,
-    fontWeight: typography.fontWeight.semibold as "600",
+    fontFamily: "Manrope_600SemiBold",
   },
 
   optionTextDisabled: {
@@ -703,11 +716,12 @@ const styles = StyleSheet.create({
 
   optionTextCustom: {
     color: colors.primary,
-    fontWeight: typography.fontWeight.medium as "500",
+    fontFamily: "Manrope_500Medium",
   },
 
   optionRegion: {
     fontSize: fontSize.xs,
+    fontFamily: "Manrope_400Regular",
     color: colors.textSecondary,
     marginTop: rp(2),
   },
@@ -740,6 +754,7 @@ const styles = StyleSheet.create({
 
   noResultsText: {
     fontSize: fontSize.md,
+    fontFamily: "Manrope_400Regular",
     color: colors.textMuted,
   },
 

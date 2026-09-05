@@ -4,7 +4,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
 import { initializeBackend } from "../../utils/integration";
 import { rf, rp } from "../../utils/responsive";
-import { flatColors as colors, typography } from "../../theme/aurora-tokens";
+import { colors } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
 
 interface AuthWrapperProps {
@@ -114,10 +115,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   loadingText: {
-    color: colors.text,
+    color: colors.text.primary,
     marginTop: rp(16),
     fontSize: rf(16),
   },
@@ -125,18 +126,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.background,
+    backgroundColor: colors.background.DEFAULT,
     padding: rp(20),
     gap: rp(8),
   },
   authTitle: {
-    color: colors.text,
+    color: colors.text.primary,
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(32),
-    fontWeight: typography.fontWeight.bold,
     marginTop: rp(16),
   },
   authSubtitle: {
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     fontSize: rf(16),
     textAlign: "center",
   },

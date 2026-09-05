@@ -64,6 +64,56 @@ import { useReducedMotion } from "../../../utils/accessibility/hooks";
 const getScreenHeight = (): number => dimensions.screenHeight;
 const DISMISS_THRESHOLD = 120; // px dragged before dismissing
 
+// Web-only, lazily-loaded — kept out of the native runtime path (require,
+// not a static import, so native never needs `react-dom` to actually run;
+// it's still resolvable in node_modules for bundling purposes since it's an
+// existing project dependency, but native code never calls require() here
+// because of the Platform.OS guard below).
+//
+// BUG FIX: the web scrim below used to be a plain `<View position:'fixed'>`
+// rendered IN PLACE in the component tree (i.e. still a structural
+// descendant of whatever screen mounted this BottomSheet). react-native-web
+// gives every View an explicit `z-index: 0` (not `auto`), and
+// `position:relative` + a non-auto z-index each establish a NEW stacking
+// context — so a sheet opened from deep inside a screen's own render tree
+// has its z-index compared only among ITS OWN ancestor's siblings, not
+// globally. Confirmed empirically: even forcing the scrim's z-index to
+// 99999 inline did NOT make it paint above the app's bottom tab bar when
+// the sheet was opened via a cross-tab quick action (Home -> Barcode/Scan
+// Label, which mounts the sheet inside the just-navigated-to Diet screen)
+// — the tab bar's own branch of the tree sits in a later/higher-precedence
+// sibling stacking context that no amount of LOCAL z-index can out-rank.
+// The correct fix for "escape an ancestor's stacking context on web" is a
+// real DOM portal — mounting the scrim as an actual sibling of the tab
+// bar's own root instead of a structural descendant of the screen that
+// opened it.
+function getWebPortalRoot(): HTMLElement | null {
+  if (Platform.OS !== "web" || typeof document === "undefined") return null;
+  const existing = document.getElementById("aurora-bottom-sheet-portal-root");
+  if (existing) return existing as HTMLElement;
+  const root = document.createElement("div");
+  root.id = "aurora-bottom-sheet-portal-root";
+  document.body.appendChild(root);
+  return root;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let webCreatePortal: ((children: React.ReactNode, container: Element) => any) | null = null;
+if (Platform.OS === "web") {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    webCreatePortal = require("react-dom").createPortal;
+  } catch (error) {
+    // Fall back to in-place rendering (the previous, pre-portal behavior)
+    // if react-dom is genuinely unavailable for any reason — never crash
+    // the sheet over this.
+    console.warn(
+      "[BottomSheet] react-dom createPortal unavailable, falling back to in-place render:",
+      error,
+    );
+  }
+}
+
 export interface BottomSheetProps {
   /** Controls visibility. */
   visible: boolean;
@@ -211,6 +261,19 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             padding="none"
             borderRadius="xxl"
             contentStyle={styles.sheetContent}
+            // BUG FIX: without this, GlassCard/GlassView size their content
+            // wrapper to its CONTENT's intrinsic height instead of the
+            // definite height this sheetWrapper already provides via
+            // maxHeight — so a tall caller (e.g. SetLogModal, whose content
+            // wraps everything including its "Save set" footer in a
+            // ScrollView) overflowed past the sheet's visible/scrollable
+            // area entirely uncapped, making the footer button unreachable
+            // by any scroll on web. sheetWrapper (the Animated.View this
+            // GlassCard sits inside) DOES provide a definite bounded height
+            // here — see its `maxHeight: SCREEN_HEIGHT * maxHeightFraction`
+            // inline style above — satisfying fillHeight's documented
+            // precondition.
+            fillHeight
           >
             {/* Drag handle region — wrapped in PanGestureHandler so the
                 grabber + header drive drag-to-dismiss. The content below is a
@@ -273,7 +336,12 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   // accessibility, hidden-until-shown a11y tree).
   if (Platform.OS === "web") {
     if (!visible) return null;
-    return <View style={styles.webScrim}>{sheetBody}</View>;
+    const scrim = <View style={styles.webScrim}>{sheetBody}</View>;
+    const portalRoot = getWebPortalRoot();
+    if (webCreatePortal && portalRoot) {
+      return webCreatePortal(scrim, portalRoot);
+    }
+    return scrim; // defensive fallback if portal setup failed
   }
 
   return (
@@ -347,7 +415,12 @@ const styles = StyleSheet.create({
   title: {
     color: colors.text.primary,
     fontSize: rf(18),
-    fontWeight: "700",
+    // Was a bare numeric-weight style ("700") with no `fontFamily` — a no-op
+    // on RN (each Manrope weight is a separate font file) that fell back to
+    // the system font stack for every BottomSheet title app-wide. Found via
+    // a Stage 3 audit trace from the onboarding Medical & safety multiselect
+    // sheet.
+    fontFamily: "Manrope_700Bold",
     flex: 1,
     minWidth: 0,
     marginRight: rp(spacing.sm),

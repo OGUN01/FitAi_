@@ -31,6 +31,14 @@ import { hexToRgba } from '../../../utils/colors';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+// Steps run into the thousands quickly (8500+), where a comma-grouped number
+// reads noisier than a compact "8.5k" — same convention as ProfileStats.tsx.
+const formatSteps = (value: number): string => {
+  if (value >= 10000) return `${(value / 1000).toFixed(0)}k`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+  return value.toString();
+};
+
 // Ring configuration — the four Aurora ring colors (flat token strokes)
 const RINGS = {
   move: { color: colors.errorLight, icon: 'flame' as const },
@@ -423,8 +431,8 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = React.memo(
                     adjustsFontSizeToFit
                     minimumFontScale={0.8}
                   >
-                    {steps.toLocaleString()}
-                    <Text style={styles.chipUnit}>/{stepsGoal.toLocaleString()}</Text>
+                    {formatSteps(steps)}
+                    <Text style={styles.chipUnit}>/{formatSteps(stepsGoal)}</Text>
                   </Text>
                   <Text style={styles.chipLabel} numberOfLines={2}>
                     Steps
@@ -559,7 +567,6 @@ const styles = StyleSheet.create({
   chipUnit: {
     fontFamily: 'Manrope_500Medium',
     fontSize: rf(11),
-    fontWeight: '500',
     color: colors.textTertiary,
   },
   chipLabel: {

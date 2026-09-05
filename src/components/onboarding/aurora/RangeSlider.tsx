@@ -184,6 +184,30 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     [min, max, step, value, onChange]
   );
 
+  // Web keyboard support: `accessibilityRole="adjustable"` maps to `role=
+  // "slider"` in the DOM, but an ARIA role alone does not make an element
+  // keyboard-focusable or -operable — that needs an explicit `tabIndex` plus
+  // a real key handler. Without this, the ONLY way to operate this control
+  // on web was a pointer drag (confirmed live: `document.activeElement`
+  // never left `body` after tapping the track, and arrow-key presses did
+  // nothing at all) — a real keyboard-accessibility gap, since this control
+  // is used for onboarding fields like height/weight. Mirrors the exact
+  // increment/decrement step math already used for VoiceOver/TalkBack above.
+  const handleKeyDown = useCallback(
+    (event: { key: string; preventDefault?: () => void }) => {
+      let delta = 0;
+      if (event.key === "ArrowRight" || event.key === "ArrowUp") delta = step;
+      else if (event.key === "ArrowLeft" || event.key === "ArrowDown") delta = -step;
+      else if (event.key === "Home") delta = min - value;
+      else if (event.key === "End") delta = max - value;
+      else return;
+      event.preventDefault?.();
+      const next = Math.max(min, Math.min(max, value + delta));
+      onChange(next);
+    },
+    [min, max, step, value, onChange]
+  );
+
   return (
     <View style={[styles.container, style]} testID={testID}>
       <View
@@ -204,6 +228,11 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
           { name: "decrement", label: "Decrease" },
         ]}
         onAccessibilityAction={handleAccessibilityAction}
+        tabIndex={0}
+        // @ts-expect-error — `onKeyDown` is a react-native-web-only prop
+        // (forwarded straight to the DOM node), not present in React
+        // Native's core `ViewProps` typings; harmlessly ignored on native.
+        onKeyDown={handleKeyDown}
       >
         <Animated.View style={[styles.fill, fillStyle, { backgroundColor: accentColor }]} />
         <Animated.View style={[styles.thumbWrap, thumbStyle]}>

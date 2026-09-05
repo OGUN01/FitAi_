@@ -32,7 +32,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
-import { flatColors as colors, flatShadows, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors } from "../../theme/aurora-tokens";
 import { rf, rw, rp, rbr } from "../../utils/responsive";
 
 // ============================================================================
@@ -221,8 +221,11 @@ const styles = StyleSheet.create({
 
   // Active-step pill — flat accent fill (Editorial Dark: gradient is a scarce
   // brand resource, reserved for aurora/bloom moments, not the nav rail). The
-  // old glow shadow stack (shadowOpacity 0.55 / elevation 6 / boxShadow) is
-  // removed — depth comes from the hairline capsule, not cast shadows.
+  // old glow shadow stack (shadowOpacity 0.55 / elevation 6 / a web shadow
+  // style) was removed, but a residual small drop-shadow token spread
+  // (`rgba(0,0,0,0.1) 0px 1px 2px`) survived — a real Stage 3 audit finding
+  // (DESIGN.md §5: no drop shadows, anywhere). Depth comes from the hairline
+  // capsule + color contrast against the track, not a cast shadow.
   glowPill: {
     position: "absolute",
     top: 0,
@@ -230,7 +233,6 @@ const styles = StyleSheet.create({
     left: 0,
     borderRadius: rbr(999),
     backgroundColor: colors.primary,
-    ...flatShadows.sm,
   },
 
   segment: {
@@ -249,14 +251,19 @@ const styles = StyleSheet.create({
 
   segmentTitleActive: {
     fontSize: rf(9),
-    fontWeight: typography.fontWeight.extrabold,
+    // Same root cause as OnboardingTabBar's metaText/metaPct (Stage 3 audit
+    // finding): a bare numeric-weight style prop is a no-op on RN — each
+    // Manrope weight is a distinct font file, so this fell back to the
+    // system font. Use `fontFamily` per DESIGN.md §3.
+    fontFamily: "Manrope_800ExtraBold",
     letterSpacing: 1,
     color: colors.white,
   },
 
   segmentNumber: {
     fontSize: rf(10),
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: "Manrope_700Bold",
+    fontVariant: ["tabular-nums"],
     color: `${colors.white}59`,
   },
 

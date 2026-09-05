@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing, typography } from '../../../theme/aurora-tokens';
+import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
 import { rf, rw, rp, rs } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: rf(16),
-    fontWeight: typography.fontWeight.extrabold,
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.white,
   },
   greetingSection: {
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontSize: rf(13),
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
     flexShrink: 1,
   },
@@ -193,21 +193,21 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: rf(22),
-    fontWeight: typography.fontWeight.extrabold,
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.text,
     letterSpacing: -0.5,
     marginTop: rp(2),
   },
   dateText: {
     fontSize: rf(12),
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: "Manrope_500Medium",
     color: colors.text,
     marginTop: rp(2),
     opacity: 0.75,
   },
   dayLabel: {
     fontSize: rf(12),
-    fontWeight: typography.fontWeight.semibold,
+    fontFamily: "Manrope_600SemiBold",
     color: colors.primary,
   },
   rightSection: {
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   streakNumber: {
     fontSize: rf(15),
-    fontWeight: typography.fontWeight.extrabold,
+    fontFamily: "Manrope_800ExtraBold",
     color: colors.errorLight,
     fontVariant: ['tabular-nums'],
   },

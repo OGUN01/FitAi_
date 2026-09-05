@@ -1,7 +1,7 @@
 {
   "src/components/advanced": {
     "flatColors": 10,
-    "fontWeight": 52,
+    "fontWeight": 40,
     "GlassCard": 31
   },
   "src/components/advanced/multiselect": {
@@ -15,10 +15,6 @@
   "src/components": {
     "flatColors": 9,
     "fontWeight": 20
-  },
-  "src/components/auth": {
-    "flatColors": 2,
-    "fontWeight": 3
   },
   "src/components/charts": {
     "flatColors": 9,
@@ -102,7 +98,7 @@
   },
   "src/components/home": {
     "flatColors": 11,
-    "fontWeight": 12,
+    "fontWeight": 1,
     "GlassCard": 7
   },
   "src/components/icons": {
@@ -124,9 +120,8 @@
     "fontWeight": 12
   },
   "src/components/onboarding": {
-    "flatColors": 9,
-    "fontWeight": 22,
-    "boxShadow": 1
+    "flatColors": 7,
+    "fontWeight": 16
   },
   "src/components/onboarding/fresh": {
     "fontWeight": 2
@@ -152,23 +147,14 @@
     "fontWeight": 12
   },
   "src/components/settings": {
-    "flatColors": 6,
-    "fontWeight": 8,
-    "GlassCard": 16,
-    "elevationColon": 1,
-    "boxShadow": 1
+    "GlassCard": 12
   },
   "src/components/shared": {
     "fontWeight": 12
   },
-  "src/components/subscription/paywall": {
-    "flatColors": 2,
-    "fontWeight": 7
-  },
   "src/components/subscription": {
     "GlassCard": 1,
-    "flatColors": 2,
-    "fontWeight": 11
+    "flatColors": 1
   },
   "src/components/test": {
     "flatColors": 2,
@@ -176,13 +162,13 @@
   },
   "src/components/ui/aurora": {
     "GlassCard": 34,
-    "fontWeight": 31,
     "flatColors": 15,
     "shadowColor": 1,
-    "elevationColon": 2
+    "elevationColon": 2,
+    "fontWeight": 30
   },
   "src/components/ui": {
-    "fontWeight": 19,
+    "fontWeight": 13,
     "GlassCard": 22,
     "flatColors": 13,
     "shadowColor": 2,
@@ -208,10 +194,6 @@
   "src/hooks": {
     "fontWeight": 1,
     "flatColors": 4
-  },
-  "src/screens/auth": {
-    "flatColors": 2,
-    "fontWeight": 4
   },
   "src/screens": {
     "fontWeight": 6
@@ -247,12 +229,10 @@
   },
   "src/screens/main/home": {
     "GlassCard": 4,
-    "flatColors": 13,
-    "fontWeight": 40
+    "flatColors": 13
   },
   "src/screens/main/home/components": {
-    "flatColors": 1,
-    "fontWeight": 2
+    "flatColors": 1
   },
   "src/screens/main/profile/modals": {
     "GlassCard": 1
@@ -265,20 +245,13 @@
     "fontWeight": 2
   },
   "src/screens/profile": {
-    "flatColors": 1,
-    "fontWeight": 11
+    "flatColors": 1
   },
   "src/screens/session": {
     "fontWeight": 1
   },
   "src/screens/settings": {
-    "GlassCard": 3,
-    "flatColors": 6,
-    "fontWeight": 15
-  },
-  "src/screens/settings/components": {
-    "flatColors": 3,
-    "fontWeight": 3
+    "GlassCard": 3
   },
   "src/screens/workout": {
     "fontWeight": 24,

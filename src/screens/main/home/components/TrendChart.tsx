@@ -5,7 +5,7 @@ import Svg, {
   Circle,
   Line,
 } from "react-native-svg";
-import { flatColors as colors, borderRadius, border, typography } from "../../../../theme/aurora-tokens";
+import { flatColors as colors, borderRadius, border } from "../../../../theme/aurora-tokens";
 import { rf } from "../../../../utils/responsive";
 import { hexToRgba } from "../../../../utils/colors";
 
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   emptyChartText: {
     fontSize: rf(11),
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: "Manrope_500Medium",
     color: colors.textSecondary,
   },
 });

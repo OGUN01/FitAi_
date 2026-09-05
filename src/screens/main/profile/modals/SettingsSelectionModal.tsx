@@ -1,25 +1,25 @@
 /**
  * SettingsSelectionModal - Aurora 2026: bottom-sheet selection dialog.
- * Flat surface.2 panel over blur backdrop, option rows with radio-style check.
- * No GlassCard, no shadows, tokens only.
+ * Migrated off the centered CustomDialog/DialogShell pattern onto the shared
+ * `BottomSheet` primitive (Stage 3 bottom-sheet migration — DESIGN.md's
+ * modal-presentation standard). Flat surface.2 option rows, tokens only, no
+ * GlassCard, no shadows, no blur backdrop (BottomSheet owns its own
+ * animated scrim).
  */
 
 import React from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-import { BlurView } from "expo-blur";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../../../components/ui/aurora/AnimatedPressable";
-import { DialogShell } from "../../../../components/ui/CustomDialog";
+import { BottomSheet } from "../../../../components/ui/aurora/BottomSheet";
 import {
   colors,
   surface,
   border,
   spacing,
   typography,
-  borderRadius,
 } from "../../../../theme/aurora-tokens";
 import { rf, rw } from "../../../../utils/responsive";
-import { useReducedMotion } from "../../../../utils/accessibility/hooks";
 
 const { variants } = typography;
 
@@ -57,191 +57,153 @@ export const SettingsSelectionModal: React.FC<SettingsSelectionModalProps> = ({
   onClose,
   footerNote,
 }) => {
-  const reducedMotion = useReducedMotion();
-
   return (
-    <DialogShell
+    <BottomSheet
       visible={visible}
-      animationType={reducedMotion ? "none" : "fade"}
-      onRequestClose={onClose}
-      bare
+      onClose={onClose}
+      showCloseButton={false}
+      contentStyle={styles.content}
+      testID="settings-selection-sheet"
     >
-      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
-          the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
-      <View style={styles.root}>
-        <Pressable
-          onPress={onClose}
-          style={StyleSheet.absoluteFill}
-          accessibilityRole="button"
-          accessibilityLabel={`Dismiss ${title} dialog`}
+      {/* Custom header (icon + title/subtitle + close) — BottomSheet's own
+          title row only supports a plain string, not an icon avatar. */}
+      <View style={styles.headerRow}>
+        <View
+          style={[
+            styles.headerIconWrap,
+            { backgroundColor: `${iconColor}1F` },
+          ]}
         >
-          <BlurView intensity={80} style={styles.blurFill} />
-        </Pressable>
-        <View style={styles.dialogContainer} accessibilityRole="alert">
-              {/* Header */}
-              <View style={styles.headerRow}>
+          <Ionicons name={icon} size={rf(20)} color={iconColor} />
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          {subtitle && (
+            <Text style={styles.subtitle} numberOfLines={2}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        <AnimatedPressable
+          onPress={onClose}
+          scaleValue={0.9}
+          style={styles.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Close ${title}`}
+        >
+          <Ionicons name="close" size={rf(18)} color={colors.text.secondary} />
+        </AnimatedPressable>
+      </View>
+
+      <View style={styles.divider} />
+
+      <ScrollView
+        style={styles.optionsViewport}
+        contentContainerStyle={styles.optionsContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View
+          style={styles.optionsList}
+          accessibilityRole="radiogroup"
+          accessibilityLabel={title}
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === selectedValue;
+            const isDisabled = opt.disabled === true;
+
+            return (
+              <AnimatedPressable
+                key={opt.value}
+                onPress={() => {
+                  if (!isDisabled) {
+                    onSelect(opt.value);
+                  }
+                }}
+                scaleValue={isDisabled ? 1.0 : 0.97}
+                disabled={isDisabled}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={opt.label}
+                accessibilityHint={opt.description}
+                style={[
+                  styles.optionRow,
+                  isSelected && styles.optionRowSelected,
+                  isDisabled && styles.optionRowDisabled,
+                ]}
+              >
                 <View
                   style={[
-                    styles.headerIconWrap,
-                    { backgroundColor: `${iconColor}1F` },
+                    styles.optionIconWrap,
+                    isSelected && {
+                      backgroundColor: `${iconColor}2E`,
+                    },
                   ]}
                 >
-                  <Ionicons name={icon} size={rf(20)} color={iconColor} />
+                  <Ionicons
+                    name={opt.icon}
+                    size={rf(18)}
+                    color={isSelected ? iconColor : colors.text.secondary}
+                  />
                 </View>
-                <View style={styles.headerText}>
-                  <Text style={styles.title} numberOfLines={2}>
-                    {title}
+
+                <View style={styles.optionContent}>
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      isSelected && styles.optionLabelSelected,
+                      isDisabled && styles.optionLabelDisabled,
+                    ]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {opt.label}
                   </Text>
-                  {subtitle && (
-                    <Text style={styles.subtitle} numberOfLines={2}>
-                      {subtitle}
+                  {opt.description && (
+                    <Text
+                      style={styles.optionDescription}
+                      numberOfLines={3}
+                      ellipsizeMode="tail"
+                    >
+                      {opt.description}
                     </Text>
                   )}
                 </View>
-                <AnimatedPressable
-                  onPress={onClose}
-                  scaleValue={0.9}
-                  style={styles.closeBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Close ${title}`}
-                >
+
+                {isSelected && (
                   <Ionicons
-                    name="close"
-                    size={rf(18)}
-                    color={colors.text.secondary}
+                    name="checkmark-circle"
+                    size={rf(20)}
+                    color={iconColor}
                   />
-                </AnimatedPressable>
-              </View>
-
-              {/* Divider */}
-              <View style={styles.divider} />
-
-              <ScrollView
-                style={styles.optionsViewport}
-                contentContainerStyle={styles.optionsContent}
-                showsVerticalScrollIndicator={false}
-                bounces={false}
-              >
-                <View
-                  style={styles.optionsList}
-                  accessibilityRole="radiogroup"
-                  accessibilityLabel={title}
-                >
-                {options.map((opt) => {
-                  const isSelected = opt.value === selectedValue;
-                  const isDisabled = opt.disabled === true;
-
-                  return (
-                    <AnimatedPressable
-                      key={opt.value}
-                      onPress={() => {
-                        if (!isDisabled) {
-                          onSelect(opt.value);
-                        }
-                      }}
-                      scaleValue={isDisabled ? 1.0 : 0.97}
-                      disabled={isDisabled}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: isSelected }}
-                      accessibilityLabel={opt.label}
-                      accessibilityHint={opt.description}
-                      style={[
-                        styles.optionRow,
-                        isSelected && styles.optionRowSelected,
-                        isDisabled && styles.optionRowDisabled,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.optionIconWrap,
-                          isSelected && {
-                            backgroundColor: `${iconColor}2E`,
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={opt.icon}
-                          size={rf(18)}
-                          color={
-                            isSelected
-                              ? iconColor
-                              : colors.text.secondary
-                          }
-                        />
-                      </View>
-
-                      <View style={styles.optionContent}>
-                        <Text
-                          style={[
-                            styles.optionLabel,
-                            isSelected && styles.optionLabelSelected,
-                            isDisabled && styles.optionLabelDisabled,
-                          ]}
-                          numberOfLines={2}
-                          ellipsizeMode="tail"
-                        >
-                          {opt.label}
-                        </Text>
-                        {opt.description && (
-                          <Text
-                            style={styles.optionDescription}
-                            numberOfLines={3}
-                            ellipsizeMode="tail"
-                          >
-                            {opt.description}
-                          </Text>
-                        )}
-                      </View>
-
-                      {isSelected && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={rf(20)}
-                          color={iconColor}
-                        />
-                      )}
-                    </AnimatedPressable>
-                  );
-                })}
-                </View>
-
-                {/* Footer note */}
-                {footerNote && (
-                  <View style={styles.footerNoteWrap}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      size={rf(14)}
-                      color={colors.text.tertiary}
-                    />
-                    <Text style={styles.footerNoteText}>{footerNote}</Text>
-                  </View>
                 )}
-              </ScrollView>
-            </View>
-      </View>
-    </DialogShell>
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+
+        {/* Footer note */}
+        {footerNote && (
+          <View style={styles.footerNoteWrap}>
+            <Ionicons
+              name="information-circle-outline"
+              size={rf(14)}
+              color={colors.text.tertiary}
+            />
+            <Text style={styles.footerNoteText}>{footerNote}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  blurFill: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  dialogContainer: {
-    width: "88%",
-    maxWidth: 380,
-    backgroundColor: surface[2],
-    borderRadius: borderRadius.card,
-    borderWidth: 1,
-    borderColor: border.subtle,
-    padding: spacing.lg,
-    maxHeight: "85%",
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
   headerRow: {
     flexDirection: "row",
@@ -280,7 +242,7 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: border.DEFAULT,
-    marginVertical: spacing.sm,
+    marginBottom: spacing.sm,
   },
   optionsList: {
     gap: spacing.xs,

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { rf, rp, rbr } from "../../utils/responsive";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import { flatColors as colors } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 
 // ============================================================================
 // Types
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
   compactLabel: {
     fontSize: rf(11),
     color: COLOR_MUTED,
-    fontWeight: "500",
+    fontFamily: FONT_FAMILY.medium,
   },
   compactValueRow: {
     flexDirection: "row",
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
   },
   compactValue: {
     fontSize: rf(12),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   dotSmall: {
     width: rp(6),
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   detailedLabel: {
     fontSize: rf(12),
     color: COLOR_MUTED,
-    fontWeight: "500",
+    fontFamily: FONT_FAMILY.medium,
     marginBottom: rp(2),
   },
   detailedValueRow: {
@@ -175,12 +176,12 @@ const styles = StyleSheet.create({
   },
   detailedValue: {
     fontSize: rf(14),
-    fontWeight: "700",
+    fontFamily: FONT_FAMILY.bold,
   },
   detailedRemaining: {
     fontSize: rf(11),
     color: COLOR_MUTED,
-    fontWeight: "400",
+    fontFamily: FONT_FAMILY.regular,
   },
   dot: {
     width: rp(8),

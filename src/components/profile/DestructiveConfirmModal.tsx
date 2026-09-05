@@ -1,8 +1,11 @@
 /**
- * DestructiveConfirmModal - Aurora 2026: shared destructive-action confirmation dialog.
+ * DestructiveConfirmModal - Aurora 2026: shared destructive-action confirmation.
  *
- * Flat surface.2 panel over a BlurView backdrop, destructive (error) CTA.
- * No GlassCard, no LinearGradient, no heavy shadow — depth comes from the
+ * Migrated off the centered CustomDialog/DialogShell + BlurView-backdrop
+ * pattern onto the shared `BottomSheet` primitive (Stage 3 bottom-sheet
+ * migration — DESIGN.md's modal-presentation standard: centered `RNModal`
+ * overlays are retired in favor of the app's bottom-sheet pattern). Flat
+ * surface content, no GlassCard, no heavy shadow — depth comes from the
  * hairline border + surface step, per Editorial Dark. This is the single
  * confirmation surface used by every destructive account action (sign out,
  * unlink Google, delete account, clear cache) so the app never mixes a
@@ -14,24 +17,13 @@
  */
 
 import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
-import { BlurView } from "expo-blur";
+import { View, Text, StyleSheet, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
-import { DialogShell } from "../ui/CustomDialog";
+import { BottomSheet } from "../ui/aurora/BottomSheet";
 import {
   colors,
-  surface,
   border,
   spacing,
   typography,
@@ -96,144 +88,93 @@ export const DestructiveConfirmModal: React.FC<
   const isConfirmDisabled = isLoading || !isTypedMatchSatisfied;
 
   return (
-    <DialogShell
+    <BottomSheet
       visible={visible}
-      animationType="fade"
-      onRequestClose={isLoading ? undefined : onCancel}
-      bare
+      onClose={isLoading ? () => {} : onCancel}
+      showCloseButton={false}
+      closeOnOverlayPress={!isLoading}
+      dismissOnDrag={!isLoading}
+      contentStyle={styles.content}
+      testID="destructive-confirm-sheet"
     >
-      {/* Web-safe DOM: backdrop Pressable is an absolute-fill SIBLING behind
-          the dialog (never an ancestor) — see AdjustmentWizard.tsx. */}
-      <View style={styles.root}>
-        <Pressable
-          onPress={isLoading ? undefined : onCancel}
-          disabled={isLoading}
-          style={StyleSheet.absoluteFill}
-          accessibilityRole="button"
-          accessibilityLabel={`Cancel ${title}`}
-        >
-          <BlurView intensity={80} style={styles.blurFill} />
-        </Pressable>
-        <KeyboardAvoidingView
-          style={styles.keyboardArea}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <ScrollView
-            style={styles.scrollViewport}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
+      <View accessibilityRole="alert">
+        {/* Icon */}
+        <View style={styles.iconContainer}>
+          <View style={styles.iconSquircle}>
+            <Ionicons name={icon} size={rf(28)} color={colors.error.DEFAULT} />
+          </View>
+        </View>
+
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.message}>{message}</Text>
+
+        {isTypedMatchRequired && (
+          <View style={styles.typedFieldWrap}>
+            {typedConfirmationLabel && (
+              <Text style={styles.typedFieldLabel}>
+                {typedConfirmationLabel}
+              </Text>
+            )}
+            <TextInput
+              style={styles.typedField}
+              value={typedValue}
+              onChangeText={setTypedValue}
+              placeholder={requireTypedConfirmation}
+              placeholderTextColor={colors.text.tertiary}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!isLoading}
+              returnKeyType="done"
+              selectionColor={colors.error.DEFAULT}
+              accessibilityLabel={`Type ${requireTypedConfirmation} to confirm`}
+            />
+          </View>
+        )}
+
+        <View style={styles.actions}>
+          <AnimatedPressable
+            style={[styles.button, styles.cancelButton]}
+            onPress={onCancel}
+            scaleValue={0.97}
+            disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={cancelLabel}
           >
-            <View style={styles.dialogContainer} accessibilityRole="alert">
-              {/* Icon */}
-              <View style={styles.iconContainer}>
-                <View style={styles.iconSquircle}>
-                  <Ionicons name={icon} size={rf(28)} color={colors.error.DEFAULT} />
-                </View>
-              </View>
+            <Text style={styles.cancelButtonText} numberOfLines={2}>
+              {cancelLabel}
+            </Text>
+          </AnimatedPressable>
 
-              <Text style={styles.title}>{title}</Text>
-              <Text style={styles.message}>{message}</Text>
-
-              {isTypedMatchRequired && (
-                <View style={styles.typedFieldWrap}>
-                  {typedConfirmationLabel && (
-                    <Text style={styles.typedFieldLabel}>
-                      {typedConfirmationLabel}
-                    </Text>
-                  )}
-                  <TextInput
-                    style={styles.typedField}
-                    value={typedValue}
-                    onChangeText={setTypedValue}
-                    placeholder={requireTypedConfirmation}
-                    placeholderTextColor={colors.text.tertiary}
-                    autoCapitalize="characters"
-                    autoCorrect={false}
-                    editable={!isLoading}
-                    returnKeyType="done"
-                    selectionColor={colors.error.DEFAULT}
-                    accessibilityLabel={`Type ${requireTypedConfirmation} to confirm`}
-                  />
-                </View>
-              )}
-
-              <View style={styles.actions}>
-                <AnimatedPressable
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={onCancel}
-                  scaleValue={0.97}
-                  disabled={isLoading}
-                  accessibilityRole="button"
-                  accessibilityLabel={cancelLabel}
-                >
-                  <Text style={styles.cancelButtonText} numberOfLines={2}>
-                    {cancelLabel}
-                  </Text>
-                </AnimatedPressable>
-
-                <AnimatedPressable
-                  style={[
-                    styles.button,
-                    styles.confirmButton,
-                    isConfirmDisabled && styles.confirmButtonDisabled,
-                  ]}
-                  onPress={onConfirm}
-                  scaleValue={0.97}
-                  disabled={isConfirmDisabled}
-                  accessibilityRole="button"
-                  accessibilityLabel={confirmLabel}
-                >
-                  {isLoading ? (
-                    <AuroraSpinner customSize={rf(16)} theme="dark" />
-                  ) : (
-                    <Text style={styles.confirmButtonText} numberOfLines={2}>
-                      {confirmLabel}
-                    </Text>
-                  )}
-                </AnimatedPressable>
-              </View>
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          <AnimatedPressable
+            style={[
+              styles.button,
+              styles.confirmButton,
+              isConfirmDisabled && styles.confirmButtonDisabled,
+            ]}
+            onPress={onConfirm}
+            scaleValue={0.97}
+            disabled={isConfirmDisabled}
+            accessibilityRole="button"
+            accessibilityLabel={confirmLabel}
+          >
+            {isLoading ? (
+              <AuroraSpinner customSize={rf(16)} theme="dark" />
+            ) : (
+              <Text style={styles.confirmButtonText} numberOfLines={2}>
+                {confirmLabel}
+              </Text>
+            )}
+          </AnimatedPressable>
+        </View>
       </View>
-    </DialogShell>
+    </BottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  blurFill: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  keyboardArea: {
-    flex: 1,
-    width: "100%",
-  },
-  scrollViewport: {
-    flex: 1,
-    width: "100%",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: spacing.lg,
-  },
-  dialogContainer: {
-    width: "85%",
-    maxWidth: 340,
-    backgroundColor: surface[2],
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: border.subtle,
-    padding: spacing.lg,
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
     alignItems: "center",
   },
   iconContainer: {
@@ -278,7 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: border.subtle,
-    backgroundColor: surface[1],
+    backgroundColor: colors.background.secondary,
     color: colors.text.primary,
     paddingHorizontal: spacing.md,
     textAlign: "center",
@@ -297,7 +238,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   cancelButton: {
-    backgroundColor: surface[1],
+    backgroundColor: colors.background.secondary,
     borderWidth: 1,
     borderColor: border.subtle,
   },

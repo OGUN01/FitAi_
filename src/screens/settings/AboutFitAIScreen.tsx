@@ -19,7 +19,8 @@ import { AboutFitAIFeatureCard } from "../../components/settings/AboutFitAIFeatu
 import { AboutFitAISocialButtons } from "../../components/settings/AboutFitAISocialButtons";
 import { useAboutFitAILogic } from "../../hooks/useAboutFitAILogic";
 
-import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh } from "../../utils/responsive";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 
@@ -86,7 +87,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
             <View style={styles.missionCard}>
               <View style={styles.missionIconContainer}>
                 <View style={styles.missionIcon}>
-                  <Ionicons name="heart-outline" size={rf(24)} color={colors.primary} />
+                  <Ionicons name="heart-outline" size={rf(24)} color={colors.primary.DEFAULT} />
                 </View>
               </View>
               <Text style={styles.missionTitle}>Our Mission</Text>
@@ -103,7 +104,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="star-outline"
                 size={rf(14)}
-                color={colors.textSecondary}
+                color={colors.text.secondary}
               />
               <Text style={styles.sectionTitle}>Key Features</Text>
             </View>
@@ -125,14 +126,14 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="thumbs-up-outline"
                 size={rf(14)}
-                color={colors.textSecondary}
+                color={colors.text.secondary}
               />
               <Text style={styles.sectionTitle}>Support FitAI</Text>
             </View>
 
             <AboutFitAIActionItem
               icon="star-outline"
-              iconColor={colors.warning}
+              iconColor={colors.warning.DEFAULT}
               title="Rate FitAI"
               description="Enjoying FitAI? Leave us a review on the store"
               onPress={handleRateApp}
@@ -143,7 +144,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="share-social-outline"
-              iconColor={colors.success}
+              iconColor={colors.success.DEFAULT}
               title="Share with Friends"
               description="Invite friends to join your fitness journey"
               onPress={handleShareApp}
@@ -154,7 +155,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="globe-outline"
-              iconColor={colors.info}
+              iconColor={colors.info.DEFAULT}
               title="Visit Our Website"
               description="Learn more about FitAI and our services"
               onPress={handleWebsite}
@@ -168,7 +169,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="share-social-outline"
                 size={rf(14)}
-                color={colors.textSecondary}
+                color={colors.text.secondary}
               />
               <Text style={styles.sectionTitle}>Follow Us</Text>
             </View>
@@ -182,14 +183,14 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Ionicons
                 name="document-outline"
                 size={rf(14)}
-                color={colors.textSecondary}
+                color={colors.text.secondary}
               />
               <Text style={styles.sectionTitle}>Legal</Text>
             </View>
 
             <AboutFitAIActionItem
               icon="document-text-outline"
-              iconColor={colors.textSecondary}
+              iconColor={colors.text.secondary}
               title="Terms of Service"
               description="Review our terms and conditions"
               onPress={handleTermsOfService}
@@ -198,7 +199,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="shield-outline"
-              iconColor={colors.textSecondary}
+              iconColor={colors.text.secondary}
               title="Privacy Policy"
               description="Learn how we protect your data"
               onPress={handlePrivacyPolicy}
@@ -207,7 +208,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <AboutFitAIActionItem
               icon="code-slash-outline"
-              iconColor={colors.textSecondary}
+              iconColor={colors.text.secondary}
               title="Open Source Licenses"
               description="Third-party libraries we use"
               onPress={handleOpenSourceLicenses}
@@ -227,7 +228,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
             </Text>
             <View style={styles.madeWithRow}>
               <Text style={styles.copyrightText}>Made with </Text>
-              <Ionicons name="heart" size={rf(12)} color={colors.error} />
+              <Ionicons name="heart" size={rf(12)} color={colors.error.DEFAULT} />
               <Text style={styles.copyrightText}> for fitness enthusiasts</Text>
             </View>
           </Animated.View>
@@ -262,35 +263,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.md,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
   },
   appLogoText: {
+    fontFamily: FONT_FAMILY.extrabold,
     fontSize: rf(32),
-    fontWeight: "800",
-    color: colors.white,
+    // Near-black, not white — white-on-#FF6B35 computes to ~2.84:1, failing
+    // even the relaxed 3:1 large-text WCAG threshold. Near-black clears
+    // 7:1+ (same fix already applied to GlassButton's primary-variant label
+    // and DestructiveConfirmModal's confirm button).
+    color: colors.background.DEFAULT,
   },
   appName: {
+    fontFamily: FONT_FAMILY.extrabold,
     fontSize: rf(24),
-    fontWeight: "800",
-    color: colors.white,
+    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   appTagline: {
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
     marginBottom: spacing.sm,
   },
   versionBadge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.full,
   },
   versionText: {
+    fontFamily: FONT_FAMILY.medium,
     fontSize: rf(11),
-    color: colors.textMuted,
-    fontWeight: "500",
+    color: colors.text.tertiary,
   },
   // Flat surface + hairline (Editorial Dark: no glass/gradient/elevation).
   missionCard: {
@@ -312,19 +317,19 @@ const styles = StyleSheet.create({
     borderRadius: rw(24),
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.primaryTint,
+    backgroundColor: `${colors.primary.DEFAULT}1A`,
     borderWidth: 1,
-    borderColor: colors.primaryFaded,
+    borderColor: `${colors.primary.DEFAULT}4D`,
   },
   missionTitle: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(18),
-    fontWeight: "700",
-    color: colors.white,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
   },
   missionText: {
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: rf(22),
   },
@@ -339,9 +344,9 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   sectionTitle: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 1,
   },
@@ -356,7 +361,7 @@ const styles = StyleSheet.create({
   },
   copyrightText: {
     fontSize: rf(11),
-    color: colors.textMuted,
+    color: colors.text.tertiary,
     textAlign: "center",
   },
   madeWithRow: {

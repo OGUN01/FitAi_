@@ -9,7 +9,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, surface, spacing, typography } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rp, rs, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 
 const { variants } = typography;
@@ -78,7 +78,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({
           </LinearGradient>
           {/* Edit badge */}
           <View style={styles.editBadge}>
-            <Ionicons name="create-outline" size={rf(11)} color={colors.text.primary} />
+            <Ionicons name="create-outline" size={rs(11)} color={colors.text.primary} />
           </View>
         </View>
       </Pressable>
@@ -111,10 +111,15 @@ const AVATAR_RADIUS = AVATAR_SIZE / 2;
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    paddingTop: spacing.lg,
+    // rp()-scaled to match every other padding value on this screen — was
+    // a raw, unscaled spacing.lg.
+    paddingTop: rp(spacing.lg),
     paddingBottom: spacing.lg,
     paddingHorizontal: spacing.lg,
-    backgroundColor: surface[0],
+    // No backgroundColor: this sits directly on the animated
+    // AuroraBackground. An opaque surface[0] band here painted over it and
+    // formed a hard seam where the header ended — the "clipped top banner"
+    // report.
   },
   pressed: {
     opacity: 0.85,

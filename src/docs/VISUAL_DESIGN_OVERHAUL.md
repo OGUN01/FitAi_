@@ -40,9 +40,11 @@ accurate) rather than re-deriving them.
 2. Button language: **onboarding's flat CTA wins app-wide** — retires
    `GlassButton`'s gradient variants (3 of 5 are unmodified Material Design
    2014 stock colors).
-3. Palette: **onboarding's values are now canonical app-wide** (done — see
-   Stage 0 below): bg `#050505`, text.primary `#F5F5F5`, text.secondary 55%
-   white, text.tertiary 34% white.
+3. Palette: **onboarding's values are now canonical app-wide, with one
+   deliberate deviation** (done — see Stage 0 below): bg `#050505`,
+   text.primary `#F5F5F5`, text.secondary 55% white, text.tertiary **50%**
+   white — NOT onboarding's literal 34%, which failed WCAG AA on this app's
+   backgrounds (see the Stage 0 checklist's WCAG-regression entry below).
 4. Automated drift guard required: jest ratchet test + ESLint rule.
 5. Rollout: staged, auto-continue — verify each stage, proceed without
    stopping to ask.
@@ -94,7 +96,9 @@ fresh worktrees; if a worktree's diff looks unexpectedly large, check
       systems into one canonical standard.
 - [x] `src/theme/aurora-tokens.ts` palette updated to the canonical values
       (`background.DEFAULT` → `#050505`, `text.primary` → `#F5F5F5`,
-      `text.secondary` → 55% white, `text.tertiary`/`.muted` → 34% white).
+      `text.secondary` → 55% white, `text.tertiary`/`.muted` → **50%** white —
+      see the WCAG-regression entry below for why this isn't onboarding's
+      literal 34%).
 - [x] `src/components/onboarding/fresh/tokens.ts` now re-exports these
       values from `aurora-tokens.ts` instead of hardcoding them a second
       time (single SSOT).
@@ -281,12 +285,199 @@ work depends on same-session uncommitted changes.
       round's reconciliation was the final word.
 
 ### Stage 3 — Remaining app-wide sweep
-- [ ] Home/Profile/Onboarding polish (Get Started CTA font, Continue as
-      Guest touch target, any other harness-flagged issue).
+- [x] **Home/Profile/Onboarding polish (Lane A)** — verified all 4 named
+      priority findings against current `master`, fixed each at its real
+      root cause, then found and fixed the same bug class across the rest of
+      Home/Profile/Onboarding while sweeping.
+      **Welcome screen**: "Get Started" CTA was ALREADY fixed (a Stage 1
+      side-effect — `GlassButton`'s label got `fontFamily: "Manrope_700Bold"`
+      during its flat reskin), confirmed live via `getComputedStyle`. But
+      `footerText` ("Already have an account? " / "Don't have an account? ")
+      and `dividerText` ("or sign in with email") had NO `fontFamily` at
+      all — fixed both
+      (`src/screens/onboarding/WelcomeScreen.tsx`). "Continue as Guest"
+      measured a real 22px-tall touch target (BUTTON element, Text-only
+      content, no `minHeight`) — added a `continueGuestButton` style
+      (`minHeight: 44`); left the inline "Sign In"/"Sign Up" links alone
+      since those sit inside a sentence (WCAG 2.5.8's inline-text-link
+      exception applies, unlike the standalone Guest button).
+      **Onboarding Body Analysis (Body tab, step 3/5)**: root-caused the
+      "STEP X OF 5"/percentage-label system-font finding to
+      `src/components/onboarding/OnboardingTabBar.tsx` (`metaText`/`metaPct`)
+      and `src/components/onboarding/AuroraStepRail.tsx`
+      (`segmentTitleActive`/`segmentNumber`) — all four had a bare
+      RN style-weight prop and NO `fontFamily`, which is a no-op on RN (each
+      Manrope weight is a separate font file), so they fell back to the
+      system font stack app-wide (this rail renders on every onboarding
+      screen, not just Body). Fixed all four with explicit `fontFamily`.
+      The residual box-shadow (`~71×44` orange element,
+      `rgba(0,0,0,0.1) 0px 1px 2px`) was the SAME component's `glowPill` (the
+      active-step pill in `AuroraStepRail.tsx`) — live-measured at
+      70.8×44px, confirming the match — carrying a leftover
+      `...flatShadows.sm` spread; removed it entirely (no replacement
+      hairline needed — depth already comes from the capsule fill/contrast).
+      Live-verified via a full scripted sign-up + onboarding walkthrough
+      (throwaway Supabase test account, deleted after) that Welcome,
+      Sign-In, and all 5 onboarding tabs (Personal/Diet/Body/Workout/Review)
+      now scan at 0 off-Manrope text nodes and 0 real `boxShadow` hits.
+      The height/weight/BMI/"— %" readouts named in the original finding
+      were traced to `MeasurementsSection.tsx`/`GoalVisualizationSection.tsx`/
+      `BodyCompositionSection.tsx` — all were ALREADY correct (`font.light`/
+      `freshType.*`, which bake in `fontFamily`); the live scan confirms zero
+      remaining hits there, so that part of the original finding no longer
+      reproduces (likely fixed incidentally by Stage 1's token work).
+      **New findings from the same root-cause pattern, same live sweep**:
+      - `src/components/advanced/MultiSelectWithCustom.tsx` (used by the
+        Body tab's Medical & safety section) had ZERO `fontFamily` anywhere
+        in the file — every label/placeholder/option/search-input Text
+        fell back to system font. Fixed all 10 affected styles.
+      - `src/components/ui/aurora/BottomSheet.tsx`'s `title` style (shared
+        app-wide primitive — every bottom sheet's title, not just
+        onboarding's) had the same bare-weight-no-family bug. Fixed.
+      - `src/components/ui/OnboardingCompleteModal.tsx` ("You're All Set!"
+        hand-off screen right after onboarding) — 6 styles had the same bug
+        across `title`/`subtitle`/`userName`/`description`/`statLabel`/
+        `statValue`/`featureText`; fixed all.
+      - A full live sweep of the actual Home screen (reached by completing
+        onboarding end-to-end on the throwaway account) found the SAME bug
+        class in 10 of its files — essentially the entire screen was
+        rendering on the system font: `BodyProgressCard.tsx` (12 styles),
+        `HomeHeader.tsx` (6), `home/components/TrendChart.tsx` (1),
+        `GuestPromptBanner.tsx` (2), `QuickActions.tsx` (2),
+        `SyncStatusIndicator.tsx` (3), `WeeklyMiniCalendar.tsx` (3, two of
+        which had a REAL bare-weight-only override that silently failed to
+        render bold even though the base style did have a family),
+        `DailyProgressRings.tsx` (1 redundant no-op, base style already had
+        `fontFamily`), `src/components/home/EmptyMealsMessage.tsx` (3),
+        `src/components/home/EmptyCalendarMessage.tsx` (3),
+        `src/components/home/HealthIntelligencePlaceholder.tsx` (3),
+        `src/components/home/GapSummary.tsx` (3, including a "Food"/"Burn"
+        label style with no font styling at all). Fixed all. Re-verified
+        live post-fix: Home screen (initial render + scrolled) now scans at
+        0 off-Manrope nodes, 0 `boxShadow` hits.
+      - Two real sub-44px touch targets found during the same live sweep and
+        fixed: `BodyProgressCard.tsx`'s whole-card-header Pressable
+        ("View Progress", 324×25 measured) — added `minHeight: 44`; and
+        `ProfileScreen.tsx`'s "quick jump" section chips (introduced in a
+        recent commit, `af54e03c`) — explicit `minHeight: 36`, bumped to 44.
+      - Profile screen scan otherwise clean (0 off-font hits). One residual
+        `boxShadow` hit is `<Switch>` (React Native's built-in component,
+        wrapped by `GlassFormSwitch.tsx`) — react-native-web renders the
+        native thumb with its own internal drop-shadow that isn't exposed
+        via our StyleSheet API; not fixable without replacing the native
+        control with a fully custom toggle. Logged in Backlog rather than
+        forced, since DESIGN.md's shadow ban is aimed at app-authored
+        styles, not a platform control's internal rendering.
+      **Root-cause pattern worth flagging explicitly for future rounds**:
+      every one of the above bugs shares the same mechanism — `App.tsx` sets
+      a global `Text.defaultProps.style` Manrope fallback, but that only
+      applies when a component's `style` prop is `undefined`; any component
+      that always passes its own `style={styles.x}` (the overwhelming norm
+      in this codebase) permanently opts out of that fallback, so a style
+      object missing `fontFamily` silently renders system font with no
+      visible error. Grepping for a bare RN font-weight style prop with no
+      sibling `fontFamily` in the same object is a fast, mechanical way to
+      find the next batch of these; it is NOT equivalent to grepping for
+      that prop generically, since plenty of correct styles legitimately
+      spread in a `typography.variants.*`/`fresh/tokens type.*` object that
+      already carries `fontFamily` first.
+      **Verification**: `npx tsc --noEmit -p .` clean, full `npx jest --silent`
+      clean (153/153 suites, 1466/1466 tests) throughout. Conformance
+      baseline regenerated at the end of this round (see below).
 - [ ] Progress/Analytics chart-stack modernization scoped as its own
       sub-task (Skia press-state `ChartCallout` — the one genuine kit gap).
-- [ ] Profile/Settings/Subscription/Paywall/Auth: bottom-sheet migration for
-      centered modals, legacy form primitive retirement.
+- [x] **Profile/Settings/Subscription/Paywall/Auth (Lane B)** — bottom-sheet
+      migration for centered modals done for the two real, in-scope call
+      sites: `src/screens/main/profile/modals/SettingsSelectionModal.tsx`
+      and `src/components/profile/DestructiveConfirmModal.tsx` (used by
+      `LogoutConfirmationModal`, `ClearCacheConfirmModal`,
+      `DeleteAccountConfirmModal`, and directly by `ProfileScreen.tsx`) —
+      both rewritten off the centered `CustomDialog`/`DialogShell` +
+      `BlurView`-backdrop pattern onto the shared `BottomSheet` primitive.
+      `src/components/ui/Modal.tsx` does not actually exist in this repo
+      (only `CustomDialog.tsx` does) — the task brief's reference to it was
+      stale, verified via search before acting.
+      **Legacy form primitive retirement**: `src/components/ui/Input.tsx` /
+      `PasswordInput.tsx` were found to be dead code — zero real importers
+      anywhere (`PasswordResetScreen.tsx`, the one auth screen in scope,
+      already uses `UnderlineInput`; no other in-scope auth screen imports
+      them). Left in place for Stage 4's dead-file pass rather than deleting
+      unilaterally (out of this task's stated scope), documented in Backlog
+      below.
+      **PaywallModal.tsx**: fixed the hardcoded `rgba(59,130,246,0.10)` /
+      `rgba(59,130,246,0.25)` "Sign in required" banner (now a governed
+      `colors.info` tint, matching its own icon/title color — was an
+      off-token Tailwind blue) and a full `flatColors`/raw-`fontWeight`
+      sweep. Also fixed real bugs found while in the file: `PlanCard.tsx`'s
+      "MOST POPULAR"/"BEST VALUE" badge was a `LinearGradient` (decorative
+      gradient filler, banned) — now a flat `colors.primary.DEFAULT` fill;
+      its label and the badge icon were white-on-orange (fails WCAG, see
+      Backlog) — now near-black. `TrustRow.tsx`'s row was a flat
+      `glassSurface`/`glassBorder` box nested inside the paywall sheet's own
+      surface — a "card inside a card" per DESIGN.md's max-1-surface-depth
+      rule — made transparent instead.
+      **Full token/typography sweep across the rest of Lane B's scope**:
+      ran the conformance scanner against every directory in scope, then
+      fixed every real `fontWeight`/`flatColors`/`boxShadow`/`elevation:`
+      hit found (not just the 4 named priority files) across
+      `src/components/settings/**`, `src/screens/settings/**` (incl. its
+      `components/` subdir), `src/screens/profile/SubscriptionManagement.tsx`,
+      `src/components/subscription/**` (incl. `paywall/`),
+      `src/components/auth/**`, `src/screens/auth/PasswordResetScreen.tsx`.
+      Real bugs caught along the way (beyond simple token renames):
+      - `src/components/settings/AppInfoCard.tsx` was dead code (zero
+        importers, a stale duplicate of the live
+        `src/screens/main/profile/AppInfoCard.tsx`) — deleted outright,
+        matching the Stage 1 precedent (dead `FitnessHeader.tsx`).
+      - Five files (`AboutFitAISocialButtons.tsx`, `AboutFitAIFeatureCard.tsx`
+        in `components/settings/`, plus the now-deleted `AppInfoCard.tsx`)
+        overrode `GlassCard`'s own flat surface fill with
+        `backgroundColor: colors.glassSurface` (the pre-Stage-1 blur-tint
+        value) passed via the `style` prop — silently re-introducing the
+        retired glass look on top of the reskinned component. Removed the
+        override (and the now-redundant `blurIntensity="light"` prop) so
+        `GlassCard`'s own flat fill actually renders.
+      - Same glass-tint-reintroduction bug, different shape, in
+        `AboutFitAIScreen.tsx` (`versionBadge`), `PlanCard.tsx`
+        (`cardCurrent` border), `TrustRow.tsx` (see above), and
+        `SubscriptionManagement.tsx` (4 occurrences: back button, progress
+        track, feature-flag chip, action row) — all used `colors.glassSurface`
+        as a plain flat-fill color, not for any actual blur. Routed through
+        `surface[2]` (the correct flat token for a raised control) instead.
+      - `src/screens/settings/components/ExpoGoMessage.tsx` had a decorative
+        `LinearGradient` icon-tile fill (`[colors.warning, colors.primaryDark]`)
+        — banned per DESIGN.md's de-gradient rule (not a genuine brand
+        moment). Replaced with a flat `colors.warning.DEFAULT` fill.
+      - Two more WCAG contrast bugs matching the pattern already fixed once
+        in `DestructiveConfirmModal.tsx` (white text/icon on the solid
+        `colors.primary.DEFAULT` #FF6B35 fill, ~2.84:1, fails even the
+        relaxed 3:1 large-text threshold): `AboutFitAIScreen.tsx`'s "F" logo
+        glyph + `DescriptionCard.tsx`'s scheduled-count badge. Both now
+        near-black text on the orange fill (7:1+), matching
+        `GlassButton`'s own documented primary-variant label convention.
+      `UsageCounter.tsx` and `SettingsSection.tsx`'s `flatColors.gold`/
+      `successAlt`/`warningAlt`/`errorAlt`/`muted` usages were deliberately
+      left on `flatColors` — DESIGN.md explicitly freezes that accent-palette
+      subset for existing consumers ("never add new entries or new
+      consumers", not "migrate existing ones"), and forcing a migration
+      would mean inventing new token names DESIGN.md doesn't define.
+      `src/screens/profile/SubscriptionManagement.tsx` similarly keeps
+      `flatColors` for its mixed accent set (`errorAlt`/`muted`/`successAlt`/
+      `successBright`/`warningAlt`/`blue`) for the same reason — only its
+      `glassSurface` bug (above) and raw `fontWeight` were fixed.
+      **Spot-checked** `src/screens/main/profile/SettingsSection.tsx` (the
+      designated reference pattern) — still clean, used as the template for
+      the grouped-list surface throughout this pass; no changes needed.
+      **Verification**: `npx tsc --noEmit -p .` clean throughout. Full
+      `npx jest --silent` clean (153/153 suites, 1466/1466 tests) — one test
+      (`TouchChrome.test.tsx`) needed its own local mock updated to stub the
+      newly-introduced `BottomSheet` import (its local `jest.mock("react-native", ...)`
+      override didn't provide `useSafeAreaInsets`, which real `BottomSheet`
+      needs); a second test file
+      (`OpaqueOverlaySurfaces.test.tsx`) already had comments anticipating
+      this exact migration ("LogoutConfirmationModal migrated to a flat
+      surface[2] dialog... no GlassCard") and passed against the real
+      `BottomSheet` with zero changes needed.
 - [ ] Full `browser_evaluate` harness sweep across all ~25 screens reachable
       from `MainNavigation.tsx`, both viewports (navigation is state-driven,
       not URL-routed — must drive via taps).
@@ -306,25 +497,27 @@ work depends on same-session uncommitted changes.
       white as the canonical `text.tertiary`/`.muted` instead — see Stage 0
       checklist for full detail. `src/utils/accessibility/contrast.ts` also
       extended to handle `rgba()` color strings (previously hex-only).
-- [ ] **Welcome screen: "Get Started" CTA + "Already have an account?" text
-      render on the system font stack, not Manrope.** Found via the live
-      Playwright conformance check during Stage 0 verification. Deferred to
-      Stage 3 (Home/Profile/Onboarding polish) since it's outside Stage 0's
-      scope (token values only).
-- [ ] **Onboarding Body Analysis screen (Personal→Body step 3/5): several
+- [x] **Welcome screen: "Get Started" CTA + "Already have an account?" text
+      render on the system font stack, not Manrope.** Resolved in Stage 3
+      Lane A. "Get Started" turned out to already be fixed as a Stage 1
+      side-effect (`GlassButton`'s reskin). "Already have an account?" /
+      "Don't have an account?" (`footerText`) and "or sign in with email"
+      (`dividerText`) genuinely had no `fontFamily` — fixed. See Stage 3
+      checklist for full detail.
+- [x] **Onboarding Body Analysis screen (Personal→Body step 3/5): several
       numeric labels render on the system font stack instead of Manrope**
-      ("STEP 3 OF 5", "58%", height/weight values, "— %" placeholder) — found
-      via the live harness run during Stage 1 verification. Onboarding was
-      previously audited as fully clean of this pattern, so this is either a
-      regression somewhere or a spot the original audit missed; worth a
-      dedicated look, not just a blind Manrope-ify, in case it's an
-      intentional numeric-formatting code path. Deferred to Stage 3.
-- [ ] **A small orange (`colors.primary`) element on the same Body Analysis
+      ("STEP 3 OF 5", "58%", height/weight values, "— %" placeholder).
+      Resolved in Stage 3 Lane A: root cause was
+      `OnboardingTabBar.tsx`/`AuroraStepRail.tsx` (the step-rail header that
+      renders on every onboarding tab, not just Body), not the Body tab's
+      own components — those were already clean. See Stage 3 checklist for
+      full detail.
+- [x] **A small orange (`colors.primary`) element on the same Body Analysis
       screen, ~71×44, carries a residual `shadows.level1` box-shadow**
-      (`rgba(0,0,0,0.1) 0px 1px 2px`) — found the same way. Small/subtle but
-      still a banned pattern per DESIGN.md. Not yet identified which
-      component this is (likely a stepper/slider control) — needs
-      localization before fixing. Deferred to Stage 3.
+      (`rgba(0,0,0,0.1) 0px 1px 2px`). Resolved in Stage 3 Lane A: identified
+      as `AuroraStepRail.tsx`'s `glowPill` (the active-step pill, confirmed
+      by a live 70.8×44px measurement) — removed the leftover
+      `...flatShadows.sm` spread. See Stage 3 checklist for full detail.
 - [ ] **Test-account session state was inconsistent across logins this
       round** (mid-onboarding with data vs. fully blank onboarding on a
       re-login moments later) — worth a quick investigation next round since
@@ -349,3 +542,86 @@ work depends on same-session uncommitted changes.
       reskinned `GlassButton`'s `success` variant). Needs a deliberate
       consolidation decision, not a guess — found by Lane B while
       evaluating whether to touch `AchievementNotifications.tsx`.
+- [x] **Stage 3 Lane B (Profile/Settings/Subscription/Paywall/Auth) findings**
+      — see the Stage 3 checklist entry above for full detail. Summary:
+      bottom-sheet migration for `SettingsSelectionModal`/
+      `DestructiveConfirmModal` done; `src/components/ui/Modal.tsx` doesn't
+      exist (stale reference in the task brief); `Input.tsx`/`PasswordInput.tsx`
+      are dead code, not migration targets (flagged for Stage 4, not deleted —
+      out of this task's scope); `PaywallModal.tsx`'s hardcoded blue tint
+      fixed to a governed `colors.info` tint; `PlanCard.tsx`'s gradient
+      "MOST POPULAR" badge and two WCAG-failing white-on-orange text/icon
+      instances fixed; a "glass tint reintroduced as a flat-fill override"
+      bug found and fixed in 8 places across 6 files
+      (`AboutFitAISocialButtons.tsx`, `AboutFitAIFeatureCard.tsx`,
+      `AboutFitAIScreen.tsx`, `PlanCard.tsx`, `TrustRow.tsx`,
+      `SubscriptionManagement.tsx` ×4); a decorative gradient icon fill in
+      `ExpoGoMessage.tsx` fixed; `TrustRow.tsx`'s own nested-card violation
+      (a bordered/filled box inside the paywall's own sheet surface) fixed;
+      dead `src/components/settings/AppInfoCard.tsx` deleted (zero
+      importers, a stale duplicate of the live
+      `src/screens/main/profile/AppInfoCard.tsx`, which was already clean).
+      Deliberately left alone: `flatColors`' frozen accent-palette keys
+      (`gold`/`successAlt`/`warningAlt`/`errorAlt`/`muted`/`blue`) in
+      `SettingsSection.tsx`, `UsageCounter.tsx`, and
+      `SubscriptionManagement.tsx` — DESIGN.md freezes that set for existing
+      consumers only, and no governed nested-token equivalent exists for
+      them yet (a future round should decide real replacements rather than
+      leaving them on the legacy map indefinitely).
+- [ ] **`src/components/ui/Input.tsx` / `PasswordInput.tsx` are dead code**
+      (zero real importers anywhere — only each other and a barrel
+      re-export in `src/components/ui/index.ts` that nothing consumes).
+      Not a migration target since nothing renders them; candidate for
+      Stage 4's dead-file deletion pass. Found by Lane B while chasing the
+      task brief's (stale) claim that `PasswordResetScreen.tsx` used them —
+      it already uses `UnderlineInput`.
+- [ ] **`src/components/subscription/PremiumGate.tsx` / `PremiumBadge.tsx`
+      referenced in a task brief do not exist anywhere in the actual source
+      tree** — only inside ~20 stale leftover `.claude/worktrees/agent-*`
+      directories (the exact stale-worktree hazard this doc's Stage 2
+      section already warns about) and a `coverage/` report artifact.
+      Zero live references in `src/`. Not acted on — nothing to fix.
+- [ ] **Out-of-scope centered-modal call sites found while auditing
+      `CustomDialog.tsx`/`DialogShell` consumers** (not touched — belong to
+      other areas/lanes): `AchievementCelebration.tsx`,
+      `AchievementDetailModal.tsx`, `DateStepper.tsx`,
+      `HealthConnectDisclosureModal.tsx`, `UnderperformancePromptModal.tsx`,
+      `MealBuilderScreen.tsx`, `MetricSummaryGrid.tsx`,
+      `WorkoutSessionScreen.tsx`, `CreateWorkoutScreen.tsx`,
+      `WeeklyBuilderScreen.tsx` — all still render via `CustomDialog`'s
+      centered `DialogShell`. A future round covering Diet/Workout/
+      Health/Achievements/Analytics should decide whether these get the
+      same bottom-sheet migration.
+- [ ] **`<Switch>` (React Native's built-in toggle, wrapped app-wide by
+      `src/screens/main/profile/components/GlassFormSwitch.tsx`) renders a
+      real `boxShadow` on its thumb on web** (`rgba(0,0,0,0.5) 0px 1px 3px`,
+      confirmed live on the Profile screen's "Rest Timer" toggle). This is
+      react-native-web's own internal rendering for the native control, not
+      an app-authored style — there's no `shadowColor`/`elevation`/
+      `boxShadow` prop exposed on `<Switch>` to override. Not fixed this
+      round: doing so properly means replacing every `<Switch>` with a
+      fully custom toggle primitive (a real, deliberate build, not a
+      token swap), which is out of scope for a polish pass. Found by
+      Lane A while sweeping Profile for the DESIGN.md "no drop shadows"
+      rule.
+- [x] **Stage 3 Lane A (Home/Profile/Onboarding polish) findings** — see the
+      Stage 3 checklist entry above for full detail. Summary: all 4 named
+      priority findings verified and fixed at root cause (2 already-fixed-
+      by-Stage-1, 2 genuinely broken — `footerText`/`dividerText` missing
+      `fontFamily` on Welcome, `OnboardingTabBar`/`AuroraStepRail`'s bare
+      weight-only styles + a residual shadow on the step rail); the same
+      bug class (a `style`-prop-bearing Text with no `fontFamily`, which
+      silently opts out of the app's global Manrope default) was then found
+      and fixed across `MultiSelectWithCustom.tsx`, `BottomSheet.tsx`
+      (shared, app-wide), `OnboardingCompleteModal.tsx`, and 10 files
+      directly on the Home screen (`BodyProgressCard.tsx`, `HomeHeader.tsx`,
+      `TrendChart.tsx`, `GuestPromptBanner.tsx`, `QuickActions.tsx`,
+      `SyncStatusIndicator.tsx`, `WeeklyMiniCalendar.tsx`,
+      `DailyProgressRings.tsx`, `EmptyMealsMessage.tsx`,
+      `EmptyCalendarMessage.tsx`, `HealthIntelligencePlaceholder.tsx`,
+      `GapSummary.tsx`); two real sub-44px touch targets fixed
+      (`BodyProgressCard.tsx`'s header Pressable, `ProfileScreen.tsx`'s
+      quick-jump chips); one real finding deferred with reasoning (native
+      `<Switch>` thumb shadow, see above). `npx tsc --noEmit -p .` and full
+      `npx jest --silent` (153/153 suites, 1466/1466 tests) clean
+      throughout; conformance baseline regenerated at the end of the round.

@@ -9,13 +9,14 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import Constants from "expo-constants";
 import { View, Text, StyleSheet, ScrollView, RefreshControl, LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   EditProvider,
   useEditActions,
 } from "../../contexts/EditContext";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { colors, surface, border, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { colors, surface, border, spacing, borderRadius } from "../../theme/aurora-tokens";
 import { rp, rh, rf } from "../../utils/responsive";
 import { useProfileLogic } from "../../hooks/useProfileLogic";
 import { useAuthStore } from "../../stores/authStore";
@@ -287,34 +288,49 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           />
 
           {/* Quick jump — one tap to any section instead of scrolling past
-              all of them, most usefully to reach Sign Out at the bottom. */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.quickJumpRow}
-          >
-            {[
-              { key: "account", label: "Account" },
-              { key: "preferences", label: "Preferences" },
-              { key: "app", label: "App" },
-              { key: "data", label: "Data" },
-              ...(isAuthenticated ? [{ key: "signout", label: "Sign Out" }] : []),
-            ].map((item) => (
-              <AnimatedPressable
-                key={item.key}
-                onPress={() => scrollToSection(item.key)}
-                scaleValue={0.95}
-                hapticType="light"
-                style={styles.quickJumpChip}
-                accessibilityRole="button"
-                accessibilityLabel={`Jump to ${item.label}`}
-              >
-                <Text style={styles.quickJumpChipText} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </ScrollView>
+              all of them, most usefully to reach Sign Out at the bottom.
+              This is now the ONLY place each section is labelled — the
+              grouped lists below no longer repeat their own header, so
+              there's exactly one name per section instead of two. */}
+          <View style={styles.quickJumpWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickJumpRow}
+            >
+              {[
+                { key: "account", label: "Account" },
+                ...(isAuthenticated ? [{ key: "accounts", label: "Accounts" }] : []),
+                { key: "preferences", label: "Preferences" },
+                { key: "app", label: "App" },
+                { key: "data", label: "Data" },
+                ...(isAuthenticated ? [{ key: "signout", label: "Sign Out" }] : []),
+              ].map((item) => (
+                <AnimatedPressable
+                  key={item.key}
+                  onPress={() => scrollToSection(item.key)}
+                  scaleValue={0.95}
+                  hapticType="light"
+                  style={styles.quickJumpChip}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Jump to ${item.label}`}
+                >
+                  <Text style={styles.quickJumpChipText} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </ScrollView>
+            {/* Fade so the trailing chip reads as scrollable rather than
+                cut off. */}
+            <LinearGradient
+              pointerEvents="none"
+              colors={["transparent", surface[0]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.quickJumpFade}
+            />
+          </View>
 
           <View onLayout={handleSectionLayout("account")}>
             <SettingsSection
@@ -326,12 +342,14 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
           </View>
 
           {isAuthenticated && (
-            <ConnectedAccountsCard
-              isGoogleConnected={isGoogleLinked}
-              googleEmail={isGoogleLinked ? authUserEmail || undefined : undefined}
-              onGooglePress={handleGooglePress}
-              animationDelay={250}
-            />
+            <View onLayout={handleSectionLayout("accounts")}>
+              <ConnectedAccountsCard
+                isGoogleConnected={isGoogleLinked}
+                googleEmail={isGoogleLinked ? authUserEmail || undefined : undefined}
+                onGooglePress={handleGooglePress}
+                animationDelay={250}
+              />
+            </View>
           )}
 
           <View onLayout={handleSectionLayout("preferences")}>
@@ -371,8 +389,6 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
               <LogoutButton onPress={handleSignOut} animationDelay={700} />
             </View>
           )}
-
-          <View style={styles.bottomSpacing} />
         </ScrollView>
 
         <LogoutConfirmationModal
@@ -492,21 +508,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: rh(40),
+    // Matches Home/Progress — the TabBar is a flex sibling of the screen
+    // container, not an overlay, so this just clears it with room to spare;
+    // it no longer needs its own separate spacer view underneath.
+    paddingBottom: rh(120),
   },
-  bottomSpacing: {
-    height: rh(100),
+  quickJumpWrap: {
+    position: "relative",
   },
   quickJumpRow: {
     flexDirection: "row",
     gap: rp(spacing.sm),
     paddingHorizontal: rp(spacing.lg),
     paddingVertical: rp(spacing.sm),
+    paddingRight: rp(spacing.xl),
+  },
+  quickJumpFade: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: rp(spacing.xxl),
   },
   quickJumpChip: {
     paddingHorizontal: rp(spacing.md),
     paddingVertical: rp(spacing.xs),
-    minHeight: 36,
+    // Was 36 — below the 44px WCAG/Apple/Material touch-target floor
+    // (DESIGN.md §8), a real Stage 3 audit finding.
+    minHeight: 44,
     justifyContent: "center",
     borderRadius: borderRadius.full,
     backgroundColor: surface[1],
@@ -514,10 +543,9 @@ const styles = StyleSheet.create({
     borderColor: border.subtle,
   },
   quickJumpChipText: {
-    fontFamily: typography.variants.caption.fontFamily,
+    fontFamily: "Manrope_600SemiBold",
     fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.text.secondary,
+    color: colors.text.primary,
   },
 });
 

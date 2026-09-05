@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../ui/aurora/GlassCard";
-import { flatColors as colors, spacing } from "../../theme/aurora-tokens";
+import { colors, spacing } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rbr } from "../../utils/responsive";
 import { FeatureItem } from "../../hooks/useAboutFitAILogic";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
@@ -35,7 +36,6 @@ export const AboutFitAIFeatureCard: React.FC<AboutFitAIFeatureCardProps> = ({
       <GlassCard
         elevation={1}
         padding="md"
-        blurIntensity="light"
         borderRadius="lg"
         style={styles.featureCard}
       >
@@ -64,7 +64,6 @@ const styles = StyleSheet.create({
   featureCard: {
     alignItems: "center",
     paddingVertical: spacing.lg,
-    backgroundColor: colors.glassSurface,
   },
   featureIcon: {
     width: rw(44),
@@ -75,15 +74,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   featureTitle: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: rf(13),
-    fontWeight: "600",
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: spacing.xs,
     textAlign: "center",
   },
   featureDescription: {
     fontSize: rf(11),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
     lineHeight: rf(15),
     paddingHorizontal: spacing.xs,

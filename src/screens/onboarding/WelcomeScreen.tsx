@@ -455,6 +455,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               accessibilityLabel="Continue as guest"
               accessibilityHint="Explore the app without creating an account"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.continueGuestButton}
             >
               <Text style={styles.footerLink}>Continue as Guest</Text>
             </AnimatedPressable>
@@ -595,6 +596,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  // "Continue as Guest" is a standalone tap target (its own row, not inline
+  // within a sentence like "Already have an account? Sign In" — that inline
+  // pattern is exempt from the 44px minimum per WCAG 2.5.8's "target is in a
+  // sentence" exception). Without an explicit minHeight this button measured
+  // ~22px tall (Text line-height only), below the 44×44 WCAG/Apple/Material
+  // floor DESIGN.md mandates for every interactive element.
+  continueGuestButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   signInHeader: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -692,6 +705,7 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: spacing.md,
     fontSize: typography.fontSize.caption,
+    fontFamily: "Manrope_400Regular",
     color: colors.text.secondary,
     fontStyle: "italic",
   },
@@ -761,6 +775,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: typography.fontSize.body,
     color: colors.text.secondary,
+    fontFamily: "Manrope_400Regular",
   },
 
   footerLink: {

@@ -15,7 +15,7 @@ import {
   typography,
   borderRadius,
 } from "../../../theme/aurora-tokens";
-import { rf, rw } from "../../../utils/responsive";
+import { rf, rs, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
 import { GoogleIcon } from "../../../components/icons/GoogleIcon";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
@@ -55,74 +55,73 @@ const AccountRow: React.FC<{
   }, [account]);
 
   return (
-    <Pressable
-      onPress={handlePress}
-      accessibilityRole="button"
-      accessibilityLabel={`${account.name}, ${account.isConnected ? "connected. Tap to disconnect" : "not connected. Tap to connect"}`}
-      style={({ pressed }) => [
-        styles.row,
-        pressed && styles.rowPressed,
-        !isLast && styles.rowBorder,
-      ]}
-    >
-      {/* Provider icon */}
-      <View style={[styles.iconSquircle, { backgroundColor: account.bgColor }]}>
-        {account.iconElement ??
-          (account.icon ? (
-            <Ionicons name={account.icon} size={rf(16)} color={account.iconColor} />
-          ) : null)}
-      </View>
-
-      {/* Info */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.providerName} numberOfLines={2}>
-          {account.name}
-        </Text>
-        {account.isConnected && account.email ? (
-          // Masked (e.g. "h***@gmail.com") — the full address was previously
-          // shown in plaintext, visible to anyone glancing at the screen.
-          <Text style={styles.email} numberOfLines={2}>
-            {maskEmail(account.email)}
-          </Text>
-        ) : (
-          <Text style={styles.notConnected}>Not connected</Text>
-        )}
-      </View>
-
-      {/* Status */}
-      <View
-        style={[
-          styles.statusBadge,
-          account.isConnected
-            ? styles.connectedBadge
-            : styles.disconnectedBadge,
-        ]}
+    <View style={styles.rowWrapper}>
+      <Pressable
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`${account.name}, ${account.isConnected ? "connected. Tap to disconnect" : "not connected. Tap to connect"}`}
+        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
       >
-        <Text
+        {/* Provider icon */}
+        <View style={[styles.iconSquircle, { backgroundColor: account.bgColor }]}>
+          {account.iconElement ??
+            (account.icon ? (
+              <Ionicons name={account.icon} size={rs(16)} color={account.iconColor} />
+            ) : null)}
+        </View>
+
+        {/* Info */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.providerName} numberOfLines={2}>
+            {account.name}
+          </Text>
+          {account.isConnected && account.email ? (
+            // Masked (e.g. "h***@gmail.com") — the full address was previously
+            // shown in plaintext, visible to anyone glancing at the screen.
+            <Text style={styles.email} numberOfLines={2}>
+              {maskEmail(account.email)}
+            </Text>
+          ) : (
+            <Text style={styles.notConnected}>Not connected</Text>
+          )}
+        </View>
+
+        {/* Status */}
+        <View
           style={[
-            styles.statusText,
+            styles.statusBadge,
             account.isConnected
-              ? styles.connectedText
-              : styles.disconnectedText,
+              ? styles.connectedBadge
+              : styles.disconnectedBadge,
           ]}
         >
-          {account.isConnected ? "Connected" : "Connect"}
-        </Text>
-      </View>
+          <Text
+            style={[
+              styles.statusText,
+              account.isConnected
+                ? styles.connectedText
+                : styles.disconnectedText,
+            ]}
+          >
+            {account.isConnected ? "Connected" : "Connect"}
+          </Text>
+        </View>
 
-      {/* Trailing affordance — visually distinguishes the destructive tap
-          (disconnect a connected account) from the additive one (connect a
-          new account) via glyph shape only. Both stay neutral text.tertiary
-          — colors.error is reserved for the actual confirm modal, so this
-          row never mixes a "problem" red next to the "Connected" green
-          badge on the same permanently-visible row. */}
-      <Ionicons
-        name={account.isConnected ? "close-circle-outline" : "chevron-forward"}
-        size={rf(16)}
-        color={colors.text.tertiary}
-        style={styles.trailingIcon}
-      />
-    </Pressable>
+        {/* Trailing affordance — visually distinguishes the destructive tap
+            (disconnect a connected account) from the additive one (connect a
+            new account) via glyph shape only. Both stay neutral text.tertiary
+            — colors.error is reserved for the actual confirm modal, so this
+            row never mixes a "problem" red next to the "Connected" green
+            badge on the same permanently-visible row. */}
+        <Ionicons
+          name={account.isConnected ? "close-circle-outline" : "chevron-forward"}
+          size={rs(16)}
+          color={colors.text.tertiary}
+          style={styles.trailingIcon}
+        />
+      </Pressable>
+      {!isLast && <View style={styles.divider} />}
+    </View>
   );
 });
 
@@ -138,13 +137,14 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
     {
       id: "google",
       name: "Google",
-      // Real multi-color Google "G" (see components/icons/GoogleIcon) on a
-      // neutral white badge — matches the brand convention already used on
-      // WelcomeScreen/GuestSignUpScreen. Never tint this row with a semantic
-      // color (error/success/etc.) — it reads as a broken/alarming state.
-      iconElement: <GoogleIcon size={rf(16)} />,
+      // Real multi-color Google "G" (see components/icons/GoogleIcon) on the
+      // same neutral surface[2] squircle every other row uses — matches the
+      // dark Aurora language instead of a clashing full-white badge. Never
+      // tint this row with a semantic color (error/success/etc.) — it reads
+      // as a broken/alarming state.
+      iconElement: <GoogleIcon size={rs(16)} />,
       iconColor: colors.text.primary,
-      bgColor: "#FFFFFF",
+      bgColor: surface[2],
       isConnected: isGoogleConnected,
       email: googleEmail,
       onPress: onGooglePress,
@@ -174,17 +174,9 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
       }
       style={styles.container}
     >
-      <View style={styles.sectionHeader}>
-        <Ionicons
-          name="link-outline"
-          size={rf(14)}
-          color={colors.text.secondary}
-          style={styles.sectionIcon}
-        />
-        <Text style={styles.sectionTitle}>Connected Accounts</Text>
-      </View>
-
-      <View style={styles.listSurface}>
+      {/* No visible header — the "Accounts" quick-jump chip on ProfileScreen
+          is the single source of this section's label now. */}
+      <View style={styles.listSurface} accessibilityLabel="Connected accounts">
         {accounts.map((account, index) => (
           <AccountRow
             key={account.id}
@@ -200,22 +192,7 @@ export const ConnectedAccountsCard: React.FC<ConnectedAccountsCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  sectionIcon: {
-    marginRight: spacing.xs,
-  },
-  sectionTitle: {
-    ...variants.caption,
-    color: colors.text.secondary,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
+    marginBottom: spacing.xl,
   },
   listSurface: {
     backgroundColor: surface[1],
@@ -224,19 +201,29 @@ const styles = StyleSheet.create({
     borderColor: border.subtle,
     overflow: "hidden",
   },
+  rowWrapper: {
+    // Positioning context for the absolutely-positioned inset divider.
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.md + spacing.xxs,
     paddingHorizontal: spacing.md,
-    minHeight: 56,
+    minHeight: 64,
   },
   rowPressed: {
     backgroundColor: surface[2],
   },
-  rowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: border.DEFAULT,
+  // Inset divider — matches SettingsSection: a separate absolutely-positioned
+  // line rather than a borderBottom on the row, so insetting it can't shift
+  // the row's own content.
+  divider: {
+    position: "absolute",
+    left: rw(32) + spacing.md,
+    right: 0,
+    bottom: 0,
+    height: 1,
+    backgroundColor: border.DEFAULT,
   },
   iconSquircle: {
     width: rw(32),
@@ -245,9 +232,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: "auto",
   },
   infoContainer: {
     flex: 1,
+    flexShrink: 1,
     minWidth: 0,
   },
   providerName: {
@@ -268,12 +259,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: 8,
+    flexGrow: 0,
     flexShrink: 0,
+    flexBasis: "auto",
     marginLeft: spacing.sm,
   },
   trailingIcon: {
     marginLeft: spacing.xs,
+    flexGrow: 0,
     flexShrink: 0,
+    flexBasis: "auto",
   },
   connectedBadge: {
     backgroundColor: `${colors.success.DEFAULT}26`,

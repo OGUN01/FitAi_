@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   statsText: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontFamily: "Manrope_600SemiBold",
     color: colors.textSecondary,
   },
   weekGrid: {
@@ -205,7 +205,10 @@ const styles = StyleSheet.create({
   },
   todayLabel: {
     color: colors.primary,
-    fontWeight: '700',
+    // Overrides dayLabel's spread-in typography.variants.caption family — a
+    // bare numeric-weight style prop is a no-op (it doesn't select a bolder
+    // Manrope file), so this never actually rendered bold.
+    fontFamily: "Manrope_700Bold",
   },
   dayCell: {
     width: rw(34),
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
   },
   dayNumber: {
     ...typography.variants.caption2,
-    fontWeight: '700',
+    fontFamily: "Manrope_700Bold",
   },
   defaultCell: {
     backgroundColor: colors.backgroundTertiary,

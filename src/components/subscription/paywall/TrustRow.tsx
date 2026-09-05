@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors } from "../../../theme/aurora-tokens";
+import { colors, border } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rp, rbr } from "../../../utils/responsive";
 
 interface TrustItemProps {
@@ -12,7 +13,7 @@ interface TrustItemProps {
 const TrustItem: React.FC<TrustItemProps> = ({ icon, label }) => (
   <View style={styles.item}>
     <View style={styles.iconWrap}>
-      <Ionicons name={icon} size={rf(13)} color={colors.successLight} />
+      <Ionicons name={icon} size={rf(13)} color={colors.success.light} />
     </View>
     <Text style={styles.label}>{label}</Text>
   </View>
@@ -35,14 +36,14 @@ const TrustRow: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  // Transparent, not another glass/surface fill — this row sits inside the
+  // paywall's own BottomSheet surface already; a second background here
+  // would be a nested card, which DESIGN.md's "max 1 surface depth" rule
+  // bans. Dividers between items are the only separators.
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.glassSurface,
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    borderRadius: rbr(12),
     paddingVertical: rp(10),
     paddingHorizontal: rp(8),
   },
@@ -55,21 +56,21 @@ const styles = StyleSheet.create({
     width: rp(22),
     height: rp(22),
     borderRadius: rbr(11),
-    backgroundColor: colors.successTint,
+    backgroundColor: `${colors.success.DEFAULT}26`,
     alignItems: "center",
     justifyContent: "center",
     marginRight: rp(6),
   },
   label: {
+    fontFamily: FONT_FAMILY.semibold,
     fontSize: rf(11),
-    fontWeight: "600",
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     flexShrink: 1,
   },
   divider: {
     width: 1,
     height: rp(14),
-    backgroundColor: colors.glassBorder,
+    backgroundColor: border.DEFAULT,
     marginHorizontal: rp(10),
   },
 });
