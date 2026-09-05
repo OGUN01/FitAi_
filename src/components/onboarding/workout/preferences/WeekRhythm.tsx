@@ -27,7 +27,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { tokens } from "../../fresh";
+import { tokens, spacing } from "../../fresh";
 
 export interface WeekRhythmProps {
   /** Sessions per week, 0–7. */
@@ -219,6 +219,18 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: tokens.hairline,
+    // Round 6 follow-up (b): at the screen's normal 24px side inset, 8
+    // zero-gap flex cells work out to ~42.75px wide on a 390px viewport —
+    // just under the 44px touch-target floor, with no safe way to recover
+    // the last ~1-2px per cell via hitSlop (confirmed inert on web) or a
+    // blanket minWidth (8x44=352px > the ~342px actually available inside
+    // the normal inset). Pulling this ONE row out to a narrower 8px inset
+    // (a common "let the ruler/scale breathe to the edges" pattern,
+    // matching real-world ruler/scale UI) reclaims enough width for every
+    // cell to clear 44px with real margin, without reducing the visible
+    // range (still all 8 numbers) or adding horizontal scroll (which would
+    // defeat the point of a ruler meant to be seen at a glance).
+    marginHorizontal: -(spacing.screenPad - spacing.s),
   },
   separator: {
     width: StyleSheet.hairlineWidth,
@@ -227,7 +239,10 @@ const styles = StyleSheet.create({
   },
   cell: {
     flex: 1,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: "center",
+    justifyContent: "center",
     paddingTop: 12,
     paddingBottom: 10,
   },

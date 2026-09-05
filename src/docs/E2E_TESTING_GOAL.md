@@ -288,13 +288,24 @@ Pick these up FIRST in the next round before starting new areas:
          pushed down.
       tsc clean; full jest suite unchanged at baseline (153/153 suites,
       1466/1466 tests).
-- [ ] **Round 6 follow-up (b): `WeekRhythm.tsx`'s 8 frequency-count cells**
-      (0-7 sessions/week, ~42px wide) need an actual layout/design
-      decision, not a mechanical patch — a zero-gap "ruler" layout means
-      neither hitSlop (would overlap the adjacent cell) nor a blanket
-      `minWidth: 44` (8×44=352px > ~342px available on a 390px viewport)
-      is safe. Needs one of: fewer visible cells, horizontal scroll, or
-      reclaiming width from elsewhere in the row.
+- [x] **Round 6 follow-up (b): `WeekRhythm.tsx`'s 8 frequency-count cells
+      — DONE.** Decision made: reclaim width from elsewhere in the row,
+      not fewer cells or horizontal scroll (both would compromise the
+      "see the whole 0-7 range at a glance" point of a ruler). The row's
+      own zero-gap layout at the screen's normal 24px side inset left
+      each cell at ~42.75px (342px available / 8) — ~1.25px short of the
+      44px floor, with cell HEIGHT already comfortably above it (~52px).
+      Pulled this one row out to a narrower 8px inset
+      (`marginHorizontal: -(spacing.screenPad - spacing.s)`, a common
+      "let the ruler/scale breathe to the edges" pattern) instead of
+      touching the screen's global padding, added explicit
+      `minWidth: 44`/`minHeight: 44` to the cell style (previously
+      implicit/incidental sizing only). Live-verified via Playwright on a
+      real 390×844 mobile viewport: all 8 cells now measure 45.88×52px,
+      `document.body.scrollWidth === document.body.clientWidth` (390,
+      zero new horizontal overflow), and the sibling Mon-Sun day-map row
+      (already fixed in Round 6 proper) is unaffected at 48.86×44px.
+      `tsc`/`jest` clean (153/153 suites, 1466/1466 tests).
 - [x] **Round 6 follow-up (c): exhaustive `error` status-color contrast
       check — DONE.** Went well beyond the original ~18-file estimate:
       examined ~96 real call sites across ~70 files using
@@ -3656,12 +3667,12 @@ distinction is noted inline rather than implied away.
    `error` status-color contrast miss: exhaustively audited (~96 call
    sites across ~70 files, not just the original ~18-file estimate); 14
    real failures fixed with a new governed `errorText` token — done,
-   checked off. **(b) remains open, deliberately**: `WeekRhythm.tsx`'s 8
-   frequency-count cells need an actual product/design decision (fewer
-   visible cells vs. horizontal scroll vs. reclaiming row width) before
-   their sub-44px width can be fixed — neither hitSlop nor a blanket
-   `minWidth` is safe here (see the Round 6 summary for why). Do not force
-   a guess at this one; it needs the user's call.
+   checked off. **(b) was open pending a human decision — now resolved.**
+   The user delegated the call; decision made was "reclaim width from
+   elsewhere in the row" (a narrower side-inset for just this one ruler
+   row, not fewer visible cells or horizontal scroll — see (b)'s own
+   entry above for the full technical detail). Fixed, live-verified,
+   checked off.
    **Round 7 (offline/network-resilience audit) is now open** — see its
    scope list above, added after (b) was confirmed to be the only
    remaining item and it's blocked on a decision, not further testing
@@ -3703,11 +3714,11 @@ distinction is noted inline rather than implied away.
    no pathological re-renders, no bundle bloat) — reported as such rather
    than manufactured into findings, per this round's own explicit honesty
    framing.
-   If a future pickup finds Round 8 also fully checked with nothing else
-   unchecked anywhere (besides item (b), which still needs the user, not
-   more testing): do not manufacture a Round 9 by re-sweeping
-   already-covered ground or forcing another weak-fit dimension. Check in
-   with the user (e.g. via `AskUserQuestion`) about what's next, the same
-   way this pickup did before Round 8 — that conversation is the correct
-   mechanism for deciding whether more testing rounds are valuable at
-   this point, not an assumption baked into this file.
+   **With item (b) now also resolved, there is NO unchecked item anywhere
+   in this file as of this pickup** — Rounds 1-8 and their full backlogs
+   are all complete. If a future pickup finds this still true: do not
+   manufacture a Round 9 by re-sweeping already-covered ground or forcing
+   another weak-fit dimension. Check in with the user (e.g. via
+   `AskUserQuestion`) about what's next — that conversation is the
+   correct mechanism for deciding whether more testing rounds are
+   valuable at this point, not an assumption baked into this file.
