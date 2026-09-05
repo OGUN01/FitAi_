@@ -3,7 +3,9 @@
  * On web, the native `react-native-razorpay` SDK is unavailable.
  * This module wraps the standard Razorpay checkout.js script.
  *
- * Usage: imported only when `Platform.OS === 'web'`
+ * Statically imported by `RazorpayService.ts` on every platform (safe —
+ * no native-only dependencies) but only ever CALLED when
+ * `Platform.OS === 'web'`.
  */
 
 import {

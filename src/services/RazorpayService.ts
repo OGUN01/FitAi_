@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { API_CONFIG, getWorkersUrl } from "../config/api";
 import { supabase } from "./supabase";
+import { openRazorpayWebCheckout } from "./RazorpayWebCheckout";
 
 // Types — declared locally to avoid importing from native module on web
 export interface RazorpayCheckoutOptions {
@@ -247,10 +248,14 @@ class RazorpayService {
 
     try {
       if (Platform.OS === "web") {
-        // On web, use the Razorpay checkout.js shim
-        const { openRazorpayWebCheckout } = await import(
-          "./RazorpayWebCheckout"
-        );
+        // On web, use the Razorpay checkout.js shim. Statically imported
+        // above (not a dynamic `import()`) — Metro's dynamic-import support
+        // for RN Web is unreliable in this dev-server setup, confirmed live
+        // to throw `Error: Requiring unknown module "<id>"` even though the
+        // target module genuinely exists on disk, permanently blocking
+        // checkout. This module has no native-only dependencies (pure
+        // DOM/`window` calls, function-scoped), so a static import is safe
+        // to always bundle on every platform.
         return await openRazorpayWebCheckout(options);
       }
       // Native platforms: use react-native-razorpay SDK
