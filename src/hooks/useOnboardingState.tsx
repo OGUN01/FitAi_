@@ -149,7 +149,24 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
     advancedReview: null,
     currentTab: 1,
     completedTabs: new Set<number>(),
-    tabValidationStatus: {},
+    // Computed eagerly (not left as {}) so the Next button's disabled state
+    // is correct from the very first render — previously tabValidationStatus
+    // only got populated as a side effect of the user's first onUpdate call
+    // on a given tab, so a pristine/untouched tab's Next button rendered as
+    // fully enabled (no aria-disabled/disabled attribute at all) despite the
+    // form being empty and genuinely invalid. handleNextTab's own validateTab
+    // gate always blocked real navigation (confirmed live — a jarring native
+    // alert() fires and the tab correctly does not advance), so this was not
+    // a data-integrity bug, but the Next button visually looked pressable
+    // when it should have shown the scaffold's documented disabled state
+    // (hairline background, ink3 label) from the start.
+    tabValidationStatus: {
+      1: validatePersonalInfo(null),
+      2: validateDietPreferences(null),
+      3: validateBodyAnalysis(null),
+      4: validateWorkoutPreferences(null),
+      5: validateAdvancedReview(null),
+    },
     overallCompletion: 0,
     isLoading: false,
     isAutoSaving: false,
@@ -242,9 +259,14 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
 
   const updatePersonalInfo = useCallback((data: Partial<PersonalInfoData>) => {
     setState((prev) => {
-      const newPersonalInfo = prev.personalInfo
-        ? { ...prev.personalInfo, ...data }
-        : (data as PersonalInfoData);
+      // Always merge onto whatever exists (even nothing) instead of a
+      // null-check ternary that wholesale-REPLACES the slice with `data` when
+      // `prev.personalInfo` is null — see the identical, confirmed-live fix
+      // in updateWorkoutPreferences below for the full root-cause writeup.
+      const newPersonalInfo = {
+        ...(prev.personalInfo ?? {}),
+        ...data,
+      } as PersonalInfoData;
 
       // Update validation immediately with the new data
       const updatedState = {
@@ -277,9 +299,10 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   const updateDietPreferences = useCallback(
     (data: Partial<DietPreferencesData>) => {
       setState((prev) => {
-        const newDietPreferences = prev.dietPreferences
-          ? { ...prev.dietPreferences, ...data }
-          : (data as DietPreferencesData);
+        const newDietPreferences = {
+          ...(prev.dietPreferences ?? {}),
+          ...data,
+        } as DietPreferencesData;
 
         const updatedState = {
           ...prev,
@@ -312,9 +335,10 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
 
   const updateBodyAnalysis = useCallback((data: Partial<BodyAnalysisData>) => {
     setState((prev) => {
-      const newBodyAnalysis = prev.bodyAnalysis
-        ? { ...prev.bodyAnalysis, ...data }
-        : (data as BodyAnalysisData);
+      const newBodyAnalysis = {
+        ...(prev.bodyAnalysis ?? {}),
+        ...data,
+      } as BodyAnalysisData;
 
       const updatedState = {
         ...prev,
@@ -344,9 +368,27 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   const updateWorkoutPreferences = useCallback(
     (data: Partial<WorkoutPreferencesData>) => {
       setState((prev) => {
-        const newWorkoutPreferences = prev.workoutPreferences
-          ? { ...prev.workoutPreferences, ...data }
-          : (data as WorkoutPreferencesData);
+        // ROOT-CAUSE FIX (confirmed live via temporary instrumentation):
+        // the previous `prev.workoutPreferences ? merge : data` ternary
+        // wholesale-REPLACED the entire slice with whatever partial `data`
+        // object happened to arrive FIRST while workoutPreferences was still
+        // null — e.g. a background effect in useWorkoutPreferences.ts
+        // calling onUpdate({ weekly_weight_loss_goal }) before the user ever
+        // touched the tab. That partial object then became the ENTIRE
+        // parent-side workoutPreferences (missing location/equipment/
+        // primary_goals/etc. entirely), which round-tripped back down into
+        // useWorkoutPreferences' "sync formData from props" effect and wiped
+        // any field the user had already set locally back to its hook
+        // default. Always merging onto whatever exists (even nothing, via
+        // `?? {}`) means a partial update can never truncate the object —
+        // it only ever adds/overwrites the fields it actually names. This
+        // is one half of the real fix; the other half (making every
+        // internal onUpdate call in useWorkoutPreferences.ts carry the full
+        // current formData instead of a bare partial) is in that file.
+        const newWorkoutPreferences = {
+          ...(prev.workoutPreferences ?? {}),
+          ...data,
+        } as WorkoutPreferencesData;
 
         const updatedState = {
           ...prev,
@@ -380,9 +422,10 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   const updateAdvancedReview = useCallback(
     (data: Partial<AdvancedReviewData>) => {
       setState((prev) => {
-        const newAdvancedReview = prev.advancedReview
-          ? { ...prev.advancedReview, ...data }
-          : (data as AdvancedReviewData);
+        const newAdvancedReview = {
+          ...(prev.advancedReview ?? {}),
+          ...data,
+        } as AdvancedReviewData;
 
         const finalState = {
           ...prev,
@@ -481,134 +524,63 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
     // Use ref to get latest state values
     const currentState = stateRef.current;
 
+    // BUG FIX: each section below used to `return false` on its own failure,
+    // which aborted every LATER section's save too (e.g. a body-analysis
+    // constraint violation silently prevented workout preferences and
+    // advanced review from ever being attempted, even though they were
+    // valid and ready). Each section is now independent — a failure in one
+    // is recorded but never blocks the next section from saving. This
+    // matches `completeOnboarding()`'s own "continue anyway" philosophy one
+    // level up, just applied within the database-save step itself.
+    const failedSections: string[] = [];
+    let lastErrorMessage = "";
+
+    const attemptSave = async (
+      sectionName: string,
+      hasData: boolean,
+      save: () => Promise<boolean>,
+    ) => {
+      if (!hasData) return;
+      try {
+        const success = await save();
+        if (!success) {
+          throw new Error(`${sectionName} save returned false`);
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : `Failed to save ${sectionName}`;
+        console.error(`❌ [ONBOARDING] ${sectionName} save error:`, error);
+        failedSections.push(sectionName);
+        lastErrorMessage = message;
+      }
+    };
+
     try {
-      // Save personal info if available
-      if (currentState.personalInfo) {
-        try {
-          const success = await PersonalInfoService.save(
-            user.id,
-            currentState.personalInfo,
-          );
-          if (!success) {
-            throw new Error("PersonalInfoService.save returned false");
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to save personal info";
-          console.error("❌ [ONBOARDING] PersonalInfo save error:", error);
-          setState((prev) => ({
-            ...prev,
-            isAutoSaving: false,
-            errors: { ...prev.errors, saveDatabase: message },
-          }));
-          return false;
-        }
-      }
+      await attemptSave("personalInfo", !!currentState.personalInfo, () =>
+        PersonalInfoService.save(user.id, currentState.personalInfo!),
+      );
 
-      // Save diet preferences if available
-      if (currentState.dietPreferences) {
-        try {
-          const success = await DietPreferencesService.save(
-            user.id,
-            currentState.dietPreferences,
-          );
-          if (!success) {
-            throw new Error("DietPreferencesService.save returned false");
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to save diet preferences";
-          console.error("❌ [ONBOARDING] DietPreferences save error:", error);
-          setState((prev) => ({
-            ...prev,
-            isAutoSaving: false,
-            errors: { ...prev.errors, saveDatabase: message },
-          }));
-          return false;
-        }
-      }
+      await attemptSave("dietPreferences", !!currentState.dietPreferences, () =>
+        DietPreferencesService.save(user.id, currentState.dietPreferences!),
+      );
 
-      // Save body analysis if available
-      if (currentState.bodyAnalysis) {
-        try {
-          const success = await BodyAnalysisService.save(
-            user.id,
-            currentState.bodyAnalysis,
-          );
-          if (!success) {
-            throw new Error("BodyAnalysisService.save returned false");
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to save body analysis";
-          console.error("❌ [ONBOARDING] BodyAnalysis save error:", error);
-          setState((prev) => ({
-            ...prev,
-            isAutoSaving: false,
-            errors: { ...prev.errors, saveDatabase: message },
-          }));
-          return false;
-        }
-      }
+      await attemptSave("bodyAnalysis", !!currentState.bodyAnalysis, () =>
+        BodyAnalysisService.save(user.id, currentState.bodyAnalysis!),
+      );
 
-      // Save workout preferences if available
-      if (currentState.workoutPreferences) {
-        try {
-          const success = await WorkoutPreferencesService.save(
+      await attemptSave(
+        "workoutPreferences",
+        !!currentState.workoutPreferences,
+        () =>
+          WorkoutPreferencesService.save(
             user.id,
-            currentState.workoutPreferences,
-          );
-          if (!success) {
-            throw new Error("WorkoutPreferencesService.save returned false");
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to save workout preferences";
-          console.error(
-            "❌ [ONBOARDING] WorkoutPreferences save error:",
-            error,
-          );
-          setState((prev) => ({
-            ...prev,
-            isAutoSaving: false,
-            errors: { ...prev.errors, saveDatabase: message },
-          }));
-          return false;
-        }
-      }
+            currentState.workoutPreferences!,
+          ),
+      );
 
-      // Save advanced review if available
-      if (currentState.advancedReview) {
-        try {
-          const success = await AdvancedReviewService.save(
-            user.id,
-            currentState.advancedReview,
-          );
-          if (!success) {
-            throw new Error("AdvancedReviewService.save returned false");
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to save advanced review";
-          console.error("❌ [ONBOARDING] AdvancedReview save error:", error);
-          setState((prev) => ({
-            ...prev,
-            isAutoSaving: false,
-            errors: { ...prev.errors, saveDatabase: message },
-          }));
-          return false;
-        }
-      }
+      await attemptSave("advancedReview", !!currentState.advancedReview, () =>
+        AdvancedReviewService.save(user.id, currentState.advancedReview!),
+      );
 
       // Save onboarding progress
       const progressData: OnboardingProgressData = {
@@ -617,25 +589,18 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         tab_validation_status: currentState.tabValidationStatus,
         total_completion_percentage: currentState.overallCompletion,
       };
+      await attemptSave("onboardingProgress", true, () =>
+        OnboardingProgressService.save(user.id, progressData),
+      );
 
-      try {
-        const progressSuccess = await OnboardingProgressService.save(
-          user.id,
-          progressData,
-        );
-        if (!progressSuccess) {
-          throw new Error("OnboardingProgressService.save returned false");
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to save onboarding progress";
-        console.error("❌ [ONBOARDING] OnboardingProgress save error:", error);
+      if (failedSections.length > 0) {
         setState((prev) => ({
           ...prev,
           isAutoSaving: false,
-          errors: { ...prev.errors, saveDatabase: message },
+          errors: {
+            ...prev.errors,
+            saveDatabase: `Failed to save: ${failedSections.join(", ")} (${lastErrorMessage})`,
+          },
         }));
         return false;
       }
@@ -807,6 +772,20 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
             advancedReview: parsedData.advancedReview,
             currentTab: parsedData.currentTab || 1,
             completedTabs: new Set<number>(parsedData.completedTabs || []),
+            // Recompute from the just-restored data, not left stale — same
+            // root cause as the initial-state fix above: without this, a
+            // resumed tab's Next button reflected whatever validation ran
+            // before the reload (usually the pristine {} default) instead of
+            // the actual validity of the data that was just loaded back in.
+            tabValidationStatus: {
+              1: validatePersonalInfo(parsedData.personalInfo ?? null),
+              2: validateDietPreferences(parsedData.dietPreferences ?? null),
+              3: validateBodyAnalysis(parsedData.bodyAnalysis ?? null),
+              4: validateWorkoutPreferences(
+                parsedData.workoutPreferences ?? null,
+              ),
+              5: validateAdvancedReview(parsedData.advancedReview ?? null),
+            },
             lastSavedAt: parsedData.lastSavedAt
               ? new Date(parsedData.lastSavedAt)
               : null,

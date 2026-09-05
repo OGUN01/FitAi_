@@ -133,6 +133,14 @@ export const useWorkoutPreferences = ({
   const hasUserSetIntensity = useRef(false);
   const hasUserSetWorkoutTypes = useRef(false);
   const hasUserSetGoals = useRef(false);
+  // Guards the gym-equipment auto-fill effect below — without this, a user
+  // who deliberately deselects every equipment pill while location="gym"
+  // gets trapped: equipment.length hits 0, the effect fires again, and it
+  // silently re-fills STANDARD_GYM_EQUIPMENT, undoing their action every
+  // single time (equipment is optional data — a gym user is allowed to
+  // select none). Only auto-fill until the user has touched equipment
+  // themselves at least once.
+  const hasUserSetEquipment = useRef(false);
   // Signature of the last workout_types array THIS hook auto-applied. The
   // hasUserSet* refs reset on remount (Back→Next), so the auto-recommend
   // effect also compares persisted data.workout_types against this signature:
@@ -207,7 +215,11 @@ export const useWorkoutPreferences = ({
       if (minutes > 0 && minutes !== formData.time_preference) {
         hasInitializedTimeFromCommitment.current = true;
         setFormData((prev) => ({ ...prev, time_preference: minutes }));
-        onUpdate({ time_preference: minutes });
+        // Send the FULL current formData, not a bare partial — see the
+        // "stale partial round-trip" fix note below (weekly_weight_loss_goal
+        // effect) for the full explanation of why a bare partial here is
+        // unsafe.
+        onUpdate({ ...formData, time_preference: minutes });
       }
     }
   }, [data, onUpdate]);
@@ -277,9 +289,17 @@ export const useWorkoutPreferences = ({
     }
   }, [data]);
 
-  // Auto-populate gym equipment when location is gym
+  // Auto-populate gym equipment when location is gym — but only until the
+  // user has explicitly touched the equipment list themselves (see
+  // hasUserSetEquipment above). Covers the load/resume case (persisted
+  // location="gym" with no equipment saved yet) without fighting a
+  // deliberate "deselect everything" action later.
   useEffect(() => {
-    if (formData.location === "gym" && formData.equipment.length === 0) {
+    if (
+      formData.location === "gym" &&
+      formData.equipment.length === 0 &&
+      !hasUserSetEquipment.current
+    ) {
       setFormData((prev: WorkoutPreferencesData) => ({
         ...prev,
         equipment: STANDARD_GYM_EQUIPMENT,
@@ -304,7 +324,28 @@ export const useWorkoutPreferences = ({
         }));
 
         if (!isSyncingFromProps.current) {
-          onUpdate({ weekly_weight_loss_goal });
+          // ROOT-CAUSE FIX: this used to send a bare `{ weekly_weight_loss_goal }`
+          // partial. useOnboardingState's updateWorkoutPreferences merges
+          // `{...prev.workoutPreferences, ...data}` — fine on its own — but
+          // this hook ALSO has a "sync formData from the data prop" effect
+          // that treats every incoming prop change as authoritative and
+          // overwrites local formData wholesale. Confirmed live (via
+          // temporary instrumentation) that this exact bare-partial path
+          // was the root cause of a CRITICAL bug: any field the user had
+          // JUST changed locally (e.g. tapping "Gym" for location) but that
+          // hadn't yet reached the parent through the 500ms debounced full
+          // sync (`stableOnUpdate` below) would be silently reverted back to
+          // its last-synced value the moment ANY of this hook's other
+          // immediate/undebounced effects (this one, the time_preference
+          // sync, the goal-derived suggestions, the workout-types
+          // auto-recommend) fired next and round-tripped a partial object
+          // that still carried the OLD value for every other field. Always
+          // sending the full current `formData` (merged with the field this
+          // effect actually owns) means the parent — and therefore any
+          // round-trip back down — always reflects the truly-latest local
+          // state, so a user's real-time selection can never be clobbered by
+          // an unrelated background effect.
+          onUpdate({ ...formData, weekly_weight_loss_goal });
         }
       }
 
@@ -334,7 +375,9 @@ export const useWorkoutPreferences = ({
           }));
 
           if (!isSyncingFromProps.current) {
-            onUpdate({ primary_goals: suggestedGoals });
+            // See the weekly_weight_loss_goal fix note above — full formData,
+            // not a bare partial, to avoid clobbering a fresher local edit.
+            onUpdate({ ...formData, primary_goals: suggestedGoals });
           }
         }
       }
@@ -378,7 +421,9 @@ export const useWorkoutPreferences = ({
     if (changed) {
       setFormData((prev: WorkoutPreferencesData) => ({ ...prev, ...derived }));
       if (!isSyncingFromProps.current) {
-        onUpdate(derived);
+        // See the weekly_weight_loss_goal fix note above — full formData,
+        // not a bare partial, to avoid clobbering a fresher local edit.
+        onUpdate({ ...formData, ...derived });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -415,6 +460,7 @@ export const useWorkoutPreferences = ({
     if (field === "intensity") hasUserSetIntensity.current = true;
     if (field === "workout_types") hasUserSetWorkoutTypes.current = true;
     if (field === "primary_goals") hasUserSetGoals.current = true;
+    if (field === "equipment") hasUserSetEquipment.current = true;
 
     let updated = { ...formData, [field]: value };
 
@@ -638,7 +684,14 @@ export const useWorkoutPreferences = ({
     }));
 
     if (!isSyncingFromProps.current) {
-      onUpdate({ workout_types: recommendedTypes });
+      // See the weekly_weight_loss_goal fix note above — full formData, not
+      // a bare partial, to avoid clobbering a fresher local edit. This was
+      // the exact site confirmed live (via temporary instrumentation) to
+      // clobber a just-tapped "location" selection: it fired a
+      // `{ workout_types }`-only partial a few hundred ms after the tap,
+      // round-tripping the parent's still-stale location value back down
+      // and silently reverting the user's real-time choice.
+      onUpdate({ ...formData, workout_types: recommendedTypes });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calculateRecommendedWorkoutTypes]);
