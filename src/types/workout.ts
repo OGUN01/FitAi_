@@ -46,6 +46,23 @@ export interface WorkoutSet {
     targetMuscles?: string[];
     instructions?: string[];
   };
+  // ── Per-set fidelity passthrough (Workout Engine v2 Phase 4) ──────────────
+  // The fields above collapse an exercise's sets to ONE flat target (reps
+  // becomes a single value or, at best, a comma-joined string) — a drop
+  // set's distinct drop weight/reps, or a pyramid scheme's per-set targets,
+  // were silently lost the moment a PlannedExercise became a WorkoutSet.
+  // plannedSets is the full-fidelity original, additive and optional so
+  // every existing WorkoutSet consumer (AI-generated plans included, which
+  // never populate this) is unaffected. Session code that wants the REAL
+  // per-set target for set index i should read plannedSets?.[i] first and
+  // fall back to the flat fields above.
+  plannedSets?: PlannedSet[];
+  /** Groups this exercise into a superset (matches SupersetGroup.id). */
+  supersetId?: string;
+  /** Groups this exercise into a circuit (matches CircuitGroup.id). */
+  circuitId?: string;
+  /** Ordering within the superset/circuit. */
+  blockIndex?: number;
 }
 
 // ============================================================================
@@ -153,6 +170,11 @@ export function toWorkoutSet(planned: PlannedExercise): WorkoutSet {
     rpe: planned.targetRpe,
     name: planned.name,
     exerciseName: planned.name,
+    // Per-set fidelity passthrough — see the WorkoutSet field comments.
+    plannedSets: planned.sets,
+    supersetId: planned.supersetId,
+    circuitId: planned.circuitId,
+    blockIndex: planned.blockIndex,
   };
 }
 
@@ -335,6 +357,39 @@ export interface Workout {
   dayOfWeek?: string; // 'monday', 'tuesday', etc.
   isRestDay?: boolean;
   completed?: boolean;
+  // ── Energy model additions (Phase A.1) ────────────────────────────────────
+  // First-class cardio activity — "30 min running" no longer faked as
+  // sets×reps. Additive: existing JSONB plans without these fields parse fine.
+  cardioBlocks?: CardioBlock[];
+  /** Display / notifications ONLY — e.g. "06:00". Never an energy-math input;
+   *  adherence is date-based, not time-based (see the goal-engine plan). */
+  scheduledTime?: string; // "HH:MM"
+}
+
+// ============================================================================
+// CARDIO BLOCK (Energy model — Phase A.1)
+// ============================================================================
+
+/** Intensity label for a cardio block. Maps to a MET modifier. */
+export type CardioIntensity = "low" | "moderate" | "high";
+
+/**
+ * A first-class cardio activity block within a workout day — e.g.
+ * "30 min running at moderate intensity". MET is resolved from
+ * `EXERCISE_TYPE_MET_OVERRIDES` (running 9.8, cycling 7.5, rowing 7.0,
+ * jump rope 12.3, walking 3.5) × an intensity modifier × duration.
+ */
+export interface CardioBlock {
+  id: string;
+  kind: "cardio";
+  name: string;
+  /** Optional exercise ID for a curated cardio exercise. */
+  exerciseId?: string;
+  /** Duration in minutes. */
+  durationMinutes: number;
+  intensity: CardioIntensity;
+  /** Optional distance — for display only, not used in MET calc. */
+  distanceKm?: number;
 }
 
 export interface WorkoutPlan {

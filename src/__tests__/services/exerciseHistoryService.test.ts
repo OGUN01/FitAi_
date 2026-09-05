@@ -78,6 +78,7 @@ describe("ExerciseHistoryService", () => {
         reps: 10,
         setType: "normal",
         rpe: null,
+        rpe10: null,
       });
       expect(result!.sets[2]).toEqual({
         setNumber: 3,
@@ -85,6 +86,7 @@ describe("ExerciseHistoryService", () => {
         reps: 10,
         setType: "failure",
         rpe: null,
+        rpe10: null,
       });
 
       // Verify query chain

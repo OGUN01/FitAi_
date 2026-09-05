@@ -36,11 +36,23 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown, Layout } from "react-native-reanimated";
 import { GlassCard } from "../../ui/aurora/GlassCard";
 import { MuscleHeatmap, type MuscleVolumeEntry } from "./MuscleHeatmap";
-import { CURATED_EXERCISES } from "../../../data/curatedExercises";
+import { resolveExerciseMeta } from "../../../utils/resolveExerciseMeta";
 import { useAnalyticsStore } from "../../../stores/analyticsStore";
+import { useAchievementStore } from "../../../stores/achievementStore";
 import { useFitnessStore } from "../../../stores/fitnessStore";
+import { useProfileStore } from "../../../stores/profileStore";
 import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
+import { isHardSet } from "../../../utils/effortScale";
+import {
+  computeAllVolumeLandmarks,
+  countWeeklySetsByMuscleFromCatalog,
+  classifyVolumeZone,
+  resolveTrainingEmphasis,
+  type LandmarkZone,
+  type TrainingAge,
+} from "../../../services/volumeLandmarksService";
+import { MAJOR_MUSCLE_GROUPS } from "../../../services/workoutInsightsService";
 import {
   colors,
   spacing,
@@ -65,12 +77,6 @@ interface BuilderAnalyticsPanelProps {
 const fw = (
   w: (typeof typography.fontWeight)[keyof typeof typography.fontWeight],
 ): TextStyle["fontWeight"] => String(w) as TextStyle["fontWeight"];
-
-// Module-level lookup map so the heatmap can resolve muscle groups per
-// exercise id without scanning the full curated array per history entry.
-const CURATED_EXERCISES_BY_ID: ReadonlyMap<string, (typeof CURATED_EXERCISES)[number]> = new Map(
-  CURATED_EXERCISES.map((c) => [c.id, c]),
-);
 
 /** ISO date → YYYY-MM-DD week-start (Monday) bucket key. */
 function weekStartKey(dateStr: string): string {
@@ -199,6 +205,145 @@ function topExercises(
     .slice(0, limit);
 }
 
+/**
+ * Overall hard-set % across the history window — RPE >= 7 working sets
+ * (src/utils/effortScale.ts isHardSet) ÷ RATED working sets. Buckets with no
+ * rpe_10 data contribute to neither side — a legacy/unrated set carries no
+ * hard/not-hard signal, so including it would understate the percentage
+ * rather than leaving it undefined for that set. Returns null (not 0) when
+ * there is no rated data at all, so the caller can distinguish "0% hard" from
+ * "no effort data yet".
+ */
+export function computeHardSetPercent(
+  history: Array<{ hardSetCount: number; ratedWorkingSetCount: number }>,
+): number | null {
+  let ratedTotal = 0;
+  let hardTotal = 0;
+  for (const entry of history) {
+    ratedTotal += entry.ratedWorkingSetCount;
+    hardTotal += entry.hardSetCount;
+  }
+  return ratedTotal > 0 ? Math.round((hardTotal / ratedTotal) * 100) : null;
+}
+
+/**
+ * Weekly effort trend: mean of avgRpe10 across every (exercise, date) bucket
+ * whose week matches, oldest → newest. Buckets with avgRpe10 === null (no
+ * rated sets that day) are skipped rather than treated as 0 — a week with
+ * zero rated data should show as empty (value 0 in the Sparkline, which
+ * already renders 0 as an empty/glass bar), not as "RPE 0".
+ */
+export function aggregateWeeklyEffort(
+  history: Array<{ date: string; avgRpe10: number | null }>,
+  weeks: number,
+): Array<{ weekLabel: string; total: number }> {
+  const now = new Date();
+  const buckets: Array<{ weekStart: Date; sum: number; count: number; label: string }> = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    const ref = new Date(now);
+    ref.setDate(ref.getDate() - i * 7);
+    const day = ref.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const weekStart = new Date(ref);
+    weekStart.setDate(ref.getDate() + diff);
+    buckets.push({
+      weekStart,
+      sum: 0,
+      count: 0,
+      label: i === 0 ? "This wk" : i === 1 ? "Last wk" : `W-${i}`,
+    });
+  }
+  for (const entry of history) {
+    if (entry.avgRpe10 == null) continue;
+    const key = weekStartKey(entry.date);
+    if (!key) continue;
+    for (const b of buckets) {
+      if (b.weekStart.toISOString().slice(0, 10) === key) {
+        b.sum += entry.avgRpe10;
+        b.count += 1;
+        break;
+      }
+    }
+  }
+  return buckets.map((b) => ({
+    weekLabel: b.label,
+    total: b.count > 0 ? b.sum / b.count : 0,
+  }));
+}
+
+export interface VolumeZoneEntry {
+  muscle: string;
+  zone: LandmarkZone;
+  actualSets: number;
+  mev: number;
+  mav: number;
+  mrv: number;
+}
+
+/**
+ * Current-week volume-landmark zone for every major muscle group —
+ * src/services/volumeLandmarksService.ts (classifyVolumeZone/
+ * computeAllVolumeLandmarks), fed by actual logged sets THIS WEEK (not the
+ * whole history window — a landmark zone answers "am I on track this week",
+ * not a historical average). Secondary-muscle credit (0.5×) and exercise
+ * resolution are handled by countWeeklySetsByMuscleFromCatalog itself.
+ */
+export function computeCurrentWeekVolumeZones(
+  history: Array<{ exerciseId: string; date: string; totalSets: number }>,
+  trainingAge: TrainingAge,
+  emphasis: import("../../../services/volumeLandmarksService").TrainingEmphasis,
+): VolumeZoneEntry[] {
+  const thisWeekKey = weekStartKey(new Date().toISOString());
+  const thisWeekExercises = history
+    .filter((entry) => weekStartKey(entry.date) === thisWeekKey)
+    .map((entry) => ({ exerciseId: entry.exerciseId, setCount: entry.totalSets }));
+
+  const actualSetsByMuscle = countWeeklySetsByMuscleFromCatalog(thisWeekExercises);
+  const landmarks = computeAllVolumeLandmarks(trainingAge, emphasis);
+
+  return MAJOR_MUSCLE_GROUPS.map((muscle) => {
+    const actualSets = actualSetsByMuscle[muscle] ?? 0;
+    const muscleLandmarks = landmarks[muscle];
+    return {
+      muscle,
+      zone: classifyVolumeZone(actualSets, muscleLandmarks),
+      actualSets,
+      mev: muscleLandmarks.mev,
+      mav: muscleLandmarks.mav,
+      mrv: muscleLandmarks.mrv,
+    };
+  });
+}
+
+/** Zone → color, distinct from the raw-volume heatmap's "more is redder"
+ * scale (MuscleHeatmap.tsx) — a landmark zone answers "is this the RIGHT
+ * amount", so the sweet spot (mav_to_mrv) is green, not the extremes. */
+export function volumeZoneColor(zone: LandmarkZone): string {
+  switch (zone) {
+    case "under_mev":
+      return colors.text.tertiary; // not enough yet — muted, not alarming
+    case "mev_to_mav":
+      return colors.warning.DEFAULT; // adequate but below the sweet spot
+    case "mav_to_mrv":
+      return colors.success.DEFAULT; // the sweet spot
+    case "over_mrv":
+      return colors.error.DEFAULT; // overreaching — the one truly "bad" zone
+  }
+}
+
+export function volumeZoneLabel(zone: LandmarkZone): string {
+  switch (zone) {
+    case "under_mev":
+      return "Under MEV";
+    case "mev_to_mav":
+      return "Building";
+    case "mav_to_mrv":
+      return "On track";
+    case "over_mrv":
+      return "Over MRV";
+  }
+}
+
 // ----------------------------------------------------------------------------
 // SPARKLINE — minimal SVG-free line of bars (View-based, accessible)
 // ----------------------------------------------------------------------------
@@ -277,7 +422,13 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
   // ── Store subscriptions ──
   const exerciseVolumeHistory = useAnalyticsStore((s) => s.exerciseVolumeHistory);
   const personalRecords = useAnalyticsStore((s) => s.personalRecords);
-  const currentStreak = useAnalyticsStore((s) => s.analyticsSummary.currentStreak);
+  // Read from achievementStore, not analyticsStore.analyticsSummary — the
+  // latter only recomputes on store init/addDailyMetrics (driven by a
+  // Supabase write from completionTracking that's fire-and-forget on
+  // failure), so it can silently lag behind or disagree with every other
+  // screen. achievementStore recomputes reactively from fitnessStore's
+  // completedSessions and is what Home/Progress/Analytics all read.
+  const currentStreak = useAchievementStore((s) => s.currentStreak);
   const isLoadingExerciseAnalytics = useAnalyticsStore(
     (s) => s.isLoadingExerciseAnalytics,
   );
@@ -285,21 +436,51 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
   // completedSessions for time invested (sum durationMinutes).
   const completedSessions = useFitnessStore((s) => s.completedSessions);
 
+  // Training age + emphasis for the volume-landmark section — same source
+  // WorkoutSessionScreen.tsx already uses for progression-scheme selection
+  // (workoutPreferences.intensity / resolveTrainingEmphasis(primary_goals)),
+  // not a separate derivation.
+  const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
+  // Default matches WorkoutSessionScreen.tsx's own fallback exactly — same
+  // derivation, same default, so the two screens never disagree for a user
+  // whose intensity isn't set.
+  const trainingAge: TrainingAge = workoutPreferences?.intensity ?? "beginner";
+  const trainingEmphasis = useMemo(
+    () => resolveTrainingEmphasis(workoutPreferences?.primary_goals ?? undefined),
+    [workoutPreferences?.primary_goals],
+  );
+
   // ── Derived data ──
   const weeklyVolume = useMemo(
     () => aggregateWeeklyVolume(exerciseVolumeHistory, 12),
     [exerciseVolumeHistory],
   );
 
+  // Workout Engine v2 Phase 6B — effort + volume-landmark sections.
+  const hardSetPercent = useMemo(
+    () => computeHardSetPercent(exerciseVolumeHistory),
+    [exerciseVolumeHistory],
+  );
+  const weeklyEffort = useMemo(
+    () => aggregateWeeklyEffort(exerciseVolumeHistory, 12),
+    [exerciseVolumeHistory],
+  );
+  const volumeZones = useMemo(
+    () => computeCurrentWeekVolumeZones(exerciseVolumeHistory, trainingAge, trainingEmphasis),
+    [exerciseVolumeHistory, trainingAge, trainingEmphasis],
+  );
+
   // ── Heatmap lookup: resolve muscle groups for each history entry via the
-  // curated exercise library. Falls back to an empty list when the exercise
-  // isn't in the curated set (e.g. user-deleted or custom entries) so those
-  // rows simply don't contribute to the heatmap rather than crashing.
+  // shared resolveExerciseMeta (exercise DB first, curated list fallback —
+  // same resolution WorkoutDetailScreen uses). Previously this only checked
+  // the small legacy curated list, so any AI-generated plan's exercise
+  // (the common case) silently contributed zero volume to every muscle
+  // bucket with no trace. resolveExerciseMeta warns on a genuine miss.
   const heatmapData = useMemo(
     () =>
       aggregateMuscleHeatmap(
         exerciseVolumeHistory,
-        (exerciseId) => CURATED_EXERCISES_BY_ID.get(exerciseId)?.muscleGroups ?? [],
+        (exerciseId) => resolveExerciseMeta(exerciseId).muscleGroups,
         4,
       ),
     [exerciseVolumeHistory],
@@ -447,6 +628,13 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
                   accent={colors.secondary.DEFAULT}
                   testID={`${testID ?? "builder-analytics"}-time`}
                 />
+                <StatTile
+                  icon="flash"
+                  label="Hard Sets"
+                  value={hardSetPercent != null ? `${hardSetPercent}%` : "—"}
+                  accent={colors.warning.DEFAULT}
+                  testID={`${testID ?? "builder-analytics"}-hardset-pct`}
+                />
               </View>
 
               {/* (a) Weekly volume trend */}
@@ -474,6 +662,39 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
                 <EmptyHint text="No per-muscle volume recorded yet." />
               )}
 
+              {/* (i) Volume-landmark zones (Workout Engine v2 Phase 6B) —
+                  where this week's per-muscle sets sit relative to
+                  MEV/MAV/MRV for this user's training age + goal. */}
+              <SectionLabel icon="speedometer" title="This Week's Volume Zone" />
+              {volumeZones.some((z) => z.actualSets > 0) ? (
+                <View style={styles.zoneGrid}>
+                  {volumeZones
+                    .filter((z) => z.actualSets > 0)
+                    .sort((a, b) => b.actualSets - a.actualSets)
+                    .map((z) => (
+                      <View
+                        key={`zone_${z.muscle}`}
+                        style={styles.zoneRow}
+                        accessibilityRole="text"
+                        accessibilityLabel={`${z.muscle}: ${z.actualSets} sets, ${volumeZoneLabel(z.zone)}, landmarks ${z.mev} to ${z.mrv} sets`}
+                      >
+                        <Text style={styles.zoneMuscle} numberOfLines={1}>
+                          {z.muscle}
+                        </Text>
+                        <View style={[styles.zoneDot, { backgroundColor: volumeZoneColor(z.zone) }]} />
+                        <Text style={[styles.zoneStatus, { color: volumeZoneColor(z.zone) }]} numberOfLines={1}>
+                          {volumeZoneLabel(z.zone)}
+                        </Text>
+                        <Text style={styles.zoneSets} numberOfLines={1}>
+                          {z.actualSets}/{z.mav} sets
+                        </Text>
+                      </View>
+                    ))}
+                </View>
+              ) : (
+                <EmptyHint text="No sets logged this week yet." />
+              )}
+
               {/* (c) Recovery score trend */}
               <SectionLabel icon="pulse" title="Activity Trend (12 weeks)" />
               {recoveryTrend.some((w) => w.value > 0) ? (
@@ -485,6 +706,20 @@ export const BuilderAnalyticsPanel: React.FC<BuilderAnalyticsPanelProps> = ({
                 />
               ) : (
                 <EmptyHint text="No activity in the last 12 weeks." />
+              )}
+
+              {/* (j) Weekly effort trend (Workout Engine v2 Phase 6B) —
+                  mean logged RPE per week, src/utils/effortScale.ts. */}
+              <SectionLabel icon="pulse" title="Weekly Effort (RPE, 12 weeks)" />
+              {weeklyEffort.some((w) => w.total > 0) ? (
+                <Sparkline
+                  data={weeklyEffort.map((w) => ({ label: w.weekLabel, value: w.total }))}
+                  unit="RPE"
+                  color={colors.warning.DEFAULT}
+                  testID={`${testID ?? "builder-analytics"}-effort-spark`}
+                />
+              ) : (
+                <EmptyHint text="No rated sets in the last 12 weeks." />
               )}
 
               {/* (g) Exercise frequency */}
@@ -696,6 +931,40 @@ const styles = StyleSheet.create({
     fontWeight: fw(typography.fontWeight.semibold),
     flexShrink: 0,
   } as TextStyle,
+  zoneGrid: {
+    gap: rp(spacing.xs),
+  },
+  zoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: rp(spacing.xs),
+    minHeight: rp(32),
+  },
+  zoneMuscle: {
+    flex: 1,
+    flexShrink: 1,
+    color: colors.text.primary,
+    fontSize: rf(typography.fontSize.caption),
+    textTransform: "capitalize",
+  },
+  zoneDot: {
+    width: rw(8),
+    height: rw(8),
+    borderRadius: borderRadius.full,
+    flexShrink: 0,
+  } as ViewStyle,
+  zoneStatus: {
+    fontSize: rf(typography.fontSize.caption),
+    fontWeight: fw(typography.fontWeight.semibold),
+    flexShrink: 0,
+  } as TextStyle,
+  zoneSets: {
+    color: colors.text.tertiary,
+    fontSize: rf(typography.fontSize.micro),
+    flexShrink: 0,
+    width: rw(56),
+    textAlign: "right",
+  },
   prList: {
     gap: rp(spacing.xs),
   },

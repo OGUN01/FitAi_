@@ -22,6 +22,8 @@ import type {
   WeeklyInsights,
   AiSuggestion,
 } from "../types/ai";
+import type { CardioBlock, CardioIntensity } from "../types/workout";
+import { toWorkoutSet } from "../types/workout";
 import { useFitnessStore } from "./fitnessStore";
 import { computeWeeklyInsights } from "../services/workoutInsightsService";
 import { workoutBuilderAi } from "../ai/workoutBuilderAi";
@@ -32,7 +34,10 @@ import { workoutBuilderAi } from "../ai/workoutBuilderAi";
 
 export interface PickerContext {
   dayIndex: number;
-  slotIndex?: number; // for superset insertion
+  /** When set, the picker's add action calls replaceExercise at this index
+   * instead of addExercise (append) — set by WeeklyBuilderScreen's "Replace
+   * exercise" action (Phase 6C-i). */
+  slotIndex?: number;
 }
 
 export interface EditorContext {
@@ -96,6 +101,24 @@ export interface WorkoutBuilderState {
     exerciseIndex: number,
     exercise: PlannedExercise,
   ) => void;
+  /**
+   * Atomic "Replace exercise" — splices newExercise in AT exerciseIndex
+   * (Phase 6C-i fix). Previously the builder's Replace action did
+   * removeExercise + addExercise, and addExercise APPENDS, so Replace
+   * silently reordered the new exercise to the end of the day instead of
+   * keeping its slot. Carries over the replaced slot's supersetId/circuitId/
+   * blockIndex onto the incoming exercise — replacing one exercise inside a
+   * superset/circuit should keep the replacement IN that group, taking over
+   * the vacated slot's role, not fall out of it. Also stamps
+   * alternativeExerciseId with the exerciseId being replaced — the first
+   * producer of that field (previously declared on PlannedExercise with zero
+   * producers anywhere in the app).
+   */
+  replaceExercise: (
+    dayIndex: number,
+    exerciseIndex: number,
+    newExercise: PlannedExercise,
+  ) => void;
   reorderExercise: (
     dayIndex: number,
     fromIndex: number,
@@ -109,6 +132,19 @@ export interface WorkoutBuilderState {
   ) => void;
   duplicateDay: (fromIndex: number, toIndex: number) => void;
   clearDay: (dayIndex: number) => void;
+
+  // ── Cardio blocks + scheduled time (Phase B) ──────────────────────────
+  /** Add a cardio block (e.g. "30 min running") to a day's draft. Additive —
+   *  existing JSONB plans without cardioBlocks parse fine. */
+  addCardioBlock: (dayIndex: number, block: CardioBlock) => void;
+  /** Remove a cardio block from a day by its id. */
+  removeCardioBlock: (dayIndex: number, blockId: string) => void;
+  /** Update a cardio block in place (duration / intensity / name / distance). */
+  updateCardioBlock: (dayIndex: number, blockId: string, patch: Partial<CardioBlock>) => void;
+  /** Set the per-day scheduled time ("HH:MM") — display/notifications ONLY,
+   *  never an energy-math input (adherence is date-based, per the goal-engine
+   *  plan). */
+  setScheduledTime: (dayIndex: number, time: string | undefined) => void;
 
   setSelectedDay: (index: number) => void;
   setExpandedDay: (index: number | null) => void;
@@ -236,9 +272,12 @@ function clonePlan(plan: WeeklyWorkoutPlan): WeeklyWorkoutPlan {
  */
 function computeRestDays(workouts: DayWorkout[]): number[] {
   return workouts
-    .map((w, i) =>
-      (w.plannedExercises?.length || w.exercises?.length || 0) > 0 ? -1 : i,
-    )
+    .map((w, i) => {
+      const hasStrength =
+        (w.plannedExercises?.length || w.exercises?.length || 0) > 0;
+      const hasCardio = (w.cardioBlocks?.length ?? 0) > 0;
+      return hasStrength || hasCardio ? -1 : i;
+    })
     .filter((i) => i >= 0);
 }
 
@@ -308,18 +347,13 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     const workouts = [...draft.workouts];
     const day = { ...workouts[dayIndex] };
     day.plannedExercises = [...(day.plannedExercises ?? []), exercise];
-    day.exercises = day.plannedExercises.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
+    // toWorkoutSet is the single adapter (src/types/workout.ts) — this used
+    // to be 3 independently-drifted inline copies here, each more lossy
+    // than the shared adapter (always read set[0]'s reps even when sets
+    // varied, and dropped supersetId/circuitId/blockIndex/plannedSets
+    // entirely, silently discarding drop-set and per-set-varying data the
+    // moment a plan reached session execution).
+    day.exercises = day.plannedExercises.map(toWorkoutSet);
     day.title = day.title === "Rest Day" ? "Custom Workout" : day.title;
     day.targetMuscleGroups = Array.from(
       new Set([
@@ -344,18 +378,13 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     day.plannedExercises = (day.plannedExercises ?? []).filter(
       (_, i) => i !== exerciseIndex,
     );
-    day.exercises = day.plannedExercises.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
+    // toWorkoutSet is the single adapter (src/types/workout.ts) — this used
+    // to be 3 independently-drifted inline copies here, each more lossy
+    // than the shared adapter (always read set[0]'s reps even when sets
+    // varied, and dropped supersetId/circuitId/blockIndex/plannedSets
+    // entirely, silently discarding drop-set and per-set-varying data the
+    // moment a plan reached session execution).
+    day.exercises = day.plannedExercises.map(toWorkoutSet);
     if (day.plannedExercises.length === 0) {
       day.title = "Rest Day";
       day.duration = 0;
@@ -383,18 +412,13 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     const day = { ...workouts[dayIndex] };
     day.plannedExercises = [...(day.plannedExercises ?? [])];
     day.plannedExercises[exerciseIndex] = exercise;
-    day.exercises = day.plannedExercises.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
+    // toWorkoutSet is the single adapter (src/types/workout.ts) — this used
+    // to be 3 independently-drifted inline copies here, each more lossy
+    // than the shared adapter (always read set[0]'s reps even when sets
+    // varied, and dropped supersetId/circuitId/blockIndex/plannedSets
+    // entirely, silently discarding drop-set and per-set-varying data the
+    // moment a plan reached session execution).
+    day.exercises = day.plannedExercises.map(toWorkoutSet);
     day.duration = estimateDayDuration(day.plannedExercises);
     workouts[dayIndex] = day;
     set({
@@ -402,6 +426,24 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       draftDirty: true,
     });
     void get().computeInsights();
+  },
+
+  replaceExercise: (dayIndex, exerciseIndex, newExercise) => {
+    const { draft } = get();
+    if (!draft) return;
+    const existing = draft.workouts[dayIndex]?.plannedExercises?.[exerciseIndex];
+    if (!existing) return;
+    const merged: PlannedExercise = {
+      ...newExercise,
+      supersetId: existing.supersetId,
+      circuitId: existing.circuitId,
+      blockIndex: existing.blockIndex,
+      alternativeExerciseId: existing.exerciseId,
+    };
+    // Reuses updateExercise's own in-place splice + day-rebuild (toWorkoutSet,
+    // targetMuscleGroups, duration, restDays, computeInsights) — same SSOT
+    // rule as every other mutator here, no duplicated logic.
+    get().updateExercise(dayIndex, exerciseIndex, merged);
   },
 
   duplicateExercise: (dayIndex, exerciseIndex) => {
@@ -419,18 +461,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     const next = [...(day.plannedExercises ?? [])];
     next.splice(exerciseIndex + 1, 0, clone);
     day.plannedExercises = next;
-    day.exercises = next.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
+    day.exercises = next.map(toWorkoutSet);
     day.duration = estimateDayDuration(next);
     day.targetMuscleGroups = Array.from(
       new Set([
@@ -456,18 +487,7 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     const [moved] = exercises.splice(fromIndex, 1);
     exercises.splice(toIndex, 0, moved);
     day.plannedExercises = exercises;
-    day.exercises = exercises.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
+    day.exercises = exercises.map(toWorkoutSet);
     workouts[dayIndex] = day;
     set({
       draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
@@ -491,30 +511,8 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
     toExercises.splice(toIndex, 0, moved);
     fromDayObj.plannedExercises = fromExercises;
     toDayObj.plannedExercises = toExercises;
-    fromDayObj.exercises = fromExercises.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
-    toDayObj.exercises = toExercises.map((p) => ({
-      exerciseId: p.exerciseId,
-      sets: p.sets.length,
-      reps: p.sets[0]?.reps ?? 8,
-      weight: p.sets[0]?.weightKg,
-      restTime: p.restSeconds,
-      notes: p.notes,
-      tempo: p.tempo,
-      rpe: p.targetRpe,
-      name: p.name,
-      exerciseName: p.name,
-    }));
+    fromDayObj.exercises = fromExercises.map(toWorkoutSet);
+    toDayObj.exercises = toExercises.map(toWorkoutSet);
     if (fromExercises.length === 0) {
       fromDayObj.title = "Rest Day";
       fromDayObj.duration = 0;
@@ -571,6 +569,75 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
       draftDirty: true,
     });
     void get().computeInsights();
+  },
+
+  // ── Cardio blocks + scheduled time (Phase B) ──────────────────────────
+  addCardioBlock: (dayIndex, block) => {
+    const { draft } = get();
+    if (!draft) return;
+    const workouts = [...draft.workouts];
+    const day = { ...workouts[dayIndex] };
+    day.cardioBlocks = [...(day.cardioBlocks ?? []), block];
+    // A day with cardio but no strength is no longer a rest day.
+    if (day.title === "Rest Day") day.title = "Custom Workout";
+    workouts[dayIndex] = day;
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
+    void get().computeInsights();
+  },
+
+  removeCardioBlock: (dayIndex, blockId) => {
+    const { draft } = get();
+    if (!draft) return;
+    const workouts = [...draft.workouts];
+    const day = { ...workouts[dayIndex] };
+    day.cardioBlocks = (day.cardioBlocks ?? []).filter((b) => b.id !== blockId);
+    if (
+      day.cardioBlocks.length === 0 &&
+      (day.plannedExercises?.length ?? 0) === 0
+    ) {
+      day.title = "Rest Day";
+    }
+    workouts[dayIndex] = day;
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
+    void get().computeInsights();
+  },
+
+  updateCardioBlock: (dayIndex, blockId, patch) => {
+    const { draft } = get();
+    if (!draft) return;
+    const workouts = [...draft.workouts];
+    const day = { ...workouts[dayIndex] };
+    day.cardioBlocks = (day.cardioBlocks ?? []).map((b) =>
+      b.id === blockId ? { ...b, ...patch } : b,
+    );
+    workouts[dayIndex] = day;
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
+    void get().computeInsights();
+  },
+
+  setScheduledTime: (dayIndex, time) => {
+    const { draft } = get();
+    if (!draft) return;
+    const workouts = [...draft.workouts];
+    const day = { ...workouts[dayIndex] };
+    // undefined clears the field; otherwise store the "HH:MM" string as-is.
+    // Display/notifications ONLY — never read by energy math (planBurn.ts).
+    day.scheduledTime = time;
+    workouts[dayIndex] = day;
+    set({
+      draft: { ...draft, workouts, restDays: computeRestDays(workouts) },
+      draftDirty: true,
+    });
+    // scheduledTime is not an energy input, so no computeInsights needed.
   },
 
   setSelectedDay: (index) => set({ selectedDayIndex: index }),
@@ -763,10 +830,15 @@ export const useWorkoutBuilderStore = create<WorkoutBuilderState>((set, get) => 
 // ----------------------------------------------------------------------------
 
 function getMuscleGroupsForExercise(exerciseId: string): string[] {
-  // Lazy require to avoid circular import at module load time
-  const { CURATED_EXERCISES } = require("../data/curatedExercises");
-  const curated = CURATED_EXERCISES.find((c: { id: string }) => c.id === exerciseId);
-  return curated?.muscleGroups ?? [];
+  // resolveExerciseMeta checks the real exercise DB first (AI-plan ids), then
+  // falls back to the curated list (legacy builder ids). The previous
+  // CURATED_EXERCISES-only lookup silently zeroed muscle coverage for any
+  // AI-plan exercise outside that ~70-entry list, so targetMuscleGroups on a
+  // draft never reflected AI-generated exercises. Lazy-required to avoid a
+  // circular import at module load time (resolveExerciseMeta →
+  // exerciseFilterService).
+  const { resolveExerciseMeta } = require("../utils/resolveExerciseMeta");
+  return resolveExerciseMeta(exerciseId).muscleGroups;
 }
 
 /** Rough duration estimate: 2 min per set + 1 min per exercise setup. */

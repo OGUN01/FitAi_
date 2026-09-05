@@ -1,0 +1,103 @@
+{
+  "_comment": "Shared exercise-classification vocabulary. SINGLE SOURCE for both runtime TS (src/utils/resolveExerciseMeta.ts, imported via resolveJsonModule) and the offline catalog generator (scripts/generate-exercise-catalog.mjs, imported as plain JSON). Edit here, not in either consumer — duplicating these lists risks the two silently drifting apart.",
+
+  "lowerBodyMuscleGroups": ["quadriceps", "hamstrings", "glutes", "calves"],
+
+  "timeBasedNameKeywords": [
+    "plank", "wall sit", "dead hang", "hollow body", "l-sit", "l sit",
+    "hold", "superman", "flexed arm hang", "isometric"
+  ],
+
+  "unilateralNameKeywords": [
+    "single arm", "single leg", "single-arm", "single-leg",
+    "one arm", "one leg", "one-arm", "one-leg",
+    "alternating", "alternate", "bulgarian", "pistol", "unilateral",
+    "suitcase"
+  ],
+
+  "_dbMuscleToGroupComment": "Target bucket vocab is workoutInsightsService.MAJOR_MUSCLE_GROUPS (chest/back/shoulders/biceps/triceps/quadriceps/hamstrings/glutes/calves/core) plus 'cardio'. Every bucket name that ALSO appears verbatim as a raw ExerciseDB muscle string (chest/back/shoulders/core, confirmed against the full 1500-exercise vocab) needs its own identity entry here — omitting one silently drops credit for any exercise whose target/secondary muscle is that literal string rather than a synonym (e.g. 'shoulders' vs 'delts').",
+  "dbMuscleToGroup": {
+    "chest": "chest",
+    "pectorals": "chest",
+    "upper chest": "chest",
+    "back": "back",
+    "lats": "back",
+    "latissimus dorsi": "back",
+    "upper back": "back",
+    "lower back": "back",
+    "traps": "back",
+    "trapezius": "back",
+    "rhomboids": "back",
+    "spine": "back",
+    "shoulders": "shoulders",
+    "delts": "shoulders",
+    "deltoids": "shoulders",
+    "rear deltoids": "shoulders",
+    "biceps": "biceps",
+    "brachialis": "biceps",
+    "triceps": "triceps",
+    "quads": "quadriceps",
+    "quadriceps": "quadriceps",
+    "hamstrings": "hamstrings",
+    "glutes": "glutes",
+    "calves": "calves",
+    "soleus": "calves",
+    "adductors": "quadriceps",
+    "abductors": "glutes",
+    "hip flexors": "quadriceps",
+    "core": "core",
+    "abs": "core",
+    "abdominals": "core",
+    "lower abs": "core",
+    "obliques": "core",
+    "cardiovascular system": "cardio"
+  },
+
+  "loadingTypeByEquipment": {
+    "barbell": "barbell",
+    "ez barbell": "barbell",
+    "olympic barbell": "barbell",
+    "trap bar": "barbell",
+    "smith machine": "barbell",
+    "dumbbell": "dumbbell",
+    "kettlebell": "dumbbell",
+    "hammer": "dumbbell",
+    "cable": "cable",
+    "rope": "cable",
+    "leverage machine": "machine",
+    "sled machine": "machine",
+    "stepmill machine": "machine",
+    "skierg machine": "machine",
+    "elliptical machine": "machine",
+    "stationary bike": "machine",
+    "upper body ergometer": "machine",
+    "tire": "machine",
+    "body weight": "bodyweight",
+    "assisted": "bodyweight",
+    "wheel roller": "bodyweight",
+    "roller": "bodyweight",
+    "stability ball": "bodyweight",
+    "bosu ball": "bodyweight",
+    "medicine ball": "bodyweight",
+    "weighted": "bodyweight",
+    "band": "banded",
+    "resistance band": "banded"
+  },
+
+  "_movementPatternComment": "Checked in this fixed priority order against the exercise name — first match wins. squat/hinge/lunge before push/pull so e.g. 'barbell squat jump step rear lunge' resolves to squat (first pattern), not lunge.",
+  "movementPatternPriority": [
+    "squat", "hinge", "lunge", "carry", "rotation",
+    "vertical_pull", "horizontal_pull", "vertical_push", "horizontal_push"
+  ],
+  "movementPatternKeywords": {
+    "squat": ["squat"],
+    "hinge": ["deadlift", "hip thrust", "good morning", "romanian"],
+    "lunge": ["lunge", "split squat", "step up", "step-up", "step through"],
+    "carry": ["carry", "farmer", "suitcase walk", "waiters walk", "yoke walk"],
+    "rotation": ["twist", "rotation", "wood chop", "woodchop", "chop", "oblique"],
+    "vertical_pull": ["pulldown", "pull up", "pull-up", "pullup", "chin up", "chin-up", "chinup"],
+    "horizontal_pull": ["row"],
+    "vertical_push": ["overhead press", "shoulder press", "military press", "push press", "handstand"],
+    "horizontal_push": ["bench press", "push up", "push-up", "pushup", "chest press", "fly", "flye", "dip"]
+  }
+}

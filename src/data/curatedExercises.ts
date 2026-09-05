@@ -797,12 +797,43 @@ export const CURATED_EXERCISES: CuratedExercise[] = [
   },
 ];
 
+// Onboarding's equipment picker (src/screens/onboarding/tabs/
+// WorkoutPreferencesConstants.ts EQUIPMENT_OPTIONS) uses a DIFFERENT string
+// vocabulary than this curated set's `equipment` tags ("bodyweight" vs
+// "body weight", "dumbbells" vs "dumbbell", "resistance-bands" vs "band",
+// etc.) — only "barbell" happens to match by coincidence. Without this
+// mapping, getCuratedExercises() silently returned ZERO exercises for any
+// account whose onboarding equipment doesn't literally include the word
+// "barbell", since every other selection (bodyweight/dumbbells/resistance
+// bands, the most common home-gym picks) never matched anything. Values with
+// no equivalent tag in this curated set (kettlebells, pull-up-bar, yoga-mat,
+// treadmill, stationary-bike) are intentionally left unmapped — mapping them
+// to an unrelated tag would over-broaden results, not fix anything.
+const ONBOARDING_EQUIPMENT_ALIASES: Record<string, string> = {
+  bodyweight: "body weight",
+  dumbbells: "dumbbell",
+  "resistance-bands": "band",
+};
+
+/** Normalize onboarding-vocabulary equipment ids to this file's `equipment`
+ * tag vocabulary (see ONBOARDING_EQUIPMENT_ALIASES above) before filtering. */
+function normalizeEquipment(equipment: string[]): string[] {
+  const normalized = new Set<string>();
+  for (const raw of equipment) {
+    normalized.add(raw);
+    const alias = ONBOARDING_EQUIPMENT_ALIASES[raw];
+    if (alias) normalized.add(alias);
+  }
+  return Array.from(normalized);
+}
+
 export function getCuratedExercises(
   equipment: string[],
   location: "home" | "gym" | "any",
 ): CuratedExercise[] {
+  const normalizedEquipment = normalizeEquipment(equipment);
   return CURATED_EXERCISES.filter((ex) => {
-    const hasEquipment = ex.equipment.some((eq) => equipment.includes(eq));
+    const hasEquipment = ex.equipment.some((eq) => normalizedEquipment.includes(eq));
     if (!hasEquipment) return false;
     if (location === "any") return true;
     return ex.location.includes(location);

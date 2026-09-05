@@ -31,7 +31,15 @@ export const WorkoutErrorState: React.FC<WorkoutErrorStateProps> = ({ errorType,
           icon: 'barbell-outline' as const,
           iconColor: colors.primary,
           title: 'No Exercises Found',
-          subtitle: 'This workout appears to be empty',
+          // BUG FIX (found via live testing): this screen previously gave a
+          // real user no idea what to do next when the AI plan hadn't been
+          // generated yet — a genuine dead end. A full fix would thread a
+          // "Generate Plan" action from here back to the Workout tab's
+          // plan-generation flow (real navigation/cross-screen wiring, out
+          // of scope for a quick fix) — this at least tells the user the
+          // concrete next step instead of leaving them guessing.
+          subtitle:
+            'This workout appears to be empty. Go back to the Workout tab and generate an AI plan first.',
         };
 
   return (

@@ -18,6 +18,7 @@ import {
 } from "../services/fitaiWorkersClient";
 import { useWorkoutBuilderStore } from "../stores/workoutBuilderStore";
 import { useProfileStore } from "../stores/profileStore";
+import { useFitnessStore } from "../stores/fitnessStore";
 import type { PersonalInfoData } from "../types/onboarding/personal-info";
 import type { WorkoutPreferencesData } from "../types/onboarding/workout-preferences";
 import type { BodyAnalysisData } from "../types/onboarding/body-analysis";
@@ -27,6 +28,100 @@ import type {
   AiSuggestion,
   ValidationWarning,
 } from "../types/workout";
+import {
+  computeAllVolumeLandmarks,
+  countWeeklySetsByMuscleFromCatalog,
+  resolveTrainingEmphasis,
+  classifyVolumeZone,
+  type TrainingAge,
+} from "../services/volumeLandmarksService";
+import { getWeekTarget } from "../services/periodizationService";
+
+// ----------------------------------------------------------------------------
+// COACH CONTEXT (Workout Engine v2 Phase 6A)
+// ----------------------------------------------------------------------------
+// Design decision: computed CLIENT-side, not re-derived in the worker. The
+// worker is a separate runtime with no access to the client's Zustand stores
+// or TS services — reimplementing volumeLandmarksService/periodizationService
+// there would duplicate business logic in two places with real drift risk
+// (this file already mirrors the "build a minimal worker profile from
+// onboarding stores, POST it" pattern for priorPerformance-style derived
+// data). The worker schema fields (SuggestDayRequestSchema.
+// volumeLandmarkContext/mesocycleContext) are optional/additive specifically
+// so a client that can't compute this (or an older client) degrades to
+// pre-6A prompt behavior, never a hard failure.
+
+interface VolumeLandmarkContextEntry {
+  muscle: string;
+  currentSets: number;
+  mev: number;
+  mav: number;
+  mrv: number;
+  zone: "under_mev" | "mev_to_mav" | "mav_to_mrv" | "over_mrv";
+}
+
+interface MesocycleContextPayload {
+  weekInBlock: number;
+  isDeloadWeek: boolean;
+  targetRir: number;
+  volumeMultiplier: number;
+}
+
+/**
+ * Builds the optional volume-landmark + mesocycle-week context sent to
+ * suggest-day/generate-full-week. Reads the FULL draft week (not just the
+ * current day) from workoutBuilderStore — volume landmarks are a WEEKLY
+ * concept, and the current day's exercises alone aren't enough to know a
+ * muscle's total weekly set count. Mirrors buildWorkerProfile()'s existing
+ * pattern of reaching into store getState() directly from this service.
+ * Returns {} (both fields undefined) on any missing prerequisite rather than
+ * fabricating a value — the worker prompt renders nothing when absent.
+ */
+function buildCoachContext(trainingAge: TrainingAge): {
+  volumeLandmarkContext?: VolumeLandmarkContextEntry[];
+  mesocycleContext?: MesocycleContextPayload;
+} {
+  const draft = useWorkoutBuilderStore.getState().draft;
+  const primaryGoals =
+    (useProfileStore.getState().workoutPreferences as { primary_goals?: string[] } | null)
+      ?.primary_goals ?? undefined;
+
+  let volumeLandmarkContext: VolumeLandmarkContextEntry[] | undefined;
+  if (draft) {
+    const emphasis = resolveTrainingEmphasis(primaryGoals);
+    const landmarks = computeAllVolumeLandmarks(trainingAge, emphasis);
+    const plannedExercises = draft.workouts.flatMap((w) =>
+      (w.plannedExercises ?? []).map((e) => ({ exerciseId: e.exerciseId, setCount: e.sets.length })),
+    );
+    const currentSets = countWeeklySetsByMuscleFromCatalog(plannedExercises);
+
+    volumeLandmarkContext = Object.entries(landmarks).map(([muscle, l]) => {
+      const sets = currentSets[muscle] ?? 0;
+      return {
+        muscle,
+        currentSets: sets,
+        mev: l.mev,
+        mav: l.mav,
+        mrv: l.mrv,
+        zone: classifyVolumeZone(sets, l),
+      };
+    });
+  }
+
+  let mesocycleContext: MesocycleContextPayload | undefined;
+  const mesocycleWeek = useFitnessStore.getState().getMesocycleWeek?.();
+  if (mesocycleWeek != null) {
+    const target = getWeekTarget(mesocycleWeek);
+    mesocycleContext = {
+      weekInBlock: target.weekInBlock,
+      isDeloadWeek: target.isDeloadWeek,
+      targetRir: target.targetRir,
+      volumeMultiplier: target.volumeMultiplier,
+    };
+  }
+
+  return { volumeLandmarkContext, mesocycleContext };
+}
 
 // ----------------------------------------------------------------------------
 // TYPES (client-facing camelCase shapes)
@@ -103,6 +198,7 @@ export interface ApplyProgressionParams {
         weightKg: number | null;
         reps: number | null;
         rpe?: 1 | 2 | 3 | null;
+        rpe10?: number | null;
       }>;
     };
   }>;
@@ -198,7 +294,9 @@ function buildWorkerProfile():
   const experienceLevel = mapExperienceLevel(
     workoutPreferences.intensity ?? "beginner",
   );
-  const availableEquipment = (workoutPreferences.available_equipment ?? workoutPreferences.equipment ?? ["body weight"]).map((e: string) => e.toLowerCase());
+  const availableEquipment = mapEquipment(
+    workoutPreferences.available_equipment ?? workoutPreferences.equipment ?? ["body weight"],
+  );
 
   // Per CLAUDE.md §8: no hardcoded fallbacks for user data. Surface real
   // values from workoutPreferences; warn when missing so the developer sees
@@ -253,6 +351,46 @@ function mapExperienceLevel(
   if (lower.includes("adv")) return "advanced";
   if (lower.includes("inter")) return "intermediate";
   return "beginner";
+}
+
+/**
+ * Onboarding equipment slug → worker EquipmentSchema enum term.
+ *
+ * BUG FIX: `buildWorkerProfile` previously just lowercased the raw onboarding
+ * slugs (WorkoutPreferencesConstants.EQUIPMENT_OPTIONS: "bodyweight",
+ * "dumbbells", "resistance-bands", "kettlebells", "pull-up-bar", "yoga-mat",
+ * "treadmill", "stationary-bike", ...) and sent them straight to the worker.
+ * Only "barbell" happened to already match the worker's EquipmentSchema
+ * (fitai-workers/src/utils/validation.ts — singular terms with spaces, e.g.
+ * "dumbbell", "resistance band", "stationary bike"), so EVERY other value
+ * failed 400 validation — breaking suggest-day, natural-language edit, and
+ * every other builder-AI endpoint for any user who selected equipment beyond
+ * barbell. This is the same class of enum-boundary gap CLAUDE.md documents
+ * for activity_level/diet_type, just missing for equipment.
+ *
+ * "pull-up-bar" and "yoga-mat" have no equipment-schema equivalent at all
+ * (ExerciseDB's own vocabulary — which EquipmentSchema mirrors — doesn't tag
+ * either as loadable/machine equipment); "treadmill" likewise has no direct
+ * match (the schema's cardio machines are elliptical/stepmill/skierg/
+ * stationary bike, not treadmill). Rather than mis-map these to something
+ * misleading, they're dropped — the worker profile still correctly reflects
+ * every OTHER piece of equipment the user has.
+ */
+export function mapEquipment(raw: string[]): string[] {
+  const map: Record<string, string> = {
+    bodyweight: "body weight",
+    dumbbells: "dumbbell",
+    "resistance-bands": "resistance band",
+    kettlebells: "kettlebell",
+    barbell: "barbell",
+    "stationary-bike": "stationary bike",
+  };
+  const mapped = raw
+    .map((e) => map[e.toLowerCase()])
+    .filter((e): e is string => Boolean(e));
+  // Schema requires >=1 entry (.min(1)) — fall back to its own documented
+  // default rather than sending an empty array if nothing mapped.
+  return mapped.length > 0 ? mapped : ["body weight"];
 }
 
 // ----------------------------------------------------------------------------
@@ -343,20 +481,26 @@ class WorkoutBuilderAiService {
         };
       }
 
+      const { volumeLandmarkContext, mesocycleContext } = buildCoachContext(profile.experienceLevel);
+
       const response = await fitaiWorkersClient.suggestDay({
         dayIndex: params.dayIndex,
-        currentExercises: params.currentExercises.map((e) => ({
-          exerciseId: e.exerciseId,
-          name: e.name,
-          targetMuscles: [],
-          bodyParts: [],
-          sets: e.sets.length,
-          reps: e.sets[0]?.reps ?? 8,
-          restSeconds: e.restSeconds,
-        })),
+        // BUG FIX: this used to reshape each exercise into an ad-hoc
+        // {exerciseId, name, targetMuscles, bodyParts, sets: number, reps,
+        // restSeconds} object — targetMuscles/bodyParts don't exist on the
+        // worker's PlannedExerciseSchema at all, and `sets` was sent as the
+        // SET COUNT where the schema expects the actual PlannedSet[] array,
+        // so every suggest-day call failed 400 validation
+        // ("currentExercises.0.sets: Invalid input: expected array,
+        // received number"). params.currentExercises is already
+        // PlannedExercise[] (src/types/workout.ts), which mirrors
+        // PlannedExerciseSchema field-for-field — pass it through as-is.
+        currentExercises: params.currentExercises,
         profile,
         goals: params.goals,
         weekNumber: params.weekNumber,
+        volumeLandmarkContext,
+        mesocycleContext,
         skipCache: params.skipCache,
       });
 
@@ -486,9 +630,14 @@ class WorkoutBuilderAiService {
         };
       }
 
+      const { volumeLandmarkContext, mesocycleContext } = buildCoachContext(profile.experienceLevel);
+
       const response = await fitaiWorkersClient.generateFullWeek({
         partialPlan: params.partialPlan,
         profile,
+        weekNumber: params.partialPlan.weekNumber,
+        volumeLandmarkContext,
+        mesocycleContext,
         skipCache: params.skipCache,
       });
 
@@ -549,8 +698,12 @@ class WorkoutBuilderAiService {
   }
 
   /**
-   * Apply a deload week (≈40% volume reduction). The worker mirrors
-   * deloadService.generateDeloadPlan.
+   * Apply a deload week (≈40% volume reduction — matches
+   * deloadService.checkProactiveDeload's advisory banner and
+   * generateDeloadPlan's reductionFactor). The actual reduction logic runs
+   * server-side in the Worker; deloadService's client-side functions are
+   * advisory/estimate-only, not the enforced source of truth for what the
+   * Worker computes.
    */
   async deloadPlan(params: DeloadParams): Promise<AiServiceResult<DeloadResult>> {
     try {

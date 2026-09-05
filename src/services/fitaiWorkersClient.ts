@@ -1146,10 +1146,11 @@ export class FitAIWorkersClient {
     profile: unknown;
     goals?: string[];
     weekNumber?: number;
-    /** Per-muscle current weekly sets vs MEV/MAV/MRV — optional, additive
-     * (Workout Engine v2 Phase 6A). See workoutBuilderAi.ts buildCoachContext. */
+    // Workout Engine v2 Phase 5/6A — optional volume-landmark + mesocycle-week
+    // coach context (see workoutBuilderAi.ts buildCoachContext()). Mirrors
+    // SuggestDayRequestSchema in fitai-workers/src/utils/validation.ts;
+    // additive/optional so older callers keep working unchanged.
     volumeLandmarkContext?: unknown[];
-    /** Current mesocycle week's target RIR/volume multiplier — optional, additive. */
     mesocycleContext?: unknown;
     skipCache?: boolean;
   }): Promise<
@@ -1238,7 +1239,8 @@ export class FitAIWorkersClient {
     partialPlan: unknown;
     profile: unknown;
     weekNumber?: number;
-    /** See suggestDay — same optional/additive coach context (Phase 6A). */
+    // Workout Engine v2 Phase 5/6A — see suggestDay() above; mirrors
+    // GenerateFullWeekRequestSchema in fitai-workers/src/utils/validation.ts.
     volumeLandmarkContext?: unknown[];
     mesocycleContext?: unknown;
     skipCache?: boolean;

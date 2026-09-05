@@ -21,7 +21,8 @@ import { BottomSheet, AnimatedPressable, EmptyState, SlidingSegmentedControl } f
 import { colors, spacing, borderRadius, typography } from '../../theme/aurora-tokens';
 import { hexToRgba } from '../../utils/colors';
 import { rf, rp, rh } from '../../utils/responsive';
-import { exerciseFilterService } from '../../services/exerciseFilterService';
+import { exerciseFilterService, FilteredExercise } from '../../services/exerciseFilterService';
+import { getCatalogEntry } from '../../data/exerciseCatalog.generated';
 import { ExerciseTipsCard } from './instruction/ExerciseTipsCard';
 
 interface ExerciseInstructionModalProps {
@@ -40,8 +41,31 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
   const [activeTab, setActiveTab] = useState<'instructions' | 'details'>('instructions');
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set());
 
-  // Direct lookup by exercise ID
-  const exercise = exerciseFilterService.getExerciseById(exerciseId);
+  // Direct lookup by exercise ID, exact-match only (no fuzzy name fallback —
+  // see the identical fix + rationale in ExerciseGifPlayer.tsx). Falls back
+  // to the canonical catalog (exerciseCatalog.generated.ts) for legacy
+  // curated ids (e.g. "deadlift") that have no entry in the legacy
+  // ExerciseDB-hash-keyed dataset, so the Details tab shows real
+  // muscle/equipment data instead of an empty state for those exercises.
+  const legacyExercise = exerciseFilterService.getExerciseById(exerciseId);
+  const exercise: FilteredExercise | null =
+    legacyExercise ??
+    (() => {
+      const catalogEntry = getCatalogEntry(exerciseId);
+      if (!catalogEntry) return null;
+      const gifAsset = catalogEntry.media.find((m) => m.type === 'exercisedb_gif');
+      return {
+        exerciseId: catalogEntry.canonicalId,
+        name: catalogEntry.name,
+        gifUrl: gifAsset?.url ?? '',
+        targetMuscles: catalogEntry.primaryMuscles,
+        bodyParts: catalogEntry.bodyPart ? [catalogEntry.bodyPart] : [],
+        equipments: catalogEntry.equipment,
+        secondaryMuscles: catalogEntry.secondaryMuscles,
+        instructions: [],
+        difficulty: catalogEntry.skillLevel,
+      };
+    })();
   // Title-case the display name so the sheet title isn't lowercase when the
   // workout plan stores the name in lowercase (e.g. "kettlebell two arm clean").
   const rawName = exerciseName || exercise?.name || 'Exercise';

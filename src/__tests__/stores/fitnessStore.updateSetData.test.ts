@@ -200,6 +200,96 @@ describe("fitnessStore.updateSetData", () => {
     expect(squat.completed).toBe(true);
   });
 
+  describe("duplicate exerciseId in one day (e.g. a circuit round)", () => {
+    beforeEach(() => {
+      // Same exerciseId appears twice — this is the exact scenario that
+      // previously collided: updateSetData matched by exerciseId via .map(),
+      // so writing to ONE occurrence silently overwrote BOTH.
+      useFitnessStore.setState({
+        currentWorkoutSession: {
+          workoutId: "workout-1",
+          sessionId: "session-1",
+          startedAt: "2026-03-26T10:00:00.000Z",
+          exercises: [
+            {
+              exerciseId: "push_up",
+              completed: false,
+              sets: [{ reps: 0, weight: 0, completed: false }],
+            },
+            {
+              exerciseId: "squat",
+              completed: false,
+              sets: [{ reps: 0, weight: 0, completed: false }],
+            },
+            {
+              exerciseId: "push_up", // duplicate — second circuit round
+              completed: false,
+              sets: [{ reps: 0, weight: 0, completed: false }],
+            },
+          ],
+        },
+      });
+    });
+
+    it("BUG (pre-fix behavior, no exerciseIndex given): writing to one duplicate updates ALL matches", () => {
+      // Documents the old collision so the fix below is provably an
+      // improvement, not just untested — omitting exerciseIndex falls back
+      // to the original exerciseId-match behavior on purpose.
+      useFitnessStore.getState().updateSetData("push_up", 0, {
+        weightKg: 20,
+        reps: 15,
+        setType: "normal",
+        completed: true,
+      });
+
+      const session = useFitnessStore.getState().currentWorkoutSession!;
+      const pushUpEntries = session.exercises.filter((e) => e.exerciseId === "push_up");
+      expect(pushUpEntries).toHaveLength(2);
+      // Both occurrences got the same write — the bug.
+      expect(pushUpEntries[0].sets[0].weight).toBe(20);
+      expect(pushUpEntries[1].sets[0].weight).toBe(20);
+    });
+
+    it("FIX: passing exerciseIndex targets only that occurrence, leaving the other duplicate untouched", () => {
+      useFitnessStore.getState().updateSetData(
+        "push_up",
+        0,
+        { weightKg: 20, reps: 15, setType: "normal", completed: true },
+        0, // first push_up occurrence (array index 0)
+      );
+      useFitnessStore.getState().updateSetData(
+        "push_up",
+        0,
+        { weightKg: 25, reps: 12, setType: "normal", completed: true },
+        2, // second push_up occurrence (array index 2)
+      );
+
+      const session = useFitnessStore.getState().currentWorkoutSession!;
+      expect(session.exercises[0].exerciseId).toBe("push_up");
+      expect(session.exercises[0].sets[0]).toEqual(
+        expect.objectContaining({ weight: 20, reps: 15 }),
+      );
+      expect(session.exercises[2].exerciseId).toBe("push_up");
+      expect(session.exercises[2].sets[0]).toEqual(
+        expect.objectContaining({ weight: 25, reps: 12 }),
+      );
+      // The non-duplicate exercise in between is unaffected.
+      expect(session.exercises[1].sets[0].completed).toBe(false);
+    });
+
+    it("FIX: an out-of-range exerciseIndex falls back to exerciseId-match rather than silently no-op'ing", () => {
+      useFitnessStore.getState().updateSetData(
+        "squat",
+        0,
+        { weightKg: 100, reps: 5, setType: "normal", completed: true },
+        99, // invalid index
+      );
+      const session = useFitnessStore.getState().currentWorkoutSession!;
+      const squat = session.exercises.find((e) => e.exerciseId === "squat")!;
+      expect(squat.sets[0].weight).toBe(100);
+    });
+  });
+
   it("clears on session end", async () => {
     useFitnessStore.getState().updateSetData("bench_press", 0, {
       weightKg: 60,

@@ -37,7 +37,6 @@ import Animated, {
   withSpring,
   interpolate,
   withTiming,
-  runOnJS,
 } from "react-native-reanimated";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import type { SharedValue } from "react-native-reanimated";
@@ -55,11 +54,13 @@ import {
   spacing,
   borderRadius,
   typography,
+  errorText,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
 import type { DayWorkout } from "../../../types/ai";
 import type { PlannedExercise } from "../../../types/workout";
 import { ExerciseRow, EXERCISE_ROW_HEIGHT } from "./ExerciseRow";
+import { CardioBlockEditor } from "./CardioBlockEditor";
 
 export interface DayBlockProps {
   dayIndex: number;
@@ -163,23 +164,32 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
     // Rest state uses backgroundTertiary + primary text color so white-on-grey
     // (~2.5:1) doesn't fail WCAG AA; high/mod keep their tinted chips with
     // primary text which meets AA on saturated orange/amber backgrounds.
+    //
+    // BUG FIX: `day.intensityLevel` is set at plan-generation time and never
+    // updated by the manual builder's addExercise action — a day created as
+    // an empty rest day (intensityLevel defaults to "rest") kept showing a
+    // "REST" chip even after the user added its first exercise, since the
+    // string itself never changed. `isRestDay` (derived fresh from
+    // `exercises.length` above) is the authoritative signal for whether a
+    // day is actually a rest day; only fall through to the stored
+    // intensityLevel string once the day genuinely has exercises.
     const intensityLevel = (day.intensityLevel ?? "rest").toLowerCase();
     const isRestState =
-      intensityLevel !== "intense" &&
-      intensityLevel !== "high" &&
-      intensityLevel !== "moderate" &&
-      intensityLevel !== "medium";
+      isRestDay ||
+      (intensityLevel !== "intense" &&
+        intensityLevel !== "high" &&
+        intensityLevel !== "moderate" &&
+        intensityLevel !== "medium");
     const intensityColor = isRestState
       ? colors.background.tertiary
       : intensityLevel === "intense" || intensityLevel === "high"
         ? colors.primary.DEFAULT // orange
         : colors.warning.DEFAULT; // amber
-    const intensityLabel =
-      intensityLevel === "intense" || intensityLevel === "high"
+    const intensityLabel = isRestDay
+      ? "REST"
+      : intensityLevel === "intense" || intensityLevel === "high"
         ? "HIGH"
-        : intensityLevel === "moderate" || intensityLevel === "medium"
-          ? "MOD"
-          : "REST";
+        : "MOD";
 
     // ── Drag-to-reorder DAYS (long-press on header) ──
     const handleDragEnd = useCallback(
@@ -253,24 +263,27 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
     //    fires once on collapse. We use usePinchToZoom for its scale tracking
     //    and route the collapse decision through an onEnd observer composed on
     //    top of the returned gesture. ──
-    const { gesture: basePinchGesture, scale: pinchScale } = usePinchToZoom(
-      0.5,
-      1.5,
-      { hapticAtLimits: false },
+    const handlePinchCollapse = useCallback(
+      (finalScale: number) => {
+        if (!onCollapseAll || finalScale >= 0.8) return;
+        onCollapseAll();
+        haptics.selection();
+      },
+      [onCollapseAll],
     );
-    const handlePinchCollapse = useCallback(() => {
-      if (!onCollapseAll) return;
-      onCollapseAll();
-      haptics.selection();
-    }, [onCollapseAll]);
-    // Compose an onEnd observer onto the base pinch: if the final scale is
-    // below the collapse threshold, fire the collapse handler. `.onEnd()` runs
-    // on the UI thread, so the JS callback is routed via runOnJS (mirrors the
-    // pattern in handlers.ts useDragToReorder).
-    const pinchGesture = basePinchGesture.onEnd(() => {
-      if (pinchScale.value < 0.8) {
-        runOnJS(handlePinchCollapse)();
-      }
+    // Was re-chaining a second .onEnd() onto usePinchToZoom's returned
+    // gesture to observe the collapse threshold — but RNGH's .onEnd()
+    // ASSIGNS the handler, it doesn't compose multiple registrations, so
+    // that silently REPLACED (not augmented) the hook's own snap-to-limit
+    // logic, and mixed worklet closures from two different module scopes on
+    // the same gesture (this file's replacement onEnd vs handlers.ts's
+    // onUpdate/onFinalize), which is the likely source of the
+    // "some callbacks are worklets and some are not" warning seen in QA.
+    // Fixed by passing the collapse check in as usePinchToZoom's own onEnd
+    // callback instead, so there's exactly one onEnd registration.
+    const { gesture: pinchGesture } = usePinchToZoom(0.5, 1.5, {
+      hapticAtLimits: false,
+      onEnd: handlePinchCollapse,
     });
 
     // ── Expand chevron rotation ──
@@ -339,7 +352,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
               <Pressable
                 onPress={handleHeaderPress}
                 accessibilityRole="button"
-                accessibilityLabel={`${dayLabel}. ${workoutTitle}. ${exerciseCount} exercises.`}
+                accessibilityLabel={`${dayLabel}. ${workoutTitle}. ${exerciseCount} exercise${exerciseCount !== 1 ? "s" : ""}.`}
                 accessibilityHint="Tap to expand or collapse. Long-press to drag this day. Pinch in to collapse all days."
                 accessibilityState={{ expanded: isExpanded }}
                 style={styles.header}
@@ -411,6 +424,16 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                             !!ex.supersetId && ex.supersetId !== prevSupersetId;
                           const isLastInSuperset =
                             !!ex.supersetId && ex.supersetId !== nextSupersetId;
+                          // Circuit grouping mirrors superset grouping exactly
+                          // (contiguous run of equal circuitId) — see
+                          // src/utils/workoutGrouping.ts for the shared
+                          // traversal logic this visual grouping matches.
+                          const prevCircuitId = planned[idx - 1]?.circuitId;
+                          const nextCircuitId = planned[idx + 1]?.circuitId;
+                          const isFirstInCircuit =
+                            !!ex.circuitId && ex.circuitId !== prevCircuitId;
+                          const isLastInCircuit =
+                            !!ex.circuitId && ex.circuitId !== nextCircuitId;
                           return (
                             <ExerciseRow
                               key={`${ex.exerciseId}_${idx}`}
@@ -419,6 +442,8 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                               exerciseIndex={idx}
                               isFirstInSuperset={isFirstInSuperset}
                               isLastInSuperset={isLastInSuperset}
+                              isFirstInCircuit={isFirstInCircuit}
+                              isLastInCircuit={isLastInCircuit}
                               onOpenEditor={onOpenEditor}
                               onDuplicate={onDuplicateExercise}
                               onRemove={onRemoveExercise}
@@ -445,6 +470,16 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                       variant="primary"
                       fullWidth
                       style={styles.addBtn}
+                    />
+
+                    {/* Cardio blocks + scheduled time (Phase B) — first-class
+                        cardio activity ("6 am, 30 min running") + a per-day
+                        time picker. Live-edits the draft via store actions. */}
+                    <CardioBlockEditor
+                      dayIndex={dayIndex}
+                      cardioBlocks={day.cardioBlocks}
+                      scheduledTime={day.scheduledTime}
+                      testID={`${testID}-cardio`}
                     />
 
                     {/* Notes */}
@@ -537,7 +572,7 @@ export const DayBlock: React.FC<DayBlockProps> = React.memo(
                               color={colors.error.DEFAULT}
                               style={styles.dayMenuIcon}
                             />
-                            <Text style={[styles.dayMenuLabel, { color: colors.error.DEFAULT }]}>
+                            <Text style={[styles.dayMenuLabel, { color: errorText }]}>
                               Clear Day
                             </Text>
                           </Pressable>
@@ -796,10 +831,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // BUG FIX: `dayMenu` previously only set top/right (no left/bottom), so on
+  // web it shrink-wrapped to its content instead of filling the screen —
+  // `menuDismiss`'s absoluteFillObject then only covered that small
+  // shrink-wrapped box (roughly the dropdown's own footprint) rather than
+  // acting as a real backdrop. A tap on unrelated content elsewhere on
+  // screen (outside that small box) never reached menuDismiss at all, so
+  // the open menu could visually sit on top of and intercept taps on
+  // whatever rendered below it (e.g. "Add Cardio") until a tap that
+  // happened to land inside the small dismiss box closed it. Fixed to
+  // mirror ExerciseRow.tsx's identical kebab-menu pattern, which already
+  // gets this right: the OUTER container fills the full screen (so
+  // menuDismiss is a true backdrop), and the visible dropdown box is
+  // positioned via `dayMenuList`'s own `position: absolute` instead.
   dayMenu: {
     position: "absolute",
-    top: rp(spacing.xs),
-    right: rp(spacing.md),
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 50,
   },
   menuDismiss: {
@@ -808,6 +858,9 @@ const styles = StyleSheet.create({
     zIndex: 40,
   } as ViewStyle,
   dayMenuList: {
+    position: "absolute",
+    top: rp(spacing.xs),
+    right: rp(spacing.md),
     backgroundColor: colors.background.tertiary,
     borderRadius: borderRadius.lg,
     borderWidth: 1,

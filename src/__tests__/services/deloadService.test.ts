@@ -23,10 +23,28 @@ describe("deloadService", () => {
       expect(result!.reason).toContain("Week 5");
     });
 
-    it("returns proactive suggestion for week 6+", () => {
-      const result = checkProactiveDeload(6);
-      expect(result).not.toBeNull();
-      expect(result!.type).toBe("proactive");
+    // BUG FIX: this used to assert week 6 ALSO deloads — checkProactiveDeload
+    // was a plain `mesocycleWeek < 5` guard with no upper bound, so it
+    // deloaded forever from week 5 onward (mesocycleStartDate is only ever
+    // set once and never rolled forward, so getMesocycleWeek() just keeps
+    // climbing). It now treats the mesocycle as a repeating 5-week block
+    // (4 accumulation + 1 deload) — week 6 is week 1 of the NEXT block, not
+    // a continuation of the deload.
+    it("does NOT deload week 6 — it's week 1 of the next accumulation block", () => {
+      expect(checkProactiveDeload(6)).toBeNull();
+    });
+
+    it("does not perpetually deload weeks 7, 8, 9 either — full block 2 accumulates normally", () => {
+      expect(checkProactiveDeload(7)).toBeNull();
+      expect(checkProactiveDeload(8)).toBeNull();
+      expect(checkProactiveDeload(9)).toBeNull();
+    });
+
+    it("deloads again at week 10 (5th week of the 2nd block) and week 15 (3rd block)", () => {
+      expect(checkProactiveDeload(10)).not.toBeNull();
+      expect(checkProactiveDeload(10)!.type).toBe("proactive");
+      expect(checkProactiveDeload(15)).not.toBeNull();
+      expect(checkProactiveDeload(15)!.type).toBe("proactive");
     });
 
     it("suggests volume reduction of 40%", () => {

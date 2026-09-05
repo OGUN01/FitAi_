@@ -29,6 +29,11 @@ const MEDIA_TYPES: Record<string, string> = {
   jpeg: 'image/jpeg',
   png: 'image/png',
   webp: 'image/webp',
+  // 3D exercise demo videos (Workout Engine v2 Phase 2 ingest — R2 keys
+  // exercise/<id>-<gender>-video.mp4). Without this, getContentType() fell
+  // back to application/octet-stream for every uploaded video, breaking
+  // native <video>/player consumption even though the bytes served fine.
+  mp4: 'video/mp4',
 };
 
 /**

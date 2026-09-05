@@ -1,4 +1,5 @@
 import { WeeklyWorkoutPlan, DayWorkout } from "../../ai";
+import type { CardioIntensity } from "../../types/workout";
 // NOTE: RealtimeChannel was previously imported here to type a module-level
 // `workoutSessionsChannel` export, but that export was dead code —
 // fitnessStore declares its OWN local `let workoutSessionsChannel` and uses
@@ -45,8 +46,35 @@ export interface CurrentWorkoutSession {
       completed: boolean;
       setType?: string;
       rpe?: 1 | 2 | 3 | null;
+      /** Full 1-10 RPE (see src/utils/effortScale.ts) — synthesized from
+       * `rpe` via EFFORT_BUCKET_TO_RPE10 for fast 3-tap logging, or entered
+       * precisely via SetLogModal's advanced RPE slider. */
+      rpe10?: number | null;
       isCalibration?: boolean;
     }>;
+  }>;
+  /**
+   * Cardio blocks (Workout Engine v2 Phase 4B.2) — a PARALLEL list to
+   * exercises[], not force-fit into that shape since a cardio block has no
+   * sets/reps. Seeded from workout.cardioBlocks at session start
+   * (fitnessStore.startWorkoutSession); each tracks its own completion +
+   * optional actual-duration override (actual over estimated — CLAUDE.md #9,
+   * same rule strength exercises already follow via WorkoutProgress.
+   * caloriesBurned). Optional so a session started before this field existed
+   * (or a plan with no cardio blocks) still round-trips cleanly.
+   */
+  cardioBlocks?: Array<{
+    /** CardioBlock.id from the plan. */
+    blockId: string;
+    name: string;
+    exerciseId?: string;
+    plannedDurationMinutes: number;
+    intensity: CardioIntensity;
+    distanceKm?: number;
+    completed: boolean;
+    /** User-adjusted actual duration, if different from planned — preferred
+     * over plannedDurationMinutes for calorie calc when present. */
+    actualDurationMinutes?: number;
   }>;
 }
 
@@ -123,9 +151,61 @@ export interface FitnessState {
       setType: string;
       completed: boolean;
       rpe?: 1 | 2 | 3;
+      /** Full 1-10 RPE — see src/utils/effortScale.ts. */
+      rpe10?: number | null;
       isCalibration?: boolean;
     },
+    /**
+     * BUG FIX: exercises[] in currentWorkoutSession was previously matched by
+     * exerciseId alone (a .map() over every entry whose exerciseId equals the
+     * given one) — if the SAME exerciseId appears twice in one day's plan (a
+     * circuit round, or two different rep-schemes of the same lift), every
+     * matching entry silently received the SAME set data on every write.
+     * Callers that know the exercise's position in workout.exercises (every
+     * current caller does — SetLogModal/ExerciseCard/WorkoutSessionScreen all
+     * track a current exercise index) should pass it here so the store
+     * targets that ONE array position exactly. Optional and additive: a
+     * caller that omits it gets the previous exerciseId-match behavior
+     * (correct for the common no-duplicates case, still susceptible to the
+     * bug above for a genuine duplicate — pass the index to fully fix it).
+     */
+    exerciseIndex?: number,
   ) => void;
+  /**
+   * Mark a cardio block (Workout Engine v2 Phase 4B.2) complete, optionally
+   * recording an actual duration different from the plan's. Matched by
+   * blockId — cardio blocks don't have the exerciseId-duplication problem
+   * updateSetData works around, since CardioBlock.id is already unique per
+   * block (stamped by workoutBuilderStore's addCardioBlock).
+   */
+  updateCardioBlock: (
+    blockId: string,
+    data: { completed: boolean; actualDurationMinutes?: number },
+  ) => void;
+
+  /**
+   * Runtime (mid-session) exercise substitution — Workout Engine v2 Phase
+   * 6C-iii. SESSION-ONLY: swaps exercises[exerciseIndex].exerciseId and
+   * reseeds its sets (fresh, unlogged, one per newSetCount) — never touches
+   * weeklyWorkoutPlan/customWeeklyPlan. The caller (WorkoutSessionScreen) is
+   * responsible for updating its own local `workout` copy in parallel so
+   * displayed name/reps/video and grouping stay in sync — this store only
+   * owns the SESSION's logged-set data, not exercise display metadata (that
+   * still comes from the plan object the screen holds, same as every other
+   * exercise in the session).
+   *
+   * Refuses (no-op, returns false) once any set on this exercise instance is
+   * already logged (`completed: true`) — those sets belong to the exercise
+   * being replaced and must never be silently discarded or reattributed to
+   * the swapped-in exercise. Callers should also hide/disable the swap
+   * affordance once a set is logged (better UX than a silent no-op), but
+   * this guard exists so a stale UI can never corrupt data.
+   */
+  swapSessionExercise: (
+    exerciseIndex: number,
+    newExerciseId: string,
+    newSetCount: number,
+  ) => boolean;
 
   // Day-boundary reset (clears stale partial progress on new day)
   checkAndResetProgressIfNewDay: () => void;

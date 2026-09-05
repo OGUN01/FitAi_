@@ -213,6 +213,21 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
       .slice(0, FEATURED_MAX);
   }, [templates, sort]);
 
+  // Templates already surfaced in the Featured header must not also appear
+  // in the "All templates" list below it -- without this exclusion, every
+  // trending-sorted template with forkCount >= FEATURED_FORK_THRESHOLD (i.e.
+  // any forked template, since the threshold is 1) rendered TWICE: once as a
+  // Featured card and again in its natural position in the main list, since
+  // `featured` was just a non-excluding slice of the same `templates` array.
+  const featuredIds = useMemo(
+    () => new Set(featured.map((t) => t.id)),
+    [featured],
+  );
+  const mainListTemplates = useMemo(
+    () => (featuredIds.size > 0 ? templates.filter((t) => !featuredIds.has(t.id)) : templates),
+    [templates, featuredIds],
+  );
+
   const handleCardPress = useCallback((tpl: WorkoutTemplate) => {
     haptics.light();
     onOpenTemplate(tpl);
@@ -267,7 +282,7 @@ export const CommunityTemplatesTab: React.FC<CommunityTemplatesTabProps> = ({
       <SortRow sort={sort} onSelect={handleSortChange} />
 
       <FlatList
-        data={templates}
+        data={mainListTemplates}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
           <CommunityCard

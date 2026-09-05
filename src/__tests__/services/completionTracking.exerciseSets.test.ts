@@ -210,6 +210,114 @@ describe("_writeExerciseSets", () => {
     expect(mockSupabase._tables["exercise_sets"].insert).not.toHaveBeenCalled();
   });
 
+  it("writes superset_id/circuit_id/block_index/tempo from the plan's exercise metadata", async () => {
+    const exercises = [
+      {
+        exerciseId: "bench_press",
+        sets: [{ weight: 60, reps: 8, completed: true }],
+      },
+    ];
+    const planExercises = [
+      {
+        exerciseId: "bench_press",
+        supersetId: "ss_lz3k9x2", // NOT a UUID — see 20260904110000 migration
+        blockIndex: 0,
+        tempo: "2-1-2-0",
+      },
+    ];
+
+    mockSupabase.from("exercise_sets");
+    mockSupabase._tables["exercise_sets"]._resolve({ data: null, error: null });
+
+    await service._writeExerciseSets("user-1", "session-1", exercises, planExercises);
+
+    const rows = mockSupabase._tables["exercise_sets"].insert.mock.calls[0][0];
+    expect(rows[0]).toMatchObject({
+      superset_id: "ss_lz3k9x2",
+      circuit_id: null,
+      block_index: 0,
+      tempo: "2-1-2-0",
+    });
+  });
+
+  it("pairs plan metadata POSITIONALLY when the same exerciseId appears twice in one day (circuit round)", async () => {
+    // BUG FIX regression test: planByExerciseId used to be keyed by bare
+    // exerciseId, so two occurrences of "squat" in one day (circuit round 1
+    // and round 2, each grouped into a different circuit block) collapsed to
+    // ONE Map entry — every row for BOTH occurrences got whichever plan
+    // metadata happened to be last in the array, not its own.
+    const exercises = [
+      { exerciseId: "squat", sets: [{ weight: 60, reps: 10, completed: true }] },
+      { exerciseId: "squat", sets: [{ weight: 60, reps: 10, completed: true }] },
+    ];
+    const planExercises = [
+      { exerciseId: "squat", circuitId: "circuit_1", blockIndex: 0 },
+      { exerciseId: "squat", circuitId: "circuit_1", blockIndex: 1 },
+    ];
+
+    mockSupabase.from("exercise_sets");
+    mockSupabase._tables["exercise_sets"]._resolve({ data: null, error: null });
+
+    await service._writeExerciseSets("user-1", "session-1", exercises, planExercises);
+
+    const rows = mockSupabase._tables["exercise_sets"].insert.mock.calls[0][0];
+    // Each occurrence's row must carry ITS OWN blockIndex, not both collapsing
+    // to the same (last-in-array) value.
+    expect(rows[0]).toMatchObject({ circuit_id: "circuit_1", block_index: 0 });
+    expect(rows[1]).toMatchObject({ circuit_id: "circuit_1", block_index: 1 });
+  });
+
+  it("writes drop_weight_kg/drop_reps from the plan's per-set drop data, matched by set index", async () => {
+    const exercises = [
+      {
+        exerciseId: "tricep_pushdown",
+        sets: [
+          { weight: 20, reps: 10, completed: true },
+          { weight: 20, reps: 8, completed: true }, // drop set
+        ],
+      },
+    ];
+    const planExercises = [
+      {
+        exerciseId: "tricep_pushdown",
+        plannedSets: [
+          {},
+          { dropWeightKg: 12.5, dropReps: 15 },
+        ],
+      },
+    ];
+
+    mockSupabase.from("exercise_sets");
+    mockSupabase._tables["exercise_sets"]._resolve({ data: null, error: null });
+
+    await service._writeExerciseSets("user-1", "session-1", exercises, planExercises);
+
+    const rows = mockSupabase._tables["exercise_sets"].insert.mock.calls[0][0];
+    expect(rows[0]).toMatchObject({ drop_weight_kg: null, drop_reps: null });
+    expect(rows[1]).toMatchObject({ drop_weight_kg: 12.5, drop_reps: 15 });
+  });
+
+  it("writes null superset/circuit/tempo/drop fields when no plan metadata is passed (backward compatible)", async () => {
+    const exercises = [
+      { exerciseId: "row", sets: [{ weight: 40, reps: 10, completed: true }] },
+    ];
+
+    mockSupabase.from("exercise_sets");
+    mockSupabase._tables["exercise_sets"]._resolve({ data: null, error: null });
+
+    await service._writeExerciseSets("user-1", "session-1", exercises);
+
+    const rows = mockSupabase._tables["exercise_sets"].insert.mock.calls[0][0];
+    expect(rows[0]).toMatchObject({
+      superset_id: null,
+      circuit_id: null,
+      block_index: null,
+      tempo: null,
+      drop_weight_kg: null,
+      drop_reps: null,
+    });
+  });
+
   it("uses completedSets when sets is not an array", async () => {
     const exercises = [
       {

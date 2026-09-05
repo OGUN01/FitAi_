@@ -395,7 +395,7 @@ export default function ExerciseHistoryScreen({ route, navigation }: Props) {
             {item.label}
           </Text>
           <Text style={styles.groupCount} numberOfLines={1}>
-            {item.rows.length} set{item.rows.length === 1 ? "" : "s"}
+            {item.rows.length} session{item.rows.length === 1 ? "" : "s"}
           </Text>
         </View>
         {item.rows.map((entry, idx) => {

@@ -30,8 +30,11 @@ class PRDetectionService {
     const current1RM = currentPRs.estimated1rm ?? 0;
 
     const isWeightPR = newSet.weightKg > currentWeight;
+    // estimateOneRepMax returns null above MAX_RELIABLE_REPS (e.g. a 20-rep
+    // set) — the formulas diverge badly past that, so treat "unreliable" as
+    // "no 1RM PR this set", never fabricate a number.
     const estimated1rm = estimateOneRepMax(newSet.weightKg, newSet.reps);
-    const is1RMPR = estimated1rm > current1RM;
+    const is1RMPR = estimated1rm !== null && estimated1rm > current1RM;
 
     if (!isWeightPR && !is1RMPR) return null;
 
@@ -39,7 +42,7 @@ class PRDetectionService {
       isWeightPR,
       is1RMPR,
       newWeightPR: isWeightPR ? newSet.weightKg : undefined,
-      new1RMPR: is1RMPR ? estimated1rm : undefined,
+      new1RMPR: is1RMPR ? (estimated1rm as number) : undefined,
     };
   }
 

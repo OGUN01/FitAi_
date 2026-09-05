@@ -33,18 +33,30 @@ import {
 import { hexToRgba } from "../../../utils/colors";
 import { rp, rf, rw } from "../../../utils/responsive";
 import { formatMuscleGroup } from "../../../utils/textFormat";
-import type { CuratedExercise } from "../../../data/curatedExercises";
+import type { CatalogEntry } from "../../../data/exerciseCatalog.generated";
 
 // ----------------------------------------------------------------------------
-// CATEGORY → ACCENT COLOR MAP (flat tint per category — gradient discs retired)
+// BODY REGION → ACCENT COLOR MAP (flat tint per region — gradient discs retired)
+//
+// Workout Engine v2 Phase 6C-ii: CatalogEntry has no single "category" field
+// like the old CuratedExercise did — it carries `bodyPart`, which mixes two
+// vocabularies depending on the row's source (ExerciseDB rows: "back",
+// "cardio", "chest", "lower arms", "neck", "shoulders", "upper arms",
+// "upper legs", "lower legs", "waist"; standalone curated rows: the old
+// curated `category` verbatim — chest/back/shoulders/arms/legs/core/cardio/
+// full_body). normalizeBodyPart folds both into the same small display-bucket
+// set the existing CATEGORY_STYLE map already covers, rather than needing a
+// second style table.
 // ----------------------------------------------------------------------------
+
+type DisplayCategory = "chest" | "back" | "legs" | "shoulders" | "arms" | "core" | "cardio" | "full_body";
 
 interface CategoryStyle {
   color: string;
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-const CATEGORY_STYLE: Record<CuratedExercise["category"], CategoryStyle> = {
+const CATEGORY_STYLE: Record<DisplayCategory, CategoryStyle> = {
   chest: { color: colors.primary.DEFAULT, icon: "barbell-outline" },
   back: { color: colors.secondary.DEFAULT, icon: "body-outline" },
   legs: { color: flatColors.purple, icon: "walk-outline" },
@@ -55,12 +67,30 @@ const CATEGORY_STYLE: Record<CuratedExercise["category"], CategoryStyle> = {
   full_body: { color: colors.primary.light, icon: "pulse-outline" },
 };
 
-function categoryStyle(category: CuratedExercise["category"]): CategoryStyle {
-  return CATEGORY_STYLE[category] ?? CATEGORY_STYLE.chest;
+const BODY_PART_TO_DISPLAY: Record<string, DisplayCategory> = {
+  chest: "chest",
+  back: "back",
+  "upper legs": "legs",
+  "lower legs": "legs",
+  legs: "legs",
+  shoulders: "shoulders",
+  neck: "shoulders",
+  "upper arms": "arms",
+  "lower arms": "arms",
+  arms: "arms",
+  waist: "core",
+  core: "core",
+  cardio: "cardio",
+  full_body: "full_body",
+};
+
+function categoryStyle(bodyPart: string | null): CategoryStyle {
+  const display = (bodyPart && BODY_PART_TO_DISPLAY[bodyPart]) || "full_body";
+  return CATEGORY_STYLE[display];
 }
 
 /** Rough estimated time per exercise: 3 sets × (reps window + rest). */
-function estimateMinutes(exercise: CuratedExercise): string {
+function estimateMinutes(exercise: CatalogEntry): string {
   // 3 sets, ~30s work + 60s rest each → ~5 min. Time-based → ~3 min.
   const mins = exercise.isTimeBased ? 3 : 5;
   return `${mins} min`;
@@ -71,7 +101,7 @@ function estimateMinutes(exercise: CuratedExercise): string {
 // ----------------------------------------------------------------------------
 
 export interface ExercisePickerCardProps {
-  exercise: CuratedExercise;
+  exercise: CatalogEntry;
   isFavorite: boolean;
   isSelected: boolean;
   multiSelectMode: boolean;
@@ -94,8 +124,8 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
   index = 0,
   testID,
 }) => {
-  const catStyle = categoryStyle(exercise.category);
-  const primaryMuscles = exercise.muscleGroups.slice(0, 2);
+  const catStyle = categoryStyle(exercise.bodyPart);
+  const primaryMuscles = exercise.primaryMuscles.slice(0, 2);
   const estTime = estimateMinutes(exercise);
 
   const handleFavPress = () => {
@@ -156,7 +186,7 @@ export const ExercisePickerCard: React.FC<ExercisePickerCardProps> = ({
           )}
           <Text style={styles.metaDot}>·</Text>
           <Text style={[styles.metaText, styles.metaTextCapitalize]}>
-            {exercise.difficulty}
+            {exercise.skillLevel}
           </Text>
           <Text style={styles.metaDot}>·</Text>
           <Text style={styles.metaText}>{estTime}</Text>

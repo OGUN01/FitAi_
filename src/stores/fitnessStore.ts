@@ -7,7 +7,7 @@ import { crudOperations } from "../services/crudOperations";
 import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
-import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
+import { getCurrentUserId, getUserIdOrGuest, getSyncableUserId } from "../services/authUtils";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import {
   findPlanWorkoutBySessionIdentity,
@@ -46,19 +46,6 @@ type StoredSessionExercise = {
   restTime?: number;
 };
 
-/**
- * BUG-2: Returns the real authenticated user id, or null when the user is a
- * guest / not authenticated. Callers use this to SKIP offline-queue sync for
- * guests (matching the pattern in nutritionStore, hydrationStore). Guest IDs
- * ("guest"/"guest-*") must never reach Supabase writes — RLS rejects them and
- * they pollute the retry queue indefinitely.
- */
-function getSyncableUserId(): string | null {
-  const userId = getCurrentUserId();
-  if (!userId) return null;
-  if (userId.startsWith("guest")) return null;
-  return userId;
-}
 
 // Realtime subscription channel reference (outside store to persist across re-renders)
 let workoutSessionsChannel: RealtimeChannel | null = null;
@@ -348,6 +335,29 @@ export const useFitnessStore = create<FitnessState>()(
       // ── Custom plan actions ─────────────────────────────────────────────
       setActivePlanSource: (source) => {
         set({ activePlanSource: source });
+
+        // Goal Engine reset rule (Phase A.2/C): 'plan' mode was a decision
+        // about a SPECIFIC custom workout plan; reverting to 'ai' must flip
+        // the shared toggle back to 'goal' so the app never silently keeps
+        // driving targets off a now-inactive custom plan. The toggle lives
+        // on nutritionStore (one shared field, hydrated alongside
+        // active_diet_source). Lazy require avoids a static
+        // fitnessStore -> nutritionStore import cycle (nutritionStore
+        // already reaches fitnessStore-free code paths).
+        if (source === 'ai') {
+          try {
+            const nutritionStoreMod = require('./nutritionStore');
+            const ns = nutritionStoreMod.useNutritionStore.getState();
+            if (ns.goalTargetsMode === 'plan' && ns.setGoalTargetsMode) {
+              ns.setGoalTargetsMode('goal');
+            }
+          } catch (resetError) {
+            console.error(
+              '[fitnessStore] Failed to reset goal_targets_mode on AI switch:',
+              resetError,
+            );
+          }
+        }
 
         // Persist to Supabase via offline queue so preference syncs across devices
         const userId = getCurrentUserId();
@@ -730,7 +740,19 @@ export const useFitnessStore = create<FitnessState>()(
               // Start at null; actual calories are set only by the MET calc at
               // completion (completionTrackingService / extraWorkoutService).
               caloriesBurned: null,
-              exercises: workout.exercises.map((exercise) => ({
+              // BUG FIX (found via live testing): a `workout` with no
+              // `exercises` array at all (undefined, not just empty — e.g.
+              // an empty-plan "Start a workout" quick-start reaching this
+              // before a real workout was ever resolved) threw a real
+              // `TypeError: Cannot read properties of undefined (reading
+              // 'map')` here. The caller's navigation params already
+              // defensively fall back to `exercises || []`, but that guard
+              // ran too late — this function's own session-creation call
+              // crashed first. Guard here too so the shared store action
+              // never crashes regardless of caller; the session correctly
+              // degrades to the player's own "No Exercises Found" state
+              // instead of a thrown exception.
+              exercises: (workout.exercises ?? []).map((exercise) => ({
                 exerciseId: exercise.exerciseId,
                 sets: Array.from({ length: exercise.sets }, (_, _index) => ({
                   reps:
@@ -772,7 +794,7 @@ export const useFitnessStore = create<FitnessState>()(
               workoutId: workout.id,
               sessionId,
               startedAt: new Date().toISOString(),
-              exercises: workout.exercises.map((exercise) => ({
+              exercises: (workout.exercises ?? []).map((exercise) => ({
                 exerciseId: exercise.exerciseId,
                 completed: false,
                 sets: Array(exercise.sets)
@@ -782,6 +804,20 @@ export const useFitnessStore = create<FitnessState>()(
                     weight: 0,
                     completed: false,
                   })),
+              })),
+              // Workout Engine v2 Phase 4B.2 — cardio blocks were never
+              // seeded into the session before (confirmed: zero runtime code
+              // touched CardioBlock; only planning/estimation services read
+              // workout.cardioBlocks). A PARALLEL list, not force-fit into
+              // exercises[] — a cardio block has no sets/reps.
+              cardioBlocks: (workout.cardioBlocks ?? []).map((block) => ({
+                blockId: block.id,
+                name: block.name,
+                exerciseId: block.exerciseId,
+                plannedDurationMinutes: block.durationMinutes,
+                intensity: block.intensity,
+                distanceKm: block.distanceKm,
+                completed: false,
               })),
             },
           });
@@ -892,35 +928,115 @@ export const useFitnessStore = create<FitnessState>()(
         }
       },
 
-      updateSetData: (exerciseId, setIndex, data) => {
+      updateSetData: (exerciseId, setIndex, data, exerciseIndex) => {
         set((state) => {
           if (!state.currentWorkoutSession) return state;
 
-          const updatedExercises = state.currentWorkoutSession.exercises.map(
-            (exercise) => {
-              if (exercise.exerciseId !== exerciseId) return exercise;
+          const exercises = state.currentWorkoutSession.exercises;
 
-              const updatedSets = [...exercise.sets];
-              if (updatedSets[setIndex]) {
-                updatedSets[setIndex] = {
-                  reps: data.reps,
-                  weight: data.weightKg,
-                  completed: data.completed,
-                  setType: data.setType,
-                  rpe: data.rpe ?? null,
-                  isCalibration: data.isCalibration ?? false,
-                };
-              }
-
-              const allCompleted =
-                updatedSets.length > 0 && updatedSets.every((s) => s.completed);
-
-              return {
-                ...exercise,
-                sets: updatedSets,
-                completed: allCompleted,
+          const applyUpdate = (exercise: (typeof exercises)[number]) => {
+            const updatedSets = [...exercise.sets];
+            if (updatedSets[setIndex]) {
+              updatedSets[setIndex] = {
+                reps: data.reps,
+                weight: data.weightKg,
+                completed: data.completed,
+                setType: data.setType,
+                rpe: data.rpe ?? null,
+                rpe10: data.rpe10 ?? null,
+                isCalibration: data.isCalibration ?? false,
               };
+            }
+            const allCompleted =
+              updatedSets.length > 0 && updatedSets.every((s) => s.completed);
+            return { ...exercise, sets: updatedSets, completed: allCompleted };
+          };
+
+          // BUG FIX: when the caller knows the exercise's position (every
+          // current caller does), target that ONE array entry directly —
+          // matching by exerciseId alone previously updated EVERY entry
+          // sharing that id, silently duplicating set data across any
+          // repeated exercise (a circuit round, or two rep-schemes of the
+          // same lift in one day). Falls back to the old exerciseId-match
+          // behavior when no index is given.
+          const updatedExercises =
+            exerciseIndex != null && exercises[exerciseIndex]
+              ? exercises.map((exercise, idx) =>
+                  idx === exerciseIndex ? applyUpdate(exercise) : exercise,
+                )
+              : exercises.map((exercise) =>
+                  exercise.exerciseId === exerciseId
+                    ? applyUpdate(exercise)
+                    : exercise,
+                );
+
+          return {
+            ...state,
+            currentWorkoutSession: {
+              ...state.currentWorkoutSession,
+              exercises: updatedExercises,
             },
+          };
+        });
+      },
+
+      // Workout Engine v2 Phase 4B.2 — matched by blockId (unique per
+      // CardioBlock, unlike exerciseId which can repeat), so no
+      // updateSetData-style instance-collision guard is needed here.
+      updateCardioBlock: (blockId, data) => {
+        set((state) => {
+          if (!state.currentWorkoutSession?.cardioBlocks) return state;
+
+          return {
+            ...state,
+            currentWorkoutSession: {
+              ...state.currentWorkoutSession,
+              cardioBlocks: state.currentWorkoutSession.cardioBlocks.map((block) =>
+                block.blockId === blockId
+                  ? {
+                      ...block,
+                      completed: data.completed,
+                      actualDurationMinutes: data.actualDurationMinutes ?? block.actualDurationMinutes,
+                    }
+                  : block,
+              ),
+            },
+          };
+        });
+      },
+
+      // Workout Engine v2 Phase 6C-iii — see the JSDoc on FitnessState.
+      // swapSessionExercise for the full contract (session-only, refuses
+      // once a set is logged).
+      swapSessionExercise: (exerciseIndex, newExerciseId, newSetCount) => {
+        let applied = false;
+        set((state) => {
+          if (!state.currentWorkoutSession) return state;
+
+          const exercises = state.currentWorkoutSession.exercises;
+          const target = exercises[exerciseIndex];
+          if (!target) return state;
+
+          if (target.sets.some((s) => s.completed)) {
+            console.warn(
+              `[fitnessStore] swapSessionExercise blocked — exercise index ${exerciseIndex} already has logged sets`,
+            );
+            return state;
+          }
+
+          applied = true;
+          const updatedExercises = exercises.map((exercise, idx) =>
+            idx === exerciseIndex
+              ? {
+                  exerciseId: newExerciseId,
+                  completed: false,
+                  sets: Array.from({ length: Math.max(1, newSetCount) }, () => ({
+                    reps: 0,
+                    weight: 0,
+                    completed: false,
+                  })),
+                }
+              : exercise,
           );
 
           return {
@@ -931,6 +1047,7 @@ export const useFitnessStore = create<FitnessState>()(
             },
           };
         });
+        return applied;
       },
 
       // Data persistence
@@ -974,13 +1091,16 @@ export const useFitnessStore = create<FitnessState>()(
                 authError.message,
               );
             } else if (user?.user?.id) {
-              // Hydrate active_plan_source preference from profiles (multi-device sync)
+              // Hydrate active_plan_source preference from profiles (multi-device sync).
+              // BUG FIX: a brand-new sign-up has no `profiles` row yet — `.single()`
+              // threw a real 406 for this normal case; `.maybeSingle()` returns
+              // null data with no error instead (same fix as getProfile above).
               try {
                 const { data: profile, error: profileError } = await supabase
                   .from("profiles")
                   .select("active_plan_source")
                   .eq("id", user.user.id)
-                  .single();
+                  .maybeSingle();
 
                 if (profileError) {
                   console.error("❌ Failed to fetch active_plan_source from profiles:", profileError);

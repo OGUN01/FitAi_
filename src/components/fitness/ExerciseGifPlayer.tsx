@@ -10,15 +10,19 @@ import {
   ViewStyle,
 } from "react-native";
 import { Image } from "expo-image"; // Use Expo Image for GIF animation support
+import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
 import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp, rbr, rs } from "../../utils/responsive";
 import { hexToRgba } from "../../utils/colors";
-import { exerciseFilterService } from "../../services/exerciseFilterService";
+import { exerciseFilterService, FilteredExercise } from "../../services/exerciseFilterService";
 import { getFallbackGifUrl } from "../../services/exercise-visual/urlUtils";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
+import { resolveExerciseMedia } from "../../utils/resolveExerciseMedia";
+import { getCatalogEntry } from "../../data/exerciseCatalog.generated";
+import { useProfileStore } from "../../stores/profileStore";
 
 interface ExerciseGifPlayerProps {
   exerciseId: string; // Direct exercise ID - no more complex matching!
@@ -56,8 +60,27 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+  // True once a resolved 3d_video has failed to load for the CURRENT
+  // exerciseId — permanently downgrades this render to the GIF path below
+  // (reusing its existing, already-tested load/error/retry UI) rather than
+  // retrying a video URL that already failed, or inventing a parallel video
+  // error UI. Reset whenever exerciseId changes (same effect as fallbackUrl).
+  const [videoFailed, setVideoFailed] = useState(false);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const mediaWidth = Math.min(width, Math.max(0, windowWidth - spacing.lg * 2));
+
+  // Gender-aware 3D video resolution (Workout Engine v2 Phase 2/§K.7) — a
+  // pure lookup against the offline exercise catalog, not a network call.
+  // null when this exercise has no video (the overwhelming majority today —
+  // 278/1,552 catalog rows) or isn't in the catalog at all; every branch
+  // below that doesn't check `resolvedVideo` renders EXACTLY as before.
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const resolvedMedia = useMemo(
+    () => resolveExerciseMedia(exerciseId, personalInfo?.gender),
+    [exerciseId, personalInfo?.gender],
+  );
+  const resolvedVideo =
+    !videoFailed && resolvedMedia?.type === "3d_video" ? resolvedMedia : null;
 
   const getFallbackDisplayName = (value: string) =>
     value
@@ -65,12 +88,36 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
       .trim()
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-  // Direct lookup by exercise ID with fallbacks, then name-based fuzzy match
-  const exercise = useMemo(() => {
-    // 1. Direct ID lookup
+  // Direct lookup by exercise ID with fallbacks.
+  //
+  // BUG FIX: this used to fall through to exerciseFilterService's
+  // getExerciseByName (steps 3/4 below, now removed), which does a
+  // "contains" SUBSTRING match — e.g. searching "deadlift" matches ANY
+  // exercise whose name contains that substring, including "band straight
+  // leg deadlift", and .find() returns whichever happens to sort first in
+  // exerciseDatabase.min.json. This fired for every exercise sourced from
+  // the canonical catalog's legacy CURATED aliases (e.g. "deadlift",
+  // "overhead_press") — those plain snake_case ids have no entry in the
+  // legacy ExerciseDB-hash-keyed exerciseDatabase.min.json at all, so ID
+  // lookup (steps 1/2) always missed and fell into the dangerous fuzzy
+  // fallback, showing a COMPLETELY DIFFERENT exercise's equipment/target/
+  // name. This is the exact class of false-positive fuzzy matching already
+  // rejected for the catalog generator itself (see
+  // scripts/generate-exercise-catalog.mjs — "squat" -> "bodyweight
+  // squatting row" was one real example) — it should never have been live
+  // here either.
+  //
+  // Fix: when the legacy ID lookup misses, fall back to an EXACT lookup
+  // against the canonical catalog (exerciseCatalog.generated.ts) instead of
+  // a fuzzy name search — the same source of truth the builder/picker used
+  // to add this exercise in the first place, so name/equipment/muscles are
+  // guaranteed to match what the user actually picked.
+  const exercise = useMemo<FilteredExercise | null>(() => {
+    // 1. Direct ID lookup (legacy ExerciseDB-hash-keyed dataset — still the
+    // richest source for gifUrl/instructions when it has the exercise).
     let result = exerciseFilterService.getExerciseById(exerciseId);
 
-    // 2. Case-insensitive ID fallback
+    // 2. Case-insensitive ID fallback (still exact-id, just case-tolerant).
     if (!result && exerciseId) {
       const cleanId = exerciseId.trim();
       const allIds = exerciseFilterService.getAllExerciseIds();
@@ -82,18 +129,33 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
       }
     }
 
-    // 3. Name-based fuzzy match using exerciseName prop
-    if (!result && exerciseName) {
-      result = exerciseFilterService.getExerciseByName(exerciseName);
-    }
-
-    // 4. Try using exerciseId itself as a name (e.g. "sun_salutation" -> "Sun Salutation")
+    // 3. Exact lookup against the canonical catalog (covers legacy curated
+    // ids like "deadlift"/"overhead_press" that only exist there).
     if (!result && exerciseId) {
-      result = exerciseFilterService.getExerciseByName(exerciseId);
+      const catalogEntry = getCatalogEntry(exerciseId);
+      if (catalogEntry) {
+        const gifAsset = catalogEntry.media.find((m) => m.type === "exercisedb_gif");
+        result = {
+          exerciseId: catalogEntry.canonicalId,
+          name: catalogEntry.name,
+          gifUrl: gifAsset?.url ?? "",
+          targetMuscles: catalogEntry.primaryMuscles,
+          bodyParts: catalogEntry.bodyPart ? [catalogEntry.bodyPart] : [],
+          equipments: catalogEntry.equipment,
+          secondaryMuscles: catalogEntry.secondaryMuscles,
+          // No plain-text instructions in the canonical catalog — leaving
+          // this empty is an honest "no detailed instructions available"
+          // rather than fabricating text or reaching for another fuzzy
+          // match, matching ExerciseInstructionModal's own existing
+          // graceful-empty handling.
+          instructions: [],
+          difficulty: catalogEntry.skillLevel,
+        };
+      }
     }
 
     return result;
-  }, [exerciseId, exerciseName]);
+  }, [exerciseId]);
 
 
   // Always prioritize database name over passed name to avoid showing IDs
@@ -108,6 +170,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
     // Reset fallback + retry counter whenever exercise changes
     setFallbackUrl(null);
     setRetryCount(0);
+    setVideoFailed(false);
     setIsPlaying(autoPlay);
     if (exercise?.gifUrl) {
       setIsLoading(true);
@@ -144,6 +207,27 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
     }
   };
 
+  // expo-av's onLoad/onPlaybackStatusUpdate report an AVPlaybackStatus, not
+  // a bare event — bridge to the same isLoading/hasError state the GIF path
+  // already uses so both media types share one loading/error UI.
+  const handleVideoLoad = (status: AVPlaybackStatus) => {
+    if (status.isLoaded) {
+      setIsLoading(false);
+      setHasError(false);
+    }
+  };
+
+  const handleVideoError = () => {
+    // Downgrade to the GIF path rather than retrying the video or inventing
+    // a separate video error UI — the same exercise's exercisedb_gif entry
+    // is a strictly better fallback than the Giphy heuristic search
+    // handleImageError falls back to, and reusing that existing, already-
+    // tested code path is lower risk than a parallel one.
+    setVideoFailed(true);
+    setIsLoading(true);
+    setHasError(false);
+  };
+
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
   };
@@ -153,7 +237,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   };
 
   const renderFullscreenModal = () => {
-    if (!exercise || !exercise.gifUrl) return null;
+    if (!exercise || (!exercise.gifUrl && !resolvedVideo)) return null;
 
     // Clamp to the phone-column width on web/tablet so the fullscreen GIF
     // doesn't balloon to 1728px on a 1920px desktop window. Mirrors the
@@ -194,18 +278,40 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
               {displayName}
             </Text>
 
-            <Image
-              key={`fullscreen-${exerciseId}-${activeGifUrl}`}
-              source={{ uri: activeGifUrl }}
-              style={[
-                styles.fullscreenGif,
-                { width: modalWidth, height: modalHeight * 0.8 },
-              ]}
-              contentFit="contain"
-              transition={300}
-              cachePolicy="memory-disk"
-              autoplay={isPlaying}
-            />
+            {resolvedVideo ? (
+              <Video
+                key={`fullscreen-video-${exerciseId}-${resolvedVideo.videoUrl}`}
+                source={{ uri: resolvedVideo.videoUrl! }}
+                posterSource={
+                  resolvedVideo.posterUrl ? { uri: resolvedVideo.posterUrl } : undefined
+                }
+                usePoster={!!resolvedVideo.posterUrl}
+                style={[
+                  styles.fullscreenGif,
+                  { width: modalWidth, height: modalHeight * 0.8 },
+                ]}
+                resizeMode={ResizeMode.CONTAIN}
+                isLooping
+                isMuted
+                useNativeControls={false}
+                shouldPlay={isPlaying}
+                onLoad={handleVideoLoad}
+                onError={handleVideoError}
+              />
+            ) : (
+              <Image
+                key={`fullscreen-${exerciseId}-${activeGifUrl}`}
+                source={{ uri: activeGifUrl }}
+                style={[
+                  styles.fullscreenGif,
+                  { width: modalWidth, height: modalHeight * 0.8 },
+                ]}
+                contentFit="contain"
+                transition={300}
+                cachePolicy="memory-disk"
+                autoplay={isPlaying}
+              />
+            )}
 
             <Text style={styles.fullscreenHint}>
               Maximum quality view - tap X to close
@@ -272,7 +378,7 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
   };
 
   const renderGifPlayer = () => {
-    if (!exercise || !exercise.gifUrl) {
+    if (!exercise || (!exercise.gifUrl && !resolvedVideo)) {
       return (
         <View style={[styles.placeholder, { height, width: mediaWidth }]}>
           <Text style={styles.placeholderText}>Demo unavailable</Text>
@@ -374,25 +480,52 @@ const ExerciseGifPlayerComponent: React.FC<ExerciseGifPlayerProps> = ({
               hapticType="light"
               style={styles.gifTouchArea}
             >
-              <Image
-                key={`${exerciseId}-${activeGifUrl}`}
-                source={{ uri: activeGifUrl }}
-                style={[
-                  styles.gif,
-                  {
-                    height,
-                    width: mediaWidth,
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                  },
-                ]}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-                contentFit="contain" // Expo Image prop (was resizeMode)
-                transition={300} // Smooth loading transition
-                cachePolicy="memory-disk" // Better caching for GIFs
-                autoplay={isPlaying}
-              />
+              {resolvedVideo ? (
+                <Video
+                  key={`video-${exerciseId}-${resolvedVideo.videoUrl}`}
+                  source={{ uri: resolvedVideo.videoUrl! }}
+                  posterSource={
+                    resolvedVideo.posterUrl ? { uri: resolvedVideo.posterUrl } : undefined
+                  }
+                  usePoster={!!resolvedVideo.posterUrl}
+                  style={[
+                    styles.gif,
+                    {
+                      height,
+                      width: mediaWidth,
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                    },
+                  ]}
+                  resizeMode={ResizeMode.CONTAIN}
+                  isLooping
+                  isMuted
+                  useNativeControls={false}
+                  shouldPlay={isPlaying}
+                  onLoad={handleVideoLoad}
+                  onError={handleVideoError}
+                />
+              ) : (
+                <Image
+                  key={`${exerciseId}-${activeGifUrl}`}
+                  source={{ uri: activeGifUrl }}
+                  style={[
+                    styles.gif,
+                    {
+                      height,
+                      width: mediaWidth,
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                    },
+                  ]}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                  contentFit="contain" // Expo Image prop (was resizeMode)
+                  transition={300} // Smooth loading transition
+                  cachePolicy="memory-disk" // Better caching for GIFs
+                  autoplay={isPlaying}
+                />
+              )}
 
               {/* Zoom hint overlay — hidden when showControls=false */}
               {showControls && (

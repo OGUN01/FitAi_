@@ -17,11 +17,13 @@
 // ============================================================================
 
 // Feature Engines - wrap aiService (the real Cloudflare Workers backend) with
-// exercise-DB enrichment. workoutEngine.generateSmartWorkout and
-// nutritionEngine's meal-generation methods are AI-backed via aiService;
-// only their "quick"/local-only variants use static data.
+// exercise-DB enrichment. workoutEngine.generateSmartWorkout is AI-backed via
+// aiService; only its "quick"/local-only variant uses static data.
+// (NutritionEngine/NutritionPortioner/IngredientMapper were a parallel,
+// entirely-unused nutrition-summation path — zero call sites anywhere in the
+// app, duplicating math nutritionStore already centralizes. Removed rather
+// than left as a second, silently-divergent source of truth.)
 export { workoutEngine } from '../features/workouts/WorkoutEngine';
-export { nutritionEngine } from '../features/nutrition/NutritionEngine';
 
 // AI Types
 export * from '../types/ai';
