@@ -1,3 +1,17 @@
+// Mirrors the LIVE Postgres CHECK constraint `check_timeline_range` on
+// `body_analysis.target_timeline_weeks` (confirmed via the Supabase
+// Management API: `CHECK ((target_timeline_weeks >= 4) AND
+// (target_timeline_weeks <= 104))` — undocumented in any migration file,
+// a live-schema-drift pattern already seen elsewhere in this project).
+// ANY code that computes a new target_timeline_weeks value MUST clamp to
+// this exact range before persisting it, or the Supabase insert/update
+// throws a raw 23514 error. Shared here (not left duplicated per call
+// site) specifically because a previous drift — one call site clamping
+// correctly, a sibling call site not clamping at all — is exactly what
+// caused a real, intermittent (~2-of-5 fresh accounts) onboarding bug.
+export const TARGET_TIMELINE_WEEKS_MIN = 4;
+export const TARGET_TIMELINE_WEEKS_MAX = 104;
+
 export const MEDICAL_CONDITIONS_OPTIONS = [
   { id: "diabetes-type1", label: "Diabetes Type 1", value: "diabetes-type1" },
   { id: "diabetes-type2", label: "Diabetes Type 2", value: "diabetes-type2" },

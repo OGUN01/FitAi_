@@ -7,6 +7,23 @@ import {
   MAX_SURPLUS_FRACTION,
   DEFAULT_EXERCISE_SESSIONS_PER_WEEK,
 } from "./constants";
+import {
+  TARGET_TIMELINE_WEEKS_MIN,
+  TARGET_TIMELINE_WEEKS_MAX,
+} from "../../screens/onboarding/tabs/BodyAnalysisConstants";
+
+/**
+ * Clamps a computed pace-card timeline to the same [4, 104] range the live
+ * DB's `check_timeline_range` constraint enforces on `target_timeline_weeks`
+ * (see BodyAnalysisConstants.ts). `useAdvancedReviewForm.ts`'s
+ * `handleRateSelection` clamps the value it actually PERSISTS when a card is
+ * selected — this must clamp the DISPLAYED value identically, or a card
+ * could promise "167 weeks to goal" while the stored value that later drives
+ * the chart/progress screens is a different, clamped number (BUG-46's own
+ * stated invariant: "the card and the stored timeline must agree").
+ */
+const clampTimelineWeeks = (weeks: number): number =>
+  Math.max(TARGET_TIMELINE_WEEKS_MIN, Math.min(TARGET_TIMELINE_WEEKS_MAX, weeks));
 
 /** S11: human-readable timeline — raw "150 weeks" reads as a bug, not a plan. */
 const formatTimeline = (weeks: number): string =>
@@ -145,7 +162,7 @@ export function calculateSmartAlternatives(
     const dailyCalories = rawDailyCalories;
     const bmrDifference = rawDailyCalories - bmr;
     const timelineWeeks =
-      weightToLose > 0 ? Math.ceil(weightToLose / tier.rate) : 0;
+      weightToLose > 0 ? clampTimelineWeeks(Math.ceil(weightToLose / tier.rate)) : 0;
 
     let riskLevel: RiskLevel;
     let badge: string;
@@ -234,11 +251,16 @@ export function calculateSmartAlternatives(
       if (weeklyRate <= 0) continue;
 
       // S05: boost rate can exceed the hard limit (BMR deficit + exercise burn).
+      // Phase A.3: The rate cap (boostOverLimit) is REMOVED for boost cards —
+      // the food floor is the real gate, not an arbitrary burn ceiling. The
+      // 1.5 kg/wk path needs the "eat at BMR + exercise" card available at any
+      // exerciseBurnNeeded amount; the rate is an OUTPUT (per the goal-engine
+      // decision), never a blocker on boost cards. The 1.5%/wk hard limit
+      // still applies to diet-only cards (overRateLimit above).
       // S15: "Eat at BMR" must respect the same absolute floor as diet cards —
       // a 1108-cal BMR user was previously offered 1108-cal boost cards.
-      const boostOverLimit = weeklyRate > hardRateLimit;
       const boostBelowFloor = Math.round(bmr) < minimumCalorieFloor;
-      const boostBlocked = boostOverLimit || boostBelowFloor;
+      const boostBlocked = boostBelowFloor;
 
       const exerciseDescription = workoutFrequency > 0
         ? `+${boost.extraMin} min cardio/session (${workoutFrequency}×/wk)`
@@ -250,13 +272,11 @@ export function calculateSmartAlternatives(
         weeklyRate: Math.round(weeklyRate * 100) / 100,
         dailyCalories: Math.round(bmr),
         bmrDifference: 0,
-        timelineWeeks: Math.ceil(weightToLose / weeklyRate),
+        timelineWeeks: clampTimelineWeeks(Math.ceil(weightToLose / weeklyRate)),
         riskLevel: boostBlocked ? "blocked" : boost.riskLevel,
         icon: boost.icon,
         badge: boostBlocked ? "Blocked" : boost.badge,
-        blockReason: boostOverLimit
-          ? `Rate above safe limit (${hardRateLimit.toFixed(2)} kg/wk)`
-          : boostBelowFloor
+        blockReason: boostBelowFloor
             ? `Below minimum ${minimumCalorieFloor} cal/day`
             : undefined,
         description: `Eat at BMR (${Math.round(bmr)} cal) + ${exerciseDescription}. Your existing workout plan continues unchanged.`,
@@ -403,7 +423,7 @@ export function calculateSmartAlternatives(
       const deliveredRate = (dailySurplus * 7) / CALORIE_PER_KG;
       const dailyCalories = Math.round(tdee + dailySurplus);
       const timelineWeeks =
-        weightToGain > 0 ? Math.ceil(weightToGain / deliveredRate) : 0;
+        weightToGain > 0 ? clampTimelineWeeks(Math.ceil(weightToGain / deliveredRate)) : 0;
       const bmrDifference = dailyCalories - bmr;
 
       // For weight gain, risk level reflects fat gain speed, not calorie restriction.
@@ -478,7 +498,7 @@ export function calculateSmartAlternatives(
         const requiredNewCalories = newTDEE + currentSurplus;
         const extraFoodNeeded = requiredNewCalories - currentDailyCalories;
         const targetFreqGainTimeline =
-          weightToGain > 0 ? Math.ceil(weightToGain / deliveredUserRate) : 0;
+          weightToGain > 0 ? clampTimelineWeeks(Math.ceil(weightToGain / deliveredUserRate)) : 0;
 
         gainAlternatives.push({
           id: `freq_${targetFreq}`,

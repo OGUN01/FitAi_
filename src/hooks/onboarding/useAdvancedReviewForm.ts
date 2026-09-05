@@ -9,6 +9,10 @@ import {
 import { SmartAlternative } from "../../services/validationEngine";
 import { DEFAULT_EXERCISE_SESSIONS_PER_WEEK } from "../../services/validation/constants";
 import { useReviewValidation } from "./useReviewValidation";
+import {
+  TARGET_TIMELINE_WEEKS_MIN,
+  TARGET_TIMELINE_WEEKS_MAX,
+} from "../../screens/onboarding/tabs/BodyAnalysisConstants";
 
 interface UseAdvancedReviewFormProps {
   personalInfo: PersonalInfoData | null;
@@ -211,10 +215,26 @@ export const useAdvancedReviewForm = ({
       // selection so the two prop updates don't each trigger a separate recalculation.
       isSelectingAlternativeRef.current = true;
       const weeklyRate = alternative.weeklyRate ?? 0.5;
+      // BUG FIX (found via live testing — a real, ~2-of-5-fresh-accounts
+      // intermittent onboarding failure, root-caused via the Supabase
+      // Management API after MCP/Docker-based introspection had been
+      // blocked all session): this computation was completely unclamped,
+      // unlike GoalVisualizationSection.tsx's sibling computation for the
+      // SAME field, which correctly clamps to [4, 104] — the live DB's
+      // undocumented `check_timeline_range` CHECK constraint. A small
+      // weightToLose paired with an aggressive pace card (e.g. 1kg to
+      // lose at 1kg/week = 1 week) computed BELOW 4; a large weightToLose
+      // paired with a conservative/safe pace card (e.g. 50kg at
+      // 0.3kg/week ≈ 167 weeks) computed ABOVE 104 — both are real,
+      // reachable combinations through the actual "Choose Your Pace" UI,
+      // not edge cases. Clamp exactly like the sibling call site does.
       const newTimelineWeeks =
         weeklyRate > 0
-          ? Math.ceil(weightToLose / weeklyRate)
-          : 0;
+          ? Math.max(
+              TARGET_TIMELINE_WEEKS_MIN,
+              Math.min(TARGET_TIMELINE_WEEKS_MAX, Math.ceil(weightToLose / weeklyRate)),
+            )
+          : TARGET_TIMELINE_WEEKS_MIN;
 
       // BUG-32: Always sync weekly rate to workout preferences (even for "KEEP MY GOAL")
       // Also persist boost_extra_cardio_minutes so ValidationEngine can account for
