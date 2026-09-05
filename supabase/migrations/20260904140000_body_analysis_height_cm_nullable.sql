@@ -1,0 +1,26 @@
+-- Bug fix: body_analysis.height_cm has a NOT NULL constraint on the live
+-- database that is NOT declared by any migration in this repo. Every
+-- migration that touches this column (20250119000000_create_onboarding_tables.sql's
+-- original CREATE TABLE, and 20251229203538_add_data_integrity_constraints.sql's
+-- later CHECK-constraint pass) treats height_cm as nullable — the latter
+-- migration explicitly SET NOT NULL on user_id/target_weight_kg/
+-- medical_conditions but deliberately did NOT do so for height_cm, and its
+-- CHECK constraint (`height_cm >= 100 AND height_cm <= 250`) still permits
+-- NULL (a NULL comparison evaluates to unknown, not false, so Postgres CHECK
+-- constraints pass it through) — this migration corrects the live schema to
+-- match what every migration file already declares it should be.
+--
+-- Real-world impact: BodyAnalysisService.save() (src/services/onboardingService.ts)
+-- is a full-profile upsert used correctly by onboarding (which always
+-- collects height). It is ALSO invoked by src/components/progress/WeightEntryModal.tsx
+-- to mirror a weight-only log into body_analysis for any user who hasn't
+-- yet completed the body-analysis onboarding step (so has no body_analysis
+-- row at all) — that INSERT then omits height_cm (spread from an empty/
+-- partial profileStore.bodyAnalysis) and 400s on this out-of-band NOT NULL,
+-- silently (caught, console.error only, no user-facing message). Height is
+-- already treated as fully optional everywhere it's consumed downstream
+-- (e.g. onboardingService.ts's own BMI calc: `data.bmi ?? (data.current_weight_kg
+-- && data.height_cm ? ... : null)`), so there is no reason for the DB to
+-- require it before a weight-only save can succeed.
+ALTER TABLE body_analysis
+  ALTER COLUMN height_cm DROP NOT NULL;
