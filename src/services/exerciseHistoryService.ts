@@ -14,6 +14,7 @@
 
 import { supabase } from './supabase';
 import { estimateOneRepMax } from '../utils/oneRepMax';
+import { rpe10ToBucket } from '../utils/effortScale';
 
 // ============================================================================
 // INTERFACES
@@ -31,6 +32,8 @@ export interface LastSessionData {
     setType: string;
     /** 1=easy, 2=just right, 3=hard. null if not captured (pre-RPE sessions) */
     rpe: 1 | 2 | 3 | null;
+    /** Full 1-10 RPE (src/utils/effortScale.ts). null for sessions logged before this field existed. */
+    rpe10: number | null;
   }>;
 }
 
@@ -43,6 +46,7 @@ export interface ExerciseHistoryEntry {
     reps: number | null;
     setType: string;
     rpe: 1 | 2 | 3 | null;
+    rpe10: number | null;
   }>;
   estimated1RM?: number;
 }
@@ -72,7 +76,7 @@ export class ExerciseHistoryService {
 
     const { data, error } = await supabase
       .from('exercise_sets')
-      .select('session_id, set_number, weight_kg, reps, set_type, rpe, is_calibration, completed_at')
+      .select('session_id, set_number, weight_kg, reps, set_type, rpe, rpe_10, is_calibration, completed_at')
       .eq('user_id', userId)
       .eq('exercise_id', exerciseId)
       .eq('is_completed', true)
@@ -102,6 +106,7 @@ export class ExerciseHistoryService {
         reps: row.reps,
         setType: row.set_type,
         rpe: (row.rpe as 1 | 2 | 3 | null) ?? null,
+        rpe10: (row.rpe_10 as number | null) ?? null,
       })),
     };
   }
@@ -117,21 +122,28 @@ export class ExerciseHistoryService {
   ): Promise<1 | 2 | 3 | null> {
     if (!userId) return null;
 
+    // Prefer rows with a captured rpe (the 1-3 bucket progressionService
+    // consumes); rpe_10 is read too so a row that only has rpe_10 (should not
+    // happen with current writes, but defensive for any legacy/edge-case
+    // insert path) still yields a usable bucket via rpe10ToBucket.
     const { data, error } = await supabase
       .from('exercise_sets')
-      .select('rpe, set_number')
+      .select('rpe, rpe_10, set_number')
       .eq('user_id', userId)
       .eq('exercise_id', exerciseId)
       .eq('is_completed', true)
       .eq('is_calibration', false)
-      .not('rpe', 'is', null)
+      .or('rpe.not.is.null,rpe_10.not.is.null')
       .order('completed_at', { ascending: false })
       .order('set_number', { ascending: false })
       .limit(1);
 
     if (error || !data || data.length === 0) return null;
 
-    return (data[0].rpe as 1 | 2 | 3) ?? null;
+    const row = data[0];
+    if (row.rpe != null) return row.rpe as 1 | 2 | 3;
+    if (row.rpe_10 != null) return rpe10ToBucket(row.rpe_10 as number);
+    return null;
   }
 
   /**
@@ -150,7 +162,7 @@ export class ExerciseHistoryService {
 
     const { data, error } = await supabase
       .from('exercise_sets')
-      .select('session_id, set_number, weight_kg, reps, set_type, rpe, completed_at')
+      .select('session_id, set_number, weight_kg, reps, set_type, rpe, rpe_10, completed_at')
       .eq('user_id', userId)
       .eq('exercise_id', exerciseId)
       .eq('is_completed', true)
@@ -181,13 +193,16 @@ export class ExerciseHistoryService {
         reps: r.reps,
         setType: r.set_type,
         rpe: (r.rpe as 1 | 2 | 3 | null) ?? null,
+        rpe10: (r.rpe_10 as number | null) ?? null,
       }));
 
       let estimated1RM: number | undefined;
       for (const s of sets) {
         if (s.weightKg && s.reps && s.reps > 0) {
+          // null = beyond MAX_RELIABLE_REPS — no reliable estimate, skip it
+          // rather than let it clobber a real estimate from another set.
           const e1rm = estimateOneRepMax(s.weightKg, s.reps);
-          if (!estimated1RM || e1rm > estimated1RM) {
+          if (e1rm !== null && (!estimated1RM || e1rm > estimated1RM)) {
             estimated1RM = e1rm;
           }
         }

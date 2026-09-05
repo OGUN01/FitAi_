@@ -50,6 +50,13 @@ import { hexToRgba } from "../../../utils/colors";
 export interface BuilderSummaryFooterProps {
   /** Navigate back after a successful save. */
   onSaved: () => void;
+  /**
+   * Phase B — opens the shared Save & Activate sheet (targets_mode toggle)
+   * instead of saving directly. When provided, the footer's primary button
+   * becomes "Save & Activate" and routes through the sheet; the plain
+   * "save only" path stays available inside the sheet as "Save as Draft".
+   */
+  onOpenActivateSheet?: () => void;
   /** Container style override. */
   style?: ViewStyle;
   /** Test ID. */
@@ -58,6 +65,7 @@ export interface BuilderSummaryFooterProps {
 
 export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
   onSaved,
+  onOpenActivateSheet,
   style,
   testID,
 }) => {
@@ -114,12 +122,15 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
           weightKg: number | null;
           reps: number | null;
           rpe?: 1 | 2 | 3 | null;
+          /** Full 1-10 RPE (Phase 3, src/utils/effortScale.ts) — additive,
+           * preferred over `rpe` worker-side when present. */
+          rpe10?: number | null;
         }>;
       };
     }>();
 
     for (const session of completedSessions) {
-      for (const ex of (session as { exercises?: Array<{ exerciseId: string; exerciseName?: string; sets?: Array<{ reps?: number; weight?: number; rpe?: number; completed?: boolean }> }> }).exercises ?? []) {
+      for (const ex of (session as { exercises?: Array<{ exerciseId: string; exerciseName?: string; sets?: Array<{ reps?: number; weight?: number; rpe?: number; rpe10?: number; completed?: boolean }> }> }).exercises ?? []) {
         if (!ex.exerciseId) continue;
         if (byExercise.has(ex.exerciseId)) continue;
         const sets = (ex.sets ?? []).map((s, i) => ({
@@ -127,6 +138,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
           weightKg: s.weight ?? null,
           reps: s.reps ?? null,
           rpe: (s.rpe as 1 | 2 | 3 | null) ?? null,
+          rpe10: s.rpe10 ?? null,
         }));
         if (sets.length === 0) continue;
         byExercise.set(ex.exerciseId, {
@@ -147,7 +159,8 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
   const totalExercises = useMemo(() => {
     if (!draft) return 0;
     return draft.workouts.reduce(
-      (sum, d) => sum + (d.plannedExercises?.length ?? 0),
+      (sum, d) =>
+        sum + (d.plannedExercises?.length ?? 0) + (d.cardioBlocks?.length ?? 0),
       0,
     );
   }, [draft]);
@@ -188,6 +201,13 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
 
   const handleSave = async () => {
     if (!hasContent || saving || saveInFlightRef.current) return;
+    // Phase B — when an activate-sheet handler is provided, the primary
+    // button routes through the Save & Activate sheet instead of saving
+    // directly (targets_mode must be collected before activation completes).
+    if (onOpenActivateSheet) {
+      onOpenActivateSheet();
+      return;
+    }
     saveInFlightRef.current = true;
     setSaving(true);
     try {
@@ -361,7 +381,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
           </Pressable>
 
           <GlassButton
-            label={saving ? "Saving…" : "Save Schedule"}
+            label={saving ? "Saving…" : onOpenActivateSheet ? "Save & Activate" : "Save Schedule"}
             icon="checkmark-circle-outline"
             onPress={handleSave}
             disabled={!hasContent || saving}
@@ -369,6 +389,13 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
             variant="success"
             hapticType="heavy"
             style={styles.saveBtn}
+            // BUG FIX: at a narrow viewport (375px), "Save & Activate" is the
+            // longest of this button's 3 possible labels and clipped ("Save
+            // & Acti..."); this button's flexShrink:0 container plus
+            // GlassButton's default unclamped-wrap label could overflow. One
+            // line with ellipsis is a safe, universally legible fallback for
+            // all 3 labels regardless of exact width.
+            numberOfLines={1}
             testID={`${testID ?? "footer"}-save`}
           />
         </View>

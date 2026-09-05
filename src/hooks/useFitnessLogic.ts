@@ -25,6 +25,8 @@ import {
 import { getCurrentWeekStart, getWeekStartForDate } from '../utils/weekUtils';
 import { buildLegacyFitnessGoals, buildLegacyPersonalInfo } from '../utils/profileLegacyAdapter';
 import { resolveCurrentWeightFromStores } from '../services/currentWeight';
+import { computePlanBurnPerDay } from '../services/energy/planBurn';
+import { getCompletedSessionsForDate } from '../utils/workoutIdentity';
 
 // Type for completed workout history items
 interface CompletedWorkoutItem {
@@ -364,6 +366,34 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
     const completedCount = new Set(completedPlannedSessions.map((s) => s.workoutId)).size;
     return { totalWorkouts, completedCount };
   }, [displayPlan, completedSessions]);
+
+  // ── Goal Engine Phase C: today's planned burn vs actual burn ──────────
+  // Planned: the ACTIVE plan's per-day-of-week burn for today (per the plan:
+  // `computePlanBurnPerDay(activePlan, weightKg).perDayOfWeek[today]`).
+  // Actual: today's completed sessions' `caloriesBurned` summed — the Calories
+  // SSOT per CLAUDE.md §9 (WorkoutProgress.caloriesBurned set at completion
+  // via the MET calculator; plan `estimatedCalories` is display-only). The
+  // completed sessions carry exactly that value, so summing them for today's
+  // date reads the SSOT. perDayOfWeek is indexed 0=Monday…6=Sunday; JS
+  // getDay() is 0=Sunday…6=Saturday → Monday-based index is (getDay()+6)%7.
+  const plannedBurnToday = useMemo(() => {
+    if (!displayPlan) return 0;
+    const weightKg = resolveCurrentWeightFromStores({
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    }).value;
+    const { perDayOfWeek } = computePlanBurnPerDay(displayPlan, weightKg ?? undefined);
+    const mondayBasedIndex = (new Date().getDay() + 6) % 7;
+    return Math.round(perDayOfWeek[mondayBasedIndex] ?? 0);
+  }, [displayPlan, bodyAnalysis]);
+
+  const actualBurnToday = useMemo(
+    () =>
+      getCompletedSessionsForDate(completedSessions).reduce(
+        (sum, s) => sum + (s.caloriesBurned ?? 0),
+        0,
+      ),
+    [completedSessions],
+  );
 
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = useCallback(async () => {
@@ -733,43 +763,60 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
   const handleRepeatWorkout = useCallback(
     (workout: CompletedWorkoutItem) => {
       const normalizedCategory = normalizeWorkoutCategory(workout.category);
+      // BUG FIX (found via Playwright testing): this used to look up
+      // `workout.workoutId` against the CURRENTLY ACTIVE plan FIRST, and only
+      // reconstruct from the completed session's own `workoutSnapshot` as a
+      // last resort. Workout ids are day-based slugs, not unique per plan
+      // generation — after a plan is regenerated/replaced, a NEW plan's
+      // Monday workout can coincidentally reuse the SAME id as an old,
+      // unrelated COMPLETED workout's `workoutId`, so "Repeat" launched a
+      // totally different, currently-scheduled workout instead of the one
+      // the user actually completed. `workoutSnapshot` is always written
+      // when a session completes (fitnessStore.CompletedSession) and is
+      // exactly what the user did — reconstruct from it FIRST, and use the
+      // live-plan id lookup only as a fallback for the rare case a snapshot
+      // is genuinely missing (very old/legacy completed-session data).
+      const reconstructedFromSnapshot: DayWorkout = {
+        id: workout.workoutId || `history-${workout.sessionId}`,
+        title: workout.title,
+        description: `Repeat workout based on your ${workout.title} history entry.`,
+        category: normalizedCategory,
+        duration: workout.duration,
+        estimatedCalories: workout.caloriesBurned,
+        exercises: (workout.workoutSnapshot?.exercises || []).map((exercise) => ({
+          exerciseId: exercise.exerciseId || exercise.name,
+          name: exercise.name,
+          exerciseName: exercise.name,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          duration: exercise.duration,
+          restTime: exercise.restTime,
+        })),
+        difficulty: 'medium',
+        tags: ['history-repeat'],
+        equipment: [],
+        targetMuscleGroups: [],
+        icon: 'fitness-outline',
+        dayOfWeek: selectedDay,
+        subCategory: normalizedCategory,
+        intensityLevel: 'moderate',
+        warmUp: [],
+        coolDown: [],
+        progressionNotes: [],
+        safetyConsiderations: [],
+        expectedBenefits: [],
+        isExtra: true,
+        aiGenerated: false,
+        isPersonalized: true,
+        createdAt: workout.completedAt,
+      } as unknown as DayWorkout;
+
       const originalWorkout =
-        weeklyWorkoutPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
-        customWeeklyPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
-        ({
-          id: workout.workoutId || `history-${workout.sessionId}`,
-          title: workout.title,
-          description: `Repeat workout based on your ${workout.title} history entry.`,
-          category: normalizedCategory,
-          duration: workout.duration,
-          estimatedCalories: workout.caloriesBurned,
-          exercises: (workout.workoutSnapshot?.exercises || []).map((exercise) => ({
-            exerciseId: exercise.exerciseId || exercise.name,
-            name: exercise.name,
-            exerciseName: exercise.name,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            duration: exercise.duration,
-            restTime: exercise.restTime,
-          })),
-          difficulty: 'medium',
-          tags: ['history-repeat'],
-          equipment: [],
-          targetMuscleGroups: [],
-          icon: 'fitness-outline',
-          dayOfWeek: selectedDay,
-          subCategory: normalizedCategory,
-          intensityLevel: 'moderate',
-          warmUp: [],
-          coolDown: [],
-          progressionNotes: [],
-          safetyConsiderations: [],
-          expectedBenefits: [],
-          isExtra: true,
-          aiGenerated: false,
-          isPersonalized: true,
-          createdAt: workout.completedAt,
-        } as unknown as DayWorkout);
+        workout.workoutSnapshot?.exercises?.length
+          ? reconstructedFromSnapshot
+          : (weeklyWorkoutPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
+            customWeeklyPlan?.workouts?.find((w) => w.id === workout.workoutId) ??
+            reconstructedFromSnapshot);
 
       handleStartWorkout(originalWorkout);
     },
@@ -911,6 +958,11 @@ export const useFitnessLogic = (navigation: FitnessNavigation) => {
       completedWorkouts,
       weekStats,
       completedSessions,
+      // Goal Engine Phase C: today's planned vs actual burn for the
+      // FitnessScreen gap surface. Actual reads the Calories SSOT
+      // (completed sessions' caloriesBurned — CLAUDE.md §9).
+      plannedBurnToday,
+      actualBurnToday,
       refreshing,
       selectedWorkout,
       showWorkoutStartDialog,

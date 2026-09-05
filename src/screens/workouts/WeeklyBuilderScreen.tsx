@@ -46,9 +46,14 @@ import { ExerciseEditorSheet } from "../../components/fitness/builder/ExerciseEd
 import { BuilderSummaryFooter } from "../../components/fitness/builder/BuilderSummaryFooter";
 import { InlineValidationBanner } from "../../components/fitness/builder/InlineValidationBanner";
 import { WeeklyInsightsPanel } from "../../components/fitness/builder/WeeklyInsightsPanel";
+import { GoalImpactPanel } from "../../components/fitness/builder/GoalImpactPanel";
+import { SaveAndActivateSheet } from "../../components/shared/SaveAndActivateSheet";
 import { NaturalLanguageEditBar } from "../../components/fitness/builder/NaturalLanguageEditBar";
 import { useWorkoutBuilderStore, DAYS_OF_WEEK } from "../../stores/workoutBuilderStore";
 import { useProfileStore } from "../../stores/profileStore";
+import { useNutritionStore } from "../../stores/nutritionStore";
+import { useFitnessStore } from "../../stores/fitnessStore";
+import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 import { validatePlan, type ValidationProfile } from "../../services/builderValidationService";
 import type { WorkoutTemplate } from "../../services/workoutTemplateService";
 import { buildDayWorkoutFromTemplate } from "../../utils/workoutBuilders";
@@ -118,6 +123,16 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   // ── User weight (for insights calorie calc) ──
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
   const userWeightKg = bodyAnalysis?.current_weight_kg ?? null;
+
+  // ── Goal-impact panel inputs (Phase B) ──
+  // Profile/goal data for computeEnergyBreakdown + projectGoal. useCalculatedMetrics
+  // is the single source of truth for these (no duplicated reads).
+  const { metrics } = useCalculatedMetrics();
+  // The shared targets_mode toggle (one field for diet AND workout) + the
+  // fitness store's activePlanSource for the Save & Activate sheet.
+  const goalTargetsMode = useNutritionStore((s) => s.goalTargetsMode);
+  const setGoalTargetsMode = useNutritionStore((s) => s.setGoalTargetsMode);
+  const setActivePlanSource = useFitnessStore((s) => s.setActivePlanSource);
 
   // ── Safety profile (for validation's safety_constraint checks) ──
   // Derived from BodyAnalysisData (pregnancy / injuries / medical conditions).
@@ -336,6 +351,18 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   // ── Back-with-discard-confirm ──
   const [discardDialogVisible, setDiscardDialogVisible] = useState(false);
 
+  // BUG FIX: footerSpacer below used a fixed height (180) to keep the last
+  // scrollable row from being hidden behind the sticky BuilderSummaryFooter
+  // — but the footer's real height is variable (validation-warning text,
+  // stat row, insets.bottom safe-area padding), and at a narrow viewport
+  // (375px) where more of its content wraps to extra lines, its rendered
+  // height can exceed 180, so the fixed spacer under-compensates and the
+  // footer visually overlaps the last exercise row. Measure the footer's
+  // ACTUAL rendered height instead of guessing a constant. Starts at the
+  // previous hardcoded value so there's no visible gap-then-overlap flash
+  // before the first onLayout fires.
+  const [footerHeight, setFooterHeight] = useState(rp(180));
+
   const handleBack = useCallback(() => {
     if (draftDirty) {
       setDiscardDialogVisible(true);
@@ -393,11 +420,17 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
 
   const handleReplaceExercise = useCallback(
     (dayIndex: number, exerciseIndex: number) => {
-      // Replace = remove then open picker in that slot
-      removeExercise(dayIndex, exerciseIndex);
+      // Phase 6C-i fix: previously removed the exercise FIRST, then opened
+      // the picker — the picker's add path (addExercise) appends, so the
+      // replacement always landed at the END of the day, not back in this
+      // slot, and cancelling the picker left the day with one exercise
+      // silently deleted and nothing put back. Now the exercise stays in
+      // place; ExercisePickerSheet's handleAddSingle sees slotIndex set and
+      // calls the new atomic replaceExercise action to splice in place —
+      // cancelling leaves the original exercise untouched.
       openPicker({ dayIndex, slotIndex: exerciseIndex });
     },
-    [removeExercise, openPicker],
+    [openPicker],
   );
 
   // "Move to…" — opens a day-target picker (mirrors DayBlock's "Copy to…"
@@ -521,6 +554,41 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   const handleSaved = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
+
+  // ── Save & Activate sheet (Phase B) ──
+  // One shared toggle (profiles.goal_targets_mode) for BOTH diet and workout.
+  // Confirm: save → set active plan source to custom → persist targets mode.
+  // The food-floor gate doesn't apply to a workout draft (no intake is set
+  // here), so it's never blocked from this side.
+  const [activateSheetVisible, setActivateSheetVisible] = useState(false);
+  const [pendingTargetsMode, setPendingTargetsMode] = useState<"goal" | "plan">(goalTargetsMode);
+  const [activating, setActivating] = useState(false);
+
+  const handleOpenActivateSheet = useCallback(() => {
+    setPendingTargetsMode(goalTargetsMode);
+    setActivateSheetVisible(true);
+  }, [goalTargetsMode]);
+
+  const handleCancelActivate = useCallback(() => {
+    setActivateSheetVisible(false);
+  }, []);
+
+  const handleConfirmActivate = useCallback(async () => {
+    setActivating(true);
+    try {
+      setGoalTargetsMode(pendingTargetsMode);
+      await useWorkoutBuilderStore.getState().save();
+      setActivePlanSource("custom");
+      setActivateSheetVisible(false);
+      haptics.success();
+      navigation.goBack();
+    } catch (error) {
+      console.error("[WeeklyBuilderScreen] save & activate failed:", error);
+      haptics.error();
+    } finally {
+      setActivating(false);
+    }
+  }, [pendingTargetsMode, setGoalTargetsMode, setActivePlanSource, navigation]);
 
   // ── Jump-to-day on day strip tap ──
   const handleDaySelect = useCallback(
@@ -745,13 +813,48 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
               {/* Weekly insights — radar + stat grid + coverage bars (Phase 6) */}
               <WeeklyInsightsPanel />
 
-              {/* Spacer so the last day isn't hidden behind the footer */}
-              <View style={styles.footerSpacer} />
+              {/* Goal impact (Phase B) — planned burn/day, resulting rate,
+                  projection sentence, gap vs goal target, unresolved-exercise
+                  warning. Reads the in-memory draft LIVE on every edit (no
+                  save round-trip). */}
+              <GoalImpactPanel
+                weightKg={userWeightKg}
+                profile={{
+                  heightCm: metrics?.heightCm ?? null,
+                  age: metrics?.age ?? null,
+                  gender: metrics?.gender ?? null,
+                  activityLevel: metrics?.activityLevel ?? null,
+                }}
+                intent={{
+                  workoutFrequencyPerWeek: metrics?.workoutFrequencyPerWeek ?? 0,
+                  timePreference: metrics?.workoutDurationMinutes ?? 0,
+                  intensity: draft.workouts.find((d) => (d.plannedExercises?.length ?? 0) > 0)?.difficulty ?? "intermediate",
+                  workoutTypes: ["strength"],
+                }}
+                goal={{
+                  targetWeightKg: metrics?.targetWeightKg ?? null,
+                  primaryGoals: metrics?.primaryGoals ?? null,
+                }}
+                plannedIntakeKcal={metrics?.dailyCalories ?? null}
+                testID="goal-impact-panel"
+              />
+
+              {/* Spacer so the last day isn't hidden behind the footer — sized
+                  to the footer's real measured height, see footerHeight. */}
+              <View style={{ height: footerHeight }} />
             </ScrollView>
           </Animated.View>
         </GestureDetector>
 
-        <BuilderSummaryFooter onSaved={handleSaved} testID="builder-footer" />
+        <View
+          onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+        >
+          <BuilderSummaryFooter
+            onSaved={handleSaved}
+            onOpenActivateSheet={handleOpenActivateSheet}
+            testID="builder-footer"
+          />
+        </View>
       </SafeAreaView>
 
       {/* Discard-changes confirm dialog */}
@@ -996,6 +1099,23 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
       <View style={styles.editorLayer}>
         <ExerciseEditorSheet />
       </View>
+
+      {/* Save & Activate sheet (Phase B) — one shared targets_mode toggle
+          for BOTH diet and workout. A workout draft sets no intake, so the
+          food-floor gate is never blocked from this side. */}
+      <SaveAndActivateSheet
+        visible={activateSheetVisible}
+        onClose={handleCancelActivate}
+        targetsMode={pendingTargetsMode}
+        onTargetsMode={setPendingTargetsMode}
+        foodFloorBlocked={false}
+        foodFloorShortfall={0}
+        foodFloorKcal={null}
+        onActivate={handleConfirmActivate}
+        activating={activating}
+        planKind="workout"
+        testID="workout-save-activate-sheet"
+      />
     </AuroraBackground>
   );
 }
@@ -1120,9 +1240,6 @@ const styles = StyleSheet.create({
   refreshText: {
     color: colors.textSecondary,
     fontSize: rf(12),
-  },
-  footerSpacer: {
-    height: rp(180),
   },
   pickerLayer: {
     zIndex: 1200,

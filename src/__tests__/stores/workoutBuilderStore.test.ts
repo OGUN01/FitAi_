@@ -369,6 +369,92 @@ describe("useWorkoutBuilderStore", () => {
     });
   });
 
+  // ── replaceExercise (Phase 6C-i fix) ────────────────────────────────────────
+  // Previously "Replace exercise" was implemented as removeExercise +
+  // addExercise in WeeklyBuilderScreen — addExercise APPENDS, so a replaced
+  // exercise always landed at the END of the day instead of its original
+  // slot. replaceExercise splices in place instead.
+  describe("replaceExercise", () => {
+    it("replaces at index 2 of a 5-exercise day and keeps the new exercise AT index 2, not appended to the end", () => {
+      useWorkoutBuilderStore.getState().startBlankWeek();
+      const ids = ["bench_press", "pull_up", "squat", "bench_press", "pull_up"];
+      for (const id of ids) {
+        useWorkoutBuilderStore.getState().addExercise(0, makePlannedExercise({ exerciseId: id }) as any);
+      }
+      const replacement = makePlannedExercise({ exerciseId: "overhead_press", name: "Overhead Press" });
+      useWorkoutBuilderStore.getState().replaceExercise(0, 2, replacement as any);
+      const day = useWorkoutBuilderStore.getState().draft!.workouts[0];
+      expect(day.plannedExercises.map((p) => p.exerciseId)).toEqual([
+        "bench_press",
+        "pull_up",
+        "overhead_press", // replaced IN PLACE at index 2
+        "bench_press",
+        "pull_up",
+      ]);
+      expect(day.plannedExercises).toHaveLength(5);
+      // exercises[] mirror stays in sync too.
+      expect(day.exercises.map((e) => e.exerciseId)).toEqual([
+        "bench_press",
+        "pull_up",
+        "overhead_press",
+        "bench_press",
+        "pull_up",
+      ]);
+    });
+
+    it("stamps alternativeExerciseId with the id of the exercise that was replaced", () => {
+      useWorkoutBuilderStore.getState().startBlankWeek();
+      useWorkoutBuilderStore.getState().addExercise(0, makePlannedExercise({ exerciseId: "bench_press" }) as any);
+      useWorkoutBuilderStore.getState().replaceExercise(
+        0,
+        0,
+        makePlannedExercise({ exerciseId: "overhead_press" }) as any,
+      );
+      const day = useWorkoutBuilderStore.getState().draft!.workouts[0];
+      expect(day.plannedExercises[0].alternativeExerciseId).toBe("bench_press");
+    });
+
+    it("carries over the replaced slot's supersetId/circuitId/blockIndex onto the new exercise", () => {
+      useWorkoutBuilderStore.getState().startBlankWeek();
+      useWorkoutBuilderStore.getState().addExercise(0, {
+        ...makePlannedExercise({ exerciseId: "bench_press" }),
+        supersetId: "ss_abc123",
+        blockIndex: 1,
+      } as any);
+      useWorkoutBuilderStore.getState().replaceExercise(
+        0,
+        0,
+        makePlannedExercise({ exerciseId: "overhead_press" }) as any,
+      );
+      const day = useWorkoutBuilderStore.getState().draft!.workouts[0];
+      expect(day.plannedExercises[0].supersetId).toBe("ss_abc123");
+      expect(day.plannedExercises[0].blockIndex).toBe(1);
+      expect(day.plannedExercises[0].circuitId).toBeUndefined();
+    });
+
+    it("is a no-op when the exercise index is out of range", () => {
+      useWorkoutBuilderStore.getState().startBlankWeek();
+      useWorkoutBuilderStore.getState().addExercise(0, makePlannedExercise({ exerciseId: "bench_press" }) as any);
+      useWorkoutBuilderStore.getState().replaceExercise(
+        0,
+        5,
+        makePlannedExercise({ exerciseId: "overhead_press" }) as any,
+      );
+      const day = useWorkoutBuilderStore.getState().draft!.workouts[0];
+      expect(day.plannedExercises).toHaveLength(1);
+      expect(day.plannedExercises[0].exerciseId).toBe("bench_press");
+    });
+
+    it("is a no-op when there is no draft", () => {
+      useWorkoutBuilderStore.getState().replaceExercise(
+        0,
+        0,
+        makePlannedExercise({ exerciseId: "overhead_press" }) as any,
+      );
+      expect(useWorkoutBuilderStore.getState().draft).toBeNull();
+    });
+  });
+
   // ── clearDay ──────────────────────────────────────────────────────────────────
   describe("clearDay", () => {
     it("resets the day to a blank Rest Day", async () => {

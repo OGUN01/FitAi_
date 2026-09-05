@@ -66,6 +66,7 @@ import { toDisplayWeight, type WeightUnit } from "../../../utils/units";
 import { CURATED_EXERCISES } from "../../../data/curatedExercises";
 import { duration } from "../../../theme/animations";
 import { haptics } from "../../../utils/haptics";
+import { RPE_LABELS, RPE_MIN, RPE_MAX } from "../../../utils/effortScale";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 import {
   colors,
@@ -88,8 +89,6 @@ import type { PlannedExercise, PlannedSet } from "../../../types/workout";
 
 const REST_MIN = 15;
 const REST_MAX = 300;
-const RPE_MIN = 1;
-const RPE_MAX = 10;
 const DEFAULT_TEMPO = "2-0-2-0";
 const DEFAULT_REST = 60;
 
@@ -110,19 +109,6 @@ const SUPERSET_MODE_OPTIONS: SelectOption[] = [
   { id: "superset", label: "Superset" },
   { id: "circuit", label: "Circuit" },
 ];
-
-const RPE_LABELS: Record<number, string> = {
-  1: "Very Easy",
-  2: "Easy",
-  3: "Moderate",
-  4: "Somewhat Hard",
-  5: "Hard",
-  6: "Hard+",
-  7: "Very Hard",
-  8: "Extremely Hard",
-  9: "Near Max",
-  10: "Max Effort",
-};
 
 // ============================================================================
 // COMPONENT
@@ -188,13 +174,20 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
   }, [exerciseVolumeHistory, exercise]);
 
   // ── Sibling exercises (for superset/circuit grouping picker) ──
-  const siblingExercises = useMemo<PlannedExercise[]>(() => {
+  // BUG FIX: this used to return bare PlannedExercise[] with no original
+  // index, forcing the render below to `key={sib.exerciseId}` — a day with
+  // the SAME exercise twice (an intentionally supported scenario) produced
+  // duplicate React keys ("Encountered two children with the same key"),
+  // silently reusing component state across the two sibling chips. Carry
+  // the original day-relative index through so each chip gets a stable,
+  // unique key regardless of duplicate exerciseIds.
+  const siblingExercises = useMemo<Array<{ exercise: PlannedExercise; index: number }>>(() => {
     if (!editorContext || !draft) return [];
     const day = draft.workouts[editorContext.dayIndex];
     if (!day?.plannedExercises) return [];
-    return day.plannedExercises.filter(
-      (_, i) => i !== editorContext.exerciseIndex,
-    );
+    return day.plannedExercises
+      .map((exercise, index) => ({ exercise, index }))
+      .filter(({ index }) => index !== editorContext.exerciseIndex);
   }, [editorContext, draft]);
 
   // ── Local state: name, notes, tempo ──
@@ -421,7 +414,7 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
   // so the UI ("Superset assigned") matches the sibling's state. Uses the same
   // `updateExercise` store action for both writes so the draft stays the SSOT.
   const handleGroupWithSibling = useCallback(
-    (siblingExerciseId: string, _siblingName: string) => {
+    (siblingIndex: number, _siblingName: string) => {
       if (!exercise || !editorContext || !draft) return;
       void _siblingName;
       const groupId =
@@ -435,14 +428,18 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
       } else if (groupMode === "circuit") {
         patchExercise({ circuitId: groupId });
       }
-      // Stamp the sibling so both sides of the grouping agree. We locate the
-      // sibling by exerciseId (ids are unique within a day) so the correct
-      // index is updated even if the list reordered.
+      // Stamp the sibling so both sides of the grouping agree. Located by
+      // its day-relative INDEX (passed straight through from the picker,
+      // which already knows it — see siblingExercises), not by exerciseId.
+      // BUG FIX: exerciseId is NOT unique within a day — a day can have the
+      // same exercise twice (an intentionally supported scenario) — so an
+      // id-based findIndex() always resolved to the FIRST occurrence, even
+      // when the user tapped the chip for the SECOND one, silently grouping
+      // the wrong instance.
       const day = draft.workouts[editorContext.dayIndex];
       const planned = day?.plannedExercises ?? [];
-      const siblingIdx = planned.findIndex((p) => p.exerciseId === siblingExerciseId);
-      if (siblingIdx < 0) return;
-      const sibling = planned[siblingIdx];
+      const sibling = planned[siblingIndex];
+      if (!sibling) return;
       const siblingUpdate: PlannedExercise = { ...sibling };
       if (groupMode === "superset") {
         siblingUpdate.supersetId = groupId;
@@ -451,7 +448,7 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
         siblingUpdate.circuitId = groupId;
         siblingUpdate.supersetId = undefined;
       }
-      updateExercise(editorContext.dayIndex, siblingIdx, siblingUpdate);
+      updateExercise(editorContext.dayIndex, siblingIndex, siblingUpdate);
     },
     [exercise, editorContext, draft, groupMode, patchExercise, updateExercise],
   );
@@ -758,11 +755,11 @@ export const ExerciseEditorSheet: React.FC<{ testID?: string }> = ({
                       showsHorizontalScrollIndicator={false}
                       style={styles.siblingScroll}
                     >
-                      {siblingExercises.map((sib) => (
+                      {siblingExercises.map(({ exercise: sib, index }) => (
                         <Pressable
-                          key={sib.exerciseId}
+                          key={index}
                           onPress={() =>
-                            handleGroupWithSibling(sib.exerciseId, sib.name)
+                            handleGroupWithSibling(index, sib.name)
                           }
                           style={({ pressed }) => [
                             styles.siblingChip,

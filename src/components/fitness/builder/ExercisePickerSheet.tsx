@@ -45,7 +45,11 @@ import {
 import { rp, rf, rw } from "../../../utils/responsive";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../../utils/colors";
 import { formatMuscleGroup } from "../../../utils/textFormat";
-import { CURATED_EXERCISES, type CuratedExercise } from "../../../data/curatedExercises";
+import {
+  EXERCISE_CATALOG,
+  getCatalogEntry,
+  type CatalogEntry,
+} from "../../../data/exerciseCatalog.generated";
 import type { PlannedExercise } from "../../../types/workout";
 import {
   searchExercises,
@@ -55,7 +59,11 @@ import {
   toggleFavorite,
   getRecommendedForDay,
   getPopularExercises,
-  curatedToPlanned,
+  catalogEntryToPlanned,
+  MAJOR_MUSCLE_GROUPS,
+  MOVEMENT_PATTERNS,
+  SKILL_LEVELS,
+  COMMON_EQUIPMENT,
   type ExercisePickerFilter,
 } from "../../../services/exercisePickerService";
 import { ExercisePickerCard } from "./ExercisePickerCard";
@@ -65,48 +73,21 @@ import { AuroraSpinner } from "../../ui/aurora/AuroraSpinner";
 import type { AiSuggestion } from "../../../types/workout";
 
 // ----------------------------------------------------------------------------
-// CONSTANTS — filter chip options (sourced from the curated library itself so
-// we never drift from the data).
+// CONSTANTS — filter chip options.
+//
+// Workout Engine v2 Phase 6C-ii: sourced from exercisePickerService's
+// re-exports of the catalog's real vocab (MAJOR_MUSCLE_GROUPS,
+// MOVEMENT_PATTERNS, SKILL_LEVELS, COMMON_EQUIPMENT) rather than a hand-typed
+// list, so these never drift from what the catalog actually contains. The
+// "Pattern" filter row (label unchanged) now filters by real movementPattern
+// values (squat/hinge/lunge/.../isolation) instead of the old body-region
+// "category" — the label finally matches what it filters.
 // ----------------------------------------------------------------------------
 
-const MUSCLE_OPTIONS = [
-  "chest",
-  "back",
-  "shoulders",
-  "biceps",
-  "triceps",
-  "legs",
-  "core",
-  "glutes",
-  "quadriceps",
-  "hamstrings",
-] as const;
-
-const EQUIPMENT_OPTIONS = [
-  "body weight",
-  "dumbbell",
-  "barbell",
-  "cable",
-  "machine",
-  "band",
-] as const;
-
-const DIFFICULTY_OPTIONS = [
-  "beginner",
-  "intermediate",
-  "advanced",
-] as const;
-
-const CATEGORY_OPTIONS = [
-  "chest",
-  "back",
-  "shoulders",
-  "arms",
-  "legs",
-  "core",
-  "cardio",
-  "full_body",
-] as const;
+const MUSCLE_OPTIONS = MAJOR_MUSCLE_GROUPS;
+const EQUIPMENT_OPTIONS = COMMON_EQUIPMENT;
+const DIFFICULTY_OPTIONS = SKILL_LEVELS;
+const PATTERN_OPTIONS = MOVEMENT_PATTERNS;
 
 const ALL_PAGE_SIZE = 24;
 
@@ -121,6 +102,7 @@ export const ExercisePickerSheet: React.FC = () => {
   const closePicker = useWorkoutBuilderStore((s) => s.closePicker);
   const addExercise = useWorkoutBuilderStore((s) => s.addExercise);
   const applyAiSuggestions = useWorkoutBuilderStore((s) => s.applyAiSuggestions);
+  const replaceExercise = useWorkoutBuilderStore((s) => s.replaceExercise);
   const draft = useWorkoutBuilderStore((s) => s.draft);
 
   // ── AI suggestions (Phase 9) ──
@@ -218,8 +200,8 @@ export const ExercisePickerSheet: React.FC = () => {
   const favoriteExercises = useMemo(
     () =>
       favorites
-        .map((id) => CURATED_EXERCISES_BY_ID.get(id))
-        .filter((c): c is CuratedExercise => Boolean(c)),
+        .map((id) => getCatalogEntry(id))
+        .filter((c): c is CatalogEntry => Boolean(c)),
     [favorites],
   );
 
@@ -231,8 +213,8 @@ export const ExercisePickerSheet: React.FC = () => {
       (filter.muscleGroups?.length ?? 0) > 0 ||
       (filter.equipment?.length ?? 0) > 0 ||
       (filter.difficulty?.length ?? 0) > 0 ||
-      Boolean(filter.category);
-    if (!hasFilters) return CURATED_ALL;
+      Boolean(filter.movementPattern);
+    if (!hasFilters) return EXERCISE_CATALOG;
     // Reuse the search path with an empty query so filters are applied.
     return searchExercises("", filter);
   }, [filter]);
@@ -265,14 +247,26 @@ export const ExercisePickerSheet: React.FC = () => {
   }, [query]);
 
   const handleAddSingle = useCallback(
-    (exercise: CuratedExercise) => {
+    (exercise: CatalogEntry) => {
       if (!pickerContext) return;
-      const planned: PlannedExercise = curatedToPlanned(exercise);
-      addExercise(pickerContext.dayIndex, planned);
+      // slotIndex set (Phase 6C-i) → this picker call is servicing a
+      // "Replace exercise" action from WeeklyBuilderScreen — splice the new
+      // exercise in AT THAT INDEX via replaceExercise, not append via
+      // addExercise. Previously this branch didn't exist, so Replace always
+      // appended to the end of the day regardless of what slotIndex said.
+      // replaceExercise itself stamps alternativeExerciseId from the exercise
+      // it's replacing, so catalogEntryToPlanned doesn't need to know it's
+      // servicing a replace.
+      const planned: PlannedExercise = catalogEntryToPlanned(exercise);
+      if (pickerContext.slotIndex !== undefined) {
+        replaceExercise(pickerContext.dayIndex, pickerContext.slotIndex, planned);
+      } else {
+        addExercise(pickerContext.dayIndex, planned);
+      }
       haptics.success();
       closePicker();
     },
-    [pickerContext, addExercise, closePicker],
+    [pickerContext, addExercise, replaceExercise, closePicker],
   );
 
   // ── Phase 9: Apply all AI suggestions at once ──
@@ -323,12 +317,12 @@ export const ExercisePickerSheet: React.FC = () => {
       setFilter((prev) => {
         const next = { ...prev };
         const current = next[key] as string[] | undefined;
-        if (key === "category") {
+        if (key === "movementPattern") {
           // single-select
-          if (next.category === value) {
-            delete next.category;
+          if (next.movementPattern === value) {
+            delete next.movementPattern;
           } else {
-            next.category = value as CuratedExercise["category"];
+            next.movementPattern = value as ExercisePickerFilter["movementPattern"];
           }
           return next;
         }
@@ -379,10 +373,14 @@ export const ExercisePickerSheet: React.FC = () => {
   const handleAddSelected = useCallback(() => {
     if (!pickerContext) return;
     if (selectedIds.size === 0) return;
+    // Multi-select always appends, even when pickerContext.slotIndex is set —
+    // "replace one slot with several exercises" has no single clean answer,
+    // and the tap-to-add-single path (handleAddSingle) is the actual replace
+    // affordance; multi-select stays an append-only bulk-add tool.
     for (const id of selectedIds) {
-      const curated = CURATED_EXERCISES_BY_ID.get(id);
-      if (!curated) continue;
-      const planned = curatedToPlanned(curated);
+      const entry = getCatalogEntry(id);
+      if (!entry) continue;
+      const planned = catalogEntryToPlanned(entry);
       addExercise(pickerContext.dayIndex, planned);
     }
     haptics.success();
@@ -407,41 +405,41 @@ export const ExercisePickerSheet: React.FC = () => {
     (filter.muscleGroups?.length ?? 0) > 0 ||
     (filter.equipment?.length ?? 0) > 0 ||
     (filter.difficulty?.length ?? 0) > 0 ||
-    Boolean(filter.category);
+    Boolean(filter.movementPattern);
 
   const renderCard = useCallback(
-    (exercise: CuratedExercise, index: number) => (
+    (exercise: CatalogEntry, index: number) => (
       <ExercisePickerCard
         // key required: section-header maps (Popular/Recommended/Favorites)
         // render via .map(), not FlatList — keyExtractor doesn't cover them.
-        key={exercise.id}
+        key={exercise.canonicalId}
         exercise={exercise}
-        isFavorite={favorites.includes(exercise.id)}
-        isSelected={selectedIds.has(exercise.id)}
+        isFavorite={favorites.includes(exercise.canonicalId)}
+        isSelected={selectedIds.has(exercise.canonicalId)}
         multiSelectMode={multiSelectMode}
         onAdd={() => handleAddSingle(exercise)}
-        onToggleFavorite={() => handleToggleFavorite(exercise.id)}
-        onToggleSelect={() => handleToggleSelect(exercise.id)}
+        onToggleFavorite={() => handleToggleFavorite(exercise.canonicalId)}
+        onToggleSelect={() => handleToggleSelect(exercise.canonicalId)}
         index={index}
-        testID={`picker-card-${exercise.id}`}
+        testID={`picker-card-${exercise.canonicalId}`}
       />
     ),
     [favorites, selectedIds, multiSelectMode, handleAddSingle, handleToggleFavorite, handleToggleSelect],
   );
 
   const renderSearchResult = useCallback(
-    ({ item, index }: ListRenderItemInfo<CuratedExercise>) =>
+    ({ item, index }: ListRenderItemInfo<CatalogEntry>) =>
       renderCard(item, index),
     [renderCard],
   );
 
   const renderAllItem = useCallback(
-    ({ item, index }: ListRenderItemInfo<CuratedExercise>) =>
+    ({ item, index }: ListRenderItemInfo<CatalogEntry>) =>
       renderCard(item, index),
     [renderCard],
   );
 
-  const keyExtractor = useCallback((item: CuratedExercise) => item.id, []);
+  const keyExtractor = useCallback((item: CatalogEntry) => item.canonicalId, []);
 
   const onEndReached = useCallback(() => {
     setAllPageCount((prev) => prev + 1);
@@ -564,9 +562,9 @@ export const ExercisePickerSheet: React.FC = () => {
           />
           <FilterChipRow
             label="Pattern"
-            options={CATEGORY_OPTIONS as unknown as string[]}
-            selected={filter.category ? [filter.category] : []}
-            onToggle={(v) => handleToggleFilter("category", v)}
+            options={PATTERN_OPTIONS as unknown as string[]}
+            selected={filter.movementPattern ? [filter.movementPattern] : []}
+            onToggle={(v) => handleToggleFilter("movementPattern", v)}
           />
           {hasActiveFilters && (
             <AnimatedPressable
@@ -797,16 +795,6 @@ const FilterChipRow: React.FC<{
       })}
     </View>
   </View>
-);
-
-// ----------------------------------------------------------------------------
-// MODULE-LEVEL CACHES (built once on import)
-// ----------------------------------------------------------------------------
-
-const CURATED_ALL: CuratedExercise[] = CURATED_EXERCISES;
-
-const CURATED_EXERCISES_BY_ID: Map<string, CuratedExercise> = new Map(
-  CURATED_ALL.map((c) => [c.id, c]),
 );
 
 // ----------------------------------------------------------------------------

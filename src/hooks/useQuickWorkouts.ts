@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useFitnessStore } from '../stores/fitnessStore';
 import { useProfileStore } from '../stores/profileStore';
-import { generateUUID } from '../utils/uuid';
 import { crossPlatformAlert } from '../utils/crossPlatformAlert';
 import { getSuggestions, generateWorkout } from '../services/extraWorkoutService';
 import type { PersonalInfo, FitnessGoals } from '../types/user';
@@ -182,7 +181,25 @@ export const useQuickWorkouts = (navigation: FitnessNavigation): QuickWorkoutsHo
           return;
         }
 
-        const sessionId = generateUUID();
+        // BUG FIX (found via live testing — a Quick Workout could NEVER be
+        // completed: every exercise's set counter climbed forever, "Set 3
+        // of 2", "Set 4 of 2", ...). This used to only generate a local
+        // UUID and never call `fitnessStore.startWorkoutSession()` — the
+        // ONE function that both creates the real DB `workout_sessions` row
+        // AND populates `currentWorkoutSession`, the store state
+        // `useWorkoutSession`'s `exerciseProgress`/`updateSetData` are
+        // built on. With no `currentWorkoutSession` to write into or read
+        // from, EVERY render re-derived a synthetic all-incomplete progress
+        // array (see `deriveProgressFromStore`'s fallback branch), so no
+        // amount of logging sets could ever satisfy `allSetsCompleted` —
+        // this was worse than, and independent of, the sibling
+        // stale-closure/missing-write bugs already fixed for the
+        // PLANNED-workout flow, which DOES call `startWorkoutSession`
+        // (via `WorkoutDetailScreen.tsx`'s "Start Workout"). Call the same
+        // store action here so Quick Workouts get identical, working
+        // session tracking — same real DB session, real completion
+        // detection.
+        const sessionId = await useFitnessStore.getState().startWorkoutSession(workout);
 
         // Persist the active session so the card can show RESUME if the user exits
         useFitnessStore.getState().setActiveExtraSession({

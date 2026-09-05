@@ -1134,6 +1134,12 @@ export class FitAIWorkersClient {
     profile: unknown;
     goals?: string[];
     weekNumber?: number;
+    // Workout Engine v2 Phase 5/6A — optional volume-landmark + mesocycle-week
+    // coach context (see workoutBuilderAi.ts buildCoachContext()). Mirrors
+    // SuggestDayRequestSchema in fitai-workers/src/utils/validation.ts;
+    // additive/optional so older callers keep working unchanged.
+    volumeLandmarkContext?: unknown[];
+    mesocycleContext?: unknown;
     skipCache?: boolean;
   }): Promise<
     WorkersResponse<{
@@ -1220,6 +1226,11 @@ export class FitAIWorkersClient {
   async generateFullWeek(request: {
     partialPlan: unknown;
     profile: unknown;
+    weekNumber?: number;
+    // Workout Engine v2 Phase 5/6A — see suggestDay() above; mirrors
+    // GenerateFullWeekRequestSchema in fitai-workers/src/utils/validation.ts.
+    volumeLandmarkContext?: unknown[];
+    mesocycleContext?: unknown;
     skipCache?: boolean;
   }): Promise<
     WorkersResponse<{

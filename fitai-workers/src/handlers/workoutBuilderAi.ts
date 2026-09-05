@@ -48,6 +48,67 @@ import { ValidationError, APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
 import { withDeduplication } from '../utils/deduplication';
 import { getAIConfig } from '../utils/appConfig';
+import { loadExerciseDatabase } from '../utils/exerciseDatabase';
+import { getCandidateExerciseIds } from '../utils/exerciseEnrichment';
+
+// ============================================================================
+// PHASE 6A — volume-landmark / mesocycle prompt context + hallucination guard
+// ============================================================================
+
+type VolumeLandmarkContext = NonNullable<SuggestDayRequest['volumeLandmarkContext']>;
+type MesocycleContext = NonNullable<SuggestDayRequest['mesocycleContext']>;
+
+/** Renders the optional volume-landmark + mesocycle-week context into a
+ * prompt section. Both are optional/additive (older clients send neither) —
+ * returns '' when absent so the prompt is unchanged from pre-6A behavior. */
+function renderCoachContext(
+  volumeLandmarkContext?: VolumeLandmarkContext,
+  mesocycleContext?: MesocycleContext,
+): string {
+  const parts: string[] = [];
+
+  if (volumeLandmarkContext && volumeLandmarkContext.length > 0) {
+    const lines = volumeLandmarkContext.map((v) => {
+      const zoneLabel =
+        v.zone === 'under_mev' ? 'BELOW minimum — needs more volume'
+        : v.zone === 'mev_to_mav' ? 'in the effective range'
+        : v.zone === 'mav_to_mrv' ? 'in the high-productive range'
+        : 'OVER maximum recoverable — avoid adding more';
+      return `  - ${v.muscle}: ${v.currentSets} sets this week (MEV ${v.mev} / MAV ${v.mav} / MRV ${v.mrv}) — ${zoneLabel}`;
+    });
+    parts.push(`**This week's volume per muscle (sets already trained):**\n${lines.join('\n')}\nPrioritize muscles below MEV; avoid pushing an over-MRV muscle further.`);
+  }
+
+  if (mesocycleContext) {
+    parts.push(
+      `**Current mesocycle week:** ${mesocycleContext.isDeloadWeek ? 'DELOAD week' : `week ${mesocycleContext.weekInBlock} of the accumulation block`} — target effort RIR ${mesocycleContext.targetRir} (${mesocycleContext.isDeloadWeek ? 'keep it light' : 'reps in reserve — lower RIR means closer to failure'}), volume multiplier ${mesocycleContext.volumeMultiplier}x baseline.`,
+    );
+  }
+
+  return parts.length > 0 ? `\n${parts.join('\n\n')}\n` : '';
+}
+
+/**
+ * Build the candidate exerciseId pool for a prompt (filtered by equipment +
+ * a coarse injury/contraindication check) and render it as a compact
+ * "id — name" list the model must pick from. Capped at 150 to keep the
+ * prompt a reasonable size — equipment filtering usually narrows well below
+ * that; if it doesn't, this is a random-but-stable sample, not a crash.
+ */
+async function buildCandidatePool(
+  availableEquipment: string[],
+  injuries: string[],
+): Promise<{ ids: Set<string>; listText: string }> {
+  const db = await loadExerciseDatabase();
+  const candidateIds = getCandidateExerciseIds(db.exercises, availableEquipment, injuries);
+  const idSet = new Set(candidateIds);
+  const byId = new Map(db.exercises.map((e) => [e.exerciseId, e.name]));
+
+  const capped = candidateIds.slice(0, 150);
+  const listText = capped.map((id) => `${id} — ${byId.get(id) ?? 'unknown'}`).join('\n');
+
+  return { ids: idSet, listText };
+}
 
 // ============================================================================
 // SHARED HELPERS
@@ -86,44 +147,6 @@ function dayLabel(dayIndex: number): string {
 }
 
 /**
- * Build a stable fingerprint of the user's safety-relevant profile fields
- * (injuries, restrictions, medical conditions, pregnancy/breastfeeding status).
- * MUST be included in every cache key that's derived from a request carrying
- * a UserProfileSchema — otherwise two users with identical
- * equipment/experience/goal but different injury profiles collide on the same
- * KV/DB cache entry, and an AI suggestion generated for an uninjured user
- * (e.g. containing overhead press, barbell squats) gets served verbatim to a
- * user who disclosed a shoulder or knee injury, silently bypassing the
- * "respect injuries" prompt guidance that only applied at generation time.
- */
-function profileSafetyFingerprint(profile?: {
-  injuries?: string[];
-  restrictions?: string[];
-  medicalConditions?: string[];
-  pregnancyStatus?: boolean;
-  pregnancyTrimester?: string | number;
-  breastfeedingStatus?: boolean;
-}): string {
-  if (!profile) return 'none';
-
-  const limitations = [
-    ...(profile.injuries ?? []),
-    ...(profile.restrictions ?? []),
-    ...(profile.medicalConditions ?? []),
-  ]
-    .map((s) => s.toLowerCase().trim())
-    .filter(Boolean)
-    .sort()
-    .join(',');
-
-  const pregnancy = profile.pregnancyStatus ? `preg:${profile.pregnancyTrimester ?? 1}` : '';
-  const breastfeeding = profile.breastfeedingStatus ? 'bf' : '';
-
-  const fingerprint = [limitations, pregnancy, breastfeeding].filter(Boolean).join('|');
-  return fingerprint || 'none';
-}
-
-/**
  * Build a stable cache-key params object for a builder endpoint. We only hash
  * the semantically-relevant fields (not the entire plan blob) so equivalent
  * inputs collide regardless of irrelevant metadata (timestamps, ids).
@@ -135,6 +158,29 @@ function planCacheFingerprint(plan: BuilderPlan): Record<string, unknown> {
       dow: w.dayOfWeek,
       ex: w.plannedExercises.map((e) => e.exerciseId),
     })),
+  };
+}
+
+/**
+ * Fingerprint for the optional volume-landmark/mesocycle coach context
+ * (Phase 6A) — MUST be included in any cache key gating a prompt that reads
+ * this context, or a cached response from a different training-volume state
+ * (a different week, a muscle that has since crossed into over-MRV) gets
+ * served as if it were still valid. Rounds sets to avoid needless cache
+ * misses from tiny/irrelevant float drift.
+ */
+function coachContextFingerprint(
+  volumeLandmarkContext?: VolumeLandmarkContext,
+  mesocycleContext?: MesocycleContext,
+): Record<string, unknown> {
+  return {
+    volume: (volumeLandmarkContext ?? [])
+      .map((v) => `${v.muscle}:${v.zone}:${Math.round(v.currentSets)}`)
+      .sort()
+      .join(','),
+    mesocycle: mesocycleContext
+      ? `${mesocycleContext.weekInBlock}:${mesocycleContext.isDeloadWeek}:${mesocycleContext.targetRir}:${mesocycleContext.volumeMultiplier}`
+      : '',
   };
 }
 
@@ -272,7 +318,12 @@ export async function handleSuggestDay(
       fitnessGoal: request.profile.fitnessGoal,
       goals: (request.goals ?? []).sort().join(','),
       weekNumber: request.weekNumber ?? 1,
-      safety: profileSafetyFingerprint(request.profile),
+      // Volume-landmark/mesocycle context changes what a "good" suggestion is
+      // (a muscle over MRV this week shouldn't get more volume even if the
+      // rest of the request is identical to last week's) — MUST be part of
+      // the cache key or a stale suggestion from a different training state
+      // gets served. coachContextFingerprint(...) below.
+      coachContext: coachContextFingerprint(request.volumeLandmarkContext, request.mesocycleContext),
     };
 
     return await runWithCacheAndDedup(
@@ -300,26 +351,37 @@ async function generateSuggestDay(
     );
   }
 
+  const injuries = request.profile.injuries ?? [];
+  const { ids: candidateIds, listText: candidateListText } = await buildCandidatePool(
+    request.profile.availableEquipment,
+    injuries,
+  );
+  const coachContext = renderCoachContext(request.volumeLandmarkContext, request.mesocycleContext);
+
   const prompt = `You are FitAI, an expert personal trainer. Suggest complementary exercises for a workout day.
 
 **User Profile:**
 - Experience: ${request.profile.experienceLevel}
 - Goal: ${request.profile.fitnessGoal.replace('_', ' ')}
 - Equipment: ${request.profile.availableEquipment.join(', ')}
-- Injuries: ${(request.profile.injuries ?? []).join(', ') || 'none'}
+- Injuries: ${injuries.join(', ') || 'none'}
 ${request.goals && request.goals.length > 0 ? `- Session goals: ${request.goals.join(', ')}` : ''}
 
 **Current exercises on this day (Day ${request.dayIndex + 1} — ${dayLabel(request.dayIndex)}):**
 ${currentNames.length > 0 ? currentNames.map((n, i) => `${i + 1}. ${n}`).join('\n') : '(empty day — suggest foundational movements)'}
 
 **Currently targeted muscles:** ${currentMuscles.size > 0 ? Array.from(currentMuscles).join(', ') : 'none yet'}
+${coachContext}
+**You MUST pick "exerciseId" values ONLY from this candidate list — do not invent or guess an id.** Each candidate is already filtered for the user's equipment and injuries:
+${candidateListText}
 
-**Task:** Suggest 3-6 complementary exercises that:
-1. Fill gaps in muscle coverage (prioritize muscles NOT yet hit today)
+**Task:** Suggest 3-6 complementary exercises FROM THE CANDIDATE LIST ABOVE that:
+1. Fill gaps in muscle coverage (prioritize muscles NOT yet hit today, and any muscle flagged below MEV above)
 2. Balance push/pull if skewed
 3. Match the user's equipment + experience level
-4. Respect injuries (avoid contraindicated movements)
+4. Respect injuries (avoid contraindicated movements — the candidate list already excludes the worst offenders, but still use judgment)
 5. Are NOT duplicates of current exercises
+6. Do not add more volume to a muscle flagged OVER MRV above
 
 Return JSON: { "suggestedExercises": [{ "exerciseId", "name", "reason", "confidence" (0-1), "muscleGroup", "sets", "reps" (number or "8-12"), "restSeconds" }], "confidence" (0-1 overall), "reasoning" (1-2 sentences) }`;
 
@@ -339,6 +401,21 @@ Return JSON: { "suggestedExercises": [{ "exerciseId", "name", "reason", "confide
 
   if (!result.object) {
     throw new APIError('AI returned empty suggestion response', 500, ErrorCode.AI_INVALID_RESPONSE);
+  }
+
+  // Hallucination guard: drop any suggested exerciseId that isn't in the
+  // candidate pool we actually gave the model, rather than silently passing
+  // an invented id through to the client (see plan §6A — previously there
+  // was zero validation here).
+  const validated = result.object.suggestedExercises.filter((s) => {
+    const valid = candidateIds.has(s.exerciseId);
+    if (!valid) {
+      console.warn(`[WorkoutBuilderAi] suggest-day: dropped hallucinated exerciseId "${s.exerciseId}" (not in candidate pool)`);
+    }
+    return valid;
+  });
+  if (validated.length !== result.object.suggestedExercises.length) {
+    result.object.suggestedExercises = validated;
   }
 
   return {
@@ -372,7 +449,6 @@ export async function handleValidatePlan(
     const cacheParams = {
       endpoint: 'validate',
       plan: planCacheFingerprint(request.plan as unknown as BuilderPlan),
-      safety: profileSafetyFingerprint(request.profile),
     };
 
     return await runWithCacheAndDedup(
@@ -588,7 +664,6 @@ export async function handleEditNaturalLanguage(
       instruction: request.instruction,
       plan: planCacheFingerprint(request.plan as unknown as BuilderPlan),
       experienceLevel: request.profile?.experienceLevel ?? 'intermediate',
-      safety: profileSafetyFingerprint(request.profile),
     };
 
     return await runWithCacheAndDedup(
@@ -695,7 +770,8 @@ export async function handleGenerateFullWeek(
       experienceLevel: request.profile.experienceLevel,
       equipment: request.profile.availableEquipment.sort().join(','),
       fitnessGoal: request.profile.fitnessGoal,
-      safety: profileSafetyFingerprint(request.profile),
+      weekNumber: request.weekNumber ?? 1,
+      coachContext: coachContextFingerprint(request.volumeLandmarkContext, request.mesocycleContext),
     };
 
     return await runWithCacheAndDedup(
@@ -716,6 +792,12 @@ async function generateFullWeek(
   _userId?: string,
 ): Promise<{ data: z.infer<typeof GenerateFullWeekResponseSchema>; metadata: CacheMetadata }> {
   const partialJson = JSON.stringify(request.partialPlan, null, 2);
+  const injuries = request.profile.injuries ?? [];
+  const { ids: candidateIds, listText: candidateListText } = await buildCandidatePool(
+    request.profile.availableEquipment,
+    injuries,
+  );
+  const coachContext = renderCoachContext(request.volumeLandmarkContext, request.mesocycleContext);
 
   const prompt = `You are FitAI, an expert personal trainer. Complete the user's partial weekly workout plan.
 
@@ -725,10 +807,13 @@ async function generateFullWeek(
 - Equipment: ${request.profile.availableEquipment.join(', ')}
 - Workouts/week target: ${request.profile.workoutsPerWeek}
 - Duration/session: ${request.profile.workoutDuration} min
-- Injuries: ${(request.profile.injuries ?? []).join(', ') || 'none'}
-
+- Injuries: ${injuries.join(', ') || 'none'}
+${coachContext}
 **Partial plan (JSON — some days have exercises, others are empty):**
 ${partialJson}
+
+**You MUST pick "exerciseId" values ONLY from this candidate list for any NEW exercise you add — do not invent or guess an id.** Each candidate is already filtered for the user's equipment and injuries:
+${candidateListText}
 
 **Task:**
 1. KEEP the existing filled days unchanged.
@@ -736,6 +821,7 @@ ${partialJson}
    - Balance muscle coverage across the week (complement existing days, don't repeat)
    - Match the user's equipment, experience, and duration
    - Respect injuries
+   - Prioritize muscles flagged below MEV above; avoid adding volume to a muscle flagged OVER MRV
 3. Set restDays appropriately (days left as rest with 0 exercises).
 4. Preserve the plan id and weekNumber.
 
@@ -757,6 +843,30 @@ Return JSON: { "completePlan": {full plan}, "daysGenerated": <number of days you
 
   if (!result.object?.completePlan) {
     throw new APIError('AI returned empty full-week response', 500, ErrorCode.AI_INVALID_RESPONSE);
+  }
+
+  // Hallucination guard — same as suggest-day: strip any plannedExercise
+  // whose exerciseId isn't in the candidate pool we gave the model, rather
+  // than letting an invented id reach the client. Original filled days are
+  // untouched by construction (KEEP instruction); this only ever prunes
+  // newly-generated days.
+  let droppedCount = 0;
+  for (const day of result.object.completePlan.workouts) {
+    const before = day.plannedExercises.length;
+    day.plannedExercises = day.plannedExercises.filter((ex) => {
+      const valid = candidateIds.has(ex.exerciseId);
+      if (!valid) droppedCount++;
+      return valid;
+    });
+    if (day.exercises) {
+      day.exercises = day.exercises.filter((ex: unknown) =>
+        candidateIds.has((ex as { exerciseId?: string }).exerciseId ?? ''),
+      );
+    }
+    void before;
+  }
+  if (droppedCount > 0) {
+    console.warn(`[WorkoutBuilderAi] generate-full-week: dropped ${droppedCount} hallucinated exerciseId(s) not in candidate pool`);
   }
 
   return {
@@ -865,7 +975,13 @@ async function generateApplyProgression(
       const maxReps = repMatch ? parseInt(repMatch[2], 10) : 12;
 
       const lastWeight = sets[0]?.weightKg ?? 0;
-      const lastRpe = sets[0]?.rpe ?? 2;
+      // Prefer the full 1-10 RPE when present (src/utils/effortScale.ts —
+      // rpe10ToBucket boundaries: <=5 Easy, 6-7 Just Right, >=8 Hard, mirrored
+      // here so worker-side progression agrees with the client's own bucket
+      // mapping). Falls back to the legacy 1-3 bucket for older callers.
+      const rpe10 = sets[0]?.rpe10;
+      const lastRpe: 1 | 2 | 3 =
+        rpe10 != null ? (rpe10 <= 5 ? 1 : rpe10 <= 7 ? 2 : 3) : (sets[0]?.rpe ?? 2);
       const allCompleted = true; // prior sets are completed by definition (from exercise_sets)
       const allAtTop = sets.every((s) => (s.reps ?? 0) >= maxReps);
       const anyExceeded = sets.some((s) => (s.reps ?? 0) > maxReps + 1);

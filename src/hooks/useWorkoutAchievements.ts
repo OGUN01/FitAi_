@@ -113,6 +113,15 @@ export const useWorkoutAchievements = () => {
       setsCompleted: number,
       exerciseIndex: number,
       totalExercises: number,
+      /**
+       * Set when this completion is exiting a superset/circuit (Workout
+       * Engine v2 Phase 4B.1) — grouped exercises finish out of strict
+       * linear order (a superset's 2nd exercise can complete before the
+       * plan's 3rd, 4th, ... exercises even start), so "Exercise N of
+       * Total" reads wrong/confusing there. When set, the toast names the
+       * group instead of an ordinal position.
+       */
+      groupLabel?: 'Superset' | 'Circuit',
     ) => {
       if (!user?.id) return;
 
@@ -128,7 +137,9 @@ export const useWorkoutAchievements = () => {
         });
 
         showAchievementMiniToast(
-          `Exercise ${exerciseIndex + 1} of ${totalExercises} Complete! 💪`,
+          groupLabel
+            ? `${groupLabel} Complete! 💪`
+            : `Exercise ${exerciseIndex + 1} of ${totalExercises} Complete! 💪`,
         );
       } catch (error) {
         console.error("[useWorkoutAchievements] trackExerciseCompletion failed:", error);

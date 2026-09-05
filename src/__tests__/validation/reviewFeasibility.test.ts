@@ -426,10 +426,12 @@ describe("S05/S12/S15: pace cards never offer what the engine blocks", () => {
         }
       }
 
-      // INVARIANT 2: every selectable loss card respects the 1.5%/wk hard limit
+      // INVARIANT 2: every selectable DIET-ONLY loss card respects the 1.5%/wk
+      // hard limit. Phase A.3: boost cards (requiresExercise) are EXEMPT — the
+      // food floor is the real gate, not an arbitrary burn ceiling.
       if (alts.goalMode === "loss") {
         for (const a of alts.alternatives) {
-          if (!a.isBlocked) {
+          if (!a.isBlocked && !a.requiresExercise) {
             expect(a.weeklyRate).toBeLessThanOrEqual(hardLimit + 1e-9);
           }
         }
@@ -477,15 +479,20 @@ describe("S05: over-limit cards are marked unselectable at the card level", () =
     expect(keepMyGoal?.blockReason).toContain("Rate above safe limit");
   });
 
-  it("boost cards are blocked when their rate exceeds the hard limit", () => {
-    // Tiny BMR deficit can't produce an over-limit boost; giant one can.
+  it("boost cards are NOT blocked by rate — food floor is the only gate (Phase A.3)", () => {
+    // Phase A.3: The exerciseBurnNeeded ≤ 700 rate cap was REMOVED for boost
+    // cards. The food floor (max(BMR, 1500 M / 1200 F)) is the real gate, not
+    // an arbitrary burn ceiling. A boost card with a high rate is still
+    // selectable — the user can always eat more to compensate.
     const alts = calculateSmartAlternatives(1.0, 1500, 4000, 90, 80, "male", 3, "intermediate", 45);
     const boosts = alts.alternatives.filter((a) => a.requiresExercise);
     expect(boosts.length).toBeGreaterThan(0);
     const limit = 90 * 0.015;
     for (const b of boosts) {
       if (b.weeklyRate > limit) {
-        expect(b.isBlocked).toBe(true);
+        // Phase A.3: boost cards over the rate limit are NOT blocked — only
+        // food-floor violations block boost cards now.
+        expect(b.isBlocked).toBe(false);
       }
     }
   });

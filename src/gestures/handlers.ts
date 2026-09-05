@@ -303,6 +303,13 @@ export const usePinchToZoom = (
   maxScale: number = 3.0,
   options?: {
     hapticAtLimits?: boolean;
+    // Fires after this hook's own onEnd snap-to-limit logic, with the final
+    // scale. Take a callback instead of letting a caller chain a second
+    // .onEnd() onto the returned gesture — RNGH's .onEnd() ASSIGNS, it
+    // doesn't compose, so a caller's re-chained .onEnd() silently replaced
+    // (not augmented) this hook's own snap-back logic. See DayBlock.tsx's
+    // pinch-to-collapse-all, which used to do exactly that.
+    onEnd?: (finalScale: number) => void;
   }
 ) => {
   const scale = useSharedValue(1);
@@ -315,6 +322,7 @@ export const usePinchToZoom = (
   const atLimit = useSharedValue(false);
 
   const hapticAtLimits = options?.hapticAtLimits ?? true;
+  const onEndCallback = options?.onEnd;
 
   // Reduce Motion: the min/max limit-snap animation collapses to an instant
   // (0ms) move instead of a spring, matching the pattern already used by
@@ -362,6 +370,10 @@ export const usePinchToZoom = (
               : withSpring(maxScale, animations.spring.gentle);
             savedScale.value = maxScale;
           }
+
+          if (onEndCallback) {
+            runOnJS(onEndCallback)(scale.value);
+          }
         })
         // onEnd only fires on a clean gesture end; a cancelled/interrupted
         // pinch (e.g. a system gesture taking over mid-pinch) skips it and
@@ -370,7 +382,7 @@ export const usePinchToZoom = (
         .onFinalize(() => {
           atLimit.value = false;
         }),
-    [minScale, maxScale, hapticAtLimits, scale, savedScale, focalX, focalY, atLimit, reduceMotion],
+    [minScale, maxScale, hapticAtLimits, scale, savedScale, focalX, focalY, atLimit, reduceMotion, onEndCallback],
   );
 
   const resetZoom = () => {
