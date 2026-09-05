@@ -408,6 +408,20 @@ class OfflineService {
   }
 
   /**
+   * Whether a queued-but-not-yet-synced write exists for this table/user.
+   * Callers that opportunistically re-fetch a resource from Supabase (e.g. on
+   * an unrelated completion event) MUST check this first — a queued write's
+   * `queueAction()` call resolves as soon as the action is pushed to the
+   * queue and persisted locally, well before `syncOfflineActions()` (fired
+   * fire-and-forget, not awaited) actually reaches the server. A re-fetch in
+   * that window returns stale server data and silently clobbers the correct,
+   * already-applied local state with it.
+   */
+  hasPendingAction(table: string, userId: string): boolean {
+    return this.syncQueue.some((a) => a.table === table && a.userId === userId);
+  }
+
+  /**
    * Sync offline actions with server
    */
   async syncOfflineActions(): Promise<SyncResult> {

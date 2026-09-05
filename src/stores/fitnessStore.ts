@@ -482,13 +482,56 @@ export const useFitnessStore = create<FitnessState>()(
             plan_source: "custom",
           };
 
-          await offlineService.queueAction({
-            type: activeCustomPlanRowId ? "UPDATE" : "CREATE",
-            table: "weekly_workout_plans",
-            data: weeklyPlanData,
-            userId,
-            maxRetries: 3,
-          });
+          // Write DIRECTLY to Supabase and AWAIT the outcome — matches the
+          // established pattern elsewhere in this codebase (e.g.
+          // completionTracking.ts's workout_sessions write): a direct
+          // awaited write is the PRIMARY path, with offlineService.queueAction
+          // used only as the offline/failure retry fallback.
+          //
+          // Previously this went straight to `await offlineService.
+          // queueAction(...)`, but queueAction only enqueues to AsyncStorage
+          // and then fires an UNAWAITED background `syncOfflineActions()` —
+          // so the `await saveCustomWeeklyPlan(...)` chain
+          // (workoutBuilderStore.save -> WeeklyBuilderScreen.
+          // handleConfirmActivate) resolved as soon as the write was queued,
+          // well before the real PATCH/POST reached Supabase. That left a
+          // window, between "queued" and "actually written", during which
+          // anything that re-fetches the plan (loadCustomWeeklyPlan — a
+          // pull-to-refresh, a workout/meal completion event, another tab —
+          // see fitnessStore.loadData) would clobber this correct local
+          // state with stale server data, surfacing as "Save & Activate
+          // reverted on navigating away and back" with no error shown.
+          // Awaiting the real write here closes that window: by the time
+          // save() resolves, the DB row is actually caught up.
+          try {
+            const { id: _planRowId, ...updatePayload } = weeklyPlanData;
+            const directResult = activeCustomPlanRowId
+              ? await supabase
+                  .from("weekly_workout_plans")
+                  .update(updatePayload)
+                  .eq("id", activeCustomPlanRowId)
+              : await supabase
+                  .from("weekly_workout_plans")
+                  .insert([weeklyPlanData]);
+
+            if (directResult.error) {
+              throw directResult.error;
+            }
+          } catch (directWriteError) {
+            console.error(
+              "❌ Direct write of custom workout plan failed — queueing for offline retry:",
+              directWriteError,
+            );
+            // Fallback: queue for retry on reconnect/next sync so the edit
+            // is never silently dropped (CLAUDE.md #5 — no silent failures).
+            await offlineService.queueAction({
+              type: activeCustomPlanRowId ? "UPDATE" : "CREATE",
+              table: "weekly_workout_plans",
+              data: weeklyPlanData,
+              userId,
+              maxRetries: 3,
+            });
+          }
         } catch (customPlanError) {
           console.error(
             "❌ Failed to save custom workout plan to database:",
@@ -506,6 +549,18 @@ export const useFitnessStore = create<FitnessState>()(
         try {
           const userId = getCurrentUserId();
           if (!userId) return null;
+
+          // Defense-in-depth alongside saveCustomWeeklyPlan's now-awaited
+          // direct write: that fix closes the race for the normal (online)
+          // path, but its offline-failure fallback still queues the write
+          // for a later, unawaited background sync. If something else
+          // (an unrelated completion event, a pull-to-refresh) calls this
+          // function while that queued write hasn't landed yet, skip the
+          // re-fetch entirely rather than clobbering the correct, already-
+          // applied local customWeeklyPlan with stale server data.
+          if (offlineService.hasPendingAction("weekly_workout_plans", userId)) {
+            return get().customWeeklyPlan;
+          }
 
           const { data: customPlans, error } = await supabase
             .from("weekly_workout_plans")
