@@ -12,27 +12,19 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { flatColors as colors, spacing } from '../../../theme/aurora-tokens';
+import { colors, spacing, borderRadius } from '../../../theme/aurora-tokens';
 import { FONT_FAMILY } from '../../../theme/fonts';
-import { rf, rw, rp, rbr } from '../../../utils/responsive';
+import { rf, rw, rp } from '../../../utils/responsive';
 import { hexToRgba } from '../../../utils/colors';
 
 interface FitnessHeaderProps {
   userName: string;
   onCalendarPress?: () => void;
-  /**
-   * Top safe-area inset, applied as the header's paddingTop so the greeting
-   * clears the status bar. Passed from FitnessScreen (which reads it via
-   * useSafeAreaInsets) because the wrapping SafeAreaView only owns the bottom
-   * edge. Falls back to spacing.lg when unset (e.g. tests / no provider).
-   */
-  paddingTop?: number;
 }
 
 export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
   userName,
   onCalendarPress,
-  paddingTop,
 }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -55,13 +47,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
   return (
     <Animated.View
       entering={FadeInDown.delay(100).duration(400)}
-      // paddingTop = top safe-area inset + spacing.lg, mirroring DietScreen's
-      // rhythm (SafeAreaView top inset + topBar paddingTop spacing.lg) so the
-      // Workout greeting sits at the same vertical position as the Diet title.
-      style={[
-        styles.container,
-        { paddingTop: (paddingTop ?? 0) + rp(spacing.lg) },
-      ]}
+      style={styles.container}
     >
       {/* Left: editorial greeting + muted date subline */}
       <View style={styles.textContainer}>
@@ -84,7 +70,7 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         accessibilityLabel="Calendar"
       >
         <View style={styles.calendarIconContainer}>
-          <Ionicons name="calendar-outline" size={rf(20)} color={colors.text} />
+          <Ionicons name="calendar-outline" size={rf(20)} color={colors.text.primary} />
         </View>
       </AnimatedPressable>
     </Animated.View>
@@ -97,8 +83,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: rp(spacing.lg),
-    // paddingTop is set inline from the top safe-area inset (see paddingTop
-    // prop) so the greeting clears the status bar reliably across devices.
+    // Top safe-area inset is handled natively by FitnessScreen's
+    // SafeAreaView edges={['top', 'bottom']}, so this only needs the same
+    // breathing room Diet/Home give their top bar.
+    paddingTop: rp(spacing.lg),
     paddingBottom: rp(spacing.xs),
   },
   textContainer: {
@@ -111,15 +99,14 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: rf(22),
     fontFamily: FONT_FAMILY.extrabold,
-    fontWeight: '800',
-    color: colors.text,
+    color: colors.text.primary,
     letterSpacing: -0.5,
     lineHeight: rf(28),
   },
   dateLine: {
     fontSize: rf(13),
-    fontWeight: '500',
-    color: colors.textSecondary,
+    fontFamily: FONT_FAMILY.medium,
+    color: colors.text.secondary,
     letterSpacing: 0.1,
     marginTop: rp(spacing.xs),
   },
@@ -129,8 +116,8 @@ const styles = StyleSheet.create({
   calendarIconContainer: {
     width: rw(44),
     height: rw(44),
-    borderRadius: rbr(22),
-    backgroundColor: hexToRgba(colors.text, 0.08),
+    borderRadius: borderRadius.full,
+    backgroundColor: hexToRgba(colors.text.primary, 0.08),
     justifyContent: 'center',
     alignItems: 'center',
   },

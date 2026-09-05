@@ -74,11 +74,22 @@ module.exports = {
     '<rootDir>/.expo/',
     '<rootDir>/ios/',
     '<rootDir>/android/',
+    '<rootDir>/.claude/worktrees/',
     // Test helpers (non-test utilities) live under __tests__/ — exclude them
     // so Jest doesn't try to run them as suites ("must contain at least one test").
     '<rootDir>/src/__tests__/helpers/',
     '<rootDir>/src/__tests__/mocks/',
+    '<rootDir>/src/__tests__/design/conformanceScan.js',
+    '<rootDir>/src/__tests__/design/conformance-baseline.json',
   ],
+
+  // Agent worktrees (.claude/worktrees/<id>/) are full checkouts nested inside
+  // the repo — each carries its own package.json (name "fitai") and __mocks__,
+  // which the Haste module map otherwise reports as collisions with the real
+  // ones ("duplicate manual mock found", "Haste module naming collision").
+  // Harmless but noisy, and worth excluding since Jest scans every file under
+  // rootDir for Haste purposes regardless of testPathIgnorePatterns.
+  modulePathIgnorePatterns: ['<rootDir>/.claude/worktrees/'],
 
   // Transform ignore patterns — EXTENDS the jest-expo preset's allowlist.
   // The preset whitelists react-native/@react-native/expo/@expo/react-navigation/

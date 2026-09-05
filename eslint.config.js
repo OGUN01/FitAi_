@@ -113,6 +113,48 @@ module.exports = [
     },
   },
   
+  // DESIGN.md conformance — banned visual patterns (see DESIGN.md §8).
+  // Warn-level for now: ~2,300 pre-existing hits (tracked + ratcheted down by
+  // src/__tests__/design/tokenConformance.test.ts) mean an immediate `error`
+  // would block on legacy code the visual overhaul hasn't reached yet.
+  // Promote to `error` per-directory as src/docs/VISUAL_DESIGN_OVERHAUL.md's
+  // stages land and that directory's ratchet count reaches zero.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: "Property[key.name='fontWeight']",
+          message:
+            'DESIGN.md bans fontWeight — RN loads each weight as a separate native font file, so this silently does nothing on native. Use fontFamily / typography.variants instead.',
+        },
+        {
+          selector: "Property[key.name='shadowColor']",
+          message: 'DESIGN.md bans drop shadows. Use a border.subtle hairline for separation instead.',
+        },
+        {
+          selector: "Property[key.name='elevation']",
+          message: 'DESIGN.md bans elevation (renders as a shadow on native). Use a border.subtle hairline instead.',
+        },
+        {
+          selector: "Property[key.name='boxShadow']",
+          message: 'DESIGN.md bans boxShadow. Use a border.subtle hairline for separation instead.',
+        },
+        {
+          selector: "ImportSpecifier[imported.name=/^(flatColors|flatFontSize|flatShadows)$/]",
+          message:
+            'DESIGN.md bans the deprecated flat token projections — import the nested colors/typography/shadows exports from src/theme/aurora-tokens.ts directly.',
+        },
+        {
+          selector: "ImportSpecifier[imported.name='GlassCard']",
+          message:
+            'DESIGN.md is retiring GlassCard in favor of a flat surface + hairline pattern (see src/docs/VISUAL_DESIGN_OVERHAUL.md Stage 1). Avoid new usages; existing ones are being migrated.',
+        },
+      ],
+    },
+  },
+
   // Prettier config to disable conflicting rules
   prettierConfig,
   

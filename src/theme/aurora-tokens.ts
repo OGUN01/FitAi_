@@ -66,23 +66,35 @@ export const colors = {
     },
   },
 
-  // Background system — DEFAULT is OLED pure black. secondary/tertiary are
-  // neutral cool greys with even perceptual steps from #000 so cards, tab bars,
-  // and raised surfaces read as cohesive elevation rather than colored panels.
+  // Background system — DEFAULT matches the "Editorial Dark" onboarding
+  // standard (src/components/onboarding/fresh/tokens.ts, near-OLED black,
+  // not pure #000) now promoted app-wide as the single canonical value.
+  // secondary/tertiary are neutral cool greys with even perceptual steps so
+  // cards, tab bars, and raised surfaces read as cohesive elevation rather
+  // than colored panels.
   background: {
-    DEFAULT: '#000000',
+    DEFAULT: '#050505',
     secondary: '#15161B',
     tertiary: '#232430',
   },
 
-  // Text color system
-  // tertiary/muted are #999999 (~5.2:1 on #000) — WCAG AA pass for body text.
-  // Previously #8A8A8A (~4.0:1) which failed AA for small caption text.
+  // Text color system — values match the Editorial Dark onboarding standard
+  // (fresh/tokens.ts ink/ink2), promoted app-wide as canonical.
+  // secondary/tertiary are alpha-based (over #050505) rather than flat greys
+  // so they scale correctly if the background tier ever changes.
+  // tertiary/muted is 50% white, NOT onboarding's literal 34% (ink3) — 34%
+  // only clears ~2.8-3.0:1 on this app's background tiers, failing WCAG AA
+  // even at the relaxed 3:1 large-text threshold (see
+  // src/utils/accessibility/__tests__/contrast.test.ts, which exists
+  // specifically because a past dimmer value failed this once already). 50%
+  // keeps the same restrained, dimmed feel while clearing 4.5:1+ on all
+  // three background tiers (background/secondary/tertiary) — 48% was tried
+  // first but fell just short (4.37:1) against the tertiary/tertiary pairing.
   text: {
-    primary: '#FFFFFF',
-    secondary: '#B0B0B0',
-    tertiary: '#999999',
-    muted: '#999999',
+    primary: '#F5F5F5',
+    secondary: 'rgba(245,245,245,0.55)',
+    tertiary: 'rgba(245,245,245,0.5)',
+    muted: 'rgba(245,245,245,0.5)',
     disabled: '#5A5A5A',
   },
 

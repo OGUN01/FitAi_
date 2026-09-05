@@ -1,12 +1,11 @@
 import React from "react";
-import { Platform, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
 import { BottomSheet } from "@/components/ui/aurora/BottomSheet";
-import { GlassCard } from "@/components/ui/aurora/GlassCard";
 import { LogoutConfirmationModal } from "@/components/profile/LogoutConfirmationModal";
 import { SettingsSelectionModal } from "@/screens/main/profile/modals/SettingsSelectionModal";
 import { ClearCacheConfirmModal } from "@/screens/main/profile/modals/ClearCacheConfirmModal";
-import { surface, flatColors } from "@/theme/aurora-tokens";
+import { surface } from "@/theme/aurora-tokens";
 
 jest.mock("@/utils/haptics", () => ({
   haptics: { trigger: jest.fn() },
@@ -17,15 +16,9 @@ jest.mock("@/utils/crossPlatformAlert", () => ({
 }));
 
 // Walks the rendered tree and returns the first node whose flattened style
-// sets `backgroundColor` to `target`. GlassCard does NOT receive a `style`
-// prop from any of these modals, so `card.props.style` is always undefined.
-// The opaque surface actually lives INSIDE GlassView (rendered by GlassCard):
-// on the Android/Web fallback path GlassView layers an absolute-fill <View>
-// with backgroundColor: colors.background.secondary (opacity 0.85) over the
-// container, which is what stops Android background content from bleeding
-// through the modal. We force Platform.OS = 'android' to exercise that
-// fallback path, then locate the opaque layer by its background color rather
-// than by a non-existent style prop.
+// sets `backgroundColor` to `target`. GlassCard (used by BottomSheet) and the
+// other dialogs here all render a flat, always-opaque surface View directly —
+// no blur, no platform-specific fallback layer to force Platform.OS for.
 const findNodeByBackgroundColor = (
   node: unknown,
   target: string,
@@ -41,28 +34,6 @@ const findNodeByBackgroundColor = (
     if (found) return found;
   }
   return null;
-};
-
-const expectGlassOpaqueSurface = (view: ReturnType<typeof render>) => {
-  // Mount the GlassCard so the tree is populated, then locate the
-  // absolute-fill View that carries the opaque background color. Platform.OS
-  // is forced to 'android' in the surrounding describe's beforeEach so that
-  // GlassView renders its opaque fallback path during render().
-  view.UNSAFE_getByType(GlassCard);
-  const opaqueLayer = findNodeByBackgroundColor(
-    view.toJSON(),
-    flatColors.backgroundSecondary,
-  );
-
-  expect(opaqueLayer).not.toBeNull();
-  const style = StyleSheet.flatten(
-    (opaqueLayer as { props: { style?: unknown } }).props.style as never,
-  );
-  // Opaque = a solid background color layered at <= 1 opacity over the
-  // blur container, which is what prevents Android content bleed-through.
-  expect(style.backgroundColor).toBe(flatColors.backgroundSecondary);
-  expect(style.opacity).toBeGreaterThan(0);
-  expect(style.opacity).toBeLessThanOrEqual(1);
 };
 
 const expectFlatOpaqueSurface = (view: ReturnType<typeof render>) => {
@@ -82,27 +53,17 @@ const expectFlatOpaqueSurface = (view: ReturnType<typeof render>) => {
 };
 
 describe("opaque overlay surfaces", () => {
-  // The opaque background-secondary layer is only emitted on GlassView's
-  // Android/Web fallback path, so force Android around every render in this
-  // block. Restored in afterEach so the interaction describe below runs under
-  // the default iOS platform.
-  let platformSpy: ReturnType<typeof jest.replaceProperty> | null = null;
-  beforeEach(() => {
-    platformSpy = jest.replaceProperty(Platform, "OS", "android");
-  });
-  afterEach(() => {
-    platformSpy?.restore();
-    platformSpy = null;
-  });
-
   it("makes the shared BottomSheet surface opaque", () => {
+    // GlassCard (which BottomSheet renders at elevation={6}) is now itself a
+    // flat, always-opaque surface[2] View on every platform — no more
+    // Android/Web-only blur fallback to force Platform.OS for.
     const view = render(
       <BottomSheet visible onClose={jest.fn()} title="Sheet">
         <Text>Sheet content</Text>
       </BottomSheet>,
     );
 
-    expectGlassOpaqueSurface(view);
+    expectFlatOpaqueSurface(view);
   });
 
   it("makes the logout dialog surface opaque", () => {

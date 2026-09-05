@@ -1,3 +1,14 @@
+/**
+ * @deprecated Prefer `GlassButton` from `./aurora/GlassButton` for a filled
+ * CTA — it's the canonical app-wide primary/secondary/success/warning/error
+ * button (see DESIGN.md §7). This component stays alive ONLY for its
+ * `outline`/`ghost` variants, which `GlassButton` doesn't cover (a
+ * de-emphasized secondary action, e.g. "Edit"/"Delete"/"Cancel" next to a
+ * primary CTA) — reskinned to flat tokens (no shadow, no gradient, no
+ * fontWeight) per DESIGN.md, but kept as its own component rather than
+ * folded into GlassButton to avoid overloading one component with two
+ * different visual languages (filled-CTA vs. hairline/text action).
+ */
 import React, { useEffect } from "react";
 import {
   TouchableOpacity,
@@ -14,8 +25,8 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, flatShadows as shadows, typography } from "../../theme/aurora-tokens";
+import { colors, chart, spacing, borderRadius, typography } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { hexToRgba, TINT_ALPHA_LOW } from "../../utils/colors";
 import { useReducedMotion } from "../../utils/accessibility/hooks";
 import { AuroraSpinner } from "./aurora/AuroraSpinner";
@@ -37,6 +48,10 @@ interface ButtonProps {
   pulse?: boolean;
   accessibilityLabel?: string;
 }
+
+// Same near-black label used by GlassButton's flat fills — every filled
+// variant here is bright enough for a dark label to read clearly.
+const FILLED_LABEL_COLOR = colors.background.DEFAULT;
 
 export const Button: React.FC<ButtonProps> = React.memo(({
   title,
@@ -120,44 +135,13 @@ export const Button: React.FC<ButtonProps> = React.memo(({
   const buttonContent = loading ? (
     <AuroraSpinner
       customSize={rf(16)}
-      theme={variant === "outline" || variant === "ghost" ? "primary" : "white"}
+      theme={variant === "outline" || variant === "ghost" ? "primary" : "dark"}
     />
   ) : (
     <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>
       {title}
     </Text>
   );
-
-  // Use gradient for primary variant
-  if (variant === "primary" && !disabled) {
-    return (
-      <AnimatedTouchable
-        style={[
-          styles.base,
-          styles[size],
-          fullWidth && styles.fullWidth,
-          disabled && styles.disabled,
-          style,
-          animatedStyle,
-        ]}
-        onPress={onPress}
-        disabled={disabled || loading}
-        activeOpacity={0.8}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? title}
-        accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      >
-        <LinearGradient
-          colors={[colors.primary, colors.primaryLight]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.gradientContainer, styles[size]]}
-        >
-          {buttonContent}
-        </LinearGradient>
-      </AnimatedTouchable>
-    );
-  }
 
   return (
     <AnimatedTouchable
@@ -188,13 +172,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
-  gradientContainer: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: borderRadius.lg,
-  },
-
   // Sizes
   sm: {
     paddingHorizontal: spacing.md,
@@ -212,51 +189,51 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
 
-  // Variants
+  // Variants — flat fills only (no gradient, no shadow), matching
+  // GlassButton's reskin. `secondary` uses chart[2] (cyan), the same source
+  // GlassButton draws its own secondary from.
   primary: {
-    backgroundColor: colors.primary,
-    ...shadows.md,
+    backgroundColor: colors.primary.DEFAULT,
   },
   secondary: {
-    backgroundColor: colors.secondary,
-    ...shadows.md,
+    backgroundColor: chart[2],
   },
   outline: {
-    backgroundColor: hexToRgba(colors.primary, TINT_ALPHA_LOW),
+    backgroundColor: hexToRgba(colors.primary.DEFAULT, TINT_ALPHA_LOW),
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.primary.DEFAULT,
   },
   ghost: {
-    backgroundColor: colors.transparent,
+    backgroundColor: "transparent",
   },
 
   // Text styles
   baseText: {
-    fontWeight: typography.fontWeight.semibold,
+    fontFamily: FONT_FAMILY.semibold,
     textAlign: "center",
   },
   smText: {
-    fontSize: fontSize.sm,
+    fontSize: rf(typography.fontSize.caption),
   },
   mdText: {
-    fontSize: fontSize.md,
+    fontSize: rf(typography.fontSize.body),
   },
   lgText: {
-    fontSize: fontSize.lg,
+    fontSize: rf(typography.fontSize.h3),
   },
 
   // Text variants
   primaryText: {
-    color: colors.white,
+    color: FILLED_LABEL_COLOR,
   },
   secondaryText: {
-    color: colors.white,
+    color: FILLED_LABEL_COLOR,
   },
   outlineText: {
-    color: colors.primary,
+    color: colors.primary.DEFAULT,
   },
   ghostText: {
-    color: colors.primary,
+    color: colors.primary.DEFAULT,
   },
 
   // States

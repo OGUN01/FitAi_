@@ -2,9 +2,10 @@
 // This file exports all base UI components for easy importing
 
 /**
- * @deprecated Flat CTA button. Use `GlassButton` from './aurora/GlassButton'
- * for primary actions in new/updated screens — it matches the glass surfaces
- * used everywhere else in the app. Kept for legacy call sites only.
+ * @deprecated Use `GlassButton` from './aurora/GlassButton' for a filled CTA
+ * (primary/secondary/success/warning/error). This one stays alive only for
+ * its `outline`/`ghost` variants — a de-emphasized secondary action that
+ * GlassButton doesn't cover. See its own file header for detail.
  */
 export { Button } from './Button';
 export { Input } from './Input';

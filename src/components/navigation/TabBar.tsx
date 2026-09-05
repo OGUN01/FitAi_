@@ -8,12 +8,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { rp, rh, rw, rf } from '../../utils/responsive';
 import {
-  flatColors as colors,
-  flatFontSize,
+  colors,
+  surface,
+  border,
   spacing,
   typography,
   borderRadius,
 } from '../../theme/aurora-tokens';
+import { FONT_FAMILY } from '../../theme/fonts';
 import { useReducedMotion } from '../../utils/accessibility/hooks';
 
 // REMOVED: Module-level Dimensions.get() causes crash
@@ -87,10 +89,10 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
       style={[
         styles.container,
         {
-          backgroundColor: colors.backgroundSecondary,
+          backgroundColor: surface[1],
           paddingBottom: Math.max(insets.bottom, rp(spacing.sm)),
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: border.subtle,
         },
       ]}
     >
@@ -116,7 +118,7 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
                 width: barWidth,
                 height: rh(3),
                 borderRadius: borderRadius.full,
-                backgroundColor: colors.primary,
+                backgroundColor: colors.primary.DEFAULT,
               },
               indicatorStyle,
             ]}
@@ -156,13 +158,9 @@ export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) =
                 style={[
                   styles.tabText,
                   {
-                    fontSize: rf(flatFontSize.xs),
-                    fontWeight: isActive
-                      ? typography.fontWeight.semibold
-                      : typography.fontWeight.medium,
-                    color: isActive
-                      ? colors.primary
-                      : colors.textMuted,
+                    fontFamily: isActive ? FONT_FAMILY.semibold : typography.variants.caption.fontFamily,
+                    fontSize: rf(typography.variants.caption.fontSize),
+                    color: isActive ? colors.primary.DEFAULT : colors.text.tertiary,
                   },
                 ]}
                 numberOfLines={1}

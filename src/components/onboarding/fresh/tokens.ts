@@ -13,21 +13,26 @@
  */
 
 import { FONT_FAMILY } from "../../../theme/fonts";
+import { colors as auroraColors, border as auroraBorder } from "../../../theme/aurora-tokens";
 
-/** Color palette. */
+/**
+ * Color palette. These values are now the app-wide canonical palette (see
+ * DESIGN.md) — sourced from aurora-tokens.ts, the single SSOT, rather than
+ * hardcoded here a second time.
+ */
 export const tokens = {
   /** Near-OLED black, screen background. */
-  bg: "#050505",
+  bg: auroraColors.background.DEFAULT,
   /** Primary text. */
-  ink: "#F5F5F5",
+  ink: auroraColors.text.primary,
   /** Secondary text. */
-  ink2: "rgba(245,245,245,0.55)",
+  ink2: auroraColors.text.secondary,
   /** Tertiary text / labels / placeholders. */
-  ink3: "rgba(245,245,245,0.34)",
+  ink3: auroraColors.text.tertiary,
   /** 1px separators — the ONLY "border". */
-  hairline: "rgba(255,255,255,0.08)",
+  hairline: auroraBorder.subtle,
   /** Brand orange — the single brand accent (matches the app's primary). */
-  accent: "#FF6B35",
+  accent: auroraColors.primary.DEFAULT,
   /** Accent at low alpha, for a selected dot / chip bg. */
   accentDim: "rgba(255,107,53,0.14)",
   /** Healthy / in-range semantic green — NOT a second brand accent. Use only

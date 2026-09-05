@@ -13,7 +13,8 @@ import { StyleSheet, Text, View, ViewStyle, TextStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "./AnimatedPressable";
-import { colors, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
+import { colors, surface, spacing, typography, borderRadius } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rp, rf } from "../../../utils/responsive";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
@@ -68,7 +69,11 @@ export const GlassHeader: React.FC<GlassHeaderProps> = ({
   return (
     <Animated.View
       entering={reducedMotion ? undefined : FadeIn.duration(250)}
-      style={[styles.container, style]}
+      // Opaque surface[1] — matches TabBar's opaque fill (also surface[1]) so
+      // top and bottom chrome read as the same elevation tier, per
+      // DESIGN.md's flat-surface rule (was translucent colors.glass.background
+      // before, which visibly mismatched the opaque tab bar).
+      style={[styles.container, { backgroundColor: surface[1] }, style]}
       accessibilityRole="header"
     >
       {/* Left: back chevron (fixed width so titles align when absent) */}
@@ -156,7 +161,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.glass.background,
+    backgroundColor: surface[2],
   },
   titleWrap: {
     flexDirection: "row",
@@ -190,16 +195,16 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: colors.text.secondary,
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(11),
-    fontWeight: String(typography.fontWeight.bold) as any,
     textTransform: "uppercase",
     letterSpacing: 1.2,
     marginBottom: rp(2),
   },
   title: {
     color: colors.text.primary,
-    fontSize: rf(typography.fontSize.h3),
-    fontWeight: String(typography.fontWeight.bold) as any,
+    fontFamily: typography.variants.pageTitle.fontFamily,
+    fontSize: rf(typography.variants.pageTitle.fontSize),
   },
 });
 

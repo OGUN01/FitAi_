@@ -1,0 +1,303 @@
+{
+  "src/components/advanced": {
+    "flatColors": 10,
+    "fontWeight": 52,
+    "GlassCard": 31
+  },
+  "src/components/advanced/multiselect": {
+    "flatColors": 8,
+    "fontWeight": 10
+  },
+  "src/components/animations": {
+    "flatColors": 4,
+    "fontWeight": 10
+  },
+  "src/components": {
+    "flatColors": 9,
+    "fontWeight": 20
+  },
+  "src/components/auth": {
+    "flatColors": 2,
+    "fontWeight": 3
+  },
+  "src/components/charts": {
+    "flatColors": 9,
+    "fontWeight": 22,
+    "elevationColon": 1
+  },
+  "src/components/cooking": {
+    "GlassCard": 16,
+    "fontWeight": 15
+  },
+  "src/components/debug": {
+    "flatColors": 3,
+    "fontWeight": 21,
+    "shadowColor": 2,
+    "elevationColon": 2
+  },
+  "src/components/details": {
+    "flatColors": 13,
+    "fontWeight": 32
+  },
+  "src/components/diet": {
+    "flatColors": 50,
+    "fontWeight": 201,
+    "elevationColon": 3,
+    "GlassCard": 15
+  },
+  "src/components/diet/builder": {
+    "fontWeight": 42,
+    "elevationColon": 1
+  },
+  "src/components/diet/feedback": {
+    "flatColors": 8,
+    "fontWeight": 8
+  },
+  "src/components/errors": {
+    "flatColors": 2,
+    "fontWeight": 2
+  },
+  "src/components/fitness/builder": {
+    "GlassCard": 26,
+    "fontWeight": 252,
+    "flatColors": 27,
+    "elevationColon": 6,
+    "shadowColor": 2
+  },
+  "src/components/fitness": {
+    "flatColors": 12,
+    "fontWeight": 84,
+    "shadowColor": 1,
+    "elevationColon": 3,
+    "GlassCard": 5
+  },
+  "src/components/fitness/exercise-card": {
+    "flatColors": 8,
+    "fontWeight": 18
+  },
+  "src/components/fitness/gif-player": {
+    "flatColors": 5,
+    "fontWeight": 10,
+    "elevationColon": 2,
+    "shadowColor": 1,
+    "boxShadow": 3
+  },
+  "src/components/fitness/instruction": {
+    "flatColors": 9,
+    "fontWeight": 23
+  },
+  "src/components/form": {
+    "flatColors": 3,
+    "fontWeight": 6
+  },
+  "src/components/health": {
+    "GlassCard": 6,
+    "flatColors": 5,
+    "fontWeight": 13
+  },
+  "src/components/help": {
+    "GlassCard": 16,
+    "flatColors": 4,
+    "fontWeight": 5
+  },
+  "src/components/home": {
+    "flatColors": 11,
+    "fontWeight": 12,
+    "GlassCard": 7
+  },
+  "src/components/icons": {
+    "flatColors": 1
+  },
+  "src/components/navigation": {
+    "flatColors": 1,
+    "fontWeight": 1
+  },
+  "src/components/notifications": {
+    "fontWeight": 1
+  },
+  "src/components/nutrition/ingredient": {
+    "flatColors": 10,
+    "fontWeight": 2
+  },
+  "src/components/nutrition": {
+    "flatColors": 6,
+    "fontWeight": 12
+  },
+  "src/components/onboarding": {
+    "flatColors": 9,
+    "fontWeight": 22,
+    "boxShadow": 1
+  },
+  "src/components/onboarding/fresh": {
+    "fontWeight": 2
+  },
+  "src/components/onboarding/shared": {
+    "flatColors": 2,
+    "fontWeight": 6,
+    "GlassCard": 1
+  },
+  "src/components/onboarding/wizard": {
+    "flatColors": 2,
+    "fontWeight": 10
+  },
+  "src/components/profile": {
+    "GlassCard": 1
+  },
+  "src/components/progress": {
+    "flatColors": 4
+  },
+  "src/components/session": {
+    "GlassCard": 12,
+    "flatColors": 4,
+    "fontWeight": 12
+  },
+  "src/components/settings": {
+    "flatColors": 6,
+    "fontWeight": 8,
+    "GlassCard": 16,
+    "elevationColon": 1,
+    "boxShadow": 1
+  },
+  "src/components/shared": {
+    "fontWeight": 12
+  },
+  "src/components/subscription/paywall": {
+    "flatColors": 2,
+    "fontWeight": 7
+  },
+  "src/components/subscription": {
+    "GlassCard": 1,
+    "flatColors": 2,
+    "fontWeight": 11
+  },
+  "src/components/test": {
+    "flatColors": 2,
+    "fontWeight": 11
+  },
+  "src/components/ui/aurora": {
+    "GlassCard": 34,
+    "fontWeight": 31,
+    "flatColors": 15,
+    "shadowColor": 1,
+    "elevationColon": 2
+  },
+  "src/components/ui": {
+    "fontWeight": 19,
+    "GlassCard": 22,
+    "flatColors": 13,
+    "shadowColor": 2,
+    "elevationColon": 3
+  },
+  "src/components/wearable": {
+    "flatColors": 6,
+    "fontWeight": 11
+  },
+  "src/components/workout": {
+    "flatColors": 7,
+    "fontWeight": 31,
+    "shadowColor": 2,
+    "elevationColon": 3,
+    "boxShadow": 2,
+    "GlassCard": 7
+  },
+  "src/features/workouts/components": {
+    "fontWeight": 20,
+    "GlassCard": 5,
+    "flatColors": 2
+  },
+  "src/hooks": {
+    "fontWeight": 1,
+    "flatColors": 4
+  },
+  "src/screens/auth": {
+    "flatColors": 2,
+    "fontWeight": 4
+  },
+  "src/screens": {
+    "fontWeight": 6
+  },
+  "src/screens/cooking": {
+    "fontWeight": 1
+  },
+  "src/screens/details/components": {
+    "fontWeight": 18
+  },
+  "src/screens/details": {
+    "fontWeight": 5
+  },
+  "src/screens/diet": {
+    "flatColors": 2,
+    "fontWeight": 8,
+    "elevationColon": 1
+  },
+  "src/screens/main/analytics": {
+    "flatColors": 2,
+    "fontWeight": 1
+  },
+  "src/screens/main": {
+    "fontWeight": 26,
+    "flatColors": 4,
+    "GlassCard": 5,
+    "elevationColon": 1
+  },
+  "src/screens/main/fitness": {
+    "flatColors": 7,
+    "fontWeight": 37,
+    "elevationColon": 2
+  },
+  "src/screens/main/home": {
+    "GlassCard": 4,
+    "flatColors": 13,
+    "fontWeight": 40
+  },
+  "src/screens/main/home/components": {
+    "flatColors": 1,
+    "fontWeight": 2
+  },
+  "src/screens/main/profile/modals": {
+    "GlassCard": 1
+  },
+  "src/screens/main/profile": {
+    "flatColors": 6
+  },
+  "src/screens/onboarding": {
+    "flatColors": 2,
+    "fontWeight": 2
+  },
+  "src/screens/profile": {
+    "flatColors": 1,
+    "fontWeight": 11
+  },
+  "src/screens/session": {
+    "fontWeight": 1
+  },
+  "src/screens/settings": {
+    "GlassCard": 3,
+    "flatColors": 6,
+    "fontWeight": 15
+  },
+  "src/screens/settings/components": {
+    "flatColors": 3,
+    "fontWeight": 3
+  },
+  "src/screens/workout": {
+    "fontWeight": 24,
+    "elevationColon": 1
+  },
+  "src/screens/workouts": {
+    "flatColors": 8,
+    "fontWeight": 73,
+    "shadowColor": 1,
+    "elevationColon": 7
+  },
+  "src/theme": {
+    "flatColors": 6,
+    "fontWeight": 10,
+    "shadowColor": 14,
+    "elevationColon": 13,
+    "boxShadow": 4
+  },
+  "src/utils": {
+    "fontWeight": 40
+  }
+}

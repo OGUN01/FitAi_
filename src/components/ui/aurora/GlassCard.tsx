@@ -1,19 +1,20 @@
 /**
  * GlassCard Component
- * Glassmorphic card with blur effect, optional gradient border, and elevation
+ *
+ * NAME IS LEGACY — this no longer renders blur/glass. Per DESIGN.md
+ * (Elevation & Depth §5) and the app-wide visual overhaul
+ * (src/docs/VISUAL_DESIGN_OVERHAUL.md, Stage 1), depth now comes from a flat
+ * `surface[1]`/`surface[2]` fill + a `border.subtle` hairline — never blur,
+ * never a shadow, regardless of the `elevation`/`gradientBorder` props. Kept
+ * the component name and prop API unchanged (~90+ call sites) so this is a
+ * pure internal reskin: every existing consumer inherits the new flat look
+ * with zero per-call-site changes.
  */
 
 import React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { GlassView } from "./GlassView";
 import { AnimatedPressable } from "./AnimatedPressable";
-import {
-  spacing,
-  shadows,
-  borderRadius as br,
-} from "../../../theme/aurora-tokens";
-import { gradientBorder as gradientBorderPreset } from "../../../theme/gradients";
+import { surface, border, spacing, borderRadius as br } from "../../../theme/aurora-tokens";
 import { rw, rp } from "../../../utils/responsive";
 
 type ElevationLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -22,19 +23,26 @@ type BorderRadiusSize = "none" | "sm" | "md" | "lg" | "xl" | "xxl";
 
 interface GlassCardProps {
   /**
-   * Blur intensity for glass effect
-   * @default 'default'
+   * @deprecated No longer renders blur — depth is flat surface + hairline
+   * now. Accepted for prop-API back-compat only; has no visual effect.
    */
   blurIntensity?: "light" | "default" | "heavy" | "medium" | "strong";
 
   /**
-   * Elevation level (1-8)
+   * Elevation level (1-8). No longer a shadow — selects which flat surface
+   * tier this card sits on: 1-3 → `surface[1]` (standard card), 4-8 →
+   * `surface[2]` (a raised control, e.g. a popover-like surface). Per
+   * DESIGN.md, max one surface depth over the screen background — don't
+   * nest a high-elevation card inside another card.
    * @default 3
    */
   elevation?: ElevationLevel;
 
   /**
-   * Show gradient border
+   * @deprecated Gradient borders are retired (DESIGN.md's de-gradient
+   * rule — gradients are reserved for genuine brand moments only). `true`
+   * now renders a slightly stronger flat hairline (`border.DEFAULT`)
+   * instead of `border.subtle`, as the closest flat equivalent.
    * @default false
    */
   gradientBorder?: boolean;
@@ -52,7 +60,10 @@ interface GlassCardProps {
   borderRadius?: BorderRadiusSize;
 
   /**
-   * Show standard border
+   * Draws a stronger hairline (`border.DEFAULT` instead of the default
+   * `border.subtle`). The card ALWAYS draws a hairline now (it's the only
+   * depth cue left post-blur/shadow removal) — this only picks the
+   * strength.
    * @default false
    */
   showBorder?: boolean;
@@ -100,6 +111,15 @@ interface GlassCardProps {
    * Content container styles
    */
   contentStyle?: ViewStyle;
+
+  /**
+   * Give the content wrapper `flex: 1` so it fills a definite height
+   * provided one level up (e.g. a bottom sheet with an explicit animated
+   * height). Only pass this when that's actually true of the caller's
+   * ancestor chain — otherwise leave it off (sizes to content, the safe
+   * default).
+   */
+  fillHeight?: boolean;
 }
 
 const getPaddingValue = (size: PaddingSize): number => {
@@ -138,13 +158,9 @@ const getBorderRadiusValue = (size: BorderRadiusSize): number => {
   }
 };
 
-const getShadowStyle = (level: ElevationLevel) => {
-  const shadowKey = `level${level}` as keyof typeof shadows;
-  return shadows[shadowKey];
-};
+const getSurfaceFill = (level: ElevationLevel): string => (level >= 4 ? surface[2] : surface[1]);
 
 export const GlassCard: React.FC<GlassCardProps> = ({
-  blurIntensity = "default",
   elevation = 3,
   gradientBorder = false,
   padding = "md",
@@ -158,41 +174,40 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   children,
   style,
   contentStyle,
+  fillHeight = false,
 }) => {
   const paddingValue = getPaddingValue(padding);
   const borderRadiusValue = getBorderRadiusValue(borderRadius);
-  const shadowStyle = getShadowStyle(elevation);
-
-  const containerStyle: ViewStyle = {
-    borderRadius: borderRadiusValue,
-    ...shadowStyle,
-  };
+  const borderColor = gradientBorder || showBorder ? border.DEFAULT : border.subtle;
 
   const renderContent = (
-    <GlassView
-      blurAmount={blurIntensity}
-      borderRadius={borderRadiusValue}
-      showBorder={!gradientBorder && showBorder}
-      style={[styles.glassContainer, containerStyle, style]}
+    <View
+      style={[
+        styles.surface,
+        {
+          backgroundColor: getSurfaceFill(elevation),
+          borderRadius: borderRadiusValue,
+          borderColor,
+        },
+        fillHeight && styles.surfaceFill,
+        style,
+      ]}
     >
-      {gradientBorder && (
-        <LinearGradient
-          colors={gradientBorderPreset.glass.colors as [string, string, ...string[]]}
-          start={gradientBorderPreset.glass.start}
-          end={gradientBorderPreset.glass.end}
-          style={[styles.gradientBorderLayer, { borderRadius: borderRadiusValue }]}
-          pointerEvents="none"
-        />
-      )}
-      <View style={[styles.content, { padding: paddingValue }, contentStyle]}>
+      <View
+        style={[
+          styles.content,
+          { padding: paddingValue },
+          fillHeight && styles.contentFill,
+          contentStyle,
+        ]}
+      >
         {children}
       </View>
-    </GlassView>
+    </View>
   );
 
-  // pressable: wrap the glass surface in an AnimatedPressable so taps get the
-  // standardized spring-scale + haptic micro-interaction. (Previously a stub —
-  // pressable props were ignored.)
+  // pressable: wrap the surface in an AnimatedPressable so taps get the
+  // standardized spring-scale + haptic micro-interaction.
   if (pressable && onPress) {
     return (
       <AnimatedPressable
@@ -214,24 +229,21 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  glassContainer: {
+  surface: {
     overflow: "hidden",
+    borderWidth: 1,
   },
-  gradientBorderLayer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    // Previously relied on the parent clipping the gradient to the rounded
-    // shape, but the parent has overflow:hidden on its own borderRadius and
-    // the gradient layer is a sibling of `content` (not a child of the
-    // rounded clip path). Setting borderRadius explicitly ensures the
-    // gradient border follows the card's corner shape on Android/Web.
-    borderRadius: 0,
+  // Opt-in via `fillHeight` — see its doc comment above.
+  surfaceFill: {
+    flex: 1,
+    minHeight: 0,
   },
   content: {
     width: "100%",
+  },
+  contentFill: {
+    flex: 1,
+    minHeight: 0,
   },
 });
 
