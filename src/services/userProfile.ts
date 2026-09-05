@@ -87,17 +87,34 @@ class UserProfileService {
    */
   async getProfile(userId: string): Promise<UserProfileResponse> {
     try {
+      // BUG FIX (found via live testing with a genuinely new account): a
+      // brand-new sign-up has no `profiles` row yet until onboarding/first
+      // save creates one — `.single()` throws a real 406/PGRST116 for this
+      // completely normal case, logged as a scary Supabase error for
+      // something that isn't one. `.maybeSingle()` returns `null` data with
+      // no error instead, matching the same fix already applied to
+      // `getDietPreferences`/`getProgressGoals` elsewhere. Caller behavior
+      // (`userStore.getProfile`) is preserved exactly — still treated as
+      // "not successful" so it doesn't set stale/fabricated profile state —
+      // only the noisy network-level error is eliminated.
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("[userProfile] getProfile Supabase error:", error);
         return {
           success: false,
           error: error.message,
+        };
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          error: "Profile not found",
         };
       }
 
@@ -395,6 +412,19 @@ class UserProfileService {
         };
       }
 
+      // BUG FIX: this uses .maybeSingle() (not .single()), which returns
+      // { data: null, error: null } — not the PGRST116 error above — when no
+      // diet_preferences row exists yet. Without this guard, fromDb(null)
+      // threw `Cannot read properties of null (reading 'dietType')` on every
+      // Home load for any account with no diet_preferences row, logged as an
+      // error despite being an entirely expected "no row yet" state. Matches
+      // this function's own existing "no data found" contract above
+      // (success: true, data: null) rather than fabricating empty defaults.
+      if (!data) {
+        console.warn("[userProfile] getDietPreferences: no diet_preferences row for user — returning null");
+        return { success: true, data: null };
+      }
+
       // Transform from database format (camelCase)
       const transformedData = fromDb(data);
 
@@ -465,22 +495,33 @@ class UserProfileService {
     userId: string,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
+      // BUG FIX (found via live testing with a genuinely new account):
+      // `.single()` throws a real 406/PGRST116 network error for the
+      // completely normal "no workout_preferences row yet" case — the
+      // `PGRST116` branch below already handled this gracefully at the
+      // application level (`success: true, data: null`, no console noise),
+      // but the raw network-level 406 still logged to the console
+      // regardless. `.maybeSingle()` returns `null` data with no error for
+      // zero rows, eliminating the network-level noise too (same fix as
+      // `getProfile` above and `getDietPreferences`/`getProgressGoals`
+      // elsewhere in this codebase).
       const { data, error } = await supabase
         .from("workout_preferences")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          // No data found - this is okay
-          return { success: true, data: null };
-        }
         console.error("[userProfile] getWorkoutPreferences Supabase error:", error);
         return {
           success: false,
           error: error.message,
         };
+      }
+
+      if (!data) {
+        // No data found - this is okay
+        return { success: true, data: null };
       }
 
       // Transform from database format (camelCase)

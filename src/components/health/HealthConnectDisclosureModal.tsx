@@ -73,6 +73,7 @@ export const HealthConnectDisclosureModal: React.FC<
             blurIntensity="heavy"
             padding="lg"
             borderRadius="xl"
+            style={styles.opaqueSurface}
           >
             <View style={styles.iconContainer}>
               <Ionicons
@@ -196,6 +197,14 @@ const styles = StyleSheet.create({
     width: "90%",
     maxWidth: 420,
     maxHeight: rh(724),
+    minHeight: 400,
+  },
+  // Belt-and-suspenders on top of GlassView's Android fallback opacity layer:
+  // this is a text-heavy first-run disclosure required by Play policy, so it
+  // must never be less than fully readable. An explicit solid background here
+  // guarantees contrast regardless of platform/blur-fallback behavior.
+  opaqueSurface: {
+    backgroundColor: colors.backgroundSecondary,
   },
   iconContainer: {
     alignItems: "center",

@@ -11,7 +11,8 @@ import Constants from "expo-constants";
 
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh, rp, rbr } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -140,7 +141,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                     <Ionicons
                       name="time-outline"
                       size={rf(10)}
-                      color={colors.primary}
+                      color={colors.primary.DEFAULT}
                     />
                     <Text style={styles.timeInfoText}>{timeInfo}</Text>
                   </View>
@@ -152,7 +153,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   <Ionicons
                     name="time-outline"
                     size={rf(10)}
-                    color={colors.primary}
+                    color={colors.primary.DEFAULT}
                   />
                   <Text style={styles.timeInfoText}>{timeInfo}</Text>
                 </View>
@@ -178,7 +179,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                   <Ionicons
                     name="settings-outline"
                     size={rf(14)}
-                    color={colors.textSecondary}
+                    color={colors.text.secondary}
                   />
                 </View>
               </AnimatedPressable>
@@ -191,12 +192,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
               }}
               trackColor={{
                 false: surface[2],
-                true: `${colors.primary}50`,
+                true: `${colors.primary.DEFAULT}50`,
               }}
               thumbColor={
                 enabled
-                  ? colors.primary
-                  : colors.textMuted
+                  ? colors.primary.DEFAULT
+                  : colors.text.tertiary
               }
               ios_backgroundColor={surface[2]}
               accessibilityRole="switch"
@@ -366,7 +367,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
             <View style={styles.notificationListSurface}>
               <NotificationItem
                 icon="water-outline"
-                iconColor={colors.info}
+                iconColor={colors.info.DEFAULT}
                 title="Water Reminders"
                 description="Smart hydration reminders based on your daily schedule"
                 timeInfo={
@@ -393,7 +394,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                   items above. */}
               <NotificationItem
                 icon="barbell-outline"
-                iconColor={colors.errorLight}
+                iconColor={colors.error.light}
                 title="Workout Reminders"
                 description="Coming soon — not yet connected to your fitness plan, so no notifications are sent"
                 enabled={false}
@@ -404,7 +405,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
               <NotificationItem
                 icon="restaurant-outline"
-                iconColor={colors.success}
+                iconColor={colors.success.DEFAULT}
                 title="Meal Reminders"
                 description="Never miss breakfast, lunch, or dinner"
                 timeInfo={
@@ -418,7 +419,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
               <NotificationItem
                 icon="moon-outline"
-                iconColor={colors.primary}
+                iconColor={colors.primary.DEFAULT}
                 title="Sleep Reminders"
                 description="Smart bedtime notifications for better recovery"
                 timeInfo={
@@ -492,14 +493,14 @@ const styles = StyleSheet.create({
   },
   unavailableTitle: {
     fontSize: rf(16),
-    fontWeight: "700",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.text.primary,
     marginBottom: rp(8),
     textAlign: "center" as const,
   },
   unavailableText: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(18),
     textAlign: "center" as const,
   },
@@ -542,13 +543,13 @@ const styles = StyleSheet.create({
   },
   notificationTitle: {
     fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.semibold,
+    color: colors.text.primary,
     marginBottom: rp(2),
   },
   notificationDescription: {
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(16),
   },
   timeInfoBadge: {
@@ -558,14 +559,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(3),
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: `${colors.primary.DEFAULT}15`,
     borderRadius: borderRadius.sm,
     alignSelf: "flex-start",
   },
   timeInfoText: {
     fontSize: rf(10),
-    fontWeight: "500",
-    color: colors.primary,
+    fontFamily: FONT_FAMILY.medium,
+    color: colors.primary.DEFAULT,
   },
   controlsContainer: {
     flexDirection: "row",
@@ -592,21 +593,21 @@ const styles = StyleSheet.create({
   },
   permissionWarning: {
     flex: 1,
-    color: colors.warning,
+    color: colors.warning.DEFAULT,
     fontSize: rf(13),
   },
   openSettingsButton: {
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(6),
     borderRadius: borderRadius.sm,
-    backgroundColor: `${colors.warning}20`,
+    backgroundColor: `${colors.warning.DEFAULT}20`,
     borderWidth: 1,
-    borderColor: `${colors.warning}50`,
+    borderColor: `${colors.warning.DEFAULT}50`,
   },
   openSettingsText: {
     fontSize: rf(12),
-    fontWeight: "600",
-    color: colors.warning,
+    fontFamily: FONT_FAMILY.semibold,
+    color: colors.warning.DEFAULT,
   },
 });
 

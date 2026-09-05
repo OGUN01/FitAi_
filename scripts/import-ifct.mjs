@@ -2,20 +2,44 @@
 /**
  * import-ifct.mjs
  * =====================================================================
- * Imports IFCT 2017 (Indian Food Composition Tables) data into
- * the Supabase ifct_foods table using the ifct2017 npm package.
+ * Imports IFCT 2017 (Indian Food Composition Tables, ICMR-NIN) data into
+ * the Supabase `ifct_foods` table using the `ifct2017` npm package.
  *
  * Prereqs:
- *   npm install @supabase/supabase-js ifct2017
- *   Set env: SUPABASE_URL  SUPABASE_SERVICE_ROLE_KEY
+ *   npm install ifct2017   (devDependency — only used by this script)
+ *   Set env: SUPABASE_URL  SUPABASE_SERVICE_ROLE_KEY  (read from .env.local)
  *
  * Usage:
  *   node scripts/import-ifct.mjs
  *
- * The ifct2017 package provides:
- *   - compositions(food_code)  - returns nutrition per 100g
- *   - foods()                  - returns all food entries
- *   - columns()                - returns column (nutrient) definitions
+ * NOTE on the real ifct2017 API (this rewrite fixes an earlier version of
+ * this script that was written against an imagined API — `.foods()` doesn't
+ * exist, and nutrient values aren't keyed by human names like "Protein" —
+ * verified against the actual installed package before writing this):
+ *
+ *   await ifct2017.compositions.load()   // must load the corpus first
+ *   ifct2017.compositions('')            // '' as query returns ALL 542 rows
+ *
+ * Each row is keyed by cryptic INFOODS-style tagnames, not readable names.
+ * The ones this script maps (confirmed via `ifct2017.representations(code)`,
+ * which reports the {factor, unit} needed to convert the raw stored value):
+ *
+ *   enerc     Energy            — raw unit is kJ (factor 1)  → divide by 4.184 for kcal
+ *   protcnt   Protein           — g, factor 1 (no conversion)
+ *   fatce     Total Fat         — g, factor 1
+ *   choavldf  Carbohydrate      — g, factor 1
+ *   fibtg     Dietary Fiber     — g, factor 1
+ *   fsugar    Free Sugars       — g, factor 1
+ *   na        Sodium            — raw × 1000 → mg
+ *   ca        Calcium           — raw × 1000 → mg
+ *   fe        Iron              — raw × 1000 → mg
+ *   vitc      Ascorbic acid (C) — raw × 1000 → mg
+ *   cartbeq   β-Carotene eq.    — raw × 1,000,000 → mcg
+ *   water     Moisture          — g, factor 1
+ *
+ * Sanity-checked against real values: rice (A015) enerc=1491 kJ → 356 kcal
+ * (real ~345-360 kcal/100g); pineapple (E053) enerc=180 kJ → 43 kcal (real
+ * ~50 kcal/100g). Confirms the kJ→kcal conversion, not a passthrough.
  * =====================================================================
  */
 
@@ -23,103 +47,101 @@ import { createClient } from '@supabase/supabase-js';
 // ifct2017 is a CommonJS package
 import { createRequire } from 'module';
 const require2 = createRequire(import.meta.url);
-const ifct = require2("ifct2017");
+const ifct = require2('ifct2017');
 
 const URL_ = process.env.SUPABASE_URL;
-const KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!URL_ || !KEY) { console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"); process.exit(1); }
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!URL_ || !KEY) {
+  console.error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (see .env.local)');
+  process.exit(1);
+}
 const sb = createClient(URL_, KEY, { auth: { persistSession: false } });
 
-// ---------------------------------------------------------------------------
-// IFCT column mappings
-// Key: IFCT nutrient column name -> our DB column
-// ---------------------------------------------------------------------------
-const NUTRIENT_MAP = {
-  // Energy
-  "Energy":                "energy_kcal_100g",
-  // Macros
-  "Protein":               "protein_100g",
-  "Fat":                   "fat_100g",
-  "Carbohydrate":          "carbohydrate_100g",
-  "Totaldietary fibre":    "fiber_100g",
-  "Freesugar":             "sugar_100g",
-  // Minerals
-  "Sodium":                "sodium_mg_100g",
-  "Calcium":               "calcium_mg_100g",
-  "Iron":                  "iron_mg_100g",
-  "Vitaminc":              "vitamin_c_mg_100g",
-  "Betacarotene":          "beta_carotene_mcg_100g",
-  // Other
-  "Moisture":              "moisture_100g",
-};
+const KJ_PER_KCAL = 4.184;
 
-function toNum(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
-function ne(v)    { return (v === "" || v === undefined || v === null) ? null : v; }
-
-// ---------------------------------------------------------------------------
-// Build rows from IFCT data
-// ---------------------------------------------------------------------------
-function buildRows() {
-  const allFoods = ifct.foods();
-  if (!allFoods || !allFoods.length) {
-    console.error("ifct2017: foods() returned empty. Check package installation.");
-    process.exit(1);
-  }
-  console.log("[ifct] Total IFCT foods:", allFoods.length);
-
-  const rows = [];
-  for (const food of allFoods) {
-    // food object shape: { code, name, scie, lang, grup, ... }
-    const comp = ifct.compositions(food.code);
-    const nutriRow = {};
-    if (comp && typeof comp === "object") {
-      for (const [ifctKey, dbCol] of Object.entries(NUTRIENT_MAP)) {
-        nutriRow[dbCol] = toNum(comp[ifctKey]);
-      }
-    }
-    rows.push({
-      food_code:         ne(food.code),
-      name:              ne(food.name) ?? ne(food.scie) ?? food.code,
-      scientific_name:   ne(food.scie),
-      local_names:       ne(food.lang),
-      food_group:        ne(food.grup),
-      subgroup:          ne(food.subg ?? food.subgroup),
-      region:            ne(food.regn ?? food.region),
-      preparation_method: ne(food.prep ?? food.preparation),
-      ...nutriRow,
-    });
-  }
-  return rows;
+function toNum(v) {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
+}
+function ne(v) {
+  return v === '' || v === undefined || v === null ? null : v;
+}
+function scaled(v, factor) {
+  const n = toNum(v);
+  return n === null ? null : n * factor;
 }
 
-// ---------------------------------------------------------------------------
-// Upsert in batches
-// ---------------------------------------------------------------------------
+/**
+ * Round to a sane number of decimal places for the target NUMERIC column
+ * (matches the migration's precision: macros NUMERIC(6,3), mg fields
+ * NUMERIC(8,2)/(6,3), energy NUMERIC(8,2)).
+ */
+function round(n, places) {
+  if (n === null) return null;
+  const f = 10 ** places;
+  return Math.round(n * f) / f;
+}
+
+function buildRows() {
+  const allFoods = ifct.compositions('');
+  if (!allFoods || !allFoods.length) {
+    console.error('ifct2017: compositions("") returned empty. Check package installation.');
+    process.exit(1);
+  }
+  console.log('[ifct] Total IFCT foods:', allFoods.length);
+
+  return allFoods.map((f) => ({
+    food_code: ne(f.code),
+    name: ne(f.name) ?? ne(f.scie) ?? f.code,
+    scientific_name: ne(f.scie),
+    local_names: ne(f.lang),
+    food_group: ne(f.grup),
+    subgroup: null, // not exposed by ifct2017's compositions() rows
+    region: f.regn != null ? String(f.regn) : null,
+    preparation_method: null, // not exposed by ifct2017's compositions() rows
+    energy_kcal_100g: round(scaled(f.enerc, 1) !== null ? f.enerc / KJ_PER_KCAL : null, 2),
+    protein_100g: round(scaled(f.protcnt, 1), 3),
+    fat_100g: round(scaled(f.fatce, 1), 3),
+    carbohydrate_100g: round(scaled(f.choavldf, 1), 3),
+    fiber_100g: round(scaled(f.fibtg, 1), 3),
+    sugar_100g: round(scaled(f.fsugar, 1), 3),
+    sodium_mg_100g: round(scaled(f.na, 1000), 2),
+    calcium_mg_100g: round(scaled(f.ca, 1000), 2),
+    iron_mg_100g: round(scaled(f.fe, 1000), 3),
+    vitamin_c_mg_100g: round(scaled(f.vitc, 1000), 3),
+    beta_carotene_mcg_100g: round(scaled(f.cartbeq, 1000000), 2),
+    moisture_100g: round(scaled(f.water, 1), 3),
+    edible_portion: null, // not exposed by ifct2017's compositions() rows
+  }));
+}
+
 async function runImport() {
+  await ifct.compositions.load();
   const rows = buildRows();
-  console.log("[ifct] Built", rows.length, "rows. Upserting to Supabase...");
+  console.log('[ifct] Built', rows.length, 'rows. Upserting to Supabase...');
 
   const BATCH = 100;
-  let total = 0, errors = 0;
+  let total = 0;
+  let errors = 0;
   const t0 = Date.now();
 
   for (let i = 0; i < rows.length; i += BATCH) {
     const slice = rows.slice(i, i + BATCH);
     const { error } = await sb
-      .from("ifct_foods")
-      .upsert(slice, { onConflict: "food_code", ignoreDuplicates: false });
+      .from('ifct_foods')
+      .upsert(slice, { onConflict: 'food_code', ignoreDuplicates: false });
     if (error) {
       errors++;
-      console.error("Batch error at row", i, ":", error.message);
+      console.error('Batch error at row', i, ':', error.message);
     } else {
       total += slice.length;
-      process.stdout.write("[ifct] Upserted: " + total + "/" + rows.length + "");
+      console.log('[ifct] Upserted:', total + '/' + rows.length);
     }
   }
 
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-  console.log("
-[ifct] Done:", total, "rows,", errors, "errors,", elapsed + "s");
+  console.log(`\n[ifct] Done: ${total} rows, ${errors} errors, ${elapsed}s`);
+  if (errors > 0) process.exitCode = 1;
 }
 
 await runImport();

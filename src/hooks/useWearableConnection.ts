@@ -205,11 +205,13 @@ export const useWearableConnection = () => {
         const alreadyAcknowledged =
           (await AsyncStorage.getItem(HC_DISCLOSURE_ACK_KEY)) === "true";
         if (!alreadyAcknowledged) {
+          console.log('[HC-DEBUG] showing disclosure modal (not yet acknowledged)');
           pendingPermissionRequestRef.current =
             runHealthConnectPermissionRequest;
           setDisclosureVisible(true);
           return;
         }
+        console.log('[HC-DEBUG] already acknowledged, skipping disclosure modal');
 
         await runHealthConnectPermissionRequest();
       } else if (isIOS) {

@@ -65,11 +65,14 @@ describe("HealthConnectDisclosureModal", () => {
       const style = StyleSheet.flatten(
         (opaqueLayer as { props: { style?: unknown } }).props.style as never,
       );
-      // Opaque = a solid background color layered at < 1 opacity over the
-      // blur container, which is what prevents Android content bleed-through.
+      // Opaque = a solid background color guaranteeing Android content cannot
+      // bleed through. No `opacity` at all (fully solid) is stronger than a
+      // partial one, so only reject values that would reintroduce transparency.
       expect(style.backgroundColor).toBe(colors.backgroundSecondary);
-      expect(style.opacity).toBeGreaterThan(0);
-      expect(style.opacity).toBeLessThanOrEqual(1);
+      if (style.opacity !== undefined) {
+        expect(style.opacity).toBeGreaterThan(0);
+        expect(style.opacity).toBeLessThanOrEqual(1);
+      }
     } finally {
       platformSpy.restore();
     }

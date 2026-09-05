@@ -2,7 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rp } from "../../../utils/responsive";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
@@ -22,7 +23,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = ({
       <View style={styles.descriptionCard}>
         <View style={styles.descriptionContent}>
           <View style={styles.scheduledBadge}>
-            <Ionicons name="calendar-outline" size={rf(14)} color={colors.text} />
+            <Ionicons name="calendar-outline" size={rf(14)} color={colors.background.DEFAULT} />
             <Text style={styles.scheduledText}>{scheduledCount}</Text>
           </View>
           <Text style={styles.descriptionText}>
@@ -52,19 +53,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center" as const,
     gap: rp(4),
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
     paddingHorizontal: spacing.sm,
     paddingVertical: rp(4),
     borderRadius: borderRadius.full,
   },
   scheduledText: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(12),
-    fontWeight: "700",
-    color: colors.text,
+    // Near-black on the solid accent fill, not off-white — matches the
+    // GlassButton primary-variant label contrast convention.
+    color: colors.background.DEFAULT,
   },
   descriptionText: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     flex: 1,
     minWidth: 0,
   },

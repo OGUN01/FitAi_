@@ -19,6 +19,7 @@ import { mapActivityLevelForHealthCalc } from "../typeTransformers";
 import { detectEthnicity } from "./autoDetection";
 import { HealthScoreCalculatorService } from "./fitnessCalculators";
 import { calculateCompletionMetrics } from "../onboardingMetrics";
+import { computeEnergyBreakdown } from "../../services/energy/energyModel";
 
 
 export class HealthCalculationEngine {
@@ -58,10 +59,25 @@ export class HealthCalculationEngine {
       personalInfo.age,
       personalInfo.gender,
     );
-    const tdee = MetabolicCalculations.calculateTDEE(
-      bmr,
-      mapActivityLevelForHealthCalc(workoutPreferences.activity_level),
-    );
+    // Phase A.3: Delegate TDEE to the unified energy engine so master-engine
+    // and core.ts agree. The engine's goalTdee (NEAT_TDEE + intentExerciseBurn)
+    // replaces the old calculateTDEE (BMR × ACTIVITY_MULTIPLIERS, no exercise
+    // term, no age modifier) — fixing the divergence between the two paths.
+    // medicalConditions not passed: master-engine has no medical-adjustment
+    // step, matching core.ts which applies medical adjustments separately.
+    const energy = computeEnergyBreakdown({
+      weightKg,
+      heightCm,
+      age: personalInfo.age,
+      gender: personalInfo.gender,
+      activityLevel: workoutPreferences.activity_level,
+      workoutFrequencyPerWeek: workoutPreferences.workout_frequency_per_week,
+      timePreference: workoutPreferences.time_preference,
+      intensity: workoutPreferences.intensity,
+      workoutTypes: workoutPreferences.workout_types,
+      plan: null,
+    });
+    const tdee = energy.goalTdee;
     const metabolicAge = MetabolicCalculations.calculateMetabolicAge(
       bmr,
       personalInfo.age,

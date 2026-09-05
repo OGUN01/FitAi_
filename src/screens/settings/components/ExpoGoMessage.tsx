@@ -2,8 +2,8 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { flatColors as colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
+import { colors, spacing, borderRadius, surface, border } from "../../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../../theme/fonts";
 import { rf, rw, rbr } from "../../../utils/responsive";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 
@@ -17,12 +17,11 @@ export const ExpoGoMessage: React.FC = () => {
       >
         <View style={styles.expoGoCard}>
           <View style={styles.expoGoIconContainer}>
-            <LinearGradient
-              colors={[colors.warning, colors.primaryDark]}
-              style={styles.expoGoIcon}
-            >
-              <Ionicons name="warning-outline" size={rf(28)} color={colors.text} />
-            </LinearGradient>
+            {/* Flat fill, not a gradient — DESIGN.md's de-gradient rule
+                (gradients are reserved for genuine brand moments only). */}
+            <View style={styles.expoGoIcon}>
+              <Ionicons name="warning-outline" size={rf(28)} color={colors.background.DEFAULT} />
+            </View>
           </View>
           <Text style={styles.expoGoTitle}>Notifications Unavailable</Text>
           <Text style={styles.expoGoMessage}>
@@ -67,17 +66,18 @@ const styles = StyleSheet.create({
     borderRadius: rbr(32),
     justifyContent: "center" as const,
     alignItems: "center" as const,
+    backgroundColor: colors.warning.DEFAULT,
   },
   expoGoTitle: {
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(20),
-    fontWeight: "700",
-    color: colors.text,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
     textAlign: "center",
   },
   expoGoMessage: {
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     textAlign: "center",
     marginBottom: spacing.lg,
     lineHeight: rf(20),
@@ -88,20 +88,20 @@ const styles = StyleSheet.create({
   },
   codeLabel: {
     fontSize: rf(12),
-    color: colors.textMuted,
+    color: colors.text.tertiary,
     marginBottom: spacing.xs,
     textAlign: "center" as const,
   },
   codeBox: {
     width: "100%",
-    backgroundColor: colors.overlayDark,
+    backgroundColor: surface[2],
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   codeText: {
     fontSize: rf(11),
-    color: colors.primary,
+    color: colors.primary.DEFAULT,
     fontFamily: "monospace",
     textAlign: "center",
   },

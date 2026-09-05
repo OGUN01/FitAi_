@@ -36,7 +36,8 @@ import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { GlassHeader } from "../../components/ui/aurora/GlassHeader";
 import { ManualMetricEntry } from "../../components/health/ManualMetricEntry";
-import { flatColors as colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { colors, spacing, surface, border, borderRadius } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
@@ -512,7 +513,7 @@ export const ManualHealthEntryScreen: React.FC<
               <Ionicons
                 name="calendar-outline"
                 size={rf(18)}
-                color={dateError ? colors.error : colors.primary}
+                color={dateError ? colors.error.DEFAULT : colors.primary.DEFAULT}
               />
               <View style={styles.dateLabelCol}>
                 <Text style={styles.dateLabel}>Date</Text>
@@ -525,7 +526,7 @@ export const ManualHealthEntryScreen: React.FC<
                 value={dateStr}
                 onChangeText={setDateStr}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={colors.text.tertiary}
                 maxLength={10}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -536,7 +537,7 @@ export const ManualHealthEntryScreen: React.FC<
             </View>
             {dateError ? (
               <View style={styles.dateErrorRow}>
-                <Ionicons name="alert-circle" size={rf(13)} color={colors.error} />
+                <Ionicons name="alert-circle" size={rf(13)} color={colors.error.DEFAULT} />
                 <Text style={styles.dateErrorText}>{dateError}</Text>
               </View>
             ) : null}
@@ -551,7 +552,7 @@ export const ManualHealthEntryScreen: React.FC<
                   <Ionicons
                     name={group.icon}
                     size={rf(16)}
-                    color={colors.primary}
+                    color={colors.primary.DEFAULT}
                   />
                   <Text style={styles.groupTitle}>{group.title}</Text>
                 </View>
@@ -583,7 +584,7 @@ export const ManualHealthEntryScreen: React.FC<
                       <Ionicons
                         name={advancedOpen ? "chevron-up" : "chevron-down"}
                         size={rf(14)}
-                        color={colors.textSecondary}
+                        color={colors.text.secondary}
                       />
                       <Text style={styles.advancedToggleText}>
                         {advancedOpen ? "Hide" : "Show"} advanced metrics
@@ -628,7 +629,7 @@ export const ManualHealthEntryScreen: React.FC<
               <Ionicons
                 name="save-outline"
                 size={rf(18)}
-                color={colors.background}
+                color={colors.background.DEFAULT}
               />
             )}
             <Text style={styles.saveButtonText}>
@@ -659,7 +660,7 @@ const styles = StyleSheet.create({
   },
   subheader: {
     fontSize: rf(14),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(20),
     marginBottom: spacing.md,
   },
@@ -670,7 +671,7 @@ const styles = StyleSheet.create({
   },
   prefillText: {
     fontSize: rf(13),
-    color: colors.textTertiary,
+    color: colors.text.tertiary,
     marginLeft: spacing.sm,
   },
   dateCard: {
@@ -692,16 +693,16 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     fontSize: rf(15),
-    fontWeight: "600",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.semibold,
+    color: colors.text.primary,
   },
   dateHint: {
     fontSize: rf(12),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginTop: rp(2),
   },
   dateInput: {
-    color: colors.text,
+    color: colors.text.primary,
     fontSize: rf(14),
     backgroundColor: surface[2],
     borderWidth: 1,
@@ -712,7 +713,7 @@ const styles = StyleSheet.create({
     minWidth: rw(120),
   },
   dateInputError: {
-    borderColor: colors.error,
+    borderColor: colors.error.DEFAULT,
   },
   dateErrorRow: {
     flexDirection: "row",
@@ -722,7 +723,7 @@ const styles = StyleSheet.create({
   },
   dateErrorText: {
     fontSize: rf(12),
-    color: colors.error,
+    color: colors.error.DEFAULT,
     marginLeft: spacing.xs,
     flex: 1,
   },
@@ -734,8 +735,8 @@ const styles = StyleSheet.create({
   },
   groupTitle: {
     fontSize: rf(15),
-    fontWeight: "700",
-    color: colors.text,
+    fontFamily: FONT_FAMILY.bold,
+    color: colors.text.primary,
     marginLeft: spacing.xs,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -759,7 +760,7 @@ const styles = StyleSheet.create({
   },
   advancedToggleText: {
     fontSize: rf(13),
-    color: colors.textSecondary,
+    color: colors.text.secondary,
     marginLeft: spacing.xs,
   },
   advancedRow: {
@@ -769,7 +770,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
     paddingVertical: rp(16),
     borderRadius: rbr(14),
     marginTop: spacing.sm,
@@ -779,10 +780,10 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontSize: rf(16),
-    fontWeight: "700",
+    fontFamily: FONT_FAMILY.bold,
     // White-on-primary computes to ~2.84:1, failing WCAG AA; near-black
     // computes to ~7.4:1 against #FF6B35.
-    color: colors.background,
+    color: colors.background.DEFAULT,
     marginLeft: spacing.xs,
   },
 });

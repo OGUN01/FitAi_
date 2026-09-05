@@ -243,9 +243,25 @@ class AchievementEngine extends EventEmitter {
         continue;
       }
 
-      // Per-requirement current values; progress = best fraction * its target,
-      // expressed as an absolute number capped at the requirement's target.
-      let bestFraction = 0;
+      // Per-requirement current values; progress = the WORST (minimum)
+      // fraction across all requirements, expressed as an absolute number
+      // capped at the requirement's target.
+      //
+      // BUG FIX (found via live testing): this used to track the BEST
+      // (maximum) fraction, so a compound/AND achievement with several
+      // requirements (e.g. "Balanced Start": 3 workouts AND 3 meals logged
+      // AND 1 water goal hit) could show 100% progress the moment ANY ONE
+      // requirement was met — genuinely misleading, since `allMet` (and
+      // therefore actual completion) still correctly requires every
+      // requirement to be met. A user who'd only logged meals (0 workouts,
+      // 0 water) saw a 100%-full progress bar for an achievement they'd
+      // barely started. The bottleneck (minimum fraction) is the honest
+      // "how close am I to actually unlocking this" measure for an AND-type
+      // achievement. For every achievement with exactly one requirement —
+      // 30 of the 31 in the current catalog — min/max/average are all
+      // identical, so this only changes behavior for genuinely
+      // multi-requirement achievements.
+      let worstFraction = 1;
       let allMet = true;
 
       for (const req of achievement.requirements) {
@@ -254,12 +270,12 @@ class AchievementEngine extends EventEmitter {
         if (!met) allMet = false;
         const fraction =
           req.target > 0 ? Math.min(current / req.target, 1) : met ? 1 : 0;
-        if (fraction > bestFraction) bestFraction = fraction;
+        if (fraction < worstFraction) worstFraction = fraction;
       }
 
       const maxProgress = maxTargetFor(achievement);
       const progress = Math.min(
-        Math.round(bestFraction * maxProgress),
+        Math.round(worstFraction * maxProgress),
         maxProgress,
       );
 
