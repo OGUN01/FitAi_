@@ -4,21 +4,44 @@ import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { hydrationDataService } from "../services/hydrationData";
 import { getLocalDateString } from "../utils/weekUtils";
 import { offlineService } from "../services/offline";
-import { getCurrentUserId } from "../services/authUtils";
+import { getSyncableUserId } from "../services/authUtils";
+import { generateUUID } from "../utils/uuid";
 import { trackAchievementActivity } from "./achievementStore";
 
 /**
- * Returns the real authenticated user id, or null when the user is a guest /
- * not authenticated. Used to SKIP offline-queue sync for guests (matching the
- * pattern in nutritionStore.getSyncableUserId). Guest IDs ("guest-...") must
- * never reach Supabase writes — RLS rejects them and they pollute the retry
- * queue indefinitely.
+ * P1-hyd-1 SSOT, other direction: notificationStore already mirrors its
+ * water-goal edits INTO hydrationStore.dailyGoalML (see notificationStore.ts
+ * updateWaterConfig). But nothing mirrored the reverse — when this store's
+ * goal changes from calculatedMetrics (e.g. a weight/activity update) rather
+ * than through the reminder-edit modal, notificationStore.preferences.water
+ * .dailyGoalLiters (which actually drives the scheduled reminder times, and
+ * what WaterReminderEditModal displays) never learned about it, and stayed
+ * on its stale/default value unless the user happened to open the Diet tab
+ * (whose mount effect was the only thing that ever pushed a resync). Mirror
+ * on every real hydrationStore goal write instead of depending on a specific
+ * screen being visited. Same ping-pong guard style as the existing reverse
+ * mirror: skip if notificationStore already holds this value.
  */
-function getSyncableUserId(): string | null {
-  const userId = getCurrentUserId();
-  if (!userId) return null;
-  if (userId.startsWith("guest")) return null;
-  return userId;
+function mirrorGoalToNotificationStore(goalML: number): void {
+  try {
+    // Lazy require to avoid a circular import at module load time (mirrors
+    // notificationStore.ts's own lazy require of this store).
+    const notificationStore = require("./notificationStore");
+    const goalLiters = Math.round((goalML / 1000) * 10) / 10;
+    const currentLiters =
+      notificationStore.useNotificationStore.getState().preferences.water
+        .dailyGoalLiters;
+    if (currentLiters !== goalLiters) {
+      void notificationStore.useNotificationStore
+        .getState()
+        .updateWaterConfig({ dailyGoalLiters: goalLiters });
+    }
+  } catch (err) {
+    console.error(
+      "[HydrationStore] Failed to mirror water goal to notificationStore:",
+      err,
+    );
+  }
 }
 
 /**
@@ -109,6 +132,12 @@ function queueWaterLogForOffline(amountML: number): void {
       type: "CREATE",
       table: "water_logs",
       data: {
+        // Client-generated id so a duplicate replay of this same queued
+        // action (e.g. a crash between a successful sync and the queue
+        // removal being persisted, or a delayed duplicate reconnect event)
+        // upserts onto the same row instead of creating a second one — see
+        // offline.ts executeAction's CREATE branch.
+        id: generateUUID(),
         user_id: userId,
         date: getLocalDateString(),
         amount_ml: amountML,
@@ -250,6 +279,7 @@ export const useHydrationStore = create<HydrationState>()(
       setDailyGoal: (goalML: number) => {
         if (!goalML || goalML <= 0) return;
         set({ dailyGoalML: goalML, isGoalUserSet: true });
+        mirrorGoalToNotificationStore(goalML);
       },
 
       // Set daily goal from calculatedMetrics — only applies when user hasn't set a custom goal.
@@ -259,6 +289,7 @@ export const useHydrationStore = create<HydrationState>()(
         const { isGoalUserSet } = get();
         if (!isGoalUserSet) {
           set({ dailyGoalML: goalML });
+          mirrorGoalToNotificationStore(goalML);
         }
       },
 

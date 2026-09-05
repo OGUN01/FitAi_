@@ -23,10 +23,14 @@ import {
   getWorkoutSlotKey,
   normalizeSnapshotReps,
 } from "../utils/workoutIdentity";
+import { EFFORT_BUCKET_TO_RPE10 } from "../utils/effortScale";
 import { generateUUID } from "../utils/uuid";
 import { MealLogProvenance } from "../types/nutritionLogging";
 import { offlineService } from "./offline";
 import { getCurrentUserId } from "./authUtils";
+import { getExerciseTypeOverride } from "../utils/calorieCalculations/metMappings";
+import { CARDIO_INTENSITY_MODIFIERS } from "./energy/constants";
+import type { CardioIntensity } from "../types/workout";
 
 export interface CompletionEvent {
   id: string;
@@ -307,6 +311,7 @@ class CompletionTrackingService {
                   userId,
                   supabaseSessionId,
                   completedExercises,
+                  workout.exercises,
                 ).catch((err) => {
                   console.error("⚠️ _writeExerciseSets failed:", err);
                 });
@@ -500,8 +505,10 @@ class CompletionTrackingService {
           return id;
         })();
 
-      // Get meal details for the event
-      const meal = nutritionStore.weeklyMealPlan?.meals.find(
+      // Get meal details for the event. getActiveWeeklyMealPlan() — not
+      // weeklyMealPlan directly — so completing a meal from a custom plan
+      // resolves to the actual meal instead of silently finding nothing.
+      const meal = nutritionStore.getActiveWeeklyMealPlan()?.meals.find(
         (m) => m.id === mealId,
       );
 
@@ -562,36 +569,39 @@ class CompletionTrackingService {
 
             // CRITICAL: Also insert into Supabase meal_logs table for stats sync
             // This ensures loadDailyNutrition can read the data from Supabase
+            // Named so both the error-response AND thrown-exception failure
+            // paths below can queue this exact payload for offline retry.
+            const mealLogInsertPayload = {
+              id: mealLogId,
+              user_id: currentUserId,
+              meal_type: meal.type,
+              meal_name: meal.name,
+              from_plan: true,
+              plan_meal_id: planMealId,
+              portion_multiplier: 1,
+              food_items: meal.items || [],
+              total_calories: meal.totalCalories || 0,
+              total_protein: meal.totalMacros?.protein ?? 0,
+              total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+              total_fat: meal.totalMacros?.fat ?? 0,
+              logging_mode: provenance.mode,
+              truth_level: provenance.truthLevel,
+              confidence: provenance.confidence ?? null,
+              country_context: provenance.countryContext ?? null,
+              requires_review: provenance.requiresReview,
+              source_metadata: {
+                source: provenance.source ?? null,
+                productIdentity: provenance.productIdentity ?? null,
+                conflict: provenance.conflict ?? null,
+              },
+              notes: logData?.reviewNote || null,
+              logged_at: completedAt,
+              is_completed: true,
+            };
             try {
               const supabaseResult = await supabase
                 .from("meal_logs")
-                .insert({
-                  id: mealLogId,
-                  user_id: currentUserId,
-                  meal_type: meal.type,
-                  meal_name: meal.name,
-                  from_plan: true,
-                  plan_meal_id: planMealId,
-                  portion_multiplier: 1,
-                  food_items: meal.items || [],
-                  total_calories: meal.totalCalories || 0,
-                  total_protein: meal.totalMacros?.protein ?? 0,
-                  total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
-                  total_fat: meal.totalMacros?.fat ?? 0,
-                  logging_mode: provenance.mode,
-                  truth_level: provenance.truthLevel,
-                  confidence: provenance.confidence ?? null,
-                  country_context: provenance.countryContext ?? null,
-                  requires_review: provenance.requiresReview,
-                  source_metadata: {
-                    source: provenance.source ?? null,
-                    productIdentity: provenance.productIdentity ?? null,
-                    conflict: provenance.conflict ?? null,
-                  },
-                  notes: logData?.reviewNote || null,
-                  logged_at: completedAt,
-                  is_completed: true,
-                })
+                .insert(mealLogInsertPayload)
                 .select("id")
                 .single();
 
@@ -600,6 +610,32 @@ class CompletionTrackingService {
                   `⚠️ Supabase meal_logs insert error:`,
                   supabaseResult.error,
                 );
+                // BUG FIX (found via live offline testing): unlike the sibling
+                // workout_sessions path (see completeWorkout above), this used
+                // to just log and move on — the optimistic local state (set by
+                // nutritionStore.completeMeal() above) was never rolled back
+                // NOR retried, so a meal logged while offline showed a fully
+                // convincing "saved" UI forever while the row was permanently
+                // never written to Supabase, even after reconnecting. `offline
+                // .ts` already has full `meal_logs` support
+                // (normalizeMealLogPayload) — mirror the exact
+                // workout_sessions pattern: queue for retry so the write
+                // actually reaches Supabase on reconnect instead of being
+                // silently lost.
+                try {
+                  await offlineService.queueAction({
+                    type: "CREATE",
+                    table: "meal_logs",
+                    data: mealLogInsertPayload,
+                    userId: currentUserId,
+                    maxRetries: 3,
+                  });
+                } catch (queueError) {
+                  console.error(
+                    "⚠️ Failed to queue meal_logs for offline retry:",
+                    queueError,
+                  );
+                }
               } else {
                 if (supabaseResult.data?.id) {
                   useNutritionStore.setState((state) => ({
@@ -714,35 +750,31 @@ class CompletionTrackingService {
                 `❌ Failed to sync to Supabase meal_logs:`,
                 supabaseError,
               );
-              // P0-2 fix: SYMMETRIC revert. The optimistic
-              // nutritionStore.completeMeal() (line 470) already set
-              // mealProgress[mealId] = {progress:100, completedAt, logId}, and
-              // crudOperations.createMealLog() (line 529) already wrote an
-              // AsyncStorage row. Previously the revert only reset mealProgress,
-              // leaving an orphaned AsyncStorage meal log with no matching
-              // Supabase row → local/Supabase divergence on every offline meal
-              // completion. Now roll back BOTH writers:
-              useNutritionStore.setState((state) => ({
-                mealProgress: {
-                  ...state.mealProgress,
-                  [mealId]: {
-                    ...state.mealProgress[mealId],
-                    progress: 0,
-                    completedAt: undefined,
-                    logId: undefined,
-                  },
-                },
-              }));
-              // Remove the orphaned AsyncStorage meal-log row written at 529.
-              // deleteMealLog is a hard delete (P2-9 fix); the Supabase row was
-              // never inserted, so the .delete() is a harmless no-op server-side
-              // and removes the local row that would otherwise re-inflate totals.
+              // BUG FIX (found via live offline testing, supersedes the old
+              // P0-2 revert-only fix): a THROWN exception here (e.g. a real
+              // network failure while offline) used to revert BOTH the
+              // optimistic mealProgress state and delete the local
+              // AsyncStorage row — under the assumption that a failed
+              // Supabase write meant "this can never reach Supabase, so keep
+              // local and cloud consistent by undoing it." That assumption
+              // no longer holds: `offline.ts` has full `meal_logs` queue
+              // support (`normalizeMealLogPayload`), same as
+              // `workout_sessions`, so the correct fix now is to QUEUE for
+              // retry and KEEP the optimistic state (matching
+              // completeWorkout's identical failure path above) rather than
+              // silently un-logging a meal the user was told succeeded.
               try {
-                await crudOperations.deleteMealLog(mealLogId);
-              } catch (revertError) {
+                await offlineService.queueAction({
+                  type: "CREATE",
+                  table: "meal_logs",
+                  data: mealLogInsertPayload,
+                  userId: currentUserId,
+                  maxRetries: 3,
+                });
+              } catch (queueError) {
                 console.error(
-                  `❌ Failed to roll back local meal log ${mealLogId} after Supabase insert failure:`,
-                  revertError,
+                  "⚠️ Failed to queue meal_logs for offline retry:",
+                  queueError,
                 );
               }
             }
@@ -865,7 +897,7 @@ class CompletionTrackingService {
       nutritionStore.updateMealProgress(mealId, progress);
 
       // Emit progress event
-      const meal = nutritionStore.weeklyMealPlan?.meals.find(
+      const meal = nutritionStore.getActiveWeeklyMealPlan()?.meals.find(
         (m) => m.id === mealId,
       );
       if (meal) {
@@ -931,21 +963,21 @@ class CompletionTrackingService {
       : fitnessStore.weeklyWorkoutPlan;
     const totalWorkouts = activePlan?.workouts.length || 0;
 
-    // Calculate meal stats
-    const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
+    // Calculate meal stats — mirrors the activePlan resolution just above
+    // for workouts (fitnessStore.activePlanSource ? customWeeklyPlan : ...).
+    const activeMealPlan = nutritionStore.getActiveWeeklyMealPlan();
+    const totalMeals = activeMealPlan?.meals.length || 0;
     const completedMeals = Object.values(nutritionStore.mealProgress).filter(
       (p) => p.progress === 100,
     ).length;
 
-    const mealMap = new Map(
-      (nutritionStore.weeklyMealPlan?.meals ?? []).map((m) => [m.id, m]),
-    );
-    const caloriesConsumed = Object.values(nutritionStore.mealProgress)
-      .filter((p) => p.progress === 100)
-      .reduce((total, progress) => {
-        const meal = mealMap.get(progress.mealId);
-        return total + (meal?.totalCalories || 0);
-      }, 0);
+    // Was hand-rolled here (mealProgress × weeklyMealPlan, not date-filtered
+    // despite the name implying "today"), diverging from nutritionStore's
+    // documented SSOT for consumed nutrition — a meal logged outside the
+    // plan (scanned food, extra entry) contributed 0, and weeklyMealPlan is
+    // explicitly documented there as "must never contribute to consumed
+    // totals". Route through the real SSOT instead of a second formula.
+    const caloriesConsumed = nutritionStore.getTodaysConsumedNutrition().calories;
 
     return {
       workouts: {
@@ -997,9 +1029,9 @@ class CompletionTrackingService {
       ? fitnessStore.getWorkoutProgress(todaysWorkout.id)
       : null;
 
-    // Today's meals
+    // Today's meals — from whichever plan is actually active.
     const todaysMeals =
-      nutritionStore.weeklyMealPlan?.meals.filter(
+      nutritionStore.getActiveWeeklyMealPlan()?.meals.filter(
         (m) => m.dayOfWeek === todayName,
       ) || [];
     const completedMeals = todaysMeals.filter((meal) => {
@@ -1055,7 +1087,7 @@ class CompletionTrackingService {
     // Complete today's meals
     // Note: This is a test function - userId should be provided by caller in production
     const todaysMeals =
-      nutritionStore.weeklyMealPlan?.meals.filter(
+      nutritionStore.getActiveWeeklyMealPlan()?.meals.filter(
         (m) => m.dayOfWeek === todayName,
       ) || [];
     for (const meal of todaysMeals) {
@@ -1101,15 +1133,25 @@ class CompletionTrackingService {
         useFitnessStore.getState().currentWorkoutSession?.exercises ??
         [];
 
+      // Plan metadata (superset/circuit/tempo/drop-set data) — same lookup
+      // pattern as completeWorkout: search both AI and custom plans.
+      const fitnessStoreState = useFitnessStore.getState();
+      const planWorkout =
+        fitnessStoreState.weeklyWorkoutPlan?.workouts.find((w) => w.id === workoutId) ??
+        fitnessStoreState.customWeeklyPlan?.workouts.find((w) => w.id === workoutId);
+
       // 1. Persist logged sets to exercise_sets (only if user is authenticated
       //    AND we have a real session row id). Fire-and-forget — failure here
       //    must not block the exit; the store SSOT retains the data for resume.
       if (userId && sessionId && sessionId !== "unknown") {
-        this._writeExerciseSets(userId, sessionId, loggedExercises).catch(
-          (err) => {
-            console.error("⚠️ savePartialExit: _writeExerciseSets failed:", err);
-          },
-        );
+        this._writeExerciseSets(
+          userId,
+          sessionId,
+          loggedExercises,
+          planWorkout?.exercises,
+        ).catch((err) => {
+          console.error("⚠️ savePartialExit: _writeExerciseSets failed:", err);
+        });
 
         // 2. Update the workout_sessions row with partial flags (P3-19).
         try {
@@ -1172,16 +1214,49 @@ class CompletionTrackingService {
     userId: string,
     sessionId: string,
     completedExercises: any[],
+    // The PLAN's exercise list (DayWorkout.exercises / WorkoutSet[]) — the
+    // store's currentWorkoutSession only tracks what was actually performed
+    // (weight/reps/rpe/completed), never plan-level metadata like which
+    // superset/circuit an exercise belongs to, its tempo, or a drop set's
+    // second weight/reps. Cross-referenced by exerciseId to attach that
+    // metadata at write time. Optional + additive: omitting it (or a plan
+    // with no supersets/circuits/drop sets/tempo) writes exactly what this
+    // function always wrote.
+    planExercises?: Array<{
+      exerciseId: string;
+      supersetId?: string;
+      circuitId?: string;
+      blockIndex?: number;
+      tempo?: string;
+      plannedSets?: Array<{ dropWeightKg?: number; dropReps?: number }>;
+    }>,
   ): Promise<void> {
     if (!completedExercises?.length) return;
+
+    // BUG FIX: was keyed by bare exerciseId, so a day with the same exercise
+    // twice (a circuit round, or two rep-schemes of the same lift) collapsed
+    // to ONE Map entry — every occurrence silently got the LAST matching
+    // plan's superset_id/circuit_id/tempo/drop-set data, not its own. Prefer
+    // positional pairing instead: completedExercises comes from
+    // currentWorkoutSession.exercises, which fitnessStore.startWorkoutSession
+    // builds 1:1 in order from workout.exercises (the same array
+    // planExercises is), so completedExercises[i] and planExercises[i] are
+    // the same occurrence. Fall back to the old id-keyed Map only when a
+    // caller's arrays aren't aligned (defensive, not the expected path).
+    const planByExerciseId = new Map(
+      (planExercises ?? []).map((p) => [p.exerciseId, p]),
+    );
 
     const now = new Date().toISOString();
     const rows: any[] = [];
 
-    for (const exercise of completedExercises) {
+    for (let exerciseIdx = 0; exerciseIdx < completedExercises.length; exerciseIdx++) {
+      const exercise = completedExercises[exerciseIdx];
       const exerciseId = exercise.exerciseId || exercise.id || "unknown";
       const exerciseName = exercise.name || exercise.exerciseName || null;
       const sets = exercise.sets || exercise.completedSets || [];
+      const planMeta =
+        planExercises?.[exerciseIdx] ?? planByExerciseId.get(exerciseId);
 
       if (Array.isArray(sets) && sets.length > 0) {
         // Per-set data available — write one row per logged set. Only sets the
@@ -1193,7 +1268,13 @@ class CompletionTrackingService {
           const isCompleted = Boolean(
             set.completed ?? set.is_completed ?? false,
           );
+          const plannedSet = planMeta?.plannedSets?.[i];
           rows.push({
+            // Client-generated id (also used as the offline-queue upsert
+            // key in offline.ts's executeAction — see its comment) so a
+            // duplicate replay of an already-synced queued action upserts
+            // onto the same row instead of creating a second one.
+            id: generateUUID(),
             user_id: userId,
             session_id: sessionId,
             exercise_id: exerciseId,
@@ -1205,8 +1286,22 @@ class CompletionTrackingService {
             set_type: set.setType ?? set.set_type ?? "normal",
             is_completed: isCompleted,
             rpe: set.rpe ?? null,
+            // Full 1-10 RPE (src/utils/effortScale.ts). Prefer whatever the
+            // caller already computed (SetLogModal always sets this now);
+            // fall back to deriving it from the 3-tap bucket for any older
+            // in-flight session data that predates this field.
+            rpe_10: set.rpe10 ?? (set.rpe ? EFFORT_BUCKET_TO_RPE10[set.rpe as 1 | 2 | 3] : null),
             is_calibration: set.isCalibration ?? false,
             completed_at: now,
+            // Plan-level grouping/tempo + per-set drop data — previously
+            // declared as DB columns and typed on PlannedExercise/PlannedSet
+            // but never actually written (Workout Engine v2 Phase 4).
+            superset_id: planMeta?.supersetId ?? null,
+            circuit_id: planMeta?.circuitId ?? null,
+            block_index: planMeta?.blockIndex ?? null,
+            tempo: planMeta?.tempo ?? null,
+            drop_weight_kg: plannedSet?.dropWeightKg ?? null,
+            drop_reps: plannedSet?.dropReps ?? null,
           });
         }
       }
@@ -1273,8 +1368,10 @@ class CompletionTrackingService {
           const w = s.weight ?? s.weight_kg ?? 0;
           const r = s.reps ?? 0;
           if (w > bestWeight) { bestWeight = w; bestWeightReps = r; }
+          // null = beyond MAX_RELIABLE_REPS (formulas diverge) — skip, never
+          // coerce to 0 or a fabricated estimate could still beat bestE1RM=0.
           const e1rm = estimateOneRepMax(w, r);
-          if (e1rm > bestE1RM) { bestE1RM = e1rm; bestE1RMReps = r; }
+          if (e1rm !== null && e1rm > bestE1RM) { bestE1RM = e1rm; bestE1RMReps = r; }
         }
 
         // Compare against stored PRs
@@ -1291,6 +1388,99 @@ class CompletionTrackingService {
       }
     } catch (prErr) {
       console.error("[completionTracking] PR detection error:", prErr);
+    }
+  }
+
+  /**
+   * Persist one completed cardio block (Workout Engine v2 Phase 4B.2).
+   *
+   * Fires immediately when the user taps "Mark Complete" on a
+   * CardioBlockCard — deliberately decoupled from the main completeWorkout()
+   * flow (which only handles strength exercises via _writeExerciseSets).
+   * This keeps cardio logging durable even if the user abandons the session
+   * before finishing, and avoids touching completeWorkout()'s control flow,
+   * which Phase 4B.1 (superset/circuit) is concurrently modifying.
+   *
+   * Calories use the SAME MET formula planBurn.ts's computeCardioBlockBurn
+   * uses for plan-side estimates (getExerciseTypeOverride ×
+   * CARDIO_INTENSITY_MODIFIERS × weight × hours), but with the actual logged
+   * duration when the user adjusted it — actual over estimated (CLAUDE.md #9).
+   */
+  async logCardioBlock(
+    userId: string,
+    sessionId: string,
+    block: {
+      blockId: string;
+      name: string;
+      plannedDurationMinutes: number;
+      intensity: CardioIntensity;
+      distanceKm?: number;
+      actualDurationMinutes?: number;
+    },
+  ): Promise<void> {
+    if (!userId || !sessionId || !block?.blockId) return;
+
+    const durationMinutes = block.actualDurationMinutes ?? block.plannedDurationMinutes;
+
+    const trackedWeight = weightTrackingService.getCurrentWeight();
+    const fallbackWeight = useProfileStore.getState().bodyAnalysis?.current_weight_kg;
+    const resolvedWeight = await resolveCurrentWeightForUser(userId, {
+      bodyAnalysisWeight: fallbackWeight,
+    });
+    const userWeight =
+      trackedWeight && trackedWeight > 0 ? trackedWeight : resolvedWeight.value;
+
+    // No fabricated fallback weight (CLAUDE.md #8) — if we genuinely don't
+    // know the user's weight, calories_burned is left null rather than
+    // guessing, same as the estimated-1RM null-skip pattern above.
+    let caloriesBurned: number | null = null;
+    if (userWeight && userWeight > 0) {
+      const met = getExerciseTypeOverride(block.name) ?? 6.0;
+      const intensityModifier = CARDIO_INTENSITY_MODIFIERS[block.intensity] ?? 1.0;
+      caloriesBurned = Math.round(
+        met * intensityModifier * userWeight * (durationMinutes / 60),
+      );
+    } else {
+      console.warn(
+        `⚠️ logCardioBlock: no resolved weight for user ${userId} — calories_burned left null`,
+      );
+    }
+
+    const row = {
+      // Client-generated id — see exercise_sets' identical comment above;
+      // makes a duplicate offline-queue replay upsert-idempotent instead of
+      // creating a second row (offline.ts's executeAction CREATE branch).
+      id: generateUUID(),
+      user_id: userId,
+      session_id: sessionId,
+      block_id: block.blockId,
+      name: block.name,
+      planned_duration_minutes: block.plannedDurationMinutes,
+      actual_duration_minutes: block.actualDurationMinutes ?? null,
+      intensity: block.intensity,
+      distance_km: block.distanceKm ?? null,
+      calories_burned: caloriesBurned,
+      completed_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from("workout_cardio_logs").insert(row);
+
+    if (error) {
+      console.error(
+        "⚠️ Failed to write workout_cardio_logs — queueing for offline retry:",
+        error,
+      );
+      try {
+        await offlineService.queueAction({
+          type: "CREATE",
+          table: "workout_cardio_logs",
+          data: row,
+          userId,
+          maxRetries: 5,
+        });
+      } catch (queueError) {
+        console.error("⚠️ Failed to queue workout_cardio_logs for offline retry:", queueError);
+      }
     }
   }
 }
