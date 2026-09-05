@@ -791,6 +791,7 @@ export function transformWorkoutResponseToWeeklyPlan(
  *   backend 'carbs' → frontend 'carbohydrates'
  *   backend 'foods' → frontend 'items' (MealItem[])
  *   backend 'sugar' → frontend 'sugar' (pass-through)
+ *   backend 'imageUrl' → frontend 'imageUrl' (pass-through; resolved server-side by resolveMealImages())
  */
 export function transformDietResponseToWeeklyPlan(
   response: WorkersResponse<DietPlan>,
@@ -907,6 +908,7 @@ export function transformDietResponseToWeeklyPlan(
         foods: items, // Backward compatibility alias
         totalCalories: totalNutrition.calories || meal.totalCalories || 0,
         totalMacros,
+        imageUrl: meal.imageUrl ?? meal.image_url,
         preparationTime: meal.preparationTime || meal.prepTime || 15,
         cookingInstructions: meal.cookingInstructions || [],
         difficulty: mapDifficultyLevel(meal.difficulty),
