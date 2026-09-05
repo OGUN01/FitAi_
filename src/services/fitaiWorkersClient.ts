@@ -541,6 +541,18 @@ export class FitAIWorkersClient {
 
       const response = await fetch(url, {
         ...options,
+        headers: {
+          ...(options.headers as Record<string, string>),
+          // Lets the worker's usage-limit reset boundaries (AI generations,
+          // food scans — see subscriptionGate.ts/usageTracker.ts) use the
+          // user's own local calendar date instead of always UTC. Safe,
+          // same defensive pattern already used in localStorage.ts; the
+          // worker falls back to UTC if this is absent or malformed.
+          'x-client-timezone':
+            typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function'
+              ? Intl.DateTimeFormat().resolvedOptions().timeZone
+              : 'UTC',
+        },
         signal: controller.signal,
       });
 
@@ -1134,6 +1146,11 @@ export class FitAIWorkersClient {
     profile: unknown;
     goals?: string[];
     weekNumber?: number;
+    /** Per-muscle current weekly sets vs MEV/MAV/MRV — optional, additive
+     * (Workout Engine v2 Phase 6A). See workoutBuilderAi.ts buildCoachContext. */
+    volumeLandmarkContext?: unknown[];
+    /** Current mesocycle week's target RIR/volume multiplier — optional, additive. */
+    mesocycleContext?: unknown;
     skipCache?: boolean;
   }): Promise<
     WorkersResponse<{
@@ -1220,6 +1237,10 @@ export class FitAIWorkersClient {
   async generateFullWeek(request: {
     partialPlan: unknown;
     profile: unknown;
+    weekNumber?: number;
+    /** See suggestDay — same optional/additive coach context (Phase 6A). */
+    volumeLandmarkContext?: unknown[];
+    mesocycleContext?: unknown;
     skipCache?: boolean;
   }): Promise<
     WorkersResponse<{

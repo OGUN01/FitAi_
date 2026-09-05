@@ -754,6 +754,22 @@ const ALL_SUBSCRIPTION_STATUSES: readonly SubscriptionStatus[] = [
 	'completed',
 ];
 
+// Every status EXCEPT 'created' — a subscription stuck at 'created' means the
+// user's client asked us to create a Razorpay order but never even opened
+// (or abandoned before submitting) the checkout modal. It never represented
+// a real subscription in the customer's eyes, so it must not be treated as
+// their "current plan" for GET /api/subscription/status — doing so silently
+// showed a never-paid user's abandoned Pro-tier checkout attempt as their
+// current plan client-side (confirmed live: it made the paywall UI mark
+// that tier "Current Plan" and permanently blocked re-subscribing). Every
+// OTHER status (paused, cancelled, halted, completed) DOES represent a real
+// subscription lifecycle the user genuinely had, so those must stay
+// reportable here for the Manage Subscription screen's Pause/Resume/Cancel
+// UI to keep working correctly.
+const CURRENT_PLAN_STATUSES: readonly SubscriptionStatus[] = ALL_SUBSCRIPTION_STATUSES.filter(
+	(status) => status !== 'created',
+);
+
 /**
  * POST /api/webhook/razorpay
  *
@@ -1021,7 +1037,7 @@ export async function handleGetSubscriptionStatus(c: Context<{ Bindings: Env; Va
 
 	let subscription: SubscriptionRow | null;
 	try {
-		subscription = await fetchLatestSubscriptionForUser(supabase, userId, ALL_SUBSCRIPTION_STATUSES);
+		subscription = await fetchLatestSubscriptionForUser(supabase, userId, CURRENT_PLAN_STATUSES);
 	} catch (error) {
 		console.error('[Subscription] Error querying subscription status:', error);
 		throw new APIError('Failed to load subscription status', 500, ErrorCode.DATABASE_ERROR);

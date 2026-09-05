@@ -44,12 +44,56 @@ const FEATURE_LIMIT_MAP: Record<
 	chat_message: {},
 };
 
-/** @returns 'YYYY-MM-DD' for daily, 'YYYY-MM-01' for monthly (UTC) */
-export function getPeriodStart(periodType: PeriodType): string {
+/**
+ * @param timezone Optional IANA timezone (e.g. "Asia/Kolkata"), sent by the
+ * client as the `x-client-timezone` header. When present, the period
+ * boundary is computed in the USER'S local calendar date instead of UTC —
+ * BUG FIX (found via live testing): daily/monthly usage-limit resets used
+ * to always use UTC, so a real user's "daily" AI-generation/food-scan quota
+ * reset at UTC midnight, not their own local midnight (e.g. 5:30am in
+ * India, 4pm Pacific) — confusing, though never a correctness/security bug
+ * since this only affects WHEN a user's own quota resets, not who can
+ * access what. Falls back to UTC when the timezone is missing or invalid
+ * (older app builds, non-browser callers, or a malformed header) — never
+ * throws on bad client input.
+ * @returns 'YYYY-MM-DD' for daily, 'YYYY-MM-01' for monthly
+ */
+export function getPeriodStart(periodType: PeriodType, timezone?: string): string {
 	const now = new Date();
-	const year = now.getUTCFullYear();
-	const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-	const day = String(now.getUTCDate()).padStart(2, '0');
+
+	let year: number;
+	let month: string;
+	let day: string;
+
+	if (timezone) {
+		try {
+			// 'en-CA' formats as YYYY-MM-DD directly — no manual field reordering.
+			const parts = new Intl.DateTimeFormat('en-CA', {
+				timeZone: timezone,
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+			}).formatToParts(now);
+			const get = (type: string) => parts.find((p) => p.type === type)?.value;
+			const y = get('year');
+			const m = get('month');
+			const d = get('day');
+			if (!y || !m || !d) throw new Error('Intl.DateTimeFormat returned incomplete parts');
+			year = Number(y);
+			month = m;
+			day = d;
+		} catch {
+			// Invalid/unsupported IANA timezone string — fall back to UTC below
+			// rather than failing the request over a malformed client header.
+			year = now.getUTCFullYear();
+			month = String(now.getUTCMonth() + 1).padStart(2, '0');
+			day = String(now.getUTCDate()).padStart(2, '0');
+		}
+	} else {
+		year = now.getUTCFullYear();
+		month = String(now.getUTCMonth() + 1).padStart(2, '0');
+		day = String(now.getUTCDate()).padStart(2, '0');
+	}
 
 	if (periodType === 'daily') {
 		return `${year}-${month}-${day}`;
@@ -62,9 +106,9 @@ export function getPeriodStart(periodType: PeriodType): string {
  * Atomically increment usage via Postgres `increment_feature_usage` (upsert).
  * Creates a new row with count=1 if none exists for the period.
  */
-export async function incrementUsage(env: Env, userId: string, featureKey: FeatureKey, periodType: PeriodType): Promise<IncrementResult> {
+export async function incrementUsage(env: Env, userId: string, featureKey: FeatureKey, periodType: PeriodType, timezone?: string): Promise<IncrementResult> {
 	const supabase = getSupabaseClient(env);
-	const periodStart = getPeriodStart(periodType);
+	const periodStart = getPeriodStart(periodType, timezone);
 
 	const { data, error } = await supabase.rpc('increment_feature_usage', {
 		p_user_id: userId,
@@ -102,9 +146,12 @@ export async function incrementUsage(env: Env, userId: string, featureKey: Featu
  * failed request, which is the same outcome as before this compensation
  * existed, so this can never make quota accounting worse, only better.
  */
-export async function decrementUsage(env: Env, userId: string, featureKey: FeatureKey, periodType: PeriodType): Promise<{ success: boolean; error?: string }> {
+export async function decrementUsage(env: Env, userId: string, featureKey: FeatureKey, periodType: PeriodType, timezone?: string): Promise<{ success: boolean; error?: string }> {
 	const supabase = getSupabaseClient(env);
-	const periodStart = getPeriodStart(periodType);
+	// Must match the SAME timezone used by the incrementUsage() call being
+	// compensated, or this looks up the wrong period_start row and silently
+	// no-ops the refund (falls into the "nothing to refund" branch below).
+	const periodStart = getPeriodStart(periodType, timezone);
 
 	const { data: row, error: selectError } = await supabase
 		.from('feature_usage')
@@ -185,6 +232,7 @@ export async function checkUsageLimit(
 	featureKey: FeatureKey,
 	periodType: PeriodType,
 	planFeatures: FeatureLimitConfig,
+	timezone?: string,
 ): Promise<UsageLimitResult> {
 	const limit = resolveLimit(featureKey, periodType, planFeatures);
 
@@ -197,7 +245,7 @@ export async function checkUsageLimit(
 	}
 
 	const supabase = getSupabaseClient(env);
-	const periodStart = getPeriodStart(periodType);
+	const periodStart = getPeriodStart(periodType, timezone);
 
 	const { data, error } = await supabase.rpc('get_feature_usage', {
 		p_user_id: userId,
@@ -219,10 +267,22 @@ export async function checkUsageLimit(
 /**
  * Delete expired usage records (period_start < current period).
  * Intended for Cloudflare Workers Cron Trigger.
+ *
+ * This is a global batch job with no per-user context, so it can't compute
+ * each row's OWN timezone-local "current period" the way `checkUsageLimit`/
+ * `incrementUsage` now do. Rows are written with THEIR OWNER'S local
+ * period_start, which can already be "yesterday" (UTC) for a user in a
+ * timezone far behind UTC while it's still "today" (UTC) here — comparing
+ * directly against UTC's current period start would delete that user's
+ * still-current row early, silently resetting their quota mid-period. Use a
+ * 1-day-earlier cutoff for 'daily' (safely covers the ~26-hour spread across
+ * every real-world UTC offset, UTC+14 to UTC-12) so a row is only ever
+ * deleted once it's expired in EVERY timezone, not just UTC's.
  */
 export async function resetUsage(env: Env, periodType: PeriodType): Promise<{ success: boolean; deletedCount: number; error?: string }> {
 	const supabase = getSupabaseClient(env);
-	const currentPeriodStart = getPeriodStart(periodType);
+	const currentPeriodStart =
+		periodType === 'daily' ? getPeriodStart('daily', 'Etc/GMT+12') : getPeriodStart('monthly', 'Etc/GMT+12');
 
 	const { data, error } = await supabase
 		.from('feature_usage')

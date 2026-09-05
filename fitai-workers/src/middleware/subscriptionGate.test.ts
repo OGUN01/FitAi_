@@ -310,7 +310,7 @@ describe('subscriptionGateMiddleware — refund on thrown handler error', () => 
 
 		expect(res.status).toBe(500);
 		expect(decrementUsage).toHaveBeenCalledTimes(1);
-		expect(decrementUsage).toHaveBeenCalledWith(expect.anything(), 'user-123', 'ai_generation', 'daily');
+		expect(decrementUsage).toHaveBeenCalledWith(expect.anything(), 'user-123', 'ai_generation', 'daily', undefined);
 	});
 
 	it('does not refund when the handler succeeds', async () => {

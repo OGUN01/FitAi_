@@ -97,6 +97,11 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		const user = c.get('user');
 		const userId = user.id;
 		const supabase = getSupabaseClient(c.env);
+		// Client-supplied IANA timezone (e.g. "Asia/Kolkata") for computing
+		// daily/monthly usage-reset boundaries in the user's own local calendar
+		// date instead of UTC. Optional — `getPeriodStart` falls back to UTC
+		// for older clients or a missing/malformed header.
+		const clientTimezone = c.req.header('x-client-timezone') || undefined;
 
 		let subscription: SubscriptionWithPlan | null = null;
 		let planFeatures: FeatureLimitConfig;
@@ -207,7 +212,7 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		let limitCheck: UsageLimitResult;
 
 		try {
-			limitCheck = await checkUsageLimit(c.env, userId, featureKey, periodType, planFeatures!);
+			limitCheck = await checkUsageLimit(c.env, userId, featureKey, periodType, planFeatures!, clientTimezone);
 		} catch (usageError) {
 			console.error('[SubscriptionGate] Usage limit check threw:', usageError);
 			return c.json(
@@ -273,7 +278,7 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		// accounting worse.
 		let reservedCredit = false;
 		try {
-			const incrementResult = await incrementUsage(c.env, userId, featureKey, periodType);
+			const incrementResult = await incrementUsage(c.env, userId, featureKey, periodType, clientTimezone);
 			reservedCredit = incrementResult.success;
 			if (!incrementResult.success) {
 				console.error(`[SubscriptionGate] Failed to reserve usage for ${featureKey}:`, incrementResult.error);
@@ -306,7 +311,7 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 		const handlerFailed = handlerThrew || (typeof c.res?.status === 'number' && c.res.status >= 400);
 		if (handlerFailed && reservedCredit) {
 			try {
-				const decrementResult = await decrementUsage(c.env, userId, featureKey, periodType);
+				const decrementResult = await decrementUsage(c.env, userId, featureKey, periodType, clientTimezone);
 				if (!decrementResult.success) {
 					console.error(`[SubscriptionGate] Failed to refund usage for ${featureKey}:`, decrementResult.error);
 				}
