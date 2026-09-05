@@ -230,27 +230,9 @@ export const useProfileLogic = () => {
       case "notifications":
         setCurrentSettingsScreen("notifications");
         break;
-      case "theme": {
-        crossPlatformAlert(
-          "Theme",
-          "FitAI uses a fixed dark theme right now. Theme switching is not available yet.",
-        );
-        break;
-      }
       case "units":
         setShowUnitsModal(true);
         break;
-      case "language":
-        crossPlatformAlert(
-          "Language",
-          "English is currently the only available language.",
-        );
-        break;
-      case "rest-timer": {
-        const current = useFitnessStore.getState().restTimerEnabled;
-        useFitnessStore.getState().setRestTimerEnabled(!current);
-        break;
-      }
       case "privacy":
         setCurrentSettingsScreen("privacy");
         break;
@@ -462,15 +444,13 @@ export const useProfileLogic = () => {
       title: "Personal Information",
       subtitle: "Name, age, gender, activity level",
       icon: "person-outline",
-      iconColor: "#4CAF50",
       isIncomplete: isProfileIncomplete("personal-info"),
     },
     {
       id: "goals",
       title: "Goals & Preferences",
-      subtitle: "Fitness goals, activity level",
+      subtitle: "Fitness goals, experience, workout time",
       icon: "flag-outline",
-      iconColor: "#FF9800",
       isIncomplete: isProfileIncomplete("goals"),
     },
     {
@@ -478,7 +458,6 @@ export const useProfileLogic = () => {
       title: "Body Measurements",
       subtitle: "Track body composition",
       icon: "body-outline",
-      iconColor: "#FF6B35",
       isIncomplete: isProfileIncomplete("measurements"),
     },
     {
@@ -489,7 +468,6 @@ export const useProfileLogic = () => {
         subscriptionStatus,
       ),
       icon: "diamond-outline",
-      iconColor: "#FF8A5C",
       isPremium: true,
     },
   ];
@@ -506,41 +484,25 @@ export const useProfileLogic = () => {
       title: "Notifications",
       subtitle: "Reminders and alerts",
       icon: "notifications-outline",
-      iconColor: "#FF6B6B",
-    },
-    {
-      id: "theme",
-      title: "Theme",
-      subtitle: "Dark theme only",
-      icon: "color-palette-outline",
-      iconColor: "#FF6B35",
-      showChevron: false,
-      disabled: true,
     },
     {
       id: "units",
       title: "Units",
       subtitle: unitsSubtitleMap[unitsPreference],
       icon: "speedometer-outline",
-      iconColor: "#00BCD4",
-    },
-    {
-      id: "language",
-      title: "Language",
-      subtitle: "English only for now",
-      icon: "globe-outline",
-      iconColor: "#4CAF50",
-      showChevron: false,
-      disabled: true,
     },
     {
       id: "rest-timer",
       title: "Rest Timer",
-      subtitle: restTimerEnabled ? "On — vibrate between sets" : "Off",
+      subtitle: "Vibrate between sets",
       icon: "timer-outline",
-      iconColor: "#9C27B0",
-      // Toggles in place (no navigation) — no chevron affordance.
+      // Toggles in place via the trailing Switch — no navigation, no chevron.
       showChevron: false,
+      toggle: {
+        value: restTimerEnabled,
+        onValueChange: (next: boolean) =>
+          useFitnessStore.getState().setRestTimerEnabled(next),
+      },
     },
   ];
 
@@ -550,21 +512,18 @@ export const useProfileLogic = () => {
       title: "Privacy & Security",
       subtitle: "Data protection settings",
       icon: "lock-closed-outline",
-      iconColor: "#FF6B35",
     },
     {
       id: "help",
       title: "Help & Support",
       subtitle: "FAQ and contact us",
       icon: "help-circle-outline",
-      iconColor: "#00BCD4",
     },
     {
       id: "about",
       title: "About FitAI",
       subtitle: "Version, legal",
       icon: "information-circle-outline",
-      iconColor: "#FF9800",
     },
   ];
 
@@ -574,28 +533,24 @@ export const useProfileLogic = () => {
       title: "Connect Wearables",
       subtitle: "Sync smartwatch & fitness bands",
       icon: "watch-outline",
-      iconColor: "#E55A2B",
     },
     {
       id: "export",
       title: "Export Data",
       subtitle: "Download your fitness data",
       icon: "download-outline",
-      iconColor: "#4CAF50",
     },
     {
       id: "sync",
       title: "Sync Settings",
       subtitle: "Health app integration",
       icon: "sync-outline",
-      iconColor: "#2196F3",
     },
     {
       id: "cache",
       title: "Clear Cache",
       subtitle: "Free up storage",
       icon: "trash-outline",
-      iconColor: "#F44336",
       isDestructive: true,
     },
   ];

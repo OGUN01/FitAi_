@@ -284,36 +284,28 @@ describe("useProfileLogic", () => {
     expect(result.current.currentSettingsScreen).toBe("subscription");
   });
 
-  it("treats theme as an informational action instead of a fake setting", async () => {
+  it("does not render unconfigurable Theme/Language rows in Preferences", () => {
     const { result } = renderHook(() => useProfileLogic());
 
-    await act(async () => {
-      await result.current.handleSettingItemPress({ id: "theme" } as any);
-    });
-
-    expect(mockCrossPlatformAlert).toHaveBeenCalledWith(
-      "Theme",
-      "FitAI uses a fixed dark theme right now. Theme switching is not available yet.",
-    );
+    const ids = result.current.preferencesItems.map((item) => item.id);
+    expect(ids).not.toContain("theme");
+    expect(ids).not.toContain("language");
   });
 
-  it("marks non-configurable preference rows as non-actionable metadata", () => {
+  it("wires Rest Timer to a live toggle instead of a disabled tap target", () => {
     const { result } = renderHook(() => useProfileLogic());
 
-    expect(result.current.preferencesItems).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: "theme",
-          disabled: true,
-          showChevron: false,
+    const restTimer = result.current.preferencesItems.find(
+      (item) => item.id === "rest-timer",
+    );
+    expect(restTimer).toEqual(
+      expect.objectContaining({
+        showChevron: false,
+        toggle: expect.objectContaining({
+          value: expect.any(Boolean),
+          onValueChange: expect.any(Function),
         }),
-        expect.objectContaining({
-          id: "language",
-          disabled: true,
-          showChevron: false,
-          subtitle: "English only for now",
-        }),
-      ]),
+      }),
     );
   });
 

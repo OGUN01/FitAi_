@@ -106,3 +106,28 @@
 - Emulator experienced CPU/memory pressure during session (ANR in com.android.phone, 99% CPU). Required multiple app restarts.
 - The `GlassView` content `flex:1` → `flexShrink:0` change was tested and REVERTED — it broke SettingsSection row touch handling (rows became unresponsive). The correct fix for the Units modal was `maxHeight` on `dialogContainer`.
 - Achievements dialog uses `Alert.alert` directly (should use `crossPlatformAlert`) — pre-existing, noted but not fixed.
+
+---
+
+## 2026-08-29 — Profile IA/contrast/layout pass
+
+**Source:** device screenshots from a live Expo Go dev bundle reported vertically-stacked settings rows, mis-aligned chevrons, low-contrast text, a clashing white Google badge / gold subscription square, duplicate category labels, and dead Theme/Language rows. No physical device was available in this session (`mobile_list_available_devices` → `[]`), so this pass is source-verified only; on-device confirmation with `mcp__mobile-mcp__*` is still owed.
+
+**Reproduction note:** the reported vertical stacking is not reproducible from source — every row container already declares `flexDirection: "row"` (`SettingsSection.tsx`, `ConnectedAccountsCard.tsx`, `ProfileStats.tsx`). The most likely mechanism is `rf()` (`src/utils/responsive.ts`) **dividing** by `PixelRatio.getFontScale()` while `typography.variants.*` text scales the opposite way (RN's own scaling on top of raw tokens) — icon and text sizes move in opposite directions as the device text-size setting changes, badly distorting row proportions without literally reflowing them to a column. Fixed by switching every settings-row icon (Ionicons + the Google "G") from `rf()` to `rs()`, which scales on the min screen dimension and does not divide by font scale.
+
+**⚠️ Standing regression re-landed, not yet re-reverted:** the working tree still carries an uncommitted change to `src/components/ui/aurora/GlassView.tsx` that removes `flex: 1` from `contentFront` (replaced with an opt-in `fillHeight` prop). This is functionally the same change the `2026-06-23` entry above records as tested-and-reverted for breaking `SettingsSection` row touch handling. `SettingsSection` itself no longer nests in `GlassCard`/`GlassView` (verified — it renders a plain `View`), so it isn't at risk this time, but `src/components/help/ResourceItem.tsx` and any other `GlassCard` consumer not passing `fillHeight` may collapse. **Check Profile → Help & Support on next device pass; if rows are collapsed, pass `fillHeight` at that call site rather than re-reverting GlassView.**
+
+**Fixes applied (source-only, unverified on device):**
+1. `SettingsSection.tsx` / `ConnectedAccountsCard.tsx` — explicit `flexGrow:0/flexShrink:0/flexBasis:"auto"` on every icon/chevron/badge/toggle so a Yoga miscalculation can't collapse them into a column; row metrics unified (64 minHeight, 18/16 padding) between the two lists; dividers switched from a `borderBottom` on the row (which would shift row content if inset) to a separate absolutely-positioned inset line starting after the icon squircle.
+2. Removed the dead `theme`/`language` rows (`disabled: true` + `showChevron: false` made their tap handlers unreachable dead code) and the `rowDisabled: { opacity: 0.5 }` double-dim stacked on already-dim token text colors (~2.4:1 effective — WCAG AA failure).
+3. Rest Timer now renders a native `Switch` (new `SettingItem.toggle`) instead of a silently-chevronless tappable row.
+4. Dropped the per-item ad-hoc hex icon tints (`#FF6B35`, `#00BCD4`, `#9C27B0`, …) for one neutral `surface[2]` squircle + full-contrast glyph across every row; dropped the gold `LinearGradient` premium square in favor of the same neutral squircle with a gold glyph; Google's connected-account badge moved off `#FFFFFF` onto `surface[2]` for the same reason.
+5. Removed the uppercase section header from both `SettingsSection` and `ConnectedAccountsCard` — it duplicated the quick-jump chip row above it. Chips are now the single source of each section's label; added an "Accounts" chip (previously unlabelled) and a right-edge fade so the trailing chip reads as scrollable instead of cut off.
+6. `ProfileHeader` lost its opaque `surface[0]` background (was painting over the animated `AuroraBackground`, forming a hard seam at the header's bottom edge) and its raw `paddingTop: spacing.lg` became `rp()`-scaled.
+7. Removed `ProfileScreen`'s separate `bottomSpacing` spacer View + `paddingBottom: rh(40)` (~140px combined, unique to this tab) in favor of a single `paddingBottom: rh(120)`, matching Home/Progress.
+
+**Files touched:** `SettingsSection.tsx`, `ConnectedAccountsCard.tsx`, `ProfileScreen.tsx`, `useProfileLogic.ts`, `ProfileHeader.tsx`, `LogoutButton.tsx`, `useProfileLogic.test.tsx`, `ProfileHeader.test.tsx` (added `rs` to its `responsive` mock).
+
+**Gates:** `npx tsc --noEmit` → 0 errors. `npx jest` → 1093 passed, 9 skipped (baseline was 471 in the prior pass — suite has grown substantially since); the sole failure (`subscriptionStore.test.ts`, a billing-month-boundary test) reproduces identically on an unmodified tree and is unrelated to this change.
+
+**Still owed:** on-device verification via `mcp__mobile-mcp__*` — element-bounds check that rows share one horizontal band, screenshots at top/mid/bottom scroll, the Help & Support `fillHeight` check above, and a large/small system-text-size pass to confirm the `rf()`→`rs()` icon fix actually resolves the original report.

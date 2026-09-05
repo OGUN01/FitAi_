@@ -70,6 +70,21 @@ interface GlassViewProps {
    * Additional styles
    */
   style?: StyleProp<ViewStyle>;
+
+  /**
+   * Opt-in: give the Android-fallback content wrapper `flex: 1` so it fills
+   * whatever height its own ancestor chain actually provides. Default
+   * (false) sizes to content instead — the safe default, since `flex: 1`
+   * here collapses this wrapper (and everything inside it) to zero height
+   * whenever the nearest ancestor with a DEFINITE height is more than one
+   * level up (e.g. a Modal's auto-height centered dialog wrapper — see the
+   * Health Connect disclosure modal fix this default exists for).
+   * Only pass `fillHeight` when you know a definite height truly is
+   * available one level up from this GlassView's own outer container (e.g.
+   * DetentBottomSheet, whose wrapping Animated.View sets an explicit
+   * numeric `height` from the active snap point) — otherwise leave it off.
+   */
+  fillHeight?: boolean;
 }
 
 const getBlurAmount = (amount: BlurAmount): number => {
@@ -98,6 +113,7 @@ export const GlassView: React.FC<GlassViewProps> = ({
   optimizeForAndroid = true,
   children,
   style,
+  fillHeight = false,
 }) => {
   const blurIntensity = getBlurAmount(blurAmount);
 
@@ -121,11 +137,20 @@ export const GlassView: React.FC<GlassViewProps> = ({
             borderWidth: showBorder ? borderWidth : 0,
             borderRadius,
           },
+          // BUG FIX: fillHeight previously only reached `contentFrontFill`
+          // (the inner wrapper below) — this OUTER View is the one that
+          // actually sits inside the caller's bounded ancestor (e.g.
+          // BottomSheet's sheetWrapper, constrained via `maxHeight`) and had
+          // no flex/height styling of its own, so it sized to its CONTENT
+          // instead of receiving that bound and passing it down. Giving the
+          // inner wrapper flex:1 did nothing when its own parent never
+          // shrank to fit in the first place.
+          fillHeight && styles.containerFill,
           style,
         ]}
       >
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background.secondary, opacity: 0.85 }]} />
-        <View style={styles.contentFront}>
+        <View style={[styles.contentFront, fillHeight && styles.contentFrontFill]}>
           {children}
         </View>
       </View>
@@ -164,13 +189,37 @@ const styles = StyleSheet.create({
   container: {
     overflow: "hidden",
   },
+  // Opt-in via `fillHeight` — see the outer View's usage above. Lets this
+  // OUTER wrapper actually receive and pass down a bounded height from its
+  // own ancestor instead of sizing to content.
+  containerFill: {
+    flex: 1,
+    minHeight: 0,
+  },
   content: {
     flex: 1,
   },
   contentFront: {
-    flex: 1,
-    // Render above the tinted overlay layer.
+    // `flex: 1` here used to collapse to zero height whenever this fallback
+    // is nested inside an auto-height ancestor chain (e.g. a Modal's
+    // centered, content-sized dialog wrapper) — Yoga has no bounded main
+    // axis to grow into, so the whole subtree (and everything inside it)
+    // rendered with zero size and swallowed touches fell through to
+    // whatever sat behind it. Size to content instead; zIndex alone is
+    // enough to keep this layer above the tint.
     zIndex: 1,
+  },
+  // Opt-in via the `fillHeight` prop — see its doc comment above. Restores
+  // `flex: 1` for callers whose ancestor chain genuinely provides a
+  // definite height one level up (e.g. DetentBottomSheet).
+  contentFrontFill: {
+    flex: 1,
+    // Without this, a flex-column child won't shrink below its own content's
+    // intrinsic height even when the parent has a definite bounded height
+    // (the classic flexbox "min-height: auto" default) — the content just
+    // overflows past the parent's edge instead of being constrained so a
+    // descendant ScrollView can take over scrolling.
+    minHeight: 0,
   },
 });
 

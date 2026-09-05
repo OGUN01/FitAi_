@@ -55,6 +55,7 @@ jest.mock("@/utils/responsive", () => ({
   rp: (value: number) => value,
   rbr: (value: number) => value,
   rw: (value: number) => value,
+  rs: (value: number) => value,
 }));
 
 import { ProfileHeader } from "@/screens/main/profile/ProfileHeader";
