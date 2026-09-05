@@ -3227,6 +3227,49 @@ full `BottomSheet` keyboard suite (auto-focus, Escape-to-close, Tab trap)
 all confirmed working end to end against the actual running app, not just
 code review.
 
+## Scope — Round 7: offline / network-resilience audit
+
+Rounds 1-6 covered functional correctness, data integrity, security
+(RLS/IDOR), visual QA, and accessibility — but never a dedicated pass on
+how the app behaves when the network is slow, flaky, or absent, despite
+real infrastructure existing to test: `offlineService.queueAction`, a
+persisted sync queue, and at least one confirmed real bug already found
+and fixed this session (Round 5: a permanent data-loss bug where a failed
+meal-log write silently discarded the log instead of queuing it for
+retry, unlike the sibling `workout_sessions` path which already queued
+correctly). That fix was found incidentally while testing something else
+— no round has ever tested offline/network behavior as its own dedicated
+focus, and the fact that ONE real data-loss bug turned up by accident
+strongly suggests more exist in code paths nobody has specifically
+exercised offline.
+
+- [ ] **Write-path resilience**: for every user action that writes to
+      Supabase (workout completion, set logging, meal logging, water
+      intake, weight entry, profile edits, template save/favorite), verify
+      that a failed/offline write is queued via `offlineService.queueAction`
+      and actually replays successfully on reconnect — not just that it
+      fails gracefully. Use the browser's network-throttling/offline
+      emulation (Playwright's `context.setOffline(true)` or CDP network
+      conditions) rather than guessing from code alone.
+- [ ] **Read-path resilience**: does the app show stale-but-usable cached
+      data when offline (rather than a blank/broken screen), and does it
+      clearly indicate staleness to the user rather than silently showing
+      old data as if it were current?
+- [ ] **Reconnect behavior**: when connectivity returns, does the queued
+      sync actually fire promptly (not just eventually on next app
+      restart), and does the UI update to reflect the now-synced state
+      without requiring a manual refresh?
+- [ ] **Partial/flaky connection** (not just fully offline): a request
+      that times out or returns a 5xx — does the app retry with reasonable
+      backoff, or does it silently drop the action the same way the
+      Round 5 meal-logging bug did? Spot-check a few write paths beyond
+      the ones already covered by that fix.
+- [ ] **Conflict/duplicate handling**: if the same queued action fires
+      twice (e.g. app reconnects, syncs, then the OS delivers a delayed
+      duplicate reconnect event), does it create a duplicate DB row, or is
+      there real idempotency (e.g. an upsert keyed on a client-generated
+      ID) protecting against it?
+
 ## How to pick up this goal in a fresh round
 
 0. **If picking up after a Claude Code process/session restart**: background
@@ -3286,34 +3329,37 @@ code review.
    real-size touch layer) on web — never conclude "hitSlop compensates"
    without separately confirming native vs. web, since a control can be
    correctly-sized on native and still genuinely sub-44px on web.
-6. **Backlog for a future round, left by Round 6, pick these up before
-   starting new scope**: (a) 6 touch targets across onboarding/Home/
-   Workout previously ruled "hitSlop compensates" (age/wake/sleep
-   steppers, info-icon buttons, equipment/workout-type pill chips,
-   Workout tab's "Regenerate plan" button + weekly day tabs, Home's
-   streak badge) are now confirmed genuinely sub-44px on web per the
-   finding above — each needs the same real-size fix + per-component
-   layout-safety check (adjacent-sibling overlap risk) that Round 6
-   applied to `WeeklyMiniCalendar`'s day cells, done individually since a
-   blanket approach risks introducing new layout regressions; (b)
-   `WeekRhythm.tsx`'s 8 frequency-count cells need an actual layout
-   decision (not a mechanical patch) before their sub-44px width can be
-   fixed — see the Round 6 summary for why hitSlop and a blanket
-   `minWidth` both fail here; (c) the `error` status color's marginal
-   (4.17:1 vs 4.5:1) contrast miss on `surface[2]` across 18 files was
-   spot-checked but not exhaustively confirmed — worth a real pass if a
-   future round has budget for a file-by-file check of actual
-   text/background pairing.
-   If a future pickup finds the above backlog AND Round 6 both fully
-   checked with nothing else unchecked anywhere: per this file's own
-   "don't invent busywork" guidance, do not manufacture a Round 7 by
-   re-sweeping already-covered ground. Instead, first spend real effort
-   looking for another genuinely NEW, real testing dimension not yet
-   covered (skim recent app changes/commits for newly-added features no
-   round has ever touched, or a class of testing — e.g. offline/
-   network-partition resilience, localization, performance under real
-   device constraints — that CLAUDE.md or the product goal implies but
-   this file has never scoped). If a real one is found, add it as a new
+6. **Round 6's backlog is now resolved except one item needing a human
+   decision.** (a) All 6 touch-target groups: confirmed genuinely sub-44px
+   on web and fixed with a real box-size increase, each individually
+   checked for adjacent-sibling overlap risk — done, checked off. (c) The
+   `error` status-color contrast miss: exhaustively audited (~96 call
+   sites across ~70 files, not just the original ~18-file estimate); 14
+   real failures fixed with a new governed `errorText` token — done,
+   checked off. **(b) remains open, deliberately**: `WeekRhythm.tsx`'s 8
+   frequency-count cells need an actual product/design decision (fewer
+   visible cells vs. horizontal scroll vs. reclaiming row width) before
+   their sub-44px width can be fixed — neither hitSlop nor a blanket
+   `minWidth` is safe here (see the Round 6 summary for why). Do not force
+   a guess at this one; it needs the user's call.
+   **Round 7 (offline/network-resilience audit) is now open** — see its
+   scope list above, added after (b) was confirmed to be the only
+   remaining item and it's blocked on a decision, not further testing
+   effort. Motivated by a real precedent: Round 5 found a permanent
+   data-loss bug (a failed meal-log write silently discarded instead of
+   queuing for retry) purely incidentally while testing something else —
+   no round has ever tested offline/network behavior as its own focus.
+   Work Round 7 next.
+   If a future pickup finds Round 7 also fully checked with nothing else
+   unchecked anywhere (besides the still-open item (b), which needs the
+   user, not more testing): per this file's own "don't invent busywork"
+   guidance, do not manufacture a Round 8 by re-sweeping already-covered
+   ground. Instead, first spend real effort looking for another genuinely
+   NEW, real testing dimension not yet covered (skim recent app changes/
+   commits for newly-added features no round has ever touched, or a class
+   of testing — e.g. localization, performance under real device
+   constraints — that CLAUDE.md or the product goal implies but this file
+   has never scoped). If a real one is found, add it as a new
    "## Scope — Round N" section (same rigor as Round 4/5/6's own framing
    of why they were legitimate) and work it per step 4. If no such
    genuinely new, valuable dimension can be found after real effort, that
