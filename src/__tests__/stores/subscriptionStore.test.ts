@@ -31,6 +31,7 @@ jest.mock("../../services/RazorpayService", () => ({
 
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import razorpayService from "../../services/RazorpayService";
+import { getLocalDateString } from "../../utils/weekUtils";
 
 const getStatusMock = razorpayService.getSubscriptionStatus as jest.Mock;
 
@@ -94,8 +95,15 @@ describe("subscriptionStore.fetchSubscriptionStatus", () => {
     it("preserves persisted counts within the same billing month/day when usage is omitted (no reset)", async () => {
       useSubscriptionStore.setState({
         currentPlan: { tier: "free", name: "Free", billing_cycle: null },
-        usageResetMonth: new Date().toISOString().slice(0, 7),
-        usageResetDay: new Date().toISOString().slice(0, 10),
+        // BUG FIX: the store's own getCurrentMonthKey/getCurrentDayKey compare
+        // against getLocalDateString (local timezone), not UTC. Seeding with
+        // toISOString() (UTC) mismatches whenever the local date has already
+        // rolled over past UTC's date (any timezone ahead of UTC, in the
+        // evening/night UTC hours) — the store then wrongly thinks a new day
+        // has started and resets barcode_scan.daily.current to 0, making this
+        // test flaky by time-of-day/timezone rather than by real app behavior.
+        usageResetMonth: getLocalDateString(new Date()).slice(0, 7),
+        usageResetDay: getLocalDateString(new Date()),
         usage: {
           ai_generation: {
             daily: { current: 0, limit: null, remaining: null },

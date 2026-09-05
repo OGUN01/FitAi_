@@ -248,7 +248,14 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({
             </Text>
             <Text style={styles.subtitle}>
               {mode === "signup"
-                ? "Sign up to save your progress and sync across devices. Your profile data will be preserved."
+                ? // BUG FIX (found via live testing): "save your progress" read as
+                  // covering workout/meal history in a fitness app, but guest
+                  // migration only ever carries over profile/preferences —
+                  // completed workouts and logged meals from guest mode are NOT
+                  // migrated (see E2E_TESTING_GOAL.md's guest-migration entry).
+                  // Scope the promise to what actually migrates so this doesn't
+                  // silently mislead a guest with real workout/meal history.
+                  "Sign up to save your profile and preferences and sync across devices."
                 : "Sign in to access your synced data and continue your fitness journey."}
             </Text>
           </View>

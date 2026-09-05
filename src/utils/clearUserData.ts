@@ -8,6 +8,7 @@
  * back to initial values.
  */
 
+import { Platform } from "react-native";
 import { useFitnessStore } from "../stores/fitnessStore";
 import { useNutritionStore, clearConsumedNutritionCaches } from "../stores/nutritionStore";
 import { useUserStore } from "../stores/userStore";
@@ -225,11 +226,16 @@ export const clearAllUserData = async (): Promise<void> => {
     ),
   );
 
-  try {
-    const Notifications = require('expo-notifications');
-    await Notifications.cancelAllScheduledNotificationsAsync();
-  } catch (e) {
-    console.error("[clearUserData] Failed to cancel notifications:", e);
+  // Scheduled local notifications don't exist on web at all — calling this
+  // there always throws UnavailabilityError, so skip it rather than log a
+  // guaranteed, expected "failure" as a real error on every web logout.
+  if (Platform.OS !== 'web') {
+    try {
+      const Notifications = require('expo-notifications');
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (e) {
+      console.error("[clearUserData] Failed to cancel notifications:", e);
+    }
   }
 
   if (errors.length > 0) {
