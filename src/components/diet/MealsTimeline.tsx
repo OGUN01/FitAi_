@@ -430,11 +430,22 @@ const styles = StyleSheet.create({
     color: colors.primary,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
+    // react-native-web auto-applies flexShrink:1 to any Text with
+    // numberOfLines (so its ellipsis mechanism can measure available width).
+    // Its sibling `timeBadge` is a plain View with no numberOfLines, so it
+    // defaults to flexShrink:0 — meaning ALL of headerRowLeft's squeeze
+    // force landed on this label, crushing "BREAKFAST" etc. to 0 width
+    // before timeBadge gave up an inch. Pin this label to its content size
+    // so the full meal-type word always renders; let timeBadge (below)
+    // shrink/truncate first when the row is tight.
+    flexShrink: 0,
   },
   timeBadge: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 2,
+    flexShrink: 1,
+    minWidth: 0,
   },
   timeText: {
     fontSize: rf(fontSize.xs),

@@ -135,6 +135,24 @@ const FOOD_UNIT_OVERRIDES: FoodUnitOverride[] = [
     units: { katori: 80, bowl: 250 },
     preferredUnits: ["katori", "bowl"],
   },
+  // Prepared paneer curry dishes (gravy, not raw paneer cubes) — these full
+  // dish-name matches are longer than the generic "paneer" entry below, so
+  // `findOverride`'s longest-match-wins rule picks these instead. Values
+  // mirror the generic "curry" entry, matching each dish's
+  // `traditionalServing: 120` in `indianFoodDatabase.ts`.
+  {
+    match: "paneer butter masala",
+    units: { katori: 120, bowl: 250 },
+    preferredUnits: ["katori", "bowl"],
+  },
+  {
+    match: "palak paneer",
+    units: { katori: 120, bowl: 250 },
+    preferredUnits: ["katori", "bowl"],
+  },
+  // Generic raw-paneer fallback (measured in cubes) — must stay AFTER the
+  // more specific dish-name entries above so it only wins for plain "paneer"
+  // (e.g. "Paneer" as a raw ingredient/food item, not a full dish name).
   { match: "paneer", units: { cube: 15 }, preferredUnits: ["cube", "g"] },
   { match: "egg white", units: { piece: 33 }, preferredUnits: ["piece"] },
   { match: "egg", units: { piece: 50 }, preferredUnits: ["piece"] },

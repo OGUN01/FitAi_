@@ -178,13 +178,15 @@ const FoodRowComponent: React.FC<FoodRowProps> = ({
     onUpdate(itemIndex, scaleItem(item, nextQuantity, nextUnit));
   }, [name, unit, quantity, item, itemIndex, onUpdate]);
 
+  // Derived from the CURRENTLY SELECTED unit (not the food's static default)
+  // so switching units via cycleUnit regenerates these chips to match —
+  // otherwise chips keep showing e.g. "1 cube/2 cubes" after switching to "g".
   const quickPortions = (() => {
-    const defaultUnit = getDefaultUnit(name);
     return [1, 2, 3, 4].map((multiplier) => ({
       qty: multiplier,
-      unit: defaultUnit,
-      label: formatQuantityLabel(multiplier, defaultUnit),
-      grams: gramsPerUnit(name, defaultUnit) * multiplier,
+      unit,
+      label: formatQuantityLabel(multiplier, unit),
+      grams: gramsPerUnit(name, unit) * multiplier,
     }));
   })();
 
