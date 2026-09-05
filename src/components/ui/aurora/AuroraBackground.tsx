@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import { StyleSheet, ViewStyle } from "react-native";
+import { StyleSheet, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
@@ -114,15 +114,25 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
   }));
 
   return (
-    <AnimatedLinearGradient
-      {...gradientProps}
-      style={[styles.container, animatedStyle, style]}
-      // The gradient is purely decorative — hide it from screen readers so
-      // they don't try to traverse the animated background layer.
-      accessible={false}
-    >
+    // The gradient must be a sibling behind `children`, not their parent.
+    // Android's LinearGradient doesn't request offscreen alpha compositing,
+    // so a fractional `opacity` applied to a container blends its *children*
+    // into whatever renders behind them instead of occluding it — any
+    // absolute-fill overlay nested here (e.g. TodaysPlanOverlay) would show
+    // the screen underneath bleeding through during the pulse. Keeping the
+    // animated opacity on the gradient alone (and children at opacity 1)
+    // preserves the pulsing look without ever touching content opacity.
+    <View style={[styles.container, style]}>
+      <AnimatedLinearGradient
+        {...gradientProps}
+        style={[StyleSheet.absoluteFill, animatedStyle]}
+        // The gradient is purely decorative — hide it from screen readers so
+        // they don't try to traverse the animated background layer.
+        accessible={false}
+        pointerEvents="none"
+      />
       {children}
-    </AnimatedLinearGradient>
+    </View>
   );
 };
 

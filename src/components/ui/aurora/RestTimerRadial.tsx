@@ -32,6 +32,7 @@ import { haptics } from "../../../utils/haptics";
 import { useReducedMotion } from "../../../utils/accessibility/hooks";
 import { rf, rs } from "../../../utils/responsive";
 import { Confetti } from "./Confetti";
+import { useSkiaReady } from "../../onboarding/aurora/useSkiaReady";
 
 // ============================================================================
 // TYPES
@@ -110,6 +111,18 @@ export const RestTimerRadial: React.FC<RestTimerRadialProps> = ({
 }) => {
   const reduceMotion = useReducedMotion();
 
+  // Skia readiness gate (same useSkiaReady pattern MuscleBalanceRadar already
+  // uses): on web, CanvasKit loads async and can fail entirely (WASM fetch —
+  // confirmed via Playwright testing: `LoadSkiaWeb failed... Failed to
+  // resolve module specifier '@shopify/react-native-skia/web'`); on native
+  // cold-start the JSI Skia object can lag a frame. Mounting <Canvas> before
+  // Skia is ready throws (`Cannot read properties of undefined, reading
+  // 'PictureRecorder'`/`'MakeWebGLCanvasSurface'`) repeatedly on every
+  // frame. While not ready, render a plain RN fallback ring instead — the
+  // countdown text/controls/haptics below are already pure RN and stay
+  // fully functional either way.
+  const skiaReady = useSkiaReady();
+
   const safeSize = Number.isFinite(size) ? Math.round(size) : 200;
   const safeStroke = Number.isFinite(strokeWidth) ? Math.round(strokeWidth) : 12;
   const safeDuration =
@@ -127,6 +140,22 @@ export const RestTimerRadial: React.FC<RestTimerRadialProps> = ({
   const [isPaused, setIsPaused] = useState(!(autoStart && !reduceMotion));
   const [completed, setCompleted] = useState(false);
   const lastHapticSecond = useSharedValue(Math.ceil(safeDuration));
+
+  // JS-side completion handler (called via runOnJS from the worklet below).
+  // MUST be declared before useFrameCallback: on web, when safeDuration
+  // resolves to 0 the frame callback's `next <= 0` branch can fire
+  // synchronously during setup (before the rest of the component body has
+  // run), so a `handleComplete` declared below via `useCallback` would still
+  // be in its temporal dead zone — `ReferenceError: Cannot access
+  // 'handleComplete' before initialization`, crashing the whole screen via
+  // ScreenErrorBoundary. Declaring it first removes the ordering hazard
+  // entirely regardless of timing.
+  const handleComplete = useCallback(() => {
+    setCompleted(true);
+    setIsPaused(true);
+    haptics.celebration();
+    onComplete?.();
+  }, [onComplete]);
 
   // useFrameCallback advances the countdown on every UI frame — this is the
   // smooth 60fps clock the spec asks for. It's paused when isRunning is false.
@@ -155,14 +184,6 @@ export const RestTimerRadial: React.FC<RestTimerRadialProps> = ({
       runOnJS(haptics.selection)();
     }
   }, autoStart && !reduceMotion);
-
-  // JS-side completion handler (called via runOnJS from the worklet).
-  const handleComplete = useCallback(() => {
-    setCompleted(true);
-    setIsPaused(true);
-    haptics.celebration();
-    onComplete?.();
-  }, [onComplete]);
 
   // Derived: progress 0..1 (1 = full time remaining).
   const progress = useDerivedValue(() => {
@@ -254,33 +275,51 @@ export const RestTimerRadial: React.FC<RestTimerRadialProps> = ({
         text: displayText.value,
       }}
     >
-      <Canvas style={StyleSheet.absoluteFill}>
-        {/* Background track (full circle, faint) */}
-        <Path
-          path={buildArcPath(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2)}
-          style="stroke"
-          strokeWidth={safeStroke}
-          strokeCap="round"
-          color={colors.glass.surface}
-          opacity={0.6}
-        />
-        {/* Animated countdown arc */}
-        <Group>
+      {skiaReady ? (
+        <Canvas style={StyleSheet.absoluteFill}>
+          {/* Background track (full circle, faint) */}
           <Path
-            path={arcPath}
+            path={buildArcPath(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2)}
             style="stroke"
             strokeWidth={safeStroke}
             strokeCap="round"
-            color={currentColor}
-          >
-            <LinearGradient
-              start={gradientStart}
-              end={gradientEnd}
-              colors={gradientColors}
-            />
-          </Path>
-        </Group>
-      </Canvas>
+            color={colors.glass.surface}
+            opacity={0.6}
+          />
+          {/* Animated countdown arc */}
+          <Group>
+            <Path
+              path={arcPath}
+              style="stroke"
+              strokeWidth={safeStroke}
+              strokeCap="round"
+              color={currentColor}
+            >
+              <LinearGradient
+                start={gradientStart}
+                end={gradientEnd}
+                colors={gradientColors}
+              />
+            </Path>
+          </Group>
+        </Canvas>
+      ) : (
+        /* Non-Skia fallback (web WASM unavailable / native cold start): a
+           static ring in the current status color — no per-frame arc
+           animation (that needs Skia), but never crashes and the countdown
+           text/controls below still work fully. */
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              borderRadius: safeSize / 2,
+              borderWidth: safeStroke,
+              borderColor: statusColor,
+              opacity: 0.6,
+            },
+          ]}
+        />
+      )}
 
       {/* Center content (RN layer for crisp text + controls) */}
       <View style={styles.centerContent}>
