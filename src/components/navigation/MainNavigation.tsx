@@ -1,4 +1,4 @@
-import React, { startTransition, useEffect, useState, useCallback } from 'react';
+import React, { startTransition, useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, BackHandler, Platform, Linking } from 'react-native';
 import { rf, rh, rw } from '../../utils/responsive';
 import { TabBar } from './TabBar';
@@ -23,6 +23,8 @@ import ExerciseHistoryScreen from '../../screens/workouts/ExerciseHistoryScreen'
 import ScheduleBuilderScreen from '../../screens/workouts/ScheduleBuilderScreen';
 import WeeklyBuilderScreen from '../../screens/workouts/WeeklyBuilderScreen';
 import { BuildMethodLandingScreen } from '../../screens/workouts/BuildMethodLandingScreen';
+import { MealPlanMethodLandingScreen } from '../../screens/diet/MealPlanMethodLandingScreen';
+import MealBuilderScreen from '../../screens/diet/MealBuilderScreen';
 import { WorkoutDetailScreen } from '../../screens/workouts/WorkoutDetailScreen';
 import { FullPlanScreen } from '../../screens/workouts/FullPlanScreen';
 import { WorkoutHistoryScreen } from '../../screens/workouts/WorkoutHistoryScreen';
@@ -153,6 +155,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     exerciseId?: string;
     exerciseName?: string;
   }>({ isActive: false });
+  // Remembers whether ExerciseHistory was opened from an active
+  // TemplateLibrary session (e.g. tapping a template's exercise row in list
+  // view) — navigating to ExerciseHistory below unconditionally closes
+  // TemplateLibrarySession, so without this flag goBack() had no way to
+  // know the user came from there and fell through to clearTransientScreens
+  // (dumping all the way back to the base Workout tab instead of returning
+  // to the Template Library the user was just looking at — a real, live-
+  // confirmed lost-context bug). Mirrors the existing workoutSession-based
+  // branch in goBack() just below.
+  const exerciseHistoryFromTemplateLibraryRef = useRef(false);
 
   // Schedule Builder overlay state
   const [scheduleBuilderSession, setScheduleBuilderSession] = useState<{
@@ -169,6 +181,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
   // Build Method Landing overlay state (Phase 2 — 4-option build entry)
   const [buildMethodLandingSession, setBuildMethodLandingSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
+  // Meal Plan Method Landing overlay state (Diet Phase 5 — 3-option build
+  // entry for the custom Meal Builder, mirrors buildMethodLandingSession).
+  const [mealPlanMethodLandingSession, setMealPlanMethodLandingSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
+  // Meal Builder overlay state (Diet Phase 5 — the custom diet plan builder,
+  // mirrors weeklyBuilderSession).
+  const [mealBuilderSession, setMealBuilderSession] = useState<{
     isActive: boolean;
   }>({ isActive: false });
 
@@ -216,6 +240,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     setScheduleBuilderSession({ isActive: false });
     setWeeklyBuilderSession({ isActive: false });
     setBuildMethodLandingSession({ isActive: false });
+    setMealPlanMethodLandingSession({ isActive: false });
+    setMealBuilderSession({ isActive: false });
     setWorkoutDetailSession({ isActive: false });
     setTemplateShareSession({ isActive: false });
     setFullPlanSession({ isActive: false });
@@ -344,6 +370,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           templateId: params?.templateId,
         });
       } else if (screen === 'ExerciseHistory') {
+        exerciseHistoryFromTemplateLibraryRef.current = templateLibrarySession.isActive;
         setTemplateLibrarySession({ isActive: false });
         setCreateWorkoutSession({ isActive: false });
         setScheduleBuilderSession({ isActive: false });
@@ -382,6 +409,12 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         setWeeklyBuilderSession({ isActive: false });
         setTemplateShareSession({ isActive: false });
         setBuildMethodLandingSession({ isActive: true });
+      } else if (screen === 'MealPlanMethodLanding') {
+        setMealBuilderSession({ isActive: false });
+        setMealPlanMethodLandingSession({ isActive: true });
+      } else if (screen === 'MealBuilder') {
+        setMealPlanMethodLandingSession({ isActive: false });
+        setMealBuilderSession({ isActive: true });
       } else if (screen === 'WorkoutDetail') {
         // Phase 8 — full-screen workout detail (replaces WorkoutDetailsDialog).
         // Additive overlay: other builder/overlay sessions are cleared so the
@@ -410,6 +443,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       // returns to their in-progress workout.
       if (exerciseHistorySession.isActive && workoutSession.isActive) {
         setExerciseHistorySession({ isActive: false });
+        return;
+      }
+      // If ExerciseHistory was opened from the Template Library (a template's
+      // exercise row in list view), return there instead of falling through
+      // to clearTransientScreens() — which has no memory of TemplateLibrary
+      // (navigate() above already closed it) and would otherwise strand the
+      // user all the way back on the base Workout tab, losing their place.
+      if (exerciseHistorySession.isActive && exerciseHistoryFromTemplateLibraryRef.current) {
+        exerciseHistoryFromTemplateLibraryRef.current = false;
+        setExerciseHistorySession({ isActive: false });
+        setTemplateLibrarySession({ isActive: true });
         return;
       }
       clearTransientScreens();
@@ -459,6 +503,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         scheduleBuilderSession.isActive ||
         weeklyBuilderSession.isActive ||
         buildMethodLandingSession.isActive ||
+        mealPlanMethodLandingSession.isActive ||
+        mealBuilderSession.isActive ||
         workoutDetailSession.isActive ||
         templateShareSession.isActive ||
         fullPlanSession.isActive ||
@@ -468,7 +514,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         return true; // Prevent default behavior
       }
 
-      // On root screen, show exit confirmation
+      // Standard Android bottom-nav pattern: back returns to the Home tab
+      // first, then exit-confirms only from there. Previously this checked
+      // only overlay sessions, so back from ANY non-Home tab (e.g. having
+      // just tapped into Analytics from a Home card) went straight to "Exit
+      // App?" instead of retracing the user's own navigation.
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        return true;
+      }
+
+      // On the Home tab with no overlay active, show exit confirmation
       crossPlatformAlert('Exit App', 'Are you sure you want to exit?', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Exit', onPress: () => BackHandler.exitApp() },
@@ -478,6 +534,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
     return () => backHandler.remove();
   }, [
+    activeTab,
+    setActiveTab,
     workoutSession.isActive,
     mealSession.isActive,
     cookingSession.isActive,
@@ -492,6 +550,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     scheduleBuilderSession.isActive,
     weeklyBuilderSession.isActive,
     buildMethodLandingSession.isActive,
+    mealPlanMethodLandingSession.isActive,
+    mealBuilderSession.isActive,
     workoutDetailSession.isActive,
     templateShareSession.isActive,
     fullPlanSession.isActive,
@@ -590,6 +650,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     scheduleBuilderSession.isActive ||
     weeklyBuilderSession.isActive ||
     buildMethodLandingSession.isActive ||
+    mealPlanMethodLandingSession.isActive ||
+    mealBuilderSession.isActive ||
     workoutDetailSession.isActive ||
     templateShareSession.isActive ||
     fullPlanSession.isActive ||
@@ -649,7 +711,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       {renderTabScreen(
         'home',
         <ScreenErrorBoundary screenName="HomeScreen" onReset={() => transitionToTab('home', undefined, true)}>
-          <HomeScreen onNavigateToTab={handleHomeNavigation} />
+          <HomeScreen
+            onNavigateToTab={handleHomeNavigation}
+            onNavigateToBuilder={navigation.navigate}
+          />
         </ScreenErrorBoundary>
       )}
       {renderTabScreen(
@@ -800,6 +865,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       return (
         <ScreenErrorBoundary screenName="BuildMethodLandingScreen" onReset={clearTransientScreens}>
           <BuildMethodLandingScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (mealPlanMethodLandingSession.isActive) {
+      return (
+        <ScreenErrorBoundary screenName="MealPlanMethodLandingScreen" onReset={clearTransientScreens}>
+          <MealPlanMethodLandingScreen navigation={navigation} />
+        </ScreenErrorBoundary>
+      );
+    } else if (mealBuilderSession.isActive) {
+      return (
+        <ScreenErrorBoundary screenName="MealBuilderScreen" onReset={clearTransientScreens}>
+          <MealBuilderScreen navigation={navigation} />
         </ScreenErrorBoundary>
       );
     } else if (scheduleBuilderSession.isActive) {
