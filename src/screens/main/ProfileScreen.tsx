@@ -181,6 +181,22 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
     }
   }, []);
 
+  // "achievements" is a free-tier navigation target, not a settings-modal
+  // toggle, so it's handled here (where `navigation` is available) rather
+  // than inside useProfileLogic's handleSettingItemPress switch. This is an
+  // ADDITIONAL entry point to AchievementsScreen alongside the existing
+  // premium-gated one in AnalyticsScreen — that path is untouched.
+  const handleAccountItemPress = useCallback(
+    (item: (typeof accountItems)[number]) => {
+      if (item.id === "achievements") {
+        navigation?.navigate("Achievements");
+        return;
+      }
+      handleSettingItemPress(item);
+    },
+    [navigation, handleSettingItemPress],
+  );
+
   React.useEffect(() => {
     const requestedSettingsScreen = route?.params?.settingsScreen;
     if (!requestedSettingsScreen) return;
@@ -336,7 +352,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any; route?: any }> = ({
             <SettingsSection
               title="Account"
               items={accountItems}
-              onItemPress={handleSettingItemPress}
+              onItemPress={handleAccountItemPress}
               animationDelay={200}
             />
           </View>

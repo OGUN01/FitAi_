@@ -470,6 +470,12 @@ export const useProfileLogic = () => {
       icon: "diamond-outline",
       isPremium: true,
     },
+    {
+      id: "achievements",
+      title: "Achievements",
+      subtitle: "Badges, tiers & FitCoins earned",
+      icon: "trophy-outline",
+    },
   ];
 
   // Derive units subtitle from current preference
