@@ -2385,6 +2385,30 @@ itself never re-runs evaluation on its own — only the Progress screen
 (`reconcileWithCurrentData`) does — worth remembering for any future
 achievement-progress testing.
 
+Follow-up: the `Pressable` fix above made `AchievementsScreen` reachable
+via `AnalyticsScreen`, but that entire screen — including the
+`AchievementShowcase` preview section and its new press handler — sits
+behind `AnalyticsScreen`'s own unconditional
+`if (!analyticsEnabled) return <lockedPaywallScreen>` early return, where
+`analyticsEnabled = featuresAnalytics && isPremium()`. So free-tier users
+still could not reach Achievements at all — achievements/gamification
+progress is a free engagement feature, not premium analytics, so this
+gating was unintentional. Fixed by adding a second, additive entry point
+on the Profile screen instead of touching `analyticsEnabled` or the
+paywall logic itself: a new "Achievements" row in `useProfileLogic.ts`'s
+`accountItems`, handled in `ProfileScreen.tsx` by a small
+`handleAccountItemPress` wrapper that calls
+`navigation?.navigate("Achievements")` directly for that row id (the
+shared `navigation` object in `MainNavigation.tsx` dispatches
+`screen === 'Achievements'` the same way regardless of caller, so no
+navigation-wiring changes were needed) and delegates every other row to
+the existing `handleSettingItemPress`. Live-verified both tiers: as
+`test.free2@fitai.dev` (free), the new Profile row opens the full
+`AchievementsScreen` with real data, and the Analytics tab still shows the
+premium paywall exactly as before; as `test.workout@fitai.dev` (Pro), the
+original `AnalyticsScreen` → `AchievementShowcase` → Achievements path is
+unchanged.
+
 **Onboarding** (`src/hooks/useOnboardingState.tsx`,
 `src/hooks/onboarding/useWorkoutPreferences.ts`): a CRITICAL bug — the
 Workout Preferences tab silently discarded every user selection, blocking
