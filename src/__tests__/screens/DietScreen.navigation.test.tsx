@@ -259,6 +259,11 @@ jest.mock('../../stores/subscriptionStore', () => ({
 jest.mock('../../hooks/useMealPlanning', () => ({
   useMealPlanning: () => ({
     weeklyMealPlan: { meals: [meal] },
+    // Dual AI/custom diet plan support: DietScreen reads activeWeeklyMealPlan
+    // (not weeklyMealPlan directly) for the displayed day's meals — mirror
+    // the real hook's default (AI-active) shape here.
+    activeWeeklyMealPlan: { meals: [meal] },
+    activeDietSource: 'ai' as const,
     isGeneratingPlan: false,
     asyncJob: null,
     aiError: null,
