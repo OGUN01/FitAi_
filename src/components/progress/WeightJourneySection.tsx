@@ -33,6 +33,7 @@ import {
   typography,
   spacing,
   borderRadius,
+  errorText,
 } from '../../theme/aurora-tokens';
 import { haptics } from '../../utils/haptics';
 import type { WeightUnit } from '../../utils/units';
@@ -58,6 +59,8 @@ const CHART_PADDING_X = 12;
 const CHART_PADDING_TOP = 12;
 const CHART_PADDING_BOTTOM = 20;
 const LINE_COLOR = chart[1];
+// Draw-on dash length for the line path (see animatedLineProps below).
+const DASH_LENGTH = 1200;
 
 interface WeightJourneySectionProps {
   weightHistory?: Array<{ date: string; weight: number }>;
@@ -222,10 +225,17 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
     [chartValues, chartWidth],
   );
 
+  // strokeDasharray must NOT be driven through animatedProps: Reanimated writes
+  // it straight to the native view, and react-native-svg's Android path
+  // (SVGLength.arrayFrom) turns a bare number into a 1-element interval array
+  // instead of duplicating it to a valid pair the way the JS extractStroke
+  // path does for a static JSX prop. A 1-element array crashes native with
+  // ArrayIndexOutOfBoundsException in DashPathEffect (same class of bug fixed
+  // in DailyProgressRings.tsx). Keep the dash pattern static below and only
+  // animate the offset.
   const animatedLineProps = useAnimatedProps(() => {
     return {
-      strokeDasharray: 1200,
-      strokeDashoffset: 1200 * (1 - drawProgress.value),
+      strokeDashoffset: DASH_LENGTH * (1 - drawProgress.value),
     } as const;
   });
 
@@ -278,7 +288,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
               size={14}
               color={deltaColor}
             />
-            <Text style={[styles.deltaChipText, { color: deltaColor }]}>
+            <Text style={[styles.deltaChipText, { color: isDown ? colors.success.DEFAULT : errorText }]}>
               {totalChangePct > 0 ? '+' : ''}
               {totalChangePct.toFixed(1)}%
             </Text>
@@ -309,6 +319,7 @@ export const WeightJourneySection: React.FC<WeightJourneySectionProps> = React.m
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={`${DASH_LENGTH} ${DASH_LENGTH}`}
               animatedProps={animatedLineProps}
             />
             <Circle cx={geom.lastX} cy={geom.lastY} r={5} fill={LINE_COLOR} />

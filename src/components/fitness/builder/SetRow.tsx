@@ -50,6 +50,7 @@ import {
   spacing,
   borderRadius,
   typography,
+  errorText,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw, rs } from "../../../utils/responsive";
 import { hexToRgba } from "../../../utils/colors";
@@ -421,7 +422,17 @@ export const SetRow: React.FC<SetRowProps> = ({
                 { backgroundColor: typeMeta.bgTint, borderColor: typeMeta.color },
               ]}
             >
-              <Text style={[styles.typeChipText, { color: typeMeta.color }]}>
+              {/* Text uses errorText for "failure", not typeMeta.color directly —
+                  error.DEFAULT on this chip's own bgTint background measures
+                  ~4.06:1, under the 4.5:1 AA floor (Round 6 follow-up c). The
+                  chip's tint/border stay on error.DEFAULT since those only need
+                  3:1. */}
+              <Text
+                style={[
+                  styles.typeChipText,
+                  { color: set.setType === "failure" ? errorText : typeMeta.color },
+                ]}
+              >
                 {typeMeta.label}
               </Text>
             </View>

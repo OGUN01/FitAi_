@@ -74,6 +74,12 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
               "Where you'll train. This shapes equipment and exercise choices.",
             )
           }
+          // Real (not hitSlop) 44px touch layer — hitSlop is confirmed
+          // inert on web (react-native-web's View drops it). The visual
+          // 16px icon is unchanged; the Pressable's own box now measures
+          // 44x44, centered on the icon, live-verified with plenty of
+          // clearance (~190px) before the section label to its left.
+          style={styles.infoButton}
           hitSlop={8}
           accessibilityLabel="About workout location"
         >
@@ -110,6 +116,7 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
               "Beginner, intermediate, or advanced. You can override our recommendation.",
             )
           }
+          style={styles.infoButton}
           hitSlop={8}
           accessibilityLabel="About intensity"
         >
@@ -212,6 +219,15 @@ export const PreferencesSection: React.FC<PreferencesSectionProps> = ({
 };
 
 const styles = StyleSheet.create({
+  // Real (not hitSlop) 44px-minimum interactive layer for the info-icon
+  // triggers below — see each Pressable's own comment for why hitSlop
+  // alone doesn't work on web.
+  infoButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",

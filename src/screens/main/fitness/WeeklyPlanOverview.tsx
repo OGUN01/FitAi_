@@ -305,10 +305,16 @@ const styles = StyleSheet.create({
   regenerateButton: {
     width: rw(40),
     height: rw(40),
+    // Real (not hitSlop) 44px-minimum touch target — measured live at
+    // 40x44 (height already cleared 44 via minHeight below; width didn't).
+    // hitSlop is confirmed inert on web (react-native-web's View drops
+    // it), so minWidth forces the actual box wider instead. Live-verified
+    // ~6px of clearance remains before the adjacent "View plan" button.
+    minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: rbr(20),
+    borderRadius: rbr(22),
   },
   viewPlanButton: {
     minHeight: 44,
@@ -335,6 +341,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: rp(6),
     paddingVertical: rp(spacing.xs),
+    // Real (not hitSlop) 44px-minimum touch target — measured live at
+    // 36x87 (height already well over 44; the Pressable's rendered width
+    // on web sizes to its content, not its `flex:1` parent, so it was
+    // genuinely only 36px wide). hitSlop is confirmed inert on web
+    // (react-native-web's View drops it). Live-verified ~15px of gap
+    // exists between adjacent day cells (7 cells across a 342px strip),
+    // so an extra 4px on each side here doesn't touch a neighbor or push
+    // the strip into horizontal overflow.
+    minWidth: 44,
   },
   dayLabel: {
     fontSize: rf(11),

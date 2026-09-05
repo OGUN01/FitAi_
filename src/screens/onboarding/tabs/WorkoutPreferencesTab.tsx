@@ -265,6 +265,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                         : "The gear you can use at home. Your plan only uses equipment you select.",
                     )
                   }
+                  // Real (not hitSlop) 44px touch layer — hitSlop is
+                  // confirmed inert on web (react-native-web's View drops
+                  // it). `caption`'s flex:1 absorbs the extra width this
+                  // takes from the row; the text just gets one more wrap
+                  // line at worst, live-verified with no overlap.
+                  style={styles.infoButton}
                   hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                   accessibilityLabel="About equipment"
                 >
@@ -323,6 +329,10 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                     "Training styles. Recommended types are listed above the grid.",
                   )
                 }
+                // Real (not hitSlop) 44px touch layer — see the "About
+                // equipment" Pressable's comment above for why hitSlop
+                // doesn't work here on web.
+                style={styles.infoButton}
                 hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 accessibilityLabel="About workout types"
               >
@@ -375,6 +385,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  // Real (not hitSlop) 44px-minimum interactive layer for the "About
+  // equipment"/"About workout types" info-icon triggers — hitSlop is
+  // confirmed inert on web (react-native-web's View drops it, not in the
+  // module's own prop allow-list).
+  infoButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   caption: {
     flex: 1,

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AuroraSpinner, AnimatedPressable } from "../ui/aurora";
-import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, flatFontSize as fontSize, typography, errorText } from "../../theme/aurora-tokens";
 import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rp, rh } from "../../utils/responsive";
 import { useFitnessData } from "../../hooks/useFitnessData";
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
 
   errorText: {
     fontSize: fontSize.md,
-    color: colors.error,
+    color: errorText,
     textAlign: "center",
     marginTop: spacing.sm,
     marginBottom: spacing.md,

@@ -18,7 +18,7 @@ import {
   MealType,
 } from "../../services/foodRecognitionService";
 import { rf, rp, rbr } from "../../utils/responsive";
-import { flatColors as colors } from "../../theme/aurora-tokens";
+import { flatColors as colors, errorText } from "../../theme/aurora-tokens";
 
 import { crossPlatformAlert } from "../../utils/crossPlatformAlert";
 interface TestResult {
@@ -432,7 +432,11 @@ const styles = StyleSheet.create({
     borderRadius: rbr(8),
   },
   clearButtonText: {
-    color: colors.error,
+    // error text on this button's own errorTint background (rendered over
+    // resultsCard's surface[1]) measures ~4.22:1, under the 4.5:1 AA floor
+    // (Round 6 follow-up c). errorText clears it — the tint stays on
+    // error.DEFAULT since it only needs 3:1.
+    color: errorText,
     fontWeight: "500",
   },
   resultItem: {

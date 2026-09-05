@@ -218,10 +218,18 @@ const styles = StyleSheet.create({
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: rp(4),
     backgroundColor: colors.errorTint,
     paddingHorizontal: rp(10),
     paddingVertical: rp(6),
+    // Real (not hitSlop) 44px-minimum touch target — measured ~51x35 live
+    // on web (width already cleared 44; only height was short). hitSlop is
+    // confirmed inert on web (react-native-web's View drops it), so this
+    // grows the actual box instead. Fits within the row's existing ~44px
+    // height (set by the 44x44 avatar beside it via alignItems:center), so
+    // this doesn't push any following content down.
+    minHeight: 44,
     borderRadius: rw(20),
     borderWidth: 1,
     // Border stays in the same red/flame family as the fill (errorTint) and

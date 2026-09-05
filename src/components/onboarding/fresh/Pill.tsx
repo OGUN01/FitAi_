@@ -105,8 +105,17 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 14,
     paddingVertical: 8,
+    // Real (not hitSlop) 44px-minimum touch target — measured ~37px live on
+    // web (this component has no hitSlop of its own to begin with, but the
+    // same web-only hitSlop-inertness finding applies to any caller that
+    // assumed padding + hitSlop was "close enough"). minHeight forces the
+    // full chip to at least 44px while paddingVertical keeps the visual
+    // label/icon vertically centered — no visual size change beyond a
+    // slightly taller chip.
+    minHeight: 44,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: tokens.hairline,

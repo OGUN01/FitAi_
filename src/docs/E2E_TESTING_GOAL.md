@@ -228,18 +228,66 @@ set-count bug) — don't re-investigate either without new evidence.
 
 Pick these up FIRST in the next round before starting new areas:
 
-- [ ] **Round 6 follow-up (a): 6 touch-target groups confirmed genuinely
-      sub-44px on web** (the `hitSlop`-is-inert-on-web finding means these
-      were wrongly ruled "compensated" earlier) — each needs a real
-      box-size increase plus the same per-component adjacent-sibling
-      layout-safety check Round 6 applied to `WeeklyMiniCalendar`'s day
-      cells, done individually, not as a blanket sweep:
-      1. Onboarding age/wake/sleep steppers (32×32 + hitSlop 8)
-      2. Onboarding info-icon buttons (28×28 + hitSlop 10)
-      3. Equipment/workout-type pill chips (37px + hitSlop 14)
-      4. Workout tab's "Regenerate plan" button (40×44 + hitSlop 8)
-      5. Workout tab's weekly day tabs (36×87 + hitSlop {4,6})
-      6. Home's streak badge (51×35 + hitSlop 8)
+- [x] **Round 6 follow-up (a): all 6 touch-target groups confirmed live and
+      FIXED with a real box-size increase (not hitSlop)**, each individually
+      layout-safety-checked via Playwright `getBoundingClientRect` before
+      and after (adjacent-sibling clearance measured, zero new horizontal
+      overflow confirmed — `document.body.scrollWidth === clientWidth` held
+      at 390px throughout):
+      1. **Onboarding age/wake/sleep steppers** — confirmed 32×32 +
+         inert hitSlop 8 in `PersonalInfoFields.tsx`'s `AgeStepper` and
+         `fresh/TimeRow.tsx`'s `TimeRow` (shared wake/sleep component, both
+         have their own local `StepButton`). Fixed by wrapping each
+         `StepButton`'s `Pressable` in a real 44×44 touch layer
+         (`stepButtonTouch`/`btnTouch`), centered on the unchanged 32×32
+         visual ghost circle — mirrors `RangeSlider.tsx`'s `touchArea`
+         pattern. Live-verified both rows have 190px+/200px+ of clearance
+         between the label and stepper group, so the ~24px width increase
+         per row causes no overlap or wrap.
+      2. **Onboarding info-icon buttons** — the literal `28×28 + hitSlop 10`
+         component described (`aurora/InfoTap.tsx`) turned out to be
+         **unreferenced dead code** (`<InfoTap` has zero live call sites
+         app-wide) — fixed defensively anyway (same 44×44-touch-layer
+         pattern wrapping its unchanged 28×28 chip) so the defect isn't
+         reintroduced the moment it's adopted. The ACTUAL live info-icon
+         buttons users hit today are plain `Pressable`s at a worse
+         **16×17** (icon-only, no box) in `PreferencesSection.tsx`
+         ("About workout location", "About intensity") and
+         `WorkoutPreferencesTab.tsx` ("About equipment", "About workout
+         types") — all 4 fixed with a real 44×44 `infoButton` style; the
+         adjacent caption text (`flex: 1`) simply absorbs the extra width,
+         live-verified with 160px+/190px+ of clearance to the nearest
+         label.
+      3. **Equipment/workout-type pill chips** — confirmed 37px tall live
+         (`fresh/Pill.tsx`, used by both grids in `WorkoutPreferencesTab.tsx`).
+         Fixed with a real `minHeight: 44` on the pill (paddingVertical
+         unchanged, so the chip is just visually 7px taller, not
+         restyled). Live-verified all 9 equipment pills + 8 workout-type
+         pills still wrap correctly with clean 8px gaps between rows, zero
+         overlap, zero horizontal overflow.
+      4. **Workout tab's "Regenerate plan" button** — confirmed live at
+         40×44 (height already fixed by a pre-existing `minHeight: 44`;
+         width wasn't) in `WeeklyPlanOverview.tsx`. Fixed by adding
+         `minWidth: 44` (and bumping `borderRadius` from `rbr(20)` to
+         `rbr(22)` to keep it circular at the new size). Live-verified 6px
+         of clearance remains before the adjacent "View plan" button.
+      5. **Workout tab's weekly day tabs** — confirmed live at exactly
+         36×87 in `WeeklyPlanOverview.tsx`'s `dayCell` (the Pressable sizes
+         to its content's intrinsic width on web, not its `flex: 1` parent,
+         so it was genuinely only 36px wide despite the visual date-circle
+         diameter being the same 36px). Fixed with `minWidth: 44` on
+         `dayCell`. Live-verified all 7 day cells now measure 44×87 with no
+         overlap between adjacent cells (each cell's right edge stays below
+         the next cell's left edge) and the strip's right edge is unchanged
+         at 366px (no overflow into the screen's padding).
+      6. **Home's streak badge** — confirmed live at 51×35 in
+         `HomeHeader.tsx` (width already cleared 44; only height was
+         short). Fixed with `minHeight: 44` only (no width change needed).
+         Live-verified it now fits within the row's existing ~44px height
+         (set by the 44×44 avatar beside it), so no following content was
+         pushed down.
+      tsc clean; full jest suite unchanged at baseline (153/153 suites,
+      1466/1466 tests).
 - [ ] **Round 6 follow-up (b): `WeekRhythm.tsx`'s 8 frequency-count cells**
       (0-7 sessions/week, ~42px wide) need an actual layout/design
       decision, not a mechanical patch — a zero-gap "ruler" layout means
@@ -247,14 +295,57 @@ Pick these up FIRST in the next round before starting new areas:
       `minWidth: 44` (8×44=352px > ~342px available on a 390px viewport)
       is safe. Needs one of: fewer visible cells, horizontal scroll, or
       reclaiming width from elsewhere in the row.
-- [ ] **Round 6 follow-up (c): exhaustive `error` status-color contrast
-      check.** Spot-checked (not exhaustive) during Round 6: `error`
-      (`#F44336`) on `surface[2]` measured a marginal 4.17:1 (under the
-      4.5:1 AA floor) across 18 files using it as text. Needs a real
-      file-by-file pass confirming actual text/background pairing (not
-      just the token value in isolation) before concluding it's a real,
-      fixable bug vs. a token used correctly as a non-text/graphical
-      element elsewhere.
+- [x] **Round 6 follow-up (c): exhaustive `error` status-color contrast
+      check — DONE.** Went well beyond the original ~18-file estimate:
+      examined ~96 real call sites across ~70 files using
+      `colors.error`/`colors.error.DEFAULT` (`#F44336`), `colors.errorAlt`
+      (`#EF4444`), and `colors.error.light`/`colors.errorLight` (`#E57373`)
+      as a `color:` (text) style property, tracing each to its actual
+      rendered background and computing the real ratio via
+      `src/utils/accessibility/contrast.ts`'s `getContrastRatio` (not
+      eyeballed). Breakdown:
+      - **14 call sites in 12 files were real bugs** — text genuinely
+        failing the 4.5:1 AA floor. They cluster in two shapes: (1) plain
+        `error.DEFAULT`/`errorAlt` text on a `surface[2]` (`#232430`)
+        raised/popover background (kebab-menu dropdowns in
+        `ExerciseRow.tsx`, `DayBlock.tsx`, `DayMealBlock.tsx`), and (2)
+        error-colored text sitting on its own
+        `hexToRgba(colors.error*, 0.12–0.18)` self-tint, which paradoxically
+        darkens the backdrop toward the text color
+        (`ConnectionCard.tsx`, `ManualBarcodeEntry.tsx`,
+        `DatabaseDownloadBanner.tsx`, `SubscriptionManagement.tsx`,
+        `SetRow.tsx`, `WeightJourneySection.tsx`). `errorLight`/`error.light`
+        never fails (worst case 5.15:1 on `surface[2]`).
+      - **~30 sites were fine — graphical**: icon `color=` props, chip/
+        border tints, chart/ring fills, `Switch` track colors — WCAG's
+        4.5:1 normal-text floor doesn't apply to non-text elements.
+      - **~52 sites were fine — passes**: real text, but the actual
+        background it renders against (plain `surface[1]`/
+        `background.DEFAULT`, or genuinely large/bold text) already clears
+        the required ratio.
+      **Fix**: added a new governed token, `errorText = '#F65E53'`
+      (`src/theme/aurora-tokens.ts`), the same hue as `error.DEFAULT`
+      lightened until it clears AA against every background it's used on
+      (4.86:1 on `surface[2]`, 5.72:1 on `surface[1]`, 6.45:1 on
+      `background.DEFAULT` — was 4.17:1 / 4.91:1 / 5.53:1), mirroring
+      Round 6's own `chartText[3]` precedent — a single new text-only
+      variant, base `error.DEFAULT`/`errorAlt`/`error.light` tokens
+      untouched (still correctly used for icons/borders/tints elsewhere,
+      including in some of the same files). Repointed only the 14 confirmed
+      genuine text bugs at it: `ConnectionCard.tsx:257`,
+      `DatabaseDownloadBanner.tsx:492`, `ManualBarcodeEntry.tsx:388`,
+      `DayMealBlock.tsx:200,296`, `PasswordResetScreen.tsx:628`,
+      `SubscriptionManagement.tsx:390,898`, `SetRow.tsx:433`,
+      `DayBlock.tsx:575`, `ExerciseRow.tsx:646`, `WorkoutAnalytics.tsx:393`,
+      `WeightJourneySection.tsx:291`, `FoodRecognitionTest.tsx:439`
+      (dev-only tool). A parallel investigation sub-process briefly
+      over-corrected with an unverified blanket sweep touching ~14
+      already-passing sites; caught via diff audit, all incorrect touches
+      reverted after re-tracing their real backgrounds, leaving only the
+      confirmed bugs fixed. tsc clean; full jest suite unchanged at
+      baseline (153/153 suites, 1466/1466 tests); conformance ratchet
+      baseline regenerated with no diff (unchanged, no increase) —
+      independently re-verified (not just trusting the agent's own report).
 - [x] **[CRITICAL] TWO MORE completion-tracking bugs found while
       re-verifying the stale-closure fix above live — both independent,
       both worse than the original, both FIXED.** A retry of the

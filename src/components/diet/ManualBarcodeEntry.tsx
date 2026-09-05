@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import barcodeService, { ProductLookupResult } from '@/services/barcodeService';
 import { getCountryFromBarcode } from '@/utils/countryMapping';
-import { flatColors as colors, spacing, borderRadius, border } from '@/theme/aurora-tokens';
+import { flatColors as colors, spacing, borderRadius, border, errorText } from '@/theme/aurora-tokens';
 import { rbr, rf, rp, rw } from '@/utils/responsive';
 import { AnimatedPressable } from '@/components/ui/aurora/AnimatedPressable';
 import { AuroraSpinner } from '@/components/ui/aurora/AuroraSpinner';
@@ -387,7 +387,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: rf(13),
-    color: colors.error,
+    // error.DEFAULT text on this card's own errorTint background (rendered
+    // over the barcode sheet's surface[1]) measures ~4.22:1, under the 4.5:1
+    // AA floor (Round 6 follow-up c). errorText clears it — the card's
+    // tint/border stay on error.DEFAULT since those only need 3:1.
+    color: errorText,
     lineHeight: 18,
   },
   retryLink: {

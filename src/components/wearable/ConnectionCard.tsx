@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
-import { flatColors as colors, spacing, borderRadius, surface, border } from "../../theme/aurora-tokens";
+import { flatColors as colors, spacing, borderRadius, surface, border, errorText } from "../../theme/aurora-tokens";
 import { rf, rp, rbr, rw } from "../../utils/responsive";
 
 interface ConnectionCardProps {
@@ -250,7 +250,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: rf(13),
-    color: colors.error,
+    // error.DEFAULT text on this banner's own errorTint background (rendered
+    // over the card's surface[1]) measures ~4.22:1, under the 4.5:1 AA floor
+    // (Round 6 follow-up c). errorText clears it — the tint/icon stay on
+    // error.DEFAULT since those only need 3:1.
+    color: errorText,
     marginLeft: spacing.xs,
     flex: 1,
   },

@@ -71,6 +71,10 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
           autoFocus
           accentColor={tokens.accent}
           containerStyle={styles.nameField}
+          // No server-side length limit (profiles.first_name is TEXT), but an
+          // unbounded free-text field with no client guard lets a pasted wall
+          // of text into a name field — cap at a generous but sane length.
+          maxLength={50}
         />
         <UnderlineInput
           label="Last Name"
@@ -80,6 +84,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
           onChangeText={(v) => updateField("last_name", v)}
           accentColor={tokens.accent}
           containerStyle={styles.nameField}
+          maxLength={50}
         />
       </View>
       {hasFieldError("first name") && (
@@ -300,6 +305,13 @@ const StepButton: React.FC<{
       accessibilityState={{ disabled }}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
+      // Real (not hitSlop) 44px touch layer — hitSlop is confirmed inert on
+      // web (react-native-web's View drops it; not in the module's own prop
+      // allow-list). This wraps the 32px ghost circle in a real 44x44
+      // Pressable box, centered, so the visual size is unchanged but the
+      // hit-testable area genuinely grows on web too. hitSlop kept for the
+      // real, additional expansion it still provides on native.
+      style={styles.stepButtonTouch}
       hitSlop={8}
     >
       <Animated.View
@@ -340,6 +352,14 @@ const styles = StyleSheet.create({
   stepper: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  // Real (not hitSlop) 44px-minimum interactive layer — see the Pressable's
+  // own comment above for why hitSlop doesn't work here on web.
+  stepButtonTouch: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   stepButton: {
     width: 32,

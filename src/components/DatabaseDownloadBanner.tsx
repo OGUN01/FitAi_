@@ -24,6 +24,7 @@ import {
   borderRadius,
   flatFontSize as fontSize,
   typography,
+  errorText,
 } from '../theme/aurora-tokens';
 import { gradients, toLinearGradientProps } from '../theme/gradients';
 import { AnimatedPressable } from './ui/aurora/AnimatedPressable';
@@ -489,7 +490,13 @@ const styles = StyleSheet.create({
   },
 
   errorText: {
-    color: colors.errorAlt,
+    // This banner sits directly on the AuroraBackground gradient near the
+    // bottom of the Diet feed, where it trends toward surface[2] — errorAlt
+    // text on the banner's own errorAlt tint there measures as low as
+    // ~3.6-4.3:1, under the 4.5:1 AA floor (Round 6 follow-up c). errorText
+    // clears every measured background with margin; the tint/icon disc stay
+    // on errorAlt since those only need 3:1.
+    color: errorText,
   },
 
   subline: {

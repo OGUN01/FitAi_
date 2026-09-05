@@ -178,6 +178,17 @@ export const chartText = {
   3: '#AB61EF', // chart[3] lightened: 4.9:1 on surface[1], 5.5:1 on background (was 3.4:1 / 3.8:1)
 } as const;
 
+// AA-compliant lightened variant of `colors.error` (Round 6 follow-up (c)
+// audit), for use as actual TEXT color on dark surfaces — `colors.error`
+// (#F44336) and `colors.errorAlt` (#EF4444) only clear ~4.17:1 / ~4.08:1 on
+// surface[2], under the 4.5:1 AA floor. This is the same hue lightened to
+// clear AA on surface[2] (the worst confirmed background a real error-text
+// call site renders on: raised sheets, kebab-menu popovers, elevated
+// containers) with a chartText[3]-style margin. Use ONLY at real text call
+// sites — icons, borders, and tint backgrounds keep using `colors.error`/
+// `colors.errorAlt` unchanged (they only need the laxer 3:1 non-text floor).
+export const errorText = '#F65E53'; // colors.error lightened: 4.86:1 on surface[2], 5.72:1 on surface[1], 6.45:1 on background (was 4.17:1 / 4.91:1 / 5.53:1)
+
 // Typography System
 export const typography = {
   fontSize: {

@@ -51,6 +51,7 @@ import {
   spacing,
   borderRadius,
   typography,
+  errorText,
 } from "../../../theme/aurora-tokens";
 import { rp, rf, rw } from "../../../utils/responsive";
 import { CURATED_EXERCISES } from "../../../data/curatedExercises";
@@ -642,7 +643,7 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
                 <Text
                   style={[
                     styles.menuLabel,
-                    item.isDestructive && { color: colors.error.DEFAULT },
+                    item.isDestructive && { color: errorText },
                   ]}
                   numberOfLines={1}
                 >

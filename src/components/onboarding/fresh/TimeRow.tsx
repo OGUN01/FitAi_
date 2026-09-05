@@ -139,6 +139,13 @@ const StepButton: React.FC<{
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       testID={testID}
+      // Real (not hitSlop) 44px touch layer — hitSlop is confirmed inert on
+      // web (react-native-web's View drops it; not in the module's own prop
+      // allow-list). This wraps the 32px ghost circle in a real 44x44
+      // Pressable box, centered, so the visual size is unchanged but the
+      // hit-testable area genuinely grows on web too. hitSlop kept for the
+      // real, additional expansion it still provides on native.
+      style={styles.btnTouch}
       hitSlop={8}
     >
       <Animated.View style={[styles.btn, animatedStyle]}>
@@ -180,6 +187,14 @@ const styles = StyleSheet.create({
   // the AM/PM suffix doesn't get clipped against the stepper buttons.
   time12h: {
     minWidth: 96,
+  },
+  // Real (not hitSlop) 44px-minimum interactive layer — see the Pressable's
+  // own comment above for why hitSlop doesn't work here on web.
+  btnTouch: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   btn: {
     width: 32,

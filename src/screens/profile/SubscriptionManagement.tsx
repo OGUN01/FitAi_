@@ -14,7 +14,9 @@ import {
   border,
   borderRadius,
   typography,
+  errorText,
 } from "../../theme/aurora-tokens";
+import { FONT_FAMILY } from "../../theme/fonts";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 
@@ -377,8 +379,16 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                       size={rf(14)}
                       color={statusInfo.color}
                     />
+                    {/* Text uses errorText, not statusInfo.color directly, for the
+                        "cancelled" status — errorAlt text on this badge's own tint
+                        background measures ~4.25:1, under the 4.5:1 AA floor (Round 6
+                        follow-up c). Icon/badge tint stay on errorAlt since those only
+                        need 3:1. */}
                     <Text
-                      style={[styles.statusText, { color: statusInfo.color }]}
+                      style={[
+                        styles.statusText,
+                        { color: subscriptionStatus === "cancelled" ? errorText : statusInfo.color },
+                      ]}
                     >
                       {statusInfo.label}
                     </Text>
@@ -691,7 +701,7 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
     alignItems: "center",
     justifyContent: "center",
   },
@@ -741,7 +751,7 @@ const styles = StyleSheet.create({
   },
   planBadgeText: {
     fontSize: rf(13),
-    fontWeight: "700",
+    fontFamily: FONT_FAMILY.bold,
     letterSpacing: 0.5,
   },
   statusBadge: {
@@ -754,11 +764,11 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: rf(12),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
   },
   planName: {
     fontSize: rf(22),
-    fontWeight: "800",
+    fontFamily: FONT_FAMILY.extrabold,
     color: colors.text,
     marginBottom: rh(4),
   },
@@ -794,7 +804,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: rf(16),
-    fontWeight: "700",
+    fontFamily: FONT_FAMILY.bold,
     color: colors.text,
   },
   usageRow: {
@@ -813,24 +823,24 @@ const styles = StyleSheet.create({
   },
   usageLabel: {
     fontSize: rf(14),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text,
   },
   usageCount: {
     fontSize: rf(13),
     color: colors.textSecondary,
-    fontWeight: "500",
+    fontFamily: FONT_FAMILY.medium,
     fontVariant: ["tabular-nums"],
   },
   unlimitedBadge: {
-    fontWeight: "700",
+    fontFamily: FONT_FAMILY.bold,
     fontSize: rf(13),
     fontVariant: ["tabular-nums"],
   },
   progressTrack: {
     height: rh(8),
     borderRadius: rw(4),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
     overflow: "hidden",
   },
   progressFill: {
@@ -852,12 +862,12 @@ const styles = StyleSheet.create({
     paddingVertical: rh(6),
     paddingHorizontal: rw(10),
     borderRadius: rw(10),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
   },
   featureFlagLabel: {
     flex: 1,
     fontSize: rf(12),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text,
   },
   featureFlagDisabled: {
@@ -872,20 +882,20 @@ const styles = StyleSheet.create({
     paddingVertical: rh(14),
     paddingHorizontal: rw(16),
     borderRadius: rw(12),
-    backgroundColor: colors.glassSurface,
+    backgroundColor: surface[2],
     marginBottom: rh(10),
   },
   actionText: {
     flex: 1,
     fontSize: rf(15),
-    fontWeight: "600",
+    fontFamily: FONT_FAMILY.semibold,
     color: colors.text,
   },
   destructiveButton: {
     backgroundColor: colors.errorTint,
   },
   destructiveText: {
-    color: colors.errorAlt,
+    color: errorText,
   },
   resumeButton: {
     backgroundColor: colors.successTint,
@@ -934,7 +944,7 @@ const styles = StyleSheet.create({
   },
   upgradeCtaTitle: {
     fontSize: rf(18),
-    fontWeight: "800",
+    fontFamily: FONT_FAMILY.extrabold,
     color: colors.text,
     marginBottom: rh(2),
   },
@@ -954,7 +964,7 @@ const styles = StyleSheet.create({
   benefitText: {
     fontSize: rf(13),
     color: colors.textSecondary,
-    fontWeight: "500",
+    fontFamily: FONT_FAMILY.medium,
   },
 
   // Bottom

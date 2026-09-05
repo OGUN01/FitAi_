@@ -10,7 +10,7 @@
  */
 
 import React from "react";
-import { StyleSheet, Pressable, ViewStyle } from "react-native";
+import { StyleSheet, Pressable, View, ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { surface, colors, borderRadius, spacing } from "../../../theme/aurora-tokens";
@@ -47,18 +47,35 @@ export const InfoTap: React.FC<InfoTapProps> = ({
         fireSelection();
         onPress();
       }}
-      style={[styles.chip, style]}
+      // Real (not hitSlop) 44px touch layer — hitSlop is confirmed inert on
+      // web (react-native-web's View drops it, not in the module's own prop
+      // allow-list). `touchArea` wraps the visual 28px surface[2] chip so
+      // the hit-testable box genuinely measures 44x44 on web too; hitSlop
+      // is kept for the real, additional expansion it still provides on
+      // native. NOTE: this component is currently unreferenced elsewhere in
+      // the app (no live call site as of this fix) — fixed defensively so
+      // the same web touch-target defect isn't reintroduced the moment it's
+      // adopted.
+      style={[styles.touchArea, style]}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       accessibilityRole="button"
       accessibilityLabel={`More info about ${title}`}
       testID={testID}
     >
-      <Ionicons name="information-circle-outline" size={18} color={colors.text.tertiary} />
+      <View style={styles.chip}>
+        <Ionicons name="information-circle-outline" size={18} color={colors.text.tertiary} />
+      </View>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
+  touchArea: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   chip: {
     width: 28,
     height: 28,
