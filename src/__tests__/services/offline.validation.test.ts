@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Mock supabase BEFORE importing offlineService
 const mockInsert = jest.fn();
+const mockUpsert = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
 const mockEq = jest.fn();
@@ -37,6 +38,7 @@ describe("OfflineService - Supabase Response Validation", () => {
 
     mockFrom.mockReturnValue({
       insert: mockInsert,
+      upsert: mockUpsert,
       update: mockUpdate,
       delete: mockDelete,
     });
@@ -44,6 +46,10 @@ describe("OfflineService - Supabase Response Validation", () => {
     (supabase.from as jest.Mock).mockImplementation(mockFrom);
 
     mockInsert.mockResolvedValue({ data: [{ id: "123" }], error: null });
+    // exercise_sets/water_logs/workout_cardio_logs/saved_meals (plus the
+    // pre-existing workout_sessions/meal_logs) go through executeAction's
+    // upsert-on-id branch, not a plain insert — see offline.ts.
+    mockUpsert.mockResolvedValue({ data: [{ id: "123" }], error: null });
     mockUpdate.mockReturnValue({ eq: mockEq });
     mockDelete.mockReturnValue({ eq: mockEq });
     mockEq.mockResolvedValue({ data: [{ id: "123" }], error: null });
@@ -152,6 +158,51 @@ describe("OfflineService - Supabase Response Validation", () => {
 
       expect(result.failedActions).toBeGreaterThan(0);
       expect(result.errors[0]).toContain("malformed");
+    });
+
+    // BUG FIX regression test: a non-retryable Postgres error (FK/unique/
+    // check violation, RLS denial) used to retry up to maxRetries times
+    // per sync call, and — worse — stayed in the queue retrying across
+    // FURTHER sync cycles (which may not happen again for a long time)
+    // until retryCount finally reached maxRetries. It must now fail fast:
+    // a single sync call purges it immediately, with mockInsert called
+    // only ONCE (no wasted retries within the call), even though
+    // maxRetries is set high enough that the old behavior would have kept
+    // retrying.
+    it("purges a non-retryable error (foreign key violation) immediately, without retrying", async () => {
+      // exercise_sets CREATE goes through executeAction's upsert-on-id
+      // branch (idempotency fix — see offline.ts), not a plain insert.
+      mockUpsert.mockResolvedValue({
+        data: null,
+        error: {
+          message: 'insert or update on table "exercise_sets" violates foreign key constraint "exercise_sets_session_id_fkey"',
+          code: "23503",
+        },
+      });
+
+      await offlineService.queueAction({
+        type: "CREATE",
+        table: "exercise_sets",
+        data: { id: "set-1", session_id: "does-not-exist" },
+        userId: "user-123",
+        maxRetries: 3,
+      });
+
+      (offlineService as any).isOnline = true;
+      const result = await offlineService.syncOfflineActions();
+
+      expect(result.failedActions).toBe(1);
+      expect(result.errors[0]).toContain("foreign key constraint");
+      // Fails fast: exactly one attempt, not the full 3-attempt inner retry
+      // loop that a retryable error would have gone through.
+      expect(mockUpsert).toHaveBeenCalledTimes(1);
+
+      // Purged, not left in the queue for a future sync to retry again.
+      (offlineService as any).isOnline = true;
+      const secondResult = await offlineService.syncOfflineActions();
+      expect(secondResult.failedActions).toBe(0);
+      expect(secondResult.syncedActions).toBe(0);
+      expect(mockUpsert).toHaveBeenCalledTimes(1);
     });
   });
 

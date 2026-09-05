@@ -15,6 +15,7 @@ import {
   OnboardingProgressRow,
 } from "../types/onboarding";
 import { resolveCurrentWeightForUser } from "./currentWeight";
+import { offlineService } from "./offline";
 
 // ============================================================================
 // PERSONAL INFO SERVICE
@@ -318,11 +319,15 @@ export class DietPreferencesService {
 
 export class BodyAnalysisService {
   static async save(userId: string, data: BodyAnalysisData): Promise<boolean> {
+    // Declared outside the try block (not const-scoped inside it) so the
+    // catch block below can still queue the intended payload for offline
+    // retry even if the failure happens after it's built.
+    let bodyData: Partial<BodyAnalysisRow> | undefined;
     try {
       const resolvedCurrentWeight = await resolveCurrentWeightForUser(userId, {
         bodyAnalysisWeight: data.current_weight_kg,
       });
-      const bodyData: Partial<BodyAnalysisRow> = {
+      bodyData = {
         user_id: userId,
 
         // Basic measurements
@@ -384,6 +389,7 @@ export class BodyAnalysisService {
           "❌ [DB-SERVICE] BodyAnalysisService: Database error:",
           error,
         );
+        await BodyAnalysisService.queueForRetry(userId, bodyData);
         return false;
       }
 
@@ -393,7 +399,45 @@ export class BodyAnalysisService {
         "❌ [DB-SERVICE] BodyAnalysisService: Unexpected error:",
         error,
       );
+      if (bodyData) {
+        await BodyAnalysisService.queueForRetry(userId, bodyData);
+      }
       return false;
+    }
+  }
+
+  /**
+   * Queue a failed body_analysis upsert for offline retry (CLAUDE.md rule 6
+   * — keep optimistic local state, queue for retry — same pattern as
+   * completionTracking's completeMeal/completeWorkout). Callers
+   * (BodyMeasurementsEditModal, useOnboardingState, DataBridge guest
+   * migration, WeightEntryModal's mirror write) already keep their own
+   * local/optimistic state regardless of this return value; previously a
+   * failed write here — most commonly a genuine offline failure — was never
+   * queued at all despite BodyMeasurementsEditModal's own UI explicitly
+   * telling the user "will sync automatically when connection is restored."
+   * Guest ids are skipped: RLS rejects them and they'd pollute the queue
+   * (see authUtils.getSyncableUserId's header comment for the same rule
+   * applied elsewhere).
+   */
+  private static async queueForRetry(
+    userId: string,
+    bodyData: Partial<BodyAnalysisRow>,
+  ): Promise<void> {
+    if (!userId || userId.startsWith("guest")) return;
+    try {
+      await offlineService.queueAction({
+        type: "CREATE",
+        table: "body_analysis",
+        data: { ...bodyData, user_id: userId },
+        userId,
+        maxRetries: 3,
+      });
+    } catch (queueError) {
+      console.error(
+        "❌ [DB-SERVICE] BodyAnalysisService: failed to queue for offline retry:",
+        queueError,
+      );
     }
   }
 
@@ -884,6 +928,7 @@ export class AdvancedReviewService {
         calculated_tdee: data.calculated_tdee ?? undefined,
         metabolic_age: data.metabolic_age ?? undefined,
         daily_calories: data.daily_calories ?? undefined,
+        daily_calories_legacy: data.daily_calories_legacy ?? null,
         daily_protein_g: data.daily_protein_g ?? undefined,
         daily_carbs_g: data.daily_carbs_g ?? undefined,
         daily_fat_g: data.daily_fat_g ?? undefined,

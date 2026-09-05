@@ -3243,7 +3243,7 @@ focus, and the fact that ONE real data-loss bug turned up by accident
 strongly suggests more exist in code paths nobody has specifically
 exercised offline.
 
-- [ ] **Write-path resilience**: for every user action that writes to
+- [x] **Write-path resilience**: for every user action that writes to
       Supabase (workout completion, set logging, meal logging, water
       intake, weight entry, profile edits, template save/favorite), verify
       that a failed/offline write is queued via `offlineService.queueAction`
@@ -3251,24 +3251,124 @@ exercised offline.
       fails gracefully. Use the browser's network-throttling/offline
       emulation (Playwright's `context.setOffline(true)` or CDP network
       conditions) rather than guessing from code alone.
-- [ ] **Read-path resilience**: does the app show stale-but-usable cached
+- [x] **Read-path resilience**: does the app show stale-but-usable cached
       data when offline (rather than a blank/broken screen), and does it
       clearly indicate staleness to the user rather than silently showing
       old data as if it were current?
-- [ ] **Reconnect behavior**: when connectivity returns, does the queued
+- [x] **Reconnect behavior**: when connectivity returns, does the queued
       sync actually fire promptly (not just eventually on next app
       restart), and does the UI update to reflect the now-synced state
       without requiring a manual refresh?
-- [ ] **Partial/flaky connection** (not just fully offline): a request
+- [x] **Partial/flaky connection** (not just fully offline): a request
       that times out or returns a 5xx — does the app retry with reasonable
       backoff, or does it silently drop the action the same way the
       Round 5 meal-logging bug did? Spot-check a few write paths beyond
       the ones already covered by that fix.
-- [ ] **Conflict/duplicate handling**: if the same queued action fires
+- [x] **Conflict/duplicate handling**: if the same queued action fires
       twice (e.g. app reconnects, syncs, then the OS delivers a delayed
       duplicate reconnect event), does it create a duplicate DB row, or is
       there real idempotency (e.g. an upsert keyed on a client-generated
       ID) protecting against it?
+
+### Round 7 summary — 4 real bugs found and fixed, 1 flagged and deferred
+
+Tested directly (no sub-agent dispatch — a single coordinator session
+using Playwright MCP's `browser_run_code_unsafe` for REAL network control
+`page.context().setOffline()` / `page.route()`, not just toggling
+`navigator.onLine`, per this round's own note that some code paths might
+not check that flag — plus the Supabase Management API for direct DB
+verification, avoiding screenshots per this round's data/logic focus).
+Account used: the existing shared `test.workout@fitai.dev` fixture (no
+onboarding-flakiness hit this session, no throwaway account needed).
+
+**Found and fixed** (all four verified end-to-end: real repro →
+`localStorage.offline_sync_queue` inspection → reconnect → direct
+service-role DB read, not just "no error shown"):
+
+1. **[MAJOR] Weight entry (`progress_entries` + `body_analysis` mirror)
+   had zero offline handling** — offline save showed a raw
+   `"TypeError: Failed to fetch"` and was never queued; the entry was
+   permanently lost on reconnect. Fixed in `src/services/progressData.ts`
+   (`createProgressEntry`) and `src/services/onboardingService.ts`
+   (`BodyAnalysisService.save`) — both now queue via
+   `offlineService.queueAction` on any failure and proceed optimistically,
+   mirroring `completionTracking.completeMeal`'s established pattern.
+   `src/services/offline.ts`'s CREATE branch gained upsert handling for
+   `progress_entries` (on `user_id,entry_date`) and
+   `workout_preferences`/`body_analysis` (on `user_id` — both have a
+   surrogate `id` distinct from `user_id`).
+2. **[CRITICAL, pre-existing, NOT offline-specific] `GoalsPreferencesEditModal`
+   and `PersonalInfoEditModal`'s `workout_preferences` upserts have ALWAYS
+   silently failed — 100% of the time, online or offline** — found while
+   investigating the "will sync automatically" alert. Root cause:
+   `location`/`equipment`/`intensity`/`primary_goals` are `NOT NULL` with
+   no default, but both modals' upserts only sent the 2-3 fields being
+   edited. Confirmed live (rolled-back SQL transaction against the real
+   DB) that `INSERT ... ON CONFLICT DO UPDATE` still throws `23502` even
+   when the row already exists, since Postgres validates the tentative
+   INSERT tuple before resolving the conflict. This meant these two
+   settings screens have never actually persisted a change to the server
+   — the local store update always succeeded, masking the failure.
+   Fixed in both modal files by carrying forward the already-loaded
+   `location`/`equipment`/`intensity`/`primary_goals` unchanged, plus
+   adding the offline queueing so the alert's promise is now true.
+   Live-verified both online (immediate DB write, previously a guaranteed
+   `23502`) and offline→reconnect.
+3. **[MEDIUM] No idempotency for `water_logs`/`exercise_sets`/
+   `workout_cardio_logs`/`saved_meals` against a duplicate queued-action
+   replay** — reproduced live by re-queuing an already-synced action and
+   observing two DB rows. Fixed by adding a client-generated `id` at
+   queue time (`src/stores/hydrationStore.ts`,
+   `src/services/completionTracking.ts` — `saved_meals` already had one)
+   and adding all four tables to `offline.ts`'s upsert-on-`id` set
+   (joining `workout_sessions`/`meal_logs`, which already had this
+   protection). Live re-verified: the same duplicate-replay repro now
+   produces exactly one row.
+4. **[MINOR, flagged, not fixed]** A queue persisted from a previous
+   session does not auto-flush on a fresh app boot that's already online
+   — confirmed live (injected a queued action, reloaded while online, it
+   sat untouched). Only a live offline→online *transition* within a
+   running session triggers sync. Not indefinitely lost (a later
+   connectivity blip, new write, or manual "Sync Now" flushes it), but not
+   "prompt on reconnect" for this specific restart-while-offline
+   sequence. Deferred: the fix is a one-line addition (sync at startup if
+   already online with a non-empty queue) but changes cold-start network
+   behavior for every user and deserves its own verification pass given
+   the syncMutex/DataBridge profile-sync race already documented in
+   `offline.ts`'s own comments — not a quick tack-on to this round.
+
+**Ruled out as false positive**: Workout tab's "Workout Library" showing
+"0 templates" while offline (with a failed fetch logged to console) —
+confirmed via direct DB query the account genuinely has 0 saved
+templates. Accurate, not a masked failure.
+
+**Read-path resilience**: Home/Workout/Diet all correctly show real
+cached data offline (weekly plan, history, nutrition ring/macros/water),
+sourced from the already-persisted Zustand stores per CLAUDE.md rule 6.
+One cosmetic, cross-cutting gap noted but not fixed (out of this round's
+scope to sweep exhaustively): a few read-failure surfaces (Diet's AI-plan
+panel, pre-fix weight entry) show raw `"TypeError: Failed to fetch"` text
+instead of a friendly message — always honest and either auto-recovering
+or offering Retry, never a broken/blank screen, just ugly copy.
+
+**Reconnect behavior**: confirmed prompt (2-4s) for a live offline→online
+transition across every path tested (water logging as a regression
+check, both newly-fixed paths) — no manual refresh needed. See flagged
+item 4 above for the one confirmed restart-specific gap.
+
+**Also noted, not a bug**: `page.context().setOffline(true)` breaks a
+full page **reload** on the web target (`net::ERR_INTERNET_DISCONNECTED`
+at the document level — no PWA/service-worker app-shell caching is
+configured). SPA-internal navigation within an already-loaded session is
+unaffected. This is a known limitation specific to the web target (native
+bundles its JS, has no equivalent failure mode) — not treated as a bug.
+
+`npx tsc --noEmit -p .` clean; full `npx jest --silent` stayed at the
+exact pre-round baseline (153/153 suites, 1466/1466 tests) — one
+pre-existing test's mock setup (`offline.validation.test.ts`) was updated
+to match the corrected upsert behavior for finding 3, not a regression.
+See `FITAI_DATA_ARCHITECTURE.md`'s new "Round 7" section for full
+technical detail on all four fixes.
 
 ## How to pick up this goal in a fresh round
 
@@ -3350,6 +3450,15 @@ exercised offline.
    queuing for retry) purely incidentally while testing something else —
    no round has ever tested offline/network behavior as its own focus.
    Work Round 7 next.
+   **Round 7 (offline/network-resilience audit) is now fully complete** —
+   all 5 scope items checked, 4 real bugs found and fixed (one of them,
+   the `workout_preferences` NOT NULL upsert bug, pre-existing and NOT
+   offline-specific — it silently failed 100% of the time, online or
+   offline, until fixed this round) plus one flagged-and-deferred gap (a
+   persisted queue doesn't auto-flush on an already-online app restart —
+   see the Round 7 summary after its scope list, and
+   `FITAI_DATA_ARCHITECTURE.md`'s matching "Round 7" section, for full
+   technical detail on all four).
    If a future pickup finds Round 7 also fully checked with nothing else
    unchecked anywhere (besides the still-open item (b), which needs the
    user, not more testing): per this file's own "don't invent busywork"

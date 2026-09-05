@@ -3174,3 +3174,177 @@ regressions, no new tests needed (all fixes are prop/style additions to
 existing components, verified live via Playwright rather than new unit
 tests). See `E2E_TESTING_GOAL.md`'s Round 6 section for the full
 methodology and per-agent findings.
+
+## Round 7 — dedicated offline / network-resilience audit, 4 real bugs found and fixed (one a pre-existing, always-broken write path unrelated to offline)
+
+First dedicated pass testing write-path resilience, read-path staleness,
+reconnect promptness, partial/flaky-connection handling, and duplicate/
+idempotency behavior against REAL network-level control
+(`page.context().setOffline()` + `page.route()` via Playwright's
+`browser_run_code_unsafe`, not just toggling `navigator.onLine`).
+Motivated by Round 5's incidental meal-log data-loss find — the fact that
+one real bug turned up by accident strongly suggested more existed in
+write paths never specifically exercised offline. All four fixes verified
+end-to-end: real offline/5xx/duplicate-delivery repro → confirmed queued
+via `localStorage.offline_sync_queue` → reconnect → confirmed landed
+correctly in Supabase via a direct service-role DB read (not just "no
+error shown").
+
+- **[MAJOR] Weight entry (`progress_entries` + its `body_analysis`
+  mirror) had zero offline handling** — a failed/offline write showed the
+  user a raw, ugly `"TypeError: Failed to fetch"` and was never queued;
+  reconnecting did nothing, so the entry was permanently lost unless the
+  user happened to notice and manually retried. Every sibling write path
+  (`workout_sessions`, `meal_logs`, `water_logs`) already used
+  `offlineService.queueAction` for exactly this scenario — `progressData
+  .createProgressEntry` and `onboardingService.BodyAnalysisService.save`
+  simply never had it. **Fixed**: both now queue the exact insert/upsert
+  payload on any Supabase error response OR thrown network exception, and
+  `createProgressEntry` returns success optimistically (mirroring
+  `completionTracking.completeMeal`'s established "keep optimistic state,
+  queue for retry" pattern) so the UI no longer surfaces the error at all
+  for a transient/offline failure. `offline.ts`'s `executeAction` CREATE
+  branch gained upsert handling for both tables: `progress_entries` on
+  `(user_id, entry_date)` (matching the live write path's own upsert,
+  which intentionally allows re-logging weight the same day) and
+  `body_analysis`/`workout_preferences` on `user_id` (both have a
+  surrogate `id` PK distinct from `user_id`, so a plain `id`-keyed update
+  can't target them). **Live-verified**: offline weight save → confirmed
+  both `progress_entries` and `body_analysis` CREATE actions queued
+  correctly → reconnect → confirmed both landed in Supabase with no
+  duplication. Also verified a **simulated 5xx** (`page.route()` returning
+  500, not full offline) hits the same queue path and retries with the
+  existing exponential backoff before landing in the queue — confirms
+  scope item 4 (partial/flaky connection) for this path.
+- **[CRITICAL — pre-existing, NOT offline-specific] `GoalsPreferencesEditModal`'s
+  and `PersonalInfoEditModal`'s `workout_preferences` upserts have ALWAYS
+  silently failed to sync, 100% of the time, online or offline.** Found
+  investigating why a "Saved Locally... will sync automatically" alert
+  ever fires online: `workout_preferences.location`/`equipment`/
+  `intensity`/`primary_goals` are `NOT NULL` with no column default (see
+  `supabase/migrations/20250119000000_create_onboarding_tables.sql`), but
+  both modals' inline `.upsert(..., {onConflict:"user_id"})` calls sent
+  only the 2-3 fields the user actually changed (e.g.
+  `{user_id, primary_goals, time_preference, intensity}` — omitting
+  `location`/`equipment`). **Confirmed empirically, not just from reading
+  the migration**: `INSERT ... ON CONFLICT (user_id) DO UPDATE` still
+  throws `23502 not_null_violation` even when a matching row already
+  exists and only the UPDATE branch would ever execute — Postgres
+  validates the tentative INSERT tuple against NOT NULL constraints
+  BEFORE resolving the conflict, regardless of whether it ultimately
+  updates. Reproduced directly against the live DB in a rolled-back
+  transaction. This meant **every "Goals & Preferences" and "activity
+  level" edit via these two settings modals has never actually persisted
+  to the server** — the local `profileStore` update always succeeded
+  first, so the UI looked fine, but a fresh sign-in or cache clear would
+  silently revert to old values, and any server-side consumer of
+  `workout_preferences` (e.g. AI generation reading it directly) was
+  always working from stale data. **Fixed**: both upserts now carry
+  forward the already-loaded `location`/`equipment`/`intensity`/
+  `primary_goals` from `profileStore.workoutPreferences` unchanged
+  (falling back to `onboardingService`'s own established defaults —
+  `"home"`/`["bodyweight"]` — only if genuinely never set), plus the
+  originally-planned offline queueing (`offlineService.queueAction`) so
+  the "will sync automatically" alert's claim is now actually true instead
+  of false. **Live-verified twice**: (1) offline save → confirmed queued
+  with the correct full payload → reconnect → confirmed
+  `workout_preferences.time_preference` updated in Supabase; (2) online
+  save (activity level "Very Active" → `active`) → confirmed
+  `workout_preferences.activity_level` updated immediately with zero
+  errors, where the identical pre-fix payload had reproducibly thrown
+  `23502` moments earlier in the same session.
+- **[MEDIUM] No idempotency protection for `water_logs`/`exercise_sets`/
+  `workout_cardio_logs` against a duplicate queued-action replay** —
+  reproduced live by re-queuing an already-successfully-synced
+  `water_logs` CREATE action (simulating the realistic scenario where the
+  in-memory `syncQueue` filter/persist step in
+  `syncOfflineActionsLocked` hasn't yet been written back to
+  `AsyncStorage` when the app crashes/reloads, or the OS delivers a
+  delayed duplicate reconnect event) and confirming two distinct rows
+  landed in the database for the same amount/timestamp. Unlike
+  `workout_sessions`/`meal_logs` (already upserted on their own `id`) and
+  the two tables fixed above, these three tables' CREATE payloads never
+  included a client-generated `id` at all, relying entirely on the
+  table's own `gen_random_uuid()` column default — so a plain
+  `.insert()` retry of the same logical action always produces a new row.
+  **Fixed**: `hydrationStore.queueWaterLogForOffline` now generates an
+  `id` via `generateUUID()` at queue time; `completionTracking`'s
+  `exercise_sets` row-construction loop and its `workout_cardio_logs` row
+  do the same (both already had `generateUUID` imported/available).
+  `offline.ts`'s CREATE branch now upserts all three (plus `saved_meals`,
+  which already carried `id: meal.id` in its payload — this table was
+  vulnerable too, just needed the upsert branch, no call-site change) on
+  `id`, joining `workout_sessions`/`meal_logs` in the same upsert set.
+  **Live-verified**: re-ran the exact duplicate-replay repro after the
+  fix — confirmed exactly one row exists for the test id, where the
+  identical repro against the pre-fix code produced two. One pre-existing
+  test (`offline.validation.test.ts`'s non-retryable-error regression
+  test) asserted against a plain `.insert()` call for `exercise_sets` and
+  needed updating to mock/assert the new `.upsert()` call instead — not a
+  behavior regression, the test's own mock setup had simply never
+  exercised the upsert branch that `workout_sessions`/`meal_logs` already
+  used before this round.
+- **[MINOR, FLAGGED NOT FIXED] A queue persisted from a previous session
+  does not auto-flush just because the app boots up already online** —
+  confirmed live: injected a queued action directly into
+  `localStorage.offline_sync_queue`, reloaded the page while online, and
+  the queue sat untouched for 5+ seconds with no sync attempt; only a
+  live offline→online *transition* within a running session (the
+  `NetInfo` listener's `!wasOnline && isOnline` check in
+  `offline.ts`'s `initializeNetworkListener`) triggers `syncOfflineActions`
+  — `loadOfflineData()` never proactively syncs whatever it just loaded
+  at construction time, even when already online. In practice this means
+  a genuinely offline write, followed by fully closing/restarting the app
+  while still offline, then opening it again once back online, would
+  leave that write stuck until the next real connectivity blip, a new
+  unrelated write, or a manual "Sync Now" (`offlineStore.forceSync`) —
+  not indefinitely lost, but not "promptly on reconnect" either per this
+  round's own scope framing. **Not fixed this round**: the correct fix
+  (proactively call `syncOfflineActions()` once at startup if already
+  online and the queue is non-empty) is a one-line, low-risk addition,
+  but flagging rather than bundling it in because it changes
+  cold-start network behavior for every user on every launch and
+  deserves its own explicit verification pass (interaction with the
+  syncMutex/DataBridge profile-sync race the file's own comments already
+  document) rather than a tacked-on afterthought to this round's other
+  fixes.
+
+**Read-path resilience**: confirmed genuinely stale-but-usable — Home,
+Workout, and Diet tabs all correctly rendered real cached data (weekly
+plan, workout history, today's nutrition ring/macros/water) while offline,
+sourced from the already-persisted Zustand stores per CLAUDE.md rule 6,
+with failed background refetches logged to console but not corrupting the
+UI. One read surface (Diet's AI-meal-plan panel) shows the same raw
+`"TypeError: Failed to fetch"` text with a "Retry" button on failure —
+honest and recoverable, just not friendly copy; noted as a minor,
+cross-cutting cosmetic gap (shared by the pre-fix weight-entry error too)
+rather than fixed, since a proper fix means auditing every raw-error
+surface app-wide, a larger sweep than this round's scope. One suspected
+false positive was ruled out with a live DB check: Workout tab's "Workout
+Library" showed "0 templates" while offline with a failed fetch logged —
+confirmed via direct query that the account genuinely has 0 saved
+templates, so this is accurate, not a masked failure.
+
+**Reconnect behavior**: confirmed prompt (2-4s) for a genuine
+offline→online transition within a running session, across every
+already-covered path (water logging) and both newly-fixed paths (weight
+entry, workout preferences) — no manual refresh needed, `offline_sync_
+queue` empties and the DB reflects the change without further action.
+See the flagged-not-fixed item above for the one confirmed gap (a queue
+surviving a full app restart while still offline).
+
+A cross-cutting note for future rounds: `page.context().setOffline(true)`
+also breaks a full page **reload** while offline (`net::ERR_INTERNET_
+DISCONNECTED` at the document level — no service worker/PWA app-shell
+caching is configured for the web target), unlike SPA-internal
+navigation within an already-loaded session, which degrades gracefully
+via the persisted stores. This is a known, accepted limitation of the web
+target specifically (the native mobile app bundles its JS and doesn't
+have this failure mode) — not treated as a bug.
+
+`npx tsc --noEmit -p .` clean throughout; full `npx jest --silent` stayed
+at the exact pre-round baseline (153/153 suites, 1466/1466 tests) after
+one pre-existing test's mock setup was updated to match the corrected
+upsert behavior (see the duplicate-handling fix above) — no net change in
+pass count, no regressions. See `E2E_TESTING_GOAL.md`'s Round 7 section
+for the full scope checklist and methodology.

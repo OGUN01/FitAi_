@@ -36,6 +36,31 @@ interface SupabaseResponse {
   } | null;
 }
 
+// Postgres error codes that can NEVER succeed on retry — the write is
+// fundamentally invalid, not transiently failing. Retrying these wastes
+// requests and (worse) leaves the action stuck in the queue for up to
+// `maxRetries` sync cycles, which in practice can be indefinite if nothing
+// else triggers a sync (queueAction only re-syncs on a NEW write, an
+// offline->online transition, or a manual "Sync now" — see queueAction /
+// initializeNetworkListener). BUG FIX: a queued exercise_sets CREATE
+// referencing a session_id that was never actually persisted to
+// workout_sessions hit this exact case (23503) and sat in the queue
+// retrying on every sync trigger indefinitely instead of failing fast.
+// https://www.postgresql.org/docs/current/errcodes-appendix.html
+const NON_RETRYABLE_PG_ERROR_CODES = new Set([
+  "23503", // foreign_key_violation
+  "23505", // unique_violation
+  "23514", // check_violation
+  "42501", // insufficient_privilege (RLS denial)
+]);
+
+class NonRetryableSyncError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NonRetryableSyncError";
+  }
+}
+
 function normalizeWorkoutSessionPayload(data: Record<string, unknown>) {
   const duration =
     (data.total_duration_minutes as number | null | undefined) ??
@@ -153,7 +178,7 @@ function validateSupabaseResponse(
   response: unknown,
   operation: string,
   table: string,
-): { valid: boolean; error?: string } {
+): { valid: boolean; error?: string; nonRetryable?: boolean } {
   if (!isValidSupabaseResponse(response)) {
     const errorMsg = `Received malformed Supabase response for ${operation} on ${table}: ${typeof response}`;
     console.error(errorMsg, response);
@@ -165,7 +190,10 @@ function validateSupabaseResponse(
   if (supabaseRes.error) {
     const errorMsg = `Supabase error for ${operation} on ${table}: ${supabaseRes.error.message}`;
     console.error(errorMsg, supabaseRes.error);
-    return { valid: false, error: errorMsg };
+    const nonRetryable = Boolean(
+      supabaseRes.error.code && NON_RETRYABLE_PG_ERROR_CODES.has(supabaseRes.error.code),
+    );
+    return { valid: false, error: errorMsg, nonRetryable };
   }
 
   return { valid: true };
@@ -428,7 +456,16 @@ class OfflineService {
           action.lastError =
             error instanceof Error ? error.message : String(error);
 
-          if (action.retryCount >= action.maxRetries) {
+          // BUG FIX: a non-retryable error (FK/unique/check violation, RLS
+          // denial — see NonRetryableSyncError) purges immediately instead
+          // of waiting for retryCount to reach maxRetries across further
+          // sync CYCLES, which may not happen again for a long time —
+          // queueAction only re-triggers a sync on a NEW write, an
+          // offline->online transition, or a manual "Sync now", so a stuck
+          // item could otherwise sit retrying indefinitely across many
+          // unrelated future syncs before finally exhausting retryCount.
+          const isNonRetryable = error instanceof NonRetryableSyncError;
+          if (isNonRetryable || action.retryCount >= action.maxRetries) {
             await this.rollbackAction(action.id);
             this.failedActions.push({ ...action });
             successfulActions.push(action.id);
@@ -509,11 +546,25 @@ class OfflineService {
               ["weekly_meal_plans", "weekly_workout_plans"].includes(table) &&
               (insertData as Record<string, unknown>).user_id
             ) {
-              const activePlanLookup = await supabase
+              // plan_source-scoped: both tables now support a simultaneous
+              // active AI plan AND active custom plan per user. Without this
+              // filter, a queued CREATE for one source could collapse onto
+              // the OTHER source's active row (e.g. an AI-plan save
+              // overwriting the user's custom plan) — this was a real bug
+              // even before dual custom-diet plans existed, since
+              // weekly_workout_plans already had plan_source without this
+              // lookup honoring it.
+              const insertPlanSource =
+                (insertData as Record<string, unknown>).plan_source as string | undefined;
+              let activePlanQuery = supabase
                 .from(table)
                 .select("id")
                 .eq("user_id", (insertData as Record<string, unknown>).user_id as string)
-                .eq("is_active", true)
+                .eq("is_active", true);
+              if (insertPlanSource) {
+                activePlanQuery = activePlanQuery.eq("plan_source", insertPlanSource);
+              }
+              const activePlanLookup = await activePlanQuery
                 .order("created_at", { ascending: false })
                 .limit(1);
 
@@ -543,13 +594,61 @@ class OfflineService {
               } else {
                 createQuery = supabase.from(table).insert([insertData]);
               }
+            } else if (
+              [
+                "workout_sessions",
+                "meal_logs",
+                "water_logs",
+                "exercise_sets",
+                "workout_cardio_logs",
+                "saved_meals",
+              ].includes(table)
+            ) {
+              // Upsert on the row's own client-generated `id` (added at
+              // queue-time by the caller — see hydrationStore.queueWaterLog
+              // ForOffline, completionTracking's exercise_sets/cardio rows,
+              // savedMealsStore.toSupabaseRow) rather than a plain insert.
+              // CONFIRMED LIVE: a plain insert here lets a duplicate replay
+              // of an already-synced action (e.g. the persisted queue still
+              // holding an action whose success wasn't yet flushed to
+              // AsyncStorage before a crash/reload, or a delayed duplicate
+              // reconnect event) create a genuine second row — reproduced by
+              // re-queuing an already-synced water_logs action and observing
+              // two distinct rows land. An upsert keyed on id makes a
+              // duplicate replay a no-op instead.
+              createQuery = supabase.from(table).upsert([insertData], {
+                onConflict: "id",
+                ignoreDuplicates: false,
+              });
+            } else if (table === "progress_entries") {
+              // Keyed by (user_id, entry_date), not id — mirrors the live
+              // write path's own upsert (progressData.createProgressEntry),
+              // which intentionally allows re-logging weight the same day.
+              // A plain insert here would 23505 on any day that already has
+              // an entry, wrongly marking a legitimate retry as
+              // non-retryable and dropping it.
+              createQuery = supabase.from(table).upsert([insertData], {
+                onConflict: "user_id,entry_date",
+                ignoreDuplicates: false,
+              });
+            } else if (
+              ["workout_preferences", "body_analysis"].includes(table)
+            ) {
+              // Both tables have their own surrogate `id` PK distinct from
+              // `user_id` (see supabase/migrations/20250119000000_create_
+              // onboarding_tables.sql), and are always written as one
+              // upsert-per-user (never a plain insert) by their live write
+              // paths (PersonalInfoEditModal/GoalsPreferencesEditModal's
+              // inline upserts, onboardingService's BodyAnalysisService).
+              // Upsert on user_id here so a queued retry lands on the same
+              // row instead of erroring (no known `id` to update by) or
+              // creating a second row for the same user.
+              createQuery = supabase.from(table).upsert([insertData], {
+                onConflict: "user_id",
+                ignoreDuplicates: false,
+              });
             } else {
-              createQuery = ["workout_sessions", "meal_logs"].includes(table)
-                ? supabase.from(table).upsert([insertData], {
-                    onConflict: "id",
-                    ignoreDuplicates: false,
-                  })
-                : supabase.from(table).insert([insertData]);
+              createQuery = supabase.from(table).insert([insertData]);
             }
             const createResponse = await createQuery;
             const createValidation = validateSupabaseResponse(
@@ -558,7 +657,9 @@ class OfflineService {
               table,
             );
             if (!createValidation.valid) {
-              throw new Error(createValidation.error);
+              throw createValidation.nonRetryable
+                ? new NonRetryableSyncError(createValidation.error!)
+                : new Error(createValidation.error);
             }
             break;
           }
@@ -588,7 +689,9 @@ class OfflineService {
               table,
             );
             if (!updateValidation.valid) {
-              throw new Error(updateValidation.error);
+              throw updateValidation.nonRetryable
+                ? new NonRetryableSyncError(updateValidation.error!)
+                : new Error(updateValidation.error);
             }
             break;
           }
@@ -609,7 +712,9 @@ class OfflineService {
               table,
             );
             if (!deleteValidation.valid) {
-              throw new Error(deleteValidation.error);
+              throw deleteValidation.nonRetryable
+                ? new NonRetryableSyncError(deleteValidation.error!)
+                : new Error(deleteValidation.error);
             }
             break;
           }
@@ -622,6 +727,23 @@ class OfflineService {
         return;
       } catch (error) {
         lastError = error as Error;
+
+        // BUG FIX: a non-retryable error (FK/unique/check violation, RLS
+        // denial) will fail identically on every attempt — burning the
+        // remaining inner attempts (with exponential backoff between each)
+        // just delays the inevitable and, worse, once this throws up to the
+        // OUTER sync loop, the action stays queued for retryCount to climb
+        // across further sync cycles that may not happen again for a long
+        // time (queueAction only re-syncs on a NEW write, an offline->online
+        // transition, or a manual "Sync now"). Fail fast instead.
+        if (error instanceof NonRetryableSyncError) {
+          console.error(
+            `❌ Non-retryable error for ${type} on ${table} — not retrying:`,
+            error.message,
+          );
+          throw error;
+        }
+
         console.warn(
           `⚠️ Attempt ${attempt} failed for ${type} on ${table}:`,
           error,
@@ -656,17 +778,31 @@ class OfflineService {
   }
 
   /**
-   * Clear failed actions for a specific table (useful for fixing UUID format issues)
+   * Clear failed actions for a specific table (useful for fixing UUID format issues).
+   *
+   * `matchData` optionally narrows which rows within the table get cleared —
+   * e.g. `(data) => data.plan_source === 'ai'`. Without it, every failed/
+   * exhausted action for the table is cleared, which is table-wide: on a
+   * dual-source table like weekly_meal_plans, clearing after an AI-plan save
+   * would also silently drop a permanently-failed custom-plan write (and
+   * vice versa). Pass a predicate when the table can hold rows for more than
+   * one logical owner/source.
    */
-  async clearFailedActionsForTable(table: string): Promise<void> {
+  async clearFailedActionsForTable(
+    table: string,
+    matchData?: (data: Record<string, unknown>) => boolean,
+  ): Promise<void> {
+    const matches = (action: OfflineAction) =>
+      action.table === table &&
+      (!matchData || matchData(action.data as Record<string, unknown>));
+
     const initialFailedCount = this.failedActions.length;
     const initialQueuedCount = this.syncQueue.length;
     this.failedActions = this.failedActions.filter(
-      (action) => action.table !== table,
+      (action) => !matches(action),
     );
     this.syncQueue = this.syncQueue.filter(
-      (action) =>
-        !(action.table === table && action.retryCount >= action.maxRetries),
+      (action) => !(matches(action) && action.retryCount >= action.maxRetries),
     );
     const clearedCount =
       initialFailedCount -

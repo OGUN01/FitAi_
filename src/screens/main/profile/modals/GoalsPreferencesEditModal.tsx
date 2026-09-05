@@ -20,6 +20,7 @@ import { crossPlatformAlert } from "../../../../utils/crossPlatformAlert";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
 import type { FitnessGoals } from "../../../../types/user";
 import { supabase } from "../../../../services/supabase";
+import { offlineService } from "../../../../services/offline";
 
 interface GoalsPreferencesEditModalProps {
   visible: boolean;
@@ -304,24 +305,51 @@ export const GoalsPreferencesEditModal: React.FC<
                   const m = timeCommitment.match(/(\d+)\s*-\s*(\d+)/);
                   return m ? parseInt(m[2], 10) : 45;
                 })();
+          // ROOT CAUSE FIX: workout_preferences.location/equipment/user_id
+          // are NOT NULL with no column default (see supabase/migrations/
+          // 20250119000000_create_onboarding_tables.sql). Postgres validates
+          // an upsert's tentative INSERT row against NOT NULL constraints
+          // BEFORE resolving ON CONFLICT — confirmed live: `INSERT ...
+          // ON CONFLICT (user_id) DO UPDATE` still throws 23502 even when a
+          // matching row already exists, if the payload omits a NOT NULL
+          // column. This upsert previously omitted both, meaning this
+          // "Goals & Preferences" save has ALWAYS failed to sync to the
+          // server 100% of the time (online or offline) — the local
+          // profileStore update above always succeeded, so the UI looked
+          // fine while the server-side row silently never changed. Carry
+          // forward the already-loaded location/equipment unchanged
+          // (falling back to onboardingService's own established defaults
+          // only if genuinely never set).
+          const workoutPreferencesPayload = {
+            user_id: user.id,
+            location: workoutPreferences?.location || "home",
+            equipment: workoutPreferences?.equipment || ["bodyweight"],
+            primary_goals: primaryGoals,
+            time_preference: timePreferenceMinutes,
+            intensity: experience,
+            updated_at: new Date().toISOString(),
+          };
           const { error: wpError } = await supabase
             .from("workout_preferences")
-            .upsert(
-              {
-                user_id: user.id,
-                primary_goals: primaryGoals,
-                time_preference: timePreferenceMinutes,
-                intensity: experience,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id" },
-            );
+            .upsert(workoutPreferencesPayload, { onConflict: "user_id" });
 
           if (wpError) {
             console.error(
               "Failed to sync workout preferences to database:",
               wpError.message,
             );
+            // Make the alert below true: actually queue the write for
+            // offline retry (CLAUDE.md rule 6) instead of just claiming it
+            // will happen. Previously nothing queued this, so a failed
+            // sync (most commonly: genuinely offline) never synced even
+            // after the connection was restored.
+            await offlineService.queueAction({
+              type: "CREATE",
+              table: "workout_preferences",
+              data: workoutPreferencesPayload,
+              userId: user.id,
+              maxRetries: 3,
+            });
             crossPlatformAlert(
               "Saved Locally",
               "Your goals were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",

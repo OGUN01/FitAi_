@@ -1,6 +1,7 @@
 import * as crypto from "expo-crypto";
 import { supabase } from "./supabase";
 import { crudOperations } from "./crudOperations";
+import { offlineService } from "./offline";
 import { AuthUser } from "../types/user";
 import { BodyMeasurement } from "../types/localData";
 import { analyticsDataService } from "./analyticsData";
@@ -246,29 +247,76 @@ class ProgressDataService {
       await crudOperations.createBodyMeasurement(bodyMeasurement);
 
       // Upsert to Supabase — handles logging weight multiple times on the same day
-      const { data, error } = await supabase
-        .from("progress_entries")
-        .upsert(
-          {
-            user_id: userId,
-            entry_date: entryDate,
-            weight_kg: entryData.weight_kg,
-            body_fat_percentage: entryData.body_fat_percentage,
-            muscle_mass_kg: entryData.muscle_mass_kg,
-            measurements: entryData.measurements || {},
-            progress_photos: entryData.progress_photos || [],
-            notes: entryData.notes,
-          },
-          { onConflict: "user_id,entry_date" },
-        )
-        .select()
-        .single();
+      const progressEntryPayload = {
+        user_id: userId,
+        entry_date: entryDate,
+        weight_kg: entryData.weight_kg,
+        body_fat_percentage: entryData.body_fat_percentage,
+        muscle_mass_kg: entryData.muscle_mass_kg,
+        measurements: entryData.measurements || {},
+        progress_photos: entryData.progress_photos || [],
+        notes: entryData.notes,
+      };
+
+      // Optimistic fallback entry used when the Supabase write fails/is
+      // offline — queued for retry via offlineService (same "keep optimistic
+      // state, queue for retry" pattern as completionTracking's
+      // completeMeal/completeWorkout, per CLAUDE.md rule 6). Without this,
+      // a weight entry logged while offline was previously silently lost:
+      // no queue, and the caller (WeightEntryModal) surfaced a raw
+      // "TypeError: Failed to fetch" with no path to retry.
+      const optimisticEntry: ProgressEntry = {
+        id: bodyMeasurement.id,
+        ...progressEntryPayload,
+        created_at: now.toISOString(),
+      } as ProgressEntry;
+
+      const queueForRetry = async (reason: unknown) => {
+        try {
+          await offlineService.queueAction({
+            type: "CREATE",
+            table: "progress_entries",
+            data: progressEntryPayload,
+            userId,
+            maxRetries: 3,
+          });
+        } catch (queueError) {
+          console.error(
+            "Failed to queue progress entry for offline retry:",
+            queueError,
+          );
+        }
+        console.error(
+          "Progress entry write failed — queued for offline retry:",
+          reason,
+        );
+      };
+
+      let data: unknown;
+      let error: { message: string } | null = null;
+      try {
+        const result = await supabase
+          .from("progress_entries")
+          .upsert(progressEntryPayload, { onConflict: "user_id,entry_date" })
+          .select()
+          .single();
+        data = result.data;
+        error = result.error;
+      } catch (fetchError) {
+        // Genuine network failure (e.g. offline) — supabase-js can throw
+        // here rather than returning a {error} response.
+        await queueForRetry(fetchError);
+        return {
+          success: true,
+          data: optimisticEntry,
+        };
+      }
 
       if (error) {
-        console.error("Error creating progress entry:", error);
+        await queueForRetry(error);
         return {
-          success: false,
-          error: error.message,
+          success: true,
+          data: optimisticEntry,
         };
       }
 
@@ -286,7 +334,7 @@ class ProgressDataService {
 
       return {
         success: true,
-        data,
+        data: data as ProgressEntry,
       };
     } catch (error) {
       console.error("Error in createProgressEntry:", error);
@@ -486,26 +534,36 @@ class ProgressDataService {
     userId: string,
   ): Promise<ProgressDataResponse<ProgressGoals>> {
     try {
+      // BUG FIX (found via live testing): `.single()` throws (and logs a
+      // real 406 to the console) whenever a user has zero progress_goals
+      // rows — a completely normal, expected state for any account that
+      // hasn't set an explicit goal yet, not an error condition. The
+      // PGRST116 branch below already handled this gracefully at the
+      // application level, but the noisy 406 still fired on every load for
+      // such an account. `.maybeSingle()` returns `null` data with no error
+      // for zero rows, achieving the identical behavior without the network
+      // error — same fix pattern already applied to `getDietPreferences`.
       const { data, error } = await supabase
         .from("progress_goals")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          // No goals found - return empty goals structure
-          return {
-            success: true,
-            data: this.getDefaultGoals(userId),
-          };
-        }
         console.error("Error fetching progress goals:", error);
         return {
           success: false,
           error: error.message,
+        };
+      }
+
+      if (!data) {
+        // No goals found - return empty goals structure
+        return {
+          success: true,
+          data: this.getDefaultGoals(userId),
         };
       }
 

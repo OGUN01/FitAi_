@@ -18,6 +18,7 @@ import { useProfileStore } from "../../../../stores/profileStore";
 import { useAuth } from "../../../../hooks/useAuth";
 import { userProfileService } from "../../../../services/userProfile";
 import { supabase } from "../../../../services/supabase";
+import { offlineService } from "../../../../services/offline";
 import { buildLegacyProfileAdapter } from "../../../../utils/profileLegacyAdapter";
 import { colors } from "../../../../theme/aurora-tokens";
 import { rf, rp, rbr } from "../../../../utils/responsive";
@@ -264,33 +265,70 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       // ✅ Sync to Supabase profiles table
       if (user?.id) {
         let syncFailed = false;
+        const profileUpdatePayload = {
+          first_name: firstName,
+          last_name: lastName,
+          age: parseInt(age, 10),
+          gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
+        };
         try {
-          const result = await userProfileService.updateProfile(user.id, {
-            first_name: firstName,
-            last_name: lastName,
-            age: parseInt(age, 10),
-            gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
-          } as Record<string, unknown>);
+          const result = await userProfileService.updateProfile(
+            user.id,
+            profileUpdatePayload as Record<string, unknown>,
+          );
           if (!result.success) {
             syncFailed = true;
             console.error(
               "[PersonalInfoModal] Failed to sync to Supabase:",
               result.error,
             );
+            // Make the "will sync automatically" alert below true — queue
+            // the real update for offline retry (CLAUDE.md rule 6) instead
+            // of just claiming it will happen (previously nothing did).
+            await offlineService.queueAction({
+              type: "UPDATE",
+              table: "profiles",
+              data: { id: user.id, ...profileUpdatePayload },
+              userId: user.id,
+              maxRetries: 3,
+            });
           }
 
           // ✅ Sync activity_level to workout_preferences table
           if (activityLevel) {
+            // ROOT CAUSE FIX (same class of bug as GoalsPreferencesEditModal):
+            // location/equipment/intensity/primary_goals are NOT NULL with no
+            // column default. Postgres validates an upsert's tentative INSERT
+            // row against NOT NULL constraints BEFORE resolving ON CONFLICT,
+            // so this upsert — previously sending only user_id/activity_level
+            // — has ALWAYS failed 23502 and never actually synced, online or
+            // offline. Carry forward the already-loaded values unchanged.
+            const activityLevelPayload = {
+              user_id: user.id,
+              activity_level: activityLevel,
+              location: profileWorkoutPreferences?.location || "home",
+              equipment: profileWorkoutPreferences?.equipment || ["bodyweight"],
+              intensity: profileWorkoutPreferences?.intensity || "intermediate",
+              primary_goals: profileWorkoutPreferences?.primary_goals || [],
+              updated_at: new Date().toISOString(),
+            };
             try {
               const { error: wpError } = await supabase
                 .from("workout_preferences")
-                .upsert({ user_id: user.id, activity_level: activityLevel }, { onConflict: "user_id" });
+                .upsert(activityLevelPayload, { onConflict: "user_id" });
               if (wpError) {
                 syncFailed = true;
                 console.error(
                   "[PersonalInfoModal] Activity level sync error:",
                   wpError,
                 );
+                await offlineService.queueAction({
+                  type: "CREATE",
+                  table: "workout_preferences",
+                  data: activityLevelPayload,
+                  userId: user.id,
+                  maxRetries: 3,
+                });
               }
             } catch (activitySyncError) {
               syncFailed = true;
@@ -298,12 +336,25 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
                 "[PersonalInfoModal] Activity level sync error:",
                 activitySyncError,
               );
+              await offlineService.queueAction({
+                type: "CREATE",
+                table: "workout_preferences",
+                data: activityLevelPayload,
+                userId: user.id,
+                maxRetries: 3,
+              });
             }
           }
         } catch (syncError) {
           syncFailed = true;
           console.error("[PersonalInfoModal] Sync error:", syncError);
-          // Don't fail the save - local update succeeded
+          await offlineService.queueAction({
+            type: "UPDATE",
+            table: "profiles",
+            data: { id: user.id, ...profileUpdatePayload },
+            userId: user.id,
+            maxRetries: 3,
+          });
         }
 
         // Match GoalsPreferencesEditModal/BodyMeasurementsEditModal: never
