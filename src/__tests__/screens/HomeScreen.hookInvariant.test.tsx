@@ -141,6 +141,8 @@ jest.mock("@/screens/main/home", () => {
     ErrorBanner: () => R.createElement(Stub, { name: "ErrorBanner" }),
     EmptyMealsMessage: () => R.createElement(Stub, { name: "EmptyMealsMessage" }),
     EmptyCalendarMessage: () => R.createElement(Stub, { name: "EmptyCalendarMessage" }),
+    // Goal Engine Phase C: HomeScreen now renders GapSummary under the rings.
+    GapSummary: () => R.createElement(Stub, { name: "GapSummary" }),
     createQuickActions: () => [],
     HomeSkeleton: () => R.createElement(Stub, { name: "HomeSkeleton" }),
   };
@@ -149,6 +151,13 @@ jest.mock("@/screens/main/home", () => {
 // --- Mock the remaining direct imports ---
 jest.mock("@/components/progress/WeightEntryModal", () => ({
   WeightEntryModal: () => null,
+}));
+// Goal Engine Phase E: the modal transitively pulls GlassCard → AnimatedPressable
+// → theme/animations, whose Easing calls the real reanimated that this file's
+// local mock replaces (see above). Stub the modal — this test isolates
+// HomeScreen's hook contract, not child rendering.
+jest.mock("@/components/home/UnderperformancePromptModal", () => ({
+  UnderperformancePromptModal: () => null,
 }));
 jest.mock("@/screens/main/GuestSignUpScreen", () => ({
   GuestSignUpScreen: () => null,

@@ -56,6 +56,24 @@ export const useMealPlanning = (navigation: any) => {
   const getMealProgress = (mealId: string) => mealProgressMap[mealId] ?? null;
   const loadNutritionStoreData = useNutritionStore((state) => state.loadData);
 
+  // Dual AI/custom diet plan support. `weeklyMealPlan` above stays the raw
+  // AI plan (generation flows — regenerate, async job polling — always
+  // target it regardless of toggle). `activeWeeklyMealPlan` is what the
+  // user is actually viewing/editing right now; display and single-meal
+  // edit actions (delete, swap) must read/write THIS, not weeklyMealPlan
+  // directly, or editing a meal while a custom plan is active silently
+  // writes into the AI plan (verified plan, Blocker 5).
+  const activeDietSource = useNutritionStore((state) => state.activeDietSource);
+  const customWeeklyMealPlan = useNutritionStore((state) => state.customWeeklyMealPlan);
+  const setCustomWeeklyMealPlan = useNutritionStore((state) => state.setCustomWeeklyMealPlan);
+  const saveCustomWeeklyMealPlan = useNutritionStore((state) => state.saveCustomWeeklyMealPlan);
+  const activeWeeklyMealPlan =
+    activeDietSource === 'custom' ? customWeeklyMealPlan : weeklyMealPlan;
+  const setActiveWeeklyMealPlan =
+    activeDietSource === 'custom' ? setCustomWeeklyMealPlan : setWeeklyMealPlan;
+  const saveActiveWeeklyMealPlan =
+    activeDietSource === 'custom' ? saveCustomWeeklyMealPlan : saveWeeklyMealPlan;
+
   const selectedDay = useAppStateStore((state) => state.selectedDay);
   const { user } = useAuth();
   // SSOT: profileStore is authoritative for all onboarding data
@@ -345,7 +363,14 @@ export const useMealPlanning = (navigation: any) => {
     if (!profileDietPreferences) missingItems.push('Diet Preferences');
 
     if (missingItems.length > 0) {
-      crossPlatformAlert('Profile Incomplete', 'Please complete your profile.');
+      // BUG FIX: missingItems was computed above but never actually used in
+      // the message — every incomplete-profile case showed the same generic
+      // "Please complete your profile," leaving the user to guess which
+      // section is missing. Surface the real list.
+      crossPlatformAlert(
+        'Profile Incomplete',
+        `Please complete: ${missingItems.join(', ')}.`,
+      );
       return;
     }
 
@@ -460,19 +485,19 @@ export const useMealPlanning = (navigation: any) => {
   };
 
   const getTodaysMeals = useMemo((): DayMeal[] => {
-    if (!weeklyMealPlan?.meals) {
+    if (!activeWeeklyMealPlan?.meals) {
       return [];
     }
-    return weeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
-  }, [weeklyMealPlan?.meals, selectedDay]);
+    return activeWeeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
+  }, [activeWeeklyMealPlan?.meals, selectedDay]);
 
   const handleDeleteMeal = async (meal: DayMeal) => {
     try {
-      if (weeklyMealPlan) {
-        const updatedMeals = weeklyMealPlan.meals.filter((m) => m.id !== meal.id);
-        const updatedPlan = { ...weeklyMealPlan, meals: updatedMeals };
-        setWeeklyMealPlan(updatedPlan);
-        await saveWeeklyMealPlan(updatedPlan);
+      if (activeWeeklyMealPlan) {
+        const updatedMeals = activeWeeklyMealPlan.meals.filter((m) => m.id !== meal.id);
+        const updatedPlan = { ...activeWeeklyMealPlan, meals: updatedMeals };
+        setActiveWeeklyMealPlan(updatedPlan);
+        await saveActiveWeeklyMealPlan(updatedPlan);
       }
 
       const mealProgressData = getMealProgress(meal.id);
@@ -545,7 +570,7 @@ export const useMealPlanning = (navigation: any) => {
     const todayName = dayNames[today.getDay()] as DayName;
 
     const completedMealsToday = Object.entries(mealProgress).filter(([mealId, progress]) => {
-      const m = weeklyMealPlan?.meals.find((m) => m.id === mealId);
+      const m = activeWeeklyMealPlan?.meals.find((m) => m.id === mealId);
       return progress.progress === 100 && m?.dayOfWeek === todayName;
     }).length;
 
@@ -612,10 +637,10 @@ export const useMealPlanning = (navigation: any) => {
 
   const swapMealInPlan = useCallback(
     async (meal: DayMeal) => {
-      if (!weeklyMealPlan) return;
+      if (!activeWeeklyMealPlan) return;
       setIsSwappingMeal(true);
       try {
-        const meals = [...(weeklyMealPlan.meals || [])];
+        const meals = [...(activeWeeklyMealPlan.meals || [])];
         const idx = meals.findIndex((m) => m.id === meal.id);
         if (idx === -1) {
           crossPlatformAlert('Error', 'Meal not found in plan.');
@@ -633,9 +658,9 @@ export const useMealPlanning = (navigation: any) => {
 
         if (result.success && result.data) {
           meals[idx] = { ...result.data, id: meal.id, dayOfWeek: meal.dayOfWeek };
-          const updatedPlan = { ...weeklyMealPlan, meals };
-          await saveWeeklyMealPlan(updatedPlan);
-          setWeeklyMealPlan(updatedPlan);
+          const updatedPlan = { ...activeWeeklyMealPlan, meals };
+          await saveActiveWeeklyMealPlan(updatedPlan);
+          setActiveWeeklyMealPlan(updatedPlan);
 
           // The new AI-generated meal replaces the old one's content but keeps
           // its id, so any prior mealProgress entry (including a 100%-complete
@@ -684,11 +709,17 @@ export const useMealPlanning = (navigation: any) => {
         setIsSwappingMeal(false);
       }
     },
-    [weeklyMealPlan, setWeeklyMealPlan, saveWeeklyMealPlan]
+    [activeWeeklyMealPlan, setActiveWeeklyMealPlan, saveActiveWeeklyMealPlan]
   );
 
   return {
     weeklyMealPlan,
+    // The plan actually being viewed/edited (custom when activeDietSource
+    // === 'custom', else the same object as weeklyMealPlan). Consumers that
+    // display "the current plan" (DietScreen's day view, meal timelines)
+    // should read this, not weeklyMealPlan directly.
+    activeWeeklyMealPlan,
+    activeDietSource,
     isGeneratingPlan,
     mealProgress,
     selectedDay,

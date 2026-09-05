@@ -11,6 +11,7 @@ import { createDebouncedStorage } from "../utils/safeAsyncStorage";
 import { supabase } from "../services/supabase";
 import { getCurrentUserId } from "../services/authUtils";
 import { analyticsDataService } from "../services/analyticsData";
+import { isHardSet } from "../utils/effortScale";
 import {
   analyticsEngine,
   ComprehensiveAnalytics,
@@ -82,6 +83,23 @@ interface AnalyticsStore {
     totalVolume: number; // sets * reps * weight
     maxWeight: number;
     totalSets: number;
+    // Workout Engine v2 Phase 6B — effort data per (exercise, date) bucket,
+    // aggregated from exercise_sets.rpe_10 (src/utils/effortScale.ts).
+    // Warm-up sets (set_type === 'warmup') are excluded from every effort
+    // field below — they are not working sets, matching how
+    // progressionService / exerciseHistoryService already exclude warm-ups
+    // from progression and PR calculations elsewhere in the app.
+    avgRpe10: number | null; // mean rpe_10 across rated working sets; null if none were rated
+    hardSetCount: number; // working sets with isHardSet(rpe_10) true (RPE >= 7)
+    workingSetCount: number; // totalSets minus warmup sets
+    // Denominator for hard-set % — deliberately distinct from
+    // workingSetCount: a working set with no rpe_10 (legacy data written
+    // before the RPE backfill, or a path that doesn't capture effort)
+    // carries no hard/not-hard signal either way, and diluting the
+    // percentage with it would understate hard-set % rather than leaving it
+    // undefined for that set. hardSetCount / ratedWorkingSetCount, not
+    // hardSetCount / workingSetCount.
+    ratedWorkingSetCount: number;
   }>;
   personalRecords: Array<{
     exerciseId: string;
@@ -682,7 +700,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         try {
           const { data: sets, error: setsError } = await supabase
             .from('exercise_sets')
-            .select('exercise_id, exercise_name, weight_kg, reps, completed_at')
+            .select('exercise_id, exercise_name, weight_kg, reps, completed_at, rpe_10, set_type')
             .eq('user_id', userId)
             .eq('is_completed', true)
             .gte('completed_at', since)
@@ -692,7 +710,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           if (setsError) {
             console.error('[analyticsStore] Failed to load exercise_sets:', setsError);
           } else if (sets && sets.length > 0) {
-            // Group by (exerciseId, date) and aggregate volume
+            // Group by (exerciseId, date) and aggregate volume + effort.
             const volumeMap = new Map<string, {
               exerciseId: string;
               exerciseName: string;
@@ -700,6 +718,13 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
               totalVolume: number;
               maxWeight: number;
               totalSets: number;
+              // Accumulators for avgRpe10 — kept as a running sum/count
+              // rather than an array so this stays O(1) per row; converted
+              // to the final avgRpe10 mean once, below.
+              _rpe10Sum: number;
+              _rpe10RatedCount: number;
+              hardSetCount: number;
+              workingSetCount: number;
             }>();
 
             sets.forEach((row: any) => {
@@ -707,11 +732,24 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
               const key = `${row.exercise_id}__${date}`;
               const weight = Number(row.weight_kg) || 0;
               const reps = Number(row.reps) || 0;
+              // Warm-up sets don't count toward effort or "working set"
+              // totals — see the exerciseVolumeHistory field comment above.
+              const isWorkingSet = row.set_type !== 'warmup';
+              const rpe10 = row.rpe_10 != null ? Number(row.rpe_10) : null;
+
               const existing = volumeMap.get(key);
               if (existing) {
                 existing.totalVolume += weight * reps;
                 existing.maxWeight = Math.max(existing.maxWeight, weight);
                 existing.totalSets += 1;
+                if (isWorkingSet) {
+                  existing.workingSetCount += 1;
+                  if (rpe10 != null) {
+                    existing._rpe10Sum += rpe10;
+                    existing._rpe10RatedCount += 1;
+                    if (isHardSet(rpe10)) existing.hardSetCount += 1;
+                  }
+                }
               } else {
                 volumeMap.set(key, {
                   exerciseId: row.exercise_id || '',
@@ -720,11 +758,28 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
                   totalVolume: weight * reps,
                   maxWeight: weight,
                   totalSets: 1,
+                  _rpe10Sum: isWorkingSet && rpe10 != null ? rpe10 : 0,
+                  _rpe10RatedCount: isWorkingSet && rpe10 != null ? 1 : 0,
+                  hardSetCount: isWorkingSet && rpe10 != null && isHardSet(rpe10) ? 1 : 0,
+                  workingSetCount: isWorkingSet ? 1 : 0,
                 });
               }
             });
 
-            set({ exerciseVolumeHistory: Array.from(volumeMap.values()) });
+            set({
+              exerciseVolumeHistory: Array.from(volumeMap.values()).map((v) => ({
+                exerciseId: v.exerciseId,
+                exerciseName: v.exerciseName,
+                date: v.date,
+                totalVolume: v.totalVolume,
+                maxWeight: v.maxWeight,
+                totalSets: v.totalSets,
+                avgRpe10: v._rpe10RatedCount > 0 ? v._rpe10Sum / v._rpe10RatedCount : null,
+                hardSetCount: v.hardSetCount,
+                workingSetCount: v.workingSetCount,
+                ratedWorkingSetCount: v._rpe10RatedCount,
+              })),
+            });
           }
         } catch (err) {
           console.error('[analyticsStore] Exception loading exercise_sets:', err);

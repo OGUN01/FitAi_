@@ -36,10 +36,12 @@ import {
   ErrorBanner,
   EmptyMealsMessage,
   EmptyCalendarMessage,
+  GapSummary,
   createQuickActions,
   HomeSkeleton,
 } from './home';
 import { WeightEntryModal } from '../../components/progress/WeightEntryModal';
+import { UnderperformancePromptModal } from '../../components/home/UnderperformancePromptModal';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { useHomeLogic } from '../../hooks/useHomeLogic';
 import { useHealthIntelligenceLogic } from '../../hooks/useHealthIntelligenceLogic';
@@ -48,6 +50,13 @@ import { getLocalDayName } from '../../utils/weekUtils';
 
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string, params?: Record<string, unknown>) => void;
+  /**
+   * Goal Engine Phase E: overlay-screen navigation ("MealBuilder" /
+   * "WeeklyBuilder") used by the under-performance prompt's rebuild CTA.
+   * Distinct from onNavigateToTab, which only switches tabs — builders are
+   * overlay sessions owned by MainNavigation.
+   */
+  onNavigateToBuilder?: (screen: string) => void;
 }
 
 const DAY_NAMES: DayName[] = [
@@ -60,7 +69,7 @@ const DAY_NAMES: DayName[] = [
   'saturday',
 ];
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab, onNavigateToBuilder }) => {
   const { setSelectedDay } = useAppStateStore();
   const insets = useSafeAreaInsets();
   const {
@@ -78,6 +87,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     healthMetrics,
     wearableConnected,
     realCaloriesBurned,
+    wearableActiveCalories,
+    plannedBurnToday,
     currentSteps,
     todaysWorkoutInfo,
     todaysData,
@@ -91,7 +102,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     weightUnit,
     waterIntakeML,
     waterGoal,
-  } = useHomeLogic();
+    // Goal Engine Phase E — under-performance response
+    energyResponseCheck,
+    dismissEnergyResponse,
+    dontAskAgainEnergyResponse,
+    rebuildFromEnergyResponse,
+  } = useHomeLogic(onNavigateToBuilder);
 
   // Today's hydration progress for the Water quick action's ring overlay.
   // Undefined (no ring rendered) until a real daily goal is known.
@@ -351,6 +367,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   onEmptyStatePress={handleRingsEmptyStatePress}
                 />
                 <EmptyMealsMessage mealsLogged={caloriesConsumed} onLogMeal={handleLogMealPress} />
+                {/* Goal Engine Phase C: daily gap surfaces (food + burn) against
+                    the resolved target. The food target is the same mode-aware
+                    number the Nutrition ring uses; the burn actual is the same
+                    wearable-precedence value the Move ring uses. */}
+                <GapSummary
+                  consumedCalories={caloriesConsumed}
+                  calorieTarget={calculatedMetrics?.dailyCalories ?? 0}
+                  actualBurn={realCaloriesBurned}
+                  plannedBurn={plannedBurnToday}
+                  targetsSource={calculatedMetrics?.targetsSource}
+                />
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
                   <View style={{ marginTop: rp(spacing.sm) }}>
@@ -370,7 +397,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   // on a <65 bpm threshold masquerading as "trending down".
                   steps={currentSteps} // Freshness-gated (today's synced snapshot only)
                   stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
-                  activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
+                  // BUG FIX: this used to reuse realCaloriesBurned (the Move
+                  // ring's value, which intentionally falls back to
+                  // app-tracked workout calories when there's no wearable at
+                  // all) — that made hasRealData true for users with NO
+                  // wearable connected, showing a broken all-"--" populated
+                  // card instead of the "Connect Health Data" placeholder.
+                  // wearableActiveCalories mirrors realCaloriesBurned's own
+                  // active->total wearable-preference fallback (still fixes
+                  // the original problem — a wearable reporting only
+                  // totalCalories) but is undefined whenever there's no
+                  // fresh wearable snapshot, never falling through to
+                  // workout calories. See useHomeLogic.ts for the derivation.
+                  activeCalories={wearableActiveCalories}
+                  isWearableConnected={wearableConnected}
                   onPress={handleHealthHubPress}
                   onConnectPress={handleConnectHealthPress}
                   // All per-metric detail taps route to the same analytics tab —
@@ -427,6 +467,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         currentWeight={weightData.currentWeight}
         unit={weightUnit}
         onSuccess={handleWeightModalSuccess}
+      />
+
+      {/* Goal Engine Phase E — under-performance response. Renders only when
+          energyResponseCheck is non-null (14-day adherence prompt or the
+          always-on <1000 kcal safety check-in). Nothing auto-changes: the
+          three buttons dismiss, navigate to a builder, or persist a
+          "don't ask again" acknowledgment (see useHomeLogic). */}
+      <UnderperformancePromptModal
+        check={energyResponseCheck}
+        onKeepPushing={dismissEnergyResponse}
+        onRebuild={rebuildFromEnergyResponse}
+        onDontAskAgain={dontAskAgainEnergyResponse}
+        onDismiss={dismissEnergyResponse}
       />
     </>
   );

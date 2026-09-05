@@ -26,6 +26,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useProfileStore } from "../stores/profileStore";
+import { useNutritionStore } from "../stores/nutritionStore";
+import type { WeeklyMealPlan } from "../ai";
 import type {
   AdvancedReviewData,
   BodyAnalysisData,
@@ -124,6 +126,18 @@ export interface CalculatedMetrics {
   // === VO2 Max (from advanced_review) ===
   vo2MaxEstimate: number | null;
   vo2MaxClassification: string | null;
+
+  // === Goal Engine (Phase C) — which target source drove today's targets ===
+  // 'goal'                    → onboarding-goal-derived target (the default,
+  //                            and the only source when goal_targets_mode='goal').
+  // 'plan'                    → today's target came from the active custom diet
+  //                            plan (goal_targets_mode='plan' + custom plan's
+  //                            day has meals).
+  // 'goal_fallback_empty_day' → goal_targets_mode='plan' is active but today's
+  //                            custom-plan day is empty (no meals); the goal
+  //                            target is used AND labelled so the UI can explain
+  //                            the fallback rather than silently reverting.
+  targetsSource: 'goal' | 'plan' | 'goal_fallback_empty_day';
 }
 
 export interface UseCalculatedMetricsReturn {
@@ -190,6 +204,22 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
   const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
   const dietPreferences = useProfileStore((s) => s.dietPreferences);
   const storeIsHydrated = useProfileStore((s) => s.isHydrated);
+
+  // Dual AI/custom diet plan support (Decision 1: "custom plan drives
+  // targets"). Subscribed reactively — NOT read via a getState() getter —
+  // so this hook (and everything downstream: Home rings, Diet targets,
+  // useNutritionTracking) re-renders the instant the user toggles source or
+  // edits the active custom plan. See FullPlanScreen.tsx's documented fix
+  // for the identical bug on the workout side.
+  const activeDietSource = useNutritionStore((s) => s.activeDietSource);
+  const customWeeklyMealPlan = useNutritionStore((s) => s.customWeeklyMealPlan);
+  // Goal Engine Phase A.2/C: shared target-source toggle. 'goal' = targets
+  // follow the onboarding-goal-derived number; 'plan' = follow the active
+  // custom diet plan's per-day number (falling back to the goal target —
+  // labelled — on empty plan days). Subscribed reactively so this hook
+  // (and everything downstream: Home rings, Diet targets) re-renders the
+  // instant the toggle flips.
+  const goalTargetsMode = useNutritionStore((s) => s.goalTargetsMode);
 
   const [metrics, setMetrics] = useState<CalculatedMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -310,7 +340,56 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
         return;
       }
 
-      const computed = mapToCalculatedMetrics(ar, ba, pi, wp, dp);
+      let computed = mapToCalculatedMetrics(ar, ba, pi, wp, dp);
+
+      // Goal Engine Phase C: which target source drives today's targets.
+      //
+      // `goal_targets_mode` (Phase A.2, shared toggle on profiles) decides
+      // whether the daily calorie/macro target follows the onboarding-goal-
+      // derived number ('goal') or the active custom plan's per-day number
+      // ('plan'). Previously this override was SILENT and unconditional
+      // whenever activeDietSource === 'custom': an empty custom-plan day
+      // returned null from deriveTodaysCustomPlanTargets and the code
+      // silently reverted to the onboarding target with no explanation.
+      //
+      // Now the override is CONDITIONAL on goal_targets_mode === 'plan':
+      //   - mode 'goal' → always use the goal-derived target (targetsSource
+      //     'goal'), even when a custom plan is active. The user explicitly
+      //     chose to keep their goal targets and just SEE the gap.
+      //   - mode 'plan' + custom plan active + today has meals → use the
+      //     plan's per-day target (targetsSource 'plan').
+      //   - mode 'plan' + custom plan active + today is EMPTY → fall back to
+      //     the goal target BUT set targetsSource 'goal_fallback_empty_day'
+      //     so the UI can label it ("Goal target — no meals planned today")
+      //     instead of silently reverting.
+      //   - mode 'plan' + no custom plan active (activeDietSource 'ai') →
+      //     goal target (targetsSource 'goal'); there is no custom plan to
+      //     drive targets from.
+      //
+      // Computed at read time — never persisted over advanced_review — so
+      // toggling back to 'ai'/goal mode instantly and losslessly restores
+      // the original onboarding targets.
+      let targetsSource: CalculatedMetrics["targetsSource"] = "goal";
+      if (goalTargetsMode === "plan" && activeDietSource === "custom") {
+        const todaysTargets = deriveTodaysCustomPlanTargets(customWeeklyMealPlan);
+        if (todaysTargets) {
+          computed = {
+            ...computed,
+            dailyCalories: todaysTargets.calories,
+            dailyProteinG: todaysTargets.protein,
+            dailyCarbsG: todaysTargets.carbs,
+            dailyFatG: todaysTargets.fat,
+            dailyFiberG: todaysTargets.fiber,
+          };
+          targetsSource = "plan";
+        } else {
+          // Empty custom-plan day: keep the goal-derived `computed` and
+          // label the fallback so the UI can explain it.
+          targetsSource = "goal_fallback_empty_day";
+        }
+      }
+      computed = { ...computed, targetsSource };
+
       setMetrics(computed);
       setHasCalculatedMetrics(true);
       setHasCompletedOnboarding(true);
@@ -338,6 +417,11 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
     isAuthenticated,
     isGuestMode,
     user?.id,
+    // Dual AI/custom diet plan support
+    activeDietSource,
+    customWeeklyMealPlan,
+    // Goal Engine target-source toggle
+    goalTargetsMode,
   ]);
 
   /**
@@ -421,6 +505,53 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Sum a custom weekly meal plan's TODAY-only meals into a single day's
+ * calorie/macro targets, for Decision 1's "custom plan drives targets".
+ *
+ * Deliberately DAY-scoped, not week-scoped: `WeeklyMealPlan.meals` is a flat
+ * array across all 7 days (each tagged with `dayOfWeek`), so summing the
+ * whole array would produce a ~7x target. Uses the same lowercase
+ * `dayOfWeek` weekday-name convention as
+ * `src/hooks/progress-screen/data.ts` and `DietScreen.tsx`.
+ *
+ * Returns null when there's nothing to derive from (no plan, or today has
+ * zero meals) so the caller can fall back to the onboarding-derived value
+ * instead of showing a real-looking 0 target (see plan Edge Case 20).
+ */
+function deriveTodaysCustomPlanTargets(
+  plan: WeeklyMealPlan | null,
+): { calories: number; protein: number; carbs: number; fat: number; fiber: number } | null {
+  if (!plan?.meals?.length) return null;
+
+  const weekdayNames = [
+    "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+  ];
+  const todayName = weekdayNames[new Date().getDay()];
+  const todaysMeals = plan.meals.filter(
+    (meal) => meal.dayOfWeek?.toLowerCase() === todayName,
+  );
+  if (todaysMeals.length === 0) return null;
+
+  const totals = todaysMeals.reduce(
+    (acc, meal) => ({
+      calories: acc.calories + (meal.totalCalories || 0),
+      protein: acc.protein + (meal.totalMacros?.protein || 0),
+      carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
+      fat: acc.fat + (meal.totalMacros?.fat || 0),
+      fiber: acc.fiber + (meal.totalMacros?.fiber || 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+  );
+
+  // A day with meals but all-zero totals (e.g. placeholder meals mid-build)
+  // is treated the same as "nothing to derive from" — fall back rather than
+  // display a 0 target while the user is still filling in the day.
+  if (totals.calories <= 0) return null;
+
+  return totals;
+}
 
 /**
  * Map raw data to CalculatedMetrics interface
@@ -572,6 +703,11 @@ function mapToCalculatedMetrics(
       advancedReview?.estimated_vo2_max ?? null, // DB has both columns
     vo2MaxClassification:
       advancedReview?.vo2_max_classification ?? null,
+
+    // Goal Engine Phase C: default source is the goal-derived target. The
+    // override block in the hook reassigns this to 'plan' or
+    // 'goal_fallback_empty_day' when goal_targets_mode='plan' applies.
+    targetsSource: "goal",
   };
 }
 

@@ -197,6 +197,21 @@ jest.mock("../../services/analyticsData", () => ({
   },
 }));
 
+// Goal Engine Phase E: the under-performance check is deferred work the hook
+// schedules via InteractionManager. Mock the service so this suite tests only
+// useHomeLogic's own scheduling contract (the service has its own suite).
+jest.mock("../../services/energyResponseService", () => ({
+  checkEnergyResponse: jest.fn().mockResolvedValue(null),
+  acknowledgeUnderperformance: jest.fn().mockResolvedValue(undefined),
+  markSafetyCheckInShown: jest.fn().mockResolvedValue(undefined),
+  getRebuildRoute: jest.fn(() => "MealBuilder"),
+}));
+
+// The Phase D ledger catch-up is a Supabase call — never exercised here.
+jest.mock("../../services/energyLedgerService", () => ({
+  catchUpLedger: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("../../utils/workoutIdentity", () => ({
   findCompletedSessionForWorkout: jest.fn(() => null),
   getCompletedSessionsForDate: jest.fn(() => []),
@@ -273,7 +288,9 @@ describe("useHomeLogic startup scheduling", () => {
 
     expect(mockGetWeightHistory).not.toHaveBeenCalled();
     expect(mockRefreshAnalytics).not.toHaveBeenCalled();
-    expect(scheduledCallbacks).toHaveLength(2);
+    // Goal Engine Phase E: 2 pre-existing callbacks (analytics + a second
+    // scheduled task) + 1 Phase E energy-response check.
+    expect(scheduledCallbacks).toHaveLength(3);
 
     scheduledCallbacks.forEach((callback) => callback());
     await Promise.resolve();

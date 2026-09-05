@@ -21,4 +21,5 @@ export { default as SyncStatusIndicator } from './SyncStatusIndicator';
 export { ErrorBanner } from '../../../components/home/ErrorBanner';
 export { EmptyMealsMessage } from '../../../components/home/EmptyMealsMessage';
 export { EmptyCalendarMessage } from '../../../components/home/EmptyCalendarMessage';
+export { GapSummary } from '../../../components/home/GapSummary';
 export { createQuickActions } from '../../../components/home/QuickActionsConfig';

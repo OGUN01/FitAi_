@@ -40,7 +40,7 @@ export const GridLines: React.FC<GridLinesProps> = ({
           y2={y}
           stroke={border.subtle}
           strokeWidth={1}
-          strokeDasharray={index === yLabels.length - 1 ? "0" : "4,6"}
+          strokeDasharray={index === yLabels.length - 1 ? undefined : "4,6"}
         />
       );
     })}

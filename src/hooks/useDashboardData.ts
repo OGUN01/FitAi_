@@ -36,6 +36,11 @@ export interface DashboardUser {
 
 export interface DashboardNutrition {
   weeklyMealPlan: any;
+  /** Whichever plan is actually active (custom when activeDietSource ===
+   * 'custom', else the same object as weeklyMealPlan). Consumers that
+   * render "the current plan" should read this, not weeklyMealPlan. */
+  activeWeeklyMealPlan: any;
+  activeDietSource: "ai" | "custom";
   dailyMeals: any[];
   mealProgress: Record<string, any>;
   isGeneratingPlan: boolean;
@@ -88,6 +93,10 @@ export const useDashboardData = (): DashboardData => {
 
   // Nutrition - individual selectors
   const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
+  const customWeeklyMealPlan = useNutritionStore((s) => s.customWeeklyMealPlan);
+  const activeDietSource = useNutritionStore((s) => s.activeDietSource);
+  const activeWeeklyMealPlan =
+    activeDietSource === "custom" ? customWeeklyMealPlan : weeklyMealPlan;
   const dailyMeals = useNutritionStore((s) => s.dailyMeals);
   const mealProgress = useNutritionStore((s) => s.mealProgress);
   const nutritionIsGenerating = useNutritionStore((s) => s.isGeneratingPlan);
@@ -150,11 +159,20 @@ export const useDashboardData = (): DashboardData => {
   const nutrition = useMemo<DashboardNutrition>(
     () => ({
       weeklyMealPlan,
+      activeWeeklyMealPlan,
+      activeDietSource,
       dailyMeals,
       mealProgress,
       isGeneratingPlan: nutritionIsGenerating,
     }),
-    [weeklyMealPlan, dailyMeals, mealProgress, nutritionIsGenerating],
+    [
+      weeklyMealPlan,
+      activeWeeklyMealPlan,
+      activeDietSource,
+      dailyMeals,
+      mealProgress,
+      nutritionIsGenerating,
+    ],
   );
 
   // Memoize fitness object
@@ -275,13 +293,17 @@ export const useTodaysWorkout = () => {
  */
 export const useTodaysNutrition = () => {
   const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
+  const customWeeklyMealPlan = useNutritionStore((s) => s.customWeeklyMealPlan);
+  const activeDietSource = useNutritionStore((s) => s.activeDietSource);
+  const activeWeeklyMealPlan =
+    activeDietSource === "custom" ? customWeeklyMealPlan : weeklyMealPlan;
   const mealProgress = useNutritionStore((s) => s.mealProgress);
   const getTodaysConsumedNutrition = useNutritionStore(
     (s) => s.getTodaysConsumedNutrition,
   );
 
   return useMemo(() => {
-    if (!weeklyMealPlan?.meals) {
+    if (!activeWeeklyMealPlan?.meals) {
       return {
         meals: [],
         consumedNutrition: {
@@ -306,7 +328,7 @@ export const useTodaysNutrition = () => {
     ];
     const todayName = dayNames[new Date().getDay()];
 
-    const todaysMeals = weeklyMealPlan.meals.filter(
+    const todaysMeals = activeWeeklyMealPlan.meals.filter(
       (m: any) => m.dayOfWeek?.toLowerCase() === todayName,
     );
 
@@ -323,7 +345,7 @@ export const useTodaysNutrition = () => {
       consumedNutrition: getTodaysConsumedNutrition(),
       mealsCompleted,
     };
-  }, [weeklyMealPlan, mealProgress, getTodaysConsumedNutrition]);
+  }, [activeWeeklyMealPlan, mealProgress, getTodaysConsumedNutrition]);
 };
 
 /**

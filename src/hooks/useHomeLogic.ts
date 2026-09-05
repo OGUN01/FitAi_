@@ -3,21 +3,15 @@
  * Extracted to reduce HomeScreen.tsx complexity
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import {
-  Platform,
-  InteractionManager,
-  AppState,
-  AppStateStatus,
-} from "react-native";
-import {
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
-import { haptics } from "../utils/haptics";
-import { useDashboardIntegration } from "../utils/integration";
-import { useAuth } from "./useAuth";
-import { useCalculatedMetrics } from "./useCalculatedMetrics";
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Platform, InteractionManager, AppState, AppStateStatus } from 'react-native';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
+import { haptics } from '../utils/haptics';
+import { useDashboardIntegration } from '../utils/integration';
+import { useAuth } from './useAuth';
+import { useCalculatedMetrics } from './useCalculatedMetrics';
+import { calculatePersonalizedStepGoal } from '../utils/healthCalculations/calculators/stepGoalCalculator';
+import { computePlanBurnPerDay } from '../services/energy/planBurn';
 import {
   useFitnessStore,
   useNutritionStore,
@@ -25,28 +19,30 @@ import {
   useHealthDataStore,
   useAnalyticsStore,
   useHydrationStore,
-} from "../stores";
-import { buildTodaysData } from "./progress-screen/data";
-import { useProfileStore } from "../stores/profileStore";
-import { completionTrackingService } from "../services/completionTracking";
-import { analyticsDataService } from "../services/analyticsData";
-import { resolveCurrentWeight } from "../services/currentWeight";
+} from '../stores';
+import { buildTodaysData } from './progress-screen/data';
+import { useProfileStore } from '../stores/profileStore';
+import { completionTrackingService } from '../services/completionTracking';
+import { analyticsDataService } from '../services/analyticsData';
+import { resolveCurrentWeight } from '../services/currentWeight';
+import { catchUpLedger } from '../services/energyLedgerService';
+import {
+  checkEnergyResponse,
+  acknowledgeUnderperformance,
+  markSafetyCheckInShown,
+  getRebuildRoute,
+  type EnergyResponseCheck,
+} from '../services/energyResponseService';
 import {
   findCompletedSessionForWorkout,
   getCompletedSessionsForDate,
   hasCompletedSessionForDay,
-} from "../utils/workoutIdentity";
-import {
-  getCurrentWeekStart,
-  getLocalDateString,
-  getLocalDayName,
-} from "../utils/weekUtils";
-import { type WeightUnit } from "../utils/units";
-import { useReducedMotion } from "../utils/accessibility/hooks";
+} from '../utils/workoutIdentity';
+import { getCurrentWeekStart, getLocalDateString, getLocalDayName } from '../utils/weekUtils';
+import { type WeightUnit } from '../utils/units';
+import { useReducedMotion } from '../utils/accessibility/hooks';
 
-export const isHealthSnapshotFromToday = (
-  lastUpdated?: string | null,
-): boolean => {
+export const isHealthSnapshotFromToday = (lastUpdated?: string | null): boolean => {
   if (!lastUpdated) {
     return false;
   }
@@ -54,7 +50,7 @@ export const isHealthSnapshotFromToday = (
   return getLocalDateString(lastUpdated) === getLocalDateString();
 };
 
-export const useHomeLogic = () => {
+export const useHomeLogic = (onNavigateToBuilder?: (screen: string) => void) => {
   const { profile } = useDashboardIntegration();
   const { user, isGuestMode } = useAuth();
   const bodyAnalysis = useProfileStore((s) => s.bodyAnalysis);
@@ -62,32 +58,35 @@ export const useHomeLogic = () => {
   const workoutPreferences = useProfileStore((s) => s.workoutPreferences);
 
   // Derived weight unit from user preferences
-  const weightUnit: WeightUnit =
-    personalInfo?.units === "imperial" ? "lbs" : "kg";
+  const weightUnit: WeightUnit = personalInfo?.units === 'imperial' ? 'lbs' : 'kg';
 
   // Stores
   const loadFitnessData = useFitnessStore((s) => s.loadData);
   const weeklyWorkoutPlan = useFitnessStore((s) => s.weeklyWorkoutPlan);
+  // Goal Engine Phase C: the active WORKOUT plan (AI or custom) drives the
+  // Home burn gap (today's planned burn vs actual). Subscribed reactively so
+  // the gap recomputes when the user toggles plan source or edits the plan.
+  const activePlanSource = useFitnessStore((s) => s.activePlanSource);
+  const customWeeklyPlan = useFitnessStore((s) => s.customWeeklyPlan);
   const loadNutritionData = useNutritionStore((s) => s.loadData);
   const weeklyMealPlan = useNutritionStore((s) => s.weeklyMealPlan);
+  // Dual AI/custom diet plan support: buildTodaysData() (progress-screen/data.ts)
+  // reads getActiveWeeklyMealPlan() internally, so these two must be
+  // subscribed here purely to make the todaysData useMemo below recompute
+  // when either changes — buildTodaysData() itself is a plain function, not
+  // a hook, so it can't subscribe on its own.
+  const activeDietSource = useNutritionStore((s) => s.activeDietSource);
+  const customWeeklyMealPlan = useNutritionStore((s) => s.customWeeklyMealPlan);
   const achievementStreak = useAchievementStore((s) => s.currentStreak);
   const initializeAchievements = useAchievementStore((s) => s.initialize);
   const achievementsInitialized = useAchievementStore((s) => s.isInitialized);
   const healthMetrics = useHealthDataStore((s) => s.metrics);
-  const isHealthKitAuthorized = useHealthDataStore(
-    (s) => s.isHealthKitAuthorized,
-  );
-  const isHealthConnectAuthorized = useHealthDataStore(
-    (s) => s.isHealthConnectAuthorized,
-  );
+  const isHealthKitAuthorized = useHealthDataStore((s) => s.isHealthKitAuthorized);
+  const isHealthConnectAuthorized = useHealthDataStore((s) => s.isHealthConnectAuthorized);
   const initializeHealthKit = useHealthDataStore((s) => s.initializeHealthKit);
   const syncHealthData = useHealthDataStore((s) => s.syncHealthData);
-  const initializeHealthConnect = useHealthDataStore(
-    (s) => s.initializeHealthConnect,
-  );
-  const syncFromHealthConnect = useHealthDataStore(
-    (s) => s.syncFromHealthConnect,
-  );
+  const initializeHealthConnect = useHealthDataStore((s) => s.initializeHealthConnect);
+  const syncFromHealthConnect = useHealthDataStore((s) => s.syncFromHealthConnect);
   const healthSettings = useHealthDataStore((s) => s.settings);
   const analyticsInitialized = useAnalyticsStore((s) => s.isInitialized);
   const initializeAnalytics = useAnalyticsStore((s) => s.initialize);
@@ -98,12 +97,8 @@ export const useHomeLogic = () => {
   // Hydration
   const waterIntakeML = useHydrationStore((s) => s.waterIntakeML);
   const waterGoal = useHydrationStore((s) => s.dailyGoalML);
-  const checkAndResetIfNewDay = useHydrationStore(
-    (s) => s.checkAndResetIfNewDay,
-  );
-  const syncHydrationWithSupabase = useHydrationStore(
-    (s) => s.syncWithSupabase,
-  );
+  const checkAndResetIfNewDay = useHydrationStore((s) => s.checkAndResetIfNewDay);
+  const syncHydrationWithSupabase = useHydrationStore((s) => s.syncWithSupabase);
 
   const { metrics: calculatedMetrics } = useCalculatedMetrics();
 
@@ -122,20 +117,43 @@ export const useHomeLogic = () => {
     }
   }, [calculatedMetrics?.dailyWaterML, setDailyGoalFromMetrics]);
 
+  // stepsGoal is normally set once at onboarding completion (useOnboardingLogic)
+  // via setStepsGoal, then persisted in healthDataStore. Users who onboarded
+  // before that existed, or whose local store was cleared/reinstalled, are
+  // stuck at stepsGoal=0 forever since onboarding never re-runs. Backfill it
+  // here from the same profileStore SSOT inputs, only when unset, so it can
+  // never clobber a value onboarding (or the user) already set.
+  const setHealthStepsGoal = useHealthDataStore((s) => s.setStepsGoal);
+  useEffect(() => {
+    if (healthMetrics?.stepsGoal) return;
+    if (!calculatedMetrics?.activityLevel) return;
+    setHealthStepsGoal(
+      calculatePersonalizedStepGoal({
+        activityLevel: calculatedMetrics.activityLevel,
+        primaryGoals: calculatedMetrics.primaryGoals ?? undefined,
+        age: calculatedMetrics.age ?? undefined,
+        experienceLevel: workoutPreferences?.intensity,
+      })
+    );
+  }, [
+    healthMetrics?.stepsGoal,
+    calculatedMetrics?.activityLevel,
+    calculatedMetrics?.primaryGoals,
+    calculatedMetrics?.age,
+    workoutPreferences?.intensity,
+    setHealthStepsGoal,
+  ]);
+
   const completedSessions = useFitnessStore((s) => s.completedSessions);
   const workoutProgress = useFitnessStore((s) => s.workoutProgress);
-  const checkAndResetProgressIfNewDay = useFitnessStore(
-    (s) => s.checkAndResetProgressIfNewDay,
-  );
+  const checkAndResetProgressIfNewDay = useFitnessStore((s) => s.checkAndResetProgressIfNewDay);
   const mealProgress = useNutritionStore((s) => s.mealProgress);
   const dailyMeals = useNutritionStore((s) => s.dailyMeals);
-  const getTodaysConsumedNutrition = useNutritionStore(
-    (s) => s.getTodaysConsumedNutrition,
-  );
+  const getTodaysConsumedNutrition = useNutritionStore((s) => s.getTodaysConsumedNutrition);
   const todaysConsumedNutrition = useMemo(
     () => getTodaysConsumedNutrition(),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mealProgress, dailyMeals],
+    [mealProgress, dailyMeals]
   );
 
   // Entrance fade — Reanimated shared value (replaces legacy Animated.Value).
@@ -145,31 +163,38 @@ export const useHomeLogic = () => {
   const completionReloadInFlightRef = useRef(false);
   const refreshInFlightRef = useRef(false);
   const mountedRef = useRef(true);
+  // Phase D: ledger catch-up re-entry guard (mirrors the service's module flag).
+  const ledgerCatchUpInFlightRef = useRef(false);
   // Keep a ref to the current user id so the subscription callback always reads
   // the latest value without needing to re-subscribe when user changes.
   const userIdRef = useRef(user?.id);
-  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+  useEffect(() => {
+    userIdRef.current = user?.id;
+  }, [user?.id]);
+  // Phase E: guard so the response check runs once per mount / day-boundary —
+  // the effect re-fires on todayDateString changes (midnight), where the check
+  // may legitimately re-evaluate, but never concurrently.
+  const energyResponseInFlightRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Phase E: the under-performance / safety check to surface on Home. Null =
+  // nothing to show (guest, offline failure, acknowledged, or healthy data).
+  const [energyResponseCheck, setEnergyResponseCheck] = useState<EnergyResponseCheck | null>(null);
   const weightHistory = useAnalyticsStore((s) => s.weightHistory);
-  const [todayDateString, setTodayDateString] = useState(() =>
-    getLocalDateString(),
-  );
+  const [todayDateString, setTodayDateString] = useState(() => getLocalDateString());
 
   useEffect(() => {
     mountedRef.current = true;
     const refreshDate = () => {
       const nextDate = getLocalDateString();
-      setTodayDateString((currentDate) =>
-        currentDate === nextDate ? currentDate : nextDate,
-      );
+      setTodayDateString((currentDate) => (currentDate === nextDate ? currentDate : nextDate));
     };
     const interval = setInterval(refreshDate, 60_000);
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active") refreshDate();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') refreshDate();
     });
     return () => {
       mountedRef.current = false;
@@ -186,9 +211,11 @@ export const useHomeLogic = () => {
       weeklyWorkoutPlan,
       workoutProgress,
       weeklyMealPlan,
+      customWeeklyMealPlan,
+      activeDietSource,
       mealProgress,
       todayDateString,
-    ],
+    ]
   );
   // Hydration day-boundary resets & Supabase sync
   // NOTE: hydration goal is set exclusively in useNutritionTracking (SSOT)
@@ -197,8 +224,24 @@ export const useHomeLogic = () => {
     checkAndResetProgressIfNewDay();
 
     syncHydrationWithSupabase().catch((err) => {
-      console.warn("[HomeScreen] Failed to sync hydration from Supabase:", err);
+      console.warn('[HomeScreen] Failed to sync hydration from Supabase:', err);
     });
+
+    // Phase D: backfill the daily energy ledger on app open / day-boundary.
+    // Mirrors checkAndResetProgressIfNewDay (runs on rehydration + day tick).
+    // The service is idempotent (upsert on (user_id, date), only fills missing
+    // days) and guarded by a module flag, so a redundant call is a no-op.
+    const uid = userIdRef.current;
+    if (uid && !ledgerCatchUpInFlightRef.current) {
+      ledgerCatchUpInFlightRef.current = true;
+      catchUpLedger(uid)
+        .catch((err) => {
+          console.error('[HomeScreen] Ledger catch-up failed:', err);
+        })
+        .finally(() => {
+          ledgerCatchUpInFlightRef.current = false;
+        });
+    }
   }, [
     checkAndResetIfNewDay,
     checkAndResetProgressIfNewDay,
@@ -218,10 +261,7 @@ export const useHomeLogic = () => {
       .getState()
       .loadHealthMetricsHistory(30)
       .catch((err) => {
-        console.error(
-          "[useHomeLogic] Failed to load health metrics history:",
-          err,
-        );
+        console.error('[useHomeLogic] Failed to load health metrics history:', err);
       });
   }, []);
 
@@ -240,7 +280,7 @@ export const useHomeLogic = () => {
     }
 
     initializeAchievements(user.id).catch((err) => {
-      console.warn("[HomeScreen] Failed to initialize achievements:", err);
+      console.warn('[HomeScreen] Failed to initialize achievements:', err);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, initializeAchievements]);
@@ -259,14 +299,24 @@ export const useHomeLogic = () => {
           useFitnessStore.getState().loadData(),
           useNutritionStore.getState().loadData(),
         ]);
+
+        // Phase D: after stores hydrate (active plan + profile available),
+        // backfill the energy ledger. Idempotent + module-guarded.
+        const uid = userIdRef.current;
+        if (uid && !ledgerCatchUpInFlightRef.current) {
+          ledgerCatchUpInFlightRef.current = true;
+          catchUpLedger(uid)
+            .catch((err) => {
+              console.error('[HomeScreen] Ledger catch-up failed:', err);
+            })
+            .finally(() => {
+              ledgerCatchUpInFlightRef.current = false;
+            });
+        }
       } catch (err) {
-        console.error("Load error:", err);
+        console.error('Load error:', err);
         if (!cancelled && requestId === dataLoadRequestRef.current) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load dashboard data",
-          );
+          setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
         }
       } finally {
         if (!cancelled && requestId === dataLoadRequestRef.current) {
@@ -290,7 +340,7 @@ export const useHomeLogic = () => {
           useNutritionStore.getState().loadData(),
         ])
           .catch((loadError) => {
-            console.error("[useHomeLogic] Completion reload failed:", loadError);
+            console.error('[useHomeLogic] Completion reload failed:', loadError);
           })
           .finally(() => {
             completionReloadInFlightRef.current = false;
@@ -298,14 +348,9 @@ export const useHomeLogic = () => {
       }
       if (userIdRef.current) {
         void Promise.resolve(
-          useAchievementStore
-            .getState()
-            .reconcileWithCurrentData(userIdRef.current),
+          useAchievementStore.getState().reconcileWithCurrentData(userIdRef.current)
         ).catch((reconcileError) => {
-          console.error(
-            "[useHomeLogic] Achievement reconciliation failed:",
-            reconcileError,
-          );
+          console.error('[useHomeLogic] Achievement reconciliation failed:', reconcileError);
         });
       }
     });
@@ -321,20 +366,74 @@ export const useHomeLogic = () => {
   // NOTE: fadeAnim is a Reanimated SharedValue (stable across renders); kept
   // in deps only to satisfy exhaustive-deps lint without functional change.
 
+  // Phase E — under-performance response (runs on app open, after the ledger
+  // catch-up above has backfilled any missing days; the check re-reads the
+  // ledger from Supabase so it always evaluates the caught-up state).
+  // Runs after the first paint (InteractionManager) so it never blocks Home.
+  // The service returns null for guests/offline errors and handles its own
+  // acknowledgment suppression — see energyResponseService.ts.
+  useEffect(() => {
+    const uid = userIdRef.current;
+    if (!uid || energyResponseInFlightRef.current) return;
+
+    energyResponseInFlightRef.current = true;
+    const task = InteractionManager.runAfterInteractions(() => {
+      checkEnergyResponse(uid)
+        .then((result) => {
+          if (!result) return;
+          // The safety check-in fires at most once per qualifying streak:
+          // persist its per-streak marker the moment it is scheduled to
+          // display (a later run must not re-fire for the same streak, even
+          // if the user never taps the modal).
+          if (result.kind === 'safety') {
+            markSafetyCheckInShown(uid, result.streak).catch((err) => {
+              console.error('[useHomeLogic] Failed to mark safety check-in:', err);
+            });
+          }
+          setEnergyResponseCheck(result);
+        })
+        .catch((err) => {
+          console.error('[useHomeLogic] Energy response check failed:', err);
+        })
+        .finally(() => {
+          energyResponseInFlightRef.current = false;
+        });
+    });
+
+    return () => task.cancel();
+  }, [user?.id, todayDateString]);
+
+  // Phase E handlers — all three close the prompt; only "Don't ask again"
+  // persists anything, and "Rebuild" only navigates. Nothing auto-changes.
+  const dismissEnergyResponse = useCallback(() => {
+    setEnergyResponseCheck(null);
+  }, []);
+
+  const dontAskAgainEnergyResponse = useCallback(() => {
+    const uid = userIdRef.current;
+    const check = energyResponseCheck;
+    setEnergyResponseCheck(null);
+    if (!uid || check?.kind !== 'adherence') return;
+    acknowledgeUnderperformance(uid, check.snapshot).catch((err) => {
+      console.error('[useHomeLogic] Failed to persist acknowledgment:', err);
+    });
+  }, [energyResponseCheck]);
+
+  const rebuildFromEnergyResponse = useCallback(() => {
+    setEnergyResponseCheck(null);
+    onNavigateToBuilder?.(getRebuildRoute());
+  }, [onNavigateToBuilder]);
   useEffect(() => {
     let cancelled = false;
     const analyticsTask = InteractionManager.runAfterInteractions(() => {
       const loadAnalytics = async () => {
-        if (Platform.OS === "ios" && healthSettings.healthKitEnabled) {
+        if (Platform.OS === 'ios' && healthSettings.healthKitEnabled) {
           if (isHealthKitAuthorized) {
             await syncHealthData();
           } else {
             await initializeHealthKit();
           }
-        } else if (
-          Platform.OS === "android" &&
-          healthSettings.healthConnectEnabled
-        ) {
+        } else if (Platform.OS === 'android' && healthSettings.healthConnectEnabled) {
           if (isHealthConnectAuthorized) {
             await syncFromHealthConnect(7);
           } else {
@@ -352,16 +451,13 @@ export const useHomeLogic = () => {
           return;
         }
 
-        const weightData = await analyticsDataService.getWeightHistory(
-          user.id,
-          90,
-        );
+        const weightData = await analyticsDataService.getWeightHistory(user.id, 90);
         if (cancelled) return;
         setHistoryData(weightData, useAnalyticsStore.getState().calorieHistory);
       };
 
       loadAnalytics().catch((error) => {
-        console.warn("[useHomeLogic] Failed to load analytics history:", error);
+        console.warn('[useHomeLogic] Failed to load analytics history:', error);
       });
     });
 
@@ -392,14 +488,14 @@ export const useHomeLogic = () => {
   // SEPARATE useEffect (do not merge with the mount/auto-sync effect above —
   // another agent may be editing this file for history-load).
   useEffect(() => {
-    if (Platform.OS !== "android") return;
+    if (Platform.OS !== 'android') return;
     if (!isHealthConnectAuthorized) return;
     if (!healthSettings.healthConnectEnabled) return;
 
     const RESUME_SYNC_DEBOUNCE_MS = 60_000;
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState !== "active") return;
+      if (nextAppState !== 'active') return;
 
       try {
         const store = useHealthDataStore.getState();
@@ -416,49 +512,41 @@ export const useHomeLogic = () => {
         // Errors are logged inside syncFromHealthConnect (no silent swallow).
         store.syncFromHealthConnect(7).catch((err) => {
           console.error(
-            "[useHomeLogic] HC resume-sync failed:",
-            err instanceof Error ? err.message : String(err),
+            '[useHomeLogic] HC resume-sync failed:',
+            err instanceof Error ? err.message : String(err)
           );
         });
       } catch (err) {
         console.error(
-          "[useHomeLogic] HC resume-sync handler error:",
-          err instanceof Error ? err.message : String(err),
+          '[useHomeLogic] HC resume-sync handler error:',
+          err instanceof Error ? err.message : String(err)
         );
       }
     };
 
-    const subscription = AppState.addEventListener(
-      "change",
-      handleAppStateChange,
-    );
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => {
       subscription?.remove();
     };
     // hcLastSyncTime intentionally NOT in deps: reading it would re-subscribe
     // on every sync (it updates after each sync). We read the latest value
     // via getState() inside the handler instead — see CLAUDE.md #10.
-  }, [
-    isHealthConnectAuthorized,
-    healthSettings.healthConnectEnabled,
-  ]);
+  }, [isHealthConnectAuthorized, healthSettings.healthConnectEnabled]);
 
   // Memoized values
   const appCaloriesBurned = useMemo(
     () =>
       getCompletedSessionsForDate(completedSessions).reduce(
         (sum, s) => sum + (s.caloriesBurned ?? 0),
-        0,
+        0
       ),
-    [completedSessions],
+    [completedSessions]
   );
 
   const wearableConnected = isHealthKitAuthorized || isHealthConnectAuthorized;
   const hasFreshWearableMetrics = useMemo(
-    () =>
-      wearableConnected &&
-      isHealthSnapshotFromToday(healthMetrics?.lastUpdated),
-    [wearableConnected, healthMetrics?.lastUpdated],
+    () => wearableConnected && isHealthSnapshotFromToday(healthMetrics?.lastUpdated),
+    [wearableConnected, healthMetrics?.lastUpdated]
   );
 
   const realCaloriesBurned = useMemo(() => {
@@ -486,10 +574,64 @@ export const useHomeLogic = () => {
     appCaloriesBurned,
   ]);
 
+  // Goal Engine Phase C: today's PLANNED burn — the active workout plan's
+  // per-day-of-week burn for today (not the weekly average). The Home burn
+  // gap compares this against `realCaloriesBurned` (the resolved, wearable-
+  // precedence actual). `computePlanBurnPerDay` returns perDayOfWeek
+  // indexed 0=Monday…6=Sunday; JS getDay() is 0=Sunday…6=Saturday, so the
+  // Monday-based index is (getDay() + 6) % 7. No plan / no weight → 0
+  // (rest phase is not an error state — see plan Edge Cases).
+  const plannedBurnToday = useMemo(() => {
+    const activePlan = activePlanSource === 'custom' ? customWeeklyPlan : weeklyWorkoutPlan;
+    if (!activePlan) return 0;
+    // weightData (declared below) is a useMemo over the same weightHistory +
+    // bodyAnalysis inputs; here the resolution must run inline to avoid a
+    // use-before-declaration (weightData is declared later in the hook).
+    const resolvedCurrentWeight = resolveCurrentWeight({
+      weightHistory,
+      bodyAnalysisWeight: bodyAnalysis?.current_weight_kg,
+    });
+    const weightKg = resolvedCurrentWeight.value ?? undefined;
+    const { perDayOfWeek } = computePlanBurnPerDay(activePlan, weightKg);
+    const mondayBasedIndex = (new Date().getDay() + 6) % 7;
+    return Math.round(perDayOfWeek[mondayBasedIndex] ?? 0);
+  }, [activePlanSource, customWeeklyPlan, weeklyWorkoutPlan, weightHistory, bodyAnalysis]);
+
   const currentSteps = useMemo(
     () => (hasFreshWearableMetrics ? (healthMetrics?.steps ?? 0) : 0),
-    [hasFreshWearableMetrics, healthMetrics?.steps],
+    [hasFreshWearableMetrics, healthMetrics?.steps]
   );
+
+  // BUG FIX: HealthIntelligenceHub's `activeCalories` prop previously reused
+  // `realCaloriesBurned` (below), which deliberately falls back to
+  // `appCaloriesBurned` (app-tracked workout calories, no wearable involved
+  // at all) when there's no fresh wearable snapshot — correct for the Move
+  // ring's "how many calories did you burn today, from any source" purpose,
+  // but wrong for the Health Intelligence card, which uses `activeCalories`
+  // as one of its `hasRealData` signals (see useHealthIntelligenceLogic) to
+  // decide whether to show real vitals or the "Connect Health Data"
+  // placeholder. Feeding it workout calories made `hasRealData` true for
+  // users with NO wearable connected at all, showing a broken-looking
+  // all-"--" populated card instead of the correct placeholder. This mirrors
+  // realCaloriesBurned's own active->total wearable-preference fallback
+  // (fixing the ORIGINAL problem it was solving — a wearable that only
+  // reports totalCalories) but — unlike realCaloriesBurned — never falls
+  // through to app-tracked workout calories; `undefined` here correctly
+  // means "no wearable-sourced active-calorie data exists."
+  const wearableActiveCalories = useMemo(() => {
+    if (!hasFreshWearableMetrics) return undefined;
+    if (healthMetrics?.activeCalories && healthMetrics.activeCalories > 0) {
+      return healthMetrics.activeCalories;
+    }
+    if (healthMetrics?.totalCalories && healthMetrics.totalCalories > 0) {
+      return healthMetrics.totalCalories;
+    }
+    return undefined;
+  }, [
+    hasFreshWearableMetrics,
+    healthMetrics?.activeCalories,
+    healthMetrics?.totalCalories,
+  ]);
 
   const realStreak = achievementStreak;
 
@@ -498,34 +640,22 @@ export const useHomeLogic = () => {
     const w = todaysData?.workout ?? null;
     const hasPlan = !!weeklyWorkoutPlan;
     const tidx = new Date().getDay();
-    const days = [
-      "sunday",
-      "monday",
-      "tuesday",
-      "wednesday",
-      "thursday",
-      "friday",
-      "saturday",
-    ];
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayMon = tidx === 0 ? 6 : tidx - 1;
     const isRest =
       (hasPlan &&
         fs.weeklyWorkoutPlan?.restDays?.some((d: number | string) =>
-          typeof d === "string" ? d === days[tidx] : d === todayMon,
+          typeof d === 'string' ? d === days[tidx] : d === todayMon
         )) ||
       false;
-    const wType = !hasPlan
-      ? "none"
-      : isRest
-        ? "rest"
-        : (w?.category ?? "workout");
+    const wType = !hasPlan ? 'none' : isRest ? 'rest' : (w?.category ?? 'workout');
     const dStatus = !hasPlan
-      ? "No Plan"
+      ? 'No Plan'
       : isRest
-        ? "Rest Day"
+        ? 'Rest Day'
         : w?.category
           ? `${w.category[0].toUpperCase()}${w.category.slice(1)} Day`
-          : "Workout Day";
+          : 'Workout Day';
     const completedSession = w
       ? findCompletedSessionForWorkout({
           completedSessions,
@@ -547,12 +677,9 @@ export const useHomeLogic = () => {
 
   const userName = useMemo(() => {
     // SSOT: profileStore.personalInfo is authoritative; compute from first+last, fallback to userStore
-    const profileName =
-      `${personalInfo?.first_name || ""} ${personalInfo?.last_name || ""}`.trim();
+    const profileName = `${personalInfo?.first_name || ''} ${personalInfo?.last_name || ''}`.trim();
     const legacyPersonalInfo = profile?.personalInfo as { name?: string } | undefined;
-    return (
-      profileName || personalInfo?.name || legacyPersonalInfo?.name || ""
-    );
+    return profileName || personalInfo?.name || legacyPersonalInfo?.name || '';
   }, [personalInfo, profile]);
 
   const weightData = useMemo(() => {
@@ -565,12 +692,10 @@ export const useHomeLogic = () => {
     });
     const currentWeight = resolvedCurrentWeight.value ?? undefined;
 
-    const startingWeight =
-      chartHistory.length > 0 ? chartHistory[0].weight : currentWeight;
+    const startingWeight = chartHistory.length > 0 ? chartHistory[0].weight : currentWeight;
 
     return {
-      currentWeight:
-        currentWeight && currentWeight > 0 ? currentWeight : undefined,
+      currentWeight: currentWeight && currentWeight > 0 ? currentWeight : undefined,
       goalWeight: goalWeight && goalWeight > 0 ? goalWeight : undefined,
       startingWeight,
       weightHistory: chartHistory,
@@ -582,9 +707,10 @@ export const useHomeLogic = () => {
   }, [todaysConsumedNutrition]);
 
   const workoutMinutes = useMemo(() => {
-    const todaysCompletedDuration = getCompletedSessionsForDate(
-      completedSessions,
-    ).reduce((sum, session) => sum + (session.durationMinutes ?? 0), 0);
+    const todaysCompletedDuration = getCompletedSessionsForDate(completedSessions).reduce(
+      (sum, session) => sum + (session.durationMinutes ?? 0),
+      0
+    );
     if (todaysCompletedDuration > 0) {
       return todaysCompletedDuration;
     }
@@ -602,7 +728,7 @@ export const useHomeLogic = () => {
       date.setDate(startOfWeek.getDate() + i);
       const dayName = getLocalDayName(date);
       const workout = weeklyWorkoutPlan?.workouts?.find(
-        (w: any) => w.dayOfWeek?.toLowerCase() === dayName,
+        (w: any) => w.dayOfWeek?.toLowerCase() === dayName
       );
       const weekStart = getCurrentWeekStart();
 
@@ -631,22 +757,19 @@ export const useHomeLogic = () => {
       // todaysData updates reactively via useMemo
 
       if (user?.id) {
-        const weightData = await analyticsDataService.getWeightHistory(
-          user.id,
-          90,
-        );
+        const weightData = await analyticsDataService.getWeightHistory(user.id, 90);
         setHistoryData(weightData, calorieHistory);
       }
 
-      if (Platform.OS === "ios" && isHealthKitAuthorized) {
+      if (Platform.OS === 'ios' && isHealthKitAuthorized) {
         await syncHealthData(true);
-      } else if (Platform.OS === "android" && isHealthConnectAuthorized) {
+      } else if (Platform.OS === 'android' && isHealthConnectAuthorized) {
         await syncFromHealthConnect(7);
       }
     } catch (err) {
-      console.error("Refresh error:", err);
+      console.error('Refresh error:', err);
       if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : "Failed to refresh data");
+        setError(err instanceof Error ? err.message : 'Failed to refresh data');
       }
     } finally {
       refreshInFlightRef.current = false;
@@ -686,6 +809,10 @@ export const useHomeLogic = () => {
     healthMetrics,
     wearableConnected,
     realCaloriesBurned,
+    wearableActiveCalories,
+    // Goal Engine Phase C: today's planned burn (active plan's per-day-of-
+    // week value) for the Home burn gap. Reused by the Phase D ledger.
+    plannedBurnToday,
     currentSteps,
 
     // Workout/nutrition data
@@ -712,5 +839,11 @@ export const useHomeLogic = () => {
 
     // Handlers
     handleRefresh,
+
+    // Phase E — under-performance response
+    energyResponseCheck,
+    dismissEnergyResponse,
+    dontAskAgainEnergyResponse,
+    rebuildFromEnergyResponse,
   };
 };

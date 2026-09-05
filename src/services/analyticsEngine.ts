@@ -576,16 +576,16 @@ class AnalyticsEngine extends EventEmitter {
     weights: Array<{ date: string; weight: number }>,
     trend: "losing" | "gaining" | "maintaining",
   ): number {
-    if (weights.length < 2) return 0;
-
-    // Calculate based on weight change magnitude
-    const firstWeight = weights[weights.length - 1].weight;
-    const currentWeight = weights[0].weight;
-    const change = Math.abs(currentWeight - firstWeight);
-
-    // Assume a goal of 5kg change for now (would ideally come from user goals)
-    const assumedGoal = 5;
-    return Math.min(100, Math.round((change / assumedGoal) * 100));
+    // This class (AnalyticsEngine) operates only on historical FitnessMetrics
+    // rows — it has no user profile/goal context threaded through
+    // generateAnalytics(), so there's no real target_weight_kg available
+    // here (that lives in bodyAnalysis/profileStore). This used to assume a
+    // flat 5kg goal, which fabricated a plausible-looking but fake progress
+    // percentage (CLAUDE.md principle 8 — no hardcoded fallbacks for user
+    // data). Surface as 0 ("unknown") instead. If this is ever wired to a
+    // live screen, thread the real target_weight_kg through
+    // generateAnalytics() instead of guessing.
+    return 0;
   }
 
   /**
@@ -596,24 +596,10 @@ class AnalyticsEngine extends EventEmitter {
     trend: "losing" | "gaining" | "maintaining",
     weeklyRate: number,
   ): string | undefined {
-    if (trend === "maintaining" || Math.abs(weeklyRate) < 0.1) {
-      return undefined; // Can't predict if maintaining
-    }
-
-    // Assume 5kg goal (would ideally come from user goals)
-    const assumedGoalChange = 5;
-    const currentWeight = weights[0].weight;
-    const weeksToGoal = Math.abs(assumedGoalChange / weeklyRate);
-
-    if (weeksToGoal > 52) {
-      return undefined; // More than a year, don't predict
-    }
-
-    const predictedDate = new Date();
-    predictedDate.setDate(
-      predictedDate.getDate() + Math.round(weeksToGoal * 7),
-    );
-    return predictedDate.toISOString();
+    // See calculateGoalProgress — no real goal weight is available at this
+    // layer, so a predicted date would be built on the same fabricated 5kg
+    // assumption. Surface as unknown rather than guess.
+    return undefined;
   }
 
   /**
@@ -664,6 +650,17 @@ class AnalyticsEngine extends EventEmitter {
           energyLevels.length
         : 7;
 
+    // NOTE: this is a distinct metric from the live "Recovery Score" on the
+    // Home screen (useHealthIntelligenceLogic.ts — sleep/resting-HR/activity
+    // weighted, computed from today's wearable snapshot). This one is a
+    // historical trend average from self-reported stress/energy/sleep-quality
+    // journal entries (FitnessMetrics), with no wearable HR input and a
+    // different formula/weighting. Both are currently named "recoveryScore"
+    // — if a screen ever renders this (ComprehensiveAnalytics.sleepWellness
+    // is unused today; see analyticsStore.currentAnalytics), do NOT present
+    // it next to the Home card's score as if they measure the same thing
+    // without reconciling the formulas first, or a user will see two
+    // different "recovery scores" for themselves at the same moment.
     const recoveryScore = Math.round(
       (avgSleepQuality * 10 + (10 - avgStress) * 10 + avgEnergy * 10) / 3,
     );
@@ -1488,8 +1485,13 @@ class AnalyticsEngine extends EventEmitter {
     );
     const { currentStreak } = this.calculateWorkoutStreaks(recentMetrics);
 
-    // Mock average score calculation
-    const averageScore = 75 + workoutTrend * 10 + currentStreak * 2;
+    // Was a fabricated formula (`75 + workoutTrend*10 + streak*2`) unrelated
+    // to the real weighted score in calculateOverallScore — two different
+    // numbers both called "score" for the same user risk disagreeing the
+    // moment both are ever shown together. Reuse the real, already-computed
+    // workout consistency score (the same one calculateOverallScore weights
+    // in) instead of inventing a second formula.
+    const averageScore = this.analyzeWorkouts(recentMetrics).consistencyScore;
 
     let recentTrend = "Stable";
     if (workoutTrend > 0.1) recentTrend = "Improving";

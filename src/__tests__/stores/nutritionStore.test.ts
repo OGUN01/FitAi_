@@ -65,6 +65,16 @@ jest.mock("../../services/offline", () => ({
 jest.mock("../../services/authUtils", () => ({
   getCurrentUserId: (...args: unknown[]) => mockGetCurrentUserId(...args),
   getUserIdOrGuest: jest.fn(() => "user-or-guest"),
+  // getSyncableUserId was extracted out of nutritionStore.ts into authUtils
+  // (previously a local function here, mirrored the same filtering inline).
+  // Derive it from the same mock so tests that set mockGetCurrentUserId
+  // still exercise the guest-id guard correctly.
+  getSyncableUserId: (...args: unknown[]) => {
+    const userId = mockGetCurrentUserId(...args);
+    if (!userId) return null;
+    if (typeof userId === "string" && userId.startsWith("guest")) return null;
+    return userId;
+  },
 }));
 
 jest.mock("../../services/supabase", () => ({
