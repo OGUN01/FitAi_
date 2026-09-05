@@ -17,6 +17,10 @@ export interface AdvancedReviewData {
 
   // Daily nutritional needs
   daily_calories?: number; // INTEGER
+  /** Phase A.2/A.3: Pre-fix snapshot of daily_calories captured before the
+   *  unified energy engine recomputes it. NULL until the one-time recompute
+   *  runs; set once and never changed. */
+  daily_calories_legacy?: number | null; // NUMERIC
   daily_protein_g?: number; // INTEGER
   daily_carbs_g?: number; // INTEGER
   daily_fat_g?: number; // INTEGER
@@ -122,6 +126,7 @@ export interface AdvancedReviewRow {
   calculated_tdee?: number | null;
   metabolic_age?: number | null;
   daily_calories?: number | null;
+  daily_calories_legacy?: number | null;
   daily_protein_g?: number | null;
   daily_carbs_g?: number | null;
   daily_fat_g?: number | null;

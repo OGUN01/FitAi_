@@ -26,7 +26,6 @@ import {
   validateMaximumBMI,
   validateBMRSafety,
   validateAbsoluteMinimum,
-  validateTimeline,
   validatePregnancyBreastfeeding,
   validateGoalConflict,
   validateMealsEnabled,
@@ -60,6 +59,7 @@ import {
   warnSingleMeal,
 } from "./warningValidations";
 import { calculateSmartAlternatives } from "./smartAlternatives";
+import { computeEnergyBreakdown } from "../energy/energyModel";
 
 // ============================================================================
 // CALORIE & RATE DERIVATION — ARCHITECTURE REFERENCE
@@ -68,9 +68,20 @@ import { calculateSmartAlternatives } from "./smartAlternatives";
 // Downstream consumers (onboardingService, useCalculatedMetrics, AI transformers)
 // must READ from advanced_review — never re-derive independently.
 //
+// Phase A.3: TDEE is computed via the unified energy engine
+// (computeEnergyBreakdown) which decomposes into:
+//   NEAT_TDEE   = BMR × NEAT_MULTIPLIERS[level] × ageModifier
+//   goalTdee    = NEAT_TDEE + intentExerciseBurn   (the ONBOARDING-INTENT number)
+// This replaces the old `applyAgeModifier(BMR × ACTIVITY_MULTIPLIERS[level] +
+// exerciseBurn)` which double-counted exercise (the Mifflin multiplier already
+// bakes in planned exercise, then calculateDailyExerciseBurn was added on top).
+// TIMELINE is no longer a blocking validation — rate/timeline is now an output
+// (a band via evaluatePlanSafety/projectGoal), not a blocker. The food floor
+// (BMR + absolute minimum) is the only hard wall.
+//
 // For WEIGHT LOSS with a Boost Pace Card (boost_extra_cardio_minutes > 0):
 //
-//   TDEE          = baseTDEE (activity multiplier) + exerciseBurn (planned workouts)
+//   TDEE (goalTdee) = NEAT_TDEE (BMR × NEAT multiplier × age modifier) + intentExerciseBurn
 //   BMR           = Mifflin-St Jeor formula
 //
 //   boostBurnPerDay = estimateSessionCalorieBurn(boostMinutes, intensity, weight, cardio)
@@ -172,22 +183,33 @@ export class ValidationEngine {
       workoutPreferences.activity_level ?? "sedentary",
     );
 
-    const baseTDEE = MetabolicCalculations.calculateTDEE(
-      bmr,
-      mappedActivityLevel,
-    );
-    const exerciseBurn = MetabolicCalculations.calculateDailyExerciseBurn(
-      workoutPreferences.workout_frequency_per_week,
-      workoutPreferences.time_preference,
-      workoutPreferences.intensity,
-      bodyAnalysis.current_weight_kg,
-      workoutPreferences.workout_types,
-    );
-    let tdee = MetabolicCalculations.applyAgeModifier(
-      baseTDEE + exerciseBurn,
-      personalInfo.age,
-      personalInfo.gender,
-    );
+    // ── Phase A.3: Unified energy engine ──────────────────────────────────
+    // Replaced the TDEE double-count: the old code computed
+    //   applyAgeModifier(BMR × ACTIVITY_MULTIPLIERS[level] + exerciseBurn, …)
+    // where ACTIVITY_MULTIPLIERS (1.2–1.9) already bakes in planned exercise,
+    // then added calculateDailyExerciseBurn on top — overstating TDEE by
+    // ~555 kcal/day for a 90 kg moderate user.
+    //
+    // The engine's `goalTdee` = NEAT_TDEE(BMR × NEAT_MULTIPLIERS[level]) +
+    // intentExerciseBurn is the correct onboarding-intent number: NEAT_TDEE
+    // uses a NEAT-only multiplier (excludes planned exercise) and
+    // intentExerciseBurn is added as a separate term. medicalConditions and
+    // pregnancy are NOT passed here — core.ts applies its own medical
+    // adjustment (applyMedicalAdjustments) and pregnancy bonus downstream,
+    // preserving the existing behavior.
+    const energy = computeEnergyBreakdown({
+      weightKg: bodyAnalysis.current_weight_kg,
+      heightCm: bodyAnalysis.height_cm,
+      age: personalInfo.age,
+      gender: personalInfo.gender,
+      activityLevel: workoutPreferences.activity_level ?? "sedentary",
+      workoutFrequencyPerWeek: workoutPreferences.workout_frequency_per_week ?? 0,
+      timePreference: workoutPreferences.time_preference ?? 0,
+      intensity: workoutPreferences.intensity ?? "beginner",
+      workoutTypes: workoutPreferences.workout_types ?? [],
+      plan: null, // core.ts is the onboarding-intent path — no active plan here.
+    });
+    const tdee = energy.goalTdee;
 
     const isWeightLoss =
       bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg;
@@ -417,13 +439,9 @@ export class ValidationEngine {
       );
       if (minCheck.status === "BLOCKED") errors.push(minCheck);
 
-      const timelineCheck = validateTimeline(
-        bodyAnalysis.current_weight_kg,
-        bodyAnalysis.target_weight_kg,
-        bodyAnalysis.target_timeline_weeks,
-        workoutPreferences.weekly_weight_loss_goal,
-      );
-      if (timelineCheck.status === "BLOCKED") errors.push(timelineCheck);
+      // Phase A.3: TIMELINE removed from the blocking set. Rate/timeline is now
+      // an output (a band via evaluatePlanSafety/projectGoal), not a blocker.
+      // The food floor (BMR + absolute minimum) is the only hard wall.
 
       const exerciseCheck = validateInsufficientExercise(
         workoutPreferences.workout_frequency_per_week,
