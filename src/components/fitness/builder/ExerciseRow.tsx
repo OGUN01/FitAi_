@@ -347,11 +347,46 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
     { hapticFeedback: false }, // we fire celebration manually
   );
 
+  // Bug fix (live-reproduced via Playwright against the web dev server): the
+  // GestureDetector below wraps rowInner, which also contains the nested
+  // Favourite and Kebab ("More actions") Pressables. RNGH's tap/double-tap
+  // recognizers don't automatically yield to those nested Pressables just
+  // because they're plain RN Pressables — a tap on "More actions" ALSO
+  // satisfies this row's own single-tap gesture. Because that tap gesture is
+  // raced against doubleTapGesture inside Gesture.Exclusive, it only
+  // resolves ~300ms later (animations.gesture.doubleTapDelay), so it fires
+  // as a DELAYED, seemingly-unrelated onOpenEditor call — popping the
+  // Exercise Editor Sheet on top of whatever the kebab action just opened.
+  // Confirmed live: tapping "More actions" then "Replace" opens the
+  // ExercisePickerSheet as expected, but ~300ms later this row's own Editor
+  // Sheet ALSO opens on top of it (mid-search), and both sheets render an
+  // identically-labeled "Close" (X) button — a user closing the unexpected
+  // top sheet reasonably believes they've cancelled the replace, while the
+  // picker (and its pickerContext) is still open underneath.
+  // (Gesture.Native() — the RNGH-documented way to give nested native
+  // touchables responder priority — was tried first but is a no-op on the
+  // web target, since react-native-gesture-handler-web's Pressables don't
+  // participate in the native responder system Gesture.Native() detects.
+  // A plain synchronous flag, set by the nested Pressables themselves and
+  // read once at the very start of the row's tap gesture, works on every
+  // platform because it doesn't depend on responder-system interop at all.)
+  const suppressRowTap = useSharedValue(false);
+  const markNestedPressableTap = useCallback(() => {
+    suppressRowTap.value = true;
+    // Auto-clear shortly after — well past the ~300ms doubleTap disambiguation
+    // window this is guarding — so a stray flag can never suppress a later,
+    // genuine tap on the row body.
+    setTimeout(() => {
+      suppressRowTap.value = false;
+    }, 500);
+  }, [suppressRowTap]);
+
   // ── Tap to open editor (composed with double-tap so a single tap doesn't
   //    pre-empt the double-tap; Gesture.Exclusive lets the double-tap win). ──
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .onStart(() => {
+      if (suppressRowTap.value) return;
       haptics.cardTap();
       onOpenEditor(dayIndex, exerciseIndex);
     });
@@ -586,6 +621,7 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
               <Pressable
                 hitSlop={13}
                 onPress={() => {
+                  markNestedPressableTap();
                   toggleFavourite(exercise.exerciseId);
                   haptics.celebration();
                 }}
@@ -604,6 +640,7 @@ const ExerciseRowComponent: React.FC<ExerciseRowProps> = ({
               <Pressable
                 hitSlop={13}
                 onPress={() => {
+                  markNestedPressableTap();
                   haptics.selection();
                   setMenuOpen((v) => !v);
                 }}

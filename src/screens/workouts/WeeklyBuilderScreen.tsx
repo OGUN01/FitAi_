@@ -358,10 +358,14 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
   // (375px) where more of its content wraps to extra lines, its rendered
   // height can exceed 180, so the fixed spacer under-compensates and the
   // footer visually overlaps the last exercise row. Measure the footer's
-  // ACTUAL rendered height instead of guessing a constant. Starts at the
-  // previous hardcoded value so there's no visible gap-then-overlap flash
-  // before the first onLayout fires.
-  const [footerHeight, setFooterHeight] = useState(rp(180));
+  // ACTUAL rendered height instead of guessing a constant. Starts at 220 —
+  // slightly above the ~214px measured live on a typical phone-width
+  // viewport — so there's no visible gap-then-overlap flash before the
+  // first onLayout fires (see BuilderSummaryFooter's forwarded onLayout —
+  // this used to be measured on a wrapper View around the footer, which
+  // always reported 0 since the footer's own root is position:absolute and
+  // contributes no height to an ancestor's layout).
+  const [footerHeight, setFooterHeight] = useState(rp(220));
 
   const handleBack = useCallback(() => {
     if (draftDirty) {
@@ -846,15 +850,23 @@ export default function WeeklyBuilderScreen({ navigation, sourceTemplate }: Prop
           </Animated.View>
         </GestureDetector>
 
-        <View
+        <BuilderSummaryFooter
+          onSaved={handleSaved}
+          onOpenActivateSheet={handleOpenActivateSheet}
+          // BUG FIX: this used to be measured via onLayout on a plain <View>
+          // WRAPPING the footer. BuilderSummaryFooter's own root is
+          // `position: "absolute"`, so it contributes zero height to that
+          // wrapper's layout — the wrapper's onLayout always fired with
+          // height 0, which overwrote the initial 180 fallback and left the
+          // spacer at the end of the ScrollView with NO height at all. The
+          // last exercise row of an expanded day and the tail of the Goal
+          // Impact panel rendered right behind the (214px-tall, in testing)
+          // floating footer. Forwarding onLayout straight onto the footer's
+          // own root View (see BuilderSummaryFooter's onLayout prop) reports
+          // its actual rendered height instead.
           onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
-        >
-          <BuilderSummaryFooter
-            onSaved={handleSaved}
-            onOpenActivateSheet={handleOpenActivateSheet}
-            testID="builder-footer"
-          />
-        </View>
+          testID="builder-footer"
+        />
       </SafeAreaView>
 
       {/* Discard-changes confirm dialog */}

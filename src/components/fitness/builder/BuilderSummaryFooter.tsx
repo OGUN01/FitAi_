@@ -23,7 +23,7 @@
  * tabular-nums.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, ViewStyle, Pressable, type TextStyle } from "react-native";
+import { View, Text, StyleSheet, ViewStyle, Pressable, type TextStyle, type LayoutChangeEvent } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassButton } from "../../ui/aurora/GlassButton";
@@ -59,6 +59,16 @@ export interface BuilderSummaryFooterProps {
   onOpenActivateSheet?: () => void;
   /** Container style override. */
   style?: ViewStyle;
+  /**
+   * BUG FIX: callers that need this footer's real rendered height (to keep
+   * scrollable content from being hidden behind it) must NOT measure a
+   * wrapper View around this component — this component's own root is
+   * `position: "absolute"`, which means it contributes zero height to an
+   * ancestor's layout, so an ancestor's onLayout always reports 0 for it.
+   * Forward onLayout here instead, straight onto this component's own root
+   * View, so it reports the footer's actual measured height.
+   */
+  onLayout?: (event: LayoutChangeEvent) => void;
   /** Test ID. */
   testID?: string;
 }
@@ -67,6 +77,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
   onSaved,
   onOpenActivateSheet,
   style,
+  onLayout,
   testID,
 }) => {
   const insets = useSafeAreaInsets();
@@ -310,6 +321,7 @@ export const BuilderSummaryFooter: React.FC<BuilderSummaryFooterProps> = ({
         style,
       ]}
       pointerEvents="box-none"
+      onLayout={onLayout}
       testID={testID}
     >
       {/* Flat footer surface — depth from hairline top border, not blur/shadow */}
